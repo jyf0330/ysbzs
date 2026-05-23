@@ -2,7 +2,9 @@
 
 ## 未发布
 
-（无）
+| 日期 | 类型 | 摘要 | 涉及文件 | 验证 |
+|---|---|---|---|---|
+| 2026-05-24 | refactor | 视觉层重构：抽离预览计算为 computeHeroAttackPreview / computeMonsterActionPreview；新增 buildBattleVM / buildBoardVM / buildHeroesVM / buildSlotsVM / buildTurnVM ViewModel 层；renderBoard / renderHS / renderSlots / renderTurn 改为接受 VM 参数，不再计算规则 | index.html / docs/02 / docs/03 | node test.js 151/151 |
 
 ---
 

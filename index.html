@@ -692,132 +692,162 @@ function closeShop(){
 }
 
 // ========== RENDERING ==========
-function render(){renderBoard();renderHS();renderSlots();renderTurn();}
 
-function renderBoard(){
-  const board=document.getElementById('board');
-  board.innerHTML='';
-  const hp={}; Object.values(G.heroes).forEach(h=>{hp[k(h.pos)]=h;});
-  const mp={}; G.monsters.forEach(m=>{if(!m.dead)mp[k(m.pos)]=m;});
-  const ps=new Set(G.prevCells.map(p=>k(p)));
-  const es=new Set(); if(G.explPos)explCells(G.explPos).forEach(p=>es.add(k(p)));
-  // ─── 英雄攻击预览（所有英雄，常驻显示）───
-  const heroAtkMap={}; // key→{el, monDmg}
-  if(G.phase!=='OVER'){
-    let simHit=G.hitCount;
-    Object.values(G.heroes).forEach(hero=>{
-      if(hero.hp<=0)return;
-      G.slots.filter(s=>s.hid===hero.id&&!s.used).forEach(slot=>{
-        atkCells(hero.pos,slot.sn,slot.dir).forEach(ap=>{
-          const key=k(ap);
-          if(!heroAtkMap[key])heroAtkMap[key]={el:slot.el,monDmg:0};
-          else heroAtkMap[key].el=slot.el;
-          const m=monAt(ap);
-          if(m){simHit++;const tmult=TIER_MULT[slot.tier]||1,emult=(m.el&&ADV[slot.el]===m.el)?2:1;heroAtkMap[key].monDmg+=simHit*tmult*emult;}
-          // 引爆预览：落点元素被克制时模拟爆炸伤害
-          {const pvBc=G.board[ap.r][ap.c];if(pvBc.el&&pvBc.stk>0&&ADV[slot.el]===pvBc.el){const expDmg=explDmg(pvBc.stk),oldEl=pvBc.el;explCells(ap).forEach(ep=>{const ek=k(ep);if(!heroAtkMap[ek])heroAtkMap[ek]={el:oldEl,monDmg:0};const em=monAt(ep);if(em){const emult2=(em.el&&ADV[oldEl]===em.el)?2:1;heroAtkMap[ek].monDmg+=expDmg*emult2;}});}}
-        });
+// ─── Preview 计算层（只读 G，不创建 DOM）───
+function computeHeroAttackPreview(){
+  const heroAtkMap={};
+  if(G.phase==='OVER')return heroAtkMap;
+  let simHit=G.hitCount;
+  Object.values(G.heroes).forEach(hero=>{
+    if(hero.hp<=0)return;
+    G.slots.filter(s=>s.hid===hero.id&&!s.used).forEach(slot=>{
+      atkCells(hero.pos,slot.sn,slot.dir).forEach(ap=>{
+        const key=k(ap);
+        if(!heroAtkMap[key])heroAtkMap[key]={el:slot.el,monDmg:0};
+        else heroAtkMap[key].el=slot.el;
+        const m=monAt(ap);
+        if(m){simHit++;const tmult=TIER_MULT[slot.tier]||1,emult=(m.el&&ADV[slot.el]===m.el)?2:1;heroAtkMap[key].monDmg+=simHit*tmult*emult;}
+        {const pvBc=G.board[ap.r][ap.c];if(pvBc.el&&pvBc.stk>0&&ADV[slot.el]===pvBc.el){const expDmg=explDmg(pvBc.stk),oldEl=pvBc.el;explCells(ap).forEach(ep=>{const ek=k(ep);if(!heroAtkMap[ek])heroAtkMap[ek]={el:oldEl,monDmg:0};const em=monAt(ep);if(em){const emult2=(em.el&&ADV[oldEl]===em.el)?2:1;heroAtkMap[ek].monDmg+=expDmg*emult2;}});}}
       });
     });
-  }
-  // ─── 行动槽单独预览 ───
-  const pvMap={};
-  if(G.selSlot!==null){const sl=G.slots[G.selSlot];G.prevCells.forEach(p=>{pvMap[k(p)]=sl.el;});}
-  const dmgMap={};
+  });
+  return heroAtkMap;
+}
+
+function computeMonsterActionPreview(){
+  const monActMap={},heroIncomingDmg={};
+  if(G.phase==='OVER')return{monActMap,heroIncomingDmg};
+  G.monsters.filter(m=>!m.dead).forEach(m=>{
+    const{movCells,atkCell,atkTarget,dmg}=simMonAct(m);
+    movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]=c.type;});
+    if(atkCell){monActMap[k(atkCell)]='atk';if(atkTarget)heroIncomingDmg[atkTarget.id]=(heroIncomingDmg[atkTarget.id]||0)+dmg;}
+  });
+  return{monActMap,heroIncomingDmg};
+}
+
+// ─── ViewModel 层（读 G，输出纯 JS 描述对象，不创建 DOM）───
+function buildBoardVM(){
+  const hp={},mp={};
+  Object.values(G.heroes).forEach(h=>{hp[k(h.pos)]=h;});
+  G.monsters.forEach(m=>{if(!m.dead)mp[k(m.pos)]=m;});
+  const ps=new Set(G.prevCells.map(p=>k(p)));
+  const es=new Set();if(G.explPos)explCells(G.explPos).forEach(p=>es.add(k(p)));
+  const heroAtkMap=computeHeroAttackPreview();
+  const pvMap={},dmgMap={};
   if(G.selSlot!==null){
     const sl=G.slots[G.selSlot];
-    G.prevCells.forEach(ap=>{
-      const m=monAt(ap);
-      if(m){const base=G.hitCount+1,tmult=TIER_MULT[sl.tier]||1,emult=(m.el&&ADV[sl.el]===m.el)?2:1;dmgMap[k(ap)]=base*tmult*emult;}
+    G.prevCells.forEach(p=>{pvMap[k(p)]=sl.el;});
+    G.prevCells.forEach(ap=>{const m=monAt(ap);if(m){const base=G.hitCount+1,tmult=TIER_MULT[sl.tier]||1,emult=(m.el&&ADV[sl.el]===m.el)?2:1;dmgMap[k(ap)]=base*tmult*emult;}});
+  }
+  const{monActMap,heroIncomingDmg}=computeMonsterActionPreview();
+  const cells=[];
+  for(let r=0;r<13;r++)for(let c=0;c<13;c++){
+    const key=`${r},${c}`,hero=hp[key],mon=mp[key],bc=G.board[r][c];
+    const classes=[];
+    if(ps.has(key))classes.push('ap');
+    if(es.has(key))classes.push('ep');
+    if(G.explPos&&G.explPos.r===r&&G.explPos.c===c)classes.push('ec');
+    const actType=monActMap[key];if(actType)classes.push(actType==='atk'?'mw-atk':'mw-mov');
+    const pvEl=heroAtkMap[key]?.el||pvMap[key]||null;
+    const pvOpacity=pvEl?(heroAtkMap[key]?'0.28':'0.38'):null;
+    let monDmg=null;
+    if(mon&&heroAtkMap[key]?.monDmg>0)monDmg=heroAtkMap[key].monDmg;
+    else if(dmgMap[key]!==undefined)monDmg=dmgMap[key];
+    cells.push({
+      r,c,key,
+      hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||0}:null,
+      mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el}:null,
+      el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
+      classes,pvEl,pvOpacity,monDmg
     });
   }
-  // ─── 怪物行动预览（3AP模拟，常驻显示）───
-  const monActMap={}; // key→'atk'|'mov'|'block'
-  const heroIncomingDmg={}; // heroId→totalDmg
-  if(G.phase!=='OVER'){
-    G.monsters.filter(m=>!m.dead).forEach(m=>{
-      const{movCells,atkCell,atkTarget,dmg}=simMonAct(m);
-      movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]=c.type;});
-      if(atkCell){
-        monActMap[k(atkCell)]='atk';
-        if(atkTarget)heroIncomingDmg[atkTarget.id]=(heroIncomingDmg[atkTarget.id]||0)+dmg;
-      }
-    });
-  }
+  return cells;
+}
 
-  for(let r=0;r<13;r++){
-    for(let c=0;c<13;c++){
-      const cell=document.createElement('div');
-      cell.className='cell';
-      const key=`${r},${c}`;
-      const hero=hp[key], mon=mp[key], bc=G.board[r][c];
+function buildHeroesVM(){
+  return Object.values(G.heroes).map(hero=>{
+    const pct=(hero.hp/hero.maxHp)*100;
+    return{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,pos:hero.pos,pct,
+      col:hero.id==='ha'?'#60a5fa':'#4ade80',
+      hpcol:pct>60?'#4ade80':pct>30?'#fbbf24':'#ef4444'};
+  });
+}
 
-      if(hero){
-        cell.classList.add('hp');
-        const hm=document.createElement('div');
-        hm.className=`hm ${hero.id==='ha'?'hma':'hmb'}${G.selHero===hero.id?' sel':''}`;
-        hm.innerHTML=`<span class="hm-letter">${hero.id==='ha'?'A':'B'}</span><span class="hm-hp">❤${hero.hp}/${hero.maxHp}</span>`;
-        hm.title=`${hero.name} HP:${hero.hp}/${hero.maxHp}`;
-        hm.onclick=(e)=>{e.stopPropagation();selHero(hero.id);};
-        cell.appendChild(hm);
-      } else if(mon){
-        const mm=document.createElement('div');
-        mm.className='mm';
-        mm.innerHTML=`<div class="mm-icon">👾</div><div class="mm-stats"><span>❤${mon.hp}</span><span>⚔${mon.atk}</span></div>`;
-        mm.title=`${mon.name} HP:${mon.hp}/${mon.maxHp} 攻:${mon.atk}`;
-        cell.appendChild(mm);
-      } else if(bc.el&&bc.stk>0){
-        const em=document.createElement('div');
-        em.className='em';
-        em.style.background=EB[bc.el];
-        em.style.color=EC[bc.el];
-        em.style.borderColor=EC[bc.el];
-        em.textContent=`${EL[bc.el]}${bc.stk}`;
-        em.title=`${EL[bc.el]}元素·${bc.stk}层·引爆伤害${explDmg(bc.stk)}`;
-        em.onclick=(e)=>{e.stopPropagation();showTT(r,c,e);};
-        cell.appendChild(em);
-      }
+function buildSlotsVM(){
+  const heroSlotCount={};
+  return G.slots.map((s,i)=>{
+    heroSlotCount[s.hid]=(heroSlotCount[s.hid]||0)+1;
+    return{idx:i,el:s.el,tier:s.tier,sn:s.sn,dir:s.dir,hid:s.hid,used:s.used,isSel:G.selSlot===i,
+      hLabel:(s.hid==='ha'?'A':'B')+'-'+heroSlotCount[s.hid],
+      disabled:s.used||G.phase!=='PLAYER'};
+  });
+}
 
-      if(ps.has(key))cell.classList.add('ap');
-      if(es.has(key))cell.classList.add('ep');
-      if(G.explPos&&G.explPos.r===r&&G.explPos.c===c)cell.classList.add('ec');
-      // 怪物行动预警（3AP常驻）
-      const actType=monActMap[key];
-      if(actType)cell.classList.add(actType==='atk'?'mw-atk':'mw-mov');
-      // 元素色叠加层（英雄攻击预览 或 行动槽预览）
-      const pvEl=heroAtkMap[key]?.el||pvMap[key];
-      if(pvEl){
-        const ovl=document.createElement('div');
-        ovl.className='hp-ovl';
-        ovl.style.background=EC[pvEl];
-        ovl.style.opacity=heroAtkMap[key]?'0.28':'0.38';
-        cell.appendChild(ovl);
-      }
-      // 伤害预告徽章：怪物格显示英雄预计伤害
-      if(mon&&heroAtkMap[key]?.monDmg>0){
-        const badge=document.createElement('div');
-        badge.className='dmg-badge';
-        badge.textContent=`-${heroAtkMap[key].monDmg}`;
-        cell.appendChild(badge);
-      } else if(dmgMap[key]!==undefined){
-        // 伤害预告徽章：行动槽单独选中模式
-        const badge=document.createElement('div');
-        badge.className='dmg-badge';
-        badge.textContent=`-${dmgMap[key]}`;
-        cell.appendChild(badge);
-      }
-      // 怪物伤害预告：英雄身上显示预计受到伤害
-      if(hero&&heroIncomingDmg[hero.id]){
-        const badge=document.createElement('div');
-        badge.className='hero-warn-badge';
-        badge.textContent=`-${heroIncomingDmg[hero.id]}`;
-        cell.appendChild(badge);
-      }
+function buildTurnVM(){
+  return{phase:G.phase,wave:G.wave,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER'};
+}
 
-      cell.onclick=()=>onCell(r,c);
-      board.appendChild(cell);
+function buildBattleVM(){
+  return{board:buildBoardVM(),heroes:buildHeroesVM(),slots:buildSlotsVM(),turn:buildTurnVM()};
+}
+
+// ─── View 层（只接受 VM 参数，只创建 DOM，不计算规则）───
+function render(){const vm=buildBattleVM();renderBoard(vm.board);renderHS(vm.heroes);renderSlots(vm.slots);renderTurn(vm.turn);}
+
+function renderBoard(boardVM){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  boardVM.forEach(cv=>{
+    const cell=document.createElement('div');
+    cell.className='cell';
+    cv.classes.forEach(cls=>cell.classList.add(cls));
+    if(cv.hero){
+      cell.classList.add('hp');
+      const hm=document.createElement('div');
+      hm.className=`hm ${cv.hero.id==='ha'?'hma':'hmb'}${cv.hero.isSel?' sel':''}`;
+      hm.innerHTML=`<span class="hm-letter">${cv.hero.id==='ha'?'A':'B'}</span><span class="hm-hp">❤${cv.hero.hp}/${cv.hero.maxHp}</span>`;
+      hm.title=`${cv.hero.name} HP:${cv.hero.hp}/${cv.hero.maxHp}`;
+      hm.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
+      cell.appendChild(hm);
+    }else if(cv.mon){
+      const mm=document.createElement('div');
+      mm.className='mm';
+      mm.innerHTML=`<div class="mm-icon">👾</div><div class="mm-stats"><span>❤${cv.mon.hp}</span><span>⚔${cv.mon.atk}</span></div>`;
+      mm.title=`${cv.mon.name} HP:${cv.mon.hp}/${cv.mon.maxHp} 攻:${cv.mon.atk}`;
+      cell.appendChild(mm);
+    }else if(cv.el){
+      const em=document.createElement('div');
+      em.className='em';
+      em.style.background=cv.el.bg;
+      em.style.color=cv.el.color;
+      em.style.borderColor=cv.el.color;
+      em.textContent=`${EL[cv.el.el]}${cv.el.stk}`;
+      em.title=`${EL[cv.el.el]}元素·${cv.el.stk}层·引爆伤害${cv.el.explDmg}`;
+      em.onclick=(e)=>{e.stopPropagation();showTT(cv.r,cv.c,e);};
+      cell.appendChild(em);
     }
-  }
+    if(cv.pvEl){
+      const ovl=document.createElement('div');
+      ovl.className='hp-ovl';
+      ovl.style.background=EC[cv.pvEl];
+      ovl.style.opacity=cv.pvOpacity;
+      cell.appendChild(ovl);
+    }
+    if(cv.monDmg!==null){
+      const badge=document.createElement('div');
+      badge.className='dmg-badge';
+      badge.textContent=`-${cv.monDmg}`;
+      cell.appendChild(badge);
+    }
+    if(cv.hero&&cv.hero.incomingDmg>0){
+      const badge=document.createElement('div');
+      badge.className='hero-warn-badge';
+      badge.textContent=`-${cv.hero.incomingDmg}`;
+      cell.appendChild(badge);
+    }
+    cell.onclick=()=>onCell(cv.r,cv.c);
+    board.appendChild(cell);
+  });
 }
 
 function k(p){return`${p.r},${p.c}`;}
@@ -850,56 +880,48 @@ function showTT(r,c,e){
 }
 function hideTT(){document.getElementById('tt').style.display='none';}
 
-function renderHS(){
+function renderHS(heroesVM){
   let h='';
-  Object.values(G.heroes).forEach(hero=>{
-    const pct=(hero.hp/hero.maxHp)*100;
-    const col=hero.id==='ha'?'#60a5fa':'#4ade80';
-    const hpcol=pct>60?'#4ade80':pct>30?'#fbbf24':'#ef4444';
+  heroesVM.forEach(hero=>{
     h+=`<div class="hi">
       <div>
-        <span style="color:${col};font-weight:bold;font-size:13px">${hero.name}</span>
+        <span style="color:${hero.col};font-weight:bold;font-size:13px">${hero.name}</span>
         <div style="font-size:10px;color:#666">📍(${hero.pos.r},${hero.pos.c})</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:12px">${hero.hp}/${hero.maxHp}</div>
-        <div class="hpb"><div class="hpf" style="width:${pct}%;background:${hpcol}"></div></div>
+        <div class="hpb"><div class="hpf" style="width:${hero.pct}%;background:${hero.hpcol}"></div></div>
       </div>
     </div>`;
   });
   document.getElementById('hs').innerHTML=h;
 }
 
-function renderSlots(){
+function renderSlots(slotsVM){
   let h='';
-  const heroSlotCount={};
-  G.slots.forEach((s,i)=>{
-    const isSel=G.selSlot===i;
-    const cls=`as${s.used?' used':''}${isSel?' sel':''}`;
-    const hero=G.heroes[s.hid];
-    heroSlotCount[s.hid]=(heroSlotCount[s.hid]||0)+1;
-    const hLabel=(s.hid==='ha'?'A':'B')+'-'+heroSlotCount[s.hid];
-    h+=`<div class="${cls}" onclick="selSlot(${i})">
-      <div class="as-name">${hLabel}${s.used?' ·已使用':''}</div>
+  slotsVM.forEach(s=>{
+    const cls=`as${s.used?' used':''}${s.isSel?' sel':''}`;
+    h+=`<div class="${cls}" onclick="selSlot(${s.idx})">
+      <div class="as-name">${s.hLabel}${s.used?' ·已使用':''}</div>
       <div class="as-blk" style="color:${EC[s.el]}">${slotName(s)}</div>
       <div class="as-hero">英雄:
-        <select onchange="setHero(${i},this.value)" onclick="event.stopPropagation()">
+        <select onchange="setHero(${s.idx},this.value)" onclick="event.stopPropagation()">
           ${Object.values(G.heroes).map(h2=>`<option value="${h2.id}"${s.hid===h2.id?' selected':''}>${h2.name}</option>`).join('')}
         </select>
       </div>
       <div class="dg">
         <div class="db de"></div>
-        <div class="db${s.dir==='up'?' da':''}" onclick="event.stopPropagation();setDir(${i},'up')">↑</div>
+        <div class="db${s.dir==='up'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'up')">↑</div>
         <div class="db de"></div>
-        <div class="db${s.dir==='left'?' da':''}" onclick="event.stopPropagation();setDir(${i},'left')">←</div>
+        <div class="db${s.dir==='left'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'left')">←</div>
         <div class="db de" style="font-size:8px;color:#333">•</div>
-        <div class="db${s.dir==='right'?' da':''}" onclick="event.stopPropagation();setDir(${i},'right')">→</div>
+        <div class="db${s.dir==='right'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'right')">→</div>
         <div class="db de"></div>
-        <div class="db${s.dir==='down'?' da':''}" onclick="event.stopPropagation();setDir(${i},'down')">↓</div>
+        <div class="db${s.dir==='down'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'down')">↓</div>
         <div class="db de"></div>
       </div>
-      <button class="ub" onclick="event.stopPropagation();useSlot(${i})"
-        ${s.used||G.phase!=='PLAYER'?'disabled':''}>
+      <button class="ub" onclick="event.stopPropagation();useSlot(${s.idx})"
+        ${s.disabled?'disabled':''}>
         ${s.used?'✓ 已使用':'⚔️ 使用'}
       </button>
     </div>`;
@@ -907,12 +929,12 @@ function renderSlots(){
   document.getElementById('asl').innerHTML=h;
 }
 
-function renderTurn(){
+function renderTurn(turnVM){
   const phText={PLAYER:'⚔️ 玩家回合',MONSTER:'👾 怪物行动中…',SHOP:'🛒 商店',OVER:'💀 游戏结束'};
-  document.getElementById('ph').textContent=phText[G.phase]||G.phase;
-  document.getElementById('rc').textContent=`第${G.wave}波 · ${Math.min(G.round,G.maxRound)}/${G.maxRound}小回合`;
-  document.getElementById('gold').textContent=G.gold;
-  document.getElementById('etb').disabled=G.phase!=='PLAYER';
+  document.getElementById('ph').textContent=phText[turnVM.phase]||turnVM.phase;
+  document.getElementById('rc').textContent=`第${turnVM.wave}波 · ${turnVM.round}/${turnVM.maxRound}小回合`;
+  document.getElementById('gold').textContent=turnVM.gold;
+  document.getElementById('etb').disabled=turnVM.endTurnDisabled;
 }
 
 // #2 形状图形预览

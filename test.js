@@ -235,17 +235,17 @@ group('元素系统', ()=>{
   test('explDmg(3)=6', ()=> assert.strictEqual(explDmg(3),6));
   test('explDmg(4)=10',()=> assert.strictEqual(explDmg(4),10));
   test('explDmg(5)=15',()=> assert.strictEqual(explDmg(5),15));
-  test('explCells 中心返回 4 个十字格', ()=>{
+  test('explCells 中心返回 5 个十字格（含中心）', ()=>{
     const c=explCells({r:5,c:5});
-    assert.strictEqual(c.length,4);
+    assert.strictEqual(c.length,5);
     const keys=c.map(p=>`${p.r},${p.c}`);
-    ['4,5','6,5','5,4','5,6'].forEach(k=>assert.ok(keys.includes(k),`缺少 ${k}`));
+    ['5,5','4,5','6,5','5,4','5,6'].forEach(k=>assert.ok(keys.includes(k),`缺少 ${k}`));
   });
-  test('explCells 角落(0,0) 只有 2 格', ()=>{
-    assert.strictEqual(explCells({r:0,c:0}).length,2);
+  test('explCells 角落(0,0) 含中心共 3 格', ()=>{
+    assert.strictEqual(explCells({r:0,c:0}).length,3);
   });
-  test('explCells 边(0,5) 只有 3 格', ()=>{
-    assert.strictEqual(explCells({r:0,c:5}).length,3);
+  test('explCells 边(0,5) 含中心共 4 格', ()=>{
+    assert.strictEqual(explCells({r:0,c:5}).length,4);
   });
   test('doExplode 清空元素格', ()=>{
     fresh();
@@ -272,6 +272,107 @@ group('元素系统', ()=>{
     doExplode({r:5,c:5}); // should silently return
     assert.ok(true);
   });
+
+// ═══════════════════════════════════════════════════════
+group('战斗系统验收测试 (10条规则)', ()=>{
+  test('验收-1: 火1层再落火变火屏2', ()=>{
+    fresh();
+    addEl({r:5,c:5},'fire');
+    addEl({r:5,c:5},'fire');
+    assert.strictEqual(G.board[5][5].el,'fire');
+    assert.strictEqual(G.board[5][5].stk,2);
+  });
+  test('验收-2: 火5层+水自动引爆，基础伤害=15', ()=>{
+    fresh();
+    for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
+    G.monsters[1].pos={r:9,c:9};
+    addEl({r:5,c:5},'water'); // 水克火 → 自动引爆
+    assert.strictEqual(G.monsters[0].hp,5,'20-15=5');
+  });
+  test('验收-3: 引爆后原格变水屏1', ()=>{
+    fresh();
+    for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
+    G.monsters[0].pos={r:9,c:9}; G.monsters[1].pos={r:9,c:8};
+    addEl({r:5,c:5},'water');
+    assert.strictEqual(G.board[5][5].el,'water');
+    assert.strictEqual(G.board[5][5].stk,1);
+  });
+  test('验收-4: 引爆范围包含中心和四个方向共5格', ()=>{
+    const c=explCells({r:5,c:5});
+    assert.strictEqual(c.length,5);
+    const keys=new Set(c.map(p=>`${p.r},${p.c}`));
+    assert.ok(keys.has('5,5'),'缺少中心');
+    assert.ok(keys.has('4,5'),'缺少上');
+    assert.ok(keys.has('6,5'),'缺少下');
+    assert.ok(keys.has('5,4'),'缺少左');
+    assert.ok(keys.has('5,6'),'缺少右');
+  });
+  test('验收-5: 火层爆炸炸到风属性怪 ×2', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el='wind';
+    G.monsters[1].pos={r:9,c:9};
+    G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, ×2=12
+    doExplode({r:5,c:5});
+    assert.strictEqual(G.monsters[0].hp,8,'20-12=8');
+  });
+  test('验收-6: 火层爆炸炸到无属性怪不翻倍', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
+    G.monsters[1].pos={r:9,c:9};
+    G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, 不翻倍
+    doExplode({r:5,c:5});
+    assert.strictEqual(G.monsters[0].hp,14,'20-6=14');
+  });
+  test('验收-7: wave1怪物 el=null 不吃克制翻倍', ()=>{
+    fresh();
+    G.monsters.forEach((m,i)=>
+      assert.strictEqual(m.el,null,`教学怪${i} 属性应为 null`)
+    );
+  });
+  test('验收-8: 直接命中只打单体，旁边怪物不受伤', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:4};
+    G.heroes.hb.pos={r:12,c:0};
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10;
+    G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=10;
+    G.slots[0].hid='ha'; G.slots[0].sn=1; G.slots[0].dir='right'; // 攻击(5,5)
+    G.slots[0].tier=1; G.slots[0].used=false; G.hitCount=0;
+    useSlot(0);
+    assert.ok(G.monsters[0].hp<10,'命中格怪物受伤');
+    // 不对应击点，且无引爆，怪物1不受伤
+    assert.strictEqual(G.monsters[1].hp,10,'旁边怪物不受直接伤');
+  });
+  test('验收-9: 引爆伤害能打十字范围内多只怪', ()=>{
+    fresh();
+    G.monsters[0].pos={r:4,c:5}; G.monsters[0].hp=20; G.monsters[0].el=null;
+    G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=20; G.monsters[1].el=null;
+    G.board[5][5].el='fire'; G.board[5][5].stk=2; // dmg=3
+    doExplode({r:5,c:5});
+    assert.ok(G.monsters[0].hp<20,'上方怪受伤');
+    assert.ok(G.monsters[1].hp<20,'右方怪受伤');
+  });
+  test('验收-10: 新元素不克制旧元素时，不覆盖旧层', ()=>{
+    fresh();
+    addEl({r:5,c:5},'fire'); addEl({r:5,c:5},'fire'); // 火2层
+    addEl({r:5,c:5},'earth'); // 土不克火，无效
+    assert.strictEqual(G.board[5][5].el,'fire','应仍是火');
+    assert.strictEqual(G.board[5][5].stk,2,'层数应不变');
+  });
+  test('验收-补: addEl 6层上限', ()=>{
+    fresh();
+    for(let i=0;i<8;i++) addEl({r:5,c:5},'fire');
+    assert.strictEqual(G.board[5][5].stk,6,'最高6层');
+  });
+  test('验收-补: 中心格怪物能被引爆伤到', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20; G.monsters[0].el=null;
+    G.monsters[1].pos={r:9,c:9};
+    G.board[5][5].el='fire'; G.board[5][5].stk=3; // dmg=6
+    doExplode({r:5,c:5});
+    assert.ok(G.monsters[0].hp<20,'中心怪物应被引爆伤到');
+  });
+});
 });
 
 // ═══════════════════════════════════════════════════════════════

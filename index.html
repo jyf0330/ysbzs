@@ -225,6 +225,7 @@ const EC = {fire:'#fb923c',water:'#38bdf8',wind:'#86efac',earth:'#d97706'};
 const EB = {fire:'#431407',water:'#0c2340',wind:'#052e16',earth:'#2d1a00'};
 const ADV = {water:'fire',fire:'wind',wind:'earth',earth:'water'};
 const TIER_MULT = [0,1,2,4,8];
+const MAX_STK = 6;
 
 // Shape definitions: cells = [row_offset, col_offset] relative to hero, default "right"
 const SD = {
@@ -300,10 +301,11 @@ function mkBoard(){
 function spawnWave(w){
   if(w===1){
     G.monsters=[
-      {id:'m0',name:'教学怪1',hp:6, maxHp:6, atk:1,pos:{r:1,c:11},dead:false},
-      {id:'m1',name:'教学怪2',hp:10,maxHp:10,atk:1,pos:{r:0,c:10},dead:false},
+      {id:'m0',name:'教学怪1',hp:6, maxHp:6, atk:1,pos:{r:1,c:11},dead:false,el:null},
+      {id:'m1',name:'教学怪2',hp:10,maxHp:10,atk:1,pos:{r:0,c:10},dead:false,el:null},
     ];
   } else {
+    const ELEMS=['fire','water','wind','earth'];
     const counts=[0,2,3,4,5,6,7,8];
     const n=counts[Math.min(w,counts.length-1)];
     G.monsters=[];
@@ -312,7 +314,8 @@ function spawnWave(w){
       G.monsters.push({
         id:`m${w}_${i}`,name:`怪物${i+1}`,
         hp,maxHp:hp,atk:Math.max(1,Math.floor(w/2)),
-        pos:{r:Math.min(i%5,4),c:12-Math.floor(i/5)},dead:false
+        pos:{r:Math.min(i%5,4),c:12-Math.floor(i/5)},dead:false,
+        el:ELEMS[ri(ELEMS.length)]
       });
     }
   }
@@ -343,26 +346,30 @@ function cellFree(pos){return !monAt(pos)&&!heroAt(pos)&&pos.r>=0&&pos.r<13&&pos
 // ========== ELEMENT SYSTEM ==========
 function addEl(pos,el){
   const cell=G.board[pos.r][pos.c];
-  cell.el=el; cell.stk=(cell.stk||0)+1;
+  if(!cell.el||cell.stk===0){cell.el=el;cell.stk=1;}
+  else if(cell.el===el){if(cell.stk<MAX_STK)cell.stk++;}
+  else if(ADV[el]===cell.el){doExplode(pos);cell.el=el;cell.stk=1;}
+  // else: 不克制不同元素 → 无效
 }
 
 function explDmg(stk){return stk*(stk+1)/2;}
 
 function explCells(pos){
-  return [{r:pos.r-1,c:pos.c},{r:pos.r+1,c:pos.c},{r:pos.r,c:pos.c-1},{r:pos.r,c:pos.c+1}]
+  return [pos,{r:pos.r-1,c:pos.c},{r:pos.r+1,c:pos.c},{r:pos.r,c:pos.c-1},{r:pos.r,c:pos.c+1}]
     .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
 }
 
 function doExplode(pos){
   const cell=G.board[pos.r][pos.c];
   if(!cell.el||cell.stk===0)return;
+  const oldEl=cell.el;
   const dmg=explDmg(cell.stk);
-  const elName=EL[cell.el];
+  const elName=EL[oldEl];
   glog(`💥 ${elName}${cell.stk}引爆！范围伤害 ${dmg}`);
   cell.el=null; cell.stk=0;
   explCells(pos).forEach(tp=>{
     const m=monAt(tp);
-    if(m)dealDmg(m,dmg,`${elName}引爆`);
+    if(m){let emult=1;if(m.el&&ADV[oldEl]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}dealDmg(m,dmg*emult,`${elName}引爆`);}
     const h=heroAt(tp);
     if(h){h.hp=Math.max(0,h.hp-dmg);glog(`💔 ${h.name}被爆炸波及 -${dmg}(${h.hp}/${h.maxHp})`);checkGameOver();}
   });
@@ -393,7 +400,7 @@ function useSlot(idx){
       const base=G.hitCount;
       const tmult=TIER_MULT[slot.tier]||1;
       let emult=1;
-      if(ADV[slot.el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}
+      if(m.el&&ADV[slot.el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}
       dealDmg(m,base*tmult*emult,`第${G.hitCount}次命中`);
     }
     addEl(ap,slot.el);
@@ -706,7 +713,9 @@ function renderBoard(){
           if(!heroAtkMap[key])heroAtkMap[key]={el:slot.el,monDmg:0};
           else heroAtkMap[key].el=slot.el;
           const m=monAt(ap);
-          if(m){simHit++;const tmult=TIER_MULT[slot.tier]||1,emult=ADV[slot.el]===m.el?2:1;heroAtkMap[key].monDmg+=simHit*tmult*emult;}
+          if(m){simHit++;const tmult=TIER_MULT[slot.tier]||1,emult=(m.el&&ADV[slot.el]===m.el)?2:1;heroAtkMap[key].monDmg+=simHit*tmult*emult;}
+          // 引爆预览：落点元素被克制时模拟爆炸伤害
+          {const pvBc=G.board[ap.r][ap.c];if(pvBc.el&&pvBc.stk>0&&ADV[slot.el]===pvBc.el){const expDmg=explDmg(pvBc.stk),oldEl=pvBc.el;explCells(ap).forEach(ep=>{const ek=k(ep);if(!heroAtkMap[ek])heroAtkMap[ek]={el:oldEl,monDmg:0};const em=monAt(ep);if(em){const emult2=(em.el&&ADV[oldEl]===em.el)?2:1;heroAtkMap[ek].monDmg+=expDmg*emult2;}});}}
         });
       });
     });
@@ -719,7 +728,7 @@ function renderBoard(){
     const sl=G.slots[G.selSlot];
     G.prevCells.forEach(ap=>{
       const m=monAt(ap);
-      if(m){const base=G.hitCount+1,tmult=TIER_MULT[sl.tier]||1,emult=ADV[sl.el]===m.el?2:1;dmgMap[k(ap)]=base*tmult*emult;}
+      if(m){const base=G.hitCount+1,tmult=TIER_MULT[sl.tier]||1,emult=(m.el&&ADV[sl.el]===m.el)?2:1;dmgMap[k(ap)]=base*tmult*emult;}
     });
   }
   // ─── 怪物行动预览（3AP模拟，常驻显示）───
@@ -829,9 +838,8 @@ function showTT(r,c,e){
     <div class="ttl"><b style="color:${EC[bc.el]}">${EL[bc.el]}元素格</b></div>
     <div class="ttl">层数：${bc.stk}</div>
     <div class="ttl">引爆伤害：${dmg}</div>
-    <div class="ttl">范围：十字1格</div>
-    <button class="exb" onclick="doExplode({r:${r},c:${c}});hideTT()">💥 引爆！</button>
-    <button class="ttc" onclick="hideTT();G.explPos=null;render()">取消</button>
+    <div class="ttl">范围：十字5格（含中心）</div>
+    <button class="ttc" onclick="hideTT();G.explPos=null;render()">关闭</button>
   `;
   const tt=document.getElementById('tt');
   const bnd=e.target.getBoundingClientRect();

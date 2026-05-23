@@ -128,7 +128,7 @@ group('initGame 初始化', ()=>{
   test('英雄 hb 存在 HP=20', ()=>{
     assert.ok(G.heroes.hb); assert.strictEqual(G.heroes.hb.hp,20);
   });
-  test('3 个行动槽',            ()=> assert.strictEqual(G.slots.length,3));
+  test('6 个行动槽（每英雄3个）', ()=> assert.strictEqual(G.slots.length,6));
   test('行动槽初始均 used=false',()=> G.slots.forEach((s,i)=>
     assert.strictEqual(s.used,false,`槽${i}`)
   ));
@@ -430,7 +430,7 @@ group('英雄移动', ()=>{
     G.selHero='ha';
     moveHero(7,7);
     assert.deepStrictEqual(G.heroes.ha.pos,{r:7,c:7});
-    assert.strictEqual(G.selHero,null);
+    assert.strictEqual(G.selHero,'ha'); // 移动后保持选中，预览继续显示
   });
   test('moveHero 不能移动到怪物格', ()=>{
     fresh();
@@ -615,9 +615,9 @@ group('spawnWave 波次生成', ()=>{
 
 // ═══════════════════════════════════════════════════════════════
 group('商店系统', ()=>{
-  test('genShop 生成 5 个商品', ()=>{
+  test('genShop 生成3个商品', ()=>{
     fresh(); genShop();
-    assert.strictEqual(G.shopItems.length,5);
+    assert.strictEqual(G.shopItems.length,3);
   });
   test('商品有合法 el / sn / tier=1 / cost≥1', ()=>{
     fresh(); genShop();
@@ -656,11 +656,11 @@ group('商店系统', ()=>{
     assert.strictEqual(G.backpack.length,64);
     assert.ok(_lastMsg.includes('满'),'应提示背包已满');
   });
-  test('refreshShop 扣 1 金币并重新生成 5 件商品', ()=>{
+  test('refreshShop 才 1 金币并重新生成3 件商品', ()=>{
     fresh(); G.gold=5; genShop();
     refreshShop();
     assert.strictEqual(G.gold,4);
-    assert.strictEqual(G.shopItems.length,5);
+    assert.strictEqual(G.shopItems.length,3);
   });
   test('refreshShop 金币不足 → 不刷新', ()=>{
     fresh(); G.gold=0; genShop();

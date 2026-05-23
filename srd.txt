@@ -547,6 +547,100 @@ function addElementToCell(cell: CellState, element: ElementType): void {
 
 ---
 
+## 9.7 双向伤害预览规则
+
+预览仅属于 UI 层计算，不得修改任何真实状态。
+
+### A. 英雄攻击预览
+
+```txt
+触发条件：玩家回合 + 英雄被选中
+数据来源：该英雄当前所有 used=false 的行动槽
+```
+
+计算逻辑：
+
+```ts
+// 运行时计算，不修改 G
+let simHit = G.hitCount;
+const heroAtkMap: Map<string, { el: ElementType; monDmg: number }> = {};
+
+for (const slot of heroSlots) {
+  for (const cell of atkCells(hero.pos, slot.sn, slot.dir)) {
+    const key = `${cell.r},${cell.c}`;
+    if (!heroAtkMap.has(key)) heroAtkMap.set(key, { el: slot.el, monDmg: 0 });
+    else heroAtkMap.get(key)!.el = slot.el; // 最后一个槽覆盖元素
+
+    const m = monAt(cell);
+    if (m) {
+      simHit++;
+      const tmult = TierMultiplier[slot.tier];
+      const emult = counterMap[slot.el] === m.el ? 2 : 1;
+      heroAtkMap.get(key)!.monDmg += simHit * tmult * emult;
+    }
+  }
+}
+```
+
+渲染表现：
+
+```txt
+攻击格：元素色半透明叠加层
+怪物格右上角：「元素名 -总伤害」（红色徽章）
+示例：火 -6
+```
+
+### B. 英雄独立性
+
+```txt
+选中英雄A → 仅计算英雄A的 used=false 様
+选中英雄B → 仅计算英雄B的 used=false 様
+```
+
+### C. 怪物行动预览
+
+```txt
+触发条件：玩家回合内始终实时计算，无需选中任何单位
+```
+
+计算逻辑：
+
+```ts
+// 对每个存活怪物执行一次预测
+for (const m of aliveMonsters) {
+  const leftCell = { r: m.pos.r, c: m.pos.c - 1 };
+  const leftHero = heroAt(leftCell);
+
+  if (leftCell.c >= 0 && leftHero) {
+    // 怪物将攻击英雄
+    monActCells.push({ ...leftCell, type: 'atk' });
+    heroIncomingDmg[leftHero.id] = (heroIncomingDmg[leftHero.id] || 0) + m.atk;
+  } else {
+    // 怪物将移动
+    const nextPos = nextMove(m);
+    if (nextPos) monActCells.push({ ...nextPos, type: 'mov' });
+  }
+}
+```
+
+渲染表现：
+
+```txt
+橙色高亮：怪物将移动到的格（mw-mov）
+红色高亮：怪物将攻击的英雄格（mw-atk）
+英雄格左下角：「-预计伤害」（紫色徽章）
+```
+
+### D. 英雄移动后预览不消失
+
+```txt
+英雄移动后保持 selHero 选中状态
+移动后立即以新位置重算所有预览
+外部行为：在 render() 中隶次调用，不需额外触发
+```
+
+---
+
 # 10. 元素叠层系统
 
 ## 10.1 元素层数据

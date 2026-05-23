@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>元素背包史 · Demo v0.1</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Microsoft YaHei',sans-serif;
+  background:#0d1117;color:#e0e0e0;
+  display:flex;flex-direction:column;align-items:center;
+  min-height:100vh;padding:8px 4px;
+  user-select:none;
+}
+h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
+#gw{display:flex;gap:12px;align-items:flex-start;}
+
+/* ===== BOARD ===== */
+#board{
+  display:grid;
+  grid-template-columns:repeat(13,42px);
+  grid-template-rows:repeat(13,42px);
+  gap:1px;background:#1a1a1a;border:2px solid #333;
+}
+.cell{
+  width:42px;height:42px;
+  background:#111827;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;cursor:pointer;position:relative;
+  transition:background 0.1s;
+}
+.cell:hover{background:#1d2f45;}
+.cell.hp{background:#1a0d0d;}
+.cell.ap{background:#162608;outline:1px solid #3a6018;}
+.cell.ep{background:#2a0a2a;outline:1px solid #6a206a;}
+.cell.ec{outline:2px solid #f0a500;}
+
+/* Markers */
+.hm{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;cursor:pointer;position:relative;}
+.hma{background:#1565C0;color:#fff;box-shadow:0 0 4px #1565C0;}
+.hmb{background:#2E7D32;color:#fff;box-shadow:0 0 4px #2E7D32;}
+.hm.sel{box-shadow:0 0 10px #f0a500,0 0 4px #f0a500;}
+.mm{width:36px;height:36px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:bold;background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444;}
+.mm .mhp{font-size:9px;color:#fda;}
+.em{width:38px;height:38px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid;}
+
+/* ===== RIGHT PANEL ===== */
+#rp{width:290px;display:flex;flex-direction:column;gap:8px;}
+.box{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px;}
+.btt{font-size:12px;color:#f0a500;font-weight:bold;margin-bottom:6px;border-bottom:1px solid #21262d;padding-bottom:4px;}
+
+/* Turn info */
+#ph{font-size:20px;font-weight:bold;color:#f0a500;text-align:center;}
+#rc{font-size:11px;color:#888;text-align:center;margin-top:2px;}
+#gi{text-align:right;font-size:12px;margin-top:4px;}
+
+.etb{
+  background:#1565C0;color:#fff;border:none;padding:7px;border-radius:6px;
+  cursor:pointer;font-size:13px;width:100%;margin-top:6px;
+}
+.etb:hover{background:#1976D2;}
+.etb:disabled{background:#21262d;color:#555;cursor:not-allowed;}
+
+/* Hero status */
+.hi{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.hpb{width:90px;height:5px;background:#21262d;border-radius:3px;margin-top:2px;}
+.hpf{height:100%;border-radius:3px;transition:width 0.3s;}
+
+/* Action slots */
+.as{
+  background:#0d1f3c;border:1px solid #1e3a5f;border-radius:6px;
+  padding:8px;margin-bottom:6px;cursor:pointer;
+  transition:border-color 0.2s;
+}
+.as:hover{border-color:#2a5a8a;}
+.as.sel{border-color:#f0a500;background:#1a2f50;}
+.as.used{opacity:0.45;}
+.as-name{font-size:10px;color:#666;margin-bottom:2px;}
+.as-blk{font-size:12px;font-weight:bold;margin-bottom:4px;}
+.as-hero{font-size:10px;color:#666;display:flex;align-items:center;gap:4px;margin-bottom:4px;}
+.as-hero select{background:#0d1f3c;color:#ccc;border:1px solid #1e3a5f;border-radius:3px;font-size:10px;padding:1px;}
+
+.dg{display:grid;grid-template-columns:repeat(3,24px);grid-template-rows:repeat(3,20px);gap:1px;margin:3px 0;}
+.db{background:#0d1f3c;border:1px solid #1e3a5f;color:#aaa;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:2px;}
+.db:hover{background:#1e3a5f;}
+.db.da{background:#f0a500;color:#000;border-color:#f0c040;}
+.db.de{background:transparent;border:none;cursor:default;}
+
+.ub{background:#b91c1c;color:#fff;border:none;padding:4px;border-radius:4px;cursor:pointer;font-size:11px;width:100%;margin-top:3px;}
+.ub:hover{background:#dc2626;}
+.ub:disabled{background:#21262d;color:#444;cursor:not-allowed;}
+
+/* Log */
+#log{height:110px;overflow-y:auto;font-size:10px;line-height:1.6;color:#9ca3af;}
+#log div{border-bottom:1px solid #1a1a1a;padding:1px 0;}
+
+/* ===== SHOP ===== */
+#so{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:100;overflow-y:auto;padding:20px;}
+#sc{max-width:680px;margin:0 auto;background:#161b22;border:2px solid #f0a500;border-radius:12px;padding:20px;}
+.stt{font-size:22px;color:#f0a500;text-align:center;margin-bottom:12px;}
+.gd{text-align:right;font-size:14px;color:#f0c040;font-weight:bold;margin-bottom:10px;}
+.ss{margin-bottom:12px;}
+.sstt{font-size:12px;color:#9ca3af;margin-bottom:6px;border-bottom:1px solid #21262d;padding-bottom:3px;}
+.si{display:flex;align-items:center;justify-content:space-between;background:#0d1117;border:1px solid #21262d;border-radius:5px;padding:7px 10px;margin-bottom:5px;}
+.si-n{font-weight:bold;font-size:12px;}
+.si-s{font-size:10px;color:#666;}
+.sic{color:#f0c040;font-size:11px;margin:0 8px;}
+.bb{background:#b91c1c;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;}
+.bb:hover{background:#dc2626;}
+.bb:disabled{background:#21262d;color:#444;cursor:not-allowed;}
+.bb.sl{background:#1565C0;} .bb.sl:hover{background:#1976D2;}
+.rfb{background:#7B1FA2;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-bottom:7px;}
+.csb{background:#15803d;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;font-size:14px;width:100%;margin-top:10px;}
+.csb:hover{background:#16a34a;}
+
+/* ===== TOOLTIP ===== */
+#tt{
+  display:none;position:fixed;
+  background:#161b22;border:2px solid #f0a500;border-radius:8px;
+  padding:10px;z-index:150;font-size:11px;min-width:130px;
+}
+.ttl{margin-bottom:3px;}
+.exb{background:#c2410c;color:#fff;border:none;padding:5px;border-radius:4px;cursor:pointer;font-size:11px;width:100%;margin-top:5px;}
+.exb:hover{background:#ea580c;}
+.ttc{background:#374151;color:#ccc;border:none;padding:4px;border-radius:4px;cursor:pointer;font-size:10px;width:100%;margin-top:3px;}
+
+/* ===== MESSAGE ===== */
+#msg{
+  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#161b22;border:2px solid #f0a500;border-radius:10px;
+  padding:20px 30px;text-align:center;font-size:15px;z-index:200;
+}
+#msg button{margin-top:10px;padding:6px 20px;background:#f0a500;border:none;border-radius:4px;cursor:pointer;color:#000;font-size:13px;}
+
+/* Assign popup */
+#ap-modal{
+  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#161b22;border:2px solid #1565C0;border-radius:10px;
+  padding:16px 20px;z-index:300;min-width:220px;
+}
+#ap-modal h3{color:#60a5fa;margin-bottom:10px;font-size:14px;}
+.apb{display:block;width:100%;background:#1565C0;color:#fff;border:none;padding:7px;border-radius:5px;cursor:pointer;font-size:12px;margin-bottom:6px;}
+.apb:hover{background:#1976D2;}
+.apc{background:#374151;color:#ccc;border:none;padding:6px;border-radius:5px;cursor:pointer;font-size:11px;width:100%;margin-top:2px;}
+</style>
+</head>
+<body>
+<h1>⚡ 元素背包史 · Demo v0.1</h1>
+<div id="gw">
+  <div>
+    <div id="board"></div>
+    <div style="font-size:10px;color:#555;margin-top:4px;text-align:center;">
+      点击英雄→选中 | 再点空格→移动 | 选行动点后可调方向→点"使用"攻击 | 点元素格→查看引爆
+    </div>
+  </div>
+  <div id="rp">
+    <!-- Turn info -->
+    <div class="box">
+      <div id="ph">⚔️ 玩家回合</div>
+      <div id="rc">第1波 · 第1/5小回合</div>
+      <div id="gi">💰 <span id="gold">5</span> 金币</div>
+      <button class="etb" id="etb" onclick="endPlayerTurn()">结束回合 →</button>
+    </div>
+    <!-- Heroes -->
+    <div class="box">
+      <div class="btt">英雄状态</div>
+      <div id="hs"></div>
+    </div>
+    <!-- Action slots -->
+    <div class="box">
+      <div class="btt">行动点（每回合3个）</div>
+      <div id="asl"></div>
+    </div>
+    <!-- Log -->
+    <div class="box">
+      <div class="btt">战斗日志</div>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Shop -->
+<div id="so">
+  <div id="sc">
+    <div class="stt">🛒 商店</div>
+    <div class="gd">💰 金币: <span id="sg">5</span></div>
+    <div id="scat"></div>
+    <button class="csb" onclick="closeShop()">✅ 完成购买，开始下一波！</button>
+  </div>
+</div>
+
+<!-- Element tooltip -->
+<div id="tt">
+  <div id="ttc"></div>
+</div>
+
+<!-- Message -->
+<div id="msg">
+  <div id="msgt"></div>
+  <button onclick="document.getElementById('msg').style.display='none'">确认</button>
+</div>
+
+<!-- Assign slot modal -->
+<div id="ap-modal">
+  <h3>装备到哪个行动点？</h3>
+  <div id="apbtns"></div>
+  <button class="apc" onclick="document.getElementById('ap-modal').style.display='none'">取消</button>
+</div>
+
+<script>
+// ========== CONSTANTS ==========
+const EL = {fire:'火',water:'水',wind:'风',earth:'土'};
+const EC = {fire:'#fb923c',water:'#38bdf8',wind:'#86efac',earth:'#d97706'};
+const EB = {fire:'#431407',water:'#0c2340',wind:'#052e16',earth:'#2d1a00'};
+const ADV = {water:'fire',fire:'wind',wind:'earth',earth:'water'};
+const TIER_MULT = [0,1,2,4,8];
+
+// Shape definitions: cells = [row_offset, col_offset] relative to hero, default "right"
+const SD = {
+  1: {cells:[[0,1]],            name:'1格点',    n:1, cat:'line'},
+  2: {cells:[[0,1],[0,2]],      name:'2格短线',  n:2, cat:'line'},
+  3: {cells:[[0,1],[0,2],[0,3]],name:'3格直线',  n:3, cat:'line'},
+  4: {cells:[[0,1],[1,1]],      name:'3格拐角',  n:3, cat:'l_shape'}, // shape: column then down
+  5: {cells:[[0,1],[0,2],[0,3],[0,4]],         name:'4格直线',  n:4, cat:'line'},
+  6: {cells:[[0,1],[0,2],[1,1],[1,2]],         name:'2×2方块',  n:4, cat:'square'},
+  7: {cells:[[0,1],[0,2],[0,3],[1,2]],         name:'T形4格',   n:4, cat:'t_shape'},
+  8: {cells:[[0,1],[1,1],[2,1],[2,2]],         name:'L形4格',   n:4, cat:'l_shape'},
+  9: {cells:[[0,1],[0,2],[1,2],[1,3]],         name:'Z形4格',   n:4, cat:'zs_shape'},
+ 10: {cells:[[0,1],[0,2],[0,3],[0,4],[0,5]],  name:'5格直线',  n:5, cat:'line'},
+ 11: {cells:[[0,1],[0,2],[0,3],[1,1],[2,1]],  name:'长L形5格', n:5, cat:'l_shape'},
+ 12: {cells:[[-1,1],[0,1],[1,1],[0,2],[0,0]], name:'十字5格',  n:5, cat:'cross'},
+ 13: {cells:[[0,1],[0,2],[0,3],[1,2],[2,2]],  name:'T形5格',   n:5, cat:'t_shape'},
+ 14: {cells:[[0,1],[0,2],[1,1],[1,2],[2,1]],  name:'紧凑5格',  n:5, cat:'square'},
+ 15: {cells:[[0,1],[0,2],[1,1],[2,1],[2,2]],  name:'凹槽5格',  n:5, cat:'notch'},
+ 16: {cells:[[0,1],[0,2],[1,2],[1,3],[2,3]],  name:'阶梯5格',  n:5, cat:'stair'},
+ 17: {cells:[[-1,1],[0,1],[1,1],[0,2],[0,3]], name:'分叉5格',  n:5, cat:'branch'},
+ 18: {cells:[[0,1],[0,3],[-1,1],[-1,2],[-1,3]],name:'U形5格', n:5, cat:'notch'},
+ 19: {cells:[[0,1],[0,2],[0,3],[0,4],[0,5],[0,6]],name:'6格直线',n:6, cat:'line'},
+ 20: {cells:[[0,1],[0,2],[0,3],[1,1],[1,2],[1,3]],name:'2×3矩形',n:6, cat:'square'},
+};
+
+// ========== GAME STATE ==========
+let G;
+
+function initGame(){
+  G={
+    phase:'PLAYER',  // PLAYER | MONSTER | SHOP | OVER
+    wave:1, round:1, maxRound:5,
+    hitCount:0,
+    gold:5,
+    board:mkBoard(),
+    heroes:{
+      ha:{id:'ha',name:'元素使A',hp:20,maxHp:20,pos:{r:10,c:1}},
+      hb:{id:'hb',name:'元素使B',hp:20,maxHp:20,pos:{r:11,c:1}},
+    },
+    monsters:[],
+    slots:[
+      {id:0,el:'fire', sn:1,tier:1,hid:'ha',dir:'right',used:false},
+      {id:1,el:'water',sn:1,tier:1,hid:'ha',dir:'right',used:false},
+      {id:2,el:'fire', sn:1,tier:1,hid:'ha',dir:'right',used:false},
+    ],
+    selHero:null,  // selected hero id
+    selSlot:null,  // selected slot index
+    prevCells:[],  // attack preview cells
+    explPos:null,  // element explosion preview pos
+    shopItems:[],
+    shopEls:[],
+    backpack:[],   // 背包物品列表
+    _bpCnt:0,     // backpack id counter
+  };
+  spawnWave(1);
+  render();
+  glog('🎮 游戏开始！第一波教学关卡。');
+  glog('💡 提示：选中行动点→调整方向→点"使用"发动攻击。');
+  glog('💡 点击英雄选中，再点空格移动位置。');
+}
+
+function mkBoard(){
+  const b=[];
+  for(let r=0;r<13;r++){b[r]=[];for(let c=0;c<13;c++)b[r][c]={r,c,el:null,stk:0};}
+  return b;
+}
+
+function spawnWave(w){
+  if(w===1){
+    G.monsters=[
+      {id:'m0',name:'教学怪1',hp:6, maxHp:6, atk:1,pos:{r:1,c:11},dead:false},
+      {id:'m1',name:'教学怪2',hp:10,maxHp:10,atk:1,pos:{r:0,c:10},dead:false},
+    ];
+  } else {
+    const counts=[0,2,3,4,5,6,7,8];
+    const n=counts[Math.min(w,counts.length-1)];
+    G.monsters=[];
+    for(let i=0;i<n;i++){
+      const hp=6+w*2+(i%2)*4;
+      G.monsters.push({
+        id:`m${w}_${i}`,name:`怪物${i+1}`,
+        hp,maxHp:hp,atk:Math.max(1,Math.floor(w/2)),
+        pos:{r:Math.min(i%5,4),c:12-Math.floor(i/5)},dead:false
+      });
+    }
+  }
+}
+
+// ========== SHAPE ROTATION ==========
+function rotCells(cells,dir){
+  switch(dir){
+    case'right': return cells;
+    case'left':  return cells.map(([r,c])=>[r,-c]);
+    case'up':    return cells.map(([r,c])=>[-c,r]);
+    case'down':  return cells.map(([r,c])=>[c,r]);
+  }
+}
+
+function atkCells(heroPos,sn,dir){
+  const s=SD[sn]; if(!s)return[];
+  return rotCells(s.cells,dir)
+    .map(([dr,dc])=>({r:heroPos.r+dr,c:heroPos.c+dc}))
+    .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+}
+
+// ========== BOARD HELPERS ==========
+function monAt(pos){return G.monsters.find(m=>!m.dead&&m.pos.r===pos.r&&m.pos.c===pos.c);}
+function heroAt(pos){return Object.values(G.heroes).find(h=>h.pos.r===pos.r&&h.pos.c===pos.c);}
+function cellFree(pos){return !monAt(pos)&&!heroAt(pos)&&pos.r>=0&&pos.r<13&&pos.c>=0&&pos.c<13;}
+
+// ========== ELEMENT SYSTEM ==========
+function addEl(pos,el){
+  const cell=G.board[pos.r][pos.c];
+  cell.el=el; cell.stk=(cell.stk||0)+1;
+}
+
+function explDmg(stk){return stk*(stk+1)/2;}
+
+function explCells(pos){
+  return [{r:pos.r-1,c:pos.c},{r:pos.r+1,c:pos.c},{r:pos.r,c:pos.c-1},{r:pos.r,c:pos.c+1}]
+    .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+}
+
+function doExplode(pos){
+  const cell=G.board[pos.r][pos.c];
+  if(!cell.el||cell.stk===0)return;
+  const dmg=explDmg(cell.stk);
+  const elName=EL[cell.el];
+  glog(`💥 ${elName}${cell.stk}引爆！范围伤害 ${dmg}`);
+  cell.el=null; cell.stk=0;
+  explCells(pos).forEach(tp=>{
+    const m=monAt(tp);
+    if(m)dealDmg(m,dmg,`${elName}引爆`);
+    const h=heroAt(tp);
+    if(h){h.hp=Math.max(0,h.hp-dmg);glog(`💔 ${h.name}被爆炸波及 -${dmg}(${h.hp}/${h.maxHp})`);checkGameOver();}
+  });
+  G.explPos=null;
+  render();
+}
+
+// ========== DAMAGE ==========
+function dealDmg(monster,dmg,src){
+  monster.hp=Math.max(0,monster.hp-dmg);
+  glog(`⚔️ ${src} → ${monster.name} -${dmg}（${monster.hp}/${monster.maxHp}）`);
+  if(monster.hp<=0){monster.dead=true;glog(`💀 ${monster.name}被击杀！`);}
+}
+
+// ========== ATTACK ==========
+function useSlot(idx){
+  const slot=G.slots[idx];
+  if(!slot||slot.used||G.phase!=='PLAYER')return;
+  const hero=G.heroes[slot.hid]; if(!hero)return;
+  const cells=atkCells(hero.pos,slot.sn,slot.dir);
+  if(cells.length===0){glog('⚠️ 攻击范围为空。');return;}
+
+  let hit=false;
+  cells.forEach(ap=>{
+    const m=monAt(ap);
+    if(m){
+      hit=true; G.hitCount++;
+      const base=G.hitCount;
+      const tmult=TIER_MULT[slot.tier]||1;
+      let emult=1;
+      if(ADV[slot.el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}
+      dealDmg(m,base*tmult*emult,`第${G.hitCount}次命中`);
+    }
+    addEl(ap,slot.el);
+  });
+
+  if(!hit)glog(`🌀 攻击空地，铺下${cells.length}个${EL[slot.el]}元素。`);
+  slot.used=true;
+  G.selSlot=null; G.prevCells=[]; G.explPos=null;
+  checkAllDead();
+  render();
+}
+
+function checkAllDead(){
+  if(G.monsters.every(m=>m.dead)){
+    glog('✅ 所有怪物被击杀！');
+  }
+}
+
+// ========== HERO MOVE ==========
+function selHero(id){
+  if(G.phase!=='PLAYER')return;
+  G.selHero=G.selHero===id?null:id;
+  G.selSlot=null; G.prevCells=[]; G.explPos=null;
+  render();
+}
+
+function moveHero(r,c){
+  if(!G.selHero||G.phase!=='PLAYER')return;
+  const hero=G.heroes[G.selHero];
+  if(heroAt({r,c})||monAt({r,c})){glog('⚠️ 目标格已占用！');return;}
+  hero.pos={r,c};
+  glog(`🚶 ${hero.name}移动到(${r},${c})`);
+  G.selHero=null; G.prevCells=[]; G.selSlot=null;
+  render();
+}
+
+// ========== SLOT SELECTION ==========
+function selSlot(idx){
+  if(G.phase!=='PLAYER')return;
+  const s=G.slots[idx]; if(!s||s.used)return;
+  G.selSlot=G.selSlot===idx?null:idx;
+  G.selHero=null; G.explPos=null;
+  updPreview();
+  render();
+}
+
+function updPreview(){
+  if(G.selSlot===null){G.prevCells=[];return;}
+  const s=G.slots[G.selSlot]; if(!s)return;
+  const hero=G.heroes[s.hid]; if(!hero)return;
+  G.prevCells=atkCells(hero.pos,s.sn,s.dir);
+}
+
+function setDir(idx,dir){
+  G.slots[idx].dir=dir;
+  if(G.selSlot===idx)updPreview();
+  render();
+}
+
+function setHero(idx,hid){
+  G.slots[idx].hid=hid;
+  if(G.selSlot===idx)updPreview();
+  render();
+}
+
+// ========== TURN MANAGEMENT ==========
+function endPlayerTurn(){
+  if(G.phase!=='PLAYER')return;
+  G.phase='MONSTER'; G.selSlot=null; G.selHero=null; G.prevCells=[]; G.explPos=null;
+  glog('--- 怪物回合 ---');
+  render();
+  setTimeout(()=>runMonsters(0),400);
+}
+
+function runMonsters(idx){
+  const alive=G.monsters.filter(m=>!m.dead);
+  if(idx>=alive.length){finishMonsters();return;}
+  monsterAct(alive[idx]);
+  render();
+  setTimeout(()=>runMonsters(idx+1),350);
+}
+
+function monsterAct(m){
+  if(m.dead)return;
+  // Try attack hero to the left
+  const lp={r:m.pos.r,c:m.pos.c-1};
+  const lh=heroAt(lp);
+  if(lp.c>=0&&lh){
+    lh.hp=Math.max(0,lh.hp-m.atk);
+    glog(`👾 ${m.name}攻击${lh.name}！-${m.atk}（${lh.hp}/${lh.maxHp}）`);
+    if(lh.hp<=0){glog(`💔 ${lh.name}倒下了！`);checkGameOver();}
+    return;
+  }
+  // Move toward closest hero
+  const np=nextMove(m);
+  if(np){
+    const bc=G.board[np.r][np.c];
+    if(bc.el&&bc.stk>0){
+      // Blocked by element — attack element, lose turn
+      glog(`👾 ${m.name}被${EL[bc.el]}${bc.stk}阻挡！攻击元素块，本回合结束。`);
+      const rdmg=explDmg(bc.stk);
+      bc.el=null; bc.stk=0;
+      dealDmg(m,rdmg,'元素块爆炸反伤');
+    } else if(!monAt(np)&&!heroAt(np)){
+      m.pos=np;
+      glog(`👾 ${m.name}→(${np.r},${np.c})`);
+    }
+  }
+}
+
+function nextMove(m){
+  const heroes=Object.values(G.heroes).filter(h=>h.hp>0);
+  let best=null,bd=99;
+  heroes.forEach(h=>{
+    const d=Math.abs(h.pos.r-m.pos.r)+Math.abs(h.pos.c-m.pos.c);
+    if(d<bd){bd=d;best=h;}
+  });
+  if(!best)return null;
+  const dr=best.pos.r-m.pos.r, dc=best.pos.c-m.pos.c;
+  const moves=[];
+  if(dc<0)moves.push({r:m.pos.r,c:m.pos.c-1});
+  if(dc>0)moves.push({r:m.pos.r,c:m.pos.c+1});
+  if(dr<0)moves.push({r:m.pos.r-1,c:m.pos.c});
+  if(dr>0)moves.push({r:m.pos.r+1,c:m.pos.c});
+  for(const mv of moves){
+    if(mv.r<0||mv.r>12||mv.c<0||mv.c>12)continue;
+    if(!monAt(mv))return mv;
+  }
+  return null;
+}
+
+function finishMonsters(){
+  G.round++;
+  const allDead=G.monsters.every(m=>m.dead);
+  if(G.round>G.maxRound||allDead){
+    glog(`✅ 第${G.wave}波结束！获得3金币，进入商店。`);
+    G.gold+=3;
+    G.phase='SHOP';
+    openShop();
+  } else {
+    G.phase='PLAYER'; G.hitCount=0;
+    G.slots.forEach(s=>s.used=false);
+    glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
+  }
+  render();
+}
+
+function checkGameOver(){
+  const allDead=Object.values(G.heroes).every(h=>h.hp<=0);
+  if(allDead){G.phase='OVER';showMsg('💀 游戏结束！所有英雄已倒下。');}
+}
+
+// ========== SHOP ==========
+const ELS=['fire','water','wind','earth'];
+const SNS=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+
+function openShop(){genShop();renderShop();document.getElementById('so').style.display='block';}
+
+function genShop(){
+  G.shopItems=[];
+  for(let i=0;i<5;i++){
+    const el=ELS[ri(ELS.length)], sn=SNS[ri(SNS.length)], tier=1;
+    const s=SD[sn];
+    const cost=s.n<=1?1:s.n<=3?2:s.n<=4?3:4;
+    G.shopItems.push({id:`si${i}`,el,sn,tier,name:bname(el,sn,tier),cost});
+  }
+  const ne=Math.random()<0.3?0:Math.random()<0.5?1:Math.random()<0.7?2:3;
+  G.shopEls=[];
+  for(let i=0;i<ne;i++)G.shopEls.push({id:`se${i}`,el:ELS[ri(ELS.length)],cost:1});
+}
+
+function ri(n){return Math.floor(Math.random()*n);}
+function bname(el,sn,tier){const s=SD[sn];return`${EL[el]}·${s.n}格·${sn}号·${tier}阶`;}
+function slotName(s){return bname(s.el,s.sn,s.tier);}
+
+// #4 背包买入
+function buyToBackpack(itemId){
+  const item=G.shopItems.find(i=>i.id===itemId);
+  if(!item)return;
+  if(G.gold<item.cost){showMsg('💰 金币不足！');return;}
+  if(G.backpack.length>=64){showMsg('背包已满（64/64）！先整理或合成后再买。');return;}
+  G.gold-=item.cost;
+  G.backpack.push({...item,bpId:`bp_${G._bpCnt++}`});
+  G.shopItems=G.shopItems.filter(i=>i.id!==item.id);
+  glog(`📦 购买${item.name}，放入背包`);
+  renderShop(); render();
+}
+
+// #4 背包→行动槽
+function bpEquip(bpId,slotIdx){
+  const bi=G.backpack.findIndex(i=>i.bpId===bpId);
+  if(bi===-1)return;
+  const item=G.backpack[bi];
+  G.backpack.splice(bi,1);
+  const s=G.slots[slotIdx];
+  s.el=item.el; s.sn=item.sn; s.tier=item.tier; s.used=false;
+  glog(`⚔️ ${item.name} 装备到行动点${slotIdx+1}`);
+  renderShop(); render();
+}
+
+// #4 背包内合成
+function bpCombine(id1,id2){
+  const i1=G.backpack.findIndex(i=>i.bpId===id1);
+  const i2=G.backpack.findIndex(i=>i.bpId===id2);
+  if(i1===-1||i2===-1)return;
+  const item=G.backpack[i1];
+  if(item.tier>=4){showMsg('已是最高4阶，无法继续合成！');return;}
+  const newTier=item.tier+1;
+  const upgraded={el:item.el,sn:item.sn,tier:newTier,name:bname(item.el,item.sn,newTier),cost:0,id:`syn_${G._bpCnt}`,bpId:`bp_${G._bpCnt++}`};
+  [i1,i2].sort((a,b)=>b-a).forEach(i=>G.backpack.splice(i,1));
+  G.backpack.push(upgraded);
+  glog(`⬆️ 合成！→ ${upgraded.name}（伤害倍率 ×${TIER_MULT[newTier]}）`);
+  renderShop();
+}
+
+function buyEl(elId){
+  const el=G.shopEls.find(e=>e.id===elId); if(!el)return;
+  if(G.gold<el.cost){showMsg('💰 金币不足！');return;}
+  G.gold-=el.cost;
+  G.shopEls=G.shopEls.filter(e=>e.id!==elId);
+  // Place element near heroes
+  const placed=placeEl(el.el);
+  glog(placed?`🛍️ 购买${EL[el.el]}元素，放置到棋盘(${placed.r},${placed.c})`:'🛍️ 购买元素失败，棋盘没有空间');
+  renderShop(); render();
+}
+
+function placeEl(el){
+  for(let r=7;r<13;r++)for(let c=3;c<12;c++){
+    if(!G.board[r][c].el&&!heroAt({r,c})&&!monAt({r,c})){
+      addEl({r,c},el); return {r,c};
+    }
+  }
+  return null;
+}
+
+function refreshShop(){
+  if(G.gold<1){showMsg('💰 金币不足，刷新需要1金币！');return;}
+  G.gold-=1; genShop(); renderShop(); glog('🔄 商店已刷新！');
+}
+
+function closeShop(){
+  document.getElementById('so').style.display='none';
+  G.wave++; G.round=1; G.hitCount=0; G.phase='PLAYER';
+  G.slots.forEach(s=>s.used=false);
+  spawnWave(G.wave);
+  glog(`⚔️ 第${G.wave}波开始！`);
+  render();
+}
+
+// ========== RENDERING ==========
+function render(){renderBoard();renderHS();renderSlots();renderTurn();}
+
+function renderBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  const hp={}; Object.values(G.heroes).forEach(h=>{hp[k(h.pos)]=h;});
+  const mp={}; G.monsters.forEach(m=>{if(!m.dead)mp[k(m.pos)]=m;});
+  const ps=new Set(G.prevCells.map(p=>k(p)));
+  const es=new Set(); if(G.explPos)explCells(G.explPos).forEach(p=>es.add(k(p)));
+
+  for(let r=0;r<13;r++){
+    for(let c=0;c<13;c++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      const key=`${r},${c}`;
+      const hero=hp[key], mon=mp[key], bc=G.board[r][c];
+
+      if(hero){
+        cell.classList.add('hp');
+        const hm=document.createElement('div');
+        hm.className=`hm ${hero.id==='ha'?'hma':'hmb'}${G.selHero===hero.id?' sel':''}`;
+        hm.textContent=hero.id==='ha'?'A':'B';
+        hm.title=`${hero.name} HP:${hero.hp}/${hero.maxHp}`;
+        hm.onclick=(e)=>{e.stopPropagation();selHero(hero.id);};
+        cell.appendChild(hm);
+      } else if(mon){
+        const mm=document.createElement('div');
+        mm.className='mm';
+        mm.innerHTML=`👾<div class="mhp">${mon.hp}/${mon.maxHp}</div>`;
+        mm.title=`${mon.name} HP:${mon.hp}/${mon.maxHp} 攻:${mon.atk}`;
+        cell.appendChild(mm);
+      } else if(bc.el&&bc.stk>0){
+        const em=document.createElement('div');
+        em.className='em';
+        em.style.background=EB[bc.el];
+        em.style.color=EC[bc.el];
+        em.style.borderColor=EC[bc.el];
+        em.textContent=`${EL[bc.el]}${bc.stk}`;
+        em.title=`${EL[bc.el]}元素·${bc.stk}层·引爆伤害${explDmg(bc.stk)}`;
+        em.onclick=(e)=>{e.stopPropagation();showTT(r,c,e);};
+        cell.appendChild(em);
+      }
+
+      if(ps.has(key))cell.classList.add('ap');
+      if(es.has(key))cell.classList.add('ep');
+      if(G.explPos&&G.explPos.r===r&&G.explPos.c===c)cell.classList.add('ec');
+
+      cell.onclick=()=>onCell(r,c);
+      board.appendChild(cell);
+    }
+  }
+}
+
+function k(p){return`${p.r},${p.c}`;}
+
+function onCell(r,c){
+  hideTT();
+  if(G.selHero){moveHero(r,c);return;}
+  // Clicking board while slot selected = execute attack
+  if(G.selSlot!==null){useSlot(G.selSlot);return;}
+}
+
+function showTT(r,c,e){
+  if(G.phase!=='PLAYER')return;
+  const bc=G.board[r][c]; if(!bc.el)return;
+  G.explPos={r,c}; render();
+  const dmg=explDmg(bc.stk);
+  document.getElementById('ttc').innerHTML=`
+    <div class="ttl"><b style="color:${EC[bc.el]}">${EL[bc.el]}元素格</b></div>
+    <div class="ttl">层数：${bc.stk}</div>
+    <div class="ttl">引爆伤害：${dmg}</div>
+    <div class="ttl">范围：十字1格</div>
+    <button class="exb" onclick="doExplode({r:${r},c:${c}});hideTT()">💥 引爆！</button>
+    <button class="ttc" onclick="hideTT();G.explPos=null;render()">取消</button>
+  `;
+  const tt=document.getElementById('tt');
+  const bnd=e.target.getBoundingClientRect();
+  let lft=bnd.right+8; let tp=bnd.top;
+  if(lft+150>window.innerWidth)lft=bnd.left-160;
+  tt.style.left=lft+'px'; tt.style.top=tp+'px';
+  tt.style.display='block';
+}
+function hideTT(){document.getElementById('tt').style.display='none';}
+
+function renderHS(){
+  let h='';
+  Object.values(G.heroes).forEach(hero=>{
+    const pct=(hero.hp/hero.maxHp)*100;
+    const col=hero.id==='ha'?'#60a5fa':'#4ade80';
+    const hpcol=pct>60?'#4ade80':pct>30?'#fbbf24':'#ef4444';
+    h+=`<div class="hi">
+      <div>
+        <span style="color:${col};font-weight:bold;font-size:13px">${hero.name}</span>
+        <div style="font-size:10px;color:#666">📍(${hero.pos.r},${hero.pos.c})</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px">${hero.hp}/${hero.maxHp}</div>
+        <div class="hpb"><div class="hpf" style="width:${pct}%;background:${hpcol}"></div></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('hs').innerHTML=h;
+}
+
+function renderSlots(){
+  let h='';
+  G.slots.forEach((s,i)=>{
+    const isSel=G.selSlot===i;
+    const cls=`as${s.used?' used':''}${isSel?' sel':''}`;
+    const hero=G.heroes[s.hid];
+    h+=`<div class="${cls}" onclick="selSlot(${i})">
+      <div class="as-name">行动点 ${i+1}${s.used?' ·已使用':''}</div>
+      <div class="as-blk" style="color:${EC[s.el]}">${slotName(s)}</div>
+      <div class="as-hero">英雄:
+        <select onchange="setHero(${i},this.value)" onclick="event.stopPropagation()">
+          ${Object.values(G.heroes).map(h2=>`<option value="${h2.id}"${s.hid===h2.id?' selected':''}>${h2.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="dg">
+        <div class="db de"></div>
+        <div class="db${s.dir==='up'?' da':''}" onclick="event.stopPropagation();setDir(${i},'up')">↑</div>
+        <div class="db de"></div>
+        <div class="db${s.dir==='left'?' da':''}" onclick="event.stopPropagation();setDir(${i},'left')">←</div>
+        <div class="db de" style="font-size:8px;color:#333">•</div>
+        <div class="db${s.dir==='right'?' da':''}" onclick="event.stopPropagation();setDir(${i},'right')">→</div>
+        <div class="db de"></div>
+        <div class="db${s.dir==='down'?' da':''}" onclick="event.stopPropagation();setDir(${i},'down')">↓</div>
+        <div class="db de"></div>
+      </div>
+      <button class="ub" onclick="event.stopPropagation();useSlot(${i})"
+        ${s.used||G.phase!=='PLAYER'?'disabled':''}>
+        ${s.used?'✓ 已使用':'⚔️ 使用'}
+      </button>
+    </div>`;
+  });
+  document.getElementById('asl').innerHTML=h;
+}
+
+function renderTurn(){
+  const phText={PLAYER:'⚔️ 玩家回合',MONSTER:'👾 怪物行动中…',SHOP:'🛒 商店',OVER:'💀 游戏结束'};
+  document.getElementById('ph').textContent=phText[G.phase]||G.phase;
+  document.getElementById('rc').textContent=`第${G.wave}波 · ${Math.min(G.round,G.maxRound)}/${G.maxRound}小回合`;
+  document.getElementById('gold').textContent=G.gold;
+  document.getElementById('etb').disabled=G.phase!=='PLAYER';
+}
+
+// #2 形状图形预览
+function shapeHTML(sn,el,sz=7){
+  const s=SD[sn]; if(!s)return'';
+  const allPos=[[0,0],...s.cells];
+  const minR=Math.min(...allPos.map(([r])=>r));
+  const maxR=Math.max(...allPos.map(([r])=>r));
+  const minC=Math.min(...allPos.map(([,c])=>c));
+  const maxC=Math.max(...allPos.map(([,c])=>c));
+  const rows=maxR-minR+1, cols=maxC-minC+1;
+  const grid={};
+  s.cells.forEach(([r,c])=>{grid[`${r-minR},${c-minC}`]='a';});
+  grid[`${-minR},${-minC}`]='h';
+  let h=`<div style="display:inline-grid;grid-template-columns:repeat(${cols},${sz}px);grid-template-rows:repeat(${rows},${sz}px);gap:1px;flex-shrink:0;">`;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const t=grid[`${r},${c}`];
+    h+=`<div style="width:${sz}px;height:${sz}px;border-radius:1px;background:${t==='a'?EC[el]:t==='h'?'#3b82f6':'#1f2937'};"></div>`;
+  }
+  return h+'</div>';
+}
+
+function renderShop(){
+  document.getElementById('sg').textContent=G.gold;
+  let h='';
+
+  // === 攻击方块商店 ===
+  h+=`<div class="ss">
+    <div class="sstt">攻击方块商店</div>
+    <button class="rfb" onclick="refreshShop()">🔄 刷新商店（1金币）</button>
+    ${G.shopItems.length===0?'<div style="color:#555;font-size:12px;padding:4px">已售罄</div>':''}
+    ${G.shopItems.map(item=>`
+      <div class="si">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+          ${shapeHTML(item.sn,item.el,9)}
+          <div>
+            <div class="si-n" style="color:${EC[item.el]}">${item.name}</div>
+            <div class="si-s">${SD[item.sn]?.name||''} · 伤害×${TIER_MULT[item.tier]}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <span class="sic">💰${item.cost}</span>
+          <button class="bb" onclick="buyToBackpack('${item.id}')" ${G.gold<item.cost?'disabled':''}>→背包</button>
+        </div>
+      </div>`).join('')}
+  </div>`;
+
+  // === 随机元素 ===
+  if(G.shopEls.length>0){
+    h+=`<div class="ss"><div class="sstt">随机元素</div>
+      ${G.shopEls.map(el=>`
+        <div class="si">
+          <div style="display:flex;align-items:center;gap:6px;color:${EC[el.el]};font-weight:bold;font-size:13px">
+            <div style="width:14px;height:14px;border-radius:2px;background:${EC[el.el]};opacity:0.85"></div>
+            ${EL[el.el]}元素
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span class="sic">💰${el.cost}</span>
+            <button class="bb" onclick="buyEl('${el.id}')" ${G.gold<el.cost?'disabled':''}>购买</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  // === #4 背包 ===
+  h+=`<div class="ss">
+    <div class="sstt">🎒 背包（${G.backpack.length}/64）</div>`;
+  if(G.backpack.length===0){
+    h+=`<div style="color:#555;font-size:12px;padding:8px;text-align:center;border:1px dashed #333;border-radius:4px;">
+      背包是空的<br>购买攻击方块后会放入这里
+    </div>`;
+  } else {
+    // Detect combos: group by el+sn+tier
+    const bpGroups={};
+    G.backpack.forEach(item=>{
+      const key=`${item.el}_${item.sn}_${item.tier}`;
+      if(!bpGroups[key])bpGroups[key]=[];
+      bpGroups[key].push(item);
+    });
+    G.backpack.forEach(item=>{
+      const key=`${item.el}_${item.sn}_${item.tier}`;
+      const group=bpGroups[key];
+      const canCombine=group.length>=2&&item.tier<4;
+      const partnerBpId=canCombine?group.find(i=>i.bpId!==item.bpId)?.bpId:null;
+      h+=`<div class="si" style="flex-wrap:wrap;gap:4px;margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+          ${shapeHTML(item.sn,item.el,8)}
+          <div>
+            <div class="si-n" style="color:${EC[item.el]}">${item.name}</div>
+            <div class="si-s">×${TIER_MULT[item.tier]} 伤害倍率${canCombine?'  <span style="color:#fbbf24">⚠️可合成</span>':''}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center">
+          ${G.slots.map((s,si)=>`<button class="bb" style="font-size:10px;padding:3px 5px" onclick="bpEquip('${item.bpId}',${si})">→槽${si+1}</button>`).join('')}
+          ${canCombine&&partnerBpId?`<button class="bb sl" style="font-size:10px;padding:3px 6px" onclick="bpCombine('${item.bpId}','${partnerBpId}')">⬆️合成</button>`:''}
+        </div>
+      </div>`;
+    });
+  }
+  h+=`</div>`;
+
+  // === 行动槽间合成 ===
+  const combos=[];
+  for(let i=0;i<G.slots.length;i++)for(let j=i+1;j<G.slots.length;j++){
+    const a=G.slots[i],b=G.slots[j];
+    if(a.el===b.el&&a.sn===b.sn&&a.tier===b.tier&&a.tier<4)combos.push({i,j,a});
+  }
+  if(combos.length>0){
+    h+=`<div class="ss"><div class="sstt">⚡ 行动点合成（相同方块×2→升一阶）</div>
+      ${combos.map(cb=>`
+        <div class="si">
+          <div style="display:flex;align-items:center;gap:6px">
+            ${shapeHTML(cb.a.sn,cb.a.el,7)}
+            <span style="color:${EC[cb.a.el]};font-size:12px">${slotName(cb.a)} ×2</span>
+          </div>
+          <button class="bb sl" onclick="combineSlots(${cb.i},${cb.j})">⬆️ 合成</button>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  // === 当前行动点 ===
+  h+=`<div class="ss"><div class="sstt">当前行动点配置</div>
+    ${G.slots.map((s,i)=>`
+      <div style="font-size:11px;margin:4px 0;display:flex;align-items:center;gap:5px">
+        <span style="color:#555;min-width:28px">槽${i+1}:</span>
+        ${shapeHTML(s.sn,s.el,6)}
+        <span style="color:${EC[s.el]}">${slotName(s)}</span>
+        <span style="color:#555">×${TIER_MULT[s.tier]}</span>
+      </div>`).join('')}
+  </div>`;
+
+  document.getElementById('scat').innerHTML=h;
+}
+
+// #5 修复合成Bug：消耗槽j的方块应重置为初始默认，不应继承同款tier1
+function combineSlots(i,j){
+  const a=G.slots[i],b=G.slots[j];
+  if(a.el!==b.el||a.sn!==b.sn||a.tier!==b.tier)return;
+  const newTier=Math.min(a.tier+1,4);
+  glog(`⬆️ 合成！${slotName(a)} ×2 → ${bname(a.el,a.sn,newTier)}（×${TIER_MULT[newTier]}）`);
+  a.tier=newTier; a.used=false;
+  // FIX #5: 被消耗的槽j重置为初始基础方块（不是同款降阶）
+  b.el='fire'; b.sn=1; b.tier=1; b.used=false;
+  glog(`行动点${j+1} 已清空，重置为 火·1格·1号·1阶`);
+  renderShop(); render();
+}
+
+// ========== UTILS ==========
+function glog(t){
+  const el=document.getElementById('log');
+  const d=document.createElement('div');d.textContent=t;el.appendChild(d);
+  el.scrollTop=el.scrollHeight;
+  while(el.children.length>60)el.removeChild(el.firstChild);
+}
+
+function showMsg(t){document.getElementById('msgt').textContent=t;document.getElementById('msg').style.display='block';}
+
+// ========== START ==========
+initGame();
+</script>
+</body>
+</html>

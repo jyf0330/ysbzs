@@ -1,0 +1,1684 @@
+# 《元素背包史》SRD v0.1
+
+## 1. 文档目标
+
+```txt
+本文档用于指导第一版 Demo 开发。
+
+目标：
+把 GDD 里的玩法规则转成程序可实现的系统规则。
+
+不包含：
+复杂美术
+完整数值平衡
+长期养成
+复杂怪物 AI
+完整四元素深度策略
+```
+
+---
+
+# 2. 第一版系统范围
+
+## 必做系统
+
+```txt
+1. 13×13 战斗棋盘
+2. 两个元素使
+3. 基础怪物
+4. 玩家 3 个行动点
+5. 攻击方块
+6. 攻击方向
+7. 元素叠层
+8. 元素引爆
+9. 元素块阻挡怪物
+10. 玩家回合 / 怪物回合
+11. 5 小回合一波
+12. 商店
+13. 购买攻击方块
+14. 购买随机元素
+15. 合成升级
+16. 8×8 背包
+```
+
+## 暂不做
+
+```txt
+1. 复杂职业
+2. 复杂怪物攻击方块
+3. 怪物多段攻击
+4. 遗物系统
+5. 完整关卡系统
+6. 完整动画系统
+7. 复杂元素克制 UI
+8. 自动寻路高级 AI
+```
+
+---
+
+# 3. 核心数据结构
+
+## 3.1 棋盘配置
+
+```ts
+type BoardConfig = {
+  rows: 13;
+  cols: 13;
+};
+```
+
+## 3.2 格子坐标
+
+```ts
+type GridPos = {
+  row: number; // 0-12
+  col: number; // 0-12
+};
+```
+
+## 3.3 格子状态
+
+```ts
+type CellState = {
+  pos: GridPos;
+  heroId?: string;
+  monsterId?: string;
+  elementStack?: ElementStack;
+  preview?: CellPreview;
+};
+```
+
+## 3.4 元素类型
+
+```ts
+type ElementType = "fire" | "water" | "wind" | "earth";
+```
+
+中文显示：
+
+```txt
+fire  = 火
+water = 水
+wind  = 风
+earth = 土
+```
+
+---
+
+# 4. 单位数据结构
+
+## 4.1 英雄
+
+```ts
+type Hero = {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  pos: GridPos;
+  actionSlotIds: string[]; // 固定 3 个
+};
+```
+
+第一版初始：
+
+```ts
+const initialHeroes = [
+  {
+    id: "hero_1",
+    name: "元素使A",
+    hp: 20,
+    maxHp: 20,
+    pos: { row: 10, col: 2 },
+    actionSlotIds: ["slot_1", "slot_2", "slot_3"]
+  },
+  {
+    id: "hero_2",
+    name: "元素使B",
+    hp: 20,
+    maxHp: 20,
+    pos: { row: 11, col: 2 },
+    actionSlotIds: []
+  }
+];
+```
+
+说明：
+
+```txt
+第一版可以先让 3 个行动点共用在玩家身上。
+两个元素使都可以作为攻击基准点。
+后续再扩展为每个英雄独立行动点。
+```
+
+---
+
+## 4.2 怪物
+
+```ts
+type Monster = {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  pos: GridPos;
+  attackDirection: Direction; // 第一版固定 left
+  isDead: boolean;
+};
+```
+
+基础怪物：
+
+```ts
+const basicMonster = {
+  name: "基础怪物",
+  hp: 6,
+  maxHp: 6,
+  attack: 2,
+  attackDirection: "left"
+};
+```
+
+---
+
+# 5. 方向系统
+
+## 5.1 方向枚举
+
+```ts
+type Direction = "up" | "down" | "left" | "right";
+```
+
+## 5.2 方向偏移
+
+```ts
+const DirectionOffset = {
+  up: { row: -1, col: 0 },
+  down: { row: 1, col: 0 },
+  left: { row: 0, col: -1 },
+  right: { row: 0, col: 1 }
+};
+```
+
+---
+
+# 6. 攻击方块系统
+
+## 6.1 攻击方块数据
+
+```ts
+type AttackBlock = {
+  id: string;
+  shapeNo: number;      // 玩家看到的编号：1、2、3...
+  name: string;         // 火·5格·25号·1阶
+  element: ElementType;
+  cellCount: number;
+  tier: 1 | 2 | 3 | 4;
+  shape: ShapeCell[];
+  category: ShapeCategory;
+};
+```
+
+## 6.2 形状格子
+
+形状以相对坐标表示：
+
+```ts
+type ShapeCell = {
+  row: number;
+  col: number;
+};
+```
+
+示例：1 格攻击块
+
+```ts
+const shape_1 = {
+  shapeNo: 1,
+  cellCount: 1,
+  shape: [
+    { row: 0, col: 1 }
+  ]
+};
+```
+
+说明：
+
+```txt
+row: 0, col: 1 表示默认向右 1 格。
+旋转方向时，由程序转换坐标。
+```
+
+---
+
+## 6.3 形状分类
+
+```ts
+type ShapeCategory =
+  | "line"
+  | "square"
+  | "l_shape"
+  | "t_shape"
+  | "cross"
+  | "zs_shape"
+  | "stair"
+  | "notch"
+  | "branch"
+  | "irregular";
+```
+
+中文商店名：
+
+```txt
+line      = 直线攻击块商店
+square    = 方块攻击块商店
+l_shape   = L形攻击块商店
+t_shape   = T形攻击块商店
+cross     = 十字攻击块商店
+zs_shape  = Z/S攻击块商店
+stair     = 阶梯攻击块商店
+notch     = 凹口攻击块商店
+branch    = 分叉攻击块商店
+irregular = 异形攻击块商店
+```
+
+---
+
+## 6.4 商品名生成
+
+```ts
+function getAttackBlockName(block: AttackBlock): string {
+  return `${elementName(block.element)}·${block.cellCount}格·${block.shapeNo}号·${block.tier}阶`;
+}
+```
+
+示例：
+
+```txt
+火·5格·25号·1阶
+水·3格·7号·2阶
+风·4格·12号·1阶
+土·6格·31号·4阶
+```
+
+---
+
+# 7. 行动点系统
+
+## 7.1 行动点数据
+
+```ts
+type ActionSlot = {
+  id: string;
+  blockId: string;
+  heroId: string;
+  direction: Direction;
+  used: boolean;
+};
+```
+
+第一版固定 3 个行动点：
+
+```ts
+const actionSlots = [
+  { id: "slot_1", blockId: "starter_fire_1", heroId: "hero_1", direction: "right", used: false },
+  { id: "slot_2", blockId: "starter_water_1", heroId: "hero_1", direction: "right", used: false },
+  { id: "slot_3", blockId: "starter_fire_1_b", heroId: "hero_1", direction: "right", used: false }
+];
+```
+
+## 7.2 行动点规则
+
+```txt
+1. 玩家每回合有 3 个行动点
+2. 每个行动点装备 1 个攻击方块
+3. 每个行动点可以独立设置方向
+4. 每个行动点每回合只能使用一次
+5. 玩家回合开始时，所有行动点 used=false
+6. 行动点按玩家点击顺序结算
+7. 命中顺序伤害按本回合第几次成功命中怪物计算
+```
+
+---
+
+# 8. 攻击范围计算
+
+## 8.1 默认形状方向
+
+所有 shape 默认按“向右”设计。
+
+例如直线 3 格：
+
+```ts
+[
+  { row: 0, col: 1 },
+  { row: 0, col: 2 },
+  { row: 0, col: 3 }
+]
+```
+
+## 8.2 方向旋转规则
+
+```ts
+function rotateShape(shape: ShapeCell[], direction: Direction): ShapeCell[] {
+  switch (direction) {
+    case "right":
+      return shape;
+    case "left":
+      return shape.map(c => ({ row: c.row, col: -c.col }));
+    case "up":
+      return shape.map(c => ({ row: -c.col, col: c.row }));
+    case "down":
+      return shape.map(c => ({ row: c.col, col: c.row }));
+  }
+}
+```
+
+## 8.3 计算实际攻击格
+
+```ts
+function getAttackCells(
+  heroPos: GridPos,
+  block: AttackBlock,
+  direction: Direction
+): GridPos[] {
+  const rotated = rotateShape(block.shape, direction);
+  return rotated.map(c => ({
+    row: heroPos.row + c.row,
+    col: heroPos.col + c.col
+  })).filter(isInsideBoard);
+}
+```
+
+---
+
+# 9. 玩家攻击结算
+
+## 9.1 玩家攻击输入
+
+```ts
+type PlayerAttackCommand = {
+  actionSlotId: string;
+};
+```
+
+玩家点击某个行动点后：
+
+```txt
+1. 读取行动点
+2. 读取英雄位置
+3. 读取攻击方块
+4. 读取方向
+5. 计算攻击范围
+6. 结算命中
+7. 生成元素
+8. 标记行动点 used=true
+```
+
+---
+
+## 9.2 命中顺序计数
+
+```ts
+type BattleRuntime = {
+  playerHitCountThisTurn: number;
+};
+```
+
+规则：
+
+```txt
+本回合第1次成功命中怪物：基础伤害 1
+本回合第2次成功命中怪物：基础伤害 2
+本回合第3次成功命中怪物：基础伤害 3
+```
+
+注意：
+
+```txt
+未命中怪物不增加 hitCount。
+攻击元素块不增加 hitCount。
+攻击空格不增加 hitCount。
+```
+
+---
+
+## 9.3 阶级倍率
+
+```ts
+const TierMultiplier = {
+  1: 1,
+  2: 2,
+  3: 4,
+  4: 8
+};
+```
+
+---
+
+## 9.4 元素克制
+
+```ts
+function getElementAdvantageMultiplier(
+  attacker: ElementType,
+  defender?: ElementType
+): number {
+  if (!defender) return 1;
+
+  const counterMap: Record<ElementType, ElementType> = {
+    water: "fire",
+    fire: "wind",
+    wind: "earth",
+    earth: "water"
+  };
+
+  return counterMap[attacker] === defender ? 2 : 1;
+}
+```
+
+第一版怪物可以先没有元素：
+
+```txt
+怪物没有元素时，克制倍率 = 1。
+```
+
+---
+
+## 9.5 玩家伤害公式
+
+```ts
+function calcPlayerHitDamage(params: {
+  hitIndex: number; // 1,2,3
+  tier: 1 | 2 | 3 | 4;
+  attackerElement: ElementType;
+  defenderElement?: ElementType;
+}): number {
+  const base = params.hitIndex;
+  const tierMul = TierMultiplier[params.tier];
+  const elementMul = getElementAdvantageMultiplier(
+    params.attackerElement,
+    params.defenderElement
+  );
+
+  return base * tierMul * elementMul;
+}
+```
+
+示例：
+
+```txt
+第1次命中，1阶，无克制：1
+第2次命中，1阶，无克制：2
+第3次命中，1阶，无克制：3
+第3次命中，4阶，克制：3 × 8 × 2 = 48
+```
+
+---
+
+## 9.6 生成元素
+
+每次行动点释放后，在攻击范围内生成元素。
+
+规则：
+
+```txt
+1. 攻击范围内所有有效格生成对应元素
+2. 如果格子已有元素，则层数 +1
+3. 当前显示元素变为最后一次叠加的元素
+4. 如果格子有怪物，也可以生成元素
+```
+
+实现：
+
+```ts
+function addElementToCell(cell: CellState, element: ElementType): void {
+  if (!cell.elementStack) {
+    cell.elementStack = {
+      currentElement: element,
+      layerCount: 1
+    };
+  } else {
+    cell.elementStack.currentElement = element;
+    cell.elementStack.layerCount += 1;
+  }
+}
+```
+
+---
+
+# 10. 元素叠层系统
+
+## 10.1 元素层数据
+
+```ts
+type ElementStack = {
+  currentElement: ElementType;
+  layerCount: number;
+};
+```
+
+第一版不保存历史层：
+
+```txt
+只保存当前显示元素 + 总层数。
+```
+
+如果后续要保存历史：
+
+```ts
+type ElementStackV2 = {
+  currentElement: ElementType;
+  layerCount: number;
+  history: ElementType[];
+};
+```
+
+---
+
+## 10.2 元素显示
+
+```ts
+function getElementStackLabel(stack: ElementStack): string {
+  return `${elementName(stack.currentElement)}${stack.layerCount}`;
+}
+```
+
+示例：
+
+```txt
+火4
+水3
+土2
+风5
+```
+
+---
+
+# 11. 元素引爆系统
+
+## 11.1 引爆伤害公式
+
+```ts
+function calcExplosionDamage(layerCount: number): number {
+  return (layerCount * (layerCount + 1)) / 2;
+}
+```
+
+示例：
+
+```txt
+1层 = 1
+2层 = 3
+3层 = 6
+4层 = 10
+5层 = 15
+6层 = 21
+```
+
+---
+
+## 11.2 引爆范围
+
+十字 1 格：
+
+```ts
+function getExplosionCells(center: GridPos): GridPos[] {
+  const offsets = [
+    { row: 0, col: 0 },
+    { row: -1, col: 0 },
+    { row: 1, col: 0 },
+    { row: 0, col: -1 },
+    { row: 0, col: 1 }
+  ];
+
+  return offsets
+    .map(o => ({ row: center.row + o.row, col: center.col + o.col }))
+    .filter(isInsideBoard);
+}
+```
+
+---
+
+## 11.3 点击预览
+
+点击元素格时生成预览：
+
+```ts
+type ExplosionPreview = {
+  center: GridPos;
+  element: ElementType;
+  layerCount: number;
+  damage: number;
+  affectedCells: GridPos[];
+};
+```
+
+示例：
+
+```txt
+点击火4：
+
+元素：火
+层数：4
+爆炸伤害：10
+范围：中心 + 上下左右
+```
+
+---
+
+## 11.4 引爆执行
+
+```ts
+function triggerExplosion(center: GridPos): ExplosionResult {
+  const cell = getCell(center);
+  const stack = cell.elementStack;
+  if (!stack) throw new Error("No element stack");
+
+  const damage = calcExplosionDamage(stack.layerCount);
+  const affectedCells = getExplosionCells(center);
+
+  const damagedMonsters = [];
+  const damagedHeroes = [];
+
+  for (const pos of affectedCells) {
+    const targetCell = getCell(pos);
+
+    if (targetCell.monsterId) {
+      damageMonster(targetCell.monsterId, damage);
+      damagedMonsters.push(targetCell.monsterId);
+    }
+
+    if (targetCell.heroId) {
+      damageHero(targetCell.heroId, damage);
+      damagedHeroes.push(targetCell.heroId);
+    }
+  }
+
+  cell.elementStack = undefined;
+
+  return {
+    center,
+    damage,
+    affectedCells,
+    damagedMonsters,
+    damagedHeroes
+  };
+}
+```
+
+第一版建议：
+
+```txt
+元素爆炸会伤害怪物。
+是否伤害英雄可配置。
+Demo 默认可以先不伤害英雄，避免教学挫败。
+```
+
+配置：
+
+```ts
+type BattleConfig = {
+  explosionCanDamageHero: boolean; // 第一版建议 false
+};
+```
+
+---
+
+# 12. 元素块阻挡系统
+
+## 12.1 元素块是否阻挡
+
+```ts
+function isCellBlockedForMonster(cell: CellState): boolean {
+  return Boolean(cell.heroId || cell.elementStack);
+}
+```
+
+说明：
+
+```txt
+怪物不能穿过英雄。
+怪物不能穿过元素块。
+怪物不能穿过其他怪物。
+```
+
+可扩展：
+
+```ts
+function isCellBlockedForMonster(cell: CellState): boolean {
+  return Boolean(cell.heroId || cell.monsterId || cell.elementStack);
+}
+```
+
+---
+
+## 12.2 怪物攻击元素块
+
+当怪物想移动到某格，但该格有元素块：
+
+```txt
+怪物攻击该元素块。
+怪物本回合结束。
+如果元素块被触发，则引爆。
+```
+
+第一版简化：
+
+```txt
+怪物攻击元素块 = 直接触发该元素块引爆
+```
+
+实现：
+
+```ts
+function monsterAttackElement(monster: Monster, targetPos: GridPos): void {
+  const cell = getCell(targetPos);
+  if (!cell.elementStack) return;
+
+  triggerExplosion(targetPos);
+  monster.hasActed = true;
+}
+```
+
+---
+
+# 13. 怪物 AI
+
+## 13.1 怪物回合流程
+
+```txt
+对每个怪物依次处理：
+
+1. 如果怪物死亡，跳过
+2. 如果能攻击英雄，攻击英雄
+3. 否则尝试向最近英雄移动
+4. 如果移动目标格有元素块，攻击元素块并结束行动
+5. 如果移动目标格为空，移动
+6. 如果无法移动，跳过
+```
+
+---
+
+## 13.2 怪物攻击范围
+
+第一版怪物只向左攻击 1 格。
+
+```ts
+function getMonsterAttackCell(monster: Monster): GridPos {
+  return {
+    row: monster.pos.row,
+    col: monster.pos.col - 1
+  };
+}
+```
+
+如果该格有英雄：
+
+```ts
+function canMonsterAttackHero(monster: Monster): Hero | undefined {
+  const targetPos = getMonsterAttackCell(monster);
+  const cell = getCell(targetPos);
+  if (!cell.heroId) return undefined;
+  return getHero(cell.heroId);
+}
+```
+
+---
+
+## 13.3 怪物攻击英雄
+
+```ts
+function monsterAttackHero(monster: Monster, hero: Hero): void {
+  hero.hp -= monster.attack;
+  if (hero.hp < 0) hero.hp = 0;
+}
+```
+
+规则：
+
+```txt
+怪物只攻击一次。
+伤害 = 怪物攻击力。
+不走玩家 1/2/3 连段。
+```
+
+---
+
+## 13.4 怪物移动
+
+第一版目标：
+
+```txt
+怪物向最近英雄靠近。
+优先从右往左靠近。
+```
+
+简化移动策略：
+
+```ts
+function getMonsterMoveTarget(monster: Monster, heroes: Hero[]): GridPos {
+  const targetHero = getNearestHero(monster.pos, heroes);
+
+  const candidates: GridPos[] = [];
+
+  // 优先水平靠近
+  if (monster.pos.col > targetHero.pos.col + 1) {
+    candidates.push({ row: monster.pos.row, col: monster.pos.col - 1 });
+  }
+
+  // 其次上下靠近
+  if (monster.pos.row > targetHero.pos.row) {
+    candidates.push({ row: monster.pos.row - 1, col: monster.pos.col });
+  } else if (monster.pos.row < targetHero.pos.row) {
+    candidates.push({ row: monster.pos.row + 1, col: monster.pos.col });
+  }
+
+  return firstValidCandidate(candidates) ?? monster.pos;
+}
+```
+
+---
+
+# 14. 回合状态机
+
+## 14.1 战斗阶段
+
+```ts
+type BattlePhase =
+  | "player_prepare"
+  | "player_action"
+  | "monster_action"
+  | "wave_end"
+  | "shop"
+  | "battle_end";
+```
+
+---
+
+## 14.2 战斗状态
+
+```ts
+type BattleState = {
+  phase: BattlePhase;
+  board: CellState[][];
+  heroes: Hero[];
+  monsters: Monster[];
+  actionSlots: ActionSlot[];
+  turnIndex: number;       // 当前小回合，1-5
+  waveIndex: number;       // 当前波次
+  playerHitCountThisTurn: number;
+};
+```
+
+---
+
+## 14.3 回合流程
+
+```txt
+进入玩家回合：
+1. phase = player_action
+2. 所有行动点 used=false
+3. playerHitCountThisTurn=0
+4. 玩家拖动英雄 / 调整方向 / 使用行动点
+
+玩家结束回合：
+1. 检查玩家是否已经用完行动点，或点击结束
+2. phase = monster_action
+
+怪物回合：
+1. 按顺序处理每只怪物
+2. 怪物攻击 / 移动 / 攻击元素块
+3. 处理死亡
+4. turnIndex += 1
+
+如果 turnIndex > 5：
+进入 wave_end
+然后进入 shop
+
+否则：
+进入下一次 player_action
+```
+
+---
+
+## 14.4 伪代码
+
+```ts
+function startPlayerTurn(state: BattleState) {
+  state.phase = "player_action";
+  state.playerHitCountThisTurn = 0;
+  for (const slot of state.actionSlots) {
+    slot.used = false;
+  }
+}
+
+function endPlayerTurn(state: BattleState) {
+  state.phase = "monster_action";
+  runMonsterTurn(state);
+}
+
+function runMonsterTurn(state: BattleState) {
+  for (const monster of state.monsters) {
+    if (monster.isDead) continue;
+    runSingleMonsterAction(monster, state);
+  }
+
+  cleanupDeadUnits(state);
+
+  state.turnIndex += 1;
+
+  if (state.turnIndex > 5) {
+    state.phase = "wave_end";
+    enterShop(state);
+  } else {
+    startPlayerTurn(state);
+  }
+}
+```
+
+---
+
+# 15. 波次系统
+
+## 15.1 第一版波次长度
+
+```ts
+const TURNS_PER_WAVE = 5;
+```
+
+## 15.2 怪物刷新数量
+
+```ts
+const waveMonsterCounts = [2, 3, 4, 5, 6, 7, 8, 10];
+```
+
+第一版 Demo 可只实现：
+
+```ts
+const demoWaveMonsterCounts = [2, 3];
+```
+
+---
+
+## 15.3 怪物出生点
+
+右上区域随机空格：
+
+```ts
+const monsterSpawnArea = {
+  rows: [0, 1, 2, 3],
+  cols: [9, 10, 11, 12]
+};
+```
+
+生成规则：
+
+```txt
+1. 从右上区域找空格
+2. 不覆盖英雄
+3. 不覆盖元素块
+4. 不覆盖其他怪物
+```
+
+---
+
+# 16. 商店系统
+
+## 16.1 商店状态
+
+```ts
+type ShopState = {
+  currentShopCategory: ShapeCategory;
+  fixedItems: ShopItem[];       // 固定 3 个
+  bonusElements: ElementShopItem[]; // 0-3 个
+  refreshCost: number;
+};
+```
+
+---
+
+## 16.2 商店类型
+
+```ts
+type ShopCategory = ShapeCategory;
+```
+
+商店入口：
+
+```txt
+直线攻击块商店
+方块攻击块商店
+L形攻击块商店
+T形攻击块商店
+十字攻击块商店
+Z/S攻击块商店
+阶梯攻击块商店
+凹口攻击块商店
+分叉攻击块商店
+异形攻击块商店
+```
+
+---
+
+## 16.3 商品类型
+
+```ts
+type ShopItem =
+  | AttackBlockShopItem
+  | ElementShopItem;
+
+type AttackBlockShopItem = {
+  type: "attack_block";
+  block: AttackBlock;
+  price: number;
+};
+
+type ElementShopItem = {
+  type: "element";
+  element: ElementType;
+  price: number;
+};
+```
+
+---
+
+## 16.4 固定商品生成
+
+规则：
+
+```txt
+每个商店固定展示 3 个攻击方块商品。
+```
+
+```ts
+function generateFixedShopItems(category: ShapeCategory): AttackBlockShopItem[] {
+  const items: AttackBlockShopItem[] = [];
+
+  while (items.length < 3) {
+    const shape = randomShapeByCategory(category);
+    const element = randomElement(); // 风火水土
+    const block = createAttackBlock({
+      shape,
+      element,
+      tier: 1
+    });
+
+    items.push({
+      type: "attack_block",
+      block,
+      price: calcAttackBlockPrice(block)
+    });
+  }
+
+  return items;
+}
+```
+
+---
+
+## 16.5 额外随机元素生成
+
+规则：
+
+```txt
+每次刷新，有概率生成 0～3 个随机元素。
+```
+
+简单版：
+
+```ts
+function generateBonusElements(): ElementShopItem[] {
+  const count = randomInt(0, 3);
+  const result: ElementShopItem[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const element = randomElement();
+    result.push({
+      type: "element",
+      element,
+      price: calcElementPrice(element)
+    });
+  }
+
+  return result;
+}
+```
+
+---
+
+## 16.6 刷新商店
+
+```ts
+function refreshShop(shop: ShopState): void {
+  shop.fixedItems = generateFixedShopItems(shop.currentShopCategory);
+  shop.bonusElements = generateBonusElements();
+}
+```
+
+验收：
+
+```txt
+刷新后：
+固定商品必须是 3 个。
+额外元素必须是 0～3 个。
+```
+
+---
+
+# 17. 购买系统
+
+## 17.1 购买攻击方块
+
+```ts
+function buyAttackBlock(item: AttackBlockShopItem): BuyResult {
+  if (!canAfford(item.price)) return { ok: false, reason: "not_enough_gold" };
+  if (!canPlaceInBackpack(item.block)) return { ok: false, reason: "backpack_full" };
+
+  spendGold(item.price);
+  addBlockToBackpack(item.block);
+
+  return { ok: true };
+}
+```
+
+---
+
+## 17.2 购买元素
+
+元素可以直接放到战斗场上，或者先放入背包。
+
+第一版建议：
+
+```txt
+商店购买元素后，进入“放置元素模式”。
+玩家选择一个棋盘格，元素直接叠到该格。
+```
+
+```ts
+function buyElementAndPlace(
+  item: ElementShopItem,
+  targetPos: GridPos
+): BuyResult {
+  if (!canAfford(item.price)) return { ok: false, reason: "not_enough_gold" };
+
+  const cell = getCell(targetPos);
+  if (cell.heroId || cell.monsterId) {
+    return { ok: false, reason: "cell_occupied" };
+  }
+
+  spendGold(item.price);
+  addElementToCell(cell, item.element);
+
+  return { ok: true };
+}
+```
+
+可选规则：
+
+```txt
+允许把元素放到已有元素格上，形成叠层。
+不允许放到英雄或怪物脚下。
+```
+
+---
+
+# 18. 合成升级系统
+
+## 18.1 可合成判断
+
+```ts
+function canMerge(a: AttackBlock, b: AttackBlock): boolean {
+  return (
+    a.element === b.element &&
+    a.shapeNo === b.shapeNo &&
+    a.tier === b.tier &&
+    a.tier < 4
+  );
+}
+```
+
+## 18.2 合成结果
+
+```ts
+function mergeBlocks(a: AttackBlock, b: AttackBlock): AttackBlock {
+  if (!canMerge(a, b)) throw new Error("Cannot merge");
+
+  return {
+    ...a,
+    id: generateId(),
+    tier: (a.tier + 1) as 1 | 2 | 3 | 4,
+    name: getAttackBlockName({
+      ...a,
+      tier: (a.tier + 1) as 1 | 2 | 3 | 4
+    })
+  };
+}
+```
+
+规则：
+
+```txt
+两个1阶 → 一个2阶
+两个2阶 → 一个3阶
+两个3阶 → 一个4阶
+4阶不能继续合成
+```
+
+---
+
+# 19. 背包系统
+
+## 19.1 背包尺寸
+
+```ts
+type BackpackConfig = {
+  rows: 8;
+  cols: 8;
+};
+```
+
+## 19.2 背包物品
+
+```ts
+type BackpackItem = {
+  id: string;
+  blockId: string;
+  pos: GridPos;
+  rotation: Direction;
+};
+```
+
+## 19.3 背包放置校验
+
+```ts
+function canPlaceBackpackItem(
+  item: AttackBlock,
+  pos: GridPos,
+  rotation: Direction,
+  backpack: BackpackState
+): boolean {
+  const cells = getBackpackItemCells(item, pos, rotation);
+
+  return cells.every(cell =>
+    isInsideBackpack(cell) && !isBackpackCellOccupied(cell, backpack)
+  );
+}
+```
+
+规则：
+
+```txt
+1. 物品按自身形状占格
+2. 不能超出背包
+3. 不能和其他物品重叠
+4. 可以旋转
+```
+
+---
+
+# 20. UI 显示规则
+
+## 20.1 棋盘显示
+
+```txt
+空格：.
+英雄：A / B
+怪物：M
+元素：火4 / 水3 / 风2 / 土5
+攻击预览：半透明高亮
+爆炸预览：十字高亮
+怪物攻击预警：红色高亮
+```
+
+## 20.2 行动点显示
+
+每个行动点显示：
+
+```txt
+1. 攻击方块名
+2. 元素
+3. 阶级
+4. 方向
+5. 是否已使用
+6. 攻击范围预览按钮
+```
+
+示例：
+
+```txt
+行动点1：火·1格·1号·1阶｜向右｜未使用
+行动点2：水·1格·1号·1阶｜向右｜未使用
+行动点3：火·1格·1号·1阶｜向右｜未使用
+```
+
+---
+
+# 21. 第一版初始配置
+
+## 21.1 初始英雄
+
+```txt
+元素使A：HP 20，位置左下
+元素使B：HP 20，位置左下
+```
+
+## 21.2 初始攻击方块
+
+```txt
+火·1格·1号·1阶
+水·1格·1号·1阶
+火·1格·1号·1阶
+```
+
+方向默认：
+
+```txt
+向右
+向右
+向右
+```
+
+## 21.3 第一只教学怪
+
+```txt
+血量：6
+攻击力：1
+元素：无
+位置：右上偏中
+```
+
+验收：
+
+```txt
+三次基础攻击 1+2+3 正好击杀。
+```
+
+---
+
+# 22. 关键测试用例
+
+## Case 1：三次基础攻击击杀 6 血怪
+
+输入：
+
+```txt
+怪物HP：6
+行动点1：1阶，第1次命中
+行动点2：1阶，第2次命中
+行动点3：1阶，第3次命中
+```
+
+预期：
+
+```txt
+伤害：1、2、3
+总伤害：6
+怪物死亡
+```
+
+---
+
+## Case 2：未命中生成元素
+
+输入：
+
+```txt
+行动点1：火攻击
+攻击范围没有怪物
+目标格为空
+```
+
+预期：
+
+```txt
+目标格生成火1
+hitCount 不增加
+```
+
+---
+
+## Case 3：元素叠层
+
+输入：
+
+```txt
+同一格依次生成：
+火
+水
+土
+火
+```
+
+预期：
+
+```txt
+显示：火4
+层数：4
+当前元素：火
+```
+
+---
+
+## Case 4：火4 引爆
+
+输入：
+
+```txt
+目标格：火4
+点击引爆
+```
+
+预期：
+
+```txt
+伤害：10
+范围：中心 + 上下左右
+爆炸后目标格清空
+范围内怪物受到10点伤害
+```
+
+---
+
+## Case 5：怪物攻击元素块
+
+输入：
+
+```txt
+怪物想向左移动
+左边格子有水4
+```
+
+预期：
+
+```txt
+怪物攻击水4
+水4引爆
+怪物本回合结束
+怪物如果在爆炸范围内，受到10点伤害
+```
+
+---
+
+## Case 6：商店刷新
+
+输入：
+
+```txt
+打开十字攻击块商店
+点击刷新
+```
+
+预期：
+
+```txt
+固定商品 = 3个
+额外元素 = 0～3个
+商品名格式正确
+```
+
+---
+
+## Case 7：合成升级
+
+输入：
+
+```txt
+火·5格·25号·1阶
+火·5格·25号·1阶
+```
+
+预期：
+
+```txt
+合成为：
+火·5格·25号·2阶
+倍率从×1变为×2
+```
+
+---
+
+# 23. 模块拆分建议
+
+```txt
+src/
+  core/
+    board.ts
+    position.ts
+    direction.ts
+    shape.ts
+    damage.ts
+    element.ts
+    explosion.ts
+    turn-state.ts
+  battle/
+    battle-state.ts
+    player-action.ts
+    monster-ai.ts
+    wave.ts
+  shop/
+    shop-state.ts
+    shop-generate.ts
+    shop-buy.ts
+  backpack/
+    backpack-state.ts
+    backpack-place.ts
+    backpack-merge.ts
+  data/
+    shapes.ts
+    starter-blocks.ts
+    monsters.ts
+    shop-config.ts
+  ui/
+    BoardView
+    ActionSlotPanel
+    ShopView
+    BackpackView
+    PreviewLayer
+```
+
+---
+
+# 24. 第一版完成标准
+
+```txt
+完成后必须能跑通：
+
+1. 进入 13×13 战斗棋盘
+2. 左下生成两个元素使
+3. 右上生成怪物
+4. 玩家可拖动英雄
+5. 玩家可调整 3 个行动点方向
+6. 玩家可执行 3 次攻击
+7. 6 血怪被 1+2+3 正好击杀
+8. 未命中攻击生成元素
+9. 元素格可显示 火4 / 水3
+10. 点击元素格显示十字爆炸预览
+11. 火4 引爆造成 10 点伤害
+12. 怪物会移动靠近英雄
+13. 怪物会向左攻击
+14. 怪物被元素块挡住会攻击元素块并结束行动
+15. 5 个小回合后进入商店
+16. 商店显示 3 个商品
+17. 刷新后换 3 个商品
+18. 商店额外生成 0～3 个随机元素
+19. 可购买攻击方块
+20. 可购买元素并放到场上
+21. 两个相同攻击方块可合成升级
+22. 背包 8×8，占格不重叠
+```
+
+---
+
+# 25. 最小实现优先级
+
+## P0：必须先做
+
+```txt
+棋盘
+英雄拖动
+行动点
+攻击范围
+伤害结算
+元素叠层
+元素引爆
+怪物移动攻击
+回合切换
+```
+
+## P1：做完 P0 后做
+
+```txt
+商店
+刷新
+购买
+背包
+合成升级
+```
+
+## P2：后续优化
+
+```txt
+怪物攻击预警
+更好的 UI 动效
+更多形状
+更多商店分类
+更好的教学表现
+完整四元素克制演出
+```
+
+---
+
+# 26. 给程序的实现原则
+
+```txt
+1. 先做纯规则层，不要先做复杂动画。
+2. 所有伤害、叠层、引爆必须能用日志验证。
+3. 每次玩家行动后输出结算日志。
+4. 每次怪物行动后输出 AI 日志。
+5. 商店刷新必须输出生成结果。
+6. 背包放置必须能打印占格结果。
+7. UI 可以简陋，但规则必须准。
+```
+
+## 推荐日志格式
+
+```txt
+[PlayerAction] slot_1 火·1格·1号·1阶 向右
+[AttackCells] (10,3)
+[Hit] monster_1 damage=1 hp=5
+[Element] cell=(10,3) 火1
+
+[Explosion] center=(8,8) element=火 layer=4 damage=10
+[ExplosionHit] monster_2 damage=10 hp=0
+
+[MonsterAction] monster_3 move left from (5,9) to (5,8)
+[MonsterBlocked] monster_4 blocked by 水4 at (6,7)
+[MonsterAttackElement] trigger explosion 水4 damage=10
+
+[ShopRefresh] category=cross fixedItems=3 bonusElements=2
+[ShopItem] 火·5格·25号·1阶
+[BonusElement] 土
+```
+
+这份 SRD 可以直接作为第一版开发实现说明。

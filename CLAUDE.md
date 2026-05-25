@@ -7,6 +7,7 @@
 1. **调用 `ywh-game` skill**，阅读完整工作流。
 2. **分类变更**：查 `docs/00_AI_PROJECT_RULES.md` 中的分类表。
    - 战斗机制 / 回合结构 / 元素规则 / 引爆时序 → **大需求**，代码量多少无关。
+   - `ywh` / 模板 / registry / AI 规则文件，且不改游戏运行行为 → **工作流规则变更 / 文档治理**。
    - 大需求 → 文档门禁 → 确认后再实现。
 3. **大改动前先给计划**，等用户确认。
 
@@ -21,9 +22,10 @@
 
 1. 运行 `node test.js`，全部通过。
 2. 有意义的游戏行为改动 → 运行 Playwright 或手动验证。
-3. **按文档同步表更新对应文档**（见 `docs/00_AI_PROJECT_RULES.md`）——不得省略。
-4. 更新 `docs/10_CHANGELOG.md`。
-5. `git add .` → `git commit` → `git push`（通过安全检查）。
+3. 工作流规则变更 → 用引用搜索、模板存在性、同步映射一致性验证。
+4. **按文档同步表更新对应文档**（见 `docs/00_AI_PROJECT_RULES.md`）——不得省略。
+5. 更新 `docs/10_CHANGELOG.md`。
+6. `git add .` → `git commit` → `git push`（通过安全检查）。
 
 ## 禁止事项
 

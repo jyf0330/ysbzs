@@ -14,12 +14,14 @@ Use `docs/00_AI_PROJECT_RULES.md` as the single source of truth for project AI r
 1. **Invoke `ywh-game` skill** and read its full workflow before anything else.
 2. **Classify the change** using the table in `docs/00_AI_PROJECT_RULES.md`.
    - Small code change ≠ small patch. Any change to combat timing / element rules / turn structure = **large feature**.
+   - Workflow, template, registry, or AI-rule changes that do not affect game runtime = **workflow governance**.
 3. For **large features**: run the doc gate check. Missing docs → draft them → `BLOCKED_FOR_DOCS`.
 4. For **small patches**: implement minimally → verify → sync impacted docs per the sync table.
 
 ## After every change
 
 - Run `node test.js` — all tests must pass.
+- For workflow governance changes, verify by reference search, template existence, and sync-mapping consistency instead of game runtime tests.
 - Sync docs per the mapping table in `docs/00_AI_PROJECT_RULES.md` (do NOT skip this).
 - Update `docs/10_CHANGELOG.md`.
 - `git add .` → `git commit -m "<type>: <summary>"` → `git push` (after safety check).

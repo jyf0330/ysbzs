@@ -331,7 +331,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
       assert.strictEqual(m.el,null,`教学怪${i} 属性应为 null`)
     );
   });
-  test('验收-8: 直接命中只打单体，旁边怪物不受伤', ()=>{
+  test('验收-8: 怪物格单体结算，相邻格怪物不受波及', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:4};
     G.heroes.hb.pos={r:12,c:0};
@@ -342,8 +342,8 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     G.explosionThreshold=1; // 单次命中即引爆
     useSlot(0); settleDamage();
     assert.ok(G.monsters[0].hp<10,'命中格怪物受伤');
-    // 不对应击点，且无引爆，怪物1不受伤
-    assert.strictEqual(G.monsters[1].hp,10,'旁边怪物不受直接伤');
+    // 新规则：怪物格=单体结算，不触发十字，相邻格怪物不受波及
+    assert.strictEqual(G.monsters[1].hp,10,'怪物格单体结算不波及相邻格');
   });
   test('验收-9: 引爆伤害能打十字范围内多只怪', ()=>{
     fresh();
@@ -428,10 +428,11 @@ group('useSlot 攻击逻辑', ()=>{
     G.explosionThreshold=1; // 测试伤害公式，单次命中即引爆
   }
 
-  test('命中怪物 hitCount+1', ()=>{
+  test('攻击命中：目标格元素层+1', ()=>{
     setup(5,5, 5,6);
+    const el=G.slots[0].el;
     useSlot(0);
-    assert.strictEqual(G.hitCount,1);
+    assert.strictEqual(G.elementCells['5,6']?.[el]?.layers, 1);
   });
   test('命中后 slot.used=true', ()=>{
     setup(5,5, 5,6);
@@ -444,29 +445,33 @@ group('useSlot 攻击逻辑', ()=>{
     useSlot(0); settleDamage();
     assert.strictEqual(G.monsters[0].hp,5); // 6-1=5
   });
-  test('2阶·第1次·伤害=1×2=2', ()=>{
+  test('tier无加成：单层引爆=explDmg(1)=1', ()=>{
     setup(5,5, 5,6);
-    G.monsters[0].hp=6; G.slots[0].tier=2; G.hitCount=0;
+    G.monsters[0].hp=6; G.slots[0].tier=2;
     useSlot(0); settleDamage();
-    assert.strictEqual(G.monsters[0].hp,4); // 6-2=4
+    assert.strictEqual(G.monsters[0].hp,5); // 6-1=5，explDmg(1)=1，tier不影响
   });
-  test('3阶·第1次·伤害=1×4=4', ()=>{
-    setup(5,5, 5,6);
-    G.monsters[0].hp=10; G.slots[0].tier=3; G.hitCount=0;
-    useSlot(0); settleDamage();
-    assert.strictEqual(G.monsters[0].hp,6); // 10-4=6
+  test('3层fire结算：explDmg(3)=6', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10; G.monsters[1].pos={r:12,c:12};
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4); // 10-6=4，explDmg(3)=6
   });
-  test('4阶·第1次·伤害=1×8=8', ()=>{
-    setup(5,5, 5,6);
-    G.monsters[0].hp=10; G.slots[0].tier=4; G.hitCount=0;
-    useSlot(0); settleDamage();
-    assert.strictEqual(G.monsters[0].hp,2); // 10-8=2
+  test('6层fire结算：explDmg(6)=21', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=25; G.monsters[1].pos={r:12,c:12};
+    G.elementCells['5,5']={fire:{layers:6,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4); // 25-21=4，explDmg(6)=21
   });
-  test('第2次命中 base=2，伤害翻倍', ()=>{
+  test('同格叠2层结算：explDmg(2)=3', ()=>{
     setup(5,5, 5,6);
-    G.monsters[0].hp=10; G.slots[0].tier=1; G.hitCount=1; // 已有1次
+    G.monsters[0].hp=10;
+    G.elementCells['5,6']={fire:{layers:1,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    G.explosionThreshold=2;
     useSlot(0); settleDamage();
-    assert.strictEqual(G.monsters[0].hp,8); // 10-2=8
+    assert.strictEqual(G.monsters[0].hp,7); // 10-3=7，explDmg(2)=3
   });
   test('元素克制 ×2：水攻火属性怪', ()=>{
     setup(5,5, 5,6);
@@ -514,7 +519,19 @@ group('useSlot 攻击逻辑', ()=>{
     useSlot(0); settleDamage();
     assert.ok(G.monsters[0].hp<10,'怪物0应受伤');
     assert.ok(G.monsters[1].hp<10,'怪物1应受伤');
-    assert.strictEqual(G.hitCount,2,'hitCount应为2（命中两次）');
+  });
+
+  test('空地叠层引爆：无怪物时不出错', ()=>{
+    setup(5,5, 9,9); // 怪物移远
+    G.slots[0].el='fire'; G.explosionThreshold=1;
+    assert.doesNotThrow(()=>{useSlot(0); settleDamage();});
+  });
+  test('同格火水各3层同时引爆：各自dmg=6', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20; G.monsters[1].pos={r:12,c:12};
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:3,willExplode:true},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,8); // 20-6-6=8
   });
 });
 
@@ -960,15 +977,15 @@ group('threshold=3 引爆阈值（游戏默认）', ()=>{
     G.slots[2].hid='ha'; G.slots[2].el='fire'; G.slots[2].sn=1; G.slots[2].dir='right'; G.slots[2].tier=1; G.slots[2].used=false;
     G.hitCount=0;
   }
-  test('fire+1 层不引爆：HP 不变', ()=>{
+  test('fire+1 层结算：怪物格单体伤害1', ()=>{
     setup3(5,5, 5,6);
     useSlot(0); settleExplosions();
-    assert.strictEqual(G.monsters[0].hp, 20, '1层不达阈值，HP不变');
+    assert.strictEqual(G.monsters[0].hp, 19, '怪物格1层单体伤害：20-1=19');
   });
-  test('fire+2 层不引爆：HP 不变', ()=>{
+  test('fire+2 层结算：怪物格单体伤害3', ()=>{
     setup3(5,5, 5,6);
     useSlot(0); useSlot(1); settleExplosions();
-    assert.strictEqual(G.monsters[0].hp, 20, '2层不达阈值，HP不变');
+    assert.strictEqual(G.monsters[0].hp, 17, '怪物格2层单体伤害：20-3=17');
   });
   test('行动阶段 HP 不变（settleExplosions 之前）', ()=>{
     setup3(5,5, 5,6);
@@ -991,6 +1008,555 @@ group('threshold=3 引爆阈值（游戏默认）', ()=>{
     G.hitCount=0;
     useSlot(0); // 水攻火格：不调用 doExplode，HP 应不变
     assert.strictEqual(G.monsters[0].hp, 20, 'useSlot 行动阶段不触发 doExplode，HP 不变');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
+  test('case_001: 怪物格1层fire结算为单体伤害1', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=6; G.monsters[1].pos={r:12,c:12};
+    G.elementCells['5,5']={fire:{layers:1,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,5,'单体伤害1：6-1=5');
+  });
+  test('case_002: 怪物格2层fire结算为单体伤害3', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=6; G.monsters[1].pos={r:12,c:12};
+    G.elementCells['5,5']={fire:{layers:2,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,3,'单体伤害3：6-3=3');
+  });
+  test('case_003: 怪物格3层fire单体结算，不触发十字，相邻怪物不受伤', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10;
+    G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=6; // 相邻格
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'怪物0受单体伤害6：10-6=4');
+    assert.strictEqual(G.monsters[1].hp,6,'相邻怪物不受十字波及');
+  });
+  test('case_004: 空格3层fire十字引爆，波及相邻怪物', ()=>{
+    fresh();
+    G.monsters[0].pos={r:6,c:5}; G.monsters[0].hp=10; // 在(5,5)正下方
+    G.monsters[1].pos={r:12,c:12};
+    // (5,5)是空格（没有怪物）
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'相邻怪受十字引爆伤害6：10-6=4');
+  });
+  test('case_005: buildMonsterStats 合并自身格伤害和波及伤害', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20;
+    G.monsters[1].pos={r:12,c:12};
+    // 自身格有2层fire（单体3伤害，不需要达到阈值）
+    G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    // 空格(5,4)有3层fire（达到默认阈值3，触发十字，波及(5,5)）
+    G.elementCells['5,4']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    const stats=buildMonsterStats();
+    const ms=stats['5,5'];
+    assert.ok(ms,'monsterStats应包含怪物所在格');
+    assert.strictEqual(ms.selfCellDamage.total,3,'自身格2层伤害=explDmg(2)=3');
+    assert.strictEqual(ms.splashDamage.total,6,'波及来自(5,4)3层fire=6');
+    assert.strictEqual(ms.finalPreview.totalDamage,9,'总预计伤害=9');
+    assert.strictEqual(ms.finalPreview.willDie,false,'9<20不死亡');
+  });
+  test('case_006: 两只怪物都能攻击同一英雄', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:1,c:0};
+    G.heroes.hb.pos={r:11,c:0};
+    G.monsters[0].pos={r:1,c:1}; // 左攻ha
+    G.monsters[1].pos={r:0,c:0}; // 下攻ha
+    const{heroIncomingDmg}=computeMonsterActionPreview();
+    assert.ok(heroIncomingDmg['ha'],'ha应收到攻击预警');
+    assert.strictEqual(heroIncomingDmg['ha'].length,2,'两次攻击预警');
+    const totalDmg=heroIncomingDmg['ha'].reduce((s,e)=>s+e.dmg,0);
+    assert.ok(totalDmg>0,'总预警伤害大于0');
+  });
+  test('case_007: 结算前怪物不被提前删除，结算后标记dead', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=1;
+    G.elementCells['5,5']={fire:{layers:1,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    // 结算前：怪物仍存活
+    assert.strictEqual(G.monsters[0].dead,false,'结算前不死亡');
+    assert.ok(monAt({r:5,c:5}),'结算前仍能在格上找到怪物');
+    // 结算后：怪物死亡
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,0,'结算后hp=0');
+    assert.strictEqual(G.monsters[0].dead,true,'结算后标记dead');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CellInfoLayer 测试（case_cellinfo_001~007）
+group('格子信息层 cellInfoMap（buildCellInfoMap）', ()=>{
+  function freshCellInfo(){
+    fresh();
+    G.explosionThreshold=3;
+    G.heroes.ha.pos={r:10,c:1}; G.heroes.hb.pos={r:12,c:0};
+    // 清空怪物，方便各 case 自行安排
+    G.monsters=[];
+  }
+
+  test('case_cellinfo_001: 怪物格 fire=1 → 单体伤害1，不爆炸', ()=>{
+    freshCellInfo();
+    G.monsters=[{id:'m0',name:'怪甲',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:1,willExplode:false}};
+    const ciMap=buildCellInfoMap();
+    const ci=ciMap['5,5'];
+    assert.ok(ci,'应有 5,5 的 cellInfo');
+    assert.ok(ci.entities.some(e=>e.type==='monster'),'实体含怪物');
+    assert.strictEqual(ci.elementField.fire,1,'火=1');
+    assert.strictEqual(ci.selfCellDamagePreview.total,1,'单体伤害=1');
+    assert.strictEqual(ci.explosionPreview.willExplode,false,'怪物格不触发十字爆炸');
+  });
+
+  test('case_cellinfo_002: 怪物格 fire=3 → 单体伤害6，不触发十字', ()=>{
+    freshCellInfo();
+    G.monsters=[{id:'m0',name:'怪甲',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:false}};
+    const ciMap=buildCellInfoMap();
+    const ci=ciMap['5,5'];
+    assert.strictEqual(ci.selfCellDamagePreview.total,6,'怪物格3层=6伤');
+    assert.strictEqual(ci.explosionPreview.willExplode,false,'怪物格不爆炸');
+    assert.ok(ci.summaryBadges.includes('🔥3'),'badge 含 🔥3');
+    assert.ok(ci.summaryBadges.includes('-6'),'badge 含 -6');
+    assert.ok(!ci.summaryBadges.includes('💥'),'badge 不含 💥');
+  });
+
+  test('case_cellinfo_003: 空格 fire=3 willExplode=true → 十字引爆', ()=>{
+    freshCellInfo();
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    const ciMap=buildCellInfoMap();
+    const ci=ciMap['5,5'];
+    assert.ok(ci.entities.length===0,'空格无实体');
+    assert.strictEqual(ci.explosionPreview.willExplode,true,'空格应引爆');
+    assert.strictEqual(ci.explosionPreview.damage,6,'引爆伤害=6');
+    assert.strictEqual(ci.explosionPreview.shape,'cross','形状=cross');
+    assert.ok(ci.explosionPreview.affectedCells.length>0,'有波及格');
+    assert.ok(ci.summaryBadges.includes('🔥3'),'badge 含 🔥3');
+    assert.ok(ci.summaryBadges.includes('💥'),'badge 含 💥');
+  });
+
+  test('case_cellinfo_004: 点击怪物格 - 实体/元素场/单体结算/来源完整', ()=>{
+    freshCellInfo();
+    G.monsters=[{id:'m0',name:'怪甲',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:false}};
+    // 槽1向右攻击 (5,2)→右→(5,3)→... 调整英雄位置使槽落到 (5,5)
+    G.heroes.ha.pos={r:5,c:4};
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].used=false;
+    G.slots[1].used=true; G.slots[2].used=true;
+    const ciMap=buildCellInfoMap();
+    const ci=ciMap['5,5'];
+    assert.ok(ci.entities.some(e=>e.type==='monster'),'有怪物实体');
+    assert.strictEqual(ci.elementField.fire,3,'元素场 fire=3');
+    assert.strictEqual(ci.selfCellDamagePreview.total,6,'单体伤害=6');
+    assert.strictEqual(ci.explosionPreview.willExplode,false,'不触发十字');
+    assert.ok(ci.incomingEffects.some(ef=>ef.source==='A-1'),'来源含 A-1');
+  });
+
+  test('case_cellinfo_005: 空格点击 - 元素场/引爆/波及/来源', ()=>{
+    freshCellInfo();
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    G.heroes.ha.pos={r:5,c:4};
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].used=false;
+    G.slots[1].used=true; G.slots[2].used=true;
+    const ciMap=buildCellInfoMap();
+    const ci=ciMap['5,5'];
+    assert.ok(ci.entities.length===0,'无实体');
+    assert.strictEqual(ci.elementField.fire,3,'元素场 fire=3');
+    assert.ok(ci.explosionPreview.willExplode,'空格 willExplode=true');
+    assert.ok(ci.explosionPreview.affectedCells.length>0,'有波及格');
+    assert.ok(ci.incomingEffects.some(ef=>ef.element==='fire'),'来源含 fire');
+  });
+
+  test('case_cellinfo_006: 同一格被三个槽作用 → incomingEffects 长度=3', ()=>{
+    freshCellInfo();
+    // 英雄 ha 在 (5,4)，sn=1 right → 攻击 (5,5)
+    G.heroes.ha.pos={r:5,c:4};
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].used=false;
+    G.slots[1].hid='ha'; G.slots[1].el='fire'; G.slots[1].sn=1; G.slots[1].dir='right'; G.slots[1].used=false;
+    G.slots[2].hid='ha'; G.slots[2].el='fire'; G.slots[2].sn=1; G.slots[2].dir='right'; G.slots[2].used=false;
+    const ciMap=buildCellInfoMap();
+    const ci=ciMap['5,5'];
+    assert.strictEqual(ci.incomingEffects.length,3,'三个槽各贡献一条来源');
+  });
+
+  test('case_cellinfo_007: 英雄格被两怪威胁 → monsterThreatPreview.hitCount=2', ()=>{
+    freshCellInfo();
+    G.heroes.ha.pos={r:5,c:5};
+    // 两只怪在英雄左侧，能攻击到英雄
+    G.monsters=[
+      {id:'m0',name:'怪甲',hp:10,maxHp:10,atk:2,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'怪乙',hp:10,maxHp:10,atk:3,pos:{r:5,c:7},dead:false,el:null},
+    ];
+    // simMonAct: 怪从右向左攻击相邻英雄
+    // 需要确认 simMonAct 能让两怪都攻击到 ha
+    // 使用 computeMonsterActionPreview 验证
+    const {heroIncomingDmg}=computeMonsterActionPreview();
+    // 只有紧邻 (5,6) 的怪能攻击，(5,7) 需要移动
+    // 结果取决于 simMonAct；这里只检查 ciMap 正确映射
+    const ciMap=buildCellInfoMap();
+    const ci=ciMap['5,5'];
+    const thr=ci.monsterThreatPreview;
+    const haIncoming=heroIncomingDmg['ha']||[];
+    assert.strictEqual(thr.hitCount,haIncoming.length,'hitCount 与 computeMonsterActionPreview 一致');
+    if(haIncoming.length>0)assert.strictEqual(thr.totalDamage,haIncoming.reduce((s,e)=>s+e.dmg,0),'totalDamage 一致');
+    // 无论 simMonAct 结果，summaryBadges 应正确包含 ⚠×N
+    if(thr.hitCount>0)assert.ok(ci.summaryBadges.some(b=>b.startsWith('⚠×')),`badge 含 ⚠×N (hitCount=${thr.hitCount})`);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// A 组：initGame 第一关默认配置测试
+group('A组：initGame 第一关默认配置', ()=>{
+  test('case_init_001: ha/hb 6个槽全部是 fire', ()=>{
+    fresh();
+    const els=G.slots.map(s=>s.el);
+    assert.ok(els.every(e=>e==='fire'), `所有槽应为 fire，实际: ${JSON.stringify(els)}`);
+  });
+  test('case_init_002: 默认槽无 water/wind/earth', ()=>{
+    fresh();
+    const els=G.slots.map(s=>s.el);
+    assert.ok(!els.includes('water'),'water 不应出现在默认槽');
+    assert.ok(!els.includes('wind'), 'wind 不应出现在默认槽');
+    assert.ok(!els.includes('earth'),'earth 不应出现在默认槽');
+  });
+  test('case_init_003: 英雄A hp=20 pos(10,1)，英雄B hp=20 pos(11,1)', ()=>{
+    fresh();
+    assert.ok(G.heroes.ha,'英雄A存在');
+    assert.ok(G.heroes.hb,'英雄B存在');
+    assert.strictEqual(G.heroes.ha.hp,20,'ha hp=20');
+    assert.strictEqual(G.heroes.hb.hp,20,'hb hp=20');
+    assert.deepStrictEqual(G.heroes.ha.pos,{r:10,c:1},'ha 初始位置(10,1)');
+    assert.deepStrictEqual(G.heroes.hb.pos,{r:11,c:1},'hb 初始位置(11,1)');
+  });
+  test('case_init_004: 教学怪1 hp=6 el=null，教学怪2 hp=10 el=null', ()=>{
+    fresh();
+    assert.strictEqual(G.monsters.length,2,'应有2只怪');
+    assert.strictEqual(G.monsters[0].name,'教学怪1','怪1名称');
+    assert.strictEqual(G.monsters[0].hp,6,'教学怪1 hp=6');
+    assert.strictEqual(G.monsters[0].el,null,'教学怪1 el=null');
+    assert.strictEqual(G.monsters[1].name,'教学怪2','怪2名称');
+    assert.strictEqual(G.monsters[1].hp,10,'教学怪2 hp=10');
+    assert.strictEqual(G.monsters[1].el,null,'教学怪2 el=null');
+  });
+  test('case_init_005: explosionThreshold=3', ()=>{
+    fresh();
+    assert.strictEqual(G.explosionThreshold,3,'threshold=3');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// B 组：怪物格单体结算测试
+group('B组：怪物格单体结算', ()=>{
+  // pos: 怪物格坐标，相邻怪放在 (pos.r, pos.c+1)
+  function setMonCell(pos,hp,el,layers){
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'主怪',hp,maxHp:hp,atk:1,pos,dead:false,el:null},
+      {id:'m1',name:'相邻怪',hp:10,maxHp:10,atk:1,pos:{r:pos.r,c:pos.c+1},dead:false,el:null},
+    ];
+    const ky=`${pos.r},${pos.c}`;
+    G.elementCells[ky]={
+      fire:{layers:0,willExplode:false},water:{layers:0,willExplode:false},
+      wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false},
+    };
+    G.elementCells[ky][el]={layers,willExplode:layers>=G.explosionThreshold};
+  }
+  test('case_monster_cell_001: fire=1 → 单体伤1，相邻怪不受波及', ()=>{
+    setMonCell({r:5,c:5},10,'fire',1);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,9,'主怪 10-1=9');
+    assert.strictEqual(G.monsters[1].hp,10,'相邻怪不受伤');
+  });
+  test('case_monster_cell_002: fire=2 → 单体伤3，相邻怪不受波及', ()=>{
+    setMonCell({r:5,c:5},10,'fire',2);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,7,'主怪 10-3=7');
+    assert.strictEqual(G.monsters[1].hp,10,'相邻怪不受伤');
+  });
+  test('case_monster_cell_003: fire=3 → 单体伤6，6血怪死亡，相邻怪不受波及', ()=>{
+    setMonCell({r:5,c:5},6,'fire',3);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,0,'主怪 6-6=0');
+    assert.strictEqual(G.monsters[0].dead,true,'主怪死亡');
+    assert.strictEqual(G.monsters[1].hp,10,'相邻怪不受伤');
+  });
+  test('case_monster_cell_004: fire=6 → 单体伤21，相邻怪不受波及', ()=>{
+    setMonCell({r:5,c:5},30,'fire',6);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,9,'主怪 30-21=9');
+    assert.strictEqual(G.monsters[1].hp,10,'相邻怪不受伤');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// C 组：空格十字爆炸测试
+group('C组：空格十字爆炸', ()=>{
+  // 爆炸格(5,5)，范围内怪在(5,6)，范围外怪在(8,8)
+  function setEmptyCell(layers){
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'范围内怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'范围外怪',hp:10,maxHp:10,atk:1,pos:{r:8,c:8},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={
+      fire:{layers,willExplode:layers>=G.explosionThreshold},
+      water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false},
+    };
+  }
+  test('case_empty_cell_001: fire=1 不伤害不爆炸', ()=>{
+    setEmptyCell(1);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,10,'范围内怪不受伤');
+    assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
+  });
+  test('case_empty_cell_002: fire=2 不伤害不爆炸', ()=>{
+    setEmptyCell(2);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,10,'范围内怪不受伤');
+    assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
+  });
+  test('case_empty_cell_003: fire=3 十字爆炸→范围内怪-6，范围外不受伤', ()=>{
+    setEmptyCell(3);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'范围内怪 10-6=4');
+    assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
+  });
+  test('case_empty_cell_004: fire=6 十字爆炸→范围内怪-21(下限0)', ()=>{
+    setEmptyCell(6);
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,0,'范围内怪 10-21=0(下限0)');
+    assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// D 组：怪物格 vs 空格行为差异测试
+group('D组：怪物格 vs 空格行为差异', ()=>{
+  test('case_diff_001: fire=3 怪物格单体不波及 vs 空格十字波及', ()=>{
+    // 怪物格：主怪在(5,5)fire=3，相邻怪在(5,6)不受波及
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null},
+      {id:'m1',name:'相邻',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'怪物格:主怪 10-6=4');
+    assert.strictEqual(G.monsters[1].hp,10,'怪物格:相邻怪不受波及（单体结算）');
+    // 空格：(5,5)无怪fire=3，怪在(5,6)被十字波及
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'范围内',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'范围外',hp:10,maxHp:10,atk:1,pos:{r:8,c:8},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'空格:范围内怪 10-6=4');
+    assert.strictEqual(G.monsters[1].hp,10,'空格:范围外不受伤');
+  });
+  test('case_diff_002: fire=2 怪物格伤3 vs 空格无伤害', ()=>{
+    // 怪物格 fire=2 → 单体扣3
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,7,'怪物格fire=2→扣3: 10-3=7');
+    // 空格 fire=2 → 不达阈值，不伤害
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'相邻',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,10,'空格fire=2不伤害，HP不变');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// E 组：多元素场测试（非第一关默认，作为规则测试保留）
+group('E组：多元素场测试', ()=>{
+  test('case_multi_001: 怪物格 fire=2 water=2 wind=2 → 各单体3+3+3=9', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'主怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null},
+      {id:'m1',name:'远处',hp:20,maxHp:20,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={
+      fire:{layers:2,willExplode:false},water:{layers:2,willExplode:false},
+      wind:{layers:2,willExplode:false},earth:{layers:0,willExplode:false},
+    };
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,11,'20-3-3-3=11');
+    assert.strictEqual(G.monsters[1].hp,20,'远处怪不受影响');
+  });
+  test('case_multi_002: 空格 fire=2 water=2 wind=2 → 无元素达到阈值，不伤害', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'范围内',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={
+      fire:{layers:2,willExplode:false},water:{layers:2,willExplode:false},
+      wind:{layers:2,willExplode:false},earth:{layers:0,willExplode:false},
+    };
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,10,'无元素达到阈值不造成伤害');
+  });
+  test('case_multi_003: 怪物格 fire=3 water=2 → 单体 6+3=9', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'主怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={
+      fire:{layers:3,willExplode:false},water:{layers:2,willExplode:false},
+      wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false},
+    };
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,11,'20-6-3=11');
+  });
+  test('case_multi_004: 空格 fire=3 water=2 → fire十字爆炸6，water未达阈值不爆', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'范围内',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={
+      fire:{layers:3,willExplode:true},water:{layers:2,willExplode:false},
+      wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false},
+    };
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'范围内怪 10-6=4，只fire十字爆');
+  });
+  test('case_multi_005 [TODO/NEEDS_REVIEW]: 空格 fire=3 water=3 两元素均达阈值→各自十字爆', ()=>{
+    // NEEDS_REVIEW: 当前实现支持多元素同格均爆炸，各自独立结算
+    // 若规则后续限定"每格只允许一种元素爆炸"，此测试需同步修改
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'范围内',hp:20,maxHp:20,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={
+      fire:{layers:3,willExplode:true},water:{layers:3,willExplode:true},
+      wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false},
+    };
+    settleDamage();
+    // fire 6 + water 6 = 12
+    assert.strictEqual(G.monsters[0].hp,8,'[TODO] 两元素均爆: 20-6-6=8，NEEDS_REVIEW');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// G 组：buildMonsterStats 预览统计测试
+group('G组：buildMonsterStats 预览统计', ()=>{
+  test('case_monstats_001: 怪物格 fire=3 → selfCellDamage.fire=6, splash=0, willDie=false', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    const s=buildMonsterStats()['5,5'];
+    assert.ok(s,'应有5,5的统计');
+    assert.strictEqual(s.selfCellDamage.fire,6,'selfCellDamage.fire=6');
+    assert.strictEqual(s.splashDamage.total,0,'splash=0');
+    assert.strictEqual(s.finalPreview.totalDamage,6,'totalDamage=6');
+    assert.strictEqual(s.finalPreview.willDie,false,'hp=10>dmg=6，不死亡');
+  });
+  test('case_monstats_002: 空格 fire=3 波及怪物→splash.fire=6, self=0', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    const s=buildMonsterStats()['5,6'];
+    assert.ok(s,'应有5,6的统计');
+    assert.strictEqual(s.selfCellDamage.total,0,'自身格无元素=0');
+    assert.strictEqual(s.splashDamage.fire,6,'波及fire=6');
+    assert.strictEqual(s.finalPreview.totalDamage,6,'totalDamage=6');
+  });
+  test('case_monstats_003: 自身格fire=2 + 空格fire=3波及→总伤3+6=9', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    // 自身格 fire=2 → 单体 explDmg(2)=3
+    G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    // 空格(5,4) fire=3 十字波及(5,5) → splash=6
+    G.elementCells['5,4']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    const s=buildMonsterStats()['5,5'];
+    assert.strictEqual(s.selfCellDamage.total,3,'自身格fire=2→explDmg(2)=3');
+    assert.strictEqual(s.splashDamage.total,6,'波及fire=3→explDmg(3)=6');
+    assert.strictEqual(s.finalPreview.totalDamage,9,'总伤3+6=9');
+  });
+  test('case_monstats_004: buildMonsterStats不修改状态，预览willDie不提前改dead', ()=>{
+    fresh();
+    G.monsters=[
+      {id:'m0',name:'测试怪',hp:6,maxHp:6,atk:1,pos:{r:5,c:5},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
+    ];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    assert.strictEqual(G.monsters[0].dead,false,'结算前怪物不dead');
+    const s=buildMonsterStats()['5,5'];
+    assert.strictEqual(G.monsters[0].dead,false,'buildMonsterStats不修改dead');
+    assert.strictEqual(s.finalPreview.willDie,true,'预览willDie=true(dmg=6>=hp=6)');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// H 组：怪物攻击预警测试
+group('H组：怪物攻击预警', ()=>{
+  test('case_monwarn_001: 怪物一步后到达攻击位→英雄A预警≥1次', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:5};
+    G.heroes.hb.pos={r:12,c:0};
+    // 怪物在(5,7)，1步→(5,6)，再检查左侧(5,5)有英雄→攻击
+    G.monsters[0].pos={r:5,c:7};
+    G.monsters[1].pos={r:0,c:10};
+    const{heroIncomingDmg}=computeMonsterActionPreview();
+    const haIncoming=heroIncomingDmg['ha']||[];
+    assert.ok(haIncoming.length>=1,'怪物应在3AP内攻击到英雄A');
+  });
+  test('case_monwarn_002: 两怪均攻击英雄A→hitCount=2，totalDmg=atk1+atk2', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:5};
+    G.heroes.hb.pos={r:12,c:0};
+    // 怪1在(5,6)，直接检查lp=(5,5)有英雄→攻击
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].atk=2;
+    // 怪2在(4,6)，移动1步到(4,5)后dp=(5,5)有英雄→攻击
+    G.monsters[1].pos={r:4,c:6}; G.monsters[1].atk=3;
+    const{heroIncomingDmg}=computeMonsterActionPreview();
+    const haIncoming=heroIncomingDmg['ha']||[];
+    assert.strictEqual(haIncoming.length,2,'两怪均攻击英雄A');
+    const total=haIncoming.reduce((s,e)=>s+e.dmg,0);
+    assert.strictEqual(total,5,'总伤害 2+3=5');
+    // 验证 cellInfoMap 的 monsterThreatPreview
+    const ciMap=buildCellInfoMap();
+    assert.strictEqual(ciMap['5,5'].monsterThreatPreview.hitCount,2,'cellInfo hitCount=2');
+    assert.strictEqual(ciMap['5,5'].monsterThreatPreview.totalDamage,5,'cellInfo totalDmg=5');
+  });
+  test('case_monwarn_003: computeMonsterActionPreview 与 simMonAct 攻击结果一致', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:5};
+    G.heroes.hb.pos={r:12,c:0};
+    // 怪1在(5,6)，lp=(5,5)有英雄→直接攻击
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].atk=2;
+    G.monsters[1].pos={r:0,c:10};
+    const sim=simMonAct(G.monsters[0]);
+    const{heroIncomingDmg}=computeMonsterActionPreview();
+    assert.ok(sim.atkTarget,'simMonAct 应检测到攻击目标');
+    const incoming=(heroIncomingDmg[sim.atkTarget.id]||[]).filter(e=>e.label==='M1');
+    assert.ok(incoming.length>0,'computeMonsterActionPreview 应记录M1的攻击');
+    assert.strictEqual(incoming[0].dmg,G.monsters[0].atk,'预警伤害与怪物atk一致');
   });
 });
 

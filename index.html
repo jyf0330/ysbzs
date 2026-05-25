@@ -178,6 +178,18 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .apb{display:block;width:100%;background:#1565C0;color:#fff;border:none;padding:7px;border-radius:5px;cursor:pointer;font-size:12px;margin-bottom:6px;}
 .apb:hover{background:#1976D2;}
 .apc{background:#374151;color:#ccc;border:none;padding:6px;border-radius:5px;cursor:pointer;font-size:11px;width:100%;margin-top:2px;}
+
+/* ===== CELL DETAIL PANEL ===== */
+#cd{font-size:11px;}
+.cd-pos{color:#f0a500;font-weight:bold;font-size:12px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #21262d;display:flex;justify-content:space-between;align-items:center;}
+.cd-close{background:none;border:none;color:#555;cursor:pointer;font-size:12px;padding:0;}
+.cd-close:hover{color:#aaa;}
+.cd-sec{margin-bottom:6px;}
+.cd-stt{color:#888;font-size:9px;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.cd-row{margin:1px 0;line-height:1.4;color:#ccc;}
+.cd-badge{display:inline-block;background:#21262d;border-radius:3px;padding:1px 5px;margin:1px 2px;font-size:10px;}
+.cd-empty{color:#555;font-size:10px;font-style:italic;}
+.cd-rule{font-size:9px;color:#6b7280;margin-top:2px;padding:3px 5px;background:#0d1117;border-radius:3px;border-left:2px solid #374151;}
 </style>
 </head>
 <body>
@@ -211,6 +223,9 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
     <div class="box">
       <div class="btt">战斗日志</div>
       <div id="log"></div>
+    </div>
+    <!-- Cell Detail -->
+    <div class="box" id="cd" style="display:none">
     </div>
   </div>
 </div>
@@ -292,18 +307,19 @@ function initGame(){
     },
     monsters:[],
     slots:[
-      {id:0,el:'fire', sn:1,tier:1,hid:'ha',dir:'right',used:false},
-      {id:1,el:'water',sn:1,tier:1,hid:'ha',dir:'right',used:false},
-      {id:2,el:'fire', sn:1,tier:1,hid:'ha',dir:'right',used:false},
-      {id:3,el:'wind', sn:1,tier:1,hid:'hb',dir:'right',used:false},
-      {id:4,el:'earth',sn:1,tier:1,hid:'hb',dir:'right',used:false},
-      {id:5,el:'water',sn:1,tier:1,hid:'hb',dir:'right',used:false},
+      {id:0,el:'fire',sn:1,tier:1,hid:'ha',dir:'right',used:false},
+      {id:1,el:'fire',sn:1,tier:1,hid:'ha',dir:'right',used:false},
+      {id:2,el:'fire',sn:1,tier:1,hid:'ha',dir:'right',used:false},
+      {id:3,el:'fire',sn:1,tier:1,hid:'hb',dir:'right',used:false},
+      {id:4,el:'fire',sn:1,tier:1,hid:'hb',dir:'right',used:false},
+      {id:5,el:'fire',sn:1,tier:1,hid:'hb',dir:'right',used:false},
     ],
     elementCells:{}, // 格子四元素槽 {"r,c":{fire:{layers,previewDamage,willExplode},...}}
     explosionThreshold:3, // 游戏默认：3层触发引爆；测试用例可自行覆盖
     previewEvents:[], // 飘字用，仅显示 [{el,r,c,dmg}]
     selHero:null,  // selected hero id
     selSlot:null,  // selected slot index
+    selectedCell:null, // 当前点击查看详情的格子 {r,c}
     prevCells:[],  // attack preview cells
     heroPrev:[],   // hero selection preview: [{r,c,el},...]
     explPos:null,  // element explosion preview pos
@@ -414,12 +430,31 @@ function settleExplosions(){
   keys.forEach(key=>{
     const [r,c]=key.split(',').map(Number);
     const pos={r,c};
+    const monHere=monAt(pos);
     ['fire','water','wind','earth'].forEach(el=>{
       const slot=G.elementCells[key][el];
-      if(!slot||!slot.willExplode)return;
-      const m=monAt(pos);
-      if(m&&slot.previewDamage>0)dealDmg(m,slot.previewDamage,`${EL[el]}元素结算`);
-      slot.layers=0; slot.previewDamage=0; slot.willExplode=false;
+      if(!slot||slot.layers===0)return;
+      if(monHere){
+        // 怪物格：单体伤害，有层即结算，不触发十字爆炸
+        const dmg=explDmg(slot.layers);
+        const emult=monHere.el&&ADV[el]===monHere.el?2:1;
+        if(emult===2)glog(`⚡ 元素克制 ×2！`);
+        glog(`⚔️ ${EL[el]}${slot.layers}层→${monHere.name} 单体 -${dmg*emult}`);
+        dealDmg(monHere,dmg*emult,`${EL[el]}元素结算`);
+      } else {
+        // 空格：需达到引爆阈值才十字引爆
+        if(!slot.willExplode)return;
+        const dmg=explDmg(slot.layers);
+        glog(`💥 ${EL[el]}${slot.layers}层引爆！范围伤害 ${dmg}`);
+        explCells(pos).forEach(tp=>{
+          const m=monAt(tp);
+          if(m){let emult=1;if(m.el&&ADV[el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}dealDmg(m,dmg*emult,`${EL[el]}元素结算`);}
+          const h=heroAt(tp);
+          if(h){h.hp=Math.max(0,h.hp-dmg);glog(`💔 ${h.name}被爆炸波及 -${dmg}`);checkGameOver();}
+        });
+      }
+      slot.layers=0; slot.willExplode=false;
+      if(G.board[r][c].el===el){G.board[r][c].el=null;G.board[r][c].stk=0;}
     });
   });
   G.previewEvents=[];
@@ -444,38 +479,23 @@ function useSlot(idx){
   const cells=atkCells(hero.pos,slot.sn,slot.dir);
   if(cells.length===0){glog('⚠️ 攻击范围为空。');return;}
 
-  let hit=false;
   cells.forEach(ap=>{
     const key=`${ap.r},${ap.c}`;
     if(!G.elementCells[key]) G.elementCells[key]={
-      fire:{layers:0,previewDamage:0,willExplode:false},
-      water:{layers:0,previewDamage:0,willExplode:false},
-      wind:{layers:0,previewDamage:0,willExplode:false},
-      earth:{layers:0,previewDamage:0,willExplode:false},
+      fire:{layers:0,willExplode:false},
+      water:{layers:0,willExplode:false},
+      wind:{layers:0,willExplode:false},
+      earth:{layers:0,willExplode:false},
     };
     const elSlot=G.elementCells[key][slot.el];
-    const m=monAt(ap);
-    if(m){
-      hit=true; G.hitCount++;
-      const base=G.hitCount;
-      const tmult=TIER_MULT[slot.tier]||1;
-      let emult=1;
-      if(m.el&&ADV[slot.el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}
-      const dmg=base*tmult*emult;
-      elSlot.previewDamage+=dmg;
-      G.previewEvents.push({el:slot.el,r:ap.r,c:ap.c,dmg});
-    }
     elSlot.layers=Math.min(elSlot.layers+1,MAX_STK);
     elSlot.willExplode=elSlot.layers>=G.explosionThreshold;
-    // 行动阶段直接更新棋盘显示，不经过 addEl 跨元素判断，避免触发 doExplode 立即扣血
-    // 普通行动块的真实伤害必须只由 settleExplosions() 统一结算
+    // 更新棋盘显示元素层数（仅用于可视化，不立即扣血；真实伤害由 settleExplosions() 统一结算）
     const cell=G.board[ap.r][ap.c];
     if(!cell.el||cell.stk===0){cell.el=slot.el;cell.stk=1;}
     else if(cell.el===slot.el){if(cell.stk<MAX_STK)cell.stk++;}
-    // 不同元素：elementCells 各槽独立追踪，棋盘保持当前主元素不变
   });
-
-  if(!hit)glog(`🌀 攻击空地，铺下${cells.length}个${EL[slot.el]}元素。`);
+  glog(`🌀 铺下${cells.length}格${EL[slot.el]}元素。`);
   slot.used=true;
   G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
   render();
@@ -540,12 +560,12 @@ function setHero(idx,hid){
 function computeMonWarn(){
   G.monWarn=[];
   G.monsters.filter(m=>!m.dead).forEach(m=>{
-    const lp={r:m.pos.r,c:m.pos.c-1};
-    if(lp.c>=0&&heroAt(lp)){
-      G.monWarn.push({r:lp.r,c:lp.c,type:'atk'});
+    const{atkCell,atkTarget,movCells}=simMonAct(m);
+    if(atkCell&&atkTarget){
+      G.monWarn.push({r:atkCell.r,c:atkCell.c,type:'atk'});
     } else {
-      const np=nextMove(m);
-      if(np)G.monWarn.push({r:np.r,c:np.c,type:'mov'});
+      const movOnly=movCells.filter(c=>c.type==='mov');
+      if(movOnly.length>0){const last=movOnly[movOnly.length-1];G.monWarn.push({r:last.r,c:last.c,type:'mov'});}
     }
   });
 }
@@ -586,6 +606,16 @@ function monsterAct(m){
         ap-=1;break;
       }
     }
+    const dp={r:m.pos.r+1,c:m.pos.c};
+    if(dp.r<=12){
+      const dh=heroAt(dp);
+      if(dh){
+        dh.hp=Math.max(0,dh.hp-m.atk);
+        glog(`👾 ${m.name}攻击${dh.name}！-${m.atk}（${dh.hp}/${dh.maxHp}）`);
+        if(dh.hp<=0){glog(`💔 ${dh.name}倒下了！`);checkGameOver();}
+        ap-=1;break;
+      }
+    }
     const np=nextMoveFromPos(m.pos,m);
     if(!np)break;
     const bc=G.board[np.r][np.c];
@@ -623,24 +653,27 @@ function nextMove(m){return nextMoveFromPos(m.pos,m);}
 
 // 模拟怪物3行动点回合，不修改真实状态
 function simMonAct(m){
+  const startPos={r:m.pos.r,c:m.pos.c};
   let pos={r:m.pos.r,c:m.pos.c};
   let ap=3;
   const movCells=[];
-  let atkCell=null,atkTarget=null;
+  let atkCell=null,atkTarget=null,stopReason='ap_exhausted';
   while(ap>0){
     const lp={r:pos.r,c:pos.c-1};
-    if(lp.c>=0){const lh=heroAt(lp);if(lh){atkCell={r:lp.r,c:lp.c};atkTarget=lh;break;}}
+    if(lp.c>=0){const lh=heroAt(lp);if(lh){atkCell={r:lp.r,c:lp.c};atkTarget=lh;stopReason='attack';break;}}
+    const dp={r:pos.r+1,c:pos.c};
+    if(dp.r<=12){const dh=heroAt(dp);if(dh){atkCell={r:dp.r,c:dp.c};atkTarget=dh;stopReason='attack';break;}}
     const np=nextMoveFromPos(pos,m);
-    if(!np)break;
+    if(!np){stopReason='no_path';break;}
     const bc=G.board[np.r][np.c];
-    if(bc.el&&bc.stk>0){movCells.push({r:np.r,c:np.c,type:'block',step:4-ap});break;}
-    if(monAt(np)||heroAt(np))break;
+    if(bc.el&&bc.stk>0){movCells.push({r:np.r,c:np.c,type:'block',step:4-ap});stopReason='blocked';break;}
+    if(monAt(np)||heroAt(np)){stopReason='occupied';break;}
     const stepNum=4-ap;
     movCells.push({r:np.r,c:np.c,type:'mov',step:stepNum});
     pos={r:np.r,c:np.c};
     ap-=1;
   }
-  return{movCells,atkCell,atkTarget,dmg:m.atk};
+  return{movCells,atkCell,atkTarget,dmg:m.atk,startPos,remainAp:ap,stopReason};
 }
 
 function finishMonsters(){
@@ -767,7 +800,6 @@ function closeShop(){
 function computeHeroAttackPreview(){
   const heroAtkMap={};
   if(G.phase==='OVER')return heroAtkMap;
-  let simHit=G.hitCount;
   // 判断"当前选中英雄"：selHero 或 selSlot 所属英雄
   const selHid=G.selHero||(G.selSlot!==null?G.slots[G.selSlot]?.hid:null);
   Object.values(G.heroes).forEach(hero=>{
@@ -782,10 +814,7 @@ function computeHeroAttackPreview(){
         // 累计每格每元素的命中次数
         const adds=heroAtkMap[key].addLayers;
         adds[slot.el]=(adds[slot.el]||0)+1;
-        const m=monAt(ap);
-        if(m){simHit++;const tmult=TIER_MULT[slot.tier]||1,emult=(m.el&&ADV[slot.el]===m.el)?2:1;heroAtkMap[key].monDmg+=simHit*tmult*emult;}
-        {const pvBc=G.board[ap.r][ap.c];if(pvBc.el&&pvBc.stk>0&&ADV[slot.el]===pvBc.el){const expDmg=explDmg(pvBc.stk),oldEl=pvBc.el;explCells(ap).forEach(ep=>{const ek=k(ep);if(!heroAtkMap[ek])heroAtkMap[ek]={el:oldEl,monDmg:0,addLayers:{},fromSelHero:false};const em=monAt(ep);if(em){const emult2=(em.el&&ADV[oldEl]===em.el)?2:1;heroAtkMap[ek].monDmg+=expDmg*emult2;}});}}
-      });
+        {const pvBc=G.board[ap.r][ap.c];if(pvBc.el&&pvBc.stk>0&&ADV[slot.el]===pvBc.el){const expDmg=explDmg(pvBc.stk),oldEl=pvBc.el;explCells(ap).forEach(ep=>{const ek=k(ep);if(!heroAtkMap[ek])heroAtkMap[ek]={el:oldEl,monDmg:0,addLayers:{},fromSelHero:false};const em=monAt(ep);if(em){const emult2=(em.el&&ADV[oldEl]===em.el)?2:1;heroAtkMap[ek].monDmg+=expDmg*emult2;}});}}      });
     });
   });
   // 后处理：计算 elLabel 与 willExplode
@@ -802,23 +831,156 @@ function computeHeroAttackPreview(){
       v.elLabel=`${EL[domEl]}+${n}`;
       const curStk=(bc.el===domEl)?bc.stk:0;
       const total=Math.min(curStk+n,MAX_STK);
-      if(total>=G.explosionThreshold)v.willExplode=true;
+      if(total>=G.explosionThreshold){
+        v.willExplode=true;
+        const pos2={r,c};
+        const monAtPos2=monAt(pos2);
+        if(monAtPos2){
+          // 怪物格预览：单体伤害写到怪物自身格
+          const emult=(monAtPos2.el&&ADV[domEl]===monAtPos2.el)?2:1;
+          const ek=k(pos2);
+          if(!heroAtkMap[ek])heroAtkMap[ek]={el:domEl,monDmg:0,addLayers:{},fromSelHero:false};
+          heroAtkMap[ek].monDmg+=explDmg(total)*emult;
+        } else {
+          // 空格预览：十字引爆，写到范围内怪物格
+          explCells(pos2).forEach(tp=>{const m=monAt(tp);if(m){const emult=(m.el&&ADV[domEl]===m.el)?2:1;const ek=k(tp);if(!heroAtkMap[ek])heroAtkMap[ek]={el:domEl,monDmg:0,addLayers:{},fromSelHero:false};heroAtkMap[ek].monDmg+=explDmg(total)*emult;}});
+        }
+      }
     }
   });
   return heroAtkMap;
+}
+
+function buildMonsterStats(){
+  const stats={};
+  G.monsters.filter(m=>!m.dead).forEach(m=>{
+    const mk=k(m.pos);
+    const cellEl=G.elementCells[mk]||{};
+    const selfCellDmg={fire:0,water:0,wind:0,earth:0,total:0};
+    const splashDmg={fire:0,water:0,wind:0,earth:0,total:0,sources:[]};
+    // 1. 怪物格单体元素伤害：有层即计算，不需要达到引爆阈值
+    ['fire','water','wind','earth'].forEach(el=>{
+      const slot=cellEl[el];
+      if(!slot||slot.layers===0)return;
+      const emult=m.el&&ADV[el]===m.el?2:1;
+      const d=explDmg(slot.layers)*emult;
+      selfCellDmg[el]+=d; selfCellDmg.total+=d;
+    });
+    // 2. 来自空格十字爆炸的波及伤害（空格需达到 willExplode）
+    Object.entries(G.elementCells).forEach(([srcKey,srcElData])=>{
+      if(srcKey===mk)return;
+      const [sr,sc]=srcKey.split(',').map(Number);
+      if(monAt({r:sr,c:sc}))return; // 怪物格不触发十字
+      ['fire','water','wind','earth'].forEach(el=>{
+        const slot=srcElData[el];
+        if(!slot||!slot.willExplode)return;
+        const inRange=explCells({r:sr,c:sc}).some(p=>p.r===m.pos.r&&p.c===m.pos.c);
+        if(!inRange)return;
+        const emult=m.el&&ADV[el]===m.el?2:1;
+        const d=explDmg(slot.layers)*emult;
+        splashDmg[el]+=d; splashDmg.total+=d;
+        splashDmg.sources.push({srcKey,el,dmg:d});
+      });
+    });
+    const totalDmg=selfCellDmg.total+splashDmg.total;
+    const hpAfter=Math.max(0,m.hp-totalDmg);
+    stats[mk]={
+      monsterId:m.id,monsterName:m.name,position:m.pos,
+      hp:{current:m.hp,max:m.maxHp,previewDamage:totalDmg,previewHp:hpAfter,willDie:totalDmg>=m.hp&&m.hp>0},
+      cellElementField:{fire:cellEl.fire?.layers||0,water:cellEl.water?.layers||0,wind:cellEl.wind?.layers||0,earth:cellEl.earth?.layers||0},
+      selfCellDamage:selfCellDmg,
+      splashDamage:splashDmg,
+      finalPreview:{totalDamage:totalDmg,hpAfter,willDie:totalDmg>=m.hp&&m.hp>0},
+    };
+  });
+  return stats;
+}
+
+function buildCellInfoMap(){
+  const monStats=buildMonsterStats();
+  const{heroIncomingDmg}=computeMonsterActionPreview();
+  // 1. 各格来源：未用行动槽作用到的格子
+  const inEffMap={};
+  const heroSlotCnt={};
+  G.slots.forEach(slot=>{
+    if(slot.used)return;
+    const hero=G.heroes[slot.hid]; if(!hero||hero.hp<=0)return;
+    heroSlotCnt[slot.hid]=(heroSlotCnt[slot.hid]||0)+1;
+    const sLabel=(slot.hid==='ha'?'A':'B')+'-'+heroSlotCnt[slot.hid];
+    atkCells(hero.pos,slot.sn,slot.dir).forEach(ap=>{
+      const ky=k(ap);
+      if(!inEffMap[ky])inEffMap[ky]=[];
+      inEffMap[ky].push({source:sLabel,type:'element_add',element:slot.el,amount:1,description:`${sLabel}：${EL[slot.el]} +1`});
+    });
+  });
+  // 2. 怪物威胁：哪些英雄格被怪物攻击
+  const monThreatMap={};
+  Object.entries(heroIncomingDmg).forEach(([heroId,dmgArr])=>{
+    const hero=G.heroes[heroId]; if(!hero)return;
+    const ky=k(hero.pos);
+    if(!monThreatMap[ky])monThreatMap[ky]={hitCount:0,totalDamage:0,sources:[]};
+    dmgArr.forEach(d=>{monThreatMap[ky].hitCount++;monThreatMap[ky].totalDamage+=d.dmg;monThreatMap[ky].sources.push({label:d.label,dmg:d.dmg});});
+  });
+  // 3. 遍历全棋盘构建 cellInfoMap
+  const map={};
+  for(let r=0;r<13;r++)for(let c=0;c<13;c++){
+    const ky=`${r},${c}`;
+    const bc=G.board[r][c];
+    const mon=G.monsters.find(m=>!m.dead&&m.pos.r===r&&m.pos.c===c);
+    const hero=Object.values(G.heroes).find(h=>h.pos.r===r&&h.pos.c===c);
+    // 实体
+    const entities=[];
+    if(mon)entities.push({type:'monster',id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el});
+    if(hero)entities.push({type:'hero',id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp});
+    // 元素场（elementCells 优先，兼容 board.el）
+    const cellEl=G.elementCells[ky]||{};
+    const elementField={fire:cellEl.fire?.layers||0,water:cellEl.water?.layers||0,wind:cellEl.wind?.layers||0,earth:cellEl.earth?.layers||0};
+    if(bc.el&&bc.stk>0&&elementField[bc.el]===0)elementField[bc.el]=bc.stk;
+    // 来源（未用槽）
+    const incomingEffects=inEffMap[ky]||[];
+    // 单体伤害预览（读 monStats，不重算）
+    const mStat=monStats[ky];
+    const selfCellDamagePreview=mStat
+      ?{total:mStat.selfCellDamage.total,byElement:{fire:mStat.selfCellDamage.fire,water:mStat.selfCellDamage.water,wind:mStat.selfCellDamage.wind,earth:mStat.selfCellDamage.earth}}
+      :{total:0,byElement:{fire:0,water:0,wind:0,earth:0}};
+    // 空格爆炸预览（只在无怪物的格子上）
+    let explosionPreview={willExplode:false,element:null,damage:0,shape:null,affectedCells:[]};
+    if(!mon){
+      ['fire','water','wind','earth'].forEach(el=>{
+        if(explosionPreview.willExplode)return;
+        const slot=cellEl[el];
+        if(slot&&slot.willExplode){explosionPreview={willExplode:true,element:el,damage:explDmg(slot.layers),shape:'cross',affectedCells:explCells({r,c}).map(p=>[p.r,p.c])};}
+      });
+    }
+    // 波及伤害（读 monStats.splashDamage）
+    const splashIncomingPreview=mStat?{total:mStat.splashDamage.total,sources:mStat.splashDamage.sources}:{total:0,sources:[]};
+    // 怪物威胁（英雄格）
+    const monsterThreatPreview=monThreatMap[ky]||{hitCount:0,totalDamage:0,sources:[]};
+    // 摘要徽章
+    const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
+    const summaryBadges=[];
+    Object.entries(elementField).forEach(([el,layers])=>{if(layers>0)summaryBadges.push(`${ELICON[el]}${layers}`);});
+    if(mon&&mStat){const td=mStat.finalPreview.totalDamage;if(td>0){summaryBadges.push(`-${td}`);if(mStat.finalPreview.willDie)summaryBadges.push('☠');}}
+    if(explosionPreview.willExplode)summaryBadges.push('💥');
+    if(monsterThreatPreview.hitCount>0)summaryBadges.push(`⚠×${monsterThreatPreview.hitCount}`);
+    map[ky]={position:[r,c],entities,elementField,incomingEffects,selfCellDamagePreview,explosionPreview,splashIncomingPreview,monsterThreatPreview,summaryBadges};
+  }
+  return map;
 }
 
 function computeMonsterActionPreview(){
   const monActMap={},heroIncomingDmg={},monCardMap={};
   const monFinalSet=new Set(); // 怪物预计停留格（区别于路过格）
   if(G.phase==='OVER')return{monActMap,heroIncomingDmg,monFinalSet,monCardMap};
-  G.monsters.filter(m=>!m.dead).forEach(m=>{
+  G.monsters.forEach((m,idx)=>{
+    if(m.dead)return;
+    const mLabel='M'+(idx+1);
     const{movCells,atkCell,atkTarget,dmg}=simMonAct(m);
     movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]={type:c.type,step:c.step||null};});
     // 最后一个 mov 类型格为怪物停留位置
     const movOnly=movCells.filter(c=>c.type==='mov');
     if(movOnly.length>0)monFinalSet.add(k(movOnly[movOnly.length-1]));
-    if(atkCell){monActMap[k(atkCell)]={type:'atk',step:null};if(atkTarget)heroIncomingDmg[atkTarget.id]=(heroIncomingDmg[atkTarget.id]||0)+dmg;}
+    if(atkCell){monActMap[k(atkCell)]={type:'atk',step:null};if(atkTarget){if(!heroIncomingDmg[atkTarget.id])heroIncomingDmg[atkTarget.id]=[];heroIncomingDmg[atkTarget.id].push({label:mLabel,dmg});}}
     // 记录每个怪物自身的攻击目标信息（用于怪物卡显示）
     monCardMap[k(m.pos)]={atkTargetId:atkTarget?.id||null,atkDmg:atkTarget?dmg:0,canAttack:!!atkTarget};
   });
@@ -837,9 +999,10 @@ function buildBoardVM(){
   if(G.selSlot!==null){
     const sl=G.slots[G.selSlot];
     G.prevCells.forEach(p=>{pvMap[k(p)]=sl.el;});
-    G.prevCells.forEach(ap=>{const m=monAt(ap);if(m){const base=G.hitCount+1,tmult=TIER_MULT[sl.tier]||1,emult=(m.el&&ADV[sl.el]===m.el)?2:1;dmgMap[k(ap)]=base*tmult*emult;}});
+    G.prevCells.forEach(ap=>{const key2=k(ap);const curL=G.elementCells[key2]?.[sl.el]?.layers||0;const newL=Math.min(curL+1,MAX_STK);if(newL>=G.explosionThreshold){const mAp=monAt(ap);if(mAp){const emult=(mAp.el&&ADV[sl.el]===mAp.el)?2:1;dmgMap[k(ap)]=(dmgMap[k(ap)]||0)+explDmg(newL)*emult;}else{explCells(ap).forEach(ep=>{const m=monAt(ep);if(m){const emult=(m.el&&ADV[sl.el]===m.el)?2:1;const ek=k(ep);dmgMap[ek]=(dmgMap[ek]||0)+explDmg(newL)*emult;}});}}}); 
   }
   const{monActMap,heroIncomingDmg,monFinalSet,monCardMap}=computeMonsterActionPreview();
+  const monStats=buildMonsterStats();
   const cells=[];
   for(let r=0;r<13;r++)for(let c=0;c<13;c++){
     const key=`${r},${c}`,hero=hp[key],mon=mp[key],bc=G.board[r][c];
@@ -873,8 +1036,8 @@ function buildBoardVM(){
     }
     cells.push({
       r,c,key,
-      hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||0}:null,
-      mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:monCardMap[key]||{atkTargetId:null,atkDmg:0,canAttack:false}}:null,
+      hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||[]}:null,
+      mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:monCardMap[key]||{atkTargetId:null,atkDmg:0,canAttack:false},stats:monStats[key]||null}:null,
       el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
       classes,pvEl,pvOpacity,monDmg,
       pvElLayers,
@@ -913,7 +1076,20 @@ function buildBattleVM(){
 }
 
 // ─── View 层（只接受 VM 参数，只创建 DOM，不计算规则）───
-function render(){const vm=buildBattleVM();renderBoard(vm.board);renderHS(vm.heroes);renderSlots(vm.slots);renderTurn(vm.turn);}
+function render(){
+  const vm=buildBattleVM();
+  renderBoard(vm.board);
+  renderHS(vm.heroes);
+  renderSlots(vm.slots);
+  renderTurn(vm.turn);
+  if(G.selectedCell){
+    const ciMap=buildCellInfoMap();
+    renderCellDetail(ciMap[k(G.selectedCell)]);
+  }else{
+    const cdEl=document.getElementById('cd');
+    if(cdEl)cdEl.style.display='none';
+  }
+}
 
 function renderBoard(boardVM){
   const board=document.getElementById('board');
@@ -926,7 +1102,7 @@ function renderBoard(boardVM){
       cell.classList.add('hp');
       const hm=document.createElement('div');
       hm.className=`hm ${cv.hero.id==='ha'?'hma':'hmb'}${cv.hero.isSel?' sel':''}`;
-      const incHtml=cv.hero.incomingDmg>0?`<div class="hm-inc">⚠-${cv.hero.incomingDmg}</div>`:'';
+      const dmgArr=cv.hero.incomingDmg;const incHtml=dmgArr.length>0?`<div class="hm-inc">⚠×${dmgArr.length} -${dmgArr.reduce((s,e)=>s+e.dmg,0)}</div>`:'';
       hm.innerHTML=`<div class="hm-row"><span class="hm-letter">${cv.hero.id==='ha'?'A':'B'}</span><span class="hm-hp">❤${cv.hero.hp}</span></div>${incHtml}`;
       hm.title=`${cv.hero.name} HP:${cv.hero.hp}/${cv.hero.maxHp}`;
       hm.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
@@ -934,8 +1110,14 @@ function renderBoard(boardVM){
     }else if(cv.mon){
       const mm=document.createElement('div');
       mm.className='mm';
-      const dmgBotHtml=cv.monDmg?`<span style="color:#ff6060">-${cv.monDmg}</span>`:'';
-      const expBotHtml=cv.pvWillExplode?`<span style="color:#f59e0b">💥</span>`:'';
+      const st=cv.mon.stats;
+      const settledDmg=st?.finalPreview.totalDamage||0;
+      const willDie=st?.finalPreview.willDie||false;
+      const hasSplash=(st?.splashDamage.total||0)>0;
+      let dmgBotHtml='';
+      if(settledDmg>0){dmgBotHtml=`<span style="color:#ff6060">${hasSplash?'💥':''}-${settledDmg}${willDie?'☠':''}</span>`;}
+      else if(cv.monDmg){dmgBotHtml=`<span style="color:#ff6060">-${cv.monDmg}</span>`;}
+      const expBotHtml=(cv.pvWillExplode&&!settledDmg)?`<span style="color:#f59e0b">💥</span>`:'';
       const ai=cv.mon.atkInfo;
       let atkInfoHtml;
       if(ai.canAttack){const hc=ai.atkTargetId==='ha'?'#60a5fa':'#4ade80';atkInfoHtml=`<span style="color:${hc}">→${ai.atkTargetId==='ha'?'A':'B'}</span><span style="color:#fda0a0"> -${ai.atkDmg}</span>`;}
@@ -992,11 +1174,71 @@ function renderBoard(boardVM){
 
 function k(p){return`${p.r},${p.c}`;}
 
+function renderCellDetail(ci){
+  const cdEl=document.getElementById('cd');
+  if(!cdEl||!ci)return;
+  const[r,c]=ci.position;
+  const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
+  const ELNAME={fire:'火',water:'水',wind:'风',earth:'土'};
+  // 实体区
+  let entHtml='';
+  if(ci.entities.length===0)entHtml='<div class="cd-empty">无</div>';
+  ci.entities.forEach(e=>{
+    if(e.type==='monster'){
+      const mSt=ci.selfCellDamagePreview;
+      const tot=mSt.total;
+      const splash=ci.splashIncomingPreview.total;
+      const willDie=tot+splash>=e.hp&&e.hp>0;
+      entHtml+=`<div class="cd-row">👾 ${e.name} ${e.hp}/${e.maxHp}${e.el?` 元素:${ELNAME[e.el]}`:''}${e.atk?' 攻:'+e.atk:''}</div>`;
+      if(tot>0)entHtml+=`<div class="cd-row" style="color:#ff6060">单体伤害预计：-${tot}${splash>0?' +波及-'+splash:''}${willDie?' ☠预计死亡':''}</div>`;
+    }else if(e.type==='hero'){
+      const thr=ci.monsterThreatPreview;
+      entHtml+=`<div class="cd-row" style="color:#60a5fa">${e.id==='ha'?'A':'B'} ${e.name} ${e.hp}/${e.maxHp}</div>`;
+      if(thr.hitCount>0)entHtml+=`<div class="cd-row" style="color:#c084fc">威胁：☠×${thr.hitCount} -${thr.totalDamage}${thr.sources.map(s=>' ('+s.label+'-'+s.dmg+')').join('')}</div>`;
+    }
+  });
+  // 元素场区
+  const elEntries=Object.entries(ci.elementField).filter(([,v])=>v>0);
+  let elHtml=elEntries.length===0?'<span class="cd-empty">无元素层</span>':elEntries.map(([el,n])=>`<span class="cd-badge" style="color:${EC[el]}">${ELICON[el]}${ELNAME[el]}${n}层</span>`).join('');
+  // 结算区
+  let settlHtml='';
+  const hasMon=ci.entities.some(e=>e.type==='monster');
+  if(hasMon){
+    const sd=ci.selfCellDamagePreview;
+    if(sd.total>0){
+      const byEl=Object.entries(sd.byElement).filter(([,v])=>v>0).map(([el,v])=>`${ELICON[el]}-${v}`).join(' ');
+      settlHtml+=`<div class="cd-row">怪物格单体伤害：<span style="color:#ff6060">-${sd.total}</span>${byEl?` (${byEl})`:''}</div>`;
+    }else{
+      settlHtml+=`<div class="cd-row cd-empty">当前无元素层，无单体伤害</div>`;
+    }
+    settlHtml+=`<div class="cd-rule">怪物格：有层即单体结算，不触发十字爆炸</div>`;
+  }else{
+    const ex=ci.explosionPreview;
+    if(ex.willExplode){
+      settlHtml+=`<div class="cd-row">空格 ${ELICON[ex.element]||'?'}${ex.layers||(ex.damage>0?`伤害${ex.damage}`:'')} 预计十字引爆</div>`;
+      settlHtml+=`<div class="cd-row" style="color:#f59e0b">💥 引爆伤害：${ex.damage}，波及：${ex.affectedCells.filter(([ar,ac])=>ar!==r||ac!==c).map(([ar,ac])=>`[${ar},${ac}]`).join(' ')}</div>`;
+    }else{
+      const hasEl=elEntries.length>0;
+      const threshGap=hasEl?G.explosionThreshold-Math.max(...elEntries.map(([,v])=>v)):null;
+      if(hasEl&&threshGap>0)settlHtml+=`<div class="cd-row cd-empty">空格，还需 ${threshGap} 层才能引爆</div>`;
+      else settlHtml+=`<div class="cd-row cd-empty">空格，未达到引爆阈值</div>`;
+    }
+  }
+  // 来源区
+  let srcHtml=ci.incomingEffects.length===0?'<div class="cd-empty">无行动点作用</div>':ci.incomingEffects.map(ef=>`<div class="cd-row">${ef.description}</div>`).join('');
+  // 输出
+  cdEl.innerHTML=`<div class="cd-pos">📍 格子 [${r},${c}]<button class="cd-close" onclick="G.selectedCell=null;render()">×</button></div><div class="cd-sec"><div class="cd-stt">实体</div>${entHtml}</div><div class="cd-sec"><div class="cd-stt">元素场</div>${elHtml}</div><div class="cd-sec"><div class="cd-stt">本格结算</div>${settlHtml}</div><div class="cd-sec"><div class="cd-stt">行动点来源</div>${srcHtml}</div>`;
+  cdEl.style.display='block';
+}
+
 function onCell(r,c){
   hideTT();
   if(G.selHero){moveHero(r,c);return;}
   // Clicking board while slot selected = execute attack
   if(G.selSlot!==null){useSlot(G.selSlot);return;}
+  // Toggle cell detail: same cell again = close
+  G.selectedCell=(G.selectedCell&&G.selectedCell.r===r&&G.selectedCell.c===c)?null:{r,c};
+  render();
 }
 
 function showTT(r,c,e){

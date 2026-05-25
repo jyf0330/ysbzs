@@ -1102,8 +1102,8 @@ function renderBoard(boardVM){
       cell.classList.add('hp');
       const hm=document.createElement('div');
       hm.className=`hm ${cv.hero.id==='ha'?'hma':'hmb'}${cv.hero.isSel?' sel':''}`;
-      const dmgArr=cv.hero.incomingDmg;const incHtml=dmgArr.length>0?`<div class="hm-inc">⚠×${dmgArr.length} -${dmgArr.reduce((s,e)=>s+e.dmg,0)}</div>`:'';
-      hm.innerHTML=`<div class="hm-row"><span class="hm-letter">${cv.hero.id==='ha'?'A':'B'}</span><span class="hm-hp">❤${cv.hero.hp}</span></div>${incHtml}`;
+      const dmgArr=cv.hero.incomingDmg;const incHtml=dmgArr.length>0?`<div class="hm-inc">⚠ 受击 ${dmgArr.reduce((s,e)=>s+e.dmg,0)}</div>`:'';
+      hm.innerHTML=`<div class="hm-row"><span class="hm-letter">${cv.hero.id==='ha'?'A':'B'}</span><span class="hm-hp">${cv.hero.hp}</span></div>${incHtml}`;
       hm.title=`${cv.hero.name} HP:${cv.hero.hp}/${cv.hero.maxHp}`;
       hm.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
       cell.appendChild(hm);
@@ -1115,14 +1115,14 @@ function renderBoard(boardVM){
       const willDie=st?.finalPreview.willDie||false;
       const hasSplash=(st?.splashDamage.total||0)>0;
       let dmgBotHtml='';
-      if(settledDmg>0){dmgBotHtml=`<span style="color:#ff6060">${hasSplash?'💥':''}-${settledDmg}${willDie?'☠':''}</span>`;}
-      else if(cv.monDmg){dmgBotHtml=`<span style="color:#ff6060">-${cv.monDmg}</span>`;}
-      const expBotHtml=(cv.pvWillExplode&&!settledDmg)?`<span style="color:#f59e0b">💥</span>`:'';
+      if(settledDmg>0){dmgBotHtml=`<span style="color:#ff6060">受伤 ${settledDmg}${willDie?' 死亡':''}</span>`;}
+      else if(cv.monDmg){dmgBotHtml=`<span style="color:#ff6060">受伤 ${cv.monDmg}</span>`;}
+      const expBotHtml=(cv.pvWillExplode&&!settledDmg)?`<span style="color:#f59e0b">将爆炸</span>`:'';
       const ai=cv.mon.atkInfo;
       let atkInfoHtml;
-      if(ai.canAttack){const hc=ai.atkTargetId==='ha'?'#60a5fa':'#4ade80';atkInfoHtml=`<span style="color:${hc}">→${ai.atkTargetId==='ha'?'A':'B'}</span><span style="color:#fda0a0"> -${ai.atkDmg}</span>`;}
+      if(ai.canAttack){const hc=ai.atkTargetId==='ha'?'#60a5fa':'#4ade80';atkInfoHtml=`<span style="color:${hc}">攻击${ai.atkTargetId==='ha'?'A':'B'}</span><span style="color:#fda0a0"> −${ai.atkDmg}</span>`;}
       else{atkInfoHtml='<span style="color:#555">·</span>';}
-      mm.innerHTML=`<div class="mm-top"><span class="mm-hp">❤${cv.mon.hp}</span><span class="mm-atk">⚔${cv.mon.atk}</span></div><div class="mm-icon">👾</div><div class="mm-atkinfo">${atkInfoHtml}</div><div class="mm-bot">${dmgBotHtml}${expBotHtml}</div>`;
+      mm.innerHTML=`<div class="mm-top"><span class="mm-hp">HP ${cv.mon.hp}</span><span class="mm-atk">攻 ${cv.mon.atk}</span></div><div class="mm-icon">👾</div><div class="mm-atkinfo">${atkInfoHtml}</div><div class="mm-bot">${dmgBotHtml}${expBotHtml}</div>`;
       mm.title=`${cv.mon.name} HP:${cv.mon.hp}/${cv.mon.maxHp} 攻:${cv.mon.atk}`;
       cell.appendChild(mm);
     }else if(cv.el){

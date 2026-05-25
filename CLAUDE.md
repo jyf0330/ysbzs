@@ -1,38 +1,24 @@
 # CLAUDE.md · 元素背包史
 
-本项目使用 `docs/00_AI_PROJECT_RULES.md` 作为 AI 规则唯一源头。
+本文件是 Claude 入口薄文件。项目规则唯一源头是 `docs/00_AI_PROJECT_RULES.md`。
 
-## 强制前置步骤（每次任务开始，缺一不可）
+## 必读
 
-1. **调用 `ywh-game` skill**，阅读完整工作流。
-2. **分类变更**：查 `docs/00_AI_PROJECT_RULES.md` 中的分类表。
-   - 战斗机制 / 回合结构 / 元素规则 / 引爆时序 → **大需求**，代码量多少无关。
-   - `ywh` / 模板 / registry / AI 规则文件，且不改游戏运行行为 → **工作流规则变更 / 文档治理**。
-   - 大需求 → 文档门禁 → 确认后再实现。
-3. **大改动前先给计划**，等用户确认。
+- 先调用并阅读 `ywh-game` skill。
+- 再读 `docs/00_AI_PROJECT_RULES.md`。
+- 开始前运行 `git status --short --untracked-files=all`。
+- 执行前使用或更新 `tasks/doing/当前任务.md`，只读取任务卡指定范围。
 
-## 项目信息
+## 项目约束
 
-- 名称：元素背包史（ysbzs）
-- 类型：browser-based web game，工作流：`ywh-game`
-- 主文件：`index.html`（单文件架构，所有 CSS/HTML/JS 内联）
-- 测试：`node test.js`（当前基准：151 项，需全部通过）
+- 主文件：`index.html`，保持单文件架构。
+- 测试：`node test.js`，当前基准 156/156。
+- 归档文档：`docs/99_归档/` 只作历史参考。
+- 任意有效改动后更新 `docs/10_CHANGELOG.md`。
 
-## 验证与同步（每次改动后）
+## 禁止
 
-1. 运行 `node test.js`，全部通过。
-2. 有意义的游戏行为改动 → 运行 Playwright 或手动验证。
-3. 工作流规则变更 → 用引用搜索、模板存在性、同步映射一致性验证。
-4. **按文档同步表更新对应文档**（见 `docs/00_AI_PROJECT_RULES.md`）——不得省略。
-5. 更新 `docs/10_CHANGELOG.md`。
-6. `git add .` → `git commit` → `git push`（通过安全检查）。
-
-## 禁止事项
-
-- 禁止跳过 ywh-game skill 调用。
-- 禁止跳过变更分类步骤。
-- 禁止把「代码量小」当做「不同步文档」的理由。
-- 禁止绕过文档门禁。
-- 禁止未经验证就提交。
-- 禁止拆分 `index.html` 单文件结构。
-- 禁止自动添加不必要的抽象、辅助函数、注释。
+- 禁止跳过变更分类。
+- 禁止所有 AI 默认全量读取 `docs/`。
+- 禁止多个 AI 同时修改同一代码文件。
+- 禁止把归档草稿当成当前规则源头。

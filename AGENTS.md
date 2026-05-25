@@ -1,82 +1,39 @@
+<!-- AUTONOMY DIRECTIVE — DO NOT REMOVE -->
+YOU ARE AN AUTONOMOUS CODING AGENT. EXECUTE TASKS TO COMPLETION WITHOUT ASKING FOR PERMISSION.
+DO NOT STOP TO ASK "SHOULD I PROCEED?" — PROCEED. DO NOT WAIT FOR CONFIRMATION ON OBVIOUS NEXT STEPS.
+IF BLOCKED, TRY AN ALTERNATIVE APPROACH. ONLY ASK WHEN TRULY AMBIGUOUS OR DESTRUCTIVE.
+USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES THROUGHPUT. THIS IS COMPLEMENTARY TO OMX TEAM MODE.
+<!-- END AUTONOMY DIRECTIVE -->
+
 # AGENTS.md · 元素背包史
 
-本项目使用 `docs/00_AI_PROJECT_RULES.md` 作为 AI 规则唯一源头。
+本文件是 AI 入口薄文件。项目规则唯一源头是 `docs/00_AI_PROJECT_RULES.md`，不要在这里复制完整规则。
+
+## 开始前必须做
+
+1. 调用并阅读 `ywh-game` skill。
+2. 阅读 `docs/00_AI_PROJECT_RULES.md`。
+3. 运行 `git status --short --untracked-files=all`，把既有改动和本轮改动分开。
+4. 按任务类型创建或更新 `tasks/doing/当前任务.md`，执行 AI 只读任务卡指定范围。
 
 ## 项目信息
 
 - 项目名称：元素背包史（ysbzs）
 - 类型：browser-based web game（回合制棋盘战术）
 - 工作流：`ywh-game`
-- 主文件：`index.html`（单文件，所有 CSS/HTML/JS 内联）
-- 测试：`node test.js`（当前基准：151 项，全部通过）
+- 主文件：`index.html`（单文件，所有 CSS/HTML/JS 内联，禁止无故拆分）
+- 测试：`node test.js`（当前基准：156 项，全部通过）
 
-## 开始前必须完成的 3 步（缺一不可）
+## 核心纪律
 
-**Step 0** — 调用 `ywh-game` skill，阅读其完整工作流。  
-**Step 1** — 按 `docs/00_AI_PROJECT_RULES.md` 中的分类表判断变更类型：
-- 回合结构 / 伤害时序 / 元素规则 / 引爆逻辑 / 状态机 → **大需求**（无论代码量多少）
-- 纯 bug / 数字调参 / UI 微调 / 不改玩法 → **小修改**  
-- `ywh` / `ywh-game` / 模板 / registry / AI 规则文件，不改游戏运行行为 → **工作流规则变更 / 文档治理**
+- 不允许所有 AI 默认全量读取 `docs/`。
+- 一个任务只允许一个 AI 修改同一代码文件，其他 AI 只能审查、验收或写指定文档。
+- 归档目录 `docs/99_归档/` 只作历史参考，不是当前规则源头。
+- 任意有效改动都要更新 `docs/10_CHANGELOG.md`。
+- 代码或文档冲突时，先列冲突点、影响范围和可选方案，不要自行抹平。
 
-**Step 2** — 运行 `git status --short`，记录初始状态。
+## 常用命令
 
-## 文档门禁（大需求）
-
-大需求开工前，必须确认以下文档存在：
-1. `docs/01_游戏设计（策划主导）/游戏概述文档GDD.md`
-2. `docs/01_游戏设计（策划主导）/功能拆解与优先级.md`
-3. `docs/01_游戏设计（策划主导）/战斗系统.md`
-4. `docs/02_程序开发（程序主导）/技术架构总览.md`
-5. `docs/03_美术资产（美术主导）/美术风格指南.md`
-6. `docs/03_美术资产（美术主导）/HUD与界面信息设计.md`
-7. `docs/01_游戏设计（策划主导）/UI-UX策划/用户界面与操作规范.md`
-8. `docs/03_美术资产（美术主导）/资源目录结构与命名.md`
-9. `docs/04_测试验收（测试主导）/版本发布验收清单.md`
-10. `docs/08_ROADMAP.md`
-11. `docs/10_CHANGELOG.md`
-12. `docs/02_程序开发（程序主导）/核心层与展示层分离设计.md`
-13. `docs/02_程序开发（程序主导）/数据文件归档与分类规范.md`
-14. `docs/04_测试验收（测试主导）/游戏闭环成熟度评分.md`
-
-缺则补草稿 → `BLOCKED_FOR_DOCS` → 不进入实现。
-
-## 执行规则
-
-- 修改 `index.html` 前先 `read_file` 理解上下文。
-- 每次改动后运行 `node test.js`，全部通过才算验证完成。
-- 有意义的游戏改动后需运行 Playwright 脚本验证。
-- 验证通过后**必须按文档同步表**更新相关文档。
-
-## 文档同步表（改完必查）
-
-| 改动内容 | 必须更新的文档 |
-|---|---|
-| 回合结构 / 伤害时序 / 元素 / 引爆 | `docs/01_游戏设计/战斗系统.md` |
-| 新玩法 / 核心规则 | `docs/01_游戏设计/游戏概述文档GDD.md` |
-| 新函数 / 新状态字段 / 架构变化 | `docs/02_程序开发/技术架构总览.md` |
-| UI / HUD / 菜单 / 界面信息层级 | `docs/03_美术资产/HUD与界面信息设计.md` |
-| 输入操作 / 按钮行为 / 模式切换 / 反馈规则 | `docs/01_游戏设计/UI-UX策划/用户界面与操作规范.md` |
-| 美术风格 / 资源路径 / 资源命名 | `docs/03_美术资产/美术风格指南.md`、`docs/03_美术资产/资源目录结构与命名.md` |
-| 验收标准 / 测试数量变化 | `docs/04_测试验收/版本发布验收清单.md` |
-| 核心状态结构 / 接口边界 / 存档回放 | `docs/02_程序开发/核心层与展示层分离设计.md` |
-| 零散数据文件整理 / 数据目录迁移 | `docs/02_程序开发/数据文件归档与分类规范.md` |
-| 大需求完成 / 核心闭环跑通 | `docs/04_测试验收/游戏闭环成熟度评分.md` |
-| 工作流规则 / AI 规则 / Skill 模板 / registry | 对应规则文件、模板或 registry；项目内变更时同步 `docs/10_CHANGELOG.md` |
-| 任意改动 | `docs/10_CHANGELOG.md` |
-
-## Git 规则
-
-- 有改动 → `git add .` → `git commit -m "<type>: <摘要>"`。
-- 安全检查通过后 → `git push`。
-- 禁止提交 `.env`、密钥、`node_modules`。
-- 无 remote → 输出 `PUSH_SKIPPED_NO_REMOTE`。
-
-## 禁止事项
-
-- 禁止跳过 Step 0（ywh-game skill 调用）。
-- 禁止跳过 Step 1（变更分类）。
-- 禁止把「代码量小」当做「不用同步文档」的理由。
-- 禁止绕过文档门禁。
-- 禁止自动大范围重构（除非用户明确要求）。
-- 禁止拆分单文件架构（不拆 index.html）。
-- 禁止提交后不验证。
+- 验证：`node test.js`
+- 状态：`git status --short --untracked-files=all`
+- 规则入口：`docs/00_AI_PROJECT_RULES.md`

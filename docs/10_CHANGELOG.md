@@ -5,6 +5,8 @@
 | 日期 | 类型 | 摘要 | 涉及文件 | 验证 |
 |---|---|---|---|---|
 | 2026-05-25 | docs | 工作流规则优化：将 UI 文档分层同步到项目规则，新增用户界面与操作规范草稿；补齐核心/展示分离、数据归档、闭环成熟度评分 3 份门禁草稿；补充工作流规则变更 / 文档治理分类，明确用引用搜索、模板存在性、同步映射一致性验证 | docs/00_AI_PROJECT_RULES.md / AGENTS.md / CLAUDE.md / .github/copilot-instructions.md / docs/01_游戏设计（策划主导）/UI-UX策划/用户界面与操作规范.md / docs/02_程序开发（程序主导）/核心层与展示层分离设计.md / docs/02_程序开发（程序主导）/数据文件归档与分类规范.md / docs/04_测试验收（测试主导）/游戏闭环成熟度评分.md | rg 一致性检查 |
+| 2026-05-25 | feat | 怪物行为预览补全：①computeMonsterActionPreview 新增 monCardMap，记录每个怪物攻击目标（atkTargetId）、伤害（atkDmg）、是否能攻击（canAttack）；②buildBoardVM 将 atkInfo 注入怪物 VM；③renderBoard 怪物卡新增 .mm-atkinfo 行，显示 →A（蓝）/-N（红）攻击信息，无法攻击时显示灰色·；④以上显示无条件启用，不依赖任何选中状态；明确战斗界面「两套预览始终共存」决策 | index.html | node test.js 156/156 |
+| 2026-05-25 | docs | 补充决策文档：战斗系统.md 新增「§11 怪物行为预览是核心玩法数据」；用户界面与操作规范.md 新增「七、战斗界面默认可见信息」 | docs/01_游戏设计/战斗系统.md / docs/01_游戏设计/UI-UX策划/用户界面与操作规范.md | — |
 | 2026-05-25 | fix | 战斗预览系统全面修复：①`computeHeroAttackPreview` 新增 `addLayers`/`elLabel`/`willExplode`/`fromSelHero` 字段，格子上常驻显示"火+1"/"水+2"等元素叠层文字；②选中英雄格子 overlay 更亮（0.42）、未选中淡色（0.20）；③将引爆时格子显示橙色"将引爆"警告；④`computeMonsterActionPreview` 新增 `monFinalSet` 区分怪物路过格（橙）/停留格（黄）/攻击格（红）；⑤`renderBoard` 新增 `.el-prev-badge`/`.explode-warn` 标签渲染 | index.html | node test.js 156/156 |
 | 2026-05-25 | feat | HUD 显示层全面改造（Phase 2）：①棋盘格子 42px→52px，单位标记 38px→48px；②英雄卡改为 hm-row 两行布局，预测承伤集成进卡片（⚠-N）；③怪物卡改为四区布局（HP/ATK 顶行、👾图标、底部预测伤害/爆炸警告）；④元素预览标签从单一主元素改为全元素显示（🔥cur→next 格式）；⑤`simMonAct` 新增步骤编号（step:1/2/3），`computeMonsterActionPreview` 传递步骤至 VM，格子显示 M1/M2/M3 标签；⑥行动槽面板改为 2 列紧凑迷你卡（方向改为 ↑↓←→ 横排，去除 3×3 方向网格） | index.html | node test.js 156/156 |
 | 2026-05-25 | docs | 新增 HUD与界面信息设计.md：从 index.html 实际代码逆向梳理，覆盖棋盘格子状态类、英雄/怪物/元素卡片规格、右侧面板4个box、4个覆盖层、元素色表、操作提示文案 | docs/03/HUD与界面信息设计.md | — |

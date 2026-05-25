@@ -50,6 +50,7 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .mm-atk{font-size:7px;color:#fda;}
 .mm-icon{font-size:13px;line-height:1;}
 .mm-bot{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
+.mm-atkinfo{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
 .em{width:48px;height:48px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid;}
 
 /* ===== RIGHT PANEL ===== */
@@ -808,9 +809,9 @@ function computeHeroAttackPreview(){
 }
 
 function computeMonsterActionPreview(){
-  const monActMap={},heroIncomingDmg={};
+  const monActMap={},heroIncomingDmg={},monCardMap={};
   const monFinalSet=new Set(); // 怪物预计停留格（区别于路过格）
-  if(G.phase==='OVER')return{monActMap,heroIncomingDmg,monFinalSet};
+  if(G.phase==='OVER')return{monActMap,heroIncomingDmg,monFinalSet,monCardMap};
   G.monsters.filter(m=>!m.dead).forEach(m=>{
     const{movCells,atkCell,atkTarget,dmg}=simMonAct(m);
     movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]={type:c.type,step:c.step||null};});
@@ -818,8 +819,10 @@ function computeMonsterActionPreview(){
     const movOnly=movCells.filter(c=>c.type==='mov');
     if(movOnly.length>0)monFinalSet.add(k(movOnly[movOnly.length-1]));
     if(atkCell){monActMap[k(atkCell)]={type:'atk',step:null};if(atkTarget)heroIncomingDmg[atkTarget.id]=(heroIncomingDmg[atkTarget.id]||0)+dmg;}
+    // 记录每个怪物自身的攻击目标信息（用于怪物卡显示）
+    monCardMap[k(m.pos)]={atkTargetId:atkTarget?.id||null,atkDmg:atkTarget?dmg:0,canAttack:!!atkTarget};
   });
-  return{monActMap,heroIncomingDmg,monFinalSet};
+  return{monActMap,heroIncomingDmg,monFinalSet,monCardMap};
 }
 
 // ─── ViewModel 层（读 G，输出纯 JS 描述对象，不创建 DOM）───
@@ -836,7 +839,7 @@ function buildBoardVM(){
     G.prevCells.forEach(p=>{pvMap[k(p)]=sl.el;});
     G.prevCells.forEach(ap=>{const m=monAt(ap);if(m){const base=G.hitCount+1,tmult=TIER_MULT[sl.tier]||1,emult=(m.el&&ADV[sl.el]===m.el)?2:1;dmgMap[k(ap)]=base*tmult*emult;}});
   }
-  const{monActMap,heroIncomingDmg,monFinalSet}=computeMonsterActionPreview();
+  const{monActMap,heroIncomingDmg,monFinalSet,monCardMap}=computeMonsterActionPreview();
   const cells=[];
   for(let r=0;r<13;r++)for(let c=0;c<13;c++){
     const key=`${r},${c}`,hero=hp[key],mon=mp[key],bc=G.board[r][c];
@@ -871,7 +874,7 @@ function buildBoardVM(){
     cells.push({
       r,c,key,
       hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||0}:null,
-      mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el}:null,
+      mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:monCardMap[key]||{atkTargetId:null,atkDmg:0,canAttack:false}}:null,
       el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
       classes,pvEl,pvOpacity,monDmg,
       pvElLayers,
@@ -933,7 +936,11 @@ function renderBoard(boardVM){
       mm.className='mm';
       const dmgBotHtml=cv.monDmg?`<span style="color:#ff6060">-${cv.monDmg}</span>`:'';
       const expBotHtml=cv.pvWillExplode?`<span style="color:#f59e0b">💥</span>`:'';
-      mm.innerHTML=`<div class="mm-top"><span class="mm-hp">❤${cv.mon.hp}</span><span class="mm-atk">⚔${cv.mon.atk}</span></div><div class="mm-icon">👾</div><div class="mm-bot">${dmgBotHtml}${expBotHtml}</div>`;
+      const ai=cv.mon.atkInfo;
+      let atkInfoHtml;
+      if(ai.canAttack){const hc=ai.atkTargetId==='ha'?'#60a5fa':'#4ade80';atkInfoHtml=`<span style="color:${hc}">→${ai.atkTargetId==='ha'?'A':'B'}</span><span style="color:#fda0a0"> -${ai.atkDmg}</span>`;}
+      else{atkInfoHtml='<span style="color:#555">·</span>';}
+      mm.innerHTML=`<div class="mm-top"><span class="mm-hp">❤${cv.mon.hp}</span><span class="mm-atk">⚔${cv.mon.atk}</span></div><div class="mm-icon">👾</div><div class="mm-atkinfo">${atkInfoHtml}</div><div class="mm-bot">${dmgBotHtml}${expBotHtml}</div>`;
       mm.title=`${cv.mon.name} HP:${cv.mon.hp}/${cv.mon.maxHp} 攻:${cv.mon.atk}`;
       cell.appendChild(mm);
     }else if(cv.el){

@@ -4,6 +4,7 @@
 
 | 日期 | 类型 | 摘要 | 涉及文件 | 验证 |
 |---|---|---|---|---|
+| 2026-05-25 | docs | 补充 graphify 使用边界：graphify 只作为总控 AI 的项目地图和影响范围分析工具，输出用于生成任务卡；执行 AI 仍只读任务卡指定文件，改代码前必须读真实源码，不能借图谱全量扫描项目 | docs/00_AI_PROJECT_RULES.md / tasks/doing/当前任务.md | rg 一致性检查；git diff --check |
 | 2026-05-25 | docs | 明确固定口令“同步 ywh 工作流”：定义为以上游 ywh/ywh-game 为准，只同步项目工作流结构与 AI 入口，不改 index.html、test.js 或游戏核心代码；同步到入口文件、项目规则、决策记录和当前任务卡 | docs/00_AI_PROJECT_RULES.md / AGENTS.md / CLAUDE.md / .github/copilot-instructions.md / docs/09_DECISIONS.md / tasks/doing/当前任务.md | rg 一致性检查；git diff --check |
 | 2026-05-25 | docs | 文档体系与多 AI 工作流清理：压缩 AGENTS/CLAUDE/Copilot 为薄入口；新增 CURRENT_CONTEXT、DECISIONS 和当前任务卡；将根目录 main/srd/数据/验收草稿归档并拆出攻击形状编号表、第一波教学脚本、基础数值表；将 Demo 门禁收敛为 10 份核心文档，补充任务卡分流、最小读取范围和单任务单代码编辑者规则 | AGENTS.md / CLAUDE.md / .github/copilot-instructions.md / docs/00_AI_PROJECT_RULES.md / docs/00_CURRENT_CONTEXT.md / docs/09_DECISIONS.md / tasks/doing/当前任务.md / docs/99_归档/** / docs/01_游戏设计（策划主导）/数值策划/** / docs/01_游戏设计（策划主导）/关卡策划/** / docs/02_程序开发（程序主导）/数据文件归档与分类规范.md / docs/04_测试验收（测试主导）/版本发布验收清单.md | node test.js 156/156；rg 结构检查 |
 | 2026-05-25 | docs | 工作流规则优化：将 UI 文档分层同步到项目规则，新增用户界面与操作规范草稿；补齐核心/展示分离、数据归档、闭环成熟度评分 3 份门禁草稿；补充工作流规则变更 / 文档治理分类，明确用引用搜索、模板存在性、同步映射一致性验证 | docs/00_AI_PROJECT_RULES.md / AGENTS.md / CLAUDE.md / .github/copilot-instructions.md / docs/01_游戏设计（策划主导）/UI-UX策划/用户界面与操作规范.md / docs/02_程序开发（程序主导）/核心层与展示层分离设计.md / docs/02_程序开发（程序主导）/数据文件归档与分类规范.md / docs/04_测试验收（测试主导）/游戏闭环成熟度评分.md | rg 一致性检查 |

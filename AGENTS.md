@@ -7,14 +7,15 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 # AGENTS.md · 元素背包史
 
-本文件是 AI 入口薄文件。项目规则唯一源头是 `docs/00_AI_PROJECT_RULES.md`，不要在这里复制完整规则。
+本文件是 AI 入口薄文件。项目规则入口是 `docs/00_AI_PROJECT_RULES.md`，细则是 `docs/00_AI_WORKFLOW_DETAILS.md`，不要在这里复制完整规则。
 
 ## 开始前必须做
 
 1. 调用并阅读 `ywh-game` skill。
 2. 阅读 `docs/00_AI_PROJECT_RULES.md`。
-3. 运行 `git status --short --untracked-files=all`，把既有改动和本轮改动分开。
-4. 按任务类型创建或更新 `tasks/doing/当前任务.md`，执行 AI 只读任务卡指定范围。
+3. 阅读 `docs/00_AI_WORKFLOW_DETAILS.md`。
+4. 运行 `git status --short --untracked-files=all`，把既有改动和本轮改动分开。
+5. 按任务类型创建或更新 `tasks/doing/当前任务.md`，执行 AI 只读任务卡指定范围。
 
 ## 项目信息
 
@@ -22,7 +23,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 - 类型：browser-based web game（回合制棋盘战术）
 - 工作流：`ywh-game`
 - 主文件：`index.html`（单文件，所有 CSS/HTML/JS 内联，禁止无故拆分）
-- 测试：`node test.js`（当前基准：156 项，全部通过）
+- 测试：`node test.js`（当前基准：199 项，全部通过）
 
 ## 核心纪律
 

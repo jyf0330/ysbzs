@@ -18,12 +18,12 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 /* ===== BOARD ===== */
 #board{
   display:grid;
-  grid-template-columns:repeat(13,42px);
-  grid-template-rows:repeat(13,42px);
+  grid-template-columns:repeat(13,52px);
+  grid-template-rows:repeat(13,52px);
   gap:1px;background:#1a1a1a;border:2px solid #333;
 }
 .cell{
-  width:42px;height:42px;
+  width:52px;height:52px;
   background:#111827;
   display:flex;align-items:center;justify-content:center;
   font-size:10px;cursor:pointer;position:relative;
@@ -36,16 +36,21 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .cell.ec{outline:2px solid #f0a500;}
 
 /* Markers */
-.hm{width:38px;height:38px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-weight:bold;cursor:pointer;position:relative;padding:3px 2px 2px;}
+.hm{width:48px;height:48px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-weight:bold;cursor:pointer;position:relative;padding:3px 2px 2px;}
 .hm-letter{font-size:14px;line-height:1.1;}
 .hm-hp{font-size:7px;line-height:1;opacity:0.85;white-space:nowrap;}
+.hm-row{display:flex;justify-content:space-between;width:100%;align-items:center;}
+.hm-inc{font-size:7px;color:#c084fc;font-weight:bold;line-height:1;text-align:center;}
 .hma{background:#1565C0;color:#fff;box-shadow:0 0 4px #1565C0;}
 .hmb{background:#2E7D32;color:#fff;box-shadow:0 0 4px #2E7D32;}
 .hm.sel{box-shadow:0 0 10px #f0a500,0 0 4px #f0a500;}
-.mm{width:38px;height:38px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-weight:bold;background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444;padding:2px;}
-.mm-icon{font-size:12px;line-height:1.3;}
-.mm-stats{display:flex;gap:4px;font-size:7px;color:#fda;line-height:1;}
-.em{width:38px;height:38px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid;}
+.mm{width:48px;height:48px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-weight:bold;background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444;padding:2px;}
+.mm-top{display:flex;justify-content:space-between;width:100%;}
+.mm-hp{font-size:7px;color:#fca5a5;}
+.mm-atk{font-size:7px;color:#fda;}
+.mm-icon{font-size:13px;line-height:1;}
+.mm-bot{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
+.em{width:48px;height:48px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid;}
 
 /* ===== RIGHT PANEL ===== */
 #rp{width:290px;display:flex;flex-direction:column;gap:8px;}
@@ -138,6 +143,21 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 /* ===== ATTACK PREVIEW LABELS ===== */
 .el-prev-badge{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:8px;font-weight:bold;pointer-events:none;z-index:5;line-height:1.3;white-space:nowrap;text-shadow:0 0 3px #000,0 0 3px #000;}
 .explode-warn{position:absolute;bottom:1px;left:0;right:0;text-align:center;color:#f59e0b;text-shadow:0 0 4px #000,0 0 4px #000;font-size:7px;font-weight:bold;pointer-events:none;z-index:6;white-space:nowrap;}
+.mon-step-badge{position:absolute;top:1px;right:2px;color:#f59e0b;font-size:7px;font-weight:bold;pointer-events:none;z-index:5;line-height:1.4;text-shadow:0 0 3px #000;}
+.asl-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.as-mini{background:#0d1f3c;border:1px solid #1e3a5f;border-radius:5px;padding:5px;cursor:pointer;transition:border-color 0.2s;}
+.as-mini:hover{border-color:#2a5a8a;}
+.as-mini.sel{border-color:#f0a500;background:#1a2f50;}
+.as-mini.used{opacity:0.45;}
+.asm-head{display:flex;align-items:center;gap:3px;margin-bottom:2px;}
+.asm-num{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;flex-shrink:0;}
+.asm-lbl{font-size:9px;color:#888;flex:1;}
+.asm-used{font-size:9px;color:#4ade80;}
+.asm-name{font-size:10px;font-weight:bold;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.asm-dir-row{display:flex;gap:2px;margin-bottom:2px;}
+.asd{width:20px;height:16px;background:#0d1f3c;border:1px solid #1e3a5f;color:#aaa;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;border-radius:2px;}
+.asd:hover{background:#1e3a5f;}
+.asd.da{background:#f0a500;color:#000;border-color:#f0c040;}
 
 /* ===== MESSAGE ===== */
 #msg{
@@ -612,9 +632,10 @@ function simMonAct(m){
     const np=nextMoveFromPos(pos,m);
     if(!np)break;
     const bc=G.board[np.r][np.c];
-    if(bc.el&&bc.stk>0){movCells.push({r:np.r,c:np.c,type:'block'});break;}
+    if(bc.el&&bc.stk>0){movCells.push({r:np.r,c:np.c,type:'block',step:4-ap});break;}
     if(monAt(np)||heroAt(np))break;
-    movCells.push({r:np.r,c:np.c,type:'mov'});
+    const stepNum=4-ap;
+    movCells.push({r:np.r,c:np.c,type:'mov',step:stepNum});
     pos={r:np.r,c:np.c};
     ap-=1;
   }
@@ -792,11 +813,11 @@ function computeMonsterActionPreview(){
   if(G.phase==='OVER')return{monActMap,heroIncomingDmg,monFinalSet};
   G.monsters.filter(m=>!m.dead).forEach(m=>{
     const{movCells,atkCell,atkTarget,dmg}=simMonAct(m);
-    movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]=c.type;});
+    movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]={type:c.type,step:c.step||null};});
     // 最后一个 mov 类型格为怪物停留位置
     const movOnly=movCells.filter(c=>c.type==='mov');
     if(movOnly.length>0)monFinalSet.add(k(movOnly[movOnly.length-1]));
-    if(atkCell){monActMap[k(atkCell)]='atk';if(atkTarget)heroIncomingDmg[atkTarget.id]=(heroIncomingDmg[atkTarget.id]||0)+dmg;}
+    if(atkCell){monActMap[k(atkCell)]={type:'atk',step:null};if(atkTarget)heroIncomingDmg[atkTarget.id]=(heroIncomingDmg[atkTarget.id]||0)+dmg;}
   });
   return{monActMap,heroIncomingDmg,monFinalSet};
 }
@@ -824,9 +845,9 @@ function buildBoardVM(){
     if(es.has(key))classes.push('ep');
     if(G.explPos&&G.explPos.r===r&&G.explPos.c===c)classes.push('ec');
     // 怪物路径：区分路过格(橙)、停留格(黄)、攻击格(红)
-    const actType=monActMap[key];
-    if(actType){
-      if(actType==='atk')classes.push('mw-atk');
+    const actData=monActMap[key];
+    if(actData){
+      if(actData.type==='atk')classes.push('mw-atk');
       else if(monFinalSet.has(key))classes.push('mw-final');
       else classes.push('mw-mov');
     }
@@ -836,14 +857,26 @@ function buildBoardVM(){
     let monDmg=null;
     if(mon&&heroAtkMap[key]?.monDmg>0)monDmg=heroAtkMap[key].monDmg;
     else if(dmgMap[key]!==undefined)monDmg=dmgMap[key];
+    // 计算每格所有元素的预览层数（用于 HUD 显示）
+    let pvElLayers=null;
+    const adds=heroAtkMap[key]?.addLayers;
+    if(adds&&Object.keys(adds).length>0){
+      pvElLayers={};
+      Object.entries(adds).forEach(([el,n])=>{
+        const curStk=(bc.el===el)?bc.stk:0;
+        const nextStk=Math.min(curStk+n,MAX_STK);
+        pvElLayers[el]={add:n,cur:curStk,next:nextStk,willExplode:nextStk>=G.explosionThreshold};
+      });
+    }
     cells.push({
       r,c,key,
       hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||0}:null,
       mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el}:null,
       el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
       classes,pvEl,pvOpacity,monDmg,
-      pvElLabel:heroAtkMap[key]?.elLabel||null,
-      pvWillExplode:heroAtkMap[key]?.willExplode||false,
+      pvElLayers,
+      pvWillExplode:pvElLayers?Object.values(pvElLayers).some(v=>v.willExplode):(heroAtkMap[key]?.willExplode||false),
+      monStep:actData?.type==='mov'?actData.step:null,
     });
   }
   return cells;
@@ -890,14 +923,17 @@ function renderBoard(boardVM){
       cell.classList.add('hp');
       const hm=document.createElement('div');
       hm.className=`hm ${cv.hero.id==='ha'?'hma':'hmb'}${cv.hero.isSel?' sel':''}`;
-      hm.innerHTML=`<span class="hm-letter">${cv.hero.id==='ha'?'A':'B'}</span><span class="hm-hp">❤${cv.hero.hp}/${cv.hero.maxHp}</span>`;
+      const incHtml=cv.hero.incomingDmg>0?`<div class="hm-inc">⚠-${cv.hero.incomingDmg}</div>`:'';
+      hm.innerHTML=`<div class="hm-row"><span class="hm-letter">${cv.hero.id==='ha'?'A':'B'}</span><span class="hm-hp">❤${cv.hero.hp}</span></div>${incHtml}`;
       hm.title=`${cv.hero.name} HP:${cv.hero.hp}/${cv.hero.maxHp}`;
       hm.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
       cell.appendChild(hm);
     }else if(cv.mon){
       const mm=document.createElement('div');
       mm.className='mm';
-      mm.innerHTML=`<div class="mm-icon">👾</div><div class="mm-stats"><span>❤${cv.mon.hp}</span><span>⚔${cv.mon.atk}</span></div>`;
+      const dmgBotHtml=cv.monDmg?`<span style="color:#ff6060">-${cv.monDmg}</span>`:'';
+      const expBotHtml=cv.pvWillExplode?`<span style="color:#f59e0b">💥</span>`:'';
+      mm.innerHTML=`<div class="mm-top"><span class="mm-hp">❤${cv.mon.hp}</span><span class="mm-atk">⚔${cv.mon.atk}</span></div><div class="mm-icon">👾</div><div class="mm-bot">${dmgBotHtml}${expBotHtml}</div>`;
       mm.title=`${cv.mon.name} HP:${cv.mon.hp}/${cv.mon.maxHp} 攻:${cv.mon.atk}`;
       cell.appendChild(mm);
     }else if(cv.el){
@@ -918,30 +954,29 @@ function renderBoard(boardVM){
       ovl.style.opacity=cv.pvOpacity;
       cell.appendChild(ovl);
     }
-    // 元素预览标签：显示"火+1"类文字；将引爆时显示橙色警告
-    if(cv.pvElLabel||cv.pvWillExplode){
+    // 元素预览标签：显示所有元素的层数变化
+    if(cv.pvElLayers&&Object.keys(cv.pvElLayers).length>0){
       const badge=document.createElement('div');
-      if(cv.pvWillExplode){
-        badge.className='explode-warn';
-        badge.textContent=(cv.pvElLabel?cv.pvElLabel+' ':'')+'将引爆';
-      } else {
-        badge.className='el-prev-badge';
-        badge.style.color=EC[cv.pvEl]||'#ccc';
-        badge.textContent=cv.pvElLabel;
-      }
+      badge.className=cv.pvWillExplode?'explode-warn':'el-prev-badge';
+      const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
+      const parts=Object.entries(cv.pvElLayers).map(([el,info])=>{
+        const txt=info.cur>0?`${info.cur}→${info.next}`:`+${info.add}`;
+        return`<span style="color:${EC[el]}">${ELICON[el]||EL[el]}${txt}${info.willExplode?'!':''}</span>`;
+      });
+      badge.innerHTML=parts.join(' ');
       cell.appendChild(badge);
     }
-    if(cv.monDmg!==null){
+    if(cv.monDmg!==null&&!cv.mon){
       const badge=document.createElement('div');
       badge.className='dmg-badge';
       badge.textContent=`-${cv.monDmg}`;
       cell.appendChild(badge);
     }
-    if(cv.hero&&cv.hero.incomingDmg>0){
-      const badge=document.createElement('div');
-      badge.className='hero-warn-badge';
-      badge.textContent=`-${cv.hero.incomingDmg}`;
-      cell.appendChild(badge);
+    if(cv.monStep){
+      const stepBadge=document.createElement('div');
+      stepBadge.className='mon-step-badge';
+      stepBadge.textContent=`M${cv.monStep}`;
+      cell.appendChild(stepBadge);
     }
     cell.onclick=()=>onCell(cv.r,cv.c);
     board.appendChild(cell);
@@ -996,34 +1031,28 @@ function renderHS(heroesVM){
 }
 
 function renderSlots(slotsVM){
-  let h='';
+  let h='<div class="asl-grid">';
   slotsVM.forEach(s=>{
-    const cls=`as${s.used?' used':''}${s.isSel?' sel':''}`;
+    const cls=`as-mini${s.used?' used':''}${s.isSel?' sel':''}`;
+    const dirLabels={up:'↑',down:'↓',left:'←',right:'→'};
+    const heroOpts=Object.values(G.heroes).map(h2=>`<option value="${h2.id}"${s.hid===h2.id?' selected':''}>${h2.id==='ha'?'A':'B'}</option>`).join('');
     h+=`<div class="${cls}" onclick="selSlot(${s.idx})">
-      <div class="as-name">${s.hLabel}${s.used?' ·已使用':''}</div>
-      <div class="as-blk" style="color:${EC[s.el]}">${slotName(s)}</div>
-      <div class="as-hero">英雄:
-        <select onchange="setHero(${s.idx},this.value)" onclick="event.stopPropagation()">
-          ${Object.values(G.heroes).map(h2=>`<option value="${h2.id}"${s.hid===h2.id?' selected':''}>${h2.name}</option>`).join('')}
-        </select>
+      <div class="asm-head">
+        <span class="asm-num" style="background:${EC[s.el]};color:#000">${s.idx+1}</span>
+        <span class="asm-lbl">${s.hLabel}</span>
+        ${s.used?'<span class="asm-used">✓</span>':''}
       </div>
-      <div class="dg">
-        <div class="db de"></div>
-        <div class="db${s.dir==='up'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'up')">↑</div>
-        <div class="db de"></div>
-        <div class="db${s.dir==='left'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'left')">←</div>
-        <div class="db de" style="font-size:8px;color:#333">•</div>
-        <div class="db${s.dir==='right'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'right')">→</div>
-        <div class="db de"></div>
-        <div class="db${s.dir==='down'?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'down')">↓</div>
-        <div class="db de"></div>
+      <div class="asm-name" style="color:${EC[s.el]}">${EL[s.el]}·${s.sn}号·×${TIER_MULT[s.tier]}</div>
+      <div class="asm-dir-row">
+        ${['up','down','left','right'].map(d=>`<div class="asd${s.dir===d?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'${d}')">${dirLabels[d]}</div>`).join('')}
       </div>
-      <button class="ub" onclick="event.stopPropagation();useSlot(${s.idx})"
-        ${s.disabled?'disabled':''}>
-        ${s.used?'✓ 已使用':'⚔️ 使用'}
-      </button>
+      <div style="display:flex;gap:3px;align-items:center;margin-top:2px">
+        <select style="flex:1;background:#0d1f3c;color:#ccc;border:1px solid #1e3a5f;border-radius:3px;font-size:9px;padding:1px;" onchange="setHero(${s.idx},this.value)" onclick="event.stopPropagation()">${heroOpts}</select>
+        <button class="ub" style="width:auto;padding:2px 5px;flex-shrink:0" onclick="event.stopPropagation();useSlot(${s.idx})" ${s.disabled?'disabled':''}>${s.used?'✓':'⚔'}</button>
+      </div>
     </div>`;
   });
+  h+='</div>';
   document.getElementById('asl').innerHTML=h;
 }
 

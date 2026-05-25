@@ -263,7 +263,7 @@ group('元素系统', ()=>{
     G.monsters[0].pos={r:5,c:6}; // 右边1格，在爆炸范围内
     G.monsters[1].pos={r:9,c:9};
     G.monsters[0].hp=10;
-    doExplode({r:5,c:5});
+    doExplode({r:5,c:5}); settleDamage();
     assert.strictEqual(G.monsters[0].hp, 7); // 10-3=7
   });
   test('doExplode 对空格无副作用', ()=>{
@@ -288,6 +288,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:9,c:9};
     addEl({r:5,c:5},'water'); // 水克火 → 自动引爆
+    settleDamage();
     assert.strictEqual(G.monsters[0].hp,5,'20-15=5');
   });
   test('验收-3: 引爆后原格变水屏1', ()=>{
@@ -313,7 +314,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el='wind';
     G.monsters[1].pos={r:9,c:9};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, ×2=12
-    doExplode({r:5,c:5});
+    doExplode({r:5,c:5}); settleDamage();
     assert.strictEqual(G.monsters[0].hp,8,'20-12=8');
   });
   test('验收-6: 火层爆炸炸到无属性怪不翻倍', ()=>{
@@ -321,7 +322,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:9,c:9};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, 不翻倍
-    doExplode({r:5,c:5});
+    doExplode({r:5,c:5}); settleDamage();
     assert.strictEqual(G.monsters[0].hp,14,'20-6=14');
   });
   test('验收-7: wave1怪物 el=null 不吃克制翻倍', ()=>{
@@ -338,7 +339,8 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=10;
     G.slots[0].hid='ha'; G.slots[0].sn=1; G.slots[0].dir='right'; // 攻击(5,5)
     G.slots[0].tier=1; G.slots[0].used=false; G.hitCount=0;
-    useSlot(0);
+    G.explosionThreshold=1; // 单次命中即引爆
+    useSlot(0); settleDamage();
     assert.ok(G.monsters[0].hp<10,'命中格怪物受伤');
     // 不对应击点，且无引爆，怪物1不受伤
     assert.strictEqual(G.monsters[1].hp,10,'旁边怪物不受直接伤');
@@ -348,7 +350,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     G.monsters[0].pos={r:4,c:5}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=20; G.monsters[1].el=null;
     G.board[5][5].el='fire'; G.board[5][5].stk=2; // dmg=3
-    doExplode({r:5,c:5});
+    doExplode({r:5,c:5}); settleDamage();
     assert.ok(G.monsters[0].hp<20,'上方怪受伤');
     assert.ok(G.monsters[1].hp<20,'右方怪受伤');
   });
@@ -369,7 +371,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:9,c:9};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // dmg=6
-    doExplode({r:5,c:5});
+    doExplode({r:5,c:5}); settleDamage();
     assert.ok(G.monsters[0].hp<20,'中心怪物应被引爆伤到');
   });
 });
@@ -423,6 +425,7 @@ group('useSlot 攻击逻辑', ()=>{
     G.monsters[1].pos={r:12,c:12};
     G.slots[0].hid='ha'; G.slots[0].sn=1; G.slots[0].dir='right';
     G.slots[0].tier=1; G.slots[0].used=false; G.hitCount=0;
+    G.explosionThreshold=1; // 测试伤害公式，单次命中即引爆
   }
 
   test('命中怪物 hitCount+1', ()=>{
@@ -438,38 +441,38 @@ group('useSlot 攻击逻辑', ()=>{
   test('1阶·第1次·伤害=1×1=1', ()=>{
     setup(5,5, 5,6);
     G.monsters[0].hp=6; G.slots[0].tier=1; G.hitCount=0;
-    useSlot(0);
+    useSlot(0); settleDamage();
     assert.strictEqual(G.monsters[0].hp,5); // 6-1=5
   });
   test('2阶·第1次·伤害=1×2=2', ()=>{
     setup(5,5, 5,6);
     G.monsters[0].hp=6; G.slots[0].tier=2; G.hitCount=0;
-    useSlot(0);
+    useSlot(0); settleDamage();
     assert.strictEqual(G.monsters[0].hp,4); // 6-2=4
   });
   test('3阶·第1次·伤害=1×4=4', ()=>{
     setup(5,5, 5,6);
     G.monsters[0].hp=10; G.slots[0].tier=3; G.hitCount=0;
-    useSlot(0);
+    useSlot(0); settleDamage();
     assert.strictEqual(G.monsters[0].hp,6); // 10-4=6
   });
   test('4阶·第1次·伤害=1×8=8', ()=>{
     setup(5,5, 5,6);
     G.monsters[0].hp=10; G.slots[0].tier=4; G.hitCount=0;
-    useSlot(0);
+    useSlot(0); settleDamage();
     assert.strictEqual(G.monsters[0].hp,2); // 10-8=2
   });
   test('第2次命中 base=2，伤害翻倍', ()=>{
     setup(5,5, 5,6);
     G.monsters[0].hp=10; G.slots[0].tier=1; G.hitCount=1; // 已有1次
-    useSlot(0);
+    useSlot(0); settleDamage();
     assert.strictEqual(G.monsters[0].hp,8); // 10-2=8
   });
   test('元素克制 ×2：水攻火属性怪', ()=>{
     setup(5,5, 5,6);
     G.monsters[0].hp=20; G.monsters[0].el='fire';
     G.slots[0].el='water'; G.slots[0].tier=1; G.hitCount=0;
-    useSlot(0);
+    useSlot(0); settleDamage();
     assert.strictEqual(G.monsters[0].hp,18); // 20-(1×1×2)=18
   });
   test('攻击空地 hitCount 不变', ()=>{
@@ -507,7 +510,8 @@ group('useSlot 攻击逻辑', ()=>{
     G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=10;
     G.slots[0].hid='ha'; G.slots[0].sn=3; G.slots[0].dir='right';
     G.slots[0].tier=1; G.slots[0].used=false; G.hitCount=0;
-    useSlot(0);
+    G.explosionThreshold=1; // 单次命中即引爆
+    useSlot(0); settleDamage();
     assert.ok(G.monsters[0].hp<10,'怪物0应受伤');
     assert.ok(G.monsters[1].hp<10,'怪物1应受伤');
     assert.strictEqual(G.hitCount,2,'hitCount应为2（命中两次）');
@@ -938,6 +942,55 @@ group('#2 shapeHTML 形状图形预览', ()=>{
   test('自定义尺寸参数生效', ()=>{
     const s12=shapeHTML(1,'fire',12);
     assert.ok(s12.includes('12px'),'应包含 12px');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+group('threshold=3 引爆阈值（游戏默认）', ()=>{
+  function setup3(heroR,heroC,monR,monC){
+    fresh();
+    G.explosionThreshold=3;
+    G.heroes.ha.pos={r:heroR,c:heroC};
+    G.heroes.hb.pos={r:12,c:0};
+    G.monsters[0].pos={r:monR,c:monC}; G.monsters[0].hp=20;
+    G.monsters[1].pos={r:12,c:12};
+    // 3 个火元素槽，全部向右
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
+    G.slots[1].hid='ha'; G.slots[1].el='fire'; G.slots[1].sn=1; G.slots[1].dir='right'; G.slots[1].tier=1; G.slots[1].used=false;
+    G.slots[2].hid='ha'; G.slots[2].el='fire'; G.slots[2].sn=1; G.slots[2].dir='right'; G.slots[2].tier=1; G.slots[2].used=false;
+    G.hitCount=0;
+  }
+  test('fire+1 层不引爆：HP 不变', ()=>{
+    setup3(5,5, 5,6);
+    useSlot(0); settleExplosions();
+    assert.strictEqual(G.monsters[0].hp, 20, '1层不达阈值，HP不变');
+  });
+  test('fire+2 层不引爆：HP 不变', ()=>{
+    setup3(5,5, 5,6);
+    useSlot(0); useSlot(1); settleExplosions();
+    assert.strictEqual(G.monsters[0].hp, 20, '2层不达阈值，HP不变');
+  });
+  test('行动阶段 HP 不变（settleExplosions 之前）', ()=>{
+    setup3(5,5, 5,6);
+    useSlot(0); useSlot(1); useSlot(2);
+    assert.strictEqual(G.monsters[0].hp, 20, '行动阶段未结算，HP 不变');
+  });
+  test('fire+3 触发：settleExplosions 扣真实 HP', ()=>{
+    setup3(5,5, 5,6);
+    useSlot(0); useSlot(1); useSlot(2); settleExplosions();
+    assert.ok(G.monsters[0].hp < 20, '3层达到阈值，结算后 HP 降低');
+  });
+  test('useSlot 不触发 doExplode（跨元素不立即扣血）', ()=>{
+    fresh();
+    G.explosionThreshold=3;
+    G.heroes.ha.pos={r:5,c:5}; G.heroes.hb.pos={r:12,c:0};
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20;
+    G.monsters[1].pos={r:12,c:12};
+    G.board[5][6].el='fire'; G.board[5][6].stk=3; // 棋盘已有火 3 层
+    G.slots[0].hid='ha'; G.slots[0].el='water'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
+    G.hitCount=0;
+    useSlot(0); // 水攻火格：不调用 doExplode，HP 应不变
+    assert.strictEqual(G.monsters[0].hp, 20, 'useSlot 行动阶段不触发 doExplode，HP 不变');
   });
 });
 

@@ -275,7 +275,7 @@ function initGame(){
       {id:5,el:'water',sn:1,tier:1,hid:'hb',dir:'right',used:false},
     ],
     elementCells:{}, // 格子四元素槽 {"r,c":{fire:{layers,previewDamage,willExplode},...}}
-    explosionThreshold:1, // 达到此层数时 willExplode=true
+    explosionThreshold:3, // 游戏默认：3层触发引爆；测试用例可自行覆盖
     previewEvents:[], // 飘字用，仅显示 [{el,r,c,dmg}]
     selHero:null,  // selected hero id
     selSlot:null,  // selected slot index
@@ -362,6 +362,8 @@ function explCells(pos){
     .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
 }
 
+// ⚠️ 旧逻辑兼容路径：由 addEl() 跨元素反应触发，或特殊即时爆炸道具用。
+// 普通行动块（useSlot）不会调用此函数；普通行动块的真实伤害必须由 settleExplosions() 统一结算。
 function doExplode(pos){
   const cell=G.board[pos.r][pos.c];
   if(!cell.el||cell.stk===0)return;
@@ -440,7 +442,12 @@ function useSlot(idx){
     }
     elSlot.layers=Math.min(elSlot.layers+1,MAX_STK);
     elSlot.willExplode=elSlot.layers>=G.explosionThreshold;
-    addEl(ap,slot.el);
+    // 行动阶段直接更新棋盘显示，不经过 addEl 跨元素判断，避免触发 doExplode 立即扣血
+    // 普通行动块的真实伤害必须只由 settleExplosions() 统一结算
+    const cell=G.board[ap.r][ap.c];
+    if(!cell.el||cell.stk===0){cell.el=slot.el;cell.stk=1;}
+    else if(cell.el===slot.el){if(cell.stk<MAX_STK)cell.stk++;}
+    // 不同元素：elementCells 各槽独立追踪，棋盘保持当前主元素不变
   });
 
   if(!hit)glog(`🌀 攻击空地，铺下${cells.length}个${EL[slot.el]}元素。`);

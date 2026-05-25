@@ -5,6 +5,12 @@
 - 决策：`docs/00_AI_PROJECT_RULES.md` 是项目 AI 规则唯一源头。
 - 影响：`AGENTS.md`、`CLAUDE.md`、`.github/copilot-instructions.md` 只保留入口信息，不复制完整规则。
 
+## 2026-05-25 · 同步 ywh 工作流口令
+
+- 决策：`同步 ywh 工作流` 是固定口令。
+- 含义：以上游 `ywh` / `ywh-game` 为准，只同步项目工作流结构与 AI 入口。
+- 禁止：不改 `index.html`、`test.js` 或游戏核心代码。
+
 ## 2026-05-25 · 多 AI 读取范围
 
 - 决策：不要让所有 AI 默认读取所有文档。

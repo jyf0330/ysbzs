@@ -26,6 +26,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 ## 核心纪律
 
+- 用户说“同步 ywh 工作流”时，固定含义是：以上游 `ywh` / `ywh-game` 为准，只同步项目工作流结构与 AI 入口，不改 `index.html`、`test.js` 或游戏核心代码。
 - 不允许所有 AI 默认全量读取 `docs/`。
 - 一个任务只允许一个 AI 修改同一代码文件，其他 AI 只能审查、验收或写指定文档。
 - 归档目录 `docs/99_归档/` 只作历史参考，不是当前规则源头。

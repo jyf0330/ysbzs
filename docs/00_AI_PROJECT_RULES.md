@@ -16,6 +16,18 @@
 3. 必须按本文件的分类表判断任务类型。
 4. 除非任务极小且无需交接，否则先创建或更新 `tasks/doing/当前任务.md`。
 
+## 固定口令：同步 ywh 工作流
+
+当用户说“同步 ywh 工作流”“同步当前项目的 ywh 工作流规则”“以上游 ywh / ywh-game 为准同步项目规则”时，含义固定为：
+
+- 以上游 `ywh` / `ywh-game` skill、references 模板和 registry 为准。
+- 只同步项目工作流结构与 AI 入口，不改 `index.html`、`test.js` 或游戏核心代码。
+- 检查并更新 `docs/00_AI_PROJECT_RULES.md`、`AGENTS.md`、`CLAUDE.md`、`.github/copilot-instructions.md`。
+- 必要时补齐或更新 `docs/00_CURRENT_CONTEXT.md`、`docs/09_DECISIONS.md`、`tasks/doing/当前任务.md`。
+- 同步内容限定为任务分类、Demo 阶段文档门禁、按需补充文档、任务卡分流、最小读取范围、验收规则、归档文档定位、CHANGELOG/Git 收尾规则。
+- 如发现项目规则与上游规则冲突，先输出冲突文件、冲突内容、可能影响和推荐方案，再决定是否覆盖。
+- 验证使用 `rg` 引用搜索、模板存在性检查、同步映射一致性检查；没有游戏运行改动时不强制运行游戏测试。
+
 ## 任务分流与最小读取
 
 不要让所有 AI 读所有文件。正确流程是：总控 AI 先判断任务类型并生成任务卡；执行 AI 只读任务卡、当前上下文、相关 2-4 份文档和指定代码文件；验收 AI 只读任务卡、验收清单和测试结果。

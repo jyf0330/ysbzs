@@ -274,6 +274,9 @@ function initGame(){
       {id:4,el:'earth',sn:1,tier:1,hid:'hb',dir:'right',used:false},
       {id:5,el:'water',sn:1,tier:1,hid:'hb',dir:'right',used:false},
     ],
+    elementCells:{}, // 格子四元素槽 {"r,c":{fire:{layers,previewDamage,willExplode},...}}
+    explosionThreshold:1, // 达到此层数时 willExplode=true
+    previewEvents:[], // 飘字用，仅显示 [{el,r,c,dmg}]
     selHero:null,  // selected hero id
     selSlot:null,  // selected slot index
     prevCells:[],  // attack preview cells
@@ -378,6 +381,28 @@ function doExplode(pos){
 }
 
 // ========== DAMAGE ==========
+function settleExplosions(){
+  const keys=Object.keys(G.elementCells);
+  if(keys.length>0)glog('--- 结算阶段 ---');
+  keys.forEach(key=>{
+    const [r,c]=key.split(',').map(Number);
+    const pos={r,c};
+    ['fire','water','wind','earth'].forEach(el=>{
+      const slot=G.elementCells[key][el];
+      if(!slot||!slot.willExplode)return;
+      const m=monAt(pos);
+      if(m&&slot.previewDamage>0)dealDmg(m,slot.previewDamage,`${EL[el]}元素结算`);
+      slot.layers=0; slot.previewDamage=0; slot.willExplode=false;
+    });
+  });
+  G.previewEvents=[];
+  checkAllDead();
+  render();
+}
+
+// 向后兼容别名，测试代码直接调用 settleDamage() 等价于 settleExplosions()
+function settleDamage(){ settleExplosions(); }
+
 function dealDmg(monster,dmg,src){
   monster.hp=Math.max(0,monster.hp-dmg);
   glog(`⚔️ ${src} → ${monster.name} -${dmg}（${monster.hp}/${monster.maxHp}）`);
@@ -394,6 +419,14 @@ function useSlot(idx){
 
   let hit=false;
   cells.forEach(ap=>{
+    const key=`${ap.r},${ap.c}`;
+    if(!G.elementCells[key]) G.elementCells[key]={
+      fire:{layers:0,previewDamage:0,willExplode:false},
+      water:{layers:0,previewDamage:0,willExplode:false},
+      wind:{layers:0,previewDamage:0,willExplode:false},
+      earth:{layers:0,previewDamage:0,willExplode:false},
+    };
+    const elSlot=G.elementCells[key][slot.el];
     const m=monAt(ap);
     if(m){
       hit=true; G.hitCount++;
@@ -401,15 +434,18 @@ function useSlot(idx){
       const tmult=TIER_MULT[slot.tier]||1;
       let emult=1;
       if(m.el&&ADV[slot.el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}
-      dealDmg(m,base*tmult*emult,`第${G.hitCount}次命中`);
+      const dmg=base*tmult*emult;
+      elSlot.previewDamage+=dmg;
+      G.previewEvents.push({el:slot.el,r:ap.r,c:ap.c,dmg});
     }
+    elSlot.layers=Math.min(elSlot.layers+1,MAX_STK);
+    elSlot.willExplode=elSlot.layers>=G.explosionThreshold;
     addEl(ap,slot.el);
   });
 
   if(!hit)glog(`🌀 攻击空地，铺下${cells.length}个${EL[slot.el]}元素。`);
   slot.used=true;
   G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
-  checkAllDead();
   render();
 }
 
@@ -485,6 +521,7 @@ function computeMonWarn(){
 // ========== TURN MANAGEMENT ==========
 function endPlayerTurn(){
   if(G.phase!=='PLAYER')return;
+  settleExplosions();
   G.phase='MONSTER'; G.selSlot=null; G.selHero=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
   glog('--- 怪物回合 ---');
   computeMonWarn();
@@ -582,7 +619,7 @@ function finishMonsters(){
     G.phase='SHOP';
     openShop();
   } else {
-    G.phase='PLAYER'; G.hitCount=0;
+    G.phase='PLAYER'; G.hitCount=0; G.elementCells={}; G.previewEvents=[];
     G.slots.forEach(s=>s.used=false);
     glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
   }

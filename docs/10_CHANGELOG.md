@@ -4,6 +4,8 @@
 
 | 日期 | 类型 | 摘要 | 涉及文件 | 验证 |
 |---|---|---|---|---|
+| 2026-05-25 | refactor | elementCells 四元素槽架构：用 G.elementCells{"r,c":{fire/water/wind/earth:{layers,previewDamage,willExplode}}} 替代 G.pendingDmg；doExplode 恢复立即结算；useSlot 写入格子槽；新增 settleExplosions()，settleDamage 成为向后兼容别名；新增 G.previewEvents 供飘字显示 | index.html / docs/02 | node test.js 151/151 |
+| 2026-05-25 | feat | 行动/结算两阶段分离（初版）：行动阶段只叠元素/记录待伤害；结算阶段统一引爆/扣血/清层 | index.html / test.js | node test.js 151/151 |
 | 2026-05-24 | refactor | 视觉层重构：抽离预览计算为 computeHeroAttackPreview / computeMonsterActionPreview；新增 buildBattleVM / buildBoardVM / buildHeroesVM / buildSlotsVM / buildTurnVM ViewModel 层；renderBoard / renderHS / renderSlots / renderTurn 改为接受 VM 参数，不再计算规则 | index.html / docs/02 / docs/03 | node test.js 151/151 |
 
 ---

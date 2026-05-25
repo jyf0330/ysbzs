@@ -134,6 +134,10 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 /* ===== MONSTER WARNING ===== */
 .mw-atk{outline:2px solid #ef4444 !important;background:#3d0000 !important;}
 .mw-mov{outline:1px solid #f59e0b !important;background:#1a1000 !important;}
+.mw-final{outline:2px solid #fde68a !important;background:#1a1300 !important;}
+/* ===== ATTACK PREVIEW LABELS ===== */
+.el-prev-badge{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:8px;font-weight:bold;pointer-events:none;z-index:5;line-height:1.3;white-space:nowrap;text-shadow:0 0 3px #000,0 0 3px #000;}
+.explode-warn{position:absolute;bottom:1px;left:0;right:0;text-align:center;color:#f59e0b;text-shadow:0 0 4px #000,0 0 4px #000;font-size:7px;font-weight:bold;pointer-events:none;z-index:6;white-space:nowrap;}
 
 /* ===== MESSAGE ===== */
 #msg{
@@ -742,31 +746,59 @@ function computeHeroAttackPreview(){
   const heroAtkMap={};
   if(G.phase==='OVER')return heroAtkMap;
   let simHit=G.hitCount;
+  // 判断"当前选中英雄"：selHero 或 selSlot 所属英雄
+  const selHid=G.selHero||(G.selSlot!==null?G.slots[G.selSlot]?.hid:null);
   Object.values(G.heroes).forEach(hero=>{
     if(hero.hp<=0)return;
+    const isSel=!!selHid&&hero.id===selHid;
     G.slots.filter(s=>s.hid===hero.id&&!s.used).forEach(slot=>{
       atkCells(hero.pos,slot.sn,slot.dir).forEach(ap=>{
         const key=k(ap);
-        if(!heroAtkMap[key])heroAtkMap[key]={el:slot.el,monDmg:0};
-        else heroAtkMap[key].el=slot.el;
+        if(!heroAtkMap[key])heroAtkMap[key]={el:slot.el,monDmg:0,addLayers:{},fromSelHero:false};
+        heroAtkMap[key].el=slot.el;
+        if(isSel)heroAtkMap[key].fromSelHero=true;
+        // 累计每格每元素的命中次数
+        const adds=heroAtkMap[key].addLayers;
+        adds[slot.el]=(adds[slot.el]||0)+1;
         const m=monAt(ap);
         if(m){simHit++;const tmult=TIER_MULT[slot.tier]||1,emult=(m.el&&ADV[slot.el]===m.el)?2:1;heroAtkMap[key].monDmg+=simHit*tmult*emult;}
-        {const pvBc=G.board[ap.r][ap.c];if(pvBc.el&&pvBc.stk>0&&ADV[slot.el]===pvBc.el){const expDmg=explDmg(pvBc.stk),oldEl=pvBc.el;explCells(ap).forEach(ep=>{const ek=k(ep);if(!heroAtkMap[ek])heroAtkMap[ek]={el:oldEl,monDmg:0};const em=monAt(ep);if(em){const emult2=(em.el&&ADV[oldEl]===em.el)?2:1;heroAtkMap[ek].monDmg+=expDmg*emult2;}});}}
+        {const pvBc=G.board[ap.r][ap.c];if(pvBc.el&&pvBc.stk>0&&ADV[slot.el]===pvBc.el){const expDmg=explDmg(pvBc.stk),oldEl=pvBc.el;explCells(ap).forEach(ep=>{const ek=k(ep);if(!heroAtkMap[ek])heroAtkMap[ek]={el:oldEl,monDmg:0,addLayers:{},fromSelHero:false};const em=monAt(ep);if(em){const emult2=(em.el&&ADV[oldEl]===em.el)?2:1;heroAtkMap[ek].monDmg+=expDmg*emult2;}});}}
       });
     });
+  });
+  // 后处理：计算 elLabel 与 willExplode
+  Object.entries(heroAtkMap).forEach(([key,v])=>{
+    const [r,c]=key.split(',').map(Number);
+    const bc=G.board[r][c];
+    const adds=v.addLayers;
+    const elKeys=Object.keys(adds);
+    v.elLabel=null; v.willExplode=false;
+    if(elKeys.length>0){
+      // 取命中次数最多的元素作为主显示
+      const domEl=elKeys.reduce((a,b)=>adds[a]>=adds[b]?a:b);
+      const n=adds[domEl];
+      v.elLabel=`${EL[domEl]}+${n}`;
+      const curStk=(bc.el===domEl)?bc.stk:0;
+      const total=Math.min(curStk+n,MAX_STK);
+      if(total>=G.explosionThreshold)v.willExplode=true;
+    }
   });
   return heroAtkMap;
 }
 
 function computeMonsterActionPreview(){
   const monActMap={},heroIncomingDmg={};
-  if(G.phase==='OVER')return{monActMap,heroIncomingDmg};
+  const monFinalSet=new Set(); // 怪物预计停留格（区别于路过格）
+  if(G.phase==='OVER')return{monActMap,heroIncomingDmg,monFinalSet};
   G.monsters.filter(m=>!m.dead).forEach(m=>{
     const{movCells,atkCell,atkTarget,dmg}=simMonAct(m);
     movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]=c.type;});
+    // 最后一个 mov 类型格为怪物停留位置
+    const movOnly=movCells.filter(c=>c.type==='mov');
+    if(movOnly.length>0)monFinalSet.add(k(movOnly[movOnly.length-1]));
     if(atkCell){monActMap[k(atkCell)]='atk';if(atkTarget)heroIncomingDmg[atkTarget.id]=(heroIncomingDmg[atkTarget.id]||0)+dmg;}
   });
-  return{monActMap,heroIncomingDmg};
+  return{monActMap,heroIncomingDmg,monFinalSet};
 }
 
 // ─── ViewModel 层（读 G，输出纯 JS 描述对象，不创建 DOM）───
@@ -783,7 +815,7 @@ function buildBoardVM(){
     G.prevCells.forEach(p=>{pvMap[k(p)]=sl.el;});
     G.prevCells.forEach(ap=>{const m=monAt(ap);if(m){const base=G.hitCount+1,tmult=TIER_MULT[sl.tier]||1,emult=(m.el&&ADV[sl.el]===m.el)?2:1;dmgMap[k(ap)]=base*tmult*emult;}});
   }
-  const{monActMap,heroIncomingDmg}=computeMonsterActionPreview();
+  const{monActMap,heroIncomingDmg,monFinalSet}=computeMonsterActionPreview();
   const cells=[];
   for(let r=0;r<13;r++)for(let c=0;c<13;c++){
     const key=`${r},${c}`,hero=hp[key],mon=mp[key],bc=G.board[r][c];
@@ -791,9 +823,16 @@ function buildBoardVM(){
     if(ps.has(key))classes.push('ap');
     if(es.has(key))classes.push('ep');
     if(G.explPos&&G.explPos.r===r&&G.explPos.c===c)classes.push('ec');
-    const actType=monActMap[key];if(actType)classes.push(actType==='atk'?'mw-atk':'mw-mov');
+    // 怪物路径：区分路过格(橙)、停留格(黄)、攻击格(红)
+    const actType=monActMap[key];
+    if(actType){
+      if(actType==='atk')classes.push('mw-atk');
+      else if(monFinalSet.has(key))classes.push('mw-final');
+      else classes.push('mw-mov');
+    }
     const pvEl=heroAtkMap[key]?.el||pvMap[key]||null;
-    const pvOpacity=pvEl?(heroAtkMap[key]?'0.28':'0.38'):null;
+    // 选中英雄（或其槽）的格子更亮，其余英雄的格子更淡
+    const pvOpacity=pvEl?(heroAtkMap[key]?.fromSelHero?'0.42':'0.20'):null;
     let monDmg=null;
     if(mon&&heroAtkMap[key]?.monDmg>0)monDmg=heroAtkMap[key].monDmg;
     else if(dmgMap[key]!==undefined)monDmg=dmgMap[key];
@@ -802,7 +841,9 @@ function buildBoardVM(){
       hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||0}:null,
       mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el}:null,
       el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
-      classes,pvEl,pvOpacity,monDmg
+      classes,pvEl,pvOpacity,monDmg,
+      pvElLabel:heroAtkMap[key]?.elLabel||null,
+      pvWillExplode:heroAtkMap[key]?.willExplode||false,
     });
   }
   return cells;
@@ -876,6 +917,19 @@ function renderBoard(boardVM){
       ovl.style.background=EC[cv.pvEl];
       ovl.style.opacity=cv.pvOpacity;
       cell.appendChild(ovl);
+    }
+    // 元素预览标签：显示"火+1"类文字；将引爆时显示橙色警告
+    if(cv.pvElLabel||cv.pvWillExplode){
+      const badge=document.createElement('div');
+      if(cv.pvWillExplode){
+        badge.className='explode-warn';
+        badge.textContent=(cv.pvElLabel?cv.pvElLabel+' ':'')+'将引爆';
+      } else {
+        badge.className='el-prev-badge';
+        badge.style.color=EC[cv.pvEl]||'#ccc';
+        badge.textContent=cv.pvElLabel;
+      }
+      cell.appendChild(badge);
     }
     if(cv.monDmg!==null){
       const badge=document.createElement('div');

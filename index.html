@@ -328,6 +328,9 @@ function initGame(){
     backpack:[],   // 背包物品列表
     _bpCnt:0,     // backpack id counter
     monWarn:[],   // 怪物预警格列表 [{r,c,type:'atk'|'mov'}]
+    coreSnapshot:null,  // 统一核心预览快照（由 recomputeCorePreview 填充）
+    coreVersion:0,      // 快照版本号，每次 recomputeCorePreview() +1
+    actionLog:[],       // 当前回合行动日志（供 buildBattleReport 使用）
   };
   spawnWave(1);
   render();
@@ -520,21 +523,15 @@ function moveHero(r,c){
   if(!G.selHero||G.phase!=='PLAYER')return;
   const hero=G.heroes[G.selHero];
   if(heroAt({r,c})||monAt({r,c})){glog('⚠️ 目标格已占用！');return;}
-  hero.pos={r,c};
   glog(`🚶 ${hero.name}移动到(${r},${c})`);
-  // 保持 selHero，移动后立即重新显示该英雄的攻击+怪物预览
-  G.prevCells=[]; G.selSlot=null; G.heroPrev=[];
-  render();
+  dispatchGameAction({type:'MOVE_HERO',heroId:G.selHero,to:{r,c}});
 }
 
 // ========== SLOT SELECTION ==========
 function selSlot(idx){
   if(G.phase!=='PLAYER')return;
   const s=G.slots[idx]; if(!s||s.used)return;
-  G.selSlot=G.selSlot===idx?null:idx;
-  G.selHero=null; G.explPos=null; G.heroPrev=[];
-  updPreview();
-  render();
+  dispatchGameAction({type:'SELECT_ACTION_SLOT',slotId:idx});
 }
 
 function updPreview(){
@@ -545,15 +542,11 @@ function updPreview(){
 }
 
 function setDir(idx,dir){
-  G.slots[idx].dir=dir;
-  if(G.selSlot===idx)updPreview();
-  render();
+  dispatchGameAction({type:'SET_ACTION_DIRECTION',slotId:idx,direction:dir});
 }
 
 function setHero(idx,hid){
-  G.slots[idx].hid=hid;
-  if(G.selSlot===idx)updPreview();
-  render();
+  dispatchGameAction({type:'UPDATE_ACTION_SLOT',slotId:idx,heroId:hid});
 }
 
 // ========== MONSTER WARNING ==========
@@ -1073,6 +1066,150 @@ function buildTurnVM(){
 
 function buildBattleVM(){
   return{board:buildBoardVM(),heroes:buildHeroesVM(),slots:buildSlotsVM(),turn:buildTurnVM()};
+}
+
+// ─── 核心事件驱动架构 ───
+function buildHeroStats(){
+  return Object.fromEntries(
+    Object.values(G.heroes).map(h=>[h.id,{id:h.id,name:h.name,hp:h.hp,maxHp:h.maxHp,pos:{r:h.pos.r,c:h.pos.c}}])
+  );
+}
+
+function buildBattleReport(monsterStats,monsterThreats){
+  const ms=monsterStats||buildMonsterStats();
+  const mt=monsterThreats||computeMonsterActionPreview();
+  const ELNAME={fire:'火',water:'水',wind:'风',earth:'土'};
+  const report=[];
+  // 1. 行动日志
+  (G.actionLog||[]).forEach(act=>{
+    if(act.type==='MOVE_HERO'){
+      const label=act.heroId==='ha'?'英雄A':'英雄B';
+      report.push(`${label} 从 [${act.from.r},${act.from.c}] 移动到 [${act.to.r},${act.to.c}]`);
+    } else if(act.type==='USE_SLOT'&&act.desc){
+      report.push(act.desc);
+    }
+  });
+  // 2. 怪物自身格伤害（单体结算，不触发十字）
+  G.monsters.filter(m=>!m.dead).forEach(m=>{
+    const mk=`${m.pos.r},${m.pos.c}`;
+    const st=ms[mk];
+    if(!st)return;
+    if(st.selfCellDamage.total>0){
+      ['fire','water','wind','earth'].forEach(el=>{
+        const dmg=st.selfCellDamage[el]||0;
+        if(dmg<=0)return;
+        const lyr=(G.elementCells[mk]&&G.elementCells[mk][el])?G.elementCells[mk][el].layers:0;
+        report.push(`怪物格 [${m.pos.r},${m.pos.c}] ${ELNAME[el]}${lyr}层，${m.name}预计单体受伤 ${dmg}`);
+      });
+      report.push('怪物格单体结算，不触发十字爆炸');
+    }
+    // 3. 来自周边空格的十字爆炸波及
+    if(st.splashDamage.total>0){
+      ['fire','water','wind','earth'].forEach(el=>{
+        const dmg=st.splashDamage[el]||0;
+        if(dmg>0)report.push(`${m.name}预计受到空格十字爆炸波及 ${ELNAME[el]} ${dmg}`);
+      });
+    }
+    if(st.finalPreview.willDie){
+      report.push(`${m.name}预计死亡（总伤 ${st.finalPreview.totalDamage}，HP ${m.hp}）`);
+    }
+  });
+  // 4. 空格十字引爆预告
+  Object.entries(G.elementCells).forEach(([ky,elData])=>{
+    const[r,c]=ky.split(',').map(Number);
+    if(monAt({r,c}))return; // 怪物格已在上面处理
+    ['fire','water','wind','earth'].forEach(el=>{
+      const slot=elData[el];
+      if(!slot||!slot.willExplode)return;
+      const affected=explCells({r,c}).filter(p=>monAt(p));
+      if(affected.length>0){
+        const names=affected.map(p=>monAt(p).name).join('、');
+        report.push(`空格 [${r},${c}] ${ELNAME[el]}${slot.layers}层预计十字引爆，波及 ${names}，伤害 ${explDmg(slot.layers)}`);
+      } else {
+        report.push(`空格 [${r},${c}] ${ELNAME[el]}${slot.layers}层预计十字引爆`);
+      }
+    });
+  });
+  // 5. 怪物攻击英雄预警
+  const{heroIncomingDmg}=mt;
+  Object.entries(heroIncomingDmg).forEach(([heroId,dmgArr])=>{
+    if(!dmgArr||dmgArr.length===0)return;
+    const heroLabel=heroId==='ha'?'英雄A':'英雄B';
+    const total=dmgArr.reduce((s,e)=>s+e.dmg,0);
+    report.push(`${heroLabel}预计受击${dmgArr.length}次，总伤害 ${total}`);
+    dmgArr.forEach(({label,dmg})=>{
+      report.push(`${label} 攻击${heroLabel}，伤害 ${dmg}`);
+    });
+  });
+  return report;
+}
+
+function recomputeCorePreview(){
+  const monsterStats=buildMonsterStats();
+  const cellInfoMap=buildCellInfoMap();
+  const monsterThreats=computeMonsterActionPreview();
+  const heroStats=buildHeroStats();
+  const battleReport=buildBattleReport(monsterStats,monsterThreats);
+  G.coreVersion=(G.coreVersion||0)+1;
+  G.coreSnapshot={
+    _version:G.coreVersion,
+    _ts:Date.now(),
+    monsterStats,
+    cellInfoMap,
+    monsterThreats,
+    heroStats,
+    battleReport,
+    warnings:[],
+  };
+}
+
+function dispatchGameAction(action){
+  applyActionToState(action);
+  recomputeCorePreview();
+  if(typeof document!=='undefined')render();
+}
+
+function applyActionToState(action){
+  if(!G.actionLog)G.actionLog=[];
+  switch(action.type){
+    case 'MOVE_HERO':{
+      const hero=G.heroes[action.heroId];
+      if(!hero)return;
+      const from={r:hero.pos.r,c:hero.pos.c};
+      hero.pos={r:action.to.r,c:action.to.c};
+      G.actionLog.push({type:'MOVE_HERO',heroId:action.heroId,from,to:action.to});
+      G.prevCells=[]; G.selSlot=null; G.heroPrev=[];
+      break;
+    }
+    case 'SELECT_ACTION_SLOT':{
+      G.selSlot=G.selSlot===action.slotId?null:action.slotId;
+      G.selHero=null; G.explPos=null; G.heroPrev=[];
+      updPreview();
+      break;
+    }
+    case 'UPDATE_ACTION_SLOT':{
+      const s=G.slots[action.slotId];
+      if(!s)return;
+      if(action.heroId!==undefined)s.hid=action.heroId;
+      if(action.element!==undefined)s.el=action.element;
+      if(action.direction!==undefined)s.dir=action.direction;
+      if(G.selSlot===action.slotId)updPreview();
+      break;
+    }
+    case 'SET_ACTION_DIRECTION':{
+      const s=G.slots[action.slotId];
+      if(!s)return;
+      s.dir=action.direction;
+      if(G.selSlot===action.slotId)updPreview();
+      break;
+    }
+    case 'SET_ACTION_TARGET':{
+      const s=G.slots[action.slotId];
+      if(s&&action.targetCell!==undefined)s.targetCell=action.targetCell;
+      break;
+    }
+    default:break;
+  }
 }
 
 // ─── View 层（只接受 VM 参数，只创建 DOM，不计算规则）───

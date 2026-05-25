@@ -1561,6 +1561,84 @@ group('H组：怪物攻击预警', ()=>{
 });
 
 // ═══════════════════════════════════════════════════════════════
+// I 组：核心事件驱动架构（case_core_001~007）
+group('I组：核心事件驱动架构（case_core_001~007）', ()=>{
+  test('case_core_001: MOVE_HERO action 触发 recomputeCorePreview，版本号递增', ()=>{
+    fresh();
+    recomputeCorePreview();
+    const v0=G.coreSnapshot._version;
+    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:8,c:1}});
+    assert.ok(G.coreSnapshot._version>v0,'版本号应递增');
+    assert.ok(G.coreSnapshot,'coreSnapshot 应存在');
+    assert.deepStrictEqual(G.heroes.ha.pos,{r:8,c:1},'英雄位置应已更新');
+  });
+  test('case_core_002: UPDATE_ACTION_SLOT action 触发 recomputeCorePreview，版本号递增', ()=>{
+    fresh();
+    recomputeCorePreview();
+    const v0=G.coreSnapshot._version;
+    dispatchGameAction({type:'UPDATE_ACTION_SLOT',slotId:0,direction:'left'});
+    assert.ok(G.coreSnapshot._version>v0,'版本号应递增');
+    assert.strictEqual(G.slots[0].dir,'left','slot 方向应已更新');
+  });
+  test('case_core_003: SET_ACTION_DIRECTION action 触发 recomputeCorePreview，版本号递增', ()=>{
+    fresh();
+    recomputeCorePreview();
+    const v0=G.coreSnapshot._version;
+    dispatchGameAction({type:'SET_ACTION_DIRECTION',slotId:1,direction:'up'});
+    assert.ok(G.coreSnapshot._version>v0,'版本号应递增');
+    assert.strictEqual(G.slots[1].dir,'up','slot 方向应已更新');
+  });
+  test('case_core_004: battleReport 包含怪物格单体伤害描述，不含十字引爆', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10;
+    G.monsters[1].pos={r:12,c:12};
+    G.elementCells['5,5']={fire:{layers:3,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    recomputeCorePreview();
+    const br=G.coreSnapshot.battleReport;
+    assert.ok(br.some(l=>l.includes('怪物格')&&l.includes('3')),'报告应含怪物格3层描述');
+    assert.ok(br.some(l=>l.includes('单体')),'报告应含单体结算描述');
+    assert.ok(!br.some(l=>l.includes('预计十字引爆')),'怪物格不应触发十字引爆');
+  });
+  test('case_core_005: battleReport 包含空格十字引爆描述', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=10;
+    G.monsters[1].pos={r:12,c:12};
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    recomputeCorePreview();
+    const br=G.coreSnapshot.battleReport;
+    assert.ok(br.some(l=>l.includes('空格')),'报告应含空格描述');
+    assert.ok(br.some(l=>l.includes('引爆')),'报告应含引爆描述');
+  });
+  test('case_core_006: battleReport 包含怪物攻击英雄预警', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:5};
+    G.heroes.hb.pos={r:11,c:0};
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].atk=2;
+    G.monsters[1].pos={r:12,c:12};
+    recomputeCorePreview();
+    const br=G.coreSnapshot.battleReport;
+    assert.ok(br.some(l=>l.includes('英雄A')&&l.includes('受击')),'报告应含英雄A受击预警');
+    assert.ok(br.some(l=>l.includes('M1')&&l.includes('攻击')),'报告应含M1攻击描述');
+  });
+  test('case_core_007: coreSnapshot 包含所有必要字段，供 UI 读取', ()=>{
+    fresh();
+    recomputeCorePreview();
+    const snap=G.coreSnapshot;
+    assert.ok(snap,'coreSnapshot 应存在');
+    assert.ok('_version' in snap,'应含 _version');
+    assert.ok('_ts' in snap,'应含 _ts');
+    assert.ok('monsterStats' in snap,'应含 monsterStats');
+    assert.ok('cellInfoMap' in snap,'应含 cellInfoMap');
+    assert.ok('monsterThreats' in snap,'应含 monsterThreats');
+    assert.ok('heroStats' in snap,'应含 heroStats');
+    assert.ok('battleReport' in snap,'应含 battleReport');
+    assert.ok(Array.isArray(snap.battleReport),'battleReport 应为数组');
+    assert.ok('warnings' in snap,'应含 warnings');
+    assert.ok(snap._version>=1,'版本号应>=1');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 // 汇总
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

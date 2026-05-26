@@ -15,7 +15,7 @@
 - 工作流：`ywh-game`
 - 仓库：`git@github.com:jyf0330/ysbzs.git`
 - 主文件：`index.html`（单文件原型，禁止无故拆分）
-- 测试：`node test.js`（当前基准：199/199）
+- 测试：`node test.js`（当前基准：243/243）
 
 ## 硬红线
 

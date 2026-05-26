@@ -3,6 +3,7 @@
  * 运行：node test.js
  */
 const fs   = require('fs');
+const path = require('path');
 const assert = require('assert');
 
 // ── DOM 桩：屏蔽所有 DOM 调用 ───────────────────────────────────
@@ -25,7 +26,8 @@ global.window = { innerWidth:1920 };
 global.setTimeout = fn => { try{ fn(); }catch(e){} };
 
 // ── 载入游戏脚本 ───────────────────────────────────────────────
-const html = fs.readFileSync('c:/Users/11277/Desktop/game1/index.html','utf8');
+const htmlPath = process.env.YSBZS_HTML_PATH || path.join(__dirname, 'index.html');
+const html = fs.readFileSync(htmlPath,'utf8');
 const scriptTag = html.match(/<script>([\s\S]+?)<\/script>/);
 if(!scriptTag) throw new Error('找不到 <script> 标签');
 // 将 const/let 改为 var，使其通过 eval 暴露到当前作用域
@@ -1245,6 +1247,75 @@ group('A组：initGame 第一关默认配置', ()=>{
     fresh();
     assert.strictEqual(G.explosionThreshold,3,'threshold=3');
   });
+  test('case_init_006: ha/hb 6个槽全部是大十字攻击方块(sn=12)', ()=>{
+    fresh();
+    const sns=G.slots.map(s=>s.sn);
+    assert.ok(sns.every(sn=>sn===12), `所有默认槽应为大十字 sn=12，实际: ${JSON.stringify(sns)}`);
+    assert.ok(G.slots.every(s=>SD[s.sn]?.cat==='cross'), '默认槽分类应为 cross');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// A补：教程默认大十字攻击方块测试
+group('A补：教程默认大十字攻击方块', ()=>{
+  function seedElCell(pos,el,layers){
+    const ky=`${pos.r},${pos.c}`;
+    G.elementCells[ky]={
+      fire:{layers:0,willExplode:false},
+      water:{layers:0,willExplode:false},
+      wind:{layers:0,willExplode:false},
+      earth:{layers:0,willExplode:false},
+    };
+    G.elementCells[ky][el]={layers,willExplode:layers>=G.explosionThreshold};
+    G.board[pos.r][pos.c].el=el;
+    G.board[pos.r][pos.c].stk=layers;
+  }
+
+  test('case_bigcross_001: 默认大十字同时覆盖怪物格与空格', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:5};
+    G.monsters=[
+      {id:'m0',name:'命中怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:10,c:10},dead:false,el:null},
+    ];
+    const hitKeys=atkCells(G.heroes.ha.pos,G.slots[0].sn,G.slots[0].dir).map(p=>`${p.r},${p.c}`);
+    ['4,6','5,6','6,6','5,7','5,5'].forEach(ky=>assert.ok(hitKeys.includes(ky),`大十字应覆盖 ${ky}`));
+    useSlot(0);
+    assert.strictEqual(G.elementCells['5,6'].fire.layers,1,'怪物格应叠 fire 1 层');
+    assert.strictEqual(G.elementCells['5,7'].fire.layers,1,'空格应叠 fire 1 层');
+    assert.strictEqual(G.monsters[0].hp,10,'行动阶段不立即扣血');
+  });
+
+  test('case_bigcross_002: 默认大十字可把空格叠到3层并触发十字引爆', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:5};
+    G.monsters=[
+      {id:'m0',name:'波及怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:8},dead:false,el:null},
+      {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:10,c:10},dead:false,el:null},
+    ];
+    seedElCell({r:5,c:7},'fire',2);
+    useSlot(0);
+    assert.strictEqual(G.elementCells['5,7'].fire.layers,3,'空格应叠到3层');
+    assert.strictEqual(G.elementCells['5,7'].fire.willExplode,true,'空格达到阈值后应待引爆');
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'波及怪应吃到空格十字爆炸 10-6=4');
+    assert.strictEqual(G.monsters[1].hp,10,'远处怪不受伤');
+  });
+
+  test('case_bigcross_003: 默认大十字命中怪物格到3层时仍是单体结算，不触发十字', ()=>{
+    fresh();
+    G.heroes.ha.pos={r:5,c:5};
+    G.monsters=[
+      {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:6},dead:false,el:null},
+      {id:'m1',name:'相邻怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:7},dead:false,el:null},
+    ];
+    seedElCell({r:4,c:6},'fire',2);
+    useSlot(0);
+    assert.strictEqual(G.elementCells['4,6'].fire.layers,3,'怪物格应叠到3层');
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'主怪仅受单体 6 伤');
+    assert.strictEqual(G.monsters[1].hp,10,'相邻怪不应被怪物格十字波及');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -1435,9 +1506,7 @@ group('E组：多元素场测试', ()=>{
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,4,'范围内怪 10-6=4，只fire十字爆');
   });
-  test('case_multi_005 [TODO/NEEDS_REVIEW]: 空格 fire=3 water=3 两元素均达阈值→各自十字爆', ()=>{
-    // NEEDS_REVIEW: 当前实现支持多元素同格均爆炸，各自独立结算
-    // 若规则后续限定"每格只允许一种元素爆炸"，此测试需同步修改
+  test('case_multi_005: 空格 fire=3 water=3 两元素均达阈值→各自十字爆',()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'范围内',hp:20,maxHp:20,atk:1,pos:{r:5,c:6},dead:false,el:null},
@@ -1447,9 +1516,21 @@ group('E组：多元素场测试', ()=>{
       fire:{layers:3,willExplode:true},water:{layers:3,willExplode:true},
       wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false},
     };
+    // 预览验证
+    const pg=buildPreviewGrid();
+    const cell=pg.grid['5,5'];
+    assert.ok(cell.preview.willExplode,'空格应触发爆炸');
+    assert.ok(cell.preview.explosionElements,'应有 explosionElements');
+    assert.strictEqual(cell.preview.explosionElements.length,2,'应有两个元素同时爆炸');
+    assert.strictEqual(cell.preview.explosionDamage,12,'fire=6 + water=6 = 12');
+    const monCell=pg.grid['5,6'];
+    assert.ok(monCell.preview.isSplashTarget,'相邻怪物应是波及目标');
+    assert.strictEqual(monCell.preview.splashDamage.total,12,'怪物收到 fire6+water6=12 波及');
+    assert.strictEqual(monCell.preview.entityDamage,12,'怪物总伤害=12');
+    // 真实结算验证
     settleDamage();
-    // fire 6 + water 6 = 12
-    assert.strictEqual(G.monsters[0].hp,8,'[TODO] 两元素均爆: 20-6-6=8，NEEDS_REVIEW');
+    assert.strictEqual(G.monsters[0].hp,8,'真实结算 20-6-6=8');
+    assert.strictEqual(G.monsters[1].hp,10,'远处怪物不受波及');
   });
 });
 
@@ -1637,6 +1718,415 @@ group('I组：核心事件驱动架构（case_core_001~007）', ()=>{
     assert.ok(snap._version>=1,'版本号应>=1');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// J组：独立格子预览层 previewGrid
+// ═══════════════════════════════════════════════════════════════
+group('J组：独立格子预览层 previewGrid', ()=>{
+  test('case_pg_001: buildPreviewGrid 返回含 169 格的 grid（13×13）', ()=>{
+    fresh();
+    const pg=buildPreviewGrid();
+    assert.ok(pg&&pg.grid,'应返回含 grid 的对象');
+    assert.strictEqual(Object.keys(pg.grid).length,169,'13×13=169 格');
+  });
+
+  test('case_pg_002: 每格含 entity / elementField / preview 三大字段', ()=>{
+    fresh();
+    const pg=buildPreviewGrid();
+    const cell=pg.grid['5,5'];
+    assert.ok(cell,'格子 5,5 应存在');
+    assert.ok('entity' in cell,'应含 entity');
+    assert.ok('elementField' in cell,'应含 elementField');
+    assert.ok('preview' in cell,'应含 preview');
+    // elementField 结构
+    ['fire','water','wind','earth'].forEach(el=>{
+      const ef=cell.elementField[el];
+      assert.ok('boardLayers' in ef,`${el} 应含 boardLayers`);
+      assert.ok('addedLayers' in ef,`${el} 应含 addedLayers`);
+      assert.ok('layers' in ef,`${el} 应含 layers`);
+      assert.ok('damage' in ef,`${el} 应含 damage`);
+    });
+    // preview 结构
+    assert.ok('entityDamage' in cell.preview,'应含 entityDamage');
+    assert.ok('willExplode' in cell.preview,'应含 willExplode');
+    assert.ok(Array.isArray(cell.preview.incomingActions),'incomingActions 应为数组');
+    assert.ok(Array.isArray(cell.preview.labels),'labels 应为数组');
+  });
+
+  test('case_pg_003: 怪物格 fire=1，entityDamage=1，willExplode=false', ()=>{
+    fresh();
+    G.monsters=[{id:'m1',name:'测试怪',pos:{r:5,c:5},hp:10,maxHp:10,atk:3,el:null,dead:false,step:3}];
+    G.elementCells['5,5']={fire:{layers:1,willExplode:false}};
+    // 清空所有槽，避免 slot 模拟影响 5,5
+    G.slots.forEach(s=>s.used=true);
+    const pg=buildPreviewGrid();
+    const cell=pg.grid['5,5'];
+    assert.strictEqual(cell.entity.type,'monster','实体应为 monster');
+    assert.strictEqual(cell.preview.entityDamage,1,'fire=1 单体伤害=explDmg(1)=1');
+    assert.strictEqual(cell.preview.willExplode,false,'怪物格不触发十字爆炸');
+    assert.strictEqual(cell.elementField.fire.boardLayers,1,'boardLayers=1');
+  });
+
+  test('case_pg_004: 怪物格 fire=3，entityDamage=6，willExplode=false', ()=>{
+    fresh();
+    G.monsters=[{id:'m1',name:'测试怪',pos:{r:5,c:5},hp:20,maxHp:20,atk:3,el:null,dead:false,step:3}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    G.slots.forEach(s=>s.used=true);
+    const pg=buildPreviewGrid();
+    const cell=pg.grid['5,5'];
+    assert.strictEqual(cell.preview.entityDamage,6,'fire=3 单体伤害=explDmg(3)=6');
+    assert.strictEqual(cell.preview.willExplode,false,'怪物格不触发十字爆炸');
+  });
+
+  test('case_pg_005: 空格 fire=3，willExplode=true，explosionShape=cross', ()=>{
+    fresh();
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    G.slots.forEach(s=>s.used=true);
+    const pg=buildPreviewGrid();
+    const cell=pg.grid['5,5'];
+    assert.strictEqual(cell.entity.type,null,'空格无实体');
+    assert.strictEqual(cell.preview.willExplode,true,'空格 fire=3 应触发爆炸');
+    assert.strictEqual(cell.preview.explosionShape,'cross','爆炸形状为十字');
+    assert.strictEqual(cell.preview.explosionElement,'fire','爆炸元素为 fire');
+    assert.strictEqual(cell.preview.explosionDamage,6,'爆炸伤害=explDmg(3)=6');
+  });
+
+  test('case_pg_006: 空格 fire=3 爆炸波及相邻怪物，怪物 entityDamage 含 splash', ()=>{
+    fresh();
+    // 空格 5,5 fire=3 爆炸，怪物在 5,6（相邻）
+    G.monsters=[{id:'m1',name:'测试怪',pos:{r:5,c:6},hp:20,maxHp:20,atk:3,el:null,dead:false,step:3}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    G.slots.forEach(s=>s.used=true);
+    const pg=buildPreviewGrid();
+    const monCell=pg.grid['5,6'];
+    assert.ok(monCell.preview.entityDamage>0,'相邻怪物应受到 splash 伤害');
+    assert.strictEqual(monCell.preview.isSplashTarget,true,'isSplashTarget 应为 true');
+    assert.ok(monCell.preview.splashDamage.total>0,'splashDamage.total>0');
+    assert.ok(monCell.preview.splashDamage.fire>0,'splashDamage.fire>0');
+  });
+
+  test('case_pg_007: 怪物格元素克制加成（ADV）翻倍伤害', ()=>{
+    fresh();
+    // fire 克制 wind 属性怪物
+    G.monsters=[{id:'m1',name:'风怪',pos:{r:5,c:5},hp:20,maxHp:20,atk:3,el:'wind',dead:false,step:3}];
+    G.elementCells['5,5']={fire:{layers:2,willExplode:false}};
+    G.slots.forEach(s=>s.used=true);
+    const pg=buildPreviewGrid();
+    const cell=pg.grid['5,5'];
+    // fire 克制 wind：ADV.fire==='wind'，emult=2
+    // explDmg(2)=3，*2=6
+    assert.strictEqual(cell.preview.entityDamage,6,'克制加成：explDmg(2)*2=6');
+  });
+
+  test('case_pg_008: elementField.boardLayers 与 addedLayers 分开追踪', ()=>{
+    fresh();
+    // 棋盘已有 fire=2，hero 槽未用，模拟 slot 会在 5,5 增加 fire
+    G.elementCells['5,5']={fire:{layers:2,willExplode:false}};
+    // 让 hero ha 从当前位置直接覆盖一个 1x1 槽命中 (5,5)
+    G.heroes.ha.pos={r:5,c:4};
+    G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].dir='right';  // 1x1 right→命中(5,5)
+    G.slots[0].hid='ha'; G.slots[0].used=false;
+    G.slots.slice(1).forEach(s=>s.used=true);
+    const pg=buildPreviewGrid();
+    const ef=pg.grid['5,5'].elementField.fire;
+    assert.strictEqual(ef.boardLayers,2,'boardLayers=2（棋盘既有）');
+    assert.ok(ef.addedLayers>=1,'addedLayers>=1（槽模拟加层）');
+    assert.ok(ef.layers>=3,'总 layers>=3');
+  });
+
+  test('case_pg_009: coreSnapshot.previewGrid 包含 grid 字段，覆盖全棋盘', ()=>{
+    fresh();
+    recomputeCorePreview();
+    const snap=G.coreSnapshot;
+    assert.ok('previewGrid' in snap,'coreSnapshot 应含 previewGrid');
+    assert.ok(snap.previewGrid&&snap.previewGrid.grid,'previewGrid 应含 grid');
+    assert.strictEqual(Object.keys(snap.previewGrid.grid).length,169,'grid 应有 169 格');
+  });
+
+  test('case_pg_010: 英雄移动后 previewGrid 更新（hero pos 变化反映到 entity）', ()=>{
+    fresh();
+    recomputeCorePreview();
+    const v0=G.coreSnapshot._version;
+    const oldKey=`${G.heroes.ha.pos.r},${G.heroes.ha.pos.c}`;
+    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:7,c:7}});
+    const snap=G.coreSnapshot;
+    assert.ok(snap._version>v0,'版本号应递增');
+    const newCell=snap.previewGrid.grid['7,7'];
+    assert.ok(newCell,'新位置格子应存在');
+    assert.strictEqual(newCell.entity.type,'hero','新位置应为 hero');
+    assert.strictEqual(newCell.entity.id,'ha','hero id 应为 ha');
+  });
+
+  test('case_pg_011: 空格 fire=1，不爆炸，entityDamage=0', ()=>{
+    fresh();
+    G.elementCells['4,4']={fire:{layers:1,willExplode:false}};
+    G.slots.forEach(s=>s.used=true);
+    const pg=buildPreviewGrid();
+    const cell=pg.grid['4,4'];
+    assert.strictEqual(cell.preview.willExplode,false,'fire=1 < threshold=3，不爆炸');
+    assert.strictEqual(cell.preview.entityDamage,0,'空格无实体，entityDamage=0');
+  test('case_pg_012: getSelectedCellPreview 返回选中格子的 preview cell',()=>{
+    fresh();
+    G.elementCells['5,5']={fire:{layers:1,willExplode:false}};
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    G.selectedCell={r:5,c:5};
+    const cell=getSelectedCellPreview(G);
+    assert.ok(cell,'应返回 preview cell');
+    assert.strictEqual(cell.cellKey,'5,5','cellKey 应正确');
+    assert.ok(cell.elementField.fire.layers>=1,'应有 fire 层');
+  });
+  test('case_pg_013: 空格 fire=3，详情 willExplode=true splashTargets 有目标',()=>{
+    fresh();
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    G.selectedCell={r:5,c:5};
+    const cell=getSelectedCellPreview(G);
+    assert.ok(cell,'应返回 preview cell');
+    assert.strictEqual(cell.preview.willExplode,true,'fire=3 应触发爆炸');
+    assert.strictEqual(cell.preview.explosionShape,'cross','爆炸形状应为十字');
+    assert.ok(cell.preview.splashTargets.length>0,'应有波及目标');
+  });
+  test('case_pg_014: 怪物格 fire=3 详情 entity.type=monster entityDamage=6 willExplode=false',()=>{
+    fresh();
+    G.monsters=[{id:'m1',name:'测试怪',pos:{r:5,c:5},hp:20,maxHp:20,atk:3,el:null,dead:false,step:3}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    G.selectedCell={r:5,c:5};
+    const cell=getSelectedCellPreview(G);
+    assert.ok(cell,'应返回 preview cell');
+    assert.strictEqual(cell.entity.type,'monster','实体类型应为 monster');
+    assert.strictEqual(cell.preview.entityDamage,6,'fire=3 entityDamage=explDmg(3)=6');
+    assert.strictEqual(cell.preview.willExplode,false,'怪物格不触发十字爆炸');
+  });
+  test('case_pg_015: getSelectedCellPreview 未选择时返回 null',()=>{
+    fresh();
+    recomputeCorePreview();
+    G.selectedCell=null;
+    assert.strictEqual(getSelectedCellPreview(G),null,'未选择时返回 null');
+  });
+  test('case_pg_016: 空格 fire=1，详情 layers=1 willExplode=false',()=>{
+    fresh();
+    G.elementCells['4,4']={fire:{layers:1,willExplode:false}};
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    G.selectedCell={r:4,c:4};
+    const cell=getSelectedCellPreview(G);
+    assert.ok(cell,'应返回 preview cell');
+    assert.strictEqual(cell.elementField.fire.layers,1,'fire 层数=1');
+    assert.strictEqual(cell.preview.willExplode,false,'fire=1 不触发爆炸');
+  });
+  test('case_pg_017: 移动英雄后详情随 previewGrid 重算变化',()=>{
+    fresh();
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    const haPos={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
+    G.selectedCell=haPos;
+    assert.strictEqual(getSelectedCellPreview(G).entity.type,'hero','初始 ha 位置应有 hero');
+    const newPos={r:haPos.r+1,c:haPos.c+1};
+    G.heroes.ha.pos=newPos;
+    recomputeCorePreview();
+    G.selectedCell=haPos;
+    assert.strictEqual(getSelectedCellPreview(G).entity.type,null,'原格英雄离开后无实体');
+    G.selectedCell=newPos;
+    assert.strictEqual(getSelectedCellPreview(G).entity.type,'hero','新位置有 hero');
+  });
+  test('case_pg_018: 英雄格详情走 previewGrid 含 threatFromMonsters',()=>{
+    fresh();
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    G.selectedCell={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
+    const cell=getSelectedCellPreview(G);
+    assert.ok(cell,'应返回 preview cell');
+    assert.strictEqual(cell.entity.type,'hero','英雄格实体类型为 hero');
+    assert.strictEqual(cell.entity.id,'ha','英雄 id 正确');
+    assert.ok(Array.isArray(cell.preview.threatFromMonsters),'threatFromMonsters 应为数组');
+  });
+  test('case_pg_019: 选取格子后详情 entity.type 与 previewGrid 一致',()=>{
+    fresh();
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    assert.strictEqual(getSelectedCellPreview(G),null,'未选择时返回 null');
+    G.selectedCell={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
+    assert.strictEqual(getSelectedCellPreview(G).entity.type,'hero','英雄格');
+    G.monsters.push({id:'m2',name:'怪2',pos:{r:3,c:3},hp:15,maxHp:15,atk:2,el:'wind',dead:false,step:3});
+    recomputeCorePreview();
+    G.selectedCell={r:3,c:3};
+    assert.strictEqual(getSelectedCellPreview(G).entity.type,'monster','怪物格');
+  test('case_pg_020: 空格 fire=3 water=3 previewGrid 同时爆炸，波及怪物总伤=12',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'受波及',hp:20,maxHp:20,atk:1,pos:{r:5,c:6},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:3,willExplode:true},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    G.slots.forEach(s=>s.used=true);
+    recomputeCorePreview();
+    const snap=G.coreSnapshot;
+    const cell=snap.previewGrid.grid['5,5'];
+    assert.ok(cell.preview.willExplode,'应触发爆炸');
+    assert.strictEqual(cell.preview.explosionElements.length,2,'两元素同时爆炸');
+    assert.strictEqual(cell.preview.explosionDamage,12,'总爆炸伤害=12');
+    const monCell=snap.previewGrid.grid['5,6'];
+    assert.strictEqual(monCell.preview.splashDamage.total,12,'怪物波及伤害=12');
+    assert.strictEqual(monCell.preview.entityDamage,12,'怪物总伤害 entityDamage=12');
+    assert.strictEqual(monCell.preview.isSplashTarget,true,'怪物是波及目标');
+    // 通过 getSelectedCellPreview 验证详情读取
+    G.selectedCell={r:5,c:5};
+    const detailCell=getSelectedCellPreview(G);
+    assert.ok(detailCell,'详情应返回 preview cell');
+    assert.strictEqual(detailCell.preview.explosionDamage,12,'详情 explosionDamage=12');
+    assert.strictEqual(detailCell.preview.explosionElements.length,2,'详情含两元素');
+  });
+  });
+  });
+// ═══════════════════════════════════════════════════════════════
+group('K组：结算与元素落地一致性', ()=>{
+  test('case_k_001: calcElementLayerDamage 公式正确',()=>{
+    assert.strictEqual(calcElementLayerDamage(1),1,'1层=1');
+    assert.strictEqual(calcElementLayerDamage(2),3,'2层=3');
+    assert.strictEqual(calcElementLayerDamage(3),6,'3层=6');
+    assert.strictEqual(calcElementLayerDamage(4),10,'4层=10');
+    assert.strictEqual(calcElementLayerDamage(5),15,'5层=15');
+    assert.strictEqual(calcElementLayerDamage(6),21,'6层=21');
+  });
+  test('case_k_002: useSlot 走 dispatchGameAction 写入 elementCells',()=>{
+    fresh();
+    assert.ok(G.elementCells,'elementCells 应存在');
+    assert.strictEqual(Object.keys(G.elementCells).length,0,'初始为空');
+    const slot0=G.slots[0];
+    const cells=atkCells(G.heroes[slot0.hid].pos,slot0.sn,slot0.dir);
+    useSlot(0);
+    // useSlot 通过 dispatchGameAction 写入 elementCells
+    const writtenKeys=Object.keys(G.elementCells).filter(k=>G.elementCells[k][slot0.el].layers>0);
+    assert.ok(writtenKeys.length>0,'useSlot 后 elementCells 应有该槽对应格子');
+    assert.strictEqual(writtenKeys.length,cells.length,'写入格数应等于攻击范围格数');
+  });
+  test('case_k_003: 怪物格 fire=3，HP6，endPlayerTurn 后怪物死亡',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'测试怪',hp:6,maxHp:6,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    assert.strictEqual(G.monsters[0].hp,6,'结算前 HP=6');
+    settleDamage();
+    assert.strictEqual(G.monsters[0].dead,true,'fire=3 → 怪物死亡');
+    // 不触发十字爆炸：相邻格无伤害
+    assert.strictEqual(G.monsters[0].hp,0,'HP 归零');
+  });
+  test('case_k_004: 怪物格 fire=3，HP10，endPlayerTurn 后 HP=4',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'HP10 → fire=3 伤害6 → 剩余 HP4');
+    // 不触发十字爆炸：怪物格不移除元素（但结算后元素层归零）
+    const cellEl=G.elementCells['5,5']?.fire;
+    assert.ok(!cellEl||cellEl.layers===0,'结算后元素层应归零');
+  });
+  test('case_k_005: 空格 fire=3 十字爆炸波及相邻怪物',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'受波及',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,4,'相邻怪物应受 6 伤害');
+  });
+  test('case_k_006: 空格 fire=3 十字爆炸不炸中心格（空格无实体）',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'中心格',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    settleDamage();
+    // 空格 fire=3 不会对中心格怪物造成伤害（中心是爆炸源，不是波及目标）
+    // 但实际 explCells 包含中心，settleExplosions 会对中心评估
+    // 空格有怪物时，实际会按怪物格处理（单体伤害）
+    assert.strictEqual(G.monsters[0].hp,4,'中心格有怪物时按怪物格单体结算');
+    assert.strictEqual(G.monsters[0].dead,false,'HP4 未死亡');
+  });
+  test('case_k_007: 结束回合元素落地：useSlot 后 elementCells 有对应格子',()=>{
+    fresh();
+    const slot0=G.slots[0];
+    assert.strictEqual(slot0.used,false,'初始未使用');
+    useSlot(0);
+    assert.strictEqual(slot0.used,true,'使用后标记 used');
+    // 验证 elementCells 有该槽产生的格子
+    const hero=G.heroes[slot0.hid];
+    const cells=atkCells(hero.pos,slot0.sn,slot0.dir);
+    cells.forEach(c=>{
+      const key=`${c.r},${c.c}`;
+      assert.ok(G.elementCells[key],`格子 [${key}] 应存在于 elementCells`);
+      assert.ok(G.elementCells[key][slot0.el].layers>0,`格子 [${key}] 应有 ${slot0.el} 层`);
+    });
+  });
+  test('case_k_008: 预览 entityDamage 与 settleDamage 真实扣血一致',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    // 预览
+    const pg=buildPreviewGrid();
+    const previewDmg=pg.grid['5,5'].preview.entityDamage;
+    assert.strictEqual(previewDmg,6,'预览 entityDamage=6');
+    // 真实结算
+    settleDamage();
+    const actualDmg=20-G.monsters[0].hp;
+    assert.strictEqual(actualDmg,6,'真实扣血=6');
+    assert.strictEqual(actualDmg,previewDmg,'预览与真实扣血一致');
+  });
+  test('case_k_009: commitPlayerActionsToElementField 幂等',()=>{
+    fresh();
+    G.elementCells['5,5']={fire:{layers:2,willExplode:false}};
+    commitPlayerActionsToElementField(G);
+    // 幂等：不覆盖已有非零层
+    assert.strictEqual(G.elementCells['5,5'].fire.layers,2,'调用后不改变已有层数');
+  });
+  test('case_k_010: 结束回合 endPlayerTurn 调用 commit 后再 settle，怪物格结算',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'测试怪',hp:6,maxHp:6,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    endPlayerTurn();
+    // endPlayerTurn 内部调用了 commitPlayerActionsToElementField + settleExplosions
+    assert.strictEqual(G.monsters[0].dead,true,'回合结束后怪物格元素应被结算');
+    assert.ok(G.phase==='MONSTER'||G.phase==='SHOP','阶段切换到 MONSTER 或 SHOP（全灭后进商店）');
+  });
+  test('case_k_011: 空格多元素结算后，未引爆元素重新同步为地形并阻挡英雄',()=>{
+    fresh();
+    G.monsters=[];
+    G.elementCells['5,5']={
+      fire:{layers:3,willExplode:true},
+      water:{layers:1,willExplode:false},
+      wind:{layers:0,willExplode:false},
+      earth:{layers:0,willExplode:false},
+    };
+    G.board[5][5].el='fire'; G.board[5][5].stk=3;
+    settleDamage();
+    assert.strictEqual(G.elementCells['5,5'].fire.layers,0,'已引爆 fire 应清零');
+    assert.strictEqual(G.elementCells['5,5'].water.layers,1,'未引爆 water 应保留');
+    assert.strictEqual(G.board[5][5].el,'water','board 应重新显示剩余 water 地形');
+    assert.strictEqual(G.board[5][5].stk,1,'board 应同步 water 层数');
+    G.selHero='ha';
+    const prev={...G.heroes.ha.pos};
+    moveHero(5,5);
+    assert.deepStrictEqual(G.heroes.ha.pos,prev,'英雄不能走入剩余元素格');
+  });
+  test('case_k_012: 怪物攻击元素块时同步清除 elementCells 与 board',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:8},dead:false,el:null}];
+    G.elementCells['5,7']={fire:{layers:1,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    G.board[5][7].el='fire'; G.board[5][7].stk=1;
+    monsterAct(G.monsters[0]);
+    assert.strictEqual(G.board[5][7].el,null,'board 元素应清除');
+    assert.strictEqual(G.board[5][7].stk,0,'board 层数应清零');
+    assert.strictEqual(G.elementCells['5,7'].fire.layers,0,'elementCells 对应层也应清零');
+    assert.strictEqual(G.monsters[0].hp,9,'怪物受到 1 层元素块反伤');
+    assert.deepStrictEqual(G.monsters[0].pos,{r:5,c:8},'怪物被元素块阻挡后不移动');
+  });
+  test('case_k_013: MOVE_HERO action 不能绕过元素格占用校验',()=>{
+    fresh();
+    G.elementCells['5,5']={fire:{layers:1,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    G.board[5][5].el='fire'; G.board[5][5].stk=1;
+    const prev={...G.heroes.ha.pos};
+    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:5,c:5}});
+    assert.deepStrictEqual(G.heroes.ha.pos,prev,'底层 action 也不能移动到元素格');
+  });
+});
+});
+
 
 // ═══════════════════════════════════════════════════════════════
 // 汇总

@@ -4,6 +4,8 @@
 
 | 日期 | 类型 | 摘要 | 涉及文件 | 验证 |
 |---|---|---|---|---|
+| 2026-05-26 | docs | 商店系统策划方案：①阅读 SAP 参考项目全部商店接口后输出完整策划；②覆盖核心循环/商品类型/单位设计(8-12个)/合成升级/经济模型/战斗连接/UI 流程/数据结构草案/风险取舍；③核心决策：第一版只做单位商店 + 合成升级，不做遗物/装备/羁绊，单位是行动槽容器，通过 buildHeroesFromUnits() 桥接现有战斗逻辑 | docs/01_游戏设计（策划主导）/商店系统策划方案.md / tasks/doing/当前任务.md / docs/10_CHANGELOG.md | 策划文档检查 |
+| 2026-05-26 | docs | 接入商店系统外部参考 `SuperAutoTest`：①浅克隆 `koisland/SuperAutoTest` 到本地 `references/SuperAutoTest/` 供后续商店系统设计参考；②新增《商店系统外部参考-SuperAutoTest》摘录可复用的商店状态机、金币/刷新/冻结、buy/sell 接口、seed/tier/packs 与测试边界；③将该外部参考目录加入父仓库 `.gitignore`，避免污染主项目工作区 | tasks/doing/当前任务.md / docs/02_程序开发（程序主导）/商店系统外部参考-SuperAutoTest.md / docs/10_CHANGELOG.md / .gitignore | 本地克隆完成；参考文件检查 |
 | 2026-05-26 | fix | 元素爆炸不再伤害英雄：移除 `doExplode()` 和 `settleExplosions()` 中对英雄的爆炸波及伤害，爆炸仅作用于怪物 | index.html / docs/01_游戏设计（策划主导）/战斗系统.md | node test.js 247/247 |
 | 2026-05-26 | feat | 结束回合处一键执行英雄动作：①新增 `execAllHeroSlots()` 函数，遍历所有已配置但未使用的行动槽一键执行；②"结束回合"按钮旁新增"⚡一键执行"按钮（`#exa`），仅在 PLAYER 阶段存在可执行槽时可用；③`buildTurnVM()` 新增 `execAllDisabled` 字段控制按钮禁用态；④新增 L 组 3 条测试（case_l_001~003），覆盖批量执行/无hero跳过/已使用跳过/非PLAYER不执行/buildTurnVM 的 execAllDisabled；测试 244→247 全通过 | index.html / test.js / docs/10_CHANGELOG.md | node test.js 247/247 |
 | 2026-05-26 | test | 补充剩余元素格点击详情集成测试：①测试 harness 保留真实 `render()` / `glog()`，允许单测临时走真实 UI 渲染与日志写入；②新增 `case_k_014`，构造 fire=3 引爆后 water=1 留存场景，调用 `onCell(5,5)` 验证 `#cd` 详情面板显示坐标、剩余水1层、未达到引爆阈值且不显示已引爆火3层；③验证普通点击查看详情不写战斗日志，选中英雄后点击同格会阻挡移动并在 `#log` 写入“目标格已占用”；测试 243→244 全通过 | test.js / docs/00_AI_PROJECT_RULES.md / docs/00_CURRENT_CONTEXT.md / docs/04_测试验收（测试主导）/版本发布验收清单.md / tasks/doing/当前任务.md / docs/10_CHANGELOG.md | node test.js 244/244 |

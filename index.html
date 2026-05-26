@@ -207,6 +207,7 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
       <div id="ph">⚔️ 玩家回合</div>
       <div id="rc">第1波 · 第1/5小回合</div>
       <div id="gi">💰 <span id="gold">5</span> 金币</div>
+      <button class="etb" id="exa" onclick="execAllHeroSlots()" style="margin-right:4px">⚡ 一键执行</button>
       <button class="etb" id="etb" onclick="endPlayerTurn()">结束回合 →</button>
     </div>
     <!-- Heroes -->
@@ -619,6 +620,18 @@ function computeMonWarn(){
 }
 
 // ========== TURN MANAGEMENT ==========
+function execAllHeroSlots(){
+  if(G.phase!=='PLAYER')return;
+  let n=0;
+  G.slots.forEach((s,i)=>{
+    if(s.used||!s.hid||!G.heroes[s.hid])return;
+    if(atkCells(G.heroes[s.hid].pos,s.sn,s.dir).length===0)return;
+    dispatchGameAction({type:'USE_SLOT',slotId:i});
+    n++;
+  });
+  if(n>0)glog(`⚡ 一键执行了${n}个英雄动作`);
+  else glog('⚠️ 没有可执行的英雄动作');
+}
 function endPlayerTurn(){
   if(G.phase!=='PLAYER')return;
   commitPlayerActionsToElementField(G);
@@ -1248,7 +1261,8 @@ function buildSlotsVM(){
 }
 
 function buildTurnVM(){
-  return{phase:G.phase,wave:G.wave,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER'};
+  const hasExec=G.phase==='PLAYER'&&G.slots.some(s=>!s.used&&s.hid&&G.heroes[s.hid]);
+  return{phase:G.phase,wave:G.wave,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER',execAllDisabled:!hasExec};
 }
 
 function buildBattleVM(){
@@ -1677,6 +1691,7 @@ function renderTurn(turnVM){
   document.getElementById('rc').textContent=`第${turnVM.wave}波 · ${turnVM.round}/${turnVM.maxRound}小回合`;
   document.getElementById('gold').textContent=turnVM.gold;
   document.getElementById('etb').disabled=turnVM.endTurnDisabled;
+  document.getElementById('exa').disabled=turnVM.execAllDisabled;
 }
 
 // #2 形状图形预览

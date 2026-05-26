@@ -2170,6 +2170,44 @@ group('K组：结算与元素落地一致性', ()=>{
     });
   });
 });
+
+group('L组：一键执行英雄动作',()=>{
+  test('case_l_001: 一键执行所有已配置未使用的行动槽',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:5,c:5};
+    // 清空默认slot配置，手动构造: 2个有效, 1个无hero, 1个已使用
+    G.slots=[{},{},{},{}];
+    G.slots[0]={hid:'ha',el:'fire',sn:1,dir:'right',used:false};
+    G.slots[1]={hid:'ha',el:'water',sn:2,dir:'right',used:false};
+    G.slots[2]={hid:null,el:'wind',sn:1,dir:'right',used:false};
+    G.slots[3]={hid:'ha',el:'earth',sn:1,dir:'right',used:true};
+    execAllHeroSlots();
+    assert.strictEqual(G.slots[0].used,true,'slot0 应被执行');
+    assert.strictEqual(G.slots[1].used,true,'slot1 应被执行');
+    assert.strictEqual(G.slots[2].used,false,'slot2 无hero不应执行');
+    assert.strictEqual(G.slots[3].used,true,'slot3 已使用保持true');
+  });
+  test('case_l_002: buildTurnVM 包含 execAllDisabled',()=>{
+    fresh();
+    G.phase='PLAYER';
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
+    G.heroes.ha.pos={r:5,c:5};
+    let vm=buildTurnVM();
+    assert.strictEqual(vm.execAllDisabled,false,'有可执行slot时execAllDisabled=false');
+    G.slots[0].used=true;
+    vm=buildTurnVM();
+    assert.strictEqual(vm.execAllDisabled,true,'无可执行slot时execAllDisabled=true');
+  });
+  test('case_l_003: 非PLAYER阶段不执行',()=>{
+    fresh();
+    G.phase='MONSTER';
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
+    G.heroes.ha.pos={r:5,c:5};
+    execAllHeroSlots();
+    assert.strictEqual(G.slots[0].used,false,'非PLAYER阶段不执行');
+  });
+});
 });
 
 

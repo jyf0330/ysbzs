@@ -467,8 +467,6 @@ function doExplode(pos){
   explCells(pos).forEach(tp=>{
     const m=monAt(tp);
     if(m){let emult=1;if(m.el&&ADV[oldEl]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}dealDmg(m,dmg*emult,`${elName}引爆`);}
-    const h=heroAt(tp);
-    if(h){h.hp=Math.max(0,h.hp-dmg);glog(`💔 ${h.name}被爆炸波及 -${dmg}(${h.hp}/${h.maxHp})`);checkGameOver();}
   });
   G.explPos=null;
   render();
@@ -500,8 +498,6 @@ function settleExplosions(){
         explCells(pos).forEach(tp=>{
           const m=monAt(tp);
           if(m){let emult=1;if(m.el&&ADV[el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}dealDmg(m,dmg*emult,`${EL[el]}元素结算`);}
-          const h=heroAt(tp);
-          if(h){h.hp=Math.max(0,h.hp-dmg);glog(`💔 ${h.name}被爆炸波及 -${dmg}`);checkGameOver();}
         });
       }
       slot.layers=0; slot.willExplode=false;

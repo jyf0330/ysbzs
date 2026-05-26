@@ -51,7 +51,7 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .mm-icon{font-size:13px;line-height:1;}
 .mm-bot{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
 .mm-atkinfo{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
-.em{width:48px;height:48px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid;}
+.em{width:48px;height:48px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;font-weight:bold;cursor:pointer;border:1px solid;}
 
 /* ===== RIGHT PANEL ===== */
 #rp{width:290px;display:flex;flex-direction:column;gap:8px;}
@@ -280,7 +280,7 @@ const SD = {
   9: {cells:[[0,1],[0,2],[1,2],[1,3]],         name:'Z形4格',   n:4, cat:'zs_shape'},
  10: {cells:[[0,1],[0,2],[0,3],[0,4],[0,5]],  name:'5格直线',  n:5, cat:'line'},
  11: {cells:[[0,1],[0,2],[0,3],[1,1],[2,1]],  name:'长L形5格', n:5, cat:'l_shape'},
- 12: {cells:[[-1,1],[0,1],[1,1],[0,2],[0,0]], name:'十字5格',  n:5, cat:'cross'},
+ 12: {cells:[[-1,1],[0,1],[1,1],[0,2],[0,0]], name:'十字5格',  n:5, cat:'cross'}, // 教程默认：大十字攻击方块
  13: {cells:[[0,1],[0,2],[0,3],[1,2],[2,2]],  name:'T形5格',   n:5, cat:'t_shape'},
  14: {cells:[[0,1],[0,2],[1,1],[1,2],[2,1]],  name:'紧凑5格',  n:5, cat:'square'},
  15: {cells:[[0,1],[0,2],[1,1],[2,1],[2,2]],  name:'凹槽5格',  n:5, cat:'notch'},
@@ -290,6 +290,9 @@ const SD = {
  19: {cells:[[0,1],[0,2],[0,3],[0,4],[0,5],[0,6]],name:'6格直线',n:6, cat:'line'},
  20: {cells:[[0,1],[0,2],[0,3],[1,1],[1,2],[1,3]],name:'2×3矩形',n:6, cat:'square'},
 };
+
+const SHAPE_BIG_CROSS = 12;
+const TUTORIAL_DEFAULT_SLOT_SN = SHAPE_BIG_CROSS;
 
 // ========== GAME STATE ==========
 let G;
@@ -307,12 +310,12 @@ function initGame(){
     },
     monsters:[],
     slots:[
-      {id:0,el:'fire',sn:1,tier:1,hid:'ha',dir:'right',used:false},
-      {id:1,el:'fire',sn:1,tier:1,hid:'ha',dir:'right',used:false},
-      {id:2,el:'fire',sn:1,tier:1,hid:'ha',dir:'right',used:false},
-      {id:3,el:'fire',sn:1,tier:1,hid:'hb',dir:'right',used:false},
-      {id:4,el:'fire',sn:1,tier:1,hid:'hb',dir:'right',used:false},
-      {id:5,el:'fire',sn:1,tier:1,hid:'hb',dir:'right',used:false},
+      {id:0,el:'fire',sn:TUTORIAL_DEFAULT_SLOT_SN,tier:1,hid:'ha',dir:'right',used:false},
+      {id:1,el:'fire',sn:TUTORIAL_DEFAULT_SLOT_SN,tier:1,hid:'ha',dir:'right',used:false},
+      {id:2,el:'fire',sn:TUTORIAL_DEFAULT_SLOT_SN,tier:1,hid:'ha',dir:'right',used:false},
+      {id:3,el:'fire',sn:TUTORIAL_DEFAULT_SLOT_SN,tier:1,hid:'hb',dir:'right',used:false},
+      {id:4,el:'fire',sn:TUTORIAL_DEFAULT_SLOT_SN,tier:1,hid:'hb',dir:'right',used:false},
+      {id:5,el:'fire',sn:TUTORIAL_DEFAULT_SLOT_SN,tier:1,hid:'hb',dir:'right',used:false},
     ],
     elementCells:{}, // 格子四元素槽 {"r,c":{fire:{layers,previewDamage,willExplode},...}}
     explosionThreshold:3, // 游戏默认：3层触发引爆；测试用例可自行覆盖
@@ -1024,7 +1027,7 @@ function buildBoardVM(){
       Object.entries(adds).forEach(([el,n])=>{
         const curStk=(bc.el===el)?bc.stk:0;
         const nextStk=Math.min(curStk+n,MAX_STK);
-        pvElLayers[el]={add:n,cur:curStk,next:nextStk,willExplode:nextStk>=G.explosionThreshold};
+        pvElLayers[el]={add:n,cur:curStk,next:nextStk,willExplode:nextStk>=G.explosionThreshold,dmg:explDmg(nextStk)};
       });
     }
     cells.push({
@@ -1268,7 +1271,7 @@ function renderBoard(boardVM){
       em.style.background=cv.el.bg;
       em.style.color=cv.el.color;
       em.style.borderColor=cv.el.color;
-      em.textContent=`${EL[cv.el.el]}${cv.el.stk}`;
+      em.innerHTML=`<span>${EL[cv.el.el]}${cv.el.stk}层</span><span style="font-size:9px;opacity:0.9">${cv.el.explDmg}伤</span>`;
       em.title=`${EL[cv.el.el]}元素·${cv.el.stk}层·引爆伤害${cv.el.explDmg}`;
       em.onclick=(e)=>{e.stopPropagation();showTT(cv.r,cv.c,e);};
       cell.appendChild(em);
@@ -1286,7 +1289,7 @@ function renderBoard(boardVM){
       badge.className=cv.pvWillExplode?'explode-warn':'el-prev-badge';
       const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
       const parts=Object.entries(cv.pvElLayers).map(([el,info])=>{
-        const txt=info.cur>0?`${info.cur}→${info.next}`:`+${info.add}`;
+        const txt=info.willExplode?`💥${info.dmg}伤`:(info.cur>0?`${info.cur}→${info.next}层`:`+${info.add}层`);
         return`<span style="color:${EC[el]}">${ELICON[el]||EL[el]}${txt}${info.willExplode?'!':''}</span>`;
       });
       badge.innerHTML=parts.join(' ');

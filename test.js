@@ -35,6 +35,8 @@ const gameScript = scriptTag[1].replace(/\bconst\b/g,'var').replace(/\blet\b/g,'
 eval(gameScript); // eslint-disable-line no-eval
 
 // 屏蔽 DOM 渲染函数，只测逻辑
+const _realRender = render;
+const _realGlog = glog;
 render      = ()=>{};
 renderShop  = ()=>{};
 glog        = ()=>{};
@@ -56,6 +58,17 @@ function test(name, fn){
 }
 function group(name, fn){ console.log(`\n▶ ${name}`); fn(); }
 function fresh(){ initGame(); _lastMsg=''; }
+function resetDomEl(id){
+  const el=document.getElementById(id);
+  el.innerHTML=''; el.textContent=''; el.children=[]; el.style.display='';
+  return el;
+}
+function withRealUi(fn){
+  const oldRender=render, oldGlog=glog;
+  render=_realRender; glog=_realGlog;
+  try{ fn(); }
+  finally{ render=oldRender; glog=oldGlog; }
+}
 
 // ═══════════════════════════════════════════════════════════════
 group('常量与形状定义', ()=>{
@@ -2123,6 +2136,38 @@ group('K组：结算与元素落地一致性', ()=>{
     const prev={...G.heroes.ha.pos};
     dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:5,c:5}});
     assert.deepStrictEqual(G.heroes.ha.pos,prev,'底层 action 也不能移动到元素格');
+  });
+  test('case_k_014: 点击剩余元素格会生成详情，移动点击会写入占用日志',()=>{
+    fresh();
+    resetDomEl('cd'); resetDomEl('log');
+    G.monsters=[];
+    G.elementCells['5,5']={
+      fire:{layers:3,willExplode:true},
+      water:{layers:1,willExplode:false},
+      wind:{layers:0,willExplode:false},
+      earth:{layers:0,willExplode:false},
+    };
+    G.board[5][5].el='fire'; G.board[5][5].stk=3;
+    settleDamage();
+    withRealUi(()=>{
+      const logEl=document.getElementById('log');
+      onCell(5,5);
+      const cdEl=document.getElementById('cd');
+      assert.strictEqual(G.selectedCell.r,5,'点击后 selectedCell.r=5');
+      assert.strictEqual(G.selectedCell.c,5,'点击后 selectedCell.c=5');
+      assert.strictEqual(cdEl.style.display,'block','格子详情面板应显示');
+      assert.ok(cdEl.innerHTML.includes('格子 [5,5]'),'详情应显示坐标');
+      assert.ok(cdEl.innerHTML.includes('💧水1层'),'详情应显示剩余水元素层');
+      assert.ok(!cdEl.innerHTML.includes('🔥火3层'),'详情不应显示已引爆的火3层');
+      assert.ok(cdEl.innerHTML.includes('还需 2 层才能引爆'),'详情应显示未达到引爆阈值');
+      assert.strictEqual(logEl.children.length,0,'普通点击查看详情不应写战斗日志');
+      G.selHero='ha';
+      const prev={...G.heroes.ha.pos};
+      onCell(5,5);
+      assert.deepStrictEqual(G.heroes.ha.pos,prev,'英雄点击剩余元素格后位置不变');
+      const lastLog=logEl.children[logEl.children.length-1]?.textContent||'';
+      assert.ok(lastLog.includes('目标格已占用'),'移动点击被阻挡时应写入占用日志');
+    });
   });
 });
 });

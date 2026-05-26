@@ -6,7 +6,7 @@
 - 当前规则源头：`docs/00_AI_PROJECT_RULES.md`。
 - 当前任务入口：`tasks/doing/当前任务.md`。
 - 主程序：`index.html`，保持单文件架构。
-- 自动化基线：`node test.js`，2026-05-26 验证为 243/243。
+- 自动化基线：`node test.js`，2026-05-26 验证为 244/244。
 
 ## 当前协作方式
 

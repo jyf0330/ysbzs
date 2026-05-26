@@ -131,7 +131,7 @@ group('initGame 初始化', ()=>{
   test('wave = 1',        ()=> assert.strictEqual(G.wave,1));
   test('round = 1',       ()=> assert.strictEqual(G.round,1));
   test('maxRound = 5',    ()=> assert.strictEqual(G.maxRound,5));
-  test('gold = 5',        ()=> assert.strictEqual(G.gold,5));
+  test('gold = 10',       ()=> assert.strictEqual(G.gold,10));
   test('hitCount = 0',    ()=> assert.strictEqual(G.hitCount,0));
   test('棋盘 13 行',      ()=> assert.strictEqual(G.board.length,13));
   test('棋盘每行 13 列',  ()=> G.board.forEach((row,r)=>
@@ -628,13 +628,14 @@ group('回合管理', ()=>{
     finishMonsters();
     G.slots.forEach((s,i)=>assert.strictEqual(s.used,false,`槽${i}`));
   });
-  test('finishMonsters round>maxRound → 商店+金币+3', ()=>{
+  test('finishMonsters round>maxRound → 进入商店并 openShop', ()=>{
     fresh();
-    const gold0=G.gold;
     G.round=G.maxRound+1;
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
-    assert.strictEqual(G.gold, gold0+3);
+    // openShop 将 gold 设为 10+savedCoins
+    assert.strictEqual(G.gold, 10);
+    assert.ok(G.shopItems.units.length>0,'应已生成商店');
   });
   test('finishMonsters 所有怪死亡 → 商店', ()=>{
     fresh();
@@ -751,198 +752,271 @@ group('spawnWave 波次生成', ()=>{
 });
 
 // ═══════════════════════════════════════════════════════════════
-group('商店系统', ()=>{
-  test('genShop 生成3个商品', ()=>{
-    fresh(); genShop();
-    assert.strictEqual(G.shopItems.length,3);
+group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
+  test('openShop 设定 shopTier=calcShopTier(day) 并 genShop', ()=>{
+    fresh(); G.day=1;
+    openShop();
+    assert.strictEqual(G.shopTier,1);
+    assert.ok(G.shopItems.units.length>0,'应生成单位商品');
+    assert.ok(G.shopItems.consumables.length>0,'应生成强化品');
   });
-  test('商品有合法 el / sn / tier=1 / cost≥1', ()=>{
-    fresh(); genShop();
-    const validEl=['fire','water','wind','earth'];
-    G.shopItems.forEach((item,i)=>{
-      assert.ok(validEl.includes(item.el),`商品${i} el非法`);
-      assert.ok(item.sn>=1&&item.sn<=20,`商品${i} sn非法`);
-      assert.strictEqual(item.tier,1,`商品${i} tier应为1`);
-      assert.ok(item.cost>=1,`商品${i} cost应≥1`);
+  test('genShop 生成 6 个单位 + 4 个强化品', ()=>{
+    fresh(); G.shopTier=1;
+    genShop();
+    assert.strictEqual(G.shopItems.units.length,6);
+    assert.strictEqual(G.shopItems.consumables.length,4);
+  });
+  test('shopItems.units 每个商品含 defId/cost/frozen', ()=>{
+    fresh(); G.shopTier=1; genShop();
+    G.shopItems.units.forEach((item,i)=>{
+      assert.ok(UNIT_DEFS[item.defId],`单位${i} defId 应存在于 UNIT_DEFS`);
+      assert.ok(item.cost>=2,`单位${i} cost 应≥2`);
+      assert.strictEqual(item.frozen,false,`单位${i} 初始 frozen=false`);
     });
   });
-  test('buyToBackpack 扣金币并放入背包', ()=>{
-    fresh(); G.gold=10; genShop();
-    const item=G.shopItems[0];
-    buyToBackpack(item.id);
-    assert.strictEqual(G.gold, 10-item.cost);
-    assert.strictEqual(G.backpack.length,1);
-    assert.strictEqual(G.backpack[0].sn,item.sn);
-    assert.ok(G.backpack[0].bpId,'应有 bpId');
+  test('buyUnit 扣金币并加入 ownedUnits', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=10;
+    G.shopTier=1; genShop();
+    G.ownedUnits=[]; G.nextUnitId=0;
+    const item=G.shopItems.units[0];
+    const cost=item.cost;
+    buyUnit(item.id);
+    assert.strictEqual(G.gold, 10-cost);
+    assert.strictEqual(G.ownedUnits.length,1);
+    assert.strictEqual(G.ownedUnits[0].defId,item.defId);
   });
-  test('buyToBackpack 购买后从商品列表移除', ()=>{
-    fresh(); G.gold=99; genShop();
-    const id=G.shopItems[0].id;
-    buyToBackpack(id);
-    assert.ok(!G.shopItems.find(i=>i.id===id),'商品应被移除');
+  test('buyUnit 金币不足 → 不购买', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=0;
+    G.shopTier=1; genShop();
+    G.ownedUnits=[];
+    buyUnit(G.shopItems.units[0].id);
+    assert.strictEqual(G.ownedUnits.length,0);
   });
-  test('buyToBackpack 金币不足 → 不购买', ()=>{
-    fresh(); G.gold=0; genShop();
-    buyToBackpack(G.shopItems[0].id);
-    assert.strictEqual(G.backpack.length,0);
+  test('buyUnit 同名单位自动合成', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=10;
+    G.shopTier=1; genShop();
+    const defId=G.shopItems.units[0].defId;
+    // 先手动加一个同名L1单位
+    addOwnedUnit(defId,{r:10,c:1});
+    const beforeCount=G.ownedUnits.length;
+    buyUnit(G.shopItems.units[0].id);
+    // 应该合成为 Lv2，不会增加单位数
+    const merged=G.ownedUnits.find(u=>u.defId===defId);
+    assert.ok(merged,'应有合并后的单位');
+    assert.strictEqual(merged.level,2,'应升级到 Lv2');
   });
-  test('buyToBackpack 背包满 64 → 不购买', ()=>{
-    fresh(); G.gold=999; genShop();
-    G.backpack=Array.from({length:64},(_,i)=>({bpId:`x${i}`}));
-    buyToBackpack(G.shopItems[0].id);
-    assert.strictEqual(G.backpack.length,64);
-    assert.ok(_lastMsg.includes('满'),'应提示背包已满');
+  test('sellUnit 返还 unit.level 金币并移除单位', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=5;
+    // initGame 已有 fire_starter + water_droplet，再加一个 fire_starter
+    addOwnedUnit('fire_starter',{r:12,c:1});
+    const unit=G.ownedUnits[2]; // 第三个 unit
+    const beforeLen=G.ownedUnits.length;
+    sellUnit(unit.instanceId);
+    assert.strictEqual(G.gold, 5+unit.level);
+    assert.strictEqual(G.ownedUnits.length, beforeLen-1);
   });
-  test('refreshShop 才 1 金币并重新生成3 件商品', ()=>{
-    fresh(); G.gold=5; genShop();
-    refreshShop();
-    assert.strictEqual(G.gold,4);
-    assert.strictEqual(G.shopItems.length,3);
+  test('rollShop 花费 1 金币并重新生成商店', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=10;
+    G.shopTier=1; genShop();
+    // 冻结一个商品
+    const uid=G.shopItems.units[0].id;
+    G.shopFrozen.units.add(uid);
+    rollShop();
+    assert.strictEqual(G.gold,9);
+    // rollShop 清除冻结
+    assert.strictEqual(G.shopFrozen.units.size,0);
+    assert.strictEqual(G.shopFrozen.consumables.size,0);
+    assert.strictEqual(G.shopItems.units.length,6,'应重新生成6个单位');
+    assert.strictEqual(G.shopItems.consumables.length,4,'应重新生成4个强化品');
   });
-  test('refreshShop 金币不足 → 不刷新', ()=>{
-    fresh(); G.gold=0; genShop();
-    refreshShop();
+  test('rollShop 金币不足 → 不刷新', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=0;
+    G.shopTier=1; genShop();
+    const oldIds=G.shopItems.units.map(u=>u.id);
+    rollShop();
     assert.strictEqual(G.gold,0);
-    assert.ok(_lastMsg.includes('金币'),'应提示金币不足');
+    assert.deepStrictEqual(G.shopItems.units.map(u=>u.id),oldIds);
   });
-  test('buyEl 扣金币并在棋盘放置元素', ()=>{
-    fresh(); G.gold=5; genShop();
-    // 手动添加一个 shopEl
-    G.shopEls=[{id:'se0',el:'fire',cost:1}];
-    const beforeGold=G.gold;
-    buyEl('se0');
-    assert.strictEqual(G.gold, beforeGold-1);
-    // 检查棋盘上有fire元素
-    let found=false;
-    for(let r=0;r<13&&!found;r++) for(let c=0;c<13&&!found;c++)
-      if(G.board[r][c].el==='fire') found=true;
-    assert.ok(found,'棋盘上应有火元素');
+  test('freezeShopItem 切换冻结状态', ()=>{
+    fresh(); G.phase='SHOP'; G.shopTier=1;
+    genShop();
+    const uid=G.shopItems.units[0].id;
+    freezeShopItem(uid,'units');
+    assert.ok(G.shopFrozen.units.has(uid),'应被冻结');
+    freezeShopItem(uid,'units');
+    assert.ok(!G.shopFrozen.units.has(uid),'应取消冻结');
   });
-  test('buyEl 购买后从 shopEls 移除', ()=>{
-    fresh(); G.gold=5;
-    G.shopEls=[{id:'se0',el:'water',cost:1}];
-    buyEl('se0');
-    assert.ok(!G.shopEls.find(e=>e.id==='se0'),'shopEl 应被移除');
+  test('closeShop day+1 wave+1 重置状态', ()=>{
+    fresh(); G.phase='SHOP';
+    const d0=G.day; const w0=G.wave;
+    closeShop();
+    assert.strictEqual(G.day, d0+1);
+    assert.strictEqual(G.wave, w0+1);
+    assert.strictEqual(G.phase,'PLAYER');
+    assert.strictEqual(G.round,1);
+    assert.strictEqual(G.hitCount,0);
   });
-});
-
-// ═══════════════════════════════════════════════════════════════
-group('#4 背包系统 bpEquip / bpCombine', ()=>{
-  test('bpEquip 装备背包物品到指定槽', ()=>{
-    fresh();
-    G.backpack=[{el:'water',sn:3,tier:2,name:'测',bpId:'bp_0'}];
-    bpEquip('bp_0',1);
-    assert.strictEqual(G.slots[1].el,'water');
-    assert.strictEqual(G.slots[1].sn,3);
-    assert.strictEqual(G.slots[1].tier,2);
-    assert.strictEqual(G.slots[1].used,false);
-    assert.strictEqual(G.backpack.length,0,'背包应清空该物品');
+  test('buyConsumable coin_bag → savedCoins+2', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=5;
+    G.savedCoins=0;
+    const item={id:'sc_test',type:'coin_bag',name:'💰金币袋',cost:2};
+    G.shopItems.consumables=[item];
+    buyConsumable('sc_test');
+    assert.strictEqual(G.gold,3);
+    assert.strictEqual(G.savedCoins,2);
   });
-  test('bpEquip 无效 bpId 不崩溃', ()=>{
-    fresh();
-    assert.doesNotThrow(()=>bpEquip('nonexistent',0));
+  test('buyConsumable 金币不足不购买', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=0;
+    G.savedCoins=0;
+    const item={id:'sc_test2',type:'coin_bag',name:'💰金币袋',cost:2};
+    G.shopItems.consumables=[item];
+    buyConsumable('sc_test2');
+    assert.strictEqual(G.savedCoins,0);
   });
-  test('bpEquip 装备后背包数量-1', ()=>{
-    fresh();
-    G.backpack=[
-      {el:'fire',sn:1,tier:1,bpId:'bp_0'},
-      {el:'water',sn:2,tier:1,bpId:'bp_1'},
-    ];
-    bpEquip('bp_0',0);
-    assert.strictEqual(G.backpack.length,1);
-    assert.strictEqual(G.backpack[0].bpId,'bp_1');
+  test('openShop 金币 = 10 + savedCoins', ()=>{
+    fresh(); G.day=1;
+    G.savedCoins=2; G.gold=5;
+    openShop();
+    assert.strictEqual(G.gold, 12);
+    assert.strictEqual(G.savedCoins, 0);
   });
-  test('bpCombine 合并两件同款物品', ()=>{
-    fresh();
-    G.backpack=[
-      {el:'fire',sn:1,tier:1,name:'火·1格·1号·1阶',cost:0,id:'a',bpId:'bp_0'},
-      {el:'fire',sn:1,tier:1,name:'火·1格·1号·1阶',cost:0,id:'b',bpId:'bp_1'},
-    ];
-    bpCombine('bp_0','bp_1');
-    assert.strictEqual(G.backpack.length,1,'应从2件变为1件');
-    assert.strictEqual(G.backpack[0].tier,2,'新阶=旧阶+1');
-    assert.strictEqual(G.backpack[0].el,'fire');
-    assert.strictEqual(G.backpack[0].sn,1);
-  });
-  test('bpCombine 合成后 tier+1', ()=>{
-    fresh();
-    G.backpack=[
-      {el:'wind',sn:5,tier:2,name:'测',cost:0,id:'c',bpId:'bp_0'},
-      {el:'wind',sn:5,tier:2,name:'测',cost:0,id:'d',bpId:'bp_1'},
-    ];
-    bpCombine('bp_0','bp_1');
-    assert.strictEqual(G.backpack[0].tier,3);
-  });
-  test('bpCombine 4 阶不再合成', ()=>{
-    fresh(); _lastMsg='';
-    G.backpack=[
-      {el:'fire',sn:1,tier:4,bpId:'bp_0'},
-      {el:'fire',sn:1,tier:4,bpId:'bp_1'},
-    ];
-    bpCombine('bp_0','bp_1');
-    assert.ok(_lastMsg.includes('最高'),'应提示已是最高阶');
-    assert.strictEqual(G.backpack.length,2,'背包应不变');
-  });
-  test('bpCombine 无效 bpId 不崩溃', ()=>{
-    fresh();
-    assert.doesNotThrow(()=>bpCombine('bad0','bad1'));
+  test('savedCoins 上限 3', ()=>{
+    fresh(); G.savedCoins=5;
+    openShop();
+    // savedCoins 在 openShop 中做了 min(savedCoins,3)
+    // 但 gold 应该 = 10 + min(5,3) = 13
+    assert.strictEqual(G.gold, 13);
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-group('#5 合成Bug修复 combineSlots', ()=>{
-  test('合成后槽 i 升阶', ()=>{
+group('单位管理 addOwnedUnit / buildHeroesFromUnits / mergeUnits', ()=>{
+  test('addOwnedUnit 创建单位实例并加入 ownedUnits', ()=>{
     fresh();
-    G.slots[0].el='fire'; G.slots[0].sn=3; G.slots[0].tier=1;
-    G.slots[1].el='fire'; G.slots[1].sn=3; G.slots[1].tier=1;
-    combineSlots(0,1);
-    assert.strictEqual(G.slots[0].tier,2);
+    const before=G.ownedUnits.length;
+    const u=addOwnedUnit('fire_starter',{r:5,c:5});
+    assert.ok(u,'应返回单位');
+    assert.strictEqual(G.ownedUnits.length, before+1);
+    assert.strictEqual(u.defId,'fire_starter');
+    assert.strictEqual(u.level,1);
+    assert.strictEqual(u.hp,20);
+    assert.strictEqual(u.active,true);
   });
-  test('合成后槽 j 重置为 fire·1号·1阶（BUG修复核心）', ()=>{
+  test('addOwnedUnit 无效 defId 返回 null', ()=>{
     fresh();
-    G.slots[0].el='water'; G.slots[0].sn=3; G.slots[0].tier=1;
-    G.slots[1].el='water'; G.slots[1].sn=3; G.slots[1].tier=1;
-    combineSlots(0,1);
-    assert.strictEqual(G.slots[1].el,  'fire', '槽j.el 应重置为 fire（非water）');
-    assert.strictEqual(G.slots[1].sn,  1,      '槽j.sn 应重置为 1');
-    assert.strictEqual(G.slots[1].tier,1,      '槽j.tier 应为 1');
+    assert.strictEqual(addOwnedUnit('nonexistent'),null);
   });
-  test('合成后槽 j.used = false', ()=>{
+  test('buildHeroesFromUnits 从 2 个活跃单位构建 heroes/slots', ()=>{
     fresh();
-    G.slots[0].el='wind'; G.slots[0].sn=2; G.slots[0].tier=1;
-    G.slots[1].el='wind'; G.slots[1].sn=2; G.slots[1].tier=1;
-    G.slots[0].used=true; G.slots[1].used=true;
-    combineSlots(0,1);
-    assert.strictEqual(G.slots[0].used,false,'槽i应重置');
-    assert.strictEqual(G.slots[1].used,false,'槽j应重置');
+    G.ownedUnits=[];
+    addOwnedUnit('fire_starter',{r:10,c:1});
+    addOwnedUnit('water_droplet',{r:11,c:1});
+    buildHeroesFromUnits();
+    assert.strictEqual(Object.keys(G.heroes).length,2);
+    assert.ok(G.heroes.ha,'ha 应存在');
+    assert.ok(G.heroes.hb,'hb 应存在');
+    assert.strictEqual(G.slots.length,6,'2单位×3槽=6');
+    assert.strictEqual(G.heroes.ha.hp,20);
+    assert.strictEqual(G.heroes.hb.hp,20);
   });
-  test('el/sn 不匹配时不合成', ()=>{
+  test('buildHeroesFromUnits 超过2个活跃单位时只取前2个', ()=>{
     fresh();
-    G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].tier=1;
-    G.slots[1].el='water';G.slots[1].sn=1; G.slots[1].tier=1;
-    combineSlots(0,1);
-    assert.strictEqual(G.slots[0].el,'fire','不应改变');
+    G.ownedUnits=[];
+    addOwnedUnit('fire_starter',{r:10,c:1});
+    addOwnedUnit('water_droplet',{r:11,c:1});
+    addOwnedUnit('wind_breeze',{r:12,c:1});
+    buildHeroesFromUnits();
+    assert.strictEqual(G.slots.length,6,'仍只构建6槽');
+    assert.strictEqual(G.ownedUnits[2].active,false,'第3个单位应标记为 inactive');
   });
-  test('tier 不匹配时不合成', ()=>{
+  test('mergeUnits 同 defId 合成升级 Lv1→Lv2', ()=>{
     fresh();
-    G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].tier=1;
-    G.slots[1].el='fire'; G.slots[1].sn=1; G.slots[1].tier=2;
-    combineSlots(0,1);
-    assert.strictEqual(G.slots[0].tier,1,'不应改变');
+    G.ownedUnits=[];
+    const u1=addOwnedUnit('fire_starter',{r:10,c:1});
+    const u2=addOwnedUnit('fire_starter',{r:11,c:1});
+    u1.level=1; u1.hp=20;
+    u2.level=1; u2.hp=20;
+    const ok=mergeUnits(u2,u1);
+    assert.ok(ok,'合成应成功');
+    assert.strictEqual(u1.level,2);
+    assert.strictEqual(u1.maxHp,25);
+    assert.strictEqual(G.ownedUnits.length,1,'素材单位已移除');
   });
-  test('4阶合成不超过 4 阶', ()=>{
+  test('mergeUnits Lv3 不再合成', ()=>{
     fresh();
-    G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].tier=4;
-    G.slots[1].el='fire'; G.slots[1].sn=1; G.slots[1].tier=4;
-    combineSlots(0,1);
-    assert.strictEqual(G.slots[0].tier,4,'上限为4阶');
+    G.ownedUnits=[];
+    const u1=addOwnedUnit('fire_starter',{r:10,c:1});
+    const u2=addOwnedUnit('fire_starter',{r:11,c:1});
+    u1.level=3; u2.level=3;
+    const ok=mergeUnits(u2,u1);
+    assert.strictEqual(ok,false);
+    assert.strictEqual(G.ownedUnits.length,2,'不应移除任何单位');
   });
-  test('合成后槽 i.used = false', ()=>{
+  test('mergeUnits 不同 defId 不合成', ()=>{
     fresh();
-    G.slots[0].el='earth';G.slots[0].sn=2;G.slots[0].tier=1;G.slots[0].used=true;
-    G.slots[1].el='earth';G.slots[1].sn=2;G.slots[1].tier=1;G.slots[1].used=false;
-    combineSlots(0,1);
-    assert.strictEqual(G.slots[0].used,false);
+    G.ownedUnits=[];
+    const u1=addOwnedUnit('fire_starter',{r:10,c:1});
+    const u2=addOwnedUnit('water_droplet',{r:11,c:1});
+    const ok=mergeUnits(u2,u1);
+    assert.strictEqual(ok,false);
+    assert.strictEqual(G.ownedUnits.length,2);
+  });
+  test('toggleUnitActive active→bench 切换', ()=>{
+    fresh();
+    G.ownedUnits=[];
+    addOwnedUnit('fire_starter',{r:10,c:1});
+    const u=G.ownedUnits[0];
+    assert.strictEqual(u.active,true);
+    toggleUnitActive(u.instanceId);
+    assert.strictEqual(u.active,false);
+    toggleUnitActive(u.instanceId);
+    assert.strictEqual(u.active,true);
+  });
+  test('calcShopTier day1→1, day2→1, day3→2, day5→3', ()=>{
+    assert.strictEqual(calcShopTier(1),1);
+    assert.strictEqual(calcShopTier(2),1);
+    assert.strictEqual(calcShopTier(3),2);
+    assert.strictEqual(calcShopTier(4),2);
+    assert.strictEqual(calcShopTier(5),3);
+    assert.strictEqual(calcShopTier(10),3);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+group('UNIT_DEFS 单位定义库', ()=>{
+  test('UNIT_DEFS 含 10 个单位（6 tier1 + 4 tier2）', ()=>{
+    const all=Object.values(UNIT_DEFS);
+    assert.strictEqual(all.length,10);
+    assert.strictEqual(all.filter(u=>u.tier===1).length,6);
+    assert.strictEqual(all.filter(u=>u.tier===2).length,4);
+  });
+  test('每个单位有 3 个等级，每级有 3 个 action slot', ()=>{
+    Object.values(UNIT_DEFS).forEach(u=>{
+      for(let lv=1;lv<=3;lv++){
+        assert.ok(u.levels[lv],`${u.id} Lv${lv} 应存在`);
+        assert.ok(u.levels[lv].hp>0,`${u.id} Lv${lv} hp>0`);
+        assert.strictEqual(u.levels[lv].slots.length,3,`${u.id} Lv${lv} 应有3槽`);
+      }
+    });
+  });
+  test('UNIT_TIER_POOL 按 tier 分组', ()=>{
+    assert.ok(Array.isArray(UNIT_TIER_POOL[1]));
+    assert.ok(Array.isArray(UNIT_TIER_POOL[2]));
+    assert.ok(UNIT_TIER_POOL[1].length>=6,'tier1 至少6个');
+    assert.ok(UNIT_TIER_POOL[2].length>=4,'tier2 至少4个');
+  });
+  test('所有单位 slot 含合法 el/sn/dir/tier', ()=>{
+    const validEl=['fire','water','wind','earth'];
+    Object.values(UNIT_DEFS).forEach(u=>{
+      for(let lv=1;lv<=3;lv++){
+        u.levels[lv].slots.forEach((s,si)=>{
+          assert.ok(validEl.includes(s.el),`${u.id} Lv${lv} slot${si} el非法`);
+          assert.ok(s.sn>=1&&s.sn<=20,`${u.id} Lv${lv} slot${si} sn非法`);
+          assert.ok(['right','left','up','down'].includes(s.dir),`${u.id} Lv${lv} slot${si} dir非法`);
+          assert.ok(s.tier>=1&&s.tier<=4,`${u.id} Lv${lv} slot${si} tier非法`);
+        });
+      }
+    });
   });
 });
 
@@ -1225,15 +1299,16 @@ group('格子信息层 cellInfoMap（buildCellInfoMap）', ()=>{
 // ═══════════════════════════════════════════════════════════════
 // A 组：initGame 第一关默认配置测试
 group('A组：initGame 第一关默认配置', ()=>{
-  test('case_init_001: ha/hb 6个槽全部是 fire', ()=>{
+  test('case_init_001: 教程默认 fire_starter(3火) + water_droplet(3水) = 6槽', ()=>{
     fresh();
     const els=G.slots.map(s=>s.el);
-    assert.ok(els.every(e=>e==='fire'), `所有槽应为 fire，实际: ${JSON.stringify(els)}`);
+    assert.deepStrictEqual(els, ['fire','fire','fire','water','water','water']);
   });
-  test('case_init_002: 默认槽无 water/wind/earth', ()=>{
+  test('case_init_002: 教程默认槽含 fire 和 water，无 wind/earth', ()=>{
     fresh();
     const els=G.slots.map(s=>s.el);
-    assert.ok(!els.includes('water'),'water 不应出现在默认槽');
+    assert.ok(els.includes('fire'),'fire 应在默认槽');
+    assert.ok(els.includes('water'),'water 应在默认槽');
     assert.ok(!els.includes('wind'), 'wind 不应出现在默认槽');
     assert.ok(!els.includes('earth'),'earth 不应出现在默认槽');
   });
@@ -1260,11 +1335,10 @@ group('A组：initGame 第一关默认配置', ()=>{
     fresh();
     assert.strictEqual(G.explosionThreshold,3,'threshold=3');
   });
-  test('case_init_006: ha/hb 6个槽全部是大十字攻击方块(sn=12)', ()=>{
+  test('case_init_006: 教程默认槽形状为 fire_starter L1(sn1/2/3) + water_droplet L1(sn1/4/12)', ()=>{
     fresh();
     const sns=G.slots.map(s=>s.sn);
-    assert.ok(sns.every(sn=>sn===12), `所有默认槽应为大十字 sn=12，实际: ${JSON.stringify(sns)}`);
-    assert.ok(G.slots.every(s=>SD[s.sn]?.cat==='cross'), '默认槽分类应为 cross');
+    assert.deepStrictEqual(sns, [1,2,3,1,4,12]);
   });
 });
 
@@ -1284,14 +1358,16 @@ group('A补：教程默认大十字攻击方块', ()=>{
     G.board[pos.r][pos.c].stk=layers;
   }
 
-  test('case_bigcross_001: 默认大十字同时覆盖怪物格与空格', ()=>{
+  test('case_bigcross_001: 大十字同时覆盖怪物格与空格', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
       {id:'m0',name:'命中怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
       {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:10,c:10},dead:false,el:null},
     ];
-    const hitKeys=atkCells(G.heroes.ha.pos,G.slots[0].sn,G.slots[0].dir).map(p=>`${p.r},${p.c}`);
+    // 显式设置大十字 sn=12
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
+    const hitKeys=atkCells(G.heroes.ha.pos,12,'right').map(p=>`${p.r},${p.c}`);
     ['4,6','5,6','6,6','5,7','5,5'].forEach(ky=>assert.ok(hitKeys.includes(ky),`大十字应覆盖 ${ky}`));
     useSlot(0);
     assert.strictEqual(G.elementCells['5,6'].fire.layers,1,'怪物格应叠 fire 1 层');
@@ -1299,13 +1375,14 @@ group('A补：教程默认大十字攻击方块', ()=>{
     assert.strictEqual(G.monsters[0].hp,10,'行动阶段不立即扣血');
   });
 
-  test('case_bigcross_002: 默认大十字可把空格叠到3层并触发十字引爆', ()=>{
+  test('case_bigcross_002: 大十字可把空格叠到3层并触发十字引爆', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
       {id:'m0',name:'波及怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:8},dead:false,el:null},
       {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:10,c:10},dead:false,el:null},
     ];
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
     seedElCell({r:5,c:7},'fire',2);
     useSlot(0);
     assert.strictEqual(G.elementCells['5,7'].fire.layers,3,'空格应叠到3层');
@@ -1315,13 +1392,14 @@ group('A补：教程默认大十字攻击方块', ()=>{
     assert.strictEqual(G.monsters[1].hp,10,'远处怪不受伤');
   });
 
-  test('case_bigcross_003: 默认大十字命中怪物格到3层时仍是单体结算，不触发十字', ()=>{
+  test('case_bigcross_003: 大十字命中怪物格到3层时仍是单体结算，不触发十字', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
       {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:6},dead:false,el:null},
       {id:'m1',name:'相邻怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:7},dead:false,el:null},
     ];
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
     seedElCell({r:4,c:6},'fire',2);
     useSlot(0);
     assert.strictEqual(G.elementCells['4,6'].fire.layers,3,'怪物格应叠到3层');

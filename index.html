@@ -589,7 +589,7 @@ function initGame(){
   addOwnedUnit('fire_starter',{r:10,c:1});
   addOwnedUnit('water_droplet',{r:11,c:1});
   syncUnitsToHeroes();
-  spawnWave(1);
+  spawnWaveForDay(1,'morning');
   render();
   glog('🎮 游戏开始！第一波教学关卡。');
   glog('💡 提示：选中行动点→调整方向→点"使用"发动攻击。');
@@ -602,29 +602,83 @@ function mkBoard(){
   return b;
 }
 
-function spawnWave(w){
-  if(w===1){
-    G.monsters=[
-      {id:'m0',name:'教学怪1',hp:6, maxHp:6, atk:1,pos:{r:1,c:11},dead:false,el:null},
-      {id:'m1',name:'教学怪2',hp:10,maxHp:10,atk:2,pos:{r:0,c:10},dead:false,el:null},
-    ];
-  } else {
-    const ELEMS=['fire','water','wind','earth'];
-    const counts=[0,2,3,4,5,6,7,8];
-    const n=counts[Math.min(w,counts.length-1)];
-    G.monsters=[];
-    for(let i=0;i<n;i++){
-      const hp=6+w*2+(i%2)*4;
-      G.monsters.push({
-        id:`m${w}_${i}`,name:`怪物${i+1}`,
-        hp,maxHp:hp,atk:Math.max(1,Math.floor(w/2)),
-        pos:{r:Math.min(i%5,4),c:12-Math.floor(i/5)},dead:false,
-        el:ELEMS[ri(ELEMS.length)]
-      });
-    }
+function buildWaveForDay(day,phase){
+  const cfg = DAY_WAVE_CONFIG[day]?.[phase];
+  if(!cfg) { G.monsters=[]; return []; }
+  let budget = cfg.budget;
+  const allowed = cfg.allowed;
+  const spawnSize = cfg.spawnSize;
+  const maxAlive = cfg.maxAlive;
+  // 构建可选怪物池
+  const pool = [];
+  allowed.forEach(typeId => {
+    const mt = MONSTER_TYPES[typeId];
+    if(mt) pool.push({...mt, typeId});
+  });
+  if(pool.length===0){ G.monsters=[]; return []; }
+  // 按cost升序排列，让廉价怪优先填满预算
+  pool.sort((a,b)=>a.cost-b.cost);
+  // 贪心+随机生成怪物列表
+  const result = [];
+  let attempts = 0;
+  while(budget>0 && result.length<maxAlive && attempts<200){
+    const affordable = pool.filter(mt=>mt.cost<=budget);
+    if(affordable.length===0) break;
+    const pick = affordable[ri(affordable.length)];
+    result.push({
+      typeId: pick.typeId,
+      name: pick.name,
+      hp: pick.hp, maxHp: pick.hp,
+      atk: pick.atk, ap: pick.ap,
+      cost: pick.cost, gold: pick.gold,
+      pos: null, dead: false, el: null,
+    });
+    budget -= pick.cost;
+    attempts++;
   }
+  return {monsters:result,remnant:budget,maxAlive,spawnSize};
 }
 
+function getSpawnCells(spawnSize){
+  // 右上角 spawnSize×spawnSize 区域
+  const cells=[];
+  for(let r=0; r<spawnSize; r++){
+    for(let c=13-spawnSize; c<13; c++){
+      cells.push({r,c});
+    }
+  }
+  return cells;
+}
+
+function spawnWaveForDay(day,phase){
+  const wavePlan = buildWaveForDay(day,phase);
+  if(!wavePlan||!wavePlan.monsters){
+    G.monsters=[];
+    return;
+  }
+  const spawnCells = getSpawnCells(wavePlan.spawnSize);
+  // 过滤已被占用的出生格
+  const freeCells = spawnCells.filter(sc=>{
+    return !monAt(sc) && !heroAt(sc);
+  });
+  G.monsters=[];
+  for(let i=0; i<wavePlan.monsters.length; i++){
+    let pos;
+    if(i<freeCells.length){
+      pos=freeCells[i];
+    } else {
+      // 出生区满，延迟生成：放在出生区角落等下一波
+      const corner=spawnCells[0]||{r:0,c:12};
+      pos=corner;
+    }
+    G.monsters.push({
+      id:`d${day}_${phase}_${i}`,
+      ...wavePlan.monsters[i],
+      pos,
+    });
+  }
+  glog(`⚔️ 第${day}天${phase==='morning'?'早上':'下午'}：${G.monsters.length}只怪物出击！`);
+}
 // ========== SHAPE ROTATION ==========
 function rotCells(cells,dir){
   switch(dir){
@@ -785,7 +839,15 @@ function settleDamage(){ settleExplosions(); }
 function dealDmg(monster,dmg,src){
   monster.hp=Math.max(0,monster.hp-dmg);
   glog(`⚔️ ${src} → ${monster.name} -${dmg}（${monster.hp}/${monster.maxHp}）`);
-  if(monster.hp<=0){monster.dead=true;glog(`💀 ${monster.name}被击杀！`);}
+  if(monster.hp<=0){
+    monster.dead=true;
+    glog(`💀 ${monster.name}被击杀！`);
+    // 击杀金币
+    if(monster.gold){
+      G.gold+=monster.gold;
+      glog(`💰 获得 ${monster.gold} 金币！`);
+    }
+  }
 }
 
 // ========== ATTACK ==========
@@ -1068,9 +1130,21 @@ function finishMonsters(){
   G.round++;
   const allDead=G.monsters.every(m=>m.dead);
   if(G.round>G.maxRound||allDead){
-    glog(`✅ 第${G.day}天战斗结束！进入商店。`);
-    G.phase='SHOP';
-    openShop();
+    if(G.dayHalf===0){
+      // 早上波结束 → 下午波
+      G.dayHalf=1;
+      G.round=1; G.hitCount=0;
+      G.slots.forEach(s=>s.used=false);
+      G.previewEvents=[];
+      spawnWaveForDay(G.day,'afternoon');
+      G.phase='PLAYER';
+      glog(`☀️ 第${G.day}天下午，更多怪物来袭！`);
+    } else {
+      // 下午波结束 → 商店
+      glog(`✅ 第${G.day}天战斗结束！进入商店。`);
+      G.phase='SHOP';
+      openShop();
+    }
   } else {
     G.phase='PLAYER'; G.hitCount=0; G.previewEvents=[];
     G.slots.forEach(s=>s.used=false);
@@ -1179,9 +1253,13 @@ function calcShopTier(day){ return Math.min(Math.ceil(day/2),3); }
 function openShop(){
   if(G.phase==='OVER')return;
   G.shopTier=calcShopTier(G.day);
-  G.savedCoins=Math.min(G.savedCoins,3);
-  G.gold=10+G.savedCoins;
-  G.savedCoins=0;
+  // 每晚固定收入
+  const income=SHOP_PRICE_CONFIG.nightIncome[G.day]||0;
+  G.gold+=income;
+  // 利息：每 interestStep 金币 +1，最高 interestMax
+  const interest=Math.min(Math.floor(G.gold/SHOP_PRICE_CONFIG.interestStep),SHOP_PRICE_CONFIG.interestMax);
+  G.gold+=interest;
+  if(income>0||interest>0) glog(`💰 第${G.day}天收入 +${income}${interest>0?`（利息+${interest})`:'）'}，共 ${G.gold} 金币`);
   syncHeroHPToUnits();
   genShop();
   syncUnitsToHeroes();
@@ -1194,45 +1272,42 @@ function genShop(){
   const frozenUnits=(G.shopItems.units||[]).filter(u=>G.shopFrozen.units.has(u.id));
   const frozenCons=(G.shopItems.consumables||[]).filter(c=>G.shopFrozen.consumables.has(c.id));
   G.shopItems={units:[],consumables:[]};
-  const pool=UNIT_TIER_POOL[G.shopTier]||[];
-  if(pool.length===0)return;
-  // 生成单位商品：最多6个，已冻结的保留
-  G.shopItems.units=frozenUnits;
-  const maxUnits=6;
-  for(let i=G.shopItems.units.length;i<maxUnits;i++){
-    const defId=pool[Math.floor(Math.random()*pool.length)];
-    const def=UNIT_DEFS[defId];
-    G.shopItems.units.push({id:`su_${G.nextUnitId}_${i}`,defId,cost:def.cost,frozen:false});
+  // 每日商店格子构成
+  const slots=SHOP_PRICE_CONFIG.shopSlots[G.day]||SHOP_PRICE_CONFIG.shopSlots[1];
+  const t1Pool=UNIT_TIER_POOL[1]||[];
+  const t2Pool=UNIT_TIER_POOL[2]||[];
+  // 生成 Tier1 单位
+  G.shopItems.units=frozenUnits.filter(u=>UNIT_DEFS[u.defId]?.tier===1);
+  for(let i=G.shopItems.units.length;i<slots.unitT1;i++){
+    if(t1Pool.length===0) break;
+    const defId=t1Pool[ri(t1Pool.length)];
+    G.shopItems.units.push({id:`su_${G.nextUnitId}_${i}`,defId,cost:SHOP_PRICE_CONFIG.unitPrice.tier1,frozen:false});
   }
-  // 生成强化品：最多4个，已冻结的保留
+  // 生成 Tier2 单位
+  const t2Frozen=frozenUnits.filter(u=>UNIT_DEFS[u.defId]?.tier===2);
+  for(const u of t2Frozen) G.shopItems.units.push(u);
+  for(let i=G.shopItems.units.length-slots.unitT1;i<slots.unitT2;i++){
+    if(t2Pool.length===0) break;
+    const defId=t2Pool[ri(t2Pool.length)];
+    G.shopItems.units.push({id:`su_${G.nextUnitId}_${i+100}`,defId,cost:SHOP_PRICE_CONFIG.unitPrice.tier2,frozen:false});
+  }
+  // 生成强化品
   G.shopItems.consumables=frozenCons;
-  const maxCons=4;
+  const maxCons=slots.consumable;
   const conTypes=[
-    {type:'el_up',el:'fire',name:'🔥火元素+1',desc:'给一个行动槽附加1层火元素',cost:1},
-    {type:'el_up',el:'water',name:'💧水元素+1',desc:'给一个行动槽附加1层水元素',cost:1},
-    {type:'el_up',el:'wind',name:'🌿风元素+1',desc:'给一个行动槽附加1层风元素',cost:1},
-    {type:'el_up',el:'earth',name:'🪨土元素+1',desc:'给一个行动槽附加1层土元素',cost:1},
-    {type:'el_up2',el:'fire',name:'🔥火元素+2',desc:'给一个行动槽附加2层火元素',cost:2},
-    {type:'el_up2',el:'water',name:'💧水元素+2',desc:'给一个行动槽附加2层水元素',cost:2},
-    {type:'el_up2',el:'wind',name:'🌿风元素+2',desc:'给一个行动槽附加2层风元素',cost:2},
-    {type:'el_up2',el:'earth',name:'🪨土元素+2',desc:'给一个行动槽附加2层土元素',cost:2},
-    {type:'el_up3',el:'fire',name:'🔥火元素+3',desc:'给一个行动槽附加3层火元素',cost:3},
-    {type:'el_up3',el:'water',name:'💧水元素+3',desc:'给一个行动槽附加3层水元素',cost:3},
-    {type:'el_up3',el:'wind',name:'🌿风元素+3',desc:'给一个行动槽附加3层风元素',cost:3},
-    {type:'el_up3',el:'earth',name:'🪨土元素+3',desc:'给一个行动槽附加3层土元素',cost:3},
-    {type:'coin_bag',name:'💰金币袋',desc:'下一天额外获得2金币',cost:2},
-    {type:'tier_up',name:'⚡伤害+1',desc:'给一个行动槽提升1级伤害倍率',cost:2},
-    {type:'hp_potion',name:'❤️回复药',desc:'恢复一个英雄5点HP',cost:2},
-    {type:'hp_potion2',name:'💖大回复药',desc:'恢复一个英雄10点HP',cost:3},
-    {type:'board_el',el:'fire',name:'🔥棋盘火种',desc:'在随机空格放置1层火元素',cost:1},
-    {type:'board_el',el:'water',name:'💧棋盘水种',desc:'在随机空格放置1层水元素',cost:1},
-    {type:'board_el',el:'wind',name:'🌿棋盘风种',desc:'在随机空格放置1层风元素',cost:1},
-    {type:'board_el',el:'earth',name:'🪨棋盘土种',desc:'在随机空格放置1层土元素',cost:1},
-    {type:'relic',relicId:'old_fuse',name:'🔥旧引信',desc:'空格十字爆炸伤害+1',cost:4},
-    {type:'relic',relicId:'manual_detonate',name:'💣手动引爆符',desc:'消耗品：强制引爆指定空格所有可爆元素',cost:4},
+    {type:'el_up',el:'fire',name:'🔥火元素+1',desc:'给一个行动槽附加1层火元素',cost:3},
+    {type:'el_up',el:'water',name:'💧水元素+1',desc:'给一个行动槽附加1层水元素',cost:3},
+    {type:'el_up',el:'wind',name:'🌿风元素+1',desc:'给一个行动槽附加1层风元素',cost:3},
+    {type:'el_up',el:'earth',name:'🪨土元素+1',desc:'给一个行动槽附加1层土元素',cost:3},
+    {type:'tier_up',name:'⚡伤害+1',desc:'给一个行动槽提升1级伤害倍率',cost:4},
+    {type:'hp_potion',name:'❤️回复药',desc:'恢复一个英雄5点HP',cost:3},
+    {type:'hp_potion2',name:'💖大回复药',desc:'恢复一个英雄10点HP',cost:5},
+    {type:'coin_bag',name:'💰金币袋',desc:'下一天额外获得3金币',cost:2},
+    {type:'relic',relicId:'old_fuse',name:'🔥旧引信',desc:'空格十字爆炸伤害+1',cost:5},
   ];
+  const shuffled=conTypes.sort(()=>ri(3)-1);
   for(let i=G.shopItems.consumables.length;i<maxCons;i++){
-    const ct=conTypes[Math.floor(Math.random()*conTypes.length)];
+    const ct=shuffled[i%shuffled.length];
     G.shopItems.consumables.push({id:`sc_${G.nextUnitId}_${i}`,...ct,frozen:false});
   }
 }
@@ -1277,8 +1352,9 @@ function sellUnit(instanceId){
 
 function rollShop(){
   if(G.phase!=='SHOP')return;
-  if(G.gold<1){showMsg('💰 金币不足，刷新需要1金币！');return;}
-  G.gold-=1;
+  const cost=SHOP_PRICE_CONFIG.consumableBase.roll;
+  if(G.gold<cost){showMsg(`💰 金币不足，刷新需要${cost}金币！`);return;}
+  G.gold-=cost;
   G.shopFrozen={units:new Set(),consumables:new Set()};
   genShop();
   glog('🔄 商店已刷新！');
@@ -1295,10 +1371,10 @@ function freezeShopItem(itemId, category){
 
 function closeShop(){
   document.getElementById('so').style.display='none';
-  G.day++; G.wave++; G.round=1; G.hitCount=0; G.phase='PLAYER';
+  G.day++; G.dayHalf=0; G.wave++; G.round=1; G.hitCount=0; G.phase='PLAYER';
   G.slots.forEach(s=>s.used=false);
   G.shopFrozen={units:new Set(),consumables:new Set()};
-  spawnWave(G.wave);
+  spawnWaveForDay(G.day,'morning');
   glog(`⚔️ 第${G.day}天战斗开始！`);
   syncUnitsToHeroes();
   render();
@@ -1736,7 +1812,7 @@ function buildSlotsVM(){
 
 function buildTurnVM(){
   const hasExec=G.phase==='PLAYER'&&G.slots.some(s=>!s.used&&s.hid&&G.heroes[s.hid]);
-  return{phase:G.phase,wave:G.wave,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER',execAllDisabled:!hasExec};
+  return{phase:G.phase,wave:G.wave,day:G.day,dayHalf:G.dayHalf,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER',execAllDisabled:!hasExec};
 }
 
 function buildBattleVM(){
@@ -2184,7 +2260,7 @@ function renderSlots(slotsVM){
 function renderTurn(turnVM){
   const phText={PLAYER:'⚔️ 玩家回合',MONSTER:'👾 怪物行动中…',SHOP:'🛒 商店',OVER:'💀 游戏结束'};
   document.getElementById('ph').textContent=phText[turnVM.phase]||turnVM.phase;
-  document.getElementById('rc').textContent=`第${turnVM.wave}波 · ${turnVM.round}/${turnVM.maxRound}小回合`;
+  document.getElementById('rc').textContent=`第${turnVM.day||turnVM.wave}天${turnVM.dayHalf===0?'早上':(turnVM.dayHalf===1?'下午':'')} · ${turnVM.round}/${turnVM.maxRound}小回合`;
   document.getElementById('gold').textContent=turnVM.gold;
   document.getElementById('etb').disabled=turnVM.endTurnDisabled;
   document.getElementById('exa').disabled=turnVM.execAllDisabled;
@@ -2350,8 +2426,8 @@ function buyConsumable(itemId){
   G.gold-=item.cost;
   G.shopItems.consumables.splice(idx,1);
   if(item.type==='coin_bag'){
-    G.savedCoins+=2;
-    glog('💰 金币袋：下一天额外+2金币');
+    G.gold+=3;
+    glog('💰 金币袋：获得3金币！');
   } else if(item.type==='hp_potion'||item.type==='hp_potion2'){
     G.backpack.push({...item,bpId:`bp_${G._bpCnt++}`});
     glog(`📦 ${item.name} 放入背包，可在阵容区使用`);

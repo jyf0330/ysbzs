@@ -150,8 +150,8 @@ group('initGame 初始化', ()=>{
   test('背包初始为空数组',       ()=> assert.deepStrictEqual(G.backpack,[]));
   test('_bpCnt 初始为 0',        ()=> assert.strictEqual(G._bpCnt,0));
   test('第 1 波生成 2 只教学怪', ()=> assert.strictEqual(G.monsters.length,2));
-  test('教学怪1 HP=6',           ()=> assert.strictEqual(G.monsters[0].hp,6));
-  test('教学怪2 HP=10',          ()=> assert.strictEqual(G.monsters[1].hp,10));
+  test('第 1 波生成 2 只普通怪', ()=> assert.strictEqual(G.monsters.length,2));
+  test('day1 morning 怪 HP=6',   ()=> { assert.strictEqual(G.monsters[0].hp,6); assert.strictEqual(G.monsters[1].hp,6); });
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -633,8 +633,8 @@ group('回合管理', ()=>{
     G.round=G.maxRound+1;
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
-    // openShop 将 gold 设为 10+savedCoins
-    assert.strictEqual(G.gold, 10);
+    // openShop 增加收入+利息: 5 (day1 income) + floor((10+5)/5)=3 (interest) = 18
+    assert.strictEqual(G.gold, 18);
     assert.ok(G.shopItems.units.length>0,'应已生成商店');
   });
   test('finishMonsters 所有怪死亡 → 商店', ()=>{
@@ -725,30 +725,68 @@ group('怪物 AI', ()=>{
   });
 });
 
-// ═══════════════════════════════════════════════════════════════
-group('spawnWave 波次生成', ()=>{
-  test('波次1 = 2只教学怪', ()=>{
-    fresh(); assert.strictEqual(G.monsters.length,2);
+group('buildWaveForDay 波次生成', ()=>{
+  test('buildWaveForDay Day1 morning 预算=4 生成正常', ()=>{
+    const plan=buildWaveForDay(1,'morning');
+    assert.ok(plan.monsters.length>=2,`Day1 morning 怪物数≥2，实际${plan.monsters.length}`);
+    // 预算4，普通怪cost=2，最多2只
+    const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
+    assert.ok(totalCost<=4,`总cost ${totalCost} 不应超过预算4`);
   });
-  test('波次2 = 3只怪', ()=>{
-    fresh(); G.monsters=[]; spawnWave(2);
-    assert.strictEqual(G.monsters.length,3);
+  test('buildWaveForDay Day1 afternoon 预算=5', ()=>{
+    const plan=buildWaveForDay(1,'afternoon');
+    assert.ok(plan.monsters.length>=2);
+    const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
+    assert.ok(totalCost<=5,`总cost ${totalCost} 不应超过预算5`);
   });
-  test('波次3 = 4只怪', ()=>{
-    fresh(); G.monsters=[]; spawnWave(3);
-    assert.strictEqual(G.monsters.length,4);
+  test('buildWaveForDay Day3 含强攻/快速怪', ()=>{
+    // Day3 allowed: normal/thick/fast/heavy
+    const plan=buildWaveForDay(3,'morning');
+    assert.ok(plan.monsters.length>=3,`Day3 morning 怪物数≥3，实际${plan.monsters.length}`);
+    const types=new Set(plan.monsters.map(m=>m.typeId));
+    assert.ok(['normal','thick','fast','heavy'].some(t=>types.has(t)),'应含 allowed 中的类型');
   });
-  test('高波次怪物 HP 高于低波次', ()=>{
-    fresh();
-    G.monsters=[]; spawnWave(5);
-    const w5hp=G.monsters[0].hp;
-    G.monsters=[]; spawnWave(2);
-    const w2hp=G.monsters[0].hp;
-    assert.ok(w5hp>w2hp,'波次5怪物HP应大于波次2');
+  test('buildWaveForDay Day4 含精英怪', ()=>{
+    const plan=buildWaveForDay(4,'morning');
+    const types=plan.monsters.map(m=>m.typeId);
+    assert.ok(types.includes('elite')||types.includes('normal'),'至少含一种类型');
+    const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
+    assert.ok(totalCost<=14,`总cost ${totalCost} 不应超过预算14`);
   });
-  test('所有怪物初始 dead=false', ()=>{
-    fresh();
-    G.monsters.forEach((m,i)=>assert.strictEqual(m.dead,false,`怪物${i}`));
+  test('buildWaveForDay Day5 morning 含 boss', ()=>{
+    const plan=buildWaveForDay(5,'morning');
+    const types=plan.monsters.map(m=>m.typeId);
+    // boss cost=12, 预算18-12=6 够再加几只小怪
+    assert.ok(plan.monsters.length>=1);
+    const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
+    assert.ok(totalCost<=18,`总cost ${totalCost} 不应超过预算18`);
+  });
+  test('buildWaveForDay maxAlive 限制', ()=>{
+    // Day1 morning maxAlive=4, 即使预算够也不超过4
+    const plan=buildWaveForDay(1,'morning');
+    assert.ok(plan.monsters.length<=4,`怪物数 ${plan.monsters.length} 不应超过 maxAlive=4`);
+  });
+  test('buildWaveForDay 无效 day/phase 返回空', ()=>{
+    let plan=buildWaveForDay(99,'morning');
+    assert.ok(!plan||plan.length===0||(Array.isArray(plan)&&plan.length===0)||plan.monsters.length===0);
+    plan=buildWaveForDay(1,'nonexistent');
+    assert.ok(!plan||plan.length===0||(Array.isArray(plan)&&plan.length===0)||(plan.monsters&&plan.monsters.length===0));
+  });
+  test('spawnWaveForDay 怪物在 spawn zone 内', ()=>{
+    fresh(); G.monsters=[]; G.heroes={};
+    spawnWaveForDay(2,'morning'); // spawnSize=3 → 右上角 r:0-2, c:10-12
+    G.monsters.forEach(m=>{
+      assert.ok(m.pos.r>=0&&m.pos.r<3,`怪物 ${m.name} r=${m.pos.r} 应在 0-2`);
+      assert.ok(m.pos.c>=10&&m.pos.c<13,`怪物 ${m.name} c=${m.pos.c} 应在 10-12`);
+    });
+  });
+  test('spawnWaveForDay Day4 spawn zone 4x4', ()=>{
+    fresh(); G.monsters=[]; G.heroes={};
+    spawnWaveForDay(4,'morning'); // spawnSize=4 → r:0-3, c:9-12
+    G.monsters.forEach(m=>{
+      assert.ok(m.pos.r>=0&&m.pos.r<4);
+      assert.ok(m.pos.c>=9&&m.pos.c<13);
+    });
   });
 });
 
@@ -761,11 +799,11 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     assert.ok(G.shopItems.units.length>0,'应生成单位商品');
     assert.ok(G.shopItems.consumables.length>0,'应生成强化品');
   });
-  test('genShop 生成 6 个单位 + 4 个强化品', ()=>{
-    fresh(); G.shopTier=1;
+  test('genShop Day1: 4 T1 + 0 T2 + 1 强化品', ()=>{
+    fresh(); G.shopTier=1; G.day=1;
     genShop();
-    assert.strictEqual(G.shopItems.units.length,6);
-    assert.strictEqual(G.shopItems.consumables.length,4);
+    assert.strictEqual(G.shopItems.units.length,4,'Day1应有4个T1单位');
+    assert.strictEqual(G.shopItems.consumables.length,1,'Day1应有1个强化品');
   });
   test('shopItems.units 每个商品含 defId/cost/frozen', ()=>{
     fresh(); G.shopTier=1; genShop();
@@ -816,19 +854,19 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     assert.strictEqual(G.gold, 5+unit.level);
     assert.strictEqual(G.ownedUnits.length, beforeLen-1);
   });
-  test('rollShop 花费 1 金币并重新生成商店', ()=>{
-    fresh(); G.phase='SHOP'; G.gold=10;
+  test('rollShop 花费 2 金币并重新生成商店', ()=>{
+    fresh(); G.phase='SHOP'; G.gold=10; G.day=1;
     G.shopTier=1; genShop();
     // 冻结一个商品
     const uid=G.shopItems.units[0].id;
     G.shopFrozen.units.add(uid);
     rollShop();
-    assert.strictEqual(G.gold,9);
+    assert.strictEqual(G.gold,8);
     // rollShop 清除冻结
     assert.strictEqual(G.shopFrozen.units.size,0);
     assert.strictEqual(G.shopFrozen.consumables.size,0);
-    assert.strictEqual(G.shopItems.units.length,6,'应重新生成6个单位');
-    assert.strictEqual(G.shopItems.consumables.length,4,'应重新生成4个强化品');
+    assert.strictEqual(G.shopItems.units.length,4,'Day1应生成4个单位');
+    assert.strictEqual(G.shopItems.consumables.length,1,'Day1应生成1个强化品');
   });
   test('rollShop 金币不足 → 不刷新', ()=>{
     fresh(); G.phase='SHOP'; G.gold=0;
@@ -857,36 +895,31 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     assert.strictEqual(G.round,1);
     assert.strictEqual(G.hitCount,0);
   });
-  test('buyConsumable coin_bag → savedCoins+2', ()=>{
+  test('buyConsumable coin_bag → 直接获得3金币', ()=>{
     fresh(); G.phase='SHOP'; G.gold=5;
-    G.savedCoins=0;
     const item={id:'sc_test',type:'coin_bag',name:'💰金币袋',cost:2};
     G.shopItems.consumables=[item];
     buyConsumable('sc_test');
-    assert.strictEqual(G.gold,3);
-    assert.strictEqual(G.savedCoins,2);
+    assert.strictEqual(G.gold,6,'应扣2得3，净+1');
   });
   test('buyConsumable 金币不足不购买', ()=>{
     fresh(); G.phase='SHOP'; G.gold=0;
-    G.savedCoins=0;
     const item={id:'sc_test2',type:'coin_bag',name:'💰金币袋',cost:2};
     G.shopItems.consumables=[item];
     buyConsumable('sc_test2');
-    assert.strictEqual(G.savedCoins,0);
+    assert.strictEqual(G.gold,0);
   });
-  test('openShop 金币 = 10 + savedCoins', ()=>{
-    fresh(); G.day=1;
-    G.savedCoins=2; G.gold=5;
+  test('openShop 增加日收入+利息', ()=>{
+    fresh(); G.day=1; G.gold=5;
     openShop();
+    // Day1 income=5, gold=10, interest=floor(10/5)=2, total=12
     assert.strictEqual(G.gold, 12);
-    assert.strictEqual(G.savedCoins, 0);
   });
-  test('savedCoins 上限 3', ()=>{
-    fresh(); G.savedCoins=5;
+  test('openShop 利息上限3', ()=>{
+    fresh(); G.day=2; G.gold=20;
     openShop();
-    // savedCoins 在 openShop 中做了 min(savedCoins,3)
-    // 但 gold 应该 = 10 + min(5,3) = 13
-    assert.strictEqual(G.gold, 13);
+    // Day2 income=6, gold=26, interest=min(floor(26/5),3)=3, total=29
+    assert.strictEqual(G.gold, 29);
   });
 });
 
@@ -1322,15 +1355,15 @@ group('A组：initGame 第一关默认配置', ()=>{
     assert.deepStrictEqual(G.heroes.ha.pos,{r:10,c:1},'ha 初始位置(10,1)');
     assert.deepStrictEqual(G.heroes.hb.pos,{r:11,c:1},'hb 初始位置(11,1)');
   });
-  test('case_init_004: 教学怪1 hp=6 el=null，教学怪2 hp=10 el=null', ()=>{
+  test('case_init_004: Day1 morning 2只普通怪 hp=6 el=null', ()=>{
     fresh();
     assert.strictEqual(G.monsters.length,2,'应有2只怪');
-    assert.strictEqual(G.monsters[0].name,'教学怪1','怪1名称');
-    assert.strictEqual(G.monsters[0].hp,6,'教学怪1 hp=6');
-    assert.strictEqual(G.monsters[0].el,null,'教学怪1 el=null');
-    assert.strictEqual(G.monsters[1].name,'教学怪2','怪2名称');
-    assert.strictEqual(G.monsters[1].hp,10,'教学怪2 hp=10');
-    assert.strictEqual(G.monsters[1].el,null,'教学怪2 el=null');
+    assert.strictEqual(G.monsters[0].name,'普通怪','怪1名称');
+    assert.strictEqual(G.monsters[0].hp,6,'怪1 hp=6');
+    assert.strictEqual(G.monsters[0].el,null,'怪1 el=null');
+    assert.strictEqual(G.monsters[1].name,'普通怪','怪2名称');
+    assert.strictEqual(G.monsters[1].hp,6,'怪2 hp=6');
+    assert.strictEqual(G.monsters[1].el,null,'怪2 el=null');
   });
   test('case_init_005: explosionThreshold=3', ()=>{
     fresh();

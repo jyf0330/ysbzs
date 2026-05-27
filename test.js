@@ -699,17 +699,18 @@ group('怪物 AI', ()=>{
     monsterAct(m);
     assert.ok(G.heroes.ha.hp < prevHp,'英雄 HP 应减少');
   });
-  test('monsterAct 遇元素块→爆炸反伤并清除元素', ()=>{
+  test('monsterAct 遇元素块→被阻挡但不受伤不消元素', ()=>{
     fresh();
     const m=G.monsters[0];
     m.pos={r:5,c:8};
     G.heroes.ha.pos={r:5,c:2};
     G.heroes.hb.pos={r:12,c:0};
-    G.board[5][7].el='fire'; G.board[5][7].stk=2; // stk=2 → explDmg=3
+    G.board[5][7].el='fire'; G.board[5][7].stk=2;
     const prevHp=m.hp;
     monsterAct(m);
-    assert.ok(m.hp < prevHp,'怪物应受反伤');
-    assert.strictEqual(G.board[5][7].el,null,'元素格应清除');
+    assert.strictEqual(m.hp,prevHp,'怪物不应受伤');
+    assert.strictEqual(G.board[5][7].el,'fire','元素不应清除');
+    assert.strictEqual(G.board[5][7].stk,2,'层数不应清零');
   });
   test('monsterAct 正常移动一格', ()=>{
     fresh();
@@ -890,7 +891,7 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
 });
 
 // ═══════════════════════════════════════════════════════════════
-group('单位管理 addOwnedUnit / buildHeroesFromUnits / mergeUnits', ()=>{
+group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
   test('addOwnedUnit 创建单位实例并加入 ownedUnits', ()=>{
     fresh();
     const before=G.ownedUnits.length;
@@ -906,12 +907,12 @@ group('单位管理 addOwnedUnit / buildHeroesFromUnits / mergeUnits', ()=>{
     fresh();
     assert.strictEqual(addOwnedUnit('nonexistent'),null);
   });
-  test('buildHeroesFromUnits 从 2 个活跃单位构建 heroes/slots', ()=>{
+  test('syncUnitsToHeroes 从 2 个活跃单位构建 heroes/slots', ()=>{
     fresh();
     G.ownedUnits=[];
     addOwnedUnit('fire_starter',{r:10,c:1});
     addOwnedUnit('water_droplet',{r:11,c:1});
-    buildHeroesFromUnits();
+    syncUnitsToHeroes();
     assert.strictEqual(Object.keys(G.heroes).length,2);
     assert.ok(G.heroes.ha,'ha 应存在');
     assert.ok(G.heroes.hb,'hb 应存在');
@@ -919,13 +920,13 @@ group('单位管理 addOwnedUnit / buildHeroesFromUnits / mergeUnits', ()=>{
     assert.strictEqual(G.heroes.ha.hp,20);
     assert.strictEqual(G.heroes.hb.hp,20);
   });
-  test('buildHeroesFromUnits 超过2个活跃单位时只取前2个', ()=>{
+  test('syncUnitsToHeroes 超过2个活跃单位时只取前2个', ()=>{
     fresh();
     G.ownedUnits=[];
     addOwnedUnit('fire_starter',{r:10,c:1});
     addOwnedUnit('water_droplet',{r:11,c:1});
     addOwnedUnit('wind_breeze',{r:12,c:1});
-    buildHeroesFromUnits();
+    syncUnitsToHeroes();
     assert.strictEqual(G.slots.length,6,'仍只构建6槽');
     assert.strictEqual(G.ownedUnits[2].active,false,'第3个单位应标记为 inactive');
   });
@@ -984,10 +985,10 @@ group('单位管理 addOwnedUnit / buildHeroesFromUnits / mergeUnits', ()=>{
 
 // ═══════════════════════════════════════════════════════════════
 group('UNIT_DEFS 单位定义库', ()=>{
-  test('UNIT_DEFS 含 10 个单位（6 tier1 + 4 tier2）', ()=>{
+  test('UNIT_DEFS 含 12 个单位（8 tier1 + 4 tier2）', ()=>{
     const all=Object.values(UNIT_DEFS);
-    assert.strictEqual(all.length,10);
-    assert.strictEqual(all.filter(u=>u.tier===1).length,6);
+    assert.strictEqual(all.length,12);
+    assert.strictEqual(all.filter(u=>u.tier===1).length,8);
     assert.strictEqual(all.filter(u=>u.tier===2).length,4);
   });
   test('每个单位有 3 个等级，每级有 3 个 action slot', ()=>{
@@ -2201,11 +2202,11 @@ group('K组：结算与元素落地一致性', ()=>{
     G.elementCells['5,7']={fire:{layers:1,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     G.board[5][7].el='fire'; G.board[5][7].stk=1;
     monsterAct(G.monsters[0]);
-    assert.strictEqual(G.board[5][7].el,null,'board 元素应清除');
-    assert.strictEqual(G.board[5][7].stk,0,'board 层数应清零');
-    assert.strictEqual(G.elementCells['5,7'].fire.layers,0,'elementCells 对应层也应清零');
-    assert.strictEqual(G.monsters[0].hp,9,'怪物受到 1 层元素块反伤');
-    assert.deepStrictEqual(G.monsters[0].pos,{r:5,c:8},'怪物被元素块阻挡后不移动');
+    assert.strictEqual(G.board[5][7].el,'fire','核对点A：元素格不应清除');
+    assert.strictEqual(G.board[5][7].stk,1,'层数不应清零');
+    assert.strictEqual(G.elementCells['5,7'].fire.layers,1,'elementCells 层数保留');
+    assert.strictEqual(G.monsters[0].hp,10,'怪物不应受伤');
+    assert.deepStrictEqual(G.monsters[0].pos,{r:5,c:8},'怪物被阻挡后不移动');
   });
   test('case_k_013: MOVE_HERO action 不能绕过元素格占用校验',()=>{
     fresh();

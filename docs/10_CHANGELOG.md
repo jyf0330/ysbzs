@@ -1,6 +1,7 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
+| 2026-05-28 | fix | async一键执行无条件调用endPlayerTurn：修复浏览器async版execAllHeroSlots只在n>0时调用endPlayerTurn导致怪物回合不触发的问题，改为与sync版一致的无条件调用 | index.html | 手动验证 |
 | 2026-05-28 | fix | 一键执行状态机对齐 + B英雄走位修复：①修复行分配bug——rowDensity取min(heroIdx, length-1)防止怪物行少于英雄时越界回原行；②sync版补SELECT_ACTION_SLOT步骤（对齐真人操作流）；③async版execAllHeroSlots完成后自动调用endPlayerTurn()进入怪物回合；④新增N组case_n_001测试（怪物行少于英雄数时的走位分配） | index.html / test.js | node test.js 261/261 |
 | 2026-05-28 | fix | 一键执行阶段拆分 + 元素穿越修复：①execAllHeroSlots拆为阶段1全部走位→阶段2全部攻击，避免队友元素阻挡走位；②走位阶段不检查hasElementAt；③applyActionToState MOVE_HERO移除元素格阻挡（AI路径），moveHero() UI层保留；④sim.js新增本地文字战斗模拟器；⑤修复__TEST__在eval后赋值导致走async分支的bug | index.html / test.js / sim.js | node test.js 261/261 |
 

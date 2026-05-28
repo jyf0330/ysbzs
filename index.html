@@ -605,8 +605,8 @@ function initGame(){
     actionLog:[],
   };
   // 教程默认上阵两个单位
-  addOwnedUnit('fire_starter',{r:10,c:1});
-  addOwnedUnit('water_droplet',{r:11,c:1});
+  addOwnedUnit('fire_starter',{r:6,c:4});
+  addOwnedUnit('water_droplet',{r:5,c:4});
   syncUnitsToHeroes();
   spawnWaveForDay(1,'morning');
   refreshUI();
@@ -659,10 +659,10 @@ function buildWaveForDay(day,phase){
 }
 
 function getSpawnCells(spawnSize){
-  // 右上角 spawnSize×spawnSize 区域
+  // Day1 tutorial: monsters on same rows as heroes
   const cells=[];
-  for(let r=0; r<spawnSize; r++){
-    for(let c=13-spawnSize; c<13; c++){
+  for(let r=5; r<=6; r++){
+    for(let c=6; c<=8; c++){
       cells.push({r,c});
     }
   }
@@ -1246,12 +1246,19 @@ function finishMonsters(){
   const allDead=G.monsters.every(m=>m.dead);
   if(G.round>G.maxRound||allDead){
     if(G.dayHalf===0){
-      // 早上波结束 → 下午波
+      // 早上波结束 → 中午商店
       G.dayHalf=1;
       G.round=1; G.hitCount=0;
       G.slots.forEach(s=>s.used=false);
       Object.values(G.heroes).forEach(h=>h._acted=false);
       G.previewEvents=[];
+      glog(`🛒 第${G.day}天中午·进入商店！`);
+      G.phase='SHOP';
+      openShop();
+    } else if(G.dayHalf===1){
+      // 中午商店后 → 下午波
+      G.dayHalf=2;
+      G.round=1; G.hitCount=0;
       spawnWaveForDay(G.day,'afternoon');
       G.phase='PLAYER';
       glog(`☀️ 第${G.day}天下午·更多怪物来袭！`);

@@ -1,3 +1,4 @@
+node_modules/
 # 密钥与敏感配置
 .env
 .env.local

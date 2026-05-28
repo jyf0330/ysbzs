@@ -190,6 +190,22 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .cd-badge{display:inline-block;background:#21262d;border-radius:3px;padding:1px 5px;margin:1px 2px;font-size:10px;}
 .cd-empty{color:#555;font-size:10px;font-style:italic;}
 .cd-rule{font-size:9px;color:#6b7280;margin-top:2px;padding:3px 5px;background:#0d1117;border-radius:3px;border-left:2px solid #374151;}
+/* 全屏适配 */
+:fullscreen #wrap { max-width:none; width:100vw; height:100vh; }
+:-webkit-full-screen #wrap { max-width:none; width:100vw; height:100vh; }
+:fullscreen #board { height:calc(100vh - 100px); }
+:-webkit-full-screen #board { height:calc(100vh - 100px); }
+:fullscreen .cell { width:calc((100vw - 280px) / 13); height:calc((100vh - 140px) / 13); }
+:-webkit-full-screen .cell { width:calc((100vw - 280px) / 13); height:calc((100vh - 140px) / 13); }
+:fullscreen #rp { font-size:13px; }
+:-webkit-full-screen #rp { font-size:13px; }
+#fsb {
+  background:#333; color:#ccc; border:1px solid #555; border-radius:4px;
+  cursor:pointer; font-size:14px; padding:2px 8px; margin-left:4px;
+}
+#fsb:hover { background:#555; color:#fff; }
+:fullscreen #fsb { background:#222; border-color:#666; }
+:-webkit-full-screen #fsb { background:#222; border-color:#666; }
 </style>
 </head>
 <body>
@@ -209,6 +225,7 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
       <div id="gi">💰 <span id="gold">5</span> 金币</div>
       <button class="etb" id="exa" onclick="execAllHeroSlots()" style="margin-right:4px">⚡ 一键执行</button>
       <button class="etb" id="etb" onclick="endPlayerTurn()">结束回合 →</button>
+      <button id="fsb" onclick="toggleFullscreen()" title="全屏 (F11)">⛶</button>
     </div>
     <!-- Heroes -->
     <div class="box">
@@ -967,41 +984,44 @@ var execAllHeroSlots = __IS_TEST__
   ? function execAllHeroSlots(){
   if(G.phase!=='PLAYER')return;
   const heroIds=Object.keys(G.heroes).filter(hid=>G.heroes[hid].hp>0);
-  let n=0;
+  // ── 阶段1：全部走位（攻击前完成，避免队友元素阻挡）──
+  const alive0=G.monsters.filter(m=>!m.dead);
+  const rowDensity=[...new Set(alive0.map(m=>m.pos.r))].map(r=>{
+    return {r,cnt:alive0.filter(m=>m.pos.r===r).length};
+  }).sort((a,b)=>b.cnt-a.cnt);
   for(let heroIdx=0;heroIdx<heroIds.length;heroIdx++){
     const hid=heroIds[heroIdx];
     const hero=G.heroes[hid];
-    const alive=G.monsters.filter(m=>!m.dead);
-    const rowDensity=[...new Set(alive.map(m=>m.pos.r))].map(r=>{
-    return {r,cnt:alive.filter(m=>m.pos.r===r).length};
-  }).sort((a,b)=>b.cnt-a.cnt);
-    if(!hero._acted && alive.length>0 && ALLOW_AUTO_MOVE){
-      let maxRange=1;
-      G.slots.forEach(s=>{
-        if(s.used||s.hid!==hid)return;
-        const shape=SD[s.sn]; if(!shape)return;
-        shape.cells.forEach(([dr,dc])=>{if(dc>maxRange)maxRange=dc;});
-      });
-      const minMonCol=Math.min(...alive.map(m=>m.pos.c));
-      const baseCol=Math.max(1,minMonCol-maxRange);
-      const rowTarget=heroIdx<rowDensity.length?rowDensity[heroIdx].r:hero.pos.r;
-      let t=null;
-      for(let off=0;off<5;off++){
-        const tc={r:rowTarget,c:Math.min(12,baseCol+off)};
-        if(tc.r===hero.pos.r&&tc.c===hero.pos.c){t=tc;break;}
-        if(monAt(tc)||heroAt(tc)||hasElementAt(tc))continue;
-        if(G.castle&&G.castle.pos.r===tc.r&&G.castle.pos.c===tc.c)continue;
-        t=tc;break;
-      }
-      if(t&&!(t.r===hero.pos.r&&t.c===hero.pos.c)){
-        const oldR=hero.pos.r,oldC=hero.pos.c;
-        hero.pos={r:t.r,c:t.c};
-        G.actionLog.push({type:'MOVE_HERO',heroId:hid,from:{r:oldR,c:oldC},to:{r:t.r,c:t.c}});
-      }
+    if(hero._acted||alive0.length===0||!ALLOW_AUTO_MOVE)continue;
+    let maxRange=1;
+    G.slots.forEach(s=>{
+      if(s.used||s.hid!==hid)return;
+      const shape=SD[s.sn]; if(!shape)return;
+      shape.cells.forEach(([dr,dc])=>{if(dc>maxRange)maxRange=dc;});
+    });
+    const minMonCol=Math.min(...alive0.map(m=>m.pos.c));
+    const baseCol=Math.max(1,minMonCol-maxRange);
+    const rowTarget=rowDensity.length>0?rowDensity[Math.min(heroIdx,rowDensity.length-1)].r:hero.pos.r;
+    let t=null;
+    for(let off=0;off<5;off++){
+      const tc={r:rowTarget,c:Math.min(12,baseCol+off)};
+      if(tc.r===hero.pos.r&&tc.c===hero.pos.c){t=tc;break;}
+      if(monAt(tc)||heroAt(tc))continue;
+      if(G.castle&&G.castle.pos.r===tc.r&&G.castle.pos.c===tc.c)continue;
+      t=tc;break;
     }
+    if(t&&!(t.r===hero.pos.r&&t.c===hero.pos.c)){
+      dispatchGameAction({type:'MOVE_HERO',heroId:hid,to:{r:t.r,c:t.c}});
+    }
+  }
+  // ── 阶段2：全部攻击 ──
+  let n=0;
+  for(let heroIdx=0;heroIdx<heroIds.length;heroIdx++){
+    const hid=heroIds[heroIdx];
     G.slots.forEach((s,i)=>{
       if(s.used||s.hid!==hid||!G.heroes[s.hid])return;
       if(atkCells(G.heroes[s.hid].pos,s.sn,s.dir).length===0)return;
+      dispatchGameAction({type:'SELECT_ACTION_SLOT',slotId:i});
       dispatchGameAction({type:'USE_SLOT',slotId:i});
       n++;
     });
@@ -1014,40 +1034,41 @@ var execAllHeroSlots = __IS_TEST__
   const btn=document.getElementById('exa');
   if(btn)btn.disabled=true;
   const heroIds=Object.keys(G.heroes).filter(hid=>G.heroes[hid].hp>0);
-  let n=0;
+  // ── 阶段1：全部走位 ──
+  const alive0=G.monsters.filter(m=>!m.dead);
+  const rowDensity=[...new Set(alive0.map(m=>m.pos.r))].map(r=>{
+    return {r,cnt:alive0.filter(m=>m.pos.r===r).length};
+  }).sort((a,b)=>b.cnt-a.cnt);
   for(let heroIdx=0;heroIdx<heroIds.length;heroIdx++){
     const hid=heroIds[heroIdx];
     const hero=G.heroes[hid];
-    const alive=G.monsters.filter(m=>!m.dead);
-    const rowDensity=[...new Set(alive.map(m=>m.pos.r))].map(r=>{
-    return {r,cnt:alive.filter(m=>m.pos.r===r).length};
-  }).sort((a,b)=>b.cnt-a.cnt);
-    if(!hero._acted && alive.length>0 && ALLOW_AUTO_MOVE){
-      let maxRange=1;
-      for(const s of G.slots){
-        if(s.used||s.hid!==hid)continue;
-        const shape=SD[s.sn]; if(!shape)continue;
-        shape.cells.forEach(([dr,dc])=>{if(dc>maxRange)maxRange=dc;});
-      }
-      const minMonCol=Math.min(...alive.map(m=>m.pos.c));
-      const baseCol=Math.max(1,minMonCol-maxRange);
-      const rowTarget=heroIdx<rowDensity.length?rowDensity[heroIdx].r:hero.pos.r;
-      let t=null;
-      for(let off=0;off<5;off++){
-        const tc={r:rowTarget,c:Math.min(12,baseCol+off)};
-        if(tc.r===hero.pos.r&&tc.c===hero.pos.c){t=tc;break;}
-        if(monAt(tc)||heroAt(tc)||hasElementAt(tc))continue;
-        if(G.castle&&G.castle.pos.r===tc.r&&G.castle.pos.c===tc.c)continue;
-        t=tc;break;
-      }
-      if(t&&!(t.r===hero.pos.r&&t.c===hero.pos.c)){
-        const oldR=hero.pos.r,oldC=hero.pos.c;
-        hero.pos={r:t.r,c:t.c};
-        G.actionLog.push({type:'MOVE_HERO',heroId:hid,from:{r:oldR,c:oldC},to:{r:t.r,c:t.c}});
-        render();
-        await sleep(250);
-      }
+    if(hero._acted||alive0.length===0||!ALLOW_AUTO_MOVE)continue;
+    let maxRange=1;
+    for(const s of G.slots){
+      if(s.used||s.hid!==hid)continue;
+      const shape=SD[s.sn]; if(!shape)continue;
+      shape.cells.forEach(([dr,dc])=>{if(dc>maxRange)maxRange=dc;});
     }
+    const minMonCol=Math.min(...alive0.map(m=>m.pos.c));
+    const baseCol=Math.max(1,minMonCol-maxRange);
+    const rowTarget=rowDensity.length>0?rowDensity[Math.min(heroIdx,rowDensity.length-1)].r:hero.pos.r;
+    let t=null;
+    for(let off=0;off<5;off++){
+      const tc={r:rowTarget,c:Math.min(12,baseCol+off)};
+      if(tc.r===hero.pos.r&&tc.c===hero.pos.c){t=tc;break;}
+      if(monAt(tc)||heroAt(tc))continue;
+      if(G.castle&&G.castle.pos.r===tc.r&&G.castle.pos.c===tc.c)continue;
+      t=tc;break;
+    }
+    if(t&&!(t.r===hero.pos.r&&t.c===hero.pos.c)){
+      dispatchGameAction({type:'MOVE_HERO',heroId:hid,to:{r:t.r,c:t.c}});
+      await sleep(250);
+    }
+  }
+  // ── 阶段2：全部攻击 ──
+  let n=0;
+  for(let heroIdx=0;heroIdx<heroIds.length;heroIdx++){
+    const hid=heroIds[heroIdx];
     for(let i=0;i<G.slots.length;i++){
       const s=G.slots[i];
       if(s.used||s.hid!==hid||!G.heroes[s.hid])continue;
@@ -1061,7 +1082,20 @@ var execAllHeroSlots = __IS_TEST__
   }
   if(n>0)glog(ALLOW_AUTO_MOVE ? `⚡ 一键执行了${n}个英雄动作，已智能走位拦截` : `⚡ 一键执行了${n}个英雄动作`);
   else glog('⚠️ 没有可执行的英雄动作');
+  endPlayerTurn();
   if(btn)btn.disabled=false;
+}
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else {
+    document.exitFullscreen();
+  }
+}
+if(typeof document.addEventListener==='function'){
+  document.addEventListener('keydown',e=>{
+    if(e.key==='F11'){ e.preventDefault(); toggleFullscreen(); }
+  });
 }
 function endPlayerTurn(){
   if(G.phase!=='PLAYER')return;
@@ -2001,7 +2035,7 @@ function applyActionToState(action){
     case 'MOVE_HERO':{
       const hero=G.heroes[action.heroId];
       if(!hero||hero._acted)return;
-      if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to)||hasElementAt(action.to))return;
+      if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to))return;
       if(G.castle&&G.castle.pos.r===action.to.r&&G.castle.pos.c===action.to.c)return;
       const from={r:hero.pos.r,c:hero.pos.c};
       hero.pos={r:action.to.r,c:action.to.c};

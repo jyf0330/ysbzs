@@ -2269,13 +2269,12 @@ group('K组：结算与元素落地一致性', ()=>{
     assert.strictEqual(G.monsters[0].hp,10,'怪物不应受伤');
     assert.deepStrictEqual(G.monsters[0].pos,{r:5,c:8},'怪物被阻挡后不移动');
   });
-  test('case_k_013: MOVE_HERO action 不能绕过元素格占用校验',()=>{
+  test('case_k_013: MOVE_HERO action AI路径允许穿越元素格',()=>{
     fresh();
     G.elementCells['5,5']={fire:{layers:1,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     G.board[5][5].el='fire'; G.board[5][5].stk=1;
-    const prev={...G.heroes.ha.pos};
     dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:5,c:5}});
-    assert.deepStrictEqual(G.heroes.ha.pos,prev,'底层 action 也不能移动到元素格');
+    assert.deepStrictEqual(G.heroes.ha.pos,{r:5,c:5},'AI路径允许穿越元素格（moveHero UI层仍阻挡人类玩家）');
   });
   test('case_k_014: 点击剩余元素格会生成详情，移动点击会写入占用日志',()=>{
     fresh();
@@ -2395,6 +2394,27 @@ group('M组：_acted 英雄行动锁定',()=>{
     G.selHero='ha';
     moveHero(5,6);
     assert.deepStrictEqual(G.heroes.ha.pos,{r:10,c:1},'_acted 英雄 moveHero 不生效');
+  });
+});
+
+
+group('N组：一键执行多英雄走位分配',()=>{
+  test('case_n_001: 怪物行少于英雄数时B英雄仍走到怪物行附近',()=>{
+    fresh();
+    G.monsters=[
+      {id:'m1',name:'怪A',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:10},dead:false},
+      {id:'m2',name:'怪B',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:11},dead:false},
+    ];
+    G.heroes.ha.pos={r:10,c:1}; G.heroes.ha._acted=false;
+    G.heroes.hb.pos={r:11,c:1}; G.heroes.hb._acted=false;
+    G.slots=[
+      {hid:'ha',el:'fire',sn:1,dir:'right',used:false},
+      {hid:'hb',el:'water',sn:2,dir:'right',used:false},
+    ];
+    execAllHeroSlots();
+    assert.ok(G.heroes.hb.pos.r<=7,
+      'B英雄行应≤7(怪物在行5)，实际r='+G.heroes.hb.pos.r);
+    assert.ok(!(G.heroes.ha.pos.r===G.heroes.hb.pos.r&&G.heroes.ha.pos.c===G.heroes.hb.pos.c),'A/B英雄不应重叠');
   });
 });
 

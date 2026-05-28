@@ -1,7 +1,10 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
+| 2026-05-28 | fix | 一键执行状态机对齐 + B英雄走位修复：①修复行分配bug——rowDensity取min(heroIdx, length-1)防止怪物行少于英雄时越界回原行；②sync版补SELECT_ACTION_SLOT步骤（对齐真人操作流）；③async版execAllHeroSlots完成后自动调用endPlayerTurn()进入怪物回合；④新增N组case_n_001测试（怪物行少于英雄数时的走位分配） | index.html / test.js | node test.js 261/261 |
+| 2026-05-28 | fix | 一键执行阶段拆分 + 元素穿越修复：①execAllHeroSlots拆为阶段1全部走位→阶段2全部攻击，避免队友元素阻挡走位；②走位阶段不检查hasElementAt；③applyActionToState MOVE_HERO移除元素格阻挡（AI路径），moveHero() UI层保留；④sim.js新增本地文字战斗模拟器；⑤修复__TEST__在eval后赋值导致走async分支的bug | index.html / test.js / sim.js | node test.js 261/261 |
 
+| 2026-05-28 | feat | 全屏支持：①新增全屏按钮 ⛶（#fsb），调用 requestFullscreen/exitFullscreen 切换；②绑定 F11 快捷键;③CSS 全屏适配（#wrap 撑满视口、棋盘格自适应、面板字号调整）;④document.addEventListener 在测试环境安全跳过 | index.html | node test.js 260/260 |
 | 2026-05-28 | feat | 英雄_acted 行动锁定规则：①hero 对象新增 `_acted` 标记(syncUnitsToHeroes);②USE_SLOT 设 `hero._acted=true`，MOVE_HERO 拒绝已行动英雄;③moveHero() UI 层提示"该英雄已行动，本回合无法再移动";④endPlayerTurn/finishMonsters 重置 `_acted`;⑤一键执行 alive 移入循环内每英雄刷新，走位条件加 `!hero._acted`（只锁走位不锁未用槽）;⑥新增 M 组 4 条测试(case_m_001~004) | index.html / test.js | node test.js 260/260 |
 | 2026-05-28 | feat | 一键执行改为真人视觉路径：①execAllHeroSlots 拆分为测试/浏览器两条路径——测试走同步 forEach 原逻辑，浏览器走 async 逐步预览；②走位后 render()+sleep(250ms) 显示英雄移动；③每个槽先 SELECT_ACTION_SLOT 展示攻击范围(sleep 200ms)，再 USE_SLOT 执行(sleep 300ms)；④按钮执行期间 disabled 防连点；⑤test.js 新增 __TEST__ 标志并恢复 L 组同步测试 | index.html / test.js | node test.js 256/256 |
 | 日期 | 类型 | 摘要 | 涉及文件 | 验证 |

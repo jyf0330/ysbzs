@@ -318,7 +318,7 @@ const UNIT_DEFS = {
   fire_starter: {
     id:'fire_starter', name:'火苗灵', element:'fire', grade:'青铜', priceTier:1, tags:['火','前排','单点','输出'], tier:1, cost:2,
     levels: {
-      1:{ hp:18, slots:[
+      1:{ hp:20, slots:[
         {el:'fire',sn:1,dir:'right',tier:1},{el:'fire',sn:2,dir:'right',tier:1},{el:'fire',sn:3,dir:'right',tier:1}
       ]},
       2:{ hp:25, slots:[
@@ -346,7 +346,7 @@ const UNIT_DEFS = {
   wind_breeze: {
     id:'wind_breeze', name:'十字使', element:'wind', grade:'青铜', priceTier:1, tags:['风','范围','十字'], tier:1, cost:3,
     levels: {
-      1:{ hp:18, slots:[
+      1:{ hp:20, slots:[
         {el:'wind',sn:12,dir:'right',tier:1},{el:'wind',sn:12,dir:'right',tier:1},{el:'wind',sn:12,dir:'right',tier:1}
       ]},
       2:{ hp:25, slots:[
@@ -388,7 +388,7 @@ const UNIT_DEFS = {
   ember: {
     id:'ember', name:'余烬灵', element:'fire', grade:'青铜', priceTier:1, tags:['火','输出'], tier:1, cost:2,
     levels: {
-      1:{ hp:18, slots:[
+      1:{ hp:20, slots:[
         {el:'fire',sn:2,dir:'right',tier:1},{el:'fire',sn:1,dir:'right',tier:1},{el:'fire',sn:12,dir:'right',tier:1}
       ]},
       2:{ hp:23, slots:[
@@ -480,7 +480,7 @@ const UNIT_DEFS = {
   firecracker: {
     id:'firecracker', name:'🧨爆竹匠', element:'fire', tier:1, cost:3,
     levels: {
-      1:{ hp:18, slots:[
+      1:{ hp:20, slots:[
         {el:'fire',sn:1,dir:'right',tier:1},  // 槽1: 目标+1F
         {el:'fire',sn:1,dir:'right',tier:1,conditional:{el:'fire',bonus:1}}, // 槽2: 目标有F额外+1F
         {el:'fire',sn:12,dir:'right',tier:1,centerBonus:1}, // 槽3: 小十字火，中心+2F
@@ -609,7 +609,7 @@ function initGame(){
   addOwnedUnit('water_droplet',{r:11,c:1});
   syncUnitsToHeroes();
   spawnWaveForDay(1,'morning');
-  render();
+  refreshUI();
   glog('🎮 游戏开始！第一波教学关卡。');
   glog('💡 提示：选中行动点→调整方向→点"使用"发动攻击。');
   glog('💡 点击英雄选中，再点空格移动位置。');
@@ -809,7 +809,7 @@ function doExplode(pos){
     if(m){let emult=1;if(m.el&&ADV[oldEl]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}dealDmg(m,dmg*emult,`${elName}引爆`);}
   });
   G.explPos=null;
-  render();
+  refreshUI();
 }
 
 // ========== DAMAGE ==========
@@ -849,7 +849,7 @@ function settleExplosions(){
   });
   G.previewEvents=[];
   checkAllDead();
-  render();
+  refreshUI();
 }
 
 // 向后兼容别名，测试代码直接调用 settleDamage() 等价于 settleExplosions()
@@ -929,7 +929,7 @@ function selHero(id){
   G.selHero=G.selHero===id?null:id;
   G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
   // 攻击预览已在 renderBoard 内实时计算，无需在此预填充
-  render();
+  refreshUI();
 }
 
 function moveHero(r,c){
@@ -982,8 +982,8 @@ function computeMonWarn(){
 const ALLOW_AUTO_MOVE = true; // 测试环境，正式改 false
 const __IS_TEST__ = typeof global !== 'undefined' && global.__TEST__;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-var execAllHeroSlots = __IS_TEST__
-  ? function execAllHeroSlots(){
+// 同步版本：供测试环境 (node test.js) 使用
+function execAllHeroSlots_sync(){
   if(G.phase!=='PLAYER')return;
   const heroIds=Object.keys(G.heroes).filter(hid=>G.heroes[hid].hp>0);
   // ── 阶段1：全部走位（攻击前完成，避免队友元素阻挡）──
@@ -1031,7 +1031,9 @@ var execAllHeroSlots = __IS_TEST__
   if(n>0)glog(ALLOW_AUTO_MOVE ? `⚡ 一键执行了${n}个英雄动作，已智能走位拦截` : `⚡ 一键执行了${n}个英雄动作`);
   else glog('⚠️ 没有可执行的英雄动作');
 }
-  : async function execAllHeroSlots(){
+
+// 异步版本：供浏览器环境使用
+async function execAllHeroSlots_async(){
   if(G.phase!=='PLAYER')return;
   const btn=document.getElementById('exa');
   if(btn)btn.disabled=true;
@@ -1087,6 +1089,13 @@ var execAllHeroSlots = __IS_TEST__
   endPlayerTurn();
   if(btn)btn.disabled=false;
 }
+
+// 统一入口
+function execAllHeroSlots(){
+  if(__IS_TEST__) return execAllHeroSlots_sync();
+  return execAllHeroSlots_async();
+}
+
 function toggleFullscreen(){
   if(!document.fullscreenElement){
     document.documentElement.requestFullscreen().catch(()=>{});
@@ -1110,7 +1119,7 @@ function endPlayerTurn(){
   const hasAtk=G.monWarn.some(w=>w.type==='atk');
   if(hasAtk)glog('⚠️ 预警：怪物即将攻击英雄！');
   else if(G.monWarn.length)glog('👁 预警：怪物移动方向已标出。');
-  render();
+  refreshUI();
   setTimeout(()=>{G.monWarn=[];runMonsters(0);},700);
 }
 
@@ -1118,7 +1127,7 @@ function runMonsters(idx){
   const alive=G.monsters.filter(m=>!m.dead);
   if(idx>=alive.length){finishMonsters();return;}
   monsterAct(alive[idx]);
-  render();
+  refreshUI();
   setTimeout(()=>runMonsters(idx+1),350);
 }
 
@@ -1258,7 +1267,7 @@ function finishMonsters(){
     Object.values(G.heroes).forEach(h=>h._acted=false);
     glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
   }
-  render();
+  refreshUI();
 }
 
 function checkGameOver(){
@@ -1444,7 +1453,7 @@ function buyUnit(itemId){
     glog(`🛒 购买${UNIT_DEFS[item.defId].name}${newUnit.active?'，上阵':'，放入备战'}`);
   }
   syncUnitsToHeroes();
-  renderShop(); render();
+  renderShop(); refreshUI();
 }
 
 function sellUnit(instanceId){
@@ -1457,7 +1466,7 @@ function sellUnit(instanceId){
   G.ownedUnits.splice(idx,1);
   glog(`💸 出售${UNIT_DEFS[unit.defId].name}，返还${refund}金币`);
   syncUnitsToHeroes();
-  renderShop(); render();
+  renderShop(); refreshUI();
 }
 
 function rollShop(){
@@ -1487,7 +1496,7 @@ function closeShop(){
   spawnWaveForDay(G.day,'morning');
   glog(`⚔️ 第${G.day}天战斗开始！`);
   syncUnitsToHeroes();
-  render();
+  refreshUI();
 }
 
 function ri(n){return Math.floor(Math.random()*n);}
@@ -2114,10 +2123,27 @@ function applyActionToState(action){
   }
 }
 
+// refreshUI() = 显式 recompute + render，用于非 dispatchGameAction 的直接调用路径
+function refreshUI(){
+  recomputeCorePreview();
+  if(!G)return;
+  const vm=buildBattleVM();
+  renderBoard(vm.board);
+  renderHS(vm.heroes);
+  renderSlots(vm.slots);
+  renderTurn(vm.turn);
+  if(G.selectedCell){
+    renderCellDetail(getSelectedCellPreview(G));
+  }else{
+    const cdEl=document.getElementById('cd');
+    if(cdEl)cdEl.style.display='none';
+  }
+}
+
 // ─── View 层（只接受 VM 参数，只创建 DOM，不计算规则）───
+// render() 是纯 View：不计算规则，调用方负责先调 recomputeCorePreview()
 function render(){
   if(!G)return;
-  recomputeCorePreview();  // 每次 render 前刷新快照，保证 previewGrid 最新
   const vm=buildBattleVM();
   renderBoard(vm.board);
   renderHS(vm.heroes);
@@ -2293,7 +2319,7 @@ function renderCellDetail(cell){
   const acts=preview.incomingActions||[];
   let srcHtml=acts.length===0?'<div class="cd-empty">无行动点作用</div>':acts.map(a=>`<div class="cd-row">${a.description}</div>`).join('');
   // 输出
-  cdEl.innerHTML=`<div class="cd-pos">📍 格子 [${r},${c}]<button class="cd-close" onclick="G.selectedCell=null;render()">×</button></div><div class="cd-sec"><div class="cd-stt">实体</div>${entHtml}</div><div class="cd-sec"><div class="cd-stt">元素场</div>${elHtml}</div><div class="cd-sec"><div class="cd-stt">本格结算</div>${settlHtml}</div><div class="cd-sec"><div class="cd-stt">行动点来源</div>${srcHtml}</div>`;
+  cdEl.innerHTML=`<div class="cd-pos">📍 格子 [${r},${c}]<button class="cd-close" onclick="G.selectedCell=null;refreshUI()">×</button></div><div class="cd-sec"><div class="cd-stt">实体</div>${entHtml}</div><div class="cd-sec"><div class="cd-stt">元素场</div>${elHtml}</div><div class="cd-sec"><div class="cd-stt">本格结算</div>${settlHtml}</div><div class="cd-sec"><div class="cd-stt">行动点来源</div>${srcHtml}</div>`;
   cdEl.style.display='block';
 }
 
@@ -2301,20 +2327,20 @@ function onCell(r,c){
   hideTT();
   if(G.selHero){moveHero(r,c);return;}
   G.selectedCell=(G.selectedCell&&G.selectedCell.r===r&&G.selectedCell.c===c)?null:{r,c};
-  render();
+  refreshUI();
 }
 
 function showTT(r,c,e){
   if(G.phase!=='PLAYER')return;
   const bc=G.board[r][c]; if(!bc.el)return;
-  G.explPos={r,c}; render();
+  G.explPos={r,c}; refreshUI();
   const dmg=explDmg(bc.stk);
   document.getElementById('ttc').innerHTML=`
     <div class="ttl"><b style="color:${EC[bc.el]}">${EL[bc.el]}元素格</b></div>
     <div class="ttl">层数：${bc.stk}</div>
     <div class="ttl">引爆伤害：${dmg}</div>
     <div class="ttl">范围：十字5格（含中心）</div>
-    <button class="ttc" onclick="hideTT();G.explPos=null;render()">关闭</button>
+    <button class="ttc" onclick="hideTT();G.explPos=null;refreshUI()">关闭</button>
   `;
   const tt=document.getElementById('tt');
   const bnd=e.target.getBoundingClientRect();
@@ -2596,7 +2622,7 @@ function useBackpackItem(bpId){
     return;
   }
   G.backpack.splice(idx,1);
-  renderShop(); render();
+  renderShop(); refreshUI();
 }
 
 function toggleUnitActive(instanceId){
@@ -2610,7 +2636,7 @@ function toggleUnitActive(instanceId){
     unit.active=true;
   }
   syncUnitsToHeroes();
-  renderShop(); render();
+  renderShop(); refreshUI();
 }
 
 // 保留旧函数别名（向后兼容）

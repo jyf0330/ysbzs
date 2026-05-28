@@ -1,3 +1,46 @@
+
+## 2026-05-28 — 双层状态机 + 文字流程一对一实现
+
+### 架构
+- 大流程状态机 (DayStart→MorningBattle→MiddayShop→AfternoonBattle→NightShop→DayEnd)
+- 战斗状态机 (PlayerPlan→HeroAction→SummonAction→ElementResolve→MonsterAction)
+- 召唤流子状态机 (ChooseSummonCell→ReadElement→CreateSummon→ConsumeElement→AutoAct→DeathCheck)
+
+### 城堡
+- 敌方城堡 HP100 右侧 pos(6,11)，摧毁=胜利
+- 怪物寻路优先英雄，城堡为次级目标
+
+### 英雄
+- 全部改名灵化：火苗灵/滴滴灵/十字使/岩岩灵/均衡灵/余烬灵
+- 每位英雄增加 grade(品级), priceTier(定价档位), tags(标签)
+- 新增9英雄：泡泡灵/召芽灵/绒语灵/爆爆灵/分分灵/火种灵/泉泉灵/岩岩灵/风风灵
+- MAX_ACTIVE 2→6
+
+### 定价
+- GRADE_BASE × priceTier：青铜2/白银4/黄金6/钻石8
+- 价格=品级基准价×定价档位
+
+### 商店
+- SHOP_POOLS 按天/阶段固定池，向后兼容旧genShop
+- shopSize=5，池不足时允许重复
+
+### 召唤系统
+- summonOnCell：空格→小小灵HP6，元素格→对应元素灵HP=6+层数
+- petAct：自动寻最近怪物，相邻攻击
+- chooseElementForSummon：选最高层，同层fire>water>wind>earth
+- processSummons + onPetDeath：召唤物死亡触发爆爆灵留元素
+
+### 元素阻挡
+- checkElementBlock：怪物踩入元素格受伤，层数×(层数+1)/2
+- 不触发十字爆炸
+
+### 文字流程调整
+- Day1上午2回合，Day1下午2回合 (DAY_ROUND_CONFIG)
+- 十字使加入Day1中午池，HP18 SD[12] 风元素 价格3
+- 冲锋怪AP5→3，水滴使远程跳跃形状
+
+### 工作流
+- TDD新增前置步骤：测试清单审阅后方可写代码
 # CHANGELOG · 元素背包史
 
 ## 未发布

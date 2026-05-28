@@ -1,0 +1,792 @@
+{
+  "schemaVersion": "ysbzs-bazaar-shop-v0.1",
+  "basedOn": "ysbzs-hero-config-v0.2",
+  "namingStyle": "可爱小精灵",
+  "designFocus": "大巴扎多摊位标签过滤 + 品级统一定价",
+  "stallSystem": {
+    "enabled": true,
+    "stallCountByDay": {
+      "1": 2,
+      "2": 3,
+      "3": 4,
+      "4": 4,
+      "5": 5,
+      "6+": 5
+    },
+    "stallDefs": [
+      {
+        "id": "anvil_luo",
+        "name": "铁砧老洛",
+        "desc": "前排硬汉",
+        "tags": [
+          "前排"
+        ],
+        "weight": 1.0,
+        "fromDay": 1
+      },
+      {
+        "id": "mist_master",
+        "name": "雾港水手",
+        "desc": "后排远程",
+        "tags": [
+          "后排"
+        ],
+        "weight": 1.0,
+        "fromDay": 1
+      },
+      {
+        "id": "summon_tent",
+        "name": "灵语帐篷",
+        "desc": "召唤流派",
+        "tags": [
+          "召唤"
+        ],
+        "weight": 0.8,
+        "fromDay": 2
+      },
+      {
+        "id": "forge_master",
+        "name": "熔炉大师",
+        "desc": "火系输出",
+        "tags": [
+          "火",
+          "输出"
+        ],
+        "weight": 0.8,
+        "fromDay": 1
+      },
+      {
+        "id": "spring_well",
+        "name": "清泉小铺",
+        "desc": "水系铺场",
+        "tags": [
+          "水"
+        ],
+        "weight": 0.7,
+        "fromDay": 2
+      },
+      {
+        "id": "gem_granny",
+        "name": "宝石婆婆",
+        "desc": "精英好货",
+        "tags": [
+          "精英"
+        ],
+        "weight": 0.5,
+        "fromDay": 3
+      },
+      {
+        "id": "stone_huang",
+        "name": "石匠胡安",
+        "desc": "土系坦克",
+        "tags": [
+          "土",
+          "防御"
+        ],
+        "weight": 0.6,
+        "fromDay": 2
+      },
+      {
+        "id": "wind_tower",
+        "name": "风塔驿站",
+        "desc": "风系机动",
+        "tags": [
+          "风"
+        ],
+        "weight": 0.5,
+        "fromDay": 3
+      }
+    ],
+    "stallSlots": 3,
+    "filterLogic": "AND",
+    "excludeOwned": true,
+    "refresh": {
+      "firstFree": true,
+      "feeCurve": [
+        1,
+        2,
+        3
+      ],
+      "feeResetsDaily": true,
+      "globalFee": 3
+    },
+    "freeze": {
+      "level": "stall",
+      "cost": 0,
+      "expire": "end_of_night"
+    }
+  },
+  "pricing": {
+    "system": "tier_unified",
+    "bronze": 2,
+    "silver": 4,
+    "gold": 8,
+    "sellBack": {
+      "bronze": 1,
+      "silver": 3,
+      "gold": 6
+    },
+    "tierProbByDay": {
+      "1": {
+        "bronze": 1.0,
+        "silver": 0.0,
+        "gold": 0.0
+      },
+      "2": {
+        "bronze": 0.7,
+        "silver": 0.3,
+        "gold": 0.0
+      },
+      "3": {
+        "bronze": 0.5,
+        "silver": 0.4,
+        "gold": 0.1
+      },
+      "4": {
+        "bronze": 0.4,
+        "silver": 0.4,
+        "gold": 0.2
+      },
+      "5": {
+        "bronze": 0.3,
+        "silver": 0.4,
+        "gold": 0.3
+      },
+      "6+": {
+        "bronze": 0.2,
+        "silver": 0.4,
+        "gold": 0.4
+      }
+    }
+  },
+  "tagCategories": {
+    "位置": [
+      "前排",
+      "中排",
+      "后排"
+    ],
+    "元素": [
+      "火",
+      "水",
+      "风",
+      "土"
+    ],
+    "职责": [
+      "输出",
+      "防御",
+      "召唤",
+      "辅助"
+    ],
+    "稀有度": [
+      "普通",
+      "精英"
+    ],
+    "战术": [
+      "单点",
+      "范围",
+      "远程",
+      "机动",
+      "铺元素",
+      "挡路",
+      "人海"
+    ]
+  },
+  "globalRules": {
+    "maxBoardHeroes": 6,
+    "battleOrder": [
+      "playerPlan",
+      "heroApplyElementLayers",
+      "summonCreateOrAct",
+      "elementResolve",
+      "monsterAction",
+      "checkBattleEnd"
+    ],
+    "elementDamageFormula": "layers * (layers + 1) / 2",
+    "castleRule": {
+      "enemyCastleHpPerDay": 100,
+      "castleHpResetsNextDay": true,
+      "castleHpIsDailyBattleTarget": true
+    },
+    "mergeRule": {
+      "sameHeroCount": 2,
+      "bronzeToSilver": true,
+      "silverToGold": true
+    },
+    "summonFromElementCell": {
+      "enabled": true,
+      "emptyCellCreates": "tiny_spirit",
+      "elementCellCreatesElementSpirit": true,
+      "consumeElementLayers": true,
+      "hpFormula": "6 + consumedLayers",
+      "atkByConsumedLayers": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 2,
+        "5": 2,
+        "6": 3
+      },
+      "attackAddsSameElementLayer": 1
+    }
+  },
+  "attackShapes": [
+    {
+      "id": "single_front",
+      "name": "前方单点",
+      "cells": [
+        {
+          "f": 1,
+          "s": 0
+        }
+      ]
+    },
+    {
+      "id": "jump_single_2",
+      "name": "跳格点射",
+      "cells": [
+        {
+          "f": 2,
+          "s": 0
+        }
+      ]
+    },
+    {
+      "id": "two_target_range",
+      "name": "双格水泡",
+      "cells": [
+        {
+          "f": 2,
+          "s": -1
+        },
+        {
+          "f": 2,
+          "s": 1
+        }
+      ]
+    },
+    {
+      "id": "front_empty_cell",
+      "name": "前方铺元素",
+      "cells": [
+        {
+          "f": 1,
+          "s": 0
+        }
+      ],
+      "preferEmptyCell": true
+    },
+    {
+      "id": "front_sweep_3",
+      "name": "前排三格",
+      "cells": [
+        {
+          "f": 1,
+          "s": -1
+        },
+        {
+          "f": 1,
+          "s": 0
+        },
+        {
+          "f": 1,
+          "s": 1
+        }
+      ]
+    },
+    {
+      "id": "l_shape",
+      "name": "小拐弯",
+      "cells": [
+        {
+          "f": 1,
+          "s": 0
+        },
+        {
+          "f": 2,
+          "s": 0
+        },
+        {
+          "f": 2,
+          "s": 1
+        }
+      ]
+    }
+  ],
+  "summonTypes": [
+    {
+      "id": "tiny_spirit",
+      "name": "小小灵",
+      "element": "neutral",
+      "baseHp": 6,
+      "baseAtk": 1,
+      "autoAct": true,
+      "attackEffect": {
+        "type": "directDamage",
+        "value": 1
+      }
+    },
+    {
+      "id": "fire_spirit",
+      "name": "火火灵",
+      "element": "fire",
+      "autoAct": true,
+      "attackEffect": {
+        "type": "addElementLayer",
+        "element": "fire",
+        "layers": 1
+      }
+    },
+    {
+      "id": "water_spirit",
+      "name": "泡泡灵",
+      "element": "water",
+      "autoAct": true,
+      "attackEffect": {
+        "type": "addElementLayer",
+        "element": "water",
+        "layers": 1
+      }
+    },
+    {
+      "id": "wind_spirit",
+      "name": "风风灵",
+      "element": "wind",
+      "autoAct": true,
+      "bonus": {
+        "moveAp": 1
+      },
+      "attackEffect": {
+        "type": "addElementLayer",
+        "element": "wind",
+        "layers": 1
+      }
+    },
+    {
+      "id": "earth_spirit",
+      "name": "岩岩灵",
+      "element": "earth",
+      "autoAct": true,
+      "bonus": {
+        "hp": 3
+      },
+      "attackEffect": {
+        "type": "addElementLayer",
+        "element": "earth",
+        "layers": 1
+      }
+    }
+  ],
+  "heroes": [
+    {
+      "id": "flame_sprite",
+      "name": "火苗灵",
+      "size": 1,
+      "element": "fire",
+      "role": "single_damage",
+      "tags": [
+        "火",
+        "前排",
+        "单点",
+        "输出",
+        "普通"
+      ],
+      "unlockDay": 1,
+      "tiers": {
+        "bronze": {
+          "hp": 20,
+          "attackShape": "single_front",
+          "hitCount": 3,
+          "layersPerHit": 1
+        },
+        "silver": {
+          "hp": 30,
+          "attackShape": "single_front",
+          "hitCount": 3,
+          "layersPerHit": 2
+        },
+        "gold": {
+          "hp": 40,
+          "attackShape": "single_front",
+          "hitCount": 3,
+          "layersPerHit": 3
+        }
+      }
+    },
+    {
+      "id": "drop_sprite",
+      "name": "滴滴灵",
+      "size": 1,
+      "element": "water",
+      "role": "ranged_single",
+      "tags": [
+        "水",
+        "后排",
+        "远程",
+        "输出",
+        "普通"
+      ],
+      "unlockDay": 1,
+      "tiers": {
+        "bronze": {
+          "hp": 20,
+          "attackShape": "jump_single_2",
+          "hitCount": 3,
+          "layersPerHit": 1
+        },
+        "silver": {
+          "hp": 30,
+          "attackShape": "jump_single_2",
+          "hitCount": 3,
+          "layersPerHit": 2
+        },
+        "gold": {
+          "hp": 40,
+          "attackShape": "jump_single_2",
+          "hitCount": 3,
+          "layersPerHit": 3
+        }
+      }
+    },
+    {
+      "id": "bubble_sprite",
+      "name": "泡泡灵",
+      "size": 2,
+      "element": "water",
+      "role": "area_damage",
+      "tags": [
+        "水",
+        "范围",
+        "清怪",
+        "铺元素",
+        "普通"
+      ],
+      "unlockDay": 1,
+      "tiers": {
+        "bronze": {
+          "hp": 20,
+          "attackShape": "two_target_range",
+          "hitCount": 3,
+          "layersPerHit": 1,
+          "maxTargets": 2
+        },
+        "silver": {
+          "hp": 30,
+          "attackShape": "two_target_range",
+          "hitCount": 3,
+          "layersPerHit": 2,
+          "maxTargets": 2
+        },
+        "gold": {
+          "hp": 40,
+          "attackShape": "two_target_range",
+          "hitCount": 3,
+          "layersPerHit": 3,
+          "maxTargets": 3
+        }
+      }
+    },
+    {
+      "id": "sprout_summoner",
+      "name": "召芽灵",
+      "size": 2,
+      "element": "neutral",
+      "role": "summon_core",
+      "tags": [
+        "召唤",
+        "中排",
+        "精英",
+        "构筑核心"
+      ],
+      "unlockDay": 1,
+      "unlockPhase": "nightShop",
+      "tiers": {
+        "bronze": {
+          "hp": 20,
+          "skill": {
+            "type": "summonFromCell",
+            "count": 1,
+            "consumeLayers": true
+          }
+        },
+        "silver": {
+          "hp": 30,
+          "skill": {
+            "type": "summonFromCell",
+            "count": 1,
+            "consumeLayers": true,
+            "bonusHp": 2
+          }
+        },
+        "gold": {
+          "hp": 40,
+          "skill": {
+            "type": "summonFromCell",
+            "count": 2,
+            "consumeLayers": true
+          }
+        }
+      }
+    },
+    {
+      "id": "fluff_speaker",
+      "name": "绒语灵",
+      "size": 1,
+      "element": "neutral",
+      "role": "summon_buffer",
+      "tags": [
+        "召唤",
+        "后排",
+        "辅助",
+        "增益",
+        "精英"
+      ],
+      "unlockDay": 2,
+      "tiers": {
+        "bronze": {
+          "hp": 16,
+          "passive": {
+            "type": "buffAllSummons",
+            "hp": 2,
+            "atk": 1
+          }
+        },
+        "silver": {
+          "hp": 24,
+          "passive": {
+            "type": "buffAllSummons",
+            "hp": 4,
+            "atk": 1
+          }
+        },
+        "gold": {
+          "hp": 32,
+          "passive": {
+            "type": "buffAllSummons",
+            "hp": 6,
+            "atk": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "boom_sprite",
+      "name": "爆爆灵",
+      "size": 1,
+      "element": "fire",
+      "role": "summon_death_value",
+      "tags": [
+        "召唤",
+        "死亡收益",
+        "火",
+        "铺元素",
+        "精英"
+      ],
+      "unlockDay": 2,
+      "tiers": {
+        "bronze": {
+          "hp": 16,
+          "passive": {
+            "type": "onDeathDropElement",
+            "element": "fire",
+            "layers": 2
+          }
+        },
+        "silver": {
+          "hp": 24,
+          "passive": {
+            "type": "onDeathDropElement",
+            "element": "fire",
+            "layers": 3
+          }
+        },
+        "gold": {
+          "hp": 32,
+          "passive": {
+            "type": "onDeathDropElement",
+            "element": "fire",
+            "layers": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "split_sprite",
+      "name": "分分灵",
+      "size": 2,
+      "element": "neutral",
+      "role": "summon_rule_change",
+      "tags": [
+        "召唤",
+        "中排",
+        "人海",
+        "精英"
+      ],
+      "unlockDay": 2,
+      "tiers": {
+        "bronze": {
+          "hp": 18,
+          "passive": {
+            "type": "splitSummon",
+            "count": 2,
+            "hpMul": 0.5
+          }
+        },
+        "silver": {
+          "hp": 27,
+          "passive": {
+            "type": "splitSummon",
+            "count": 2,
+            "hpMul": 0.75
+          }
+        },
+        "gold": {
+          "hp": 36,
+          "passive": {
+            "type": "splitSummon",
+            "count": 3,
+            "hpMul": 0.6
+          }
+        }
+      }
+    },
+    {
+      "id": "ember_seed",
+      "name": "火种灵",
+      "size": 1,
+      "element": "fire",
+      "role": "element_layer",
+      "tags": [
+        "火",
+        "铺元素",
+        "前排",
+        "普通"
+      ],
+      "unlockDay": 2,
+      "tiers": {
+        "bronze": {
+          "hp": 18,
+          "attackShape": "front_empty_cell",
+          "hitCount": 2,
+          "layersPerHit": 1
+        },
+        "silver": {
+          "hp": 27,
+          "attackShape": "front_empty_cell",
+          "hitCount": 2,
+          "layersPerHit": 2
+        },
+        "gold": {
+          "hp": 36,
+          "attackShape": "front_empty_cell",
+          "hitCount": 3,
+          "layersPerHit": 2
+        }
+      }
+    },
+    {
+      "id": "spring_sprite",
+      "name": "泉泉灵",
+      "size": 1,
+      "element": "water",
+      "role": "element_layer",
+      "tags": [
+        "水",
+        "铺元素",
+        "后排",
+        "普通"
+      ],
+      "unlockDay": 2,
+      "tiers": {
+        "bronze": {
+          "hp": 18,
+          "attackShape": "front_empty_cell",
+          "hitCount": 2,
+          "layersPerHit": 1
+        },
+        "silver": {
+          "hp": 27,
+          "attackShape": "front_empty_cell",
+          "hitCount": 2,
+          "layersPerHit": 2
+        },
+        "gold": {
+          "hp": 36,
+          "attackShape": "front_empty_cell",
+          "hitCount": 3,
+          "layersPerHit": 2
+        }
+      }
+    },
+    {
+      "id": "pebble_guard",
+      "name": "岩岩灵",
+      "size": 3,
+      "element": "earth",
+      "role": "front_tank",
+      "tags": [
+        "土",
+        "前排",
+        "防御",
+        "挡路",
+        "普通"
+      ],
+      "unlockDay": 2,
+      "tiers": {
+        "bronze": {
+          "hp": 30,
+          "attackShape": "front_sweep_3",
+          "hitCount": 2,
+          "layersPerHit": 1
+        },
+        "silver": {
+          "hp": 45,
+          "attackShape": "front_sweep_3",
+          "hitCount": 2,
+          "layersPerHit": 2
+        },
+        "gold": {
+          "hp": 60,
+          "attackShape": "front_sweep_3",
+          "hitCount": 3,
+          "layersPerHit": 2
+        }
+      }
+    },
+    {
+      "id": "breeze_sprite",
+      "name": "风风灵",
+      "size": 1,
+      "element": "wind",
+      "role": "side_attack",
+      "tags": [
+        "风",
+        "侧击",
+        "机动",
+        "清散怪",
+        "精英"
+      ],
+      "unlockDay": 3,
+      "tiers": {
+        "bronze": {
+          "hp": 18,
+          "attackShape": "l_shape",
+          "hitCount": 3,
+          "layersPerHit": 1
+        },
+        "silver": {
+          "hp": 27,
+          "attackShape": "l_shape",
+          "hitCount": 3,
+          "layersPerHit": 2
+        },
+        "gold": {
+          "hp": 36,
+          "attackShape": "l_shape",
+          "hitCount": 3,
+          "layersPerHit": 3
+        }
+      }
+    }
+  ]
+}

@@ -316,9 +316,9 @@ const TUTORIAL_DEFAULT_SLOT_SN = SHAPE_BIG_CROSS;
 const UNIT_DEFS = {
   // --- Tier 1 ---
   fire_starter: {
-    id:'fire_starter', name:'火苗使', element:'fire', tier:1, cost:2,
+    id:'fire_starter', name:'火苗灵', element:'fire', grade:'青铜', priceTier:1, tags:['火','前排','单点','输出'], tier:1, cost:2,
     levels: {
-      1:{ hp:20, slots:[
+      1:{ hp:18, slots:[
         {el:'fire',sn:1,dir:'right',tier:1},{el:'fire',sn:2,dir:'right',tier:1},{el:'fire',sn:3,dir:'right',tier:1}
       ]},
       2:{ hp:25, slots:[
@@ -330,7 +330,7 @@ const UNIT_DEFS = {
     }
   },
   water_droplet: {
-    id:'water_droplet', name:'水滴使', element:'water', tier:1, cost:2,
+    id:'water_droplet', name:'滴滴灵', element:'water', grade:'青铜', priceTier:1, tags:['水','后排','远程','输出'], tier:1, cost:2,
     levels: {
       1:{ hp:20, slots:[
         {el:'water',sn:1,dir:'right',tier:1},{el:'water',sn:4,dir:'right',tier:1},{el:'water',sn:12,dir:'right',tier:1}
@@ -344,10 +344,10 @@ const UNIT_DEFS = {
     }
   },
   wind_breeze: {
-    id:'wind_breeze', name:'微风使', element:'wind', tier:1, cost:2,
+    id:'wind_breeze', name:'十字使', element:'wind', grade:'青铜', priceTier:1, tags:['风','范围','十字'], tier:1, cost:3,
     levels: {
-      1:{ hp:20, slots:[
-        {el:'wind',sn:2,dir:'right',tier:1},{el:'wind',sn:7,dir:'right',tier:1},{el:'wind',sn:10,dir:'right',tier:1}
+      1:{ hp:18, slots:[
+        {el:'wind',sn:12,dir:'right',tier:1},{el:'wind',sn:12,dir:'right',tier:1},{el:'wind',sn:12,dir:'right',tier:1}
       ]},
       2:{ hp:25, slots:[
         {el:'wind',sn:3,dir:'right',tier:2},{el:'wind',sn:7,dir:'right',tier:2},{el:'wind',sn:10,dir:'right',tier:2}
@@ -358,7 +358,7 @@ const UNIT_DEFS = {
     }
   },
   earth_shield: {
-    id:'earth_shield', name:'岩盾使', element:'earth', tier:1, cost:3,
+    id:'earth_shield', name:'岩岩灵', element:'earth', grade:'青铜', priceTier:3, tags:['土','前排','防御'], tier:1, cost:3,
     levels: {
       1:{ hp:25, slots:[
         {el:'earth',sn:4,dir:'right',tier:1},{el:'earth',sn:6,dir:'right',tier:1},{el:'earth',sn:8,dir:'right',tier:1}
@@ -372,7 +372,7 @@ const UNIT_DEFS = {
     }
   },
   balance: {
-    id:'balance', name:'均衡使', element:'fire', tier:1, cost:3,
+    id:'balance', name:'均衡灵', element:'fire', grade:'青铜', priceTier:1, tags:['火','水','风','灵活'], tier:1, cost:3,
     levels: {
       1:{ hp:20, slots:[
         {el:'fire',sn:1,dir:'right',tier:1},{el:'water',sn:1,dir:'right',tier:1},{el:'wind',sn:4,dir:'right',tier:1}
@@ -386,7 +386,7 @@ const UNIT_DEFS = {
     }
   },
   ember: {
-    id:'ember', name:'余烬使', element:'fire', tier:1, cost:2,
+    id:'ember', name:'余烬灵', element:'fire', grade:'青铜', priceTier:1, tags:['火','输出'], tier:1, cost:2,
     levels: {
       1:{ hp:18, slots:[
         {el:'fire',sn:2,dir:'right',tier:1},{el:'fire',sn:1,dir:'right',tier:1},{el:'fire',sn:12,dir:'right',tier:1}
@@ -505,7 +505,7 @@ const MONSTER_TYPES = {
   normal:  { name:'普通怪', hp:6,  atk:1, ap:5, cost:2, gold:2 },
   thick:   { name:'厚皮怪', hp:10, atk:1, ap:4, cost:3, gold:3 },
   fast:    { name:'快速怪', hp:5,  atk:1, ap:7, cost:3, gold:3 },
-  heavy:   { name:'强攻怪', hp:8,  atk:2, ap:5, cost:4, gold:4 },
+  heavy:   { name:'冲锋怪', hp:8,  atk:2, ap:3, cost:4, gold:4 },
   elite:   { name:'精英怪', hp:18, atk:3, ap:5, cost:8, gold:8 },
   boss:    { name:'小Boss',hp:30, atk:3, ap:4, cost:12,gold:15},
 };
@@ -560,14 +560,16 @@ const SHOP_PRICE_CONFIG = {
   interestStep: 5,
   interestMax: 3,
 };
+const GRADE_BASE={青铜:2,白银:4,黄金:6,钻石:8};function calcUnitPrice(def){return def.cost||(GRADE_BASE[def.grade]||2)*(def.priceTier||1);}
 
 // ========== GAME STATE ==========
 let G;
 
+const DAY_ROUND_CONFIG={1:{morning:2,afternoon:2},2:{morning:2,afternoon:3},3:{morning:3,afternoon:3}};
 function initGame(){
   G={
     phase:'PLAYER',  // PLAYER | MONSTER | SHOP | OVER
-    day:1, dayHalf:0, wave:1, round:1, maxRound:5,
+    day:1, dayHalf:0, wave:1, round:1, maxRound:2,
     hitCount:0,
     gold:10,
     savedCoins:0,
@@ -583,7 +585,7 @@ function initGame(){
     shopFrozen:{units:new Set(),consumables:new Set()}, // 冻结索引
     shopTier:1,
     // 城堡系统
-    castle:{hp:30,maxHp:30,pos:{r:12,c:1}},
+    castle:{hp:100,maxHp:100,pos:{r:6,c:11}},
     // 遗物系统
     relics:[],               // [{id,name,desc,effect,value}] effect: explosion_plus | manual_detonate
     elementCells:{},
@@ -1178,9 +1180,9 @@ function nextMoveFromPos(pos,m){
     const d=Math.abs(h.pos.r-pos.r)+Math.abs(h.pos.c-pos.c);
     if(d<bd){bd=d;best={r:h.pos.r,c:h.pos.c};}
   });
-  if(G.castle&&G.castle.hp>0){
+  if(G.castle&&G.castle.hp>0&&bd===Infinity){
     const cd=Math.abs(G.castle.pos.r-pos.r)+Math.abs(G.castle.pos.c-pos.c);
-    if(cd<bd){bd=cd;best={r:G.castle.pos.r,c:G.castle.pos.c};}
+    if(cd<bd||bd===Infinity){bd=cd;best={r:G.castle.pos.r,c:G.castle.pos.c};}
   }
   if(!best)return null;
   const dr=best.r-pos.r, dc=best.c-pos.c;
@@ -1262,7 +1264,7 @@ function finishMonsters(){
 function checkGameOver(){
   const allDead=Object.values(G.heroes).every(h=>h.hp<=0);
   if(allDead){G.phase='OVER';showMsg('💀 游戏结束！所有英雄已倒下。');}
-  if(G.castle&&G.castle.hp<=0){G.phase='OVER';showMsg('🏰 游戏结束！我方城堡已被摧毁。');}
+  if(G.castle&&G.castle.hp<=0){G.phase='OVER';showMsg('🏰 胜利！敌方城堡已被摧毁！');}
 }
 
 // ========== UNIT MANAGEMENT ==========
@@ -1295,7 +1297,7 @@ function syncHeroHPToUnits(){
 }
 
 function syncUnitsToHeroes(){
-  const active=G.ownedUnits.filter(u=>u.active).slice(0,2);
+  const MAX_ACTIVE=6;const active=G.ownedUnits.filter(u=>u.active).slice(0,MAX_ACTIVE);
   G.heroes={};
   G.slots=[];
   active.forEach((unit,ui)=>{
@@ -1374,6 +1376,7 @@ function openShop(){
   document.getElementById('so').style.display='block';
 }
 
+const SHOP_POOLS={day1_midday:["fire_starter","water_droplet","wind_breeze","bubble_sprite","pebble_guard"],day1_night:["sprout_summoner","fire_starter","water_droplet","bubble_sprite"],day2_midday:["fluff_speaker","boom_sprite","split_sprite","sprout_summoner","ember_seed","spring_sprite","water_droplet"],day2_night:["fluff_speaker","boom_sprite","split_sprite","ember_seed","spring_sprite","pebble_guard"],day3:["breeze_sprite","pebble_guard","sprout_summoner","fluff_speaker","boom_sprite"]};
 function genShop(){
   // 先快照已冻结的商品，再清空重新生成
   const frozenUnits=(G.shopItems.units||[]).filter(u=>G.shopFrozen.units.has(u.id));
@@ -1428,7 +1431,7 @@ function buyUnit(itemId){
   G.gold-=item.cost;
   G.shopItems.units.splice(idx,1);
   const activeCount=G.ownedUnits.filter(u=>u.active).length;
-  const newUnit=addOwnedUnit(item.defId, activeCount===0?{r:10,c:1}:activeCount===1?{r:11,c:1}:null);
+  const newUnit=addOwnedUnit(item.defId, activeCount<6?{r:10+activeCount,c:1}:null);
   if(!newUnit)return;
   // 检查是否有同名单位可合成
   const existing=G.ownedUnits.find(u=>u.instanceId!==newUnit.instanceId&&u.defId===newUnit.defId&&u.active);
@@ -1437,7 +1440,7 @@ function buyUnit(itemId){
     glog(`🛒 购买${UNIT_DEFS[item.defId].name}，自动合成！`);
   } else {
     // 上阵位满了放备战
-    if(activeCount>=2) newUnit.active=false;
+    if(activeCount>=6) newUnit.active=false;
     glog(`🛒 购买${UNIT_DEFS[item.defId].name}${newUnit.active?'，上阵':'，放入备战'}`);
   }
   syncUnitsToHeroes();
@@ -2603,7 +2606,7 @@ function toggleUnitActive(instanceId){
     unit.active=false;
   } else {
     const activeCount=G.ownedUnits.filter(u=>u.active).length;
-    if(activeCount>=2){showMsg('最多上阵2个单位！');return;}
+    if(activeCount>=6){showMsg('最多上阵6个单位！');return;}
     unit.active=true;
   }
   syncUnitsToHeroes();

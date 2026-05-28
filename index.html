@@ -584,7 +584,6 @@ function initGame(){
     coreSnapshot:null,
     coreVersion:0,
     actionLog:[],
-    simLog:[],
   };
   // 教程默认上阵两个单位
   addOwnedUnit('fire_starter',{r:10,c:1});
@@ -1154,10 +1153,10 @@ function finishMonsters(){
       G.previewEvents=[];
       spawnWaveForDay(G.day,'afternoon');
       G.phase='PLAYER';
-      glog(`☀️ 第${G.day}天下午，更多怪物来袭！`);
+      glog(`☀️ 第${G.day}天下午·更多怪物来袭！`);
     } else {
       // 下午波结束 → 商店
-      glog(`✅ 第${G.day}天战斗结束！进入商店。`);
+      glog(`🌙 第${G.day}天夜晚·进入商店！`);
       G.phase='SHOP';
       openShop();
     }
@@ -2012,7 +2011,7 @@ function applyActionToState(action){
       });
       s.used=true;
       G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
-      G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,el:s.el,sn:s.sn,dir:s.dir,cells:cells.map(c=>`${c.r},${c.c}`)});
+      G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,el:s.el,sn:s.sn,dir:s.dir,cells:cells.map(c=>`${c.r},${c.c}`),desc:`使用行动块#${action.slotId+1}：${EL[s.el]}`});
       break;
     }
     default:break;

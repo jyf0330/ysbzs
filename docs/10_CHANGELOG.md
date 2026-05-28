@@ -4,6 +4,7 @@
 
 | 日期 | 类型 | 摘要 | 涉及文件 | 验证 |
 |---|---|---|---|---|
+| 2026-05-28 | fix | 文字战斗系统修复：①`USE_SLOT` actionLog 补上 `desc` 字段，battleReport 现在包含玩家行动记录（英雄名、行动块、元素类型）；②清理 `simLog` 死字段；③对齐 glog 战斗日志消息与 `dayHalf` 系统：下午波消息改为 `🌙 第{N}天夜晚·进入商店！`，商店阶段消息对齐 `renderTurn` 格式 | index.html / tasks/doing/当前任务.md / docs/10_CHANGELOG.md | node test.js 256/256 |
 | 2026-05-28 | test | 修复剩余 3 个失败用例并与“一天两波”机制对齐：①`finishMonsters` 两个用例补充 `dayHalf=1`（下午波结束才进商店）；②`case_k_010` 避免因上午波清场后刷下午怪导致断言对象漂移，改为断言原怪物引用 `target.dead`；③全量回归通过并更新基线到 256/256 | test.js / docs/00_CURRENT_CONTEXT.md / tasks/doing/当前任务.md / docs/10_CHANGELOG.md | node test.js 256/256 |
 | 2026-05-28 | fix | 修复第二天阶段切换顶部文案异常：`renderTurn` 按阶段分支显示，`SHOP` 改为“第X天夜晚 · 商店阶段”，不再沿用战斗态“小回合”文本；`OVER` 显示“战斗结束”；新增测试 `renderTurn 在 SHOP 阶段显示商店文案，不显示小回合` 并通过 | index.html / test.js / docs/01_游戏设计（策划主导）/UI-UX策划/用户界面与操作规范.md / tasks/doing/当前任务.md / docs/10_CHANGELOG.md | node test.js 256/256 |
 | 2026-05-28 | docs | 补充 TDD 硬门禁：①代码改动默认要求先写失败测试或复现用例并确认 RED，再做最小实现和 GREEN 验证；②明确纯文档/规则/配置说明类改动可豁免但需记录原因；③任务卡需记录 RED/GREEN 命令和摘要；④明确 subagent 可用于并行审查、验收、文档核对和测试方案设计，但不是本项目硬门禁，仍保持单任务单代码文件编辑者规则；⑤归档本轮 TDD 门禁任务卡，`tasks/doing/当前任务.md` 恢复为空闲入口 | AGENTS.md / CLAUDE.md / .github/copilot-instructions.md / docs/00_AI_PROJECT_RULES.md / docs/00_AI_WORKFLOW_DETAILS.md / docs/00_CURRENT_CONTEXT.md / tasks/doing/当前任务.md / tasks/done/2026-05-28-tdd-gate.md / docs/10_CHANGELOG.md | rg TDD/subagent 规则检查；git diff --check |

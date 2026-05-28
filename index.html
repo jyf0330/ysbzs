@@ -550,7 +550,7 @@ let G;
 function initGame(){
   G={
     phase:'PLAYER',  // PLAYER | MONSTER | SHOP | OVER
-    day:1, wave:1, round:1, maxRound:5,
+    day:1, dayHalf:0, wave:1, round:1, maxRound:5,
     hitCount:0,
     gold:10,
     savedCoins:0,
@@ -584,6 +584,7 @@ function initGame(){
     coreSnapshot:null,
     coreVersion:0,
     actionLog:[],
+    simLog:[],
   };
   // 教程默认上阵两个单位
   addOwnedUnit('fire_starter',{r:10,c:1});
@@ -963,33 +964,48 @@ const ALLOW_AUTO_MOVE = true; // 测试环境，正式改 false
 function execAllHeroSlots(){
   if(G.phase!=='PLAYER')return;
   const alive=G.monsters.filter(m=>!m.dead);
-  if(alive.length>0 && ALLOW_AUTO_MOVE){
-    // 按怪物密度排行走位，英雄分散到不同行
-    const rowDensity=[...new Set(alive.map(m=>m.pos.r))].map(r=>{
-      return {r,cnt:alive.filter(m=>m.pos.r===r).length};
-    }).sort((a,b)=>b.cnt-a.cnt);
-    const heros=Object.keys(G.heroes).filter(hid=>G.heroes[hid].hp>0);
-    heros.forEach((hid,i)=>{
-      const hero=G.heroes[hid];
-      const rowTarget=i<rowDensity.length?rowDensity[i].r:hero.pos.r;
-      const minMonCol=Math.min(...alive.map(m=>m.pos.c));
-      const targetCol=Math.max(1,minMonCol-4);
-      const t={r:rowTarget,c:targetCol};
-      if(t.r===hero.pos.r&&t.c===hero.pos.c)return;
-      if(t.r<0||t.r>=13||t.c<0||t.c>=13)return;
-      if(monAt(t)||heroAt(t)||hasElementAt(t))return;
-      if(G.castle&&G.castle.pos.r===t.r&&G.castle.pos.c===t.c)return;
-      const oldR=hero.pos.r,oldC=hero.pos.c;
-      hero.pos={r:t.r,c:t.c};
-      G.actionLog.push({type:'MOVE_HERO',heroId:hid,from:{r:oldR,c:oldC},to:{r:t.r,c:t.c}});
-    });
-  }
+  // 按怪物密度排行走位，英雄分散到不同行
+  const rowDensity=[...new Set(alive.map(m=>m.pos.r))].map(r=>{
+    return {r,cnt:alive.filter(m=>m.pos.r===r).length};
+  }).sort((a,b)=>b.cnt-a.cnt);
+  const heroIds=Object.keys(G.heroes).filter(hid=>G.heroes[hid].hp>0);
   let n=0;
-  G.slots.forEach((s,i)=>{
-    if(s.used||!s.hid||!G.heroes[s.hid])return;
-    if(atkCells(G.heroes[s.hid].pos,s.sn,s.dir).length===0)return;
-    dispatchGameAction({type:'USE_SLOT',slotId:i});
-    n++;
+  // 逐个英雄：走位 → 铺元素 → 下一个英雄基于最新棋盘再走位
+  heroIds.forEach((hid,heroIdx)=>{
+    const hero=G.heroes[hid];
+    if(alive.length>0 && ALLOW_AUTO_MOVE){
+      // 计算该英雄未用槽的最大向右攻击距离
+      let maxRange=1;
+      G.slots.forEach(s=>{
+        if(s.used||s.hid!==hid)return;
+        const shape=SD[s.sn]; if(!shape)return;
+        shape.cells.forEach(([dr,dc])=>{if(dc>maxRange)maxRange=dc;});
+      });
+      const minMonCol=Math.min(...alive.map(m=>m.pos.c));
+      const baseCol=Math.max(1,minMonCol-maxRange);
+      const rowTarget=heroIdx<rowDensity.length?rowDensity[heroIdx].r:hero.pos.r;
+      // 尝试落脚：首选列被占时向右侧错开（最多试 5 列）
+      let t=null;
+      for(let off=0;off<5;off++){
+        const tc={r:rowTarget,c:Math.min(12,baseCol+off)};
+        if(tc.r===hero.pos.r&&tc.c===hero.pos.c){t=tc;break;}
+        if(monAt(tc)||heroAt(tc)||hasElementAt(tc))continue;
+        if(G.castle&&G.castle.pos.r===tc.r&&G.castle.pos.c===tc.c)continue;
+        t=tc;break;
+      }
+      if(t&&!(t.r===hero.pos.r&&t.c===hero.pos.c)){
+        const oldR=hero.pos.r,oldC=hero.pos.c;
+        hero.pos={r:t.r,c:t.c};
+        G.actionLog.push({type:'MOVE_HERO',heroId:hid,from:{r:oldR,c:oldC},to:{r:t.r,c:t.c}});
+      }
+    }
+    // 执行该英雄全部未用槽
+    G.slots.forEach((s,i)=>{
+      if(s.used||s.hid!==hid||!G.heroes[s.hid])return;
+      if(atkCells(G.heroes[s.hid].pos,s.sn,s.dir).length===0)return;
+      dispatchGameAction({type:'USE_SLOT',slotId:i});
+      n++;
+    });
   });
   if(n>0)glog(ALLOW_AUTO_MOVE ? `⚡ 一键执行了${n}个英雄动作，已智能走位拦截` : `⚡ 一键执行了${n}个英雄动作`);
   else glog('⚠️ 没有可执行的英雄动作');
@@ -2259,8 +2275,16 @@ function renderSlots(slotsVM){
 
 function renderTurn(turnVM){
   const phText={PLAYER:'⚔️ 玩家回合',MONSTER:'👾 怪物行动中…',SHOP:'🛒 商店',OVER:'💀 游戏结束'};
+  const dayLabel=`第${turnVM.day||turnVM.wave}天`;
+  const halfLabel=turnVM.dayHalf===0?'早上':(turnVM.dayHalf===1?'下午':'');
   document.getElementById('ph').textContent=phText[turnVM.phase]||turnVM.phase;
-  document.getElementById('rc').textContent=`第${turnVM.day||turnVM.wave}天${turnVM.dayHalf===0?'早上':(turnVM.dayHalf===1?'下午':'')} · ${turnVM.round}/${turnVM.maxRound}小回合`;
+  if(turnVM.phase==='SHOP'){
+    document.getElementById('rc').textContent=`${dayLabel}夜晚 · 商店阶段`;
+  }else if(turnVM.phase==='OVER'){
+    document.getElementById('rc').textContent=`${dayLabel}${halfLabel} · 战斗结束`;
+  }else{
+    document.getElementById('rc').textContent=`${dayLabel}${halfLabel} · ${turnVM.round}/${turnVM.maxRound}小回合`;
+  }
   document.getElementById('gold').textContent=turnVM.gold;
   document.getElementById('etb').disabled=turnVM.endTurnDisabled;
   document.getElementById('exa').disabled=turnVM.execAllDisabled;

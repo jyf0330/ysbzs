@@ -628,8 +628,9 @@ group('回合管理', ()=>{
     finishMonsters();
     G.slots.forEach((s,i)=>assert.strictEqual(s.used,false,`槽${i}`));
   });
-  test('finishMonsters round>maxRound → 进入商店并 openShop', ()=>{
+  test('finishMonsters round>maxRound（下午波）→ 进入商店并 openShop', ()=>{
     fresh();
+    G.dayHalf=1;
     G.round=G.maxRound+1;
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
@@ -637,8 +638,9 @@ group('回合管理', ()=>{
     assert.strictEqual(G.gold, 18);
     assert.ok(G.shopItems.units.length>0,'应已生成商店');
   });
-  test('finishMonsters 所有怪死亡 → 商店', ()=>{
+  test('finishMonsters 所有怪死亡（下午波）→ 商店', ()=>{
     fresh();
+    G.dayHalf=1;
     G.round=2;
     G.monsters.forEach(m=>m.dead=true);
     finishMonsters();
@@ -920,6 +922,19 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     openShop();
     // Day2 income=6, gold=26, interest=min(floor(26/5),3)=3, total=29
     assert.strictEqual(G.gold, 29);
+  });
+  test('renderTurn 在 SHOP 阶段显示商店文案，不显示小回合', ()=>{
+    fresh();
+    G.phase='SHOP';
+    G.day=2;
+    G.dayHalf=1;
+    G.round=5;
+    withRealUi(()=>{
+      renderTurn(buildTurnVM());
+      const txt=document.getElementById('rc').textContent;
+      assert.ok(txt.includes('商店阶段'),`SHOP 文案应包含“商店阶段”，实际: ${txt}`);
+      assert.ok(!txt.includes('小回合'),`SHOP 文案不应包含“小回合”，实际: ${txt}`);
+    });
   });
 });
 
@@ -2202,11 +2217,13 @@ group('K组：结算与元素落地一致性', ()=>{
   });
   test('case_k_010: 结束回合 endPlayerTurn 调用 commit 后再 settle，怪物格结算',()=>{
     fresh();
+    G.dayHalf=1;
     G.monsters=[{id:'m0',name:'测试怪',hp:6,maxHp:6,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    const target=G.monsters[0];
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     endPlayerTurn();
     // endPlayerTurn 内部调用了 commitPlayerActionsToElementField + settleExplosions
-    assert.strictEqual(G.monsters[0].dead,true,'回合结束后怪物格元素应被结算');
+    assert.strictEqual(target.dead,true,'回合结束后怪物格元素应被结算');
     assert.ok(G.phase==='MONSTER'||G.phase==='SHOP','阶段切换到 MONSTER 或 SHOP（全灭后进商店）');
   });
   test('case_k_011: 空格多元素结算后，未引爆元素重新同步为地形并阻挡英雄',()=>{

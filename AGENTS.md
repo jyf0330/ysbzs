@@ -14,8 +14,8 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 1. 调用并阅读 `ywh-game` skill。
 2. 阅读 `docs/00_AI_PROJECT_RULES.md`。
 3. 阅读 `docs/00_AI_WORKFLOW_DETAILS.md`。
-4. 运行 `git status --short --untracked-files=all`，把既有改动和本轮改动分开。
-5. 按任务类型创建或更新 `tasks/doing/当前任务.md`，执行 AI 只读任务卡指定范围。
+4. 运行 `git status --short --untracked-files=all`；如有非 `.omx/` 改动，继续读 `git diff --stat` 和必要 diff 摘要，把既有改动和本轮改动分开。
+5. 按任务类型创建或更新 `tasks/doing/当前任务.md`，执行 AI 只读任务卡指定范围；只读评审 / 流程审计不创建任务卡。
 
 ## 项目信息
 
@@ -23,7 +23,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 - 类型：browser-based web game（回合制棋盘战术）
 - 工作流：`ywh-game`
 - 主文件：`index.html`（单文件，所有 CSS/HTML/JS 内联，禁止无故拆分）
-- 测试：`node test.js`（当前基准：199 项，全部通过）
+- 测试：`node test.js`（当前基准只维护在 `docs/00_CURRENT_CONTEXT.md`，入口文件不要复制数字）
 
 ## 核心纪律
 
@@ -33,6 +33,10 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 - 归档目录 `docs/99_归档/` 只作历史参考，不是当前规则源头。
 - 任意有效改动都要更新 `docs/10_CHANGELOG.md`。
 - 代码或文档冲突时，先列冲突点、影响范围和可选方案，不要自行抹平。
+- 默认自主执行；但遇到破坏性操作、未归属核心改动、代码-文档冲突或 `[NEEDS_REVIEW]` 决策时，先暂停并列出取舍。
+- 完成的任务卡归档到 `tasks/done/`，`tasks/doing/当前任务.md` 只保留当前进行中的任务。
+- 代码改动默认执行 TDD：bugfix、核心机制、UI 可观察行为、重构或行为变化，必须先写失败测试或复现用例并确认 RED，再改实现。
+- subagent 可用于并行审查、验收或文档分析，但不是硬门禁；同一任务仍只允许一个 AI 修改同一代码文件。
 
 ## 常用命令
 

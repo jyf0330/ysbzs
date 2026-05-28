@@ -5,8 +5,8 @@
 1. 调用并阅读 `ywh-game` skill。
 2. 读取本文件。
 3. 读取 [docs/00_AI_WORKFLOW_DETAILS.md](./00_AI_WORKFLOW_DETAILS.md)。
-4. 运行 `git status --short --untracked-files=all`。
-5. 按任务类型决定是否创建或更新 `tasks/doing/当前任务.md`。
+4. 运行 `git status --short --untracked-files=all`；如有非 `.omx/` 改动，继续读 `git diff --stat` 和必要 diff 摘要。
+5. 按任务类型决定是否创建或更新 `tasks/doing/当前任务.md`；只读评审 / 流程审计不创建任务卡。
 
 ## 项目标识
 
@@ -15,7 +15,7 @@
 - 工作流：`ywh-game`
 - 仓库：`git@github.com:jyf0330/ysbzs.git`
 - 主文件：`index.html`（单文件原型，禁止无故拆分）
-- 测试：`node test.js`（当前基准：247/247）
+- 测试：`node test.js`（当前基准只维护在 [docs/00_CURRENT_CONTEXT.md](./00_CURRENT_CONTEXT.md)，入口文件不要复制数字）
 
 ## 硬红线
 
@@ -26,6 +26,10 @@
 - 禁止未读 `git diff --stat` / 必要 diff 摘要就汇报未归属改动。
 - 禁止文档未同步就 `git add` / `git commit` / `git push`。
 - 禁止把“同步 ywh 工作流”理解成业务代码重构。
+- 禁止完成任务后继续把旧任务卡留在 `tasks/doing/当前任务.md` 当作当前任务。
+- 默认自主执行；但遇到破坏性操作、未归属核心改动、代码-文档冲突或 `[NEEDS_REVIEW]` 决策时，先暂停并列出取舍。
+- 代码改动默认执行 TDD：bugfix、核心机制、UI 可观察行为、重构或行为变化，必须先写失败测试或复现用例并确认 RED，再改实现。
+- subagent 可用于并行审查、验收或文档分析，但不是硬门禁；同一任务仍只允许一个 AI 修改同一代码文件。
 
 ## 快捷口令
 
@@ -72,6 +76,7 @@ curl -s -o /dev/null -w "%{http_code}" http://124.222.83.113/ysbzs/
 
 - 任务分流与最小读取
 - 工作区状态必读门禁
+- 任务卡生命周期
 - graphify 使用边界
 - Demo 阶段文档门禁
 - 文档同步规则

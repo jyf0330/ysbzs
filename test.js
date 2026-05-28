@@ -32,6 +32,7 @@ const scriptTag = html.match(/<script>([\s\S]+?)<\/script>/);
 if(!scriptTag) throw new Error('找不到 <script> 标签');
 // 将 const/let 改为 var，使其通过 eval 暴露到当前作用域
 const gameScript = scriptTag[1].replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
+global.__TEST__ = true;
 eval(gameScript); // eslint-disable-line no-eval
 
 // 屏蔽 DOM 渲染函数，只测逻辑
@@ -47,13 +48,23 @@ showMsg = t => { _lastMsg = t; };
 let pass=0, fail=0;
 const failures=[];
 
+const _asyncTests = [];
 function test(name, fn){
-  try{ fn(); pass++; console.log(`  ✅ ${name}`); }
+  try{ 
+    const r = fn();
+    if (r && typeof r.then === 'function') {
+      _asyncTests.push(
+        r.then(() => { pass++; console.log(`  ✅ ${name}`); })
+         .catch(e => { fail++; failures.push({ name, msg:e.message }); console.log(`  ❌ ${name}\n     → ${e.message}`); })
+      );
+    } else {
+      pass++; console.log(`  ✅ ${name}`);
+    }
+  }
   catch(e){
     fail++;
     failures.push({ name, msg:e.message });
-    console.log(`  ❌ ${name}`);
-    console.log(`     → ${e.message}`);
+    console.log(`  ❌ ${name}\n     → ${e.message}`);
   }
 }
 function group(name, fn){ console.log(`\n▶ ${name}`); fn(); }
@@ -2340,8 +2351,56 @@ group('L组：一键执行英雄动作',()=>{
 });
 
 
+
+group('M组：_acted 英雄行动锁定',()=>{
+  test('case_m_001: USE_SLOT 后 hero._acted=true，禁止 MOVE_HERO',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:5,c:5};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
+    assert.strictEqual(G.heroes.ha._acted,false,'初始 _acted=false');
+    dispatchGameAction({type:'USE_SLOT',slotId:0});
+    assert.strictEqual(G.heroes.ha._acted,true,'使用槽后 _acted=true');
+    const oldPos={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
+    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:5,c:6}});
+    assert.deepStrictEqual(G.heroes.ha.pos,oldPos,'_acted hero 不允许移动');
+  });
+  test('case_m_002: endPlayerTurn 重置 _acted',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:5,c:5};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
+    dispatchGameAction({type:'USE_SLOT',slotId:0});
+    assert.strictEqual(G.heroes.ha._acted,true);
+    endPlayerTurn();
+    assert.strictEqual(G.heroes.ha._acted,false,'endPlayerTurn 后 _acted 重置');
+  });
+  test('case_m_003: 一键执行跳过 _acted 英雄的走位，仍执行其未用槽',()=>{
+    fresh();
+    G.monsters=[{id:'m1',name:'怪',hp:10,maxHp:10,atk:3,el:null,pos:{r:10,c:10},dead:false}];
+    G.heroes.ha.pos={r:10,c:5};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false},{hid:'ha',el:'fire',sn:2,dir:'right',used:false}];
+    dispatchGameAction({type:'USE_SLOT',slotId:0});
+    assert.strictEqual(G.heroes.ha._acted,true);
+    assert.strictEqual(G.slots[0].used,true);
+    assert.strictEqual(G.slots[1].used,false);
+    const oldPos={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
+    execAllHeroSlots();
+    assert.deepStrictEqual(G.heroes.ha.pos,oldPos,'_acted 英雄一键执行不会走位');
+    assert.strictEqual(G.slots[1].used,true,'_acted 英雄的未用槽仍会执行');
+  });
+  test('case_m_004: moveHero 函数拒绝 _acted 英雄',()=>{
+    fresh();
+    G.heroes.ha._acted=true;
+    G.selHero='ha';
+    moveHero(5,6);
+    assert.deepStrictEqual(G.heroes.ha.pos,{r:10,c:1},'_acted 英雄 moveHero 不生效');
+  });
+});
+
 // ═══════════════════════════════════════════════════════════════
-// 汇总
+// 汇总（等待所有异步测试完成后输出）
+Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);
 if(failures.length>0){
@@ -2355,3 +2414,4 @@ if(failures.length>0){
   console.log('🎉 全部测试通过！');
   process.exit(0);
 }
+});

@@ -916,6 +916,7 @@ function selHero(id){
 function moveHero(r,c){
   if(!G.selHero||G.phase!=='PLAYER')return;
   const hero=G.heroes[G.selHero];
+  if(hero._acted){glog('⚠️ 该英雄已行动，本回合无法再移动！');return;}
   if(heroAt({r,c})||monAt({r,c})||hasElementAt({r,c})||(G.castle&&G.castle.pos.r===r&&G.castle.pos.c===c)){glog('⚠️ 目标格已占用！');return;}
   glog(`🚶 ${hero.name}移动到(${r},${c})`);
   dispatchGameAction({type:'MOVE_HERO',heroId:G.selHero,to:{r,c}});
@@ -960,20 +961,21 @@ function computeMonWarn(){
 // ========== TURN MANAGEMENT ==========
 // 正式环境禁止 AI 走位，只执行技能槽
 const ALLOW_AUTO_MOVE = true; // 测试环境，正式改 false
-function execAllHeroSlots(){
+const __IS_TEST__ = typeof global !== 'undefined' && global.__TEST__;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+var execAllHeroSlots = __IS_TEST__
+  ? function execAllHeroSlots(){
   if(G.phase!=='PLAYER')return;
-  const alive=G.monsters.filter(m=>!m.dead);
-  // 按怪物密度排行走位，英雄分散到不同行
-  const rowDensity=[...new Set(alive.map(m=>m.pos.r))].map(r=>{
-    return {r,cnt:alive.filter(m=>m.pos.r===r).length};
-  }).sort((a,b)=>b.cnt-a.cnt);
   const heroIds=Object.keys(G.heroes).filter(hid=>G.heroes[hid].hp>0);
   let n=0;
-  // 逐个英雄：走位 → 铺元素 → 下一个英雄基于最新棋盘再走位
-  heroIds.forEach((hid,heroIdx)=>{
+  for(let heroIdx=0;heroIdx<heroIds.length;heroIdx++){
+    const hid=heroIds[heroIdx];
     const hero=G.heroes[hid];
-    if(alive.length>0 && ALLOW_AUTO_MOVE){
-      // 计算该英雄未用槽的最大向右攻击距离
+    const alive=G.monsters.filter(m=>!m.dead);
+    const rowDensity=[...new Set(alive.map(m=>m.pos.r))].map(r=>{
+    return {r,cnt:alive.filter(m=>m.pos.r===r).length};
+  }).sort((a,b)=>b.cnt-a.cnt);
+    if(!hero._acted && alive.length>0 && ALLOW_AUTO_MOVE){
       let maxRange=1;
       G.slots.forEach(s=>{
         if(s.used||s.hid!==hid)return;
@@ -983,7 +985,6 @@ function execAllHeroSlots(){
       const minMonCol=Math.min(...alive.map(m=>m.pos.c));
       const baseCol=Math.max(1,minMonCol-maxRange);
       const rowTarget=heroIdx<rowDensity.length?rowDensity[heroIdx].r:hero.pos.r;
-      // 尝试落脚：首选列被占时向右侧错开（最多试 5 列）
       let t=null;
       for(let off=0;off<5;off++){
         const tc={r:rowTarget,c:Math.min(12,baseCol+off)};
@@ -998,22 +999,76 @@ function execAllHeroSlots(){
         G.actionLog.push({type:'MOVE_HERO',heroId:hid,from:{r:oldR,c:oldC},to:{r:t.r,c:t.c}});
       }
     }
-    // 执行该英雄全部未用槽
     G.slots.forEach((s,i)=>{
       if(s.used||s.hid!==hid||!G.heroes[s.hid])return;
       if(atkCells(G.heroes[s.hid].pos,s.sn,s.dir).length===0)return;
       dispatchGameAction({type:'USE_SLOT',slotId:i});
       n++;
     });
-  });
+  }
   if(n>0)glog(ALLOW_AUTO_MOVE ? `⚡ 一键执行了${n}个英雄动作，已智能走位拦截` : `⚡ 一键执行了${n}个英雄动作`);
   else glog('⚠️ 没有可执行的英雄动作');
+}
+  : async function execAllHeroSlots(){
+  if(G.phase!=='PLAYER')return;
+  const btn=document.getElementById('exa');
+  if(btn)btn.disabled=true;
+  const heroIds=Object.keys(G.heroes).filter(hid=>G.heroes[hid].hp>0);
+  let n=0;
+  for(let heroIdx=0;heroIdx<heroIds.length;heroIdx++){
+    const hid=heroIds[heroIdx];
+    const hero=G.heroes[hid];
+    const alive=G.monsters.filter(m=>!m.dead);
+    const rowDensity=[...new Set(alive.map(m=>m.pos.r))].map(r=>{
+    return {r,cnt:alive.filter(m=>m.pos.r===r).length};
+  }).sort((a,b)=>b.cnt-a.cnt);
+    if(!hero._acted && alive.length>0 && ALLOW_AUTO_MOVE){
+      let maxRange=1;
+      for(const s of G.slots){
+        if(s.used||s.hid!==hid)continue;
+        const shape=SD[s.sn]; if(!shape)continue;
+        shape.cells.forEach(([dr,dc])=>{if(dc>maxRange)maxRange=dc;});
+      }
+      const minMonCol=Math.min(...alive.map(m=>m.pos.c));
+      const baseCol=Math.max(1,minMonCol-maxRange);
+      const rowTarget=heroIdx<rowDensity.length?rowDensity[heroIdx].r:hero.pos.r;
+      let t=null;
+      for(let off=0;off<5;off++){
+        const tc={r:rowTarget,c:Math.min(12,baseCol+off)};
+        if(tc.r===hero.pos.r&&tc.c===hero.pos.c){t=tc;break;}
+        if(monAt(tc)||heroAt(tc)||hasElementAt(tc))continue;
+        if(G.castle&&G.castle.pos.r===tc.r&&G.castle.pos.c===tc.c)continue;
+        t=tc;break;
+      }
+      if(t&&!(t.r===hero.pos.r&&t.c===hero.pos.c)){
+        const oldR=hero.pos.r,oldC=hero.pos.c;
+        hero.pos={r:t.r,c:t.c};
+        G.actionLog.push({type:'MOVE_HERO',heroId:hid,from:{r:oldR,c:oldC},to:{r:t.r,c:t.c}});
+        render();
+        await sleep(250);
+      }
+    }
+    for(let i=0;i<G.slots.length;i++){
+      const s=G.slots[i];
+      if(s.used||s.hid!==hid||!G.heroes[s.hid])continue;
+      if(atkCells(G.heroes[s.hid].pos,s.sn,s.dir).length===0)continue;
+      dispatchGameAction({type:'SELECT_ACTION_SLOT',slotId:i});
+      await sleep(200);
+      dispatchGameAction({type:'USE_SLOT',slotId:i});
+      n++;
+      await sleep(300);
+    }
+  }
+  if(n>0)glog(ALLOW_AUTO_MOVE ? `⚡ 一键执行了${n}个英雄动作，已智能走位拦截` : `⚡ 一键执行了${n}个英雄动作`);
+  else glog('⚠️ 没有可执行的英雄动作');
+  if(btn)btn.disabled=false;
 }
 function endPlayerTurn(){
   if(G.phase!=='PLAYER')return;
   commitPlayerActionsToElementField(G);
   settleExplosions();
   G.phase='MONSTER'; G.selSlot=null; G.selHero=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
+  Object.values(G.heroes).forEach(h=>h._acted=false);
   glog('--- 怪物回合 ---');
   computeMonWarn();
   const hasAtk=G.monWarn.some(w=>w.type==='atk');
@@ -1150,6 +1205,7 @@ function finishMonsters(){
       G.dayHalf=1;
       G.round=1; G.hitCount=0;
       G.slots.forEach(s=>s.used=false);
+      Object.values(G.heroes).forEach(h=>h._acted=false);
       G.previewEvents=[];
       spawnWaveForDay(G.day,'afternoon');
       G.phase='PLAYER';
@@ -1163,6 +1219,7 @@ function finishMonsters(){
   } else {
     G.phase='PLAYER'; G.hitCount=0; G.previewEvents=[];
     G.slots.forEach(s=>s.used=false);
+    Object.values(G.heroes).forEach(h=>h._acted=false);
     glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
   }
   render();
@@ -1219,6 +1276,7 @@ function syncUnitsToHeroes(){
       maxHp:unit.maxHp,
       pos:{r:unit.pos.r,c:unit.pos.c},
       unitId:unit.instanceId,
+      _acted:false,
     };
     lvlData.slots.forEach((slotDef,si)=>{
       G.slots.push({
@@ -1942,7 +2000,7 @@ function applyActionToState(action){
   switch(action.type){
     case 'MOVE_HERO':{
       const hero=G.heroes[action.heroId];
-      if(!hero)return;
+      if(!hero||hero._acted)return;
       if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to)||hasElementAt(action.to))return;
       if(G.castle&&G.castle.pos.r===action.to.r&&G.castle.pos.c===action.to.c)return;
       const from={r:hero.pos.r,c:hero.pos.c};
@@ -2010,6 +2068,7 @@ function applyActionToState(action){
         else if(cell.el===s.el){cell.stk=Math.min(cell.stk+layersToAdd,MAX_STK);}
       });
       s.used=true;
+      hero._acted=true;
       G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
       G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,el:s.el,sn:s.sn,dir:s.dir,cells:cells.map(c=>`${c.r},${c.c}`),desc:`使用行动块#${action.slotId+1}：${EL[s.el]}`});
       break;

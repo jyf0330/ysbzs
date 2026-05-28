@@ -2,6 +2,8 @@
 
 ## 未发布
 
+| 2026-05-28 | feat | 英雄_acted 行动锁定规则：①hero 对象新增 `_acted` 标记(syncUnitsToHeroes);②USE_SLOT 设 `hero._acted=true`，MOVE_HERO 拒绝已行动英雄;③moveHero() UI 层提示"该英雄已行动，本回合无法再移动";④endPlayerTurn/finishMonsters 重置 `_acted`;⑤一键执行 alive 移入循环内每英雄刷新，走位条件加 `!hero._acted`（只锁走位不锁未用槽）;⑥新增 M 组 4 条测试(case_m_001~004) | index.html / test.js | node test.js 260/260 |
+| 2026-05-28 | feat | 一键执行改为真人视觉路径：①execAllHeroSlots 拆分为测试/浏览器两条路径——测试走同步 forEach 原逻辑，浏览器走 async 逐步预览；②走位后 render()+sleep(250ms) 显示英雄移动；③每个槽先 SELECT_ACTION_SLOT 展示攻击范围(sleep 200ms)，再 USE_SLOT 执行(sleep 300ms)；④按钮执行期间 disabled 防连点；⑤test.js 新增 __TEST__ 标志并恢复 L 组同步测试 | index.html / test.js | node test.js 256/256 |
 | 日期 | 类型 | 摘要 | 涉及文件 | 验证 |
 |---|---|---|---|---|
 | 2026-05-28 | fix | 文字战斗系统修复：①`USE_SLOT` actionLog 补上 `desc` 字段，battleReport 现在包含玩家行动记录（英雄名、行动块、元素类型）；②清理 `simLog` 死字段；③对齐 glog 战斗日志消息与 `dayHalf` 系统：下午波消息改为 `🌙 第{N}天夜晚·进入商店！`，商店阶段消息对齐 `renderTurn` 格式 | index.html / tasks/doing/当前任务.md / docs/10_CHANGELOG.md | node test.js 256/256 |

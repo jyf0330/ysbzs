@@ -641,7 +641,7 @@ group('回合管理', ()=>{
   });
   test('finishMonsters round>maxRound（下午波）→ 进入商店并 openShop', ()=>{
     fresh();
-    G.dayHalf=1;
+    G.dayHalf=2;
     G.round=G.maxRound+1;
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
@@ -651,7 +651,7 @@ group('回合管理', ()=>{
   });
   test('finishMonsters 所有怪死亡（下午波）→ 商店', ()=>{
     fresh();
-    G.dayHalf=1;
+    G.dayHalf=2;
     G.round=2;
     G.monsters.forEach(m=>m.dead=true);
     finishMonsters();
@@ -686,6 +686,7 @@ group('怪物 AI', ()=>{
   test('nextMove 向最近英雄靠近（向左）', ()=>{
     fresh();
     const m=G.monsters[0];
+    G.monsters=[m];
     m.pos={r:5,c:8};
     G.heroes.ha.pos={r:5,c:2};
     G.heroes.hb.pos={r:5,c:2}; // 同位置（简化）
@@ -1657,6 +1658,7 @@ group('E组：多元素场测试', ()=>{
   });
   test('case_multi_005: 空格 fire=3 water=3 两元素均达阈值→各自十字爆',()=>{
     fresh();
+    G.slots.forEach(s=>{s.used=true;});
     G.monsters=[
       {id:'m0',name:'范围内',hp:20,maxHp:20,atk:1,pos:{r:5,c:6},dead:false,el:null},
       {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
@@ -2205,6 +2207,7 @@ group('K组：结算与元素落地一致性', ()=>{
   });
   test('case_k_008: 预览 entityDamage 与 settleDamage 真实扣血一致',()=>{
     fresh();
+    G.slots.forEach(s=>{s.used=true;});
     G.monsters=[{id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null}];
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     // 预览
@@ -2226,14 +2229,13 @@ group('K组：结算与元素落地一致性', ()=>{
   });
   test('case_k_010: 结束回合 endPlayerTurn 调用 commit 后再 settle，怪物格结算',()=>{
     fresh();
-    G.dayHalf=1;
     G.monsters=[{id:'m0',name:'测试怪',hp:6,maxHp:6,atk:1,pos:{r:5,c:5},dead:false,el:null}];
     const target=G.monsters[0];
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     endPlayerTurn();
-    // endPlayerTurn 内部调用了 commitPlayerActionsToElementField + settleExplosions
+    // endPlayerTurn 内部调用了 commitPlayerActionsToElementField + settleExplosions；同步怪物回合会立即结束
     assert.strictEqual(target.dead,true,'回合结束后怪物格元素应被结算');
-    assert.ok(G.phase==='MONSTER'||G.phase==='SHOP','阶段切换到 MONSTER 或 SHOP（全灭后进商店）');
+    assert.ok(['MONSTER','SHOP','PLAYER'].includes(G.phase),'阶段应进入怪物回合、商店或回到玩家回合');
   });
   test('case_k_011: 空格多元素结算后，未引爆元素重新同步为地形并阻挡英雄',()=>{
     fresh();
@@ -2267,16 +2269,18 @@ group('K组：结算与元素落地一致性', ()=>{
     assert.strictEqual(G.monsters[0].hp,10,'怪物不应受伤');
     assert.deepStrictEqual(G.monsters[0].pos,{r:5,c:8},'怪物被阻挡后不移动');
   });
-  test('case_k_013: MOVE_HERO action AI路径允许穿越元素格',()=>{
+  test('case_k_013: MOVE_HERO action 与 moveHero 一致，禁止进入元素格',()=>{
     fresh();
+    const start={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
     G.elementCells['5,5']={fire:{layers:1,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     G.board[5][5].el='fire'; G.board[5][5].stk=1;
     dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:5,c:5}});
-    assert.deepStrictEqual(G.heroes.ha.pos,{r:5,c:5},'AI路径允许穿越元素格（moveHero UI层仍阻挡人类玩家）');
+    assert.deepStrictEqual(G.heroes.ha.pos,start,'底层 MOVE_HERO 与 UI 一样阻挡元素格');
   });
   test('case_k_014: 点击剩余元素格会生成详情，移动点击会写入占用日志',()=>{
     fresh();
-    resetDomEl('cd'); resetDomEl('log');
+    G.slots.forEach(s=>{s.used=true;});
+    resetDomEl('cd'); resetDomEl('log'); resetDomEl('board');
     G.monsters=[];
     G.elementCells['5,5']={
       fire:{layers:3,willExplode:true},
@@ -2388,10 +2392,11 @@ group('M组：_acted 英雄行动锁定',()=>{
   });
   test('case_m_004: moveHero 函数拒绝 _acted 英雄',()=>{
     fresh();
+    const start={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
     G.heroes.ha._acted=true;
     G.selHero='ha';
     moveHero(5,6);
-    assert.deepStrictEqual(G.heroes.ha.pos,{r:10,c:1},'_acted 英雄 moveHero 不生效');
+    assert.deepStrictEqual(G.heroes.ha.pos,start,'_acted 英雄 moveHero 不生效');
   });
 });
 

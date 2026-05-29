@@ -658,14 +658,16 @@ function buildWaveForDay(day,phase){
   return {monsters:result,remnant:budget,maxAlive,spawnSize};
 }
 
-function getSpawnCells(spawnSize){
-  // Day1 tutorial: monsters on same rows as heroes
-  const cells=[];
-  for(let r=5; r<=6; r++){
-    for(let c=6; c<=8; c++){
-      cells.push({r,c});
-    }
+function getSpawnCells(spawnSize,day,phase){
+  // Day1 早上教学：怪物出生在英雄附近
+  if(day===1&&phase==='morning'){
+    const cells=[];
+    for(let r=5;r<=6;r++)for(let c=6;c<=8;c++)cells.push({r,c});
+    return cells;
   }
+  const size=spawnSize||3;
+  const cells=[];
+  for(let r=0;r<size;r++)for(let c=13-size;c<13;c++)cells.push({r,c});
   return cells;
 }
 
@@ -675,7 +677,7 @@ function spawnWaveForDay(day,phase){
     G.monsters=[];
     return;
   }
-  const spawnCells = getSpawnCells(wavePlan.spawnSize);
+  const spawnCells = getSpawnCells(wavePlan.spawnSize,day,phase);
   // 过滤已被占用的出生格
   const freeCells = spawnCells.filter(sc=>{
     return !monAt(sc) && !heroAt(sc);
@@ -2054,7 +2056,7 @@ function applyActionToState(action){
     case 'MOVE_HERO':{
       const hero=G.heroes[action.heroId];
       if(!hero||hero._acted)return;
-      if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to))return;
+      if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to)||hasElementAt(action.to))return;
       if(G.castle&&G.castle.pos.r===action.to.r&&G.castle.pos.c===action.to.c)return;
       const from={r:hero.pos.r,c:hero.pos.c};
       hero.pos={r:action.to.r,c:action.to.c};

@@ -161,8 +161,47 @@ group('initGame 初始化', ()=>{
   test('背包初始为空数组',       ()=> assert.deepStrictEqual(G.backpack,[]));
   test('_bpCnt 初始为 0',        ()=> assert.strictEqual(G._bpCnt,0));
   test('第 1 波生成 2 只教学怪', ()=> assert.strictEqual(G.monsters.length,2));
-  test('第 1 波生成 2 只普通怪', ()=> assert.strictEqual(G.monsters.length,2));
-  test('day1 morning 怪 HP=6',   ()=> { assert.strictEqual(G.monsters[0].hp,6); assert.strictEqual(G.monsters[1].hp,6); });
+  test('英雄 GDD 站位 (10,1) 与 (11,1)', ()=>{
+    assert.deepStrictEqual(G.heroes.ha.pos,{r:10,c:1});
+    assert.deepStrictEqual(G.heroes.hb.pos,{r:11,c:1});
+  });
+  test('day1 morning 教学怪 GDD 坐标与 HP', ()=>{
+    assert.deepStrictEqual(G.monsters[0].pos,{r:1,c:11});
+    assert.strictEqual(G.monsters[0].hp,6);
+    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:10});
+    assert.strictEqual(G.monsters[1].hp,10);
+  });
+});
+
+group('城堡系统', ()=>{
+  test('双城堡：我方左下、敌方右上', ()=>{
+    fresh();
+    assert.strictEqual(G.playerCastle.hp,100);
+    assert.deepStrictEqual(G.playerCastle.pos,{r:12,c:1});
+    assert.strictEqual(G.enemyCastle.hp,100);
+    assert.deepStrictEqual(G.enemyCastle.pos,{r:0,c:11});
+  });
+  test('敌方城堡 HP≤0 → 胜利', ()=>{
+    fresh();
+    G.enemyCastle.hp=0;
+    checkGameOver();
+    assert.strictEqual(G.phase,'OVER');
+    assert.ok(_lastMsg.includes('胜利'));
+  });
+  test('我方城堡 HP≤0 → 失败', ()=>{
+    fresh();
+    G.playerCastle.hp=0;
+    checkGameOver();
+    assert.strictEqual(G.phase,'OVER');
+    assert.ok(_lastMsg.includes('失败')||_lastMsg.includes('我方'));
+  });
+  test('不可移动到城堡格', ()=>{
+    fresh();
+    G.selHero='ha';
+    const start={...G.heroes.ha.pos};
+    moveHero(G.enemyCastle.pos.r,G.enemyCastle.pos.c);
+    assert.deepStrictEqual(G.heroes.ha.pos,start);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -1380,15 +1419,17 @@ group('A组：initGame 第一关默认配置', ()=>{
     assert.ok(ha.pos.r>=0);
     assert.ok(hb.pos.r>=0);
   });
-  test('case_init_004: Day1 morning 2只普通怪 hp=6 el=null', ()=>{
+  test('case_init_004: Day1 morning GDD 教学怪', ()=>{
     fresh();
     assert.strictEqual(G.monsters.length,2,'应有2只怪');
-    assert.strictEqual(G.monsters[0].name,'普通怪','怪1名称');
-    assert.strictEqual(G.monsters[0].hp,6,'怪1 hp=6');
-    assert.strictEqual(G.monsters[0].el,null,'怪1 el=null');
-    assert.strictEqual(G.monsters[1].name,'普通怪','怪2名称');
-    assert.strictEqual(G.monsters[1].hp,6,'怪2 hp=6');
-    assert.strictEqual(G.monsters[1].el,null,'怪2 el=null');
+    assert.strictEqual(G.monsters[0].name,'教学怪1');
+    assert.strictEqual(G.monsters[0].hp,6);
+    assert.deepStrictEqual(G.monsters[0].pos,{r:1,c:11});
+    assert.strictEqual(G.monsters[0].el,null);
+    assert.strictEqual(G.monsters[1].name,'教学怪2');
+    assert.strictEqual(G.monsters[1].hp,10);
+    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:10});
+    assert.strictEqual(G.monsters[1].el,null);
   });
   test('case_init_005: explosionThreshold=3', ()=>{
     fresh();

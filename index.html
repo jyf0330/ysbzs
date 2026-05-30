@@ -190,6 +190,7 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
   display:none;position:fixed;left:8px;bottom:8px;width:320px;max-height:42vh;
   overflow-y:auto;background:rgba(13,17,23,0.95);border:1px solid #f0a500;
   border-radius:8px;padding:8px;font-size:10px;line-height:1.45;z-index:300;
+#debug-panel.dragging{cursor:grabbing;user-select:none;}
   font-family:ui-monospace,monospace;color:#cbd5e1;
 }
 #debug-panel .dbg-title{color:#f0a500;font-weight:bold;margin-bottom:4px;font-size:11px;}
@@ -1176,6 +1177,7 @@ function settleExplosions(){
     const [r,c]=key.split(',').map(Number);
     const pos={r,c};
     const monHere=monAt(pos);
+    const heroHere=heroAt(pos);
     ['fire','water','wind','earth'].forEach(el=>{
       const slot=G.elementCells[key][el];
       if(!slot||slot.layers===0)return;
@@ -1192,6 +1194,8 @@ function settleExplosions(){
         const wasAlive=!monHere.dead;
         dealDmg(monHere,td,`${EL[el]}元素结算`);
         if(wasAlive&&monHere.dead)report.killedCount++;
+      } else if(heroHere){
+        // 英雄身上有层，暂不结算
       } else {
         if(!slot.willExplode)return;
         report.chainSegments++;
@@ -2969,6 +2973,63 @@ function buildDebugPanelVM(){
     engineStats:{...(G.engineStats||{})},
   };
 }
+function buildDebugCellHtml(){
+  var E=['fire','water','wind','earth'];
+  var EC={fire:'火',water:'水',wind:'风',earth:'土'};
+  var sel=G.selectedCell;
+  if(!sel)return'<span class="dbg-k">（点击格子查看）</span>';
+  var r=sel.r,c=sel.c,key=r+','+c;
+  var pg=G.coreSnapshot?.previewGrid?.grid?.[key];
+  var ec=G.elementCells[key]||{};
+  var mon=G.monsters.find(function(m){return!m.dead&&m.pos.r===r&&m.pos.c===c;});
+  if(mon){
+    var elNm=EC[mon.el]||'',hp='<span style="color:#cbd5e1">'+mon.hp+'/'+mon.maxHp+'</span>';
+    var s='<span style="color:#f8d56b">'+(elNm||'?')+'</span> '+hp+' 攻'+mon.atk;
+    var incoming=pg?.preview?.incomingActions||[];
+    if(incoming.length>0){
+      var ord={}; incoming.forEach(function(a){if(!ord[a.element])ord[a.element]=[]; for(var i=0;i<a.amount;i++)ord[a.element].push(a.heroId==='ha'?'A':'B');});
+      var parts=E.filter(function(el){return ord[el]&&ord[el].length>0;}).map(function(el){return EC[el]+ord[el].join('');});
+      var total=0; E.forEach(function(el){var l=pg?.elementField?.[el]?.layers||0; if(l>0)total+=l*(l+1)/2;});
+      s+='，结算 '+parts.join(' ');
+      if(total>0){s+=' <span style="color:#ff6060">-'+total+'</span>';}
+      if(pg?.preview?.entityDamage>=mon.hp&&mon.hp>0)s+='<span style="color:#ff6060">☠</span>';
+    }
+    return s;
+  }
+  var hero=Object.values(G.heroes).find(function(h){return h.pos.r===r&&h.pos.c===c;});
+  if(hero){
+    var lb=hero.id==='ha'?'A':'B';
+    var s='<span style="color:#60a5fa">'+lb+'</span> '+hero.name+' <span style="color:#cbd5e1">'+hero.hp+'/'+hero.maxHp+'</span>';
+    var incoming=pg?.preview?.incomingActions||[];
+    if(incoming.length>0){
+      var ord={}; incoming.forEach(function(a){if(!ord[a.element])ord[a.element]=[]; for(var i=0;i<a.amount;i++)ord[a.element].push(a.heroId==='ha'?'A':'B');});
+      var parts=E.filter(function(el){return ord[el]&&ord[el].length>0;}).map(function(el){return EC[el]+ord[el].join('');});
+      s+='，身上 '+parts.join(' ')+' <span style="color:#94a3b8">暂存</span>';
+    }
+    var thr=pg?.preview?.threatFromMonsters||[];
+    if(thr.length>0)s+='，受击 '+thr.map(function(t){return t.label+':<span style="color:#ff6060">-'+t.dmg+'</span>';}).join(' ');
+    return s;
+  }
+  var incoming=pg?.preview?.incomingActions||[];
+  if(incoming.length>0){
+    var ord={}; incoming.forEach(function(a){if(!ord[a.element])ord[a.element]=[]; for(var i=0;i<a.amount;i++)ord[a.element].push(a.heroId==='ha'?'A':'B');});
+    var parts=E.filter(function(el){return ord[el]&&ord[el].length>0;}).map(function(el){
+      var l=pg?.elementField?.[el]?.layers||0;
+      var ex=l>=G.explosionThreshold?'<span style="color:#f59e0b">💥'+l*(l+1)/2+'</span>':'';
+      return EC[el]+ord[el].join('')+ex;
+    });
+    return'空，回合结束 '+parts.join(' ');
+  }
+  var has=E.some(function(el){return(ec[el]?.layers||0)>0;});
+  if(has){
+    var parts=E.filter(function(el){return(ec[el]?.layers||0)>0;}).map(function(el){
+      var l=ec[el]?.layers||0; return EC[el]+l+'层';
+    });
+    return'空，回合结束 '+parts.join(' ');
+  }
+  return'<span class="dbg-k">空</span>';
+}
+
 
 function renderDebugPanel(){
   if(typeof global!=='undefined'&&global.__TEST__)return;
@@ -2976,12 +3037,26 @@ function renderDebugPanel(){
   if(!el)return;
   if(!isDebugMode()){ el.style.display='none'; el.setAttribute('aria-hidden','true'); return; }
   el.style.display='block'; el.setAttribute('aria-hidden','false');
+
+  // 拖拽 debug 面板
+  var bar=el.querySelector('.dbg-title');
+  if(bar&&!bar._dragInited){
+    bar._dragInited=1;bar.style.cursor='grab';
+    var ox=0,oy=0,on=0;
+    bar.addEventListener('mousedown',function(e){
+      on=1;ox=e.clientX-el.offsetLeft;oy=e.clientY-el.offsetTop;
+      el.classList.add('dragging');e.preventDefault();
+    });
+    document.addEventListener('mousemove',function(e){
+      if(!on)return;
+      el.style.left=Math.max(0,Math.min(window.innerWidth-el.offsetWidth,e.clientX-ox))+'px';
+      el.style.top=Math.max(0,Math.min(window.innerHeight-el.offsetHeight,e.clientY-oy))+'px';
+    });
+    document.addEventListener('mouseup',function(){on=0;el.classList.remove('dragging');});
+  }
+
   const vm=buildDebugPanelVM();
-  const sel=vm.selectedCell;
-  const selHtml=sel?`
-    <div>${sel.coord} · board ${sel.board?.el||'-'}×${sel.board?.stk||0}</div>
-    <div>元素 F${sel.elements?.fire||0} W${sel.elements?.water||0} N${sel.elements?.wind||0} E${sel.elements?.earth||0}</div>
-    ${sel.previewDmg!=null?`<div>预览伤害 ${sel.previewDmg}</div>`:''}`:'<div class="dbg-k">（未选格）</div>';
+  const cellHtml=buildDebugCellHtml();
   const slotHtml=vm.slots.map(s=>`#${s.i+1} ${s.used?'✓':s.el||'-'} h${s.hid??'?'}`).join(' · ');
   const logHtml=vm.actionLogTail.length
     ? vm.actionLogTail.map(a=>a.desc||a.type).join('<br>')
@@ -2989,7 +3064,7 @@ function renderDebugPanel(){
   el.innerHTML=`
     <div class="dbg-title">🛠 Debug · D 切换</div>
     <div>phase ${vm.phase} · D${vm.day} half${vm.dayHalf} · R${vm.round}/${vm.maxRound}</div>
-    <div class="dbg-sec"><span class="dbg-k">选中格</span>${selHtml}</div>
+    <div class="dbg-sec"><span class="dbg-k">格子</span><br>${cellHtml}</div>
     <div class="dbg-sec"><span class="dbg-k">行动槽</span> ${slotHtml}</div>
     <div class="dbg-sec"><span class="dbg-k">引擎</span> 召${vm.engineStats.summonCount||0} 疗${vm.engineStats.healCount||0}</div>
     <div class="dbg-sec"><span class="dbg-k">actionLog</span><br>${logHtml}</div>`;
@@ -3012,6 +3087,7 @@ function applyActionToState(action){
       if(castleAt(action.to))return;
       const from={r:hero.pos.r,c:hero.pos.c};
       hero.pos={r:action.to.r,c:action.to.c};
+      if(G.selectedCell&&G.selectedCell.r===from.r&&G.selectedCell.c===from.c){G.selectedCell={r:action.to.r,c:action.to.c};}
       G.actionLog.push({type:'MOVE_HERO',heroId:action.heroId,from,to:action.to});
       G.prevCells=[]; G.selSlot=null; G.heroPrev=[];
       break;

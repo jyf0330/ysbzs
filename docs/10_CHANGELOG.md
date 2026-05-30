@@ -44,6 +44,7 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
+| 2026-05-30 | feat | 水+召唤引擎（增量1·纯逻辑）：新增 `G.summons`/`G.engineStats`/`_nextSummonId`；新增 `spawnSummon`(生成水召唤物)、`healSummon`(治疗→atk+1 引擎成长)、`killSummon`/`damageSummon`(死亡原地留1层水)、`summonAt`(占用查询)、`addElementLayers`(规范写入 elementCells)；死亡留水层与 `settleExplosions` 连锁不冲突。来源 `.omx/specs/deep-interview-v1-scope.md` | index.html / test.js | node test.js 324/324 |
 | 2026-05-29 | fix | 全屏布局修复：补 `#wrap` 容器；全屏样式改挂 `html:fullscreen`；棋盘用 `1fr` 网格等比缩放，侧栏固定宽+滚动，修复点全屏界面错乱 | index.html | 手动验证 |
 | 2026-05-29 | feat | 双城堡 + GDD 开局：①`G.playerCastle` 左下 (12,1)、`G.enemyCastle` 右上 (0,11)，打掉敌方获胜、我方被毁失败；②怪物寻路/攻击以英雄优先、可攻我方城堡，不再混淆单城堡；③英雄 (10,1)/(11,1)；④Day1 早上固定教学怪 (1,11) hp6、(0,10) hp10；⑤刷怪区统一右上 `getSpawnCells`；⑥元素十字波及可伤敌方城堡 | index.html / test.js | node test.js 319/319 |
 | 2026-05-29 | fix | 代码-文档-测试对齐：①`getSpawnCells(spawnSize,day,phase)` 恢复 Day1 教学区 + 按 spawnSize 右上角出生；②`MOVE_HERO` 与 `moveHero` 统一 `hasElementAt` 阻挡；③测试对齐一天三阶段（`dayHalf=2` 进夜晚商店）、预览夹具禁用未用槽、英雄初始坐标；④`case_k_013` 改为禁止穿越元素格；⑤更新 `技术架构总览`/`00_CURRENT_CONTEXT` 基线与 `render`/`refreshUI` 描述 | index.html / test.js / docs | node test.js 315/315 |

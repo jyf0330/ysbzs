@@ -2635,6 +2635,59 @@ group('TDD-WT:合成',()=>{
   });
 });
 
+// TDD-水召唤引擎（deep-interview v1-scope · 增量1：核心引擎逻辑）
+group('TDD-水召唤引擎',()=>{
+  test('ENG1:spawnSummon生成水召唤物并计数',()=>{
+    fresh();
+    const before=(G.summons||[]).length;
+    const s=spawnSummon('ha',{r:8,c:4});
+    assert.ok(s,'应返回召唤物');
+    assert.strictEqual(s.el,'water','默认水属性');
+    assert.strictEqual(s.kind,'summon','kind=summon');
+    assert.ok(summonAt({r:8,c:4}),'summonAt应命中召唤物');
+    assert.strictEqual(G.summons.length,before+1,'summons+1');
+    assert.strictEqual(G.engineStats.summonCount,1,'summonCount+1');
+  });
+  test('ENG2:healSummon治疗并atk+1',()=>{
+    fresh();
+    const s=spawnSummon('ha',{r:8,c:4},{hp:1,maxHp:3,atk:1});
+    const atk0=s.atk;
+    healSummon(s,1);
+    assert.strictEqual(s.atk,atk0+1,'每次治疗atk+1（引擎成长）');
+    assert.ok(s.hp<=s.maxHp,'hp不超过maxHp');
+    assert.ok(s.hp>=2,'治疗应回血');
+    assert.strictEqual(G.engineStats.healCount,1,'healCount+1');
+  });
+  test('ENG3:召唤物死亡原地留1层水',()=>{
+    fresh();
+    const s=spawnSummon('ha',{r:8,c:4});
+    killSummon(s);
+    assert.ok(s.dead,'应标记dead');
+    const slot=G.elementCells['8,4']&&G.elementCells['8,4'].water;
+    assert.ok(slot&&slot.layers>=1,'原地应留水层');
+    assert.ok(!summonAt({r:8,c:4}),'已死召唤物不再被summonAt命中');
+  });
+  test('ENG4:死亡留水叠到阈值经settleExplosions引爆相邻怪物',()=>{
+    fresh();
+    G.monsters=[{name:'靶',hp:50,maxHp:50,atk:1,ap:0,pos:{r:8,c:5},dead:false,el:null}];
+    for(let i=0;i<3;i++){const s=spawnSummon('ha',{r:8,c:4});damageSummon(s,s.hp);}
+    const slot=G.elementCells['8,4'].water;
+    assert.ok(slot.layers>=3,'3次死亡应叠>=3层水');
+    assert.ok(slot.willExplode,'达阈值willExplode=true');
+    const hp0=G.monsters[0].hp;
+    settleExplosions();
+    assert.ok(G.monsters[0].hp<hp0,'空格十字引爆应伤及相邻怪物（与结算不冲突）');
+  });
+  test('ENG5:连续治疗成长曲线 atk=base+N',()=>{
+    fresh();
+    const s=spawnSummon('ha',{r:8,c:4},{hp:10,maxHp:10,atk:1});
+    const base=s.atk;
+    for(let i=0;i<4;i++)healSummon(s,1);
+    assert.strictEqual(s.atk,base+4,'4次治疗后 atk=base+4');
+    assert.strictEqual(G.engineStats.healCount,4,'healCount=4');
+  });
+});
+
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

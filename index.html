@@ -653,6 +653,10 @@ function initGame(){
     enemyCastle:{hp:100,maxHp:100,pos:{r:0,c:11}},
     // 遗物系统
     relics:[],               // [{id,name,desc,effect,value}] effect: explosion_plus | manual_detonate
+    // 召唤引擎（水+召唤原型 · deep-interview v1-scope 增量1）
+    summons:[],              // 召唤物实体 [{id,kind,name,hp,maxHp,atk,el,pos,ownerHid,dead}]
+    _nextSummonId:0,
+    engineStats:{summonCount:0,healCount:0},
     elementCells:{},
     explosionThreshold:3,
     previewEvents:[],
@@ -1437,6 +1441,63 @@ function addLevelupUnit(){
   const defId=pool[Math.floor(Math.random()*pool.length)];
   const def=UNIT_DEFS[defId];
   G.shopItems.units.push({id:`su_${G.nextUnitId}`,defId,cost:def.cost,frozen:false});
+}
+
+// ========== 召唤引擎（水+召唤原型 · deep-interview v1-scope 增量1） ==========
+// 召唤物是水属性棋盘实体：被治疗 → 攻击+1（引擎成长）；死亡 → 原地留 1 层水（连锁燃料）。
+function summonAt(pos){
+  if(!G.summons)return undefined;
+  return G.summons.find(s=>!s.dead&&s.pos.r===pos.r&&s.pos.c===pos.c);
+}
+// 按结算可识别的规范结构把 n 层 el 元素写入 elementCells，并同步棋盘显示
+function addElementLayers(pos,el,n){
+  if(castleAt(pos))return;
+  const key=`${pos.r},${pos.c}`;
+  if(!G.elementCells[key])G.elementCells[key]={
+    fire:{layers:0,willExplode:false},
+    water:{layers:0,willExplode:false},
+    wind:{layers:0,willExplode:false},
+    earth:{layers:0,willExplode:false},
+  };
+  const slot=G.elementCells[key][el];
+  slot.layers=Math.min(slot.layers+(n||1),MAX_STK);
+  slot.willExplode=slot.layers>=G.explosionThreshold;
+  if(typeof syncBoardElementFromElementCells==='function')syncBoardElementFromElementCells(pos);
+}
+function spawnSummon(ownerHid,pos,opts){
+  opts=opts||{};
+  const baseHp=opts.hp!=null?opts.hp:3;
+  const s={
+    id:`sm_${G._nextSummonId++}`,
+    kind:'summon',
+    name:opts.name||'水灵',
+    el:opts.el||'water',
+    hp:baseHp,
+    maxHp:opts.maxHp!=null?opts.maxHp:baseHp,
+    atk:opts.atk!=null?opts.atk:1,
+    pos:{r:pos.r,c:pos.c},
+    ownerHid:ownerHid||null,
+    dead:false,
+  };
+  G.summons.push(s);
+  G.engineStats.summonCount++;
+  return s;
+}
+function healSummon(summon,amount){
+  if(!summon||summon.dead)return;
+  summon.hp=Math.min(summon.hp+(amount||0),summon.maxHp);
+  summon.atk+=1;                 // 引擎成长：每次被治疗 +1 攻击
+  G.engineStats.healCount++;
+}
+function killSummon(summon){
+  if(!summon||summon.dead)return;
+  summon.dead=true;
+  addElementLayers(summon.pos,summon.el||'water',1);   // 死亡留水层（连锁燃料）
+}
+function damageSummon(summon,dmg){
+  if(!summon||summon.dead)return;
+  summon.hp=Math.max(0,summon.hp-(dmg||0));
+  if(summon.hp<=0)killSummon(summon);
 }
 
 // ========== SHOP ==========

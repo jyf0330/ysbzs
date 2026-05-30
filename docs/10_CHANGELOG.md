@@ -44,7 +44,13 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
-| 2026-05-30 | feat | 水+召唤引擎（增量5·后续）：怪物左/下邻格攻击召唤物 + `summonIncomingDmg` 预览/HUD；引擎闭环测试（召唤→治疗→攻击→死亡留水）；SHOP_POOLS 缺单位 UNIT_DEFS 补全（pebble_guard/fluff_speaker/boom_sprite/split_sprite/ember_seed/breeze_sprite）。测试 ENG16–ENG20 | index.html / test.js / docs/01/战斗系统.md §12g | node test.js 339/339 |
+| 2026-05-30 | feat | S2 成长与连锁反馈：`G.growth` 阶位（召/疗/连）驱动 spawn ATK、heal 量/ATK、召芽灵额外只数；`settleExplosions`→`G.lastSettle` + 完美回合 +3 金 + chainCount；HUD `#es` 成长阶位。测试 GROW1–GROW7 | index.html / test.js / docs/01/战斗系统.md §13 | node test.js 352/352 |
+| 2026-05-30 | docs | 新增 Run 结构与城堡跨战系统 GDD（拍板：无独立地图/城堡实体格+HP/run≈5天HP100不回满/一天三阶段保留；城堡 HP 已事实跨战，待回归测试+Day5 Boss）；同步游戏概述 GDD 胜负/系统表/阶段表/待决、功能拆解 S3、ROADMAP、一天三阶段文档标“保留” | docs/01/Run结构与城堡跨战系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/一天三阶段系统设计.md | — |
+| 2026-05-30 | docs | 决策落盘「砍掉遗物·商店只卖英雄」（英雄被动/主动即遗物职能）：新增商店与英雄构筑系统 GDD（含遗物代码清理清单 old_fuse/G.relics）；游戏概述 GDD/功能拆解 S3/ROADMAP 去遗物；旧商店方案标遗物段落作废 | docs/01/商店与英雄构筑系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/商店系统策划方案.md | — |
+| 2026-05-30 | docs | 新增 S2 成长与连锁反馈系统 GDD（局内永久成长基于 engineStats、连锁飘字/完美回合、A4 风险对策、playtest sign-off 表、GROW backlog）；同步游戏概述 GDD 系统表/索引、功能拆解 S2 行 | docs/01/成长与连锁反馈系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md | — |
+| 2026-05-30 | docs | Deep-Interview 结果落盘：重写游戏概述 GDD（roguelite+城堡+阶段表）；新增召唤引擎系统 GDD；修订功能拆解 S0–S4、ROADMAP S1–S4；战斗系统 §12 指向系统 GDD；概念修订草案标记已合并 | docs/01/* / docs/08_ROADMAP.md | — |
+| 2026-05-30 | feat | 水+召唤引擎（增量6·被动+Day1走查）：绒语灵 buffAllSummons / 爆爆灵死亡铺火 / 分分灵拆分召芽灵；`playable_day1.js` + `record_gameplay.mjs` 引擎路径。测试 ENG21–ENG26 | index.html / test.js / playable_day1.js | node test.js 345/345 |
+| 2026-05-30 | feat | 水+召唤引擎（增量5·后续）：怪物左/下邻格攻击召唤物 + `summonIncomingDmg` 预览/HUD；引擎闭环测试；SHOP_POOLS 缺单位 UNIT_DEFS 补全。测试 ENG16–ENG20 | index.html / test.js / docs/01/战斗系统.md §12f | node test.js 339/339 |
 | 2026-05-30 | feat | 水+召唤引擎（增量2–4）：`runSummonActions` 召唤物邻格攻击；`cellFree`/`moveHero`/`monsterAct`/`simMonAct`/`nextMoveFromPos` 经 `summonAt` 占用阻挡；召芽灵(`summonFromCell`)/泉泉灵(`healSummons`)/泡泡灵占位 + `USE_SLOT` skill 分支 + Day1 夜商店池；`buildBoardVM`/`buildTurnVM`/`buildPreviewGrid` 渲染召唤物与引擎统计。测试 ENG6–ENG15 | index.html / test.js / docs/01/战斗系统.md §12e | node test.js 334/334 |
 | 2026-05-30 | feat | 水+召唤引擎（增量1·纯逻辑）：新增 `G.summons`/`G.engineStats`/`_nextSummonId`；新增 `spawnSummon`(生成水召唤物)、`healSummon`(治疗→atk+1 引擎成长)、`killSummon`/`damageSummon`(死亡原地留1层水)、`summonAt`(占用查询)、`addElementLayers`(规范写入 elementCells)；死亡留水层与 `settleExplosions` 连锁不冲突。来源 `.omx/specs/deep-interview-v1-scope.md` | index.html / test.js | node test.js 324/324 |
 | 2026-05-29 | fix | 全屏布局修复：补 `#wrap` 容器；全屏样式改挂 `html:fullscreen`；棋盘用 `1fr` 网格等比缩放，侧栏固定宽+滚动，修复点全屏界面错乱 | index.html | 手动验证 |

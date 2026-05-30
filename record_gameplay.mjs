@@ -1,6 +1,7 @@
 /**
  * 元素背包史 · Playwright 手操录制
- * 运行: node record_gameplay.mjs
+ * 运行: 先 npx serve -l 8899 .  再 node record_gameplay.mjs
+ * 纯逻辑走查: node playable_day1.js
  * 输出: recordings/ 目录下 .webm 视频 + 截图
  */
 import { chromium } from 'playwright';
@@ -88,6 +89,28 @@ async function main() {
   }
 
   await ss(page, '04_battle_start.png');
+
+  // ======== Day1 水+召唤引擎走查（浏览器） ========
+  log('=== Day1 引擎：技能槽 + 引擎统计 ===');
+  const engineStats = page.locator('#es');
+  if (await engineStats.isVisible().catch(() => false)) {
+    const esText = await engineStats.textContent();
+    log(`引擎统计 HUD: ${(esText || '').trim()}`);
+    await ss(page, '04b_engine_hud.png');
+  }
+  // 优先点带「召唤」「治疗」字样的行动槽
+  const skillSlots = page.locator('#slots button, .slot-btn, [data-slot]');
+  const slotCount = await skillSlots.count().catch(() => 0);
+  for (let i = 0; i < slotCount && i < 6; i++) {
+    const btn = skillSlots.nth(i);
+    const label = ((await btn.textContent()) || '').trim();
+    if (/召唤|治疗|summon|heal/i.test(label) || label.includes('🌱') || label.includes('💧')) {
+      log(`使用技能槽: ${label.slice(0, 24)}`);
+      await btn.click().catch(() => {});
+      await page.waitForTimeout(500);
+    }
+  }
+  await ss(page, '04c_after_summon_skills.png');
 
   // ======== 战斗阶段 ========
   log('=== 战斗阶段 ===');

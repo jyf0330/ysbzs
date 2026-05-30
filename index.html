@@ -627,6 +627,7 @@ const UNIT_DEFS = {
   },
   fluff_speaker: {
     id:'fluff_speaker', name:'绒语灵', element:'water', grade:'白银', priceTier:2, tags:['召唤','后排','辅助','增益'], tier:1, cost:4,
+    passive:{type:'buffAllSummons',hpByLevel:[2,4,6],atkByLevel:[1,1,2]},
     levels: {
       1:{ hp:16, slots:[
         {skill:'healSummons', sn:12, dir:'right', tier:1},
@@ -647,6 +648,7 @@ const UNIT_DEFS = {
   },
   boom_sprite: {
     id:'boom_sprite', name:'爆爆灵', element:'fire', grade:'白银', priceTier:2, tags:['召唤','死亡收益','火','铺元素'], tier:1, cost:4,
+    passive:{type:'onSummonDeath',el:'fire',layersByLevel:[2,3,4]},
     levels: {
       1:{ hp:16, slots:[
         {el:'fire', sn:1, dir:'right', tier:1},
@@ -667,6 +669,7 @@ const UNIT_DEFS = {
   },
   split_sprite: {
     id:'split_sprite', name:'分分灵', element:'water', grade:'白银', priceTier:2, tags:['召唤','中排','人海'], tier:1, cost:4,
+    passive:{type:'splitSproutSummon',countByLevel:[2,2,3],hpMulByLevel:[0.5,0.75,0.6]},
     levels: {
       1:{ hp:18, slots:[
         {skill:'summonFromCell', sn:1, dir:'right', tier:1, consumeLayers:false, count:2},
@@ -842,7 +845,9 @@ function initGame(){
     // 召唤引擎（水+召唤原型 · deep-interview v1-scope 增量1）
     summons:[],              // 召唤物实体 [{id,kind,name,hp,maxHp,atk,el,pos,ownerHid,dead}]
     _nextSummonId:0,
-    engineStats:{summonCount:0,healCount:0},
+    engineStats:{summonCount:0,healCount:0,chainCount:0,perfectCount:0},
+    growth:{summonTier:0,healTier:0,chainTier:0},
+    lastSettle:null,
     elementCells:{},
     explosionThreshold:3,
     previewEvents:[],
@@ -1072,7 +1077,30 @@ function doExplode(pos){
 }
 
 // ========== DAMAGE ==========
+function recomputeGrowth(){
+  if(!G.growth)G.growth={summonTier:0,healTier:0,chainTier:0};
+  const es=G.engineStats||{};
+  G.growth.summonTier=Math.floor((es.summonCount||0)/3);
+  G.growth.healTier=Math.floor((es.healCount||0)/4);
+  G.growth.chainTier=Math.floor((es.chainCount||0)/3);
+}
+function calcHealAmount(){
+  return 2+Math.floor((G.engineStats?.healCount||0)/4);
+}
+function calcHealAtkGain(){
+  return 1+Math.floor((G.engineStats?.healCount||0)/8);
+}
 function settleExplosions(){
+  const report={
+    chainSegments:0,
+    advHits:0,
+    totalDamage:0,
+    killedCount:0,
+    clearedWave:false,
+    perfect:false,
+  };
+  const aliveBefore=G.monsters.filter(m=>!m.dead).length;
+  const goldBefore=G.gold;
   const keys=Object.keys(G.elementCells);
   if(keys.length>0)glog('--- 结算阶段 ---');
   keys.forEach(key=>{
@@ -1083,30 +1111,59 @@ function settleExplosions(){
       const slot=G.elementCells[key][el];
       if(!slot||slot.layers===0)return;
       if(monHere){
-        // 怪物格：单体伤害，有层即结算，不触发十字爆炸
+        report.chainSegments++;
         const dmg=explDmg(slot.layers);
         const emult=monHere.el&&ADV[el]===monHere.el?2:1;
+        if(emult===2)report.advHits++;
+        report.totalDamage+=dmg*emult;
         if(emult===2)glog(`⚡ 元素克制 ×2！`);
         glog(`⚔️ ${EL[el]}${slot.layers}层→${monHere.name} 单体 -${dmg*emult}`);
+        const wasAlive=!monHere.dead;
         dealDmg(monHere,dmg*emult,`${EL[el]}元素结算`);
+        if(wasAlive&&monHere.dead)report.killedCount++;
       } else {
-        // 空格：需达到引爆阈值才十字引爆
         if(!slot.willExplode)return;
+        report.chainSegments++;
         let dmg=explDmg(slot.layers);
-        // 遗物加成（仅空格爆炸，怪物格单体不享受）
         const relicBonus=G.relics.reduce((sum,r)=>(r.relicId==='old_fuse'?sum+1:sum),0);
         dmg+=relicBonus;
         glog(`💥 ${EL[el]}${slot.layers}层引爆！范围伤害 ${dmg}${relicBonus>0?' (旧引信+'+relicBonus+')':''}`);
         explCells(pos).forEach(tp=>{
           const m=monAt(tp);
-          if(m){let emult=1;if(m.el&&ADV[el]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}dealDmg(m,dmg*emult,`${EL[el]}元素结算`);}
-          else if(enemyCastleAt(tp))damageEnemyCastle(dmg,`${EL[el]}元素结算`);
+          if(m){
+            let emult=1;
+            if(m.el&&ADV[el]===m.el){emult=2;report.advHits++;}
+            report.totalDamage+=dmg*emult;
+            if(emult===2)glog(`⚡ 元素克制 ×2！`);
+            const wasAlive=!m.dead;
+            dealDmg(m,dmg*emult,`${EL[el]}元素结算`);
+            if(wasAlive&&m.dead)report.killedCount++;
+          }
+          else if(enemyCastleAt(tp)){
+            report.totalDamage+=dmg;
+            damageEnemyCastle(dmg,`${EL[el]}元素结算`);
+          }
         });
       }
       slot.layers=0; slot.willExplode=false;
       syncBoardElementFromElementCells(pos);
     });
   });
+  report.clearedWave=G.monsters.every(m=>m.dead);
+  report.perfect=report.clearedWave&&aliveBefore>0;
+  if(report.perfect){
+    G.gold+=3;
+    G.engineStats.perfectCount=(G.engineStats.perfectCount||0)+1;
+    glog('🌟 完美回合！连锁清场 +3 金');
+  }
+  if(report.chainSegments>0){
+    G.engineStats.chainCount=(G.engineStats.chainCount||0)+report.chainSegments;
+  }
+  G.lastSettle=report;
+  recomputeGrowth();
+  if(report.chainSegments>0){
+    glog(`🔗 连锁 ×${report.chainSegments}！克制 ×${report.advHits}！合计 −${report.totalDamage}`);
+  }
   G.previewEvents=[];
   checkAllDead();
   refreshUI();
@@ -1674,9 +1731,53 @@ function addElementLayers(pos,el,n){
   slot.willExplode=slot.layers>=G.explosionThreshold;
   if(typeof syncBoardElementFromElementCells==='function')syncBoardElementFromElementCells(pos);
 }
+function getPassiveAura(){
+  let buffHp=0,buffAtk=0,splitSprout=null;
+  (G.ownedUnits||[]).forEach(u=>{
+    const p=UNIT_DEFS[u.defId]?.passive; if(!p)return;
+    const li=Math.max(0,Math.min(2,(u.level||1)-1));
+    if(p.type==='buffAllSummons'){
+      buffHp+=(p.hpByLevel||[])[li]||0;
+      buffAtk+=(p.atkByLevel||[])[li]||0;
+    }else if(p.type==='splitSproutSummon'){
+      splitSprout={count:(p.countByLevel||[])[li]||2,hpMul:(p.hpMulByLevel||[])[li]||0.5};
+    }
+  });
+  return {buffHp,buffAtk,splitSprout};
+}
+function getOwnerDeathDrop(ownerHid){
+  const u=getUnitByHeroId(ownerHid);
+  if(!u)return null;
+  const p=UNIT_DEFS[u.defId]?.passive;
+  if(p?.type!=='onSummonDeath')return null;
+  const li=Math.max(0,Math.min(2,(u.level||1)-1));
+  return {el:p.el||'fire',layers:(p.layersByLevel||[])[li]||2};
+}
+function applySummonPassives(s){
+  const {buffHp,buffAtk}=getPassiveAura();
+  if(buffHp){s.hp+=buffHp;s.maxHp+=buffHp;}
+  if(buffAtk){s.atk+=buffAtk;}
+}
+function calcSproutSpawnParams(hero,slot,chosen){
+  const bonusHp=slot.bonusHp||0;
+  const layerBonus=Math.min(chosen.layers||0,2);
+  const base=6+bonusHp+layerBonus;
+  let count=slot.count||1;
+  let hpMul=1;
+  const u=getUnitByHeroId(hero.id);
+  if(u&&u.defId==='sprout_summoner'){
+    const {splitSprout}=getPassiveAura();
+    if(splitSprout){count=splitSprout.count;hpMul=splitSprout.hpMul;}
+  }
+  const extraSpawn=Math.floor((G.engineStats?.summonCount||0)/5);
+  count=Math.min(count+extraSpawn,4);
+  const hp=Math.max(1,Math.floor(base*hpMul));
+  return {count,hp,maxHp:hp};
+}
 function spawnSummon(ownerHid,pos,opts){
   opts=opts||{};
   const baseHp=opts.hp!=null?opts.hp:3;
+  const tierBonus=Math.floor((G.engineStats?.summonCount||0)/3);
   const s={
     id:`sm_${G._nextSummonId++}`,
     kind:'summon',
@@ -1684,25 +1785,31 @@ function spawnSummon(ownerHid,pos,opts){
     el:opts.el||'water',
     hp:baseHp,
     maxHp:opts.maxHp!=null?opts.maxHp:baseHp,
-    atk:opts.atk!=null?opts.atk:1,
+    atk:(opts.atk!=null?opts.atk:1)+tierBonus,
     pos:{r:pos.r,c:pos.c},
     ownerHid:ownerHid||null,
     dead:false,
   };
   G.summons.push(s);
   G.engineStats.summonCount++;
+  recomputeGrowth();
+  applySummonPassives(s);
   return s;
 }
 function healSummon(summon,amount){
   if(!summon||summon.dead)return;
-  summon.hp=Math.min(summon.hp+(amount||0),summon.maxHp);
-  summon.atk+=1;                 // 引擎成长：每次被治疗 +1 攻击
+  const amt=amount!=null?amount:calcHealAmount();
+  summon.hp=Math.min(summon.hp+amt,summon.maxHp);
+  summon.atk+=calcHealAtkGain();
   G.engineStats.healCount++;
+  recomputeGrowth();
 }
 function killSummon(summon){
   if(!summon||summon.dead)return;
   summon.dead=true;
   addElementLayers(summon.pos,summon.el||'water',1);   // 死亡留水层（连锁燃料）
+  const drop=getOwnerDeathDrop(summon.ownerHid);
+  if(drop)addElementLayers(summon.pos,drop.el,drop.layers);
 }
 function damageSummon(summon,dmg){
   if(!summon||summon.dead)return;
@@ -1769,14 +1876,21 @@ function execSummonFromCellSkill(hero,slot){
     }
   }
   const bonusHp=slot.bonusHp||0;
-  const spawnCount=slot.count||1;
+  const u=getUnitByHeroId(hero.id);
+  const isSprout=u&&u.defId==='sprout_summoner';
+  const spawnPlan=isSprout?calcSproutSpawnParams(hero,slot,chosen):{
+    count:slot.count||1,
+    hp:3+bonusHp+Math.min(chosen.layers,2),
+    maxHp:5+bonusHp+Math.min(chosen.layers,2),
+  };
+  const spawnCount=spawnPlan.count;
   for(let i=0;i<spawnCount;i++){
     const offset=i===0?bestCell:{r:bestCell.r,c:Math.min(12,bestCell.c+i)};
     if(summonAt(offset)||heroAt(offset)||monAt(offset)||castleAt(offset))continue;
     spawnSummon(hero.id,offset,{
       el:chosen.el||'water',
-      hp:3+bonusHp+Math.min(chosen.layers,2),
-      maxHp:5+bonusHp+Math.min(chosen.layers,2),
+      hp:spawnPlan.hp,
+      maxHp:spawnPlan.maxHp,
       name:chosen.el==='water'?'水灵':'芽灵',
     });
   }
@@ -1789,7 +1903,7 @@ function execHealSummonsSkill(hero,slot){
   let n=0;
   G.summons.filter(s=>!s.dead).forEach(s=>{
     if(cells.some(p=>p.r===s.pos.r&&p.c===s.pos.c)){
-      healSummon(s,2);
+      healSummon(s);
       n++;
     }
   });
@@ -2405,7 +2519,9 @@ function buildTurnVM(){
   const hasExec=G.phase==='PLAYER'&&G.slots.some(s=>!s.used&&s.hid&&G.heroes[s.hid]);
   const aliveSummons=(G.summons||[]).filter(s=>!s.dead).length;
   return{phase:G.phase,wave:G.wave,day:G.day,dayHalf:G.dayHalf,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER',execAllDisabled:!hasExec,
-    engineStats:{summonCount:G.engineStats?.summonCount||0,healCount:G.engineStats?.healCount||0,summonAlive:aliveSummons}};
+    engineStats:{summonCount:G.engineStats?.summonCount||0,healCount:G.engineStats?.healCount||0,summonAlive:aliveSummons,
+      growth:{summonTier:G.growth?.summonTier||0,healTier:G.growth?.healTier||0,chainTier:G.growth?.chainTier||0},
+      lastSettle:G.lastSettle||null}};
 }
 
 function buildBattleVM(){
@@ -2912,7 +3028,12 @@ function renderTurn(turnVM){
     const es=turnVM.engineStats;
     if(es.summonAlive>0||es.summonCount>0||es.healCount>0){
       esEl.style.display='';
-      esEl.textContent=`🌀 场上${es.summonAlive} · 累计召${es.summonCount} · 治疗${es.healCount}`;
+      let txt=`🌀 场上${es.summonAlive} · 累计召${es.summonCount} · 治疗${es.healCount}`;
+      const g=es.growth;
+      if(g&&(g.summonTier||g.healTier||g.chainTier)){
+        txt+=` · 成长 召T${g.summonTier}/疗T${g.healTier}/连T${g.chainTier}`;
+      }
+      esEl.textContent=txt;
     }else esEl.style.display='none';
   }
 }

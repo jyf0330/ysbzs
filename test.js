@@ -2820,6 +2820,137 @@ group('TDD-水召唤引擎·增量5',()=>{
   });
 });
 
+group('TDD-水召唤引擎·增量6',()=>{
+  test('ENG21:绒语灵被动增益召唤物',()=>{
+    fresh(); G.ownedUnits=[];
+    addOwnedUnit('fluff_speaker',{r:10,c:1});
+    syncUnitsToHeroes();
+    const s=spawnSummon('ha',{r:8,c:4});
+    assert.strictEqual(s.hp,5,'HP 3+2');
+    assert.strictEqual(s.atk,2,'ATK 1+1');
+  });
+  test('ENG22:爆爆灵召唤物死亡铺火',()=>{
+    fresh(); G.ownedUnits=[];
+    addOwnedUnit('boom_sprite',{r:10,c:1});
+    syncUnitsToHeroes();
+    const s=spawnSummon('ha',{r:8,c:4});
+    damageSummon(s,99);
+    const key='8,4';
+    assert.ok((G.elementCells[key]?.water?.layers||0)>=1,'仍留水层');
+    assert.ok((G.elementCells[key]?.fire?.layers||0)>=2,'额外铺火2层');
+  });
+  test('ENG23:分分灵拆分召芽灵召唤',()=>{
+    fresh(); G.ownedUnits=[];
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
+    addOwnedUnit('split_sprite',{r:11,c:1});
+    syncUnitsToHeroes();
+    const idx=G.slots.findIndex(s=>s.skill==='summonFromCell'&&s.hid==='ha');
+    dispatchGameAction({type:'USE_SLOT',slotId:idx});
+    const alive=G.summons.filter(s=>!s.dead);
+    assert.strictEqual(alive.length,2,'应拆成2只');
+    assert.strictEqual(alive[0].hp,3,'HP floor(6×0.5)');
+    assert.strictEqual(alive[1].hp,3);
+  });
+  test('ENG24:绒语+分分组合 HP5 ATK2',()=>{
+    fresh(); G.ownedUnits=[];
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
+    addOwnedUnit('split_sprite',{r:11,c:1});
+    addOwnedUnit('fluff_speaker',{r:12,c:1});
+    syncUnitsToHeroes();
+    const idx=G.slots.findIndex(s=>s.skill==='summonFromCell'&&s.hid==='ha');
+    dispatchGameAction({type:'USE_SLOT',slotId:idx});
+    const s=G.summons.find(x=>!x.dead);
+    assert.strictEqual(s.hp,5,'floor(6×0.5)+2');
+    assert.strictEqual(s.atk,2,'1+1');
+  });
+  test('ENG25:Day1上午引擎走查至中午商店',()=>{
+    fresh(); G.ownedUnits=[];
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
+    addOwnedUnit('spring_sprite',{r:11,c:1});
+    syncUnitsToHeroes();
+    G.monsters.forEach(m=>{m.hp=1;m.maxHp=1;});
+    let guard=0;
+    while(G.phase==='PLAYER'&&guard<8){
+      G.slots.forEach((s,i)=>{if(!s.used&&s.skill)dispatchGameAction({type:'USE_SLOT',slotId:i});});
+      if(G.phase!=='PLAYER')break;
+      endPlayerTurn();
+      guard++;
+    }
+    assert.strictEqual(G.phase,'SHOP','Day1上午结束应进中午商店');
+    assert.ok(G.engineStats.summonCount>=1,'应至少召唤1次');
+  });
+  test('ENG26:Day1夜池含召芽灵且genShop可刷',()=>{
+    fresh(); G.day=1; G.dayHalf=2; G.phase='SHOP';
+    openShop();
+    assert.ok(SHOP_POOLS.day1_night.includes('sprout_summoner'));
+    assert.ok(G.shopItems.units.some(u=>u.defId==='sprout_summoner'));
+  });
+});
+
+group('TDD-S2成长与连锁反馈',()=>{
+  test('GROW1:召唤3次后新召唤物ATK+1',()=>{
+    fresh();
+    for(let i=0;i<3;i++) spawnSummon('ha',{r:8,c:4+i});
+    const s=spawnSummon('ha',{r:8,c:8});
+    assert.strictEqual(s.atk,2,'第4只应有召唤阶位+1 ATK');
+    assert.ok(G.growth,'应有G.growth');
+    assert.strictEqual(G.growth.summonTier,1);
+  });
+  test('GROW2:治疗4次后单次治疗量+1',()=>{
+    fresh();
+    const s=spawnSummon('ha',{r:8,c:4},{hp:20,maxHp:20});
+    for(let i=0;i<4;i++) healSummon(s,2);
+    s.hp=1;
+    healSummon(s);
+    assert.strictEqual(s.hp,4,'第5次治疗量应为3(2+阶位1)');
+  });
+  test('GROW3:成长局内持久不随initGame外重置',()=>{
+    fresh();
+    for(let i=0;i<3;i++) spawnSummon('ha',{r:8,c:i});
+    assert.strictEqual(G.engineStats.summonCount,3);
+    assert.strictEqual(G.growth.summonTier,1);
+    G.monsters.forEach(m=>{m.dead=true;});
+    assert.strictEqual(G.engineStats.summonCount,3,'清怪不重置引擎统计');
+    assert.strictEqual(G.growth.summonTier,1,'清怪不重置成长阶位');
+  });
+  test('GROW4:settleExplosions输出lastSettle',()=>{
+    fresh();
+    G.monsters=[{name:'靶',hp:10,maxHp:10,atk:1,ap:0,pos:{r:5,c:6},dead:false,el:null}];
+    addElementLayers({r:5,c:6},'fire',2);
+    settleExplosions();
+    assert.ok(G.lastSettle,'应有lastSettle');
+    assert.ok(G.lastSettle.totalDamage>0,'应统计总伤害');
+    assert.ok(G.lastSettle.chainSegments>=1,'应有连锁段');
+  });
+  test('GROW5:lastSettle统计克制次数',()=>{
+    fresh();
+    G.monsters=[{name:'火怪',hp:30,maxHp:30,atk:1,ap:0,pos:{r:5,c:6},dead:false,el:'fire'}];
+    addElementLayers({r:5,c:6},'water',2);
+    settleExplosions();
+    assert.strictEqual(G.lastSettle.advHits,1);
+    assert.strictEqual(G.lastSettle.totalDamage,6,'水2层dmg3×克制2');
+  });
+  test('GROW6:完美回合清场+3金',()=>{
+    fresh();
+    G.monsters=[{name:'弱',hp:3,maxHp:3,atk:1,ap:0,pos:{r:5,c:6},dead:false,el:null}];
+    const goldBefore=G.gold;
+    addElementLayers({r:5,c:6},'fire',3);
+    settleExplosions();
+    assert.strictEqual(G.lastSettle.perfect,true);
+    assert.strictEqual(G.lastSettle.clearedWave,true);
+    assert.strictEqual(G.gold,goldBefore+3);
+    assert.strictEqual(G.engineStats.perfectCount,1);
+  });
+  test('GROW7:buildTurnVM含成长阶位',()=>{
+    fresh();
+    for(let i=0;i<3;i++) spawnSummon('ha',{r:8,c:i});
+    const vm=buildTurnVM();
+    assert.ok(vm.engineStats.growth,'VM应含growth');
+    assert.strictEqual(vm.engineStats.growth.summonTier,1);
+    assert.strictEqual(vm.engineStats.growth.healTier,0);
+  });
+});
+
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

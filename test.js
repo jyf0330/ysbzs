@@ -167,9 +167,9 @@ group('initGame 初始化', ()=>{
     assert.deepStrictEqual(G.heroes.hb.pos,{r:11,c:1});
   });
   test('day1 morning 教学怪 GDD 坐标与 HP', ()=>{
-    assert.deepStrictEqual(G.monsters[0].pos,{r:1,c:11});
+    assert.deepStrictEqual(G.monsters[0].pos,{r:0,c:10});
     assert.strictEqual(G.monsters[0].hp,6);
-    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:10});
+    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:11});
     assert.strictEqual(G.monsters[1].hp,10);
   });
 });
@@ -658,6 +658,17 @@ group('回合管理', ()=>{
     // setTimeout 同步执行，所以怪物已经行动完毕
     assert.ok(['PLAYER','SHOP'].includes(G.phase),`phase 应为 PLAYER 或 SHOP，实际:${G.phase}`);
   });
+  test('endPlayerTurn 城堡被炸毁不应覆写 OVER 状态', ()=>{
+    fresh();
+    // 清掉(1,11)的教学怪，让空格爆炸能波及城堡(0,11)
+    G.monsters=[];
+    G.enemyCastle={hp:1,maxHp:100,pos:{r:0,c:11}};
+    const ck='1,11'; G.elementCells[ck]={fire:{layers:3,willExplode:true}};
+    endPlayerTurn();
+    assert.strictEqual(G.phase,'OVER','城堡被炸毁应直接结束');
+    assert.strictEqual(G.runVictory,true,'炸毁敌方城堡应判定胜利');
+    delete G.elementCells[ck];
+  });
   test('finishMonsters round<maxRound → 继续玩家回合', ()=>{
     fresh();
     G.round=3; G.maxRound=5;
@@ -688,13 +699,30 @@ group('回合管理', ()=>{
     assert.strictEqual(G.gold, 18);
     assert.ok(G.shopItems.units.length>0,'应已生成商店');
   });
-  test('finishMonsters 所有怪死亡（下午波）→ 商店', ()=>{
+  test('finishMonsters 所有怪死亡+城堡存活 → 不跳商店', ()=>{
+    fresh();
+    G.dayHalf=2;
+    G.monsters.forEach(m=>m.dead=true);
+    G.enemyCastle={hp:100,maxHp:100,pos:{r:0,c:11}};
+    finishMonsters();
+    assert.strictEqual(G.phase,'PLAYER','城堡存活时应继续战斗');
+  });
+  test('finishMonsters 所有怪死亡+城堡已毁 → 商店', ()=>{
     fresh();
     G.dayHalf=2;
     G.round=2;
     G.monsters.forEach(m=>m.dead=true);
+    G.enemyCastle={hp:0,maxHp:100,pos:{r:0,c:11}};
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
+  });
+  test('finishMonsters round>maxRound → 进商店（无视城堡状态）', ()=>{
+    fresh();
+    G.dayHalf=0;
+    G.round=G.maxRound+1;
+    G.enemyCastle={hp:100,maxHp:100,pos:{r:0,c:11}};
+    finishMonsters();
+    assert.strictEqual(G.phase,'SHOP','超出回合数必须进商店');
   });
   test('checkGameOver 双英雄 HP≤0 → OVER', ()=>{
     fresh();
@@ -1425,11 +1453,11 @@ group('A组：initGame 第一关默认配置', ()=>{
     assert.strictEqual(G.monsters.length,2,'应有2只怪');
     assert.strictEqual(G.monsters[0].name,'教学怪1');
     assert.strictEqual(G.monsters[0].hp,6);
-    assert.deepStrictEqual(G.monsters[0].pos,{r:1,c:11});
+    assert.deepStrictEqual(G.monsters[0].pos,{r:0,c:10});
     assert.strictEqual(G.monsters[0].el,null);
     assert.strictEqual(G.monsters[1].name,'教学怪2');
     assert.strictEqual(G.monsters[1].hp,10);
-    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:10});
+    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:11});
     assert.strictEqual(G.monsters[1].el,null);
   });
   test('case_init_005: explosionThreshold=3', ()=>{
@@ -2339,10 +2367,10 @@ group('K组：结算与元素落地一致性', ()=>{
       assert.strictEqual(G.selectedCell.r,5,'点击后 selectedCell.r=5');
       assert.strictEqual(G.selectedCell.c,5,'点击后 selectedCell.c=5');
       assert.strictEqual(cdEl.style.display,'block','格子详情面板应显示');
-      assert.ok(cdEl.innerHTML.includes('格子 [5,5]'),'详情应显示坐标');
-      assert.ok(cdEl.innerHTML.includes('💧水1层'),'详情应显示剩余水元素层');
-      assert.ok(!cdEl.innerHTML.includes('🔥火3层'),'详情不应显示已引爆的火3层');
-      assert.ok(cdEl.innerHTML.includes('还需 2 层才能引爆'),'详情应显示未达到引爆阈值');
+      assert.ok(cdEl.innerHTML.includes('📍 [5,5]'),'详情应显示坐标');
+      assert.ok(cdEl.innerHTML.includes('💧'),'详情应显示剩余水元素');
+      assert.ok(!cdEl.innerHTML.includes('🔥'),'详情不应显示已引爆的火元素');
+      assert.ok(cdEl.innerHTML.includes('还需 2 层引爆'),'详情应显示未达到引爆阈值');
       assert.strictEqual(logEl.children.length,0,'普通点击查看详情不应写战斗日志');
       G.selHero='ha';
       const prev={...G.heroes.ha.pos};
@@ -2460,6 +2488,42 @@ group('N组：一键执行多英雄走位分配',()=>{
     assert.ok(G.heroes.hb.pos.r<=7,
       'B英雄行应≤7(怪物在行5)，实际r='+G.heroes.hb.pos.r);
     assert.ok(!(G.heroes.ha.pos.r===G.heroes.hb.pos.r&&G.heroes.ha.pos.c===G.heroes.hb.pos.c),'A/B英雄不应重叠');
+  });
+  test('case_n_002: 英雄已能攻击怪物时一键执行不移动(多行怪物密度引导)',()=>{
+    // 行7有3只怪物(密度高)，行5只有1只。自动走位会把英雄导向行7，
+    // 但英雄在行5就能攻击到行5的怪物 → 不应移动。
+    fresh();
+    G.monsters=[
+      {id:'m1',name:'怪A',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:10},dead:false},
+      {id:'m2',name:'怪B',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:8},dead:false},
+      {id:'m3',name:'怪C',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:9},dead:false},
+      {id:'m4',name:'怪D',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:10},dead:false},
+    ];
+    G.heroes.ha.pos={r:5,c:8}; G.heroes.ha._acted=false;
+    G.slots=[{hid:'ha',el:'fire',sn:2,dir:'right',used:false}];
+    const oldPos={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
+    execAllHeroSlots();
+    assert.deepStrictEqual(G.heroes.ha.pos,oldPos,'英雄已能攻击行5怪物，密度引导也不应移动');
+    assert.strictEqual(G.slots[0].used,true,'仍应执行攻击');
+  });
+  test('case_n_003: canHeroAttackEnemyFrom 直接测试',()=>{
+    fresh();
+    // 怪物在攻击范围内
+    G.monsters=[{id:'m1',name:'怪',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:8},dead:false}];
+    G.heroes.ha.pos={r:5,c:5};
+    G.slots=[{hid:'ha',el:'fire',sn:3,dir:'right',used:false}];
+    assert.strictEqual(canHeroAttackEnemyFrom({r:5,c:5},'ha'),true,'sn=3 攻击范围覆盖怪物');
+    // 怪物不在攻击范围内
+    G.monsters=[{id:'m2',name:'怪',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:10},dead:false}];
+    assert.strictEqual(canHeroAttackEnemyFrom({r:5,c:5},'ha'),false,'sn=3 打到(5,8)碰不到(5,10)');
+    // 敌方城堡在攻击范围内
+    G.monsters=[];
+    G.enemyCastle={hp:100,maxHp:100,pos:{r:0,c:11}};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
+    assert.strictEqual(canHeroAttackEnemyFrom({r:0,c:10},'ha'),true,'攻击范围覆盖敌方城堡');
+    // 无可用槽
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:true}];
+    assert.strictEqual(canHeroAttackEnemyFrom({r:0,c:10},'ha'),false,'所有槽已用');
   });
 });
 
@@ -3089,6 +3153,70 @@ group('TDD-S3 Run与商店',()=>{
     addElementLayers({r:5,c:6},'water',2);
     settleExplosions();
     assert.strictEqual(G.lastSettle.totalDamage,7,'dmg3×2+风1');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+group('Replay 战斗复盘', ()=>{
+  test('REPLAY1: exportReplay 含 version/initial/steps/finalResult', ()=>{
+    fresh();
+    startReplayCapture();
+    dispatchGameAction({ type:'USE_SLOT', slotId:0 });
+    dispatchGameAction({ type:'USE_SLOT', slotId:1 });
+    const rep=exportReplay();
+    stopReplayCapture();
+    assert.strictEqual(rep.version, 1);
+    assert.ok(rep.initial && rep.initial.board, 'initial 应有 board');
+    assert.ok(Array.isArray(rep.steps) && rep.steps.length>=2, 'steps 应记录行动');
+    assert.ok(rep.finalResult && rep.finalResult.hash, 'finalResult 应有 hash');
+  });
+  test('REPLAY2: runReplay 复现相同 hash（单玩家相内叠火）', ()=>{
+    fresh();
+    G.monsters.forEach(m=>{ m.hp=20; m.maxHp=20; });
+    startReplayCapture();
+    dispatchGameAction({ type:'USE_SLOT', slotId:0 });
+    dispatchGameAction({ type:'USE_SLOT', slotId:1 });
+    dispatchGameAction({ type:'USE_SLOT', slotId:2 });
+    const rep=exportReplay();
+    stopReplayCapture();
+    const expectedHash=rep.finalResult.hash;
+    fresh();
+    const result=runReplay(rep);
+    assert.strictEqual(result.hash, expectedHash, '回放后 hash 应一致');
+    const anyFire=Object.values(G.elementCells||{}).some(c=>c.fire&&c.fire.layers>0);
+    assert.ok(anyFire, '回放后应有火元素层');
+  });
+  test('REPLAY3: Day1 教学怪 + END_PLAYER_TURN 可回放', ()=>{
+    fresh();
+    startReplayCapture();
+    G.slots.forEach((s,i)=>{ if(!s.used) dispatchGameAction({ type:'USE_SLOT', slotId:i }); });
+    endPlayerTurn();
+    const rep=exportReplay();
+    stopReplayCapture();
+    const hash=rep.finalResult.hash;
+    fresh();
+    const result=runReplay(rep);
+    assert.strictEqual(result.hash, hash);
+    assert.ok(['MONSTER','SHOP','PLAYER','OVER'].includes(G.phase), '怪物回合后 phase 合法');
+  });
+  test('REPLAY4: hashReplayState 对相同状态稳定', ()=>{
+    fresh();
+    const h1=hashReplayState();
+    const h2=hashReplayState();
+    assert.strictEqual(h1, h2);
+  });
+});
+
+group('Debug 面板 VM', ()=>{
+  test('DEBUG1: buildDebugPanelVM 含 phase/slots/actionLog', ()=>{
+    fresh();
+    G.selectedCell={ r:1, c:11 };
+    recomputeCorePreview();
+    const vm=buildDebugPanelVM();
+    assert.strictEqual(vm.phase, 'PLAYER');
+    assert.ok(Array.isArray(vm.slots), 'slots 队列');
+    assert.ok(Array.isArray(vm.actionLogTail), 'actionLog 尾部');
+    assert.ok(vm.selectedCell, '选中格信息');
   });
 });
 

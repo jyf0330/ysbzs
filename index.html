@@ -35,27 +35,37 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .cell.ep{background:#2a0a2a;outline:1px solid #6a206a;}
 .cell.ec{outline:2px solid #f0a500;}
 
-/* Markers */
-.hm{width:48px;height:48px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-weight:bold;cursor:pointer;position:relative;padding:3px 2px 2px;}
-.hm-letter{font-size:14px;line-height:1.1;}
-.hm-hp{font-size:7px;line-height:1;opacity:0.85;white-space:nowrap;}
-.hm-row{display:flex;justify-content:space-between;width:100%;align-items:center;}
-.hm-inc{font-size:7px;color:#c084fc;font-weight:bold;line-height:1;text-align:center;}
-.hma{background:#1565C0;color:#fff;box-shadow:0 0 4px #1565C0;}
-.hmb{background:#2E7D32;color:#fff;box-shadow:0 0 4px #2E7D32;}
-.hm.sel{box-shadow:0 0 10px #f0a500,0 0 4px #f0a500;}
-.mm{width:48px;height:48px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-weight:bold;background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444;padding:2px;}
-.mm-top{display:flex;justify-content:space-between;width:100%;}
-.mm-hp{font-size:7px;color:#fca5a5;}
-.mm-atk{font-size:7px;color:#fda;}
-.mm-icon{font-size:13px;line-height:1;}
-.mm-bot{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
-.mm-atkinfo{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
-.sm{width:92%;height:92%;border-radius:6px;background:rgba(14,165,233,0.25);border:2px solid #38bdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#bae6fd;position:relative;box-sizing:border-box;}
-.sm-atk{color:#fbbf24;font-weight:bold;font-size:10px;line-height:1.1;}
-.sm-hp{font-size:8px;color:#7dd3fc;}
-.sm-icon{font-size:14px;line-height:1;}
-.em{width:48px;height:48px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;font-weight:bold;cursor:pointer;border:1px solid;}
+/* ===== INFO BLOCKS (独立信息块) ===== */
+.cell{display:flex;flex-direction:column;gap:1px;padding:1px;overflow:hidden;}
+.ib{font-size:8px;line-height:1.2;border-radius:2px;cursor:pointer;position:relative;text-align:center;font-weight:bold;}
+.ib:hover{filter:brightness(1.25);z-index:2;}
+/* entity block */
+.ib-e{display:flex;align-items:center;justify-content:center;gap:2px;flex:2;min-height:0;}
+.ib-e.ib-m{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444;}
+.ib-e.ib-m-die{animation:diePulse 0.5s ease-in-out 3;}
+@keyframes diePulse{50%{background:#ef4444;color:#fff;}}
+.ib-e.ib-h{color:#fff;}
+.ib-e.ib-ha{background:#1565C0;box-shadow:0 0 4px #1565C0;}
+.ib-e.ib-hb{background:#2E7D32;box-shadow:0 0 4px #2E7D32;}
+.ib-e.ib-h.sel{box-shadow:0 0 10px #f0a500,0 0 4px #f0a500;}
+.ib-e.ib-s{background:rgba(14,165,233,0.25);border:1px solid #38bdf8;color:#bae6fd;}
+.ib-e.ib-c{color:#fff;font-size:11px;}
+.ib-e.ib-cp{background:#2563eb;box-shadow:0 0 6px #2563eb;}
+.ib-e.ib-ce{background:#dc2626;box-shadow:0 0 6px #dc2626;}
+.ib-e.ib-el-only{background:transparent;font-size:10px;}
+/* element badge */
+.ib-el{font-size:7px;padding:0 2px;margin:0 1px;display:inline-block;border-radius:2px;}
+/* bottom row badges: damage / threat / source / explode */
+.ib-bot{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;min-height:0;flex:1;align-items:center;}
+.ib-b{font-size:7px;padding:0 2px;border-radius:2px;white-space:nowrap;}
+.ib-b.ib-dmg{color:#ff6060;background:rgba(220,38,38,0.15);}
+.ib-b.ib-die{color:#fff;background:#ef4444;animation:diePulse 0.5s ease-in-out infinite;}
+.ib-b.ib-thr{color:#c084fc;background:rgba(192,132,252,0.15);}
+.ib-b.ib-exp{color:#f59e0b;background:rgba(245,158,11,0.15);}
+.ib-b.ib-src{color:#60a5fa;font-size:6px;}
+.ib-b.ib-src-b{color:#4ade80;}
+/* empty cell */
+.ib-empty{color:#333;font-size:9px;text-align:center;}
 
 /* ===== RIGHT PANEL ===== */
 #rp{width:290px;display:flex;flex-direction:column;gap:8px;}
@@ -175,6 +185,17 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 }
 #msg button{margin-top:10px;padding:6px 20px;background:#f0a500;border:none;border-radius:4px;cursor:pointer;color:#000;font-size:13px;}
 
+/* ===== DEBUG PANEL ===== */
+#debug-panel{
+  display:none;position:fixed;left:8px;bottom:8px;width:320px;max-height:42vh;
+  overflow-y:auto;background:rgba(13,17,23,0.95);border:1px solid #f0a500;
+  border-radius:8px;padding:8px;font-size:10px;line-height:1.45;z-index:300;
+  font-family:ui-monospace,monospace;color:#cbd5e1;
+}
+#debug-panel .dbg-title{color:#f0a500;font-weight:bold;margin-bottom:4px;font-size:11px;}
+#debug-panel .dbg-sec{margin-top:6px;border-top:1px solid #21262d;padding-top:4px;}
+#debug-panel .dbg-k{color:#64748b;}
+
 /* Assign popup */
 #ap-modal{
   display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -186,17 +207,16 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .apb:hover{background:#1976D2;}
 .apc{background:#374151;color:#ccc;border:none;padding:6px;border-radius:5px;cursor:pointer;font-size:11px;width:100%;margin-top:2px;}
 
-/* ===== CELL DETAIL PANEL ===== */
+/* ===== CELL DETAIL (信息块面板) ===== */
 #cd{font-size:11px;}
 .cd-pos{color:#f0a500;font-weight:bold;font-size:12px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #21262d;display:flex;justify-content:space-between;align-items:center;}
 .cd-close{background:none;border:none;color:#555;cursor:pointer;font-size:12px;padding:0;}
 .cd-close:hover{color:#aaa;}
-.cd-sec{margin-bottom:6px;}
-.cd-stt{color:#888;font-size:9px;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.cd-block{background:#0d1117;border:1px solid #21262d;border-radius:5px;padding:6px 8px;margin-bottom:5px;}
+.cd-blkt{color:#888;font-size:8px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1a1a1a;padding-bottom:2px;}
+.cd-empty{color:#444;font-size:9px;font-style:italic;}
+.cd-badge{display:block;padding:1px 4px;font-size:9px;}
 .cd-row{margin:1px 0;line-height:1.4;color:#ccc;}
-.cd-badge{display:inline-block;background:#21262d;border-radius:3px;padding:1px 5px;margin:1px 2px;font-size:10px;}
-.cd-empty{color:#555;font-size:10px;font-style:italic;}
-.cd-rule{font-size:9px;color:#6b7280;margin-top:2px;padding:3px 5px;background:#0d1117;border-radius:3px;border-left:2px solid #374151;}
 /* 全屏：html 根元素进全屏，棋盘与侧栏按比例缩放 */
 #wrap{width:100%;max-width:100%;display:flex;flex-direction:column;align-items:center;}
 .board-col{display:flex;flex-direction:column;align-items:center;}
@@ -229,12 +249,8 @@ html:-webkit-full-screen #board{
 }
 html:fullscreen .cell,
 html:-webkit-full-screen .cell{width:auto;height:auto;min-width:0;min-height:0;}
-html:fullscreen .hm,
-html:fullscreen .mm,
-html:fullscreen .em,
-html:-webkit-full-screen .hm,
-html:-webkit-full-screen .mm,
-html:-webkit-full-screen .em{width:92%;height:92%;}
+html:fullscreen .ib-e,
+html:-webkit-full-screen .ib-e{font-size:clamp(6px,1vw,11px);}
 html:fullscreen #rp,
 html:-webkit-full-screen #rp{
   width:300px;flex-shrink:0;max-height:100%;overflow-y:auto;font-size:13px;
@@ -323,6 +339,8 @@ html:-webkit-full-screen #fsb { background:#222; border-color:#666; }
   <div id="apbtns"></div>
   <button class="apc" onclick="document.getElementById('ap-modal').style.display='none'">取消</button>
 </div>
+
+<div id="debug-panel" aria-hidden="true"></div>
 
 <script>
 // ========== CONSTANTS ==========
@@ -952,20 +970,25 @@ function getSpawnCells(spawnSize){
 }
 
 function spawnWaveForDay(day,phase){
+  // ── 硬编码教学波：改为通过出生区分配，避免落在元素块上 ──
   if(day===1&&phase==='morning'){
-    G.monsters=[
-      {id:'tut_m1',name:'教学怪1',hp:6,maxHp:6,atk:1,pos:{r:1,c:11},dead:false,el:null,gold:1},
-      {id:'tut_m2',name:'教学怪2',hp:10,maxHp:10,atk:1,pos:{r:0,c:10},dead:false,el:null,gold:1},
+    const monsters=[
+      {id:'tut_m1',name:'教学怪1',hp:6,maxHp:6,atk:1,dead:false,el:null,gold:1},
+      {id:'tut_m2',name:'教学怪2',hp:10,maxHp:10,atk:1,dead:false,el:null,gold:1},
     ];
+    assignSpawnPositions(monsters,3);
+    G.monsters=monsters;
     glog('⚔️ 第1天早上：2只教学怪物（右上）');
     return;
   }
   if(day===3&&phase==='morning'){
-    G.monsters=[
-      {id:'d3_elite',name:'铁甲队长',typeId:'elite',hp:24,maxHp:24,atk:3,ap:3,pos:{r:1,c:11},dead:false,el:null,gold:8},
-      {id:'d3_a',name:'小怪A',typeId:'normal',hp:4,maxHp:4,atk:1,ap:5,pos:{r:0,c:10},dead:false,el:null,gold:2},
-      {id:'d3_b',name:'小怪B',typeId:'normal',hp:4,maxHp:4,atk:1,ap:5,pos:{r:2,c:12},dead:false,el:null,gold:2},
+    const monsters=[
+      {id:'d3_elite',name:'铁甲队长',typeId:'elite',hp:24,maxHp:24,atk:3,ap:3,dead:false,el:null,gold:8},
+      {id:'d3_a',name:'小怪A',typeId:'normal',hp:4,maxHp:4,atk:1,ap:5,dead:false,el:null,gold:2},
+      {id:'d3_b',name:'小怪B',typeId:'normal',hp:4,maxHp:4,atk:1,ap:5,dead:false,el:null,gold:2},
     ];
+    assignSpawnPositions(monsters,3);
+    G.monsters=monsters;
     glog('⚔️ 第3天早上：精英教学波（铁甲队长+小怪）');
     return;
   }
@@ -974,29 +997,21 @@ function spawnWaveForDay(day,phase){
     G.monsters=[];
     return;
   }
-  const spawnCells = getSpawnCells(wavePlan.spawnSize);
-  // 过滤已被占用的出生格
-  const freeCells = spawnCells.filter(sc=>{
-    return !monAt(sc) && !heroAt(sc);
-  });
-  G.monsters=[];
-  for(let i=0; i<wavePlan.monsters.length; i++){
-    let pos;
-    if(i<freeCells.length){
-      pos=freeCells[i];
-    } else {
-      // 出生区满，延迟生成：放在出生区角落等下一波
-      const corner=spawnCells[0]||{r:0,c:12};
-      pos=corner;
-    }
-    G.monsters.push({
-      id:`d${day}_${phase}_${i}`,
-      ...wavePlan.monsters[i],
-      pos,
-    });
-  }
+  assignSpawnPositions(wavePlan.monsters, wavePlan.spawnSize);
+  G.monsters=wavePlan.monsters.map((m,i)=>({id:`d${day}_${phase}_${i}`,...m}));
   glog(`⚔️ 第${day}天${phase==='morning'?'早上':'下午'}：${G.monsters.length}只怪物出击！`);
   syncMaxRoundForPhase();
+}
+function assignSpawnPositions(monsters,spawnSize){
+  const spawnCells=getSpawnCells(spawnSize);
+  const freeCells=spawnCells.filter(sc=>!monAt(sc)&&!heroAt(sc)&&!hasElementAt(sc));
+  for(let i=0;i<monsters.length;i++){
+    if(i<freeCells.length){
+      monsters[i].pos=freeCells[i];
+    }else{
+      monsters[i].pos=spawnCells[0]||{r:0,c:12};
+    }
+  }
 }
 // ========== SHAPE ROTATION ==========
 function rotCells(cells,dir){
@@ -1033,6 +1048,24 @@ function findCenterCell(cells){
 function monAt(pos){return G.monsters.find(m=>!m.dead&&m.pos.r===pos.r&&m.pos.c===pos.c);}
 function heroAt(pos){return Object.values(G.heroes).find(h=>h.pos.r===pos.r&&h.pos.c===pos.c);}
 function cellFree(pos){return !monAt(pos)&&!heroAt(pos)&&!summonAt(pos)&&pos.r>=0&&pos.r<13&&pos.c>=0&&pos.c<13;}
+// 检查英雄从指定位置是否能攻击到任何敌方（怪物或城堡）
+function canHeroAttackEnemyFrom(pos,hid){
+  const hasEnemy=G.monsters.some(m=>!m.dead);
+  const hasCastle=G.enemyCastle&&G.enemyCastle.hp>0;
+  if(!hasEnemy&&!hasCastle)return false;
+  for(const s of G.slots){
+    if(s.used||s.hid!==hid)continue;
+    const shape=SD[s.sn]; if(!shape)continue;
+    const cells=rotCells(shape.cells,s.dir)
+      .map(([dr,dc])=>({r:pos.r+dr,c:pos.c+dc}))
+      .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+    for(const p of cells){
+      if(monAt(p))return true;
+      if(enemyCastleAt(p))return true;
+    }
+  }
+  return false;
+}
 
 // ========== ELEMENT SYSTEM ==========
 function addEl(pos,el){
@@ -1352,6 +1385,7 @@ function execAllHeroSlots_sync(){
     const hid=heroIds[heroIdx];
     const hero=G.heroes[hid];
     if(hero._acted||alive0.length===0||!ALLOW_AUTO_MOVE)continue;
+    if(canHeroAttackEnemyFrom(hero.pos,hid))continue;
     let maxRange=1;
     G.slots.forEach(s=>{
       if(s.used||s.hid!==hid)return;
@@ -1404,6 +1438,7 @@ async function execAllHeroSlots_async(){
     const hid=heroIds[heroIdx];
     const hero=G.heroes[hid];
     if(hero._acted||alive0.length===0||!ALLOW_AUTO_MOVE)continue;
+    if(canHeroAttackEnemyFrom(hero.pos,hid))continue;
     let maxRange=1;
     for(const s of G.slots){
       if(s.used||s.hid!==hid)continue;
@@ -1463,13 +1498,22 @@ function toggleFullscreen(){
 if(typeof document.addEventListener==='function'){
   document.addEventListener('keydown',e=>{
     if(e.key==='F11'){ e.preventDefault(); toggleFullscreen(); }
+    if(e.key==='d'||e.key==='D'){
+      try{
+        const on=isDebugMode();
+        localStorage.setItem('ysbzs_debug', on?'0':'1');
+        renderDebugPanel();
+      }catch(err){}
+    }
   });
 }
 function endPlayerTurn(){
   if(G.phase!=='PLAYER')return;
+  pushReplayStep({type:'END_PLAYER_TURN'});
   commitPlayerActionsToElementField(G);
   settleExplosions();
   runSummonActions();
+  if(G.phase==='OVER'){refreshUI();return;}
   G.phase='MONSTER'; G.selSlot=null; G.selHero=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
   Object.values(G.heroes).forEach(h=>h._acted=false);
   glog('--- 怪物回合 ---');
@@ -1614,7 +1658,8 @@ function finishMonsters(){
   if(G.phase==='OVER')return;
   G.round++;
   const allDead=G.monsters.every(m=>m.dead);
-  if(G.round>G.maxRound||allDead){
+  const castleDead=!G.enemyCastle||G.enemyCastle.hp<=0;
+  if(G.round>G.maxRound||(allDead&&castleDead)){
     if(G.dayHalf===0){
       // 早上波结束 → 中午商店
       G.dayHalf=1;
@@ -1694,6 +1739,7 @@ function syncUnitsToHeroes(){
   G.heroes={};
   G.slots=[];
   active.forEach((unit,ui)=>{
+    if(ui>=2)return;
     const def=UNIT_DEFS[unit.defId];
     const lvlData=def.levels[unit.level];
     const hid=ui===0?'ha':'hb';
@@ -1726,9 +1772,9 @@ function syncUnitsToHeroes(){
       });
     });
   });
-  G.ownedUnits.forEach((u,i)=>{
-    if(i>=2||!active.includes(u)) u.active=false;
-  });
+  // 只保留前2个上阵单位，其余全部放入备战
+  const heroUnits=new Set(active.slice(0,2));
+  G.ownedUnits.forEach(u=>{if(!heroUnits.has(u))u.active=false;});
 }
 
 function mergeUnits(fromUnit, toUnit){
@@ -2103,7 +2149,7 @@ function buyUnit(itemId){
   G.gold-=item.cost;
   G.shopItems.units.splice(idx,1);
   const activeCount=G.ownedUnits.filter(u=>u.active).length;
-  const newUnit=addOwnedUnit(item.defId, activeCount<6?{r:10+activeCount,c:1}:null);
+  const newUnit=addOwnedUnit(item.defId, activeCount<2?{r:10+activeCount,c:1}:null);
   if(!newUnit)return;
   // 检查是否有同名单位可合成
   const existing=G.ownedUnits.find(u=>u.instanceId!==newUnit.instanceId&&u.defId===newUnit.defId&&u.active);
@@ -2112,7 +2158,7 @@ function buyUnit(itemId){
     glog(`🛒 购买${UNIT_DEFS[item.defId].name}，自动合成！`);
   } else {
     // 上阵位满了放备战
-    if(activeCount>=6) newUnit.active=false;
+    if(activeCount>=2) newUnit.active=false;
     glog(`🛒 购买${UNIT_DEFS[item.defId].name}${newUnit.active?'，上阵':'，放入备战'}`);
   }
   syncUnitsToHeroes();
@@ -2751,8 +2797,207 @@ function recomputeCorePreview(){
   };
 }
 
+// ========== REPLAY 战斗复盘 ==========
+const REPLAY_VERSION = 1;
+
+function snapshotCoreStateForReplay(){
+  return {
+    day:G.day, dayHalf:G.dayHalf, phase:G.phase, round:G.round, maxRound:G.maxRound,
+    gold:G.gold, hitCount:G.hitCount, explosionThreshold:G.explosionThreshold,
+    board:JSON.parse(JSON.stringify(G.board)),
+    elementCells:JSON.parse(JSON.stringify(G.elementCells)),
+    heroes:JSON.parse(JSON.stringify(G.heroes)),
+    monsters:JSON.parse(JSON.stringify(G.monsters)),
+    slots:JSON.parse(JSON.stringify(G.slots)),
+    summons:JSON.parse(JSON.stringify(G.summons||[])),
+    ownedUnits:JSON.parse(JSON.stringify(G.ownedUnits||[])),
+    playerCastle:JSON.parse(JSON.stringify(G.playerCastle)),
+    enemyCastle:JSON.parse(JSON.stringify(G.enemyCastle)),
+    engineStats:JSON.parse(JSON.stringify(G.engineStats||{})),
+    growth:JSON.parse(JSON.stringify(G.growth||{})),
+    _nextSummonId:G._nextSummonId||0,
+  };
+}
+
+function applyReplaySnapshot(snap){
+  Object.assign(G,{
+    ...snap,
+    actionLog:[],
+    coreSnapshot:null,
+    coreVersion:0,
+    selHero:null, selSlot:null, selectedCell:null,
+    prevCells:[], heroPrev:[], explPos:null, monWarn:[],
+    previewEvents:[], shopItems:{units:[],consumables:[]},
+    shopFrozen:{units:new Set(),consumables:new Set()},
+    runVictory:null, lastSettle:null,
+  });
+  recomputeCorePreview();
+}
+
+function hashReplayState(){
+  const payload={
+    phase:G.phase, round:G.round, day:G.day, dayHalf:G.dayHalf,
+    gold:G.gold, explosionThreshold:G.explosionThreshold,
+    playerCastle:G.playerCastle, enemyCastle:G.enemyCastle,
+    elementCells:G.elementCells,
+    heroes:Object.fromEntries(Object.entries(G.heroes).map(([k,h])=>[k,{hp:h.hp,maxHp:h.maxHp,pos:h.pos,_acted:!!h._acted}])),
+    monsters:G.monsters.map(m=>({hp:m.hp,maxHp:m.maxHp,pos:m.pos,dead:!!m.dead,name:m.name})),
+    slots:G.slots.map(s=>({el:s.el,sn:s.sn,used:!!s.used,hid:s.hid,dir:s.dir,layers:s.layers})),
+    summons:(G.summons||[]).map(s=>({hp:s.hp,dead:!!s.dead,pos:s.pos})),
+    engineStats:G.engineStats,
+  };
+  return stableReplayHash(JSON.stringify(payload));
+}
+
+function stableReplayHash(str){
+  let h=2166136261;
+  for(let i=0;i<str.length;i++){
+    h^=str.charCodeAt(i);
+    h=Math.imul(h,16777619);
+  }
+  return (h>>>0).toString(16);
+}
+
+function buildReplayFinalResult(){
+  return {
+    hash:hashReplayState(),
+    phase:G.phase,
+    round:G.round,
+    day:G.day,
+    monstersAlive:G.monsters.filter(m=>!m.dead).length,
+    playerCastleHp:G.playerCastle?.hp,
+    enemyCastleHp:G.enemyCastle?.hp,
+    engineStats:{...(G.engineStats||{})},
+  };
+}
+
+function startReplayCapture(){
+  G._replayCapture={ initial:snapshotCoreStateForReplay(), steps:[] };
+}
+
+function stopReplayCapture(){
+  const cap=G._replayCapture;
+  G._replayCapture=null;
+  return cap;
+}
+
+function pushReplayStep(step){
+  if(!G._replayCapture)return;
+  G._replayCapture.steps.push(JSON.parse(JSON.stringify(step)));
+}
+
+function exportReplay(opts={}){
+  const cap=G._replayCapture;
+  return {
+    version:REPLAY_VERSION,
+    seed:opts.seed??null,
+    meta:{
+      day:G.day, dayHalf:G.dayHalf, phase:G.phase,
+      exportedAt:typeof Date!=='undefined'?Date.now():0,
+    },
+    initial:opts.initial||(cap&&cap.initial)||snapshotCoreStateForReplay(),
+    steps:opts.steps||(cap&&cap.steps)||[...(G.actionLog||[])],
+    finalResult:buildReplayFinalResult(),
+  };
+}
+
+function executeReplayStep(step){
+  switch(step.type){
+    case 'MOVE_HERO':
+    case 'USE_SLOT':
+    case 'SELECT_ACTION_SLOT':
+    case 'UPDATE_ACTION_SLOT':
+    case 'SET_ACTION_DIRECTION':
+    case 'SET_ACTION_TARGET':
+      dispatchGameAction(step);
+      break;
+    case 'END_PLAYER_TURN':
+      endPlayerTurn();
+      break;
+    case 'CLOSE_SHOP':
+      closeShop();
+      break;
+    default:
+      throw new Error('未知 replay 步骤: '+step.type);
+  }
+}
+
+function runReplay(replay){
+  if(!replay||replay.version!==REPLAY_VERSION){
+    throw new Error('不支持的 replay 版本');
+  }
+  applyReplaySnapshot(replay.initial);
+  (replay.steps||[]).forEach(executeReplayStep);
+  return buildReplayFinalResult();
+}
+
+function isDebugMode(){
+  if(typeof global!=='undefined'&&global.__DEBUG__)return true;
+  if(typeof location!=='undefined'&&location&&location.search){
+    if(new URLSearchParams(location.search).get('debug')==='1')return true;
+  }
+  if(typeof localStorage!=='undefined'){
+    try{ if(localStorage.getItem('ysbzs_debug')==='1')return true; }catch(e){}
+  }
+  return false;
+}
+
+function buildDebugPanelVM(){
+  const sel=G.selectedCell;
+  let selectedCell=null;
+  if(sel){
+    const key=`${sel.r},${sel.c}`;
+    const ec=G.elementCells[key];
+    const pg=G.coreSnapshot?.previewGrid?.grid?.[key];
+    selectedCell={
+      coord:key,
+      board:G.board[sel.r]?.[sel.c],
+      elements:ec?{fire:ec.fire.layers,water:ec.water.layers,wind:ec.wind.layers,earth:ec.earth.layers}:null,
+      previewDmg:pg?.preview?.selfCellDamage??pg?.preview?.totalDamage??null,
+      entity:pg?.entity||null,
+    };
+  }
+  return {
+    phase:G.phase, day:G.day, dayHalf:G.dayHalf, round:G.round, maxRound:G.maxRound,
+    selectedCell,
+    slots:G.slots.map((s,i)=>({i,el:s.el,used:!!s.used,hid:s.hid,skill:s.skill||null,sn:s.sn})),
+    actionLogTail:(G.actionLog||[]).slice(-8),
+    monsters:G.monsters.filter(m=>!m.dead).map(m=>({
+      name:m.name,pos:{...m.pos},hp:m.hp,
+      nextWarn:(G.monWarn||[]).find(w=>w.r===m.pos.r&&w.c===m.pos.c)||null,
+    })),
+    engineStats:{...(G.engineStats||{})},
+  };
+}
+
+function renderDebugPanel(){
+  if(typeof global!=='undefined'&&global.__TEST__)return;
+  const el=document.getElementById('debug-panel');
+  if(!el)return;
+  if(!isDebugMode()){ el.style.display='none'; el.setAttribute('aria-hidden','true'); return; }
+  el.style.display='block'; el.setAttribute('aria-hidden','false');
+  const vm=buildDebugPanelVM();
+  const sel=vm.selectedCell;
+  const selHtml=sel?`
+    <div>${sel.coord} · board ${sel.board?.el||'-'}×${sel.board?.stk||0}</div>
+    <div>元素 F${sel.elements?.fire||0} W${sel.elements?.water||0} N${sel.elements?.wind||0} E${sel.elements?.earth||0}</div>
+    ${sel.previewDmg!=null?`<div>预览伤害 ${sel.previewDmg}</div>`:''}`:'<div class="dbg-k">（未选格）</div>';
+  const slotHtml=vm.slots.map(s=>`#${s.i+1} ${s.used?'✓':s.el||'-'} h${s.hid??'?'}`).join(' · ');
+  const logHtml=vm.actionLogTail.length
+    ? vm.actionLogTail.map(a=>a.desc||a.type).join('<br>')
+    : '<span class="dbg-k">（空）</span>';
+  el.innerHTML=`
+    <div class="dbg-title">🛠 Debug · D 切换</div>
+    <div>phase ${vm.phase} · D${vm.day} half${vm.dayHalf} · R${vm.round}/${vm.maxRound}</div>
+    <div class="dbg-sec"><span class="dbg-k">选中格</span>${selHtml}</div>
+    <div class="dbg-sec"><span class="dbg-k">行动槽</span> ${slotHtml}</div>
+    <div class="dbg-sec"><span class="dbg-k">引擎</span> 召${vm.engineStats.summonCount||0} 疗${vm.engineStats.healCount||0}</div>
+    <div class="dbg-sec"><span class="dbg-k">actionLog</span><br>${logHtml}</div>`;
+}
+
 function dispatchGameAction(action){
   applyActionToState(action);
+  pushReplayStep(action);
   recomputeCorePreview();
   if(typeof document!=='undefined')render();
 }
@@ -2868,6 +3113,7 @@ function refreshUI(){
     const cdEl=document.getElementById('cd');
     if(cdEl)cdEl.style.display='none';
   }
+  renderDebugPanel();
 }
 
 // ─── View 层（只接受 VM 参数，只创建 DOM，不计算规则）───
@@ -2885,73 +3131,105 @@ function render(){
     const cdEl=document.getElementById('cd');
     if(cdEl)cdEl.style.display='none';
   }
+  renderDebugPanel();
 }
 
 function renderBoard(boardVM){
   const board=document.getElementById('board');
   board.innerHTML='';
+  const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
   boardVM.forEach(cv=>{
     const cell=document.createElement('div');
     cell.className='cell';
     cv.classes.forEach(cls=>cell.classList.add(cls));
+
+    // ── 实体块 (ib-e) ──
+    let entHtml='',entCls='';
     if(cv.castle){
-      cell.classList.add('hp');
-      const cm=document.createElement('div');
-      cm.className='hm';
-      const isPlayer=cv.castle.side==='player';
-      cm.style.background=isPlayer?'#2563eb':'#dc2626';
-      cm.style.color='#fff';
-      cm.style.boxShadow=isPlayer?'0 0 6px #2563eb':'0 0 6px #dc2626';
-      cm.innerHTML=`<div style="font-size:16px">🏰</div><div style="font-size:7px">${cv.castle.hp}/${cv.castle.maxHp}</div>`;
-      cm.title=`${isPlayer?'我方':'敌方'}城堡 HP:${cv.castle.hp}/${cv.castle.maxHp}`;
-      cell.appendChild(cm);
-    }else
-    if(cv.hero){
-      cell.classList.add('hp');
-      const hm=document.createElement('div');
-      hm.className=`hm ${cv.hero.id==='ha'?'hma':'hmb'}${cv.hero.isSel?' sel':''}`;
-      const dmgArr=cv.hero.incomingDmg;const incHtml=dmgArr.length>0?`<div class="hm-inc">⚠ 受击 ${dmgArr.reduce((s,e)=>s+e.dmg,0)}</div>`:'';
-      hm.innerHTML=`<div class="hm-row"><span class="hm-letter">${cv.hero.id==='ha'?'A':'B'}</span><span class="hm-hp">${cv.hero.hp}</span></div>${incHtml}`;
-      hm.title=`${cv.hero.name} HP:${cv.hero.hp}/${cv.hero.maxHp}`;
-      hm.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
-      cell.appendChild(hm);
+      const isP=cv.castle.side==='player';
+      entCls='ib-e ib-c '+(isP?'ib-cp':'ib-ce');
+      entHtml=`🏰 ${cv.castle.hp}/${cv.castle.maxHp}`;
+    }else if(cv.hero){
+      entCls='ib-e ib-h ib-'+(cv.hero.id==='ha'?'ha':'hb')+(cv.hero.isSel?' sel':'');
+      const dmgArr=cv.hero.incomingDmg;
+      const thrStr=dmgArr.length>0?` ⚠${dmgArr.reduce((s,e)=>s+e.dmg,0)}`:'';
+      entHtml=`<span>${cv.hero.id==='ha'?'A':'B'}</span><span style="font-size:7px">HP${cv.hero.hp}${thrStr}</span>`;
     }else if(cv.mon){
-      const mm=document.createElement('div');
-      mm.className='mm';
-      // 从 previewGrid 派生的 previewDamage/willDie（不在此层重计算）
-      const settledDmg=cv.mon.previewDamage||0;
-      const willDie=cv.mon.willDie||false;
-      let dmgBotHtml='';
-      if(settledDmg>0){dmgBotHtml=`<span style="color:#ff6060">受伤 ${settledDmg}${willDie?' 死亡':''}</span>`;}
-      else if(cv.monDmg){dmgBotHtml=`<span style="color:#ff6060">受伤 ${cv.monDmg}</span>`;}
-      const expBotHtml=(cv.pvWillExplode&&!settledDmg)?`<span style="color:#f59e0b">将爆炸</span>`:'';
-      const ai=cv.mon.atkInfo;
-      let atkInfoHtml;
-      if(ai.canAttack){const hc=ai.atkTargetId==='ha'?'#60a5fa':'#4ade80';atkInfoHtml=`<span style="color:${hc}">攻击${ai.atkTargetId==='ha'?'A':'B'}</span><span style="color:#fda0a0"> −${ai.atkDmg}</span>`;}
-      else{atkInfoHtml='<span style="color:#555">·</span>';}
-      mm.innerHTML=`<div class="mm-top"><span class="mm-hp">HP ${cv.mon.hp}</span><span class="mm-atk">攻 ${cv.mon.atk}</span></div><div class="mm-icon">👾</div><div class="mm-atkinfo">${atkInfoHtml}</div><div class="mm-bot">${dmgBotHtml}${expBotHtml}</div>`;
-      mm.title=`${cv.mon.name} HP:${cv.mon.hp}/${cv.mon.maxHp} 攻:${cv.mon.atk}`;
-      cell.appendChild(mm);
+      entCls='ib-e ib-m'+(cv.mon.willDie?' ib-m-die':'');
+      const dmg=cv.mon.previewDamage||cv.monDmg||0;
+      const dmgStr=dmg>0?` -${dmg}${cv.mon.willDie?'☠':''}`:'';
+      entHtml=`<span>👾</span><span>${cv.mon.hp}/${cv.mon.maxHp}${dmgStr}</span>`;
     }else if(cv.summon){
-      cell.classList.add('hp');
-      const sm=document.createElement('div');
-      sm.className='sm';
+      entCls='ib-e ib-s';
       const sdmg=(cv.summon.incomingDmg||[]).reduce((s,e)=>s+e.dmg,0);
-      const incHtml=sdmg>0?`<div class="sm-hp" style="color:#fda0a0">⚠${sdmg}</div>`:'';
-      sm.innerHTML=`<div class="sm-atk">⚔${cv.summon.atk}</div><div class="sm-icon">💧</div><div class="sm-hp">${cv.summon.hp}/${cv.summon.maxHp}</div>${incHtml}`;
-      sm.title=`${cv.summon.name} HP:${cv.summon.hp}/${cv.summon.maxHp} ATK:${cv.summon.atk}`;
-      cell.appendChild(sm);
+      entHtml=`💧 ${cv.summon.hp}/${cv.summon.maxHp} ⚔${cv.summon.atk}${sdmg>0?' ⚠'+sdmg:''}`;
+    }else if(cv.pvElLayers&&Object.keys(cv.pvElLayers).length>0){
+      entCls='ib-e ib-el-only';
+      entHtml=Object.entries(cv.pvElLayers).map(([el,info])=>{
+        const icon=ELICON[el]||el;
+        if(info.willExplode)return`<span style="color:${EC[el]}">💥${icon}${info.dmg}伤</span>`;
+        return`<span style="color:${EC[el]}">${icon}${info.cur}→${info.next}</span>`;
+      }).join(' ');
     }else if(cv.el){
-      const em=document.createElement('div');
-      em.className='em';
-      em.style.background=cv.el.bg;
-      em.style.color=cv.el.color;
-      em.style.borderColor=cv.el.color;
-      em.innerHTML=`<span>${EL[cv.el.el]}${cv.el.stk}层</span><span style="font-size:9px;opacity:0.9">${cv.el.explDmg}伤</span>`;
-      em.title=`${EL[cv.el.el]}元素·${cv.el.stk}层·引爆伤害${cv.el.explDmg}`;
-      em.onclick=(e)=>{e.stopPropagation();showTT(cv.r,cv.c,e);};
-      cell.appendChild(em);
+      entCls='ib-e ib-el-only';
+      entHtml=`<span style="color:${cv.el.color}">${EL[cv.el.el]}${cv.el.stk}层 ${cv.el.explDmg}伤</span>`;
+    }else{
+      entHtml='<span class="ib-empty">·</span>';
     }
+    if(entCls||entHtml){
+      const entEl=document.createElement('div');
+      entEl.className=entCls||'ib-e';
+      entEl.innerHTML=entHtml;
+      if(cv.hero)entEl.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
+      else if(cv.el)entEl.onclick=(e)=>{e.stopPropagation();showTT(cv.r,cv.c,e);};
+      cell.appendChild(entEl);
+    }
+
+    // ── 底部徽标行 (ib-bot) ──
+    const badges=[];
+    // 怪物攻击信息
+    if(cv.mon&&cv.mon.atkInfo&&cv.mon.atkInfo.canAttack){
+      const ai=cv.mon.atkInfo;
+      badges.push(`<span class="ib-b ib-src${ai.atkTargetId==='hb'?' ib-src-b':''}" title="${cv.mon.name}攻击英雄${ai.atkTargetId==='ha'?'A':'B'}">⚔${ai.atkTargetId.toUpperCase()}${ai.atkDmg}</span>`);
+    }
+    // 怪物攻击预警（怪物路径）
+    if(cv.monStep){
+      badges.push(`<span class="ib-b ib-exp">M${cv.monStep}</span>`);
+    }
+    // 英雄受击威胁
+    if(cv.hero&&cv.hero.incomingDmg.length>0){
+      const td=cv.hero.incomingDmg.reduce((s,e)=>s+e.dmg,0);
+      badges.push(`<span class="ib-b ib-thr">⚠×${cv.hero.incomingDmg.length} -${td}</span>`);
+    }
+    // 元素爆炸警告（空格）
+    if(cv.pvWillExplode&&!cv.mon){
+      badges.push(`<span class="ib-b ib-exp">💥爆炸</span>`);
+    }
+    // 行动来源（从previewGrid读取incomingActions，按英雄聚合）
+    if(cv.key){
+      const pgCell=(G.coreSnapshot?.previewGrid?.grid||{})[cv.key];
+      if(pgCell){
+        const byHero={};
+        pgCell.preview.incomingActions.forEach(a=>{
+          if(!byHero[a.heroId])byHero[a.heroId]={el:{},total:0};
+          byHero[a.heroId].el[a.element]=(byHero[a.heroId].el[a.element]||0)+a.amount;
+          byHero[a.heroId].total+=a.amount;
+        });
+        Object.entries(byHero).forEach(([hid,info])=>{
+          const cls=hid==='ha'?'ib-src':'ib-src ib-src-b';
+          const parts=Object.entries(info.el).map(([el,n])=>`${ELICON[el]}${n}`).join('');
+          badges.push(`<span class="ib-b ${cls}">${hid==='ha'?'A':'B'}+${info.total}${parts?' '+parts:''}</span>`);
+        });
+      }
+    }
+    if(badges.length>0){
+      const botEl=document.createElement('div');
+      botEl.className='ib-bot';
+      botEl.innerHTML=badges.join('');
+      cell.appendChild(botEl);
+    }
+
+    // ── 元素预览覆盖层 ──
     if(cv.pvEl){
       const ovl=document.createElement('div');
       ovl.className='hp-ovl';
@@ -2959,30 +3237,15 @@ function renderBoard(boardVM){
       ovl.style.opacity=cv.pvOpacity;
       cell.appendChild(ovl);
     }
-    // 元素预览标签：显示所有元素的层数变化
-    if(cv.pvElLayers&&Object.keys(cv.pvElLayers).length>0){
-      const badge=document.createElement('div');
-      badge.className=cv.pvWillExplode?'explode-warn':'el-prev-badge';
-      const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
-      const parts=Object.entries(cv.pvElLayers).map(([el,info])=>{
-        const txt=info.willExplode?`💥${info.dmg}伤`:(info.cur>0?`${info.cur}→${info.next}层`:`+${info.add}层`);
-        return`<span style="color:${EC[el]}">${ELICON[el]||EL[el]}${txt}${info.willExplode?'!':''}</span>`;
-      });
-      badge.innerHTML=parts.join(' ');
-      cell.appendChild(badge);
-    }
+
+    // ── 伤害数字徽标（空格被波及）──
     if(cv.monDmg!==null&&!cv.mon){
       const badge=document.createElement('div');
       badge.className='dmg-badge';
       badge.textContent=`-${cv.monDmg}`;
       cell.appendChild(badge);
     }
-    if(cv.monStep){
-      const stepBadge=document.createElement('div');
-      stepBadge.className='mon-step-badge';
-      stepBadge.textContent=`M${cv.monStep}`;
-      cell.appendChild(stepBadge);
-    }
+
     cell.onclick=()=>onCell(cv.r,cv.c);
     board.appendChild(cell);
   });
@@ -3003,63 +3266,93 @@ function renderCellDetail(cell){
   const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
   const ELNAME={fire:'火',water:'水',wind:'风',earth:'土'};
   const{entity,elementField,preview}=cell;
-  // 实体区
-  let entHtml='';
+  const blocks=[];
+  // 位置头
+  let header=`<div class="cd-pos">📍 [${r},${c}]<button class="cd-close" onclick="G.selectedCell=null;refreshUI()">×</button></div>`;
+
+  // ── 块1：实体 ──
+  let eHtml='';
   if(!entity||!entity.type){
-    entHtml='<div class="cd-empty">无</div>';
+    eHtml='<span class="cd-empty">空地</span>';
   }else if(entity.type==='monster'){
-    const selfDmg=preview.selfCellDamage?.total||0;
-    const splashDmg=preview.splashDamage?.total||0;
-    const totalDmg=selfDmg+splashDmg;
-    const willDie=totalDmg>=entity.hp&&entity.hp>0;
-    entHtml=`<div class="cd-row">👾 ${entity.name} ${entity.hp}/${entity.maxHp}${entity.el?` 元素:${ELNAME[entity.el]}`:''}${entity.atk?' 攻:'+entity.atk:''}</div>`;
-    if(totalDmg>0)entHtml+=`<div class="cd-row" style="color:#ff6060">自身伤害 ${selfDmg} / 波及伤害 ${splashDmg} / 总伤害 ${totalDmg}${willDie?' ☠预计死亡':''}</div>`;
+    const td=preview.entityDamage||0;
+    const willDie=td>=entity.hp&&entity.hp>0;
+    eHtml=`<div>👾 ${entity.name}</div><div>HP ${entity.hp}/${entity.maxHp} 攻 ${entity.atk||'?'}${entity.el?` ${ELICON[entity.el]}`:''}</div>`;
+    if(td>0)eHtml+=`<div style="color:${willDie?'#fff':'#ff6060'};background:${willDie?'#ef4444':'rgba(220,38,38,0.15)'};padding:2px 6px;border-radius:3px;margin-top:3px;">预计承伤 ${td}${willDie?' ☠致死':''}</div>`;
+    const sd=preview.selfCellDamage||{total:0};
+    const sp=preview.splashDamage||{total:0};
+    if(sd.total>0)eHtml+=`<div style="font-size:9px;color:#888;margin-top:2px;">单体:${sd.total} 波及:${sp.total}</div>`;
   }else if(entity.type==='hero'){
     const thr=preview.threatFromMonsters||[];
-    entHtml=`<div class="cd-row" style="color:#60a5fa">${entity.id==='ha'?'A':'B'} ${entity.name} ${entity.hp}/${entity.maxHp}</div>`;
+    eHtml=`<div style="color:${entity.id==='ha'?'#60a5fa':'#4ade80'}">英雄${entity.id==='ha'?'A':'B'} ${entity.name}</div><div>HP ${entity.hp}/${entity.maxHp}</div>`;
     if(thr.length>0){
-      const hitCount=thr.length;
-      const totalDmg=thr.reduce((s,t)=>s+t.dmg,0);
-      entHtml+=`<div class="cd-row" style="color:#c084fc">威胁：☠×${hitCount} -${totalDmg}${thr.map(t=>' ('+t.label+'-'+t.dmg+')').join('')}</div>`;
+      const td=thr.reduce((s,t)=>s+t.dmg,0);
+      eHtml+=`<div style="color:#c084fc;margin-top:3px;">⚠ 威胁 ×${thr.length} 总伤 ${td}`;
+      thr.forEach(t=>{eHtml+=`<div style="font-size:9px;color:#a78bfa;">${t.label} -${t.dmg}</div>`;});
+      eHtml+=`</div>`;
     }
+  }else if(entity.type==='summon'){
+    eHtml=`<div>💧 ${entity.name}</div><div>HP ${entity.hp}/${entity.maxHp} ⚔${entity.atk||0}</div>`;
+  }else if(entity.type==='player_castle'){
+    eHtml=`<div>🏰 我方城堡</div><div>HP ${entity.hp}/${entity.maxHp}</div>`;
+  }else if(entity.type==='enemy_castle'){
+    eHtml=`<div>🏰 敌方城堡</div><div>HP ${entity.hp}/${entity.maxHp}</div>`;
   }
-  // 元素场区
+  blocks.push(`<div class="cd-block"><div class="cd-blkt">实体</div>${eHtml}</div>`);
+
+  // ── 块2：元素场 ──
   const elEntries=Object.entries(elementField).filter(([,v])=>v.layers>0);
-  let elHtml=elEntries.length===0?'<span class="cd-empty">无元素层</span>':elEntries.map(([el,v])=>`<span class="cd-badge" style="color:${EC[el]}">${ELICON[el]}${ELNAME[el]}${v.layers}层</span>`).join('');
-  // 结算区
-  let settlHtml='';
-  if(entity&&entity.type==='monster'){
-    const sd=preview.selfCellDamage||{total:0};
-    if(sd.total>0){
-      const byEl=Object.entries(sd).filter(([k,v])=>k!=='total'&&v>0).map(([el,v])=>`${ELICON[el]}-${v}`).join(' ');
-      settlHtml+=`<div class="cd-row">怪物格单体伤害：<span style="color:#ff6060">-${sd.total}</span>${byEl?` (${byEl})`:''}</div>`;
-    }else{
-      settlHtml+=`<div class="cd-row cd-empty">当前无元素层，无单体伤害</div>`;
-    }
-    if(preview.splashDamage?.total>0){
-      const splashByEl=Object.entries(preview.splashDamage).filter(([k,v])=>k!=='total'&&v>0).map(([el,v])=>`${ELICON[el]}-${v}`).join(' ');
-      settlHtml+=`<div class="cd-row" style="color:#c084fc">波及伤害：<span style="color:#ff6060">-${preview.splashDamage.total}</span>${splashByEl?` (${splashByEl})`:''}</div>`;
-    }
-    settlHtml+=`<div class="cd-rule">怪物格：有层即单体结算，不触发十字爆炸</div>`;
+  let elHtml='';
+  if(elEntries.length===0){
+    elHtml='<span class="cd-empty">无</span>';
   }else{
-    if(preview.willExplode){
-      const expEls=preview.explosionElements||[{element:preview.explosionElement,layers:0,damage:preview.explosionDamage}];
-      const perElHtml=expEls.map(e=>`<span style="color:${EC[e.element]}">${ELICON[e.element]}${e.layers}层 伤害${e.damage}</span>`).join(' ');
-      settlHtml+=`<div class="cd-row">空格预计十字引爆：${perElHtml}</div>`;
-      settlHtml+=`<div class="cd-row" style="color:#f59e0b">💥 引爆总伤害：${preview.explosionDamage}，波及：${(preview.splashTargets||[]).join(' ')}</div>`;
-    }else{
-      const hasEl=elEntries.length>0;
-      const maxLayers=hasEl?Math.max(...elEntries.map(([,v])=>v.layers)):null;
-      const threshGap=hasEl?G.explosionThreshold-maxLayers:null;
-      if(hasEl&&threshGap>0)settlHtml+=`<div class="cd-row cd-empty">空格，还需 ${threshGap} 层才能引爆</div>`;
-      else settlHtml+=`<div class="cd-row cd-empty">空格，未达到引爆阈值</div>`;
-    }
+    elEntries.forEach(([el,v])=>{
+      elHtml+=`<div class="cd-badge" style="color:${EC[el]};margin:2px 0;">${ELICON[el]}${ELNAME[el]} ${v.boardLayers}层${v.addedLayers>0?` +${v.addedLayers}预叠 → ${v.layers}层`:''} 伤害${v.damage}</div>`;
+    });
   }
-  // 来源区
+  blocks.push(`<div class="cd-block"><div class="cd-blkt">元素场</div>${elHtml}</div>`);
+
+  // ── 块3：结算 ──
+  let settleHtml='';
+  if(entity&&entity.type==='monster'){
+    // no extra, entity block already shows damage
+    settleHtml='<span class="cd-empty" style="font-size:9px;">见实体块伤害</span>';
+  }else if(preview.willExplode){
+    const expEls=preview.explosionElements||[{element:preview.explosionElement,layers:0,damage:preview.explosionDamage}];
+    expEls.forEach(e=>{
+      settleHtml+=`<div style="color:#f59e0b;">💥 ${ELICON[e.element]}${e.layers}层 → 十字引爆 伤害${e.damage}</div>`;
+    });
+    settleHtml+=`<div style="font-size:9px;color:#888;">波及: ${(preview.splashTargets||[]).join(' ')}</div>`;
+  }else{
+    const maxLayers=elEntries.length>0?Math.max(...elEntries.map(([,v])=>v.layers)):0;
+    const gap=G.explosionThreshold-maxLayers;
+    settleHtml=gap>0?`<span class="cd-empty">还需 ${gap} 层引爆</span>`:'<span class="cd-empty">未达阈值</span>';
+  }
+  blocks.push(`<div class="cd-block"><div class="cd-blkt">结算</div>${settleHtml}</div>`);
+
+  // ── 块4：行动来源（按英雄分组）──
   const acts=preview.incomingActions||[];
-  let srcHtml=acts.length===0?'<div class="cd-empty">无行动点作用</div>':acts.map(a=>`<div class="cd-row">${a.description}</div>`).join('');
-  // 输出
-  cdEl.innerHTML=`<div class="cd-pos">📍 格子 [${r},${c}]<button class="cd-close" onclick="G.selectedCell=null;refreshUI()">×</button></div><div class="cd-sec"><div class="cd-stt">实体</div>${entHtml}</div><div class="cd-sec"><div class="cd-stt">元素场</div>${elHtml}</div><div class="cd-sec"><div class="cd-stt">本格结算</div>${settlHtml}</div><div class="cd-sec"><div class="cd-stt">行动点来源</div>${srcHtml}</div>`;
+  let srcHtml='';
+  if(acts.length===0){
+    srcHtml='<span class="cd-empty">无</span>';
+  }else{
+    const byHero={};
+    acts.forEach(a=>{
+      if(!byHero[a.heroId])byHero[a.heroId]=[];
+      byHero[a.heroId].push(a);
+    });
+    Object.entries(byHero).forEach(([hid,as])=>{
+      const tag=hid==='ha'?'A':'B';
+      srcHtml+=`<div style="margin:4px 0;"><span style="color:${hid==='ha'?'#60a5fa':'#4ade80'};font-weight:bold;">英雄${tag}</span>`;
+      as.forEach(a=>{
+        srcHtml+=`<div style="font-size:9px;color:#aaa;padding-left:8px;">槽 ${a.description}</div>`;
+      });
+      srcHtml+=`</div>`;
+    });
+  }
+  blocks.push(`<div class="cd-block"><div class="cd-blkt">行动来源</div>${srcHtml}</div>`);
+
+  cdEl.innerHTML=header+blocks.join('');
   cdEl.style.display='block';
 }
 
@@ -3377,7 +3670,7 @@ function toggleUnitActive(instanceId){
     unit.active=false;
   } else {
     const activeCount=G.ownedUnits.filter(u=>u.active).length;
-    if(activeCount>=6){showMsg('最多上阵6个单位！');return;}
+    if(activeCount>=2){showMsg('最多上阵2个英雄！请先下阵一个。');return;}
     unit.active=true;
   }
   syncUnitsToHeroes();

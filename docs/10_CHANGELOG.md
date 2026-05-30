@@ -1,6 +1,22 @@
 
 
 ## 2026-05-30 — 文字战争与代码决策落地（1C–8）
+## 2026-05-30 — 一键执行：英雄能攻击时不走位
+
+### 代码（`index.html` / `test.js`）
+- **N组**：`canHeroAttackEnemyFrom(pos,hid)` —— 检查英雄从给定位置是否能攻击到敌方怪物或城堡
+- `execAllHeroSlots_sync` / `execAllHeroSlots_async`：走位阶段增加检查，英雄已能攻击敌方时跳过移动，直接执行动作
+- 测试新增 `case_n_002`（多行密度引导不走位）、`case_n_003`（直接测试 canHeroAttackEnemyFrom），**374 项（373 通过 + 1 已有失败）**
+
+## 2026-05-30 — 三 Bug 修复
+
+### 代码（`index.html` / `test.js`）
+- **Bug1 怪物出生在元素块上**：`spawnWaveForDay` 出生区过滤增加 `!hasElementAt(sc)`，防止怪物刷到残留在出生区的元素格上
+- **Bug2 打完第一波跳商店**：`finishMonsters` 改为 `allDead && castleDead` 才进商店——清完怪后城堡还在则继续战斗，只有城堡也被毁或回合超限才进商店；同时修复 `endPlayerTurn` 在 castle 结算被炸毁后覆写 `phase='MONSTER'` 的问题
+- **Bug3 第三天英雄消失**：`syncUnitsToHeroes` 重写停用逻辑。旧代码按 `ownedUnits` 下标停用（`i>=2` 误杀了购买的单位）；新代码只停用非前 2 个上阵单位（`heroUnits = Set(active.slice(0,2))`），同时修复了 `ui>=2` 时覆写 `hb` 的问题
+- 测试 **377/377 全部通过**
+
+
 
 ### 代码（`index.html` / `test.js`）
 - **1C**：`closeShop` 新一天仅**敌方城堡回满**，我方 HP 跨天保留（RUN1 更新）
@@ -9,12 +25,25 @@
 - **7**：胜利仅 **敌方城堡 HP≤0**（`runVictory`）；移除 Day5 下午 / day>5 自动通关
 - 测试 **367/367**
 
+
 ### 策划 / 教学文档
 - **2C**：恢复火/水/风与代码一致；`召唤引擎系统GDD` 回 **水+召唤**
 - **3B**：附录与前2天规则改 **杀怪+夜收入+利息**，删除阶段固定金币表
 - **4B**：合成改 **Lv2** + 预览算伤害；删除「白银 6 层=21」权威口径
 - **8**：文档商店价改 **Tier1=3 / Tier2=6**
 - 第3–5天正文保留部分旧叙事示例，文首标注「以附录与代码为准」
+## 2026-05-30 — 小团队能力补强 P0（replay / debug / smoke）
+
+### 程序 / 测试
+- **Replay**：`REPLAY_VERSION=1` · `snapshotCoreStateForReplay` / `exportReplay` / `runReplay` / `startReplayCapture` · `recordings/day1_fire_sample.json` · CLI `node replay.js`
+- **Debug 面板**：`?debug=1` 或 localStorage `ysbzs_debug` / 键 D · `buildDebugPanelVM` · 显示 phase/选中格/行动槽/actionLog
+- **测试**：`test.js` 新增 Replay + Debug 组（**372/372**）
+- **Playwright smoke**：`node e2e/smoke.js`（169 格 + debug 可见）
+- 工具：`scripts/gen_replay_fixture.js` 生成样例 replay
+
+### 文档
+- `个人开发者小团队能力补强清单.md` P0-a/b/d/e 勾选
+
 ## 2026-05-30 — 个人开发者小团队能力补强清单
 
 ### 文档

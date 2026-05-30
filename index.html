@@ -690,6 +690,7 @@ const UNIT_DEFS = {
   },
   ember_seed: {
     id:'ember_seed', name:'火种灵', element:'fire', grade:'青铜', priceTier:1, tags:['火','铺元素','前排'], tier:1, cost:2,
+    passive:{type:'spaceExplosionBonus',bonusByLevel:[1,1,2]},
     levels: {
       1:{ hp:18, slots:[
         {el:'fire', sn:1, dir:'right', tier:1},
@@ -786,7 +787,7 @@ const SHOP_PRICE_CONFIG = {
     5: { unitT1:0, unitT2:2, consumable:3 },
   },
   // 每晚固定收入
-  nightIncome: { 1:5, 2:6, 3:7, 4:8 },
+  nightIncome: { 1:5, 2:6, 3:7, 4:8, 5:9 },
   // 利息：每 interestStep 金币 +1，最高 interestMax
   interestStep: 5,
   interestMax: 3,
@@ -818,7 +819,13 @@ function damageEnemyCastle(dmg,src){
   if(G.enemyCastle.hp<=0)checkGameOver();
 }
 
-const DAY_ROUND_CONFIG={1:{morning:2,afternoon:2},2:{morning:2,afternoon:3},3:{morning:3,afternoon:3}};
+const DAY_ROUND_CONFIG={1:{morning:2,afternoon:2},2:{morning:2,afternoon:3},3:{morning:3,afternoon:3},4:{morning:3,afternoon:4},5:{morning:3,afternoon:4}};
+function syncMaxRoundForPhase(){
+  const d=G.day||1;
+  const phase=G.dayHalf===2?'afternoon':'morning';
+  const cfg=DAY_ROUND_CONFIG[d]||DAY_ROUND_CONFIG[1];
+  G.maxRound=cfg[phase]||2;
+}
 function initGame(){
   G={
     phase:'PLAYER',  // PLAYER | MONSTER | SHOP | OVER
@@ -840,8 +847,6 @@ function initGame(){
     // 城堡：左下我方、右上敌方
     playerCastle:{hp:100,maxHp:100,pos:{r:12,c:1}},
     enemyCastle:{hp:100,maxHp:100,pos:{r:0,c:11}},
-    // 遗物系统
-    relics:[],               // [{id,name,desc,effect,value}] effect: explosion_plus | manual_detonate
     // 召唤引擎（水+召唤原型 · deep-interview v1-scope 增量1）
     summons:[],              // 召唤物实体 [{id,kind,name,hp,maxHp,atk,el,pos,ownerHid,dead}]
     _nextSummonId:0,
@@ -869,6 +874,7 @@ function initGame(){
   addOwnedUnit('water_droplet',{r:11,c:1});
   syncUnitsToHeroes();
   spawnWaveForDay(1,'morning');
+  syncMaxRoundForPhase();
   refreshUI();
   glog('🎮 游戏开始！第一波教学关卡。');
   glog('💡 提示：选中行动点→调整方向→点"使用"发动攻击。');
@@ -914,6 +920,19 @@ function buildWaveForDay(day,phase){
     });
     budget -= pick.cost;
     attempts++;
+  }
+  if(day===5&&phase==='afternoon'&&!result.some(m=>m.typeId==='boss')){
+    const boss=MONSTER_TYPES.boss;
+    if(boss){
+      result.push({
+        typeId:'boss',
+        name:boss.name,
+        hp:boss.hp, maxHp:boss.hp,
+        atk:boss.atk, ap:boss.ap,
+        cost:boss.cost, gold:boss.gold,
+        pos:null, dead:false, el:null,
+      });
+    }
   }
   return {monsters:result,remnant:budget,maxAlive,spawnSize};
 }
@@ -961,6 +980,7 @@ function spawnWaveForDay(day,phase){
     });
   }
   glog(`⚔️ 第${day}天${phase==='morning'?'早上':'下午'}：${G.monsters.length}只怪物出击！`);
+  syncMaxRoundForPhase();
 }
 // ========== SHAPE ROTATION ==========
 function rotCells(cells,dir){
@@ -1125,9 +1145,9 @@ function settleExplosions(){
         if(!slot.willExplode)return;
         report.chainSegments++;
         let dmg=explDmg(slot.layers);
-        const relicBonus=G.relics.reduce((sum,r)=>(r.relicId==='old_fuse'?sum+1:sum),0);
-        dmg+=relicBonus;
-        glog(`💥 ${EL[el]}${slot.layers}层引爆！范围伤害 ${dmg}${relicBonus>0?' (旧引信+'+relicBonus+')':''}`);
+        const spaceBonus=getSpaceExplosionBonus();
+        dmg+=spaceBonus;
+        glog(`💥 ${EL[el]}${slot.layers}层引爆！范围伤害 ${dmg}${spaceBonus>0?' (引信+'+spaceBonus+')':''}`);
         explCells(pos).forEach(tp=>{
           const m=monAt(tp);
           if(m){
@@ -1585,18 +1605,17 @@ function finishMonsters(){
       glog(`🛒 第${G.day}天中午·进入商店！`);
       G.phase='SHOP';
       openShop();
-    } else if(G.dayHalf===1){
-      // 中午商店后 → 下午波
-      G.dayHalf=2;
-      G.round=1; G.hitCount=0;
-      spawnWaveForDay(G.day,'afternoon');
-      G.phase='PLAYER';
-      glog(`☀️ 第${G.day}天下午·更多怪物来袭！`);
-    } else {
-      // 下午波结束 → 商店
-      glog(`🌙 第${G.day}天夜晚·进入商店！`);
-      G.phase='SHOP';
-      openShop();
+    } else if(G.dayHalf===2){
+      // 下午波结束 → 夜晚商店（Day5 下午 Boss 结束则通关）
+      if(G.day>=5){
+        G.phase='OVER';
+        showMsg('🏆 通关！撑过 Day5 Boss！');
+        glog('🏆 Run 通关！');
+      } else {
+        glog(`🌙 第${G.day}天夜晚·进入商店！`);
+        G.phase='SHOP';
+        openShop();
+      }
     }
   } else {
     G.phase='PLAYER'; G.hitCount=0; G.previewEvents=[];
@@ -1744,6 +1763,17 @@ function getPassiveAura(){
     }
   });
   return {buffHp,buffAtk,splitSprout};
+}
+function getSpaceExplosionBonus(){
+  let bonus=0;
+  (G.ownedUnits||[]).forEach(u=>{
+    if(!u.active)return;
+    const p=UNIT_DEFS[u.defId]?.passive;
+    if(p?.type!=='spaceExplosionBonus')return;
+    const li=Math.max(0,Math.min(2,(u.level||1)-1));
+    bonus+=(p.bonusByLevel||[])[li]||0;
+  });
+  return bonus;
 }
 function getOwnerDeathDrop(ownerHid){
   const u=getUnitByHeroId(ownerHid);
@@ -1983,7 +2013,6 @@ function genShop(){
     {type:'hp_potion',name:'❤️回复药',desc:'恢复一个英雄5点HP',cost:3},
     {type:'hp_potion2',name:'💖大回复药',desc:'恢复一个英雄10点HP',cost:5},
     {type:'coin_bag',name:'💰金币袋',desc:'下一天额外获得3金币',cost:2},
-    {type:'relic',relicId:'old_fuse',name:'🔥旧引信',desc:'空格十字爆炸伤害+1',cost:5},
   ];
   const shuffled=conTypes.sort(()=>ri(3)-1);
   for(let i=G.shopItems.consumables.length;i<maxCons;i++){
@@ -2051,11 +2080,31 @@ function freezeShopItem(itemId, category){
 
 function closeShop(){
   document.getElementById('so').style.display='none';
-  G.day++; G.dayHalf=0; G.wave++; G.round=1; G.hitCount=0; G.phase='PLAYER';
-  G.slots.forEach(s=>s.used=false);
   G.shopFrozen={units:new Set(),consumables:new Set()};
-  spawnWaveForDay(G.day,'morning');
-  glog(`⚔️ 第${G.day}天战斗开始！`);
+  G.slots.forEach(s=>s.used=false);
+  if(G.dayHalf===1){
+    G.dayHalf=2;
+    G.round=1; G.hitCount=0;
+    spawnWaveForDay(G.day,'afternoon');
+    G.phase='PLAYER';
+    glog(`☀️ 第${G.day}天下午·更多怪物来袭！`);
+  } else {
+    G.day++;
+    if(G.day>5){
+      G.phase='OVER';
+      showMsg('🏆 Run 结束！');
+      glog('🏆 Run 结束！');
+      syncUnitsToHeroes();
+      refreshUI();
+      return;
+    }
+    G.dayHalf=0;
+    G.wave++;
+    G.round=1; G.hitCount=0;
+    spawnWaveForDay(G.day,'morning');
+    G.phase='PLAYER';
+    glog(`⚔️ 第${G.day}天战斗开始！`);
+  }
   syncUnitsToHeroes();
   refreshUI();
 }
@@ -2427,7 +2476,7 @@ function buildPreviewGrid(){
     const{entity,elementField,preview}=cell;
     const isMonster=entity.type==='monster';
     const explodingEls=[];
-    const relicSpaceBonus=G.relics.reduce((s,r)=>(r.relicId==='old_fuse'?s+1:s),0);
+    const spaceBonus=getSpaceExplosionBonus();
     ELEMS.forEach(el=>{
       const ef=elementField[el]; if(ef.layers===0)return;
       if(isMonster){
@@ -2436,7 +2485,7 @@ function buildPreviewGrid(){
         preview.selfCellDamage[el]=dmg; preview.selfCellDamage.total+=dmg; preview.entityDamage+=dmg;
       } else {
         if(ef.layers>=G.explosionThreshold){
-          const expDmg=explDmg(ef.layers)+relicSpaceBonus;
+          const expDmg=explDmg(ef.layers)+spaceBonus;
           explodingEls.push({element:el,layers:ef.layers,damage:expDmg});
           preview.willExplode=true;
         }
@@ -3206,14 +3255,6 @@ function buyConsumable(itemId){
   } else if(item.type==='board_el'){
     G.backpack.push({...item,bpId:`bp_${G._bpCnt++}`});
     glog(`📦 ${item.name} 放入背包，可在战斗中使用`);
-  } else if(item.type==='relic'){
-    if(!G.relics.find(r=>r.relicId===item.relicId)){
-      G.relics.push({relicId:item.relicId,name:item.name,desc:item.desc});
-      glog(`🏆 获得遗物：${item.name}！${item.desc}`);
-    } else {
-      glog(`⚠️ 已拥有${item.name}，不能重复获得`);
-      G.gold+=item.cost; G.shopItems.consumables.splice(idx,0,item);
-    }
   } else if(item.type==='el_up'||item.type==='el_up2'||item.type==='el_up3'||item.type==='tier_up'){
     G.backpack.push({...item,bpId:`bp_${G._bpCnt++}`});
     glog(`📦 ${item.name} 放入背包，可在阵容区装备到行动槽`);

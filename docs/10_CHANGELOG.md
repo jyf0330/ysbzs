@@ -1,4 +1,11 @@
 
+## 2026-05-30 — 同步 ywh 工作流（Superpowers 执行链）
+
+### 工作流
+- `docs/00_AI_WORKFLOW_DETAILS.md` 对齐上游 `ywh-game`：新增 Superpowers 执行链、文档门禁分级、verification 铁律
+- 任务卡要求增加 TDD 清单、实施步骤、RED/GREEN 证据字段
+- subagent 默认：有 `writing-plans` 且任务独立时走 `subagent-driven-development`
+
 ## 2026-05-28 — 双层状态机 + 文字流程一对一实现
 
 ### 架构
@@ -44,7 +51,7 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
-| 2026-05-30 | feat | S2 成长与连锁反馈：`G.growth` 阶位（召/疗/连）驱动 spawn ATK、heal 量/ATK、召芽灵额外只数；`settleExplosions`→`G.lastSettle` + 完美回合 +3 金 + chainCount；HUD `#es` 成长阶位。测试 GROW1–GROW7 | index.html / test.js / docs/01/战斗系统.md §13 | node test.js 352/352 |
+| 2026-05-30 | feat | S3 Roguelite 壳：删遗物（G.relics/old_fuse）；火种灵 `spaceExplosionBonus` 承接引信；Day4–5 `DAY_ROUND_CONFIG`；Day5 下午 Boss 保底+通关；`closeShop` 修复中午→下午三阶段；城堡跨战回归 RUN1/3。测试 RUN1–5/SH1–3 + `playable_run.js` | index.html / test.js / playable_run.js | node test.js 361/361 |
 | 2026-05-30 | docs | 新增 Run 结构与城堡跨战系统 GDD（拍板：无独立地图/城堡实体格+HP/run≈5天HP100不回满/一天三阶段保留；城堡 HP 已事实跨战，待回归测试+Day5 Boss）；同步游戏概述 GDD 胜负/系统表/阶段表/待决、功能拆解 S3、ROADMAP、一天三阶段文档标“保留” | docs/01/Run结构与城堡跨战系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/一天三阶段系统设计.md | — |
 | 2026-05-30 | docs | 决策落盘「砍掉遗物·商店只卖英雄」（英雄被动/主动即遗物职能）：新增商店与英雄构筑系统 GDD（含遗物代码清理清单 old_fuse/G.relics）；游戏概述 GDD/功能拆解 S3/ROADMAP 去遗物；旧商店方案标遗物段落作废 | docs/01/商店与英雄构筑系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/商店系统策划方案.md | — |
 | 2026-05-30 | docs | 新增 S2 成长与连锁反馈系统 GDD（局内永久成长基于 engineStats、连锁飘字/完美回合、A4 风险对策、playtest sign-off 表、GROW backlog）；同步游戏概述 GDD 系统表/索引、功能拆解 S2 行 | docs/01/成长与连锁反馈系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md | — |

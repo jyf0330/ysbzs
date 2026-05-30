@@ -10,7 +10,7 @@
 
 - **游戏概述 GDD**、**召唤引擎系统 GDD**、**功能拆解**、**ROADMAP** 已按 deep-interview 修订。
 - 策划入口：`docs/01_游戏设计（策划主导）/游戏概述文档GDD.md` → `召唤引擎系统GDD.md`。
-- 自动化基线单一来源：`node test.js`，2026-05-30 验证为 352/352（S2 成长连锁 GROW1–7 + 水召唤引擎 ENG1–26）；Day1 走查 `node playable_day1.js`；入口文件只引用本文件，不复制具体数字。
+- 自动化基线单一来源：`node test.js`，2026-05-30 验证为 361/361（S3 RUN/SH + S2 GROW + ENG）；Day1 走查 `node playable_day1.js`、Run 走查 `node playable_run.js`；入口文件只引用本文件，不复制具体数字。
 
 ## 当前协作方式
 

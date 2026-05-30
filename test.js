@@ -2951,6 +2951,80 @@ group('TDD-S2成长与连锁反馈',()=>{
   });
 });
 
+group('TDD-S3 Run与商店',()=>{
+  test('RUN1:城堡HP跨天保留',()=>{
+    fresh();
+    G.playerCastle.hp=73;
+    G.enemyCastle.hp=41;
+    G.phase='SHOP';
+    G.day=1;
+    G.dayHalf=2;
+    closeShop();
+    assert.strictEqual(G.playerCastle.hp,73);
+    assert.strictEqual(G.enemyCastle.hp,41);
+    assert.strictEqual(G.day,2);
+  });
+  test('RUN2:Day5下午Boss战结束通关',()=>{
+    fresh();
+    G.day=5;
+    G.dayHalf=2;
+    syncMaxRoundForPhase();
+    spawnWaveForDay(5,'afternoon');
+    assert.ok(G.monsters.some(m=>m.typeId==='boss'),'Day5下午应含Boss');
+    G.monsters.forEach(m=>{m.dead=true;});
+    G.round=G.maxRound+1;
+    finishMonsters();
+    assert.strictEqual(G.phase,'OVER');
+  });
+  test('RUN3:我方城堡归零失败',()=>{
+    fresh();
+    damagePlayerCastle(100,'test');
+    assert.strictEqual(G.phase,'OVER');
+  });
+  test('RUN3:敌方城堡归零胜利',()=>{
+    fresh();
+    damageEnemyCastle(100,'test');
+    assert.strictEqual(G.phase,'OVER');
+  });
+  test('SH1:genShop不产出relic商品',()=>{
+    fresh();
+    G.phase='SHOP';
+    for(let i=0;i<20;i++){
+      genShop();
+      assert.ok(!G.shopItems.consumables.some(c=>c.type==='relic'),'不应有relic商品');
+    }
+  });
+  test('SH2:无遗物状态G.relics不存在',()=>{
+    fresh();
+    assert.strictEqual(typeof G.relics,'undefined');
+  });
+  test('SH3:火种灵被动空格爆炸+1',()=>{
+    fresh();
+    G.ownedUnits=[];
+    addOwnedUnit('ember_seed',{r:10,c:1});
+    syncUnitsToHeroes();
+    assert.strictEqual(getSpaceExplosionBonus(),1);
+    G.monsters=[{name:'靶',hp:20,maxHp:20,atk:1,ap:0,pos:{r:5,c:6},dead:false,el:null}];
+    addElementLayers({r:5,c:5},'fire',3);
+    settleExplosions();
+    assert.strictEqual(G.lastSettle.totalDamage,7,'空爆dmg6+被动1');
+  });
+  test('RUN4:Day4-5回合配置可读',()=>{
+    assert.strictEqual(DAY_ROUND_CONFIG[4].morning,3);
+    assert.strictEqual(DAY_ROUND_CONFIG[5].afternoon,4);
+  });
+  test('RUN5:closeShop中午进下午不增天',()=>{
+    fresh();
+    G.phase='SHOP';
+    G.day=2;
+    G.dayHalf=1;
+    closeShop();
+    assert.strictEqual(G.day,2);
+    assert.strictEqual(G.dayHalf,2);
+    assert.strictEqual(G.phase,'PLAYER');
+  });
+});
+
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

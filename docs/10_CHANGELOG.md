@@ -44,6 +44,7 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
+| 2026-05-29 | fix | 全屏布局修复：补 `#wrap` 容器；全屏样式改挂 `html:fullscreen`；棋盘用 `1fr` 网格等比缩放，侧栏固定宽+滚动，修复点全屏界面错乱 | index.html | 手动验证 |
 | 2026-05-29 | feat | 双城堡 + GDD 开局：①`G.playerCastle` 左下 (12,1)、`G.enemyCastle` 右上 (0,11)，打掉敌方获胜、我方被毁失败；②怪物寻路/攻击以英雄优先、可攻我方城堡，不再混淆单城堡；③英雄 (10,1)/(11,1)；④Day1 早上固定教学怪 (1,11) hp6、(0,10) hp10；⑤刷怪区统一右上 `getSpawnCells`；⑥元素十字波及可伤敌方城堡 | index.html / test.js | node test.js 319/319 |
 | 2026-05-29 | fix | 代码-文档-测试对齐：①`getSpawnCells(spawnSize,day,phase)` 恢复 Day1 教学区 + 按 spawnSize 右上角出生；②`MOVE_HERO` 与 `moveHero` 统一 `hasElementAt` 阻挡；③测试对齐一天三阶段（`dayHalf=2` 进夜晚商店）、预览夹具禁用未用槽、英雄初始坐标；④`case_k_013` 改为禁止穿越元素格；⑤更新 `技术架构总览`/`00_CURRENT_CONTEXT` 基线与 `render`/`refreshUI` 描述 | index.html / test.js / docs | node test.js 315/315 |
 | 2026-05-28 | refactor | 核心/视图边界收敛：①`render()` 移除内部 `recomputeCorePreview()` 调用，改为纯 View 函数（只创建 DOM，不计算规则）；②新增 `refreshUI()` 包装函数（recompute+render），供非 dispatchGameAction 路径的直接调用；③所有直接 `render()` 调用（initGame/doExplode/settleExplosions/selHero/endPlayerTurn/runMonsters/finishMonsters/shop 系列/onCell/showTT/inline onclick）统一替换为 `refreshUI()`；④`execAllHeroSlots` 的 `var` hack 拆为 `execAllHeroSlots_sync`（测试）/ `execAllHeroSlots_async`（浏览器）+ 统一分派函数；⑤`dispatchGameAction` 保留先 `recomputeCorePreview` 后纯 `render()` 的调用链，不重复计算 | index.html | node test.js 314/315（预存 1 项失败）|

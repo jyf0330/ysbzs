@@ -69,6 +69,9 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 }
 .etb:hover{background:#1976D2;}
 .etb:disabled{background:#21262d;color:#555;cursor:not-allowed;}
+.turn-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:stretch;}
+.turn-actions .etb{width:auto;flex:1;min-width:118px;margin-top:0;}
+.turn-actions #fsb{flex:0 0 auto;margin-left:0;padding:7px 10px;align-self:stretch;}
 
 /* Hero status */
 .hi{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
@@ -190,30 +193,66 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .cd-badge{display:inline-block;background:#21262d;border-radius:3px;padding:1px 5px;margin:1px 2px;font-size:10px;}
 .cd-empty{color:#555;font-size:10px;font-style:italic;}
 .cd-rule{font-size:9px;color:#6b7280;margin-top:2px;padding:3px 5px;background:#0d1117;border-radius:3px;border-left:2px solid #374151;}
-/* 全屏适配 */
-:fullscreen #wrap { max-width:none; width:100vw; height:100vh; }
-:-webkit-full-screen #wrap { max-width:none; width:100vw; height:100vh; }
-:fullscreen #board { height:calc(100vh - 100px); }
-:-webkit-full-screen #board { height:calc(100vh - 100px); }
-:fullscreen .cell { width:calc((100vw - 280px) / 13); height:calc((100vh - 140px) / 13); }
-:-webkit-full-screen .cell { width:calc((100vw - 280px) / 13); height:calc((100vh - 140px) / 13); }
-:fullscreen #rp { font-size:13px; }
-:-webkit-full-screen #rp { font-size:13px; }
+/* 全屏：html 根元素进全屏，棋盘与侧栏按比例缩放 */
+#wrap{width:100%;max-width:100%;display:flex;flex-direction:column;align-items:center;}
+.board-col{display:flex;flex-direction:column;align-items:center;}
+html:fullscreen,
+html:-webkit-full-screen{background:#0d1117;}
+html:fullscreen body,
+html:-webkit-full-screen body{
+  width:100vw;height:100vh;padding:10px 12px;overflow:hidden;
+  align-items:stretch;justify-content:flex-start;
+}
+html:fullscreen #wrap,
+html:-webkit-full-screen #wrap{
+  flex:1;width:100%;min-height:0;max-width:none;align-items:stretch;
+}
+html:fullscreen h1,
+html:-webkit-full-screen h1{font-size:1.05em;margin-bottom:6px;text-align:center;}
+html:fullscreen #gw,
+html:-webkit-full-screen #gw{
+  flex:1;min-height:0;width:100%;align-items:stretch;justify-content:center;
+}
+html:fullscreen .board-col,
+html:-webkit-full-screen .board-col{flex:1;min-width:0;justify-content:center;}
+html:fullscreen #board,
+html:-webkit-full-screen #board{
+  width:min(calc(100vh - 96px), calc(100vw - 320px));
+  height:min(calc(100vh - 96px), calc(100vw - 320px));
+  max-width:100%;
+  grid-template-columns:repeat(13,1fr);
+  grid-template-rows:repeat(13,1fr);
+}
+html:fullscreen .cell,
+html:-webkit-full-screen .cell{width:auto;height:auto;min-width:0;min-height:0;}
+html:fullscreen .hm,
+html:fullscreen .mm,
+html:fullscreen .em,
+html:-webkit-full-screen .hm,
+html:-webkit-full-screen .mm,
+html:-webkit-full-screen .em{width:92%;height:92%;}
+html:fullscreen #rp,
+html:-webkit-full-screen #rp{
+  width:300px;flex-shrink:0;max-height:100%;overflow-y:auto;font-size:13px;
+}
+html:fullscreen #log,
+html:-webkit-full-screen #log{flex:1;min-height:80px;max-height:28vh;}
 #fsb {
   background:#333; color:#ccc; border:1px solid #555; border-radius:4px;
   cursor:pointer; font-size:14px; padding:2px 8px; margin-left:4px;
 }
 #fsb:hover { background:#555; color:#fff; }
-:fullscreen #fsb { background:#222; border-color:#666; }
-:-webkit-full-screen #fsb { background:#222; border-color:#666; }
+html:fullscreen #fsb,
+html:-webkit-full-screen #fsb { background:#222; border-color:#666; }
 </style>
 </head>
 <body>
+<div id="wrap">
 <h1>⚡ 元素背包史 · Demo v0.1</h1>
 <div id="gw">
-  <div>
+  <div class="board-col">
     <div id="board"></div>
-    <div style="font-size:10px;color:#555;margin-top:4px;text-align:center;">
+    <div class="board-hint" style="font-size:10px;color:#555;margin-top:4px;text-align:center;">
       点击英雄→选中 | 再点空格→移动 | 选行动点后可调方向→点"使用"攻击 | 点元素格→查看引爆
     </div>
   </div>
@@ -223,9 +262,11 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
       <div id="ph">⚔️ 玩家回合</div>
       <div id="rc">第1波 · 第1/5小回合</div>
       <div id="gi">💰 <span id="gold">5</span> 金币</div>
-      <button class="etb" id="exa" onclick="execAllHeroSlots()" style="margin-right:4px">⚡ 一键执行</button>
+      <div class="turn-actions">
+      <button class="etb" id="exa" onclick="execAllHeroSlots()">⚡ 一键执行</button>
       <button class="etb" id="etb" onclick="endPlayerTurn()">结束回合 →</button>
-      <button id="fsb" onclick="toggleFullscreen()" title="全屏 (F11)">⛶</button>
+      <button id="fsb" onclick="toggleFullscreen()" title="全屏 (F11)">⛶ 全屏</button>
+      </div>
     </div>
     <!-- Heroes -->
     <div class="box">
@@ -246,6 +287,7 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
     <div class="box" id="cd" style="display:none">
     </div>
   </div>
+</div>
 </div>
 
 <!-- Shop -->

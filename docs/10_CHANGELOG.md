@@ -1,5 +1,12 @@
 
-## 2026-05-30 — 同步 ywh 工作流（Superpowers 执行链）
+## 2026-05-30 — S3 P1 结算 UI + 构筑被动
+
+### 游戏
+- Run 结束：`buildRunEndVM` / `showRunEnd` / `restartRun()`，胜败统计（天/金/城堡/引擎/成长）
+- 构筑被动：泉泉灵 `healAmpBonus`、岩岩灵 `castleReduce`、风风灵 `advHitBonus`
+- 城堡失败 / Day5 通关 / 全灭统一走 `showRunEnd`
+- 测试 RUN6–7、SH4–6；基线 **366/366**
+
 
 ### 工作流
 - `docs/00_AI_WORKFLOW_DETAILS.md` 对齐上游 `ywh-game`：新增 Superpowers 执行链、文档门禁分级、verification 铁律

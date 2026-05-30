@@ -43,6 +43,7 @@ renderShop  = ()=>{};
 glog        = ()=>{};
 let _lastMsg = '';
 showMsg = t => { _lastMsg = t; };
+showRunEnd = () => { _lastMsg = buildRunEndVM().title; };
 
 // ── 测试运行器 ─────────────────────────────────────────────────
 let pass=0, fail=0;
@@ -193,7 +194,7 @@ group('城堡系统', ()=>{
     G.playerCastle.hp=0;
     checkGameOver();
     assert.strictEqual(G.phase,'OVER');
-    assert.ok(_lastMsg.includes('失败')||_lastMsg.includes('我方'));
+    assert.ok(_lastMsg.includes('失败')||_lastMsg.includes('我方')||_lastMsg.includes('结束'));
   });
   test('不可移动到城堡格', ()=>{
     fresh();
@@ -3022,6 +3023,62 @@ group('TDD-S3 Run与商店',()=>{
     assert.strictEqual(G.day,2);
     assert.strictEqual(G.dayHalf,2);
     assert.strictEqual(G.phase,'PLAYER');
+  });
+  test('RUN6:buildRunEndVM通关统计',()=>{
+    fresh();
+    G.runVictory=true;
+    G.day=5;
+    G.gold=42;
+    G.playerCastle.hp=67;
+    G.engineStats={summonCount:10,healCount:8,chainCount:5,perfectCount:2};
+    G.growth={summonTier:3,healTier:2,chainTier:1};
+    const vm=buildRunEndVM();
+    assert.strictEqual(vm.win,true);
+    assert.strictEqual(vm.gold,42);
+    assert.strictEqual(vm.castleHp,67);
+    assert.strictEqual(vm.summonCount,10);
+    assert.ok(vm.title.includes('通关'));
+  });
+  test('RUN7:buildRunEndVM失败',()=>{
+    fresh();
+    G.runVictory=false;
+    G.playerCastle.hp=0;
+    const vm=buildRunEndVM();
+    assert.strictEqual(vm.win,false);
+    assert.ok(vm.title.includes('结束')||vm.title.includes('失败'));
+  });
+  test('SH4:泉泉灵治疗加成',()=>{
+    fresh();
+    G.ownedUnits=[];
+    addOwnedUnit('spring_sprite',{r:10,c:1});
+    syncUnitsToHeroes();
+    assert.strictEqual(getHealAmpBonus(),1);
+    const s=spawnSummon('ha',{r:8,c:4},{hp:10,maxHp:10});
+    s.hp=1;
+    healSummon(s);
+    assert.strictEqual(s.hp,4,'基础2+泉1+阶位0治疗量3');
+  });
+  test('SH5:岩岩灵城堡减伤',()=>{
+    fresh();
+    G.ownedUnits=[];
+    addOwnedUnit('pebble_guard',{r:10,c:1});
+    syncUnitsToHeroes();
+    G.playerCastle.hp=100;
+    damagePlayerCastle(3,'test');
+    assert.strictEqual(G.playerCastle.hp,98,'3-1减伤');
+    damagePlayerCastle(1,'test');
+    assert.strictEqual(G.playerCastle.hp,97,'最低仍扣1');
+  });
+  test('SH6:风风灵克制额外伤害',()=>{
+    fresh();
+    G.ownedUnits=[];
+    addOwnedUnit('breeze_sprite',{r:10,c:1});
+    syncUnitsToHeroes();
+    assert.strictEqual(getAdvHitBonus(),1);
+    G.monsters=[{name:'火怪',hp:30,maxHp:30,atk:1,ap:0,pos:{r:5,c:6},dead:false,el:'fire'}];
+    addElementLayers({r:5,c:6},'water',2);
+    settleExplosions();
+    assert.strictEqual(G.lastSettle.totalDamage,7,'dmg3×2+风1');
   });
 });
 

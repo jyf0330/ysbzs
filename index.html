@@ -313,7 +313,8 @@ html:-webkit-full-screen #fsb { background:#222; border-color:#666; }
 <!-- Message -->
 <div id="msg">
   <div id="msgt"></div>
-  <button onclick="document.getElementById('msg').style.display='none'">确认</button>
+  <div id="msgd" style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.6;text-align:left;"></div>
+  <button onclick="restartRun()">再来一局</button>
 </div>
 
 <!-- Assign slot modal -->
@@ -567,6 +568,7 @@ const UNIT_DEFS = {
   },
   spring_sprite: {
     id:'spring_sprite', name:'泉泉灵', element:'water', grade:'青铜', priceTier:1, tags:['水','治疗','召唤'], tier:1, cost:2,
+    passive:{type:'healAmpBonus',bonusByLevel:[1,1,2]},
     levels: {
       1:{ hp:18, slots:[
         {skill:'healSummons', sn:12, dir:'right', tier:1},
@@ -607,6 +609,7 @@ const UNIT_DEFS = {
   },
   pebble_guard: {
     id:'pebble_guard', name:'岩岩灵', element:'earth', grade:'青铜', priceTier:2, tags:['土','前排','防御','挡路'], tier:1, cost:3,
+    passive:{type:'castleReduce',reductionByLevel:[1,1,2]},
     levels: {
       1:{ hp:30, slots:[
         {el:'earth', sn:4, dir:'right', tier:1},
@@ -711,6 +714,7 @@ const UNIT_DEFS = {
   },
   breeze_sprite: {
     id:'breeze_sprite', name:'风风灵', element:'wind', grade:'白银', priceTier:2, tags:['风','侧击','机动','清散怪'], tier:1, cost:4,
+    passive:{type:'advHitBonus',bonusByLevel:[1,2,3]},
     levels: {
       1:{ hp:18, slots:[
         {el:'wind', sn:7, dir:'right', tier:1},
@@ -808,8 +812,10 @@ function enemyCastleAt(pos){
 function castleAt(pos){return playerCastleAt(pos)||enemyCastleAt(pos);}
 function damagePlayerCastle(dmg,src){
   if(!G.playerCastle||G.playerCastle.hp<=0)return;
-  G.playerCastle.hp=Math.max(0,G.playerCastle.hp-dmg);
-  glog(`🏰 我方城堡 ${src} -${dmg}（${G.playerCastle.hp}/${G.playerCastle.maxHp}）`);
+  const red=getCastleDamageReduce();
+  const td=Math.max(1,(dmg||0)-red);
+  G.playerCastle.hp=Math.max(0,G.playerCastle.hp-td);
+  glog(`🏰 我方城堡 ${src} -${td}${red>0?' (护城-'+red+')':''}（${G.playerCastle.hp}/${G.playerCastle.maxHp}）`);
   if(G.playerCastle.hp<=0)checkGameOver();
 }
 function damageEnemyCastle(dmg,src){
@@ -853,6 +859,7 @@ function initGame(){
     engineStats:{summonCount:0,healCount:0,chainCount:0,perfectCount:0},
     growth:{summonTier:0,healTier:0,chainTier:0},
     lastSettle:null,
+    runVictory:null,
     elementCells:{},
     explosionThreshold:3,
     previewEvents:[],
@@ -1105,7 +1112,7 @@ function recomputeGrowth(){
   G.growth.chainTier=Math.floor((es.chainCount||0)/3);
 }
 function calcHealAmount(){
-  return 2+Math.floor((G.engineStats?.healCount||0)/4);
+  return 2+Math.floor((G.engineStats?.healCount||0)/4)+getHealAmpBonus();
 }
 function calcHealAtkGain(){
   return 1+Math.floor((G.engineStats?.healCount||0)/8);
@@ -1134,12 +1141,14 @@ function settleExplosions(){
         report.chainSegments++;
         const dmg=explDmg(slot.layers);
         const emult=monHere.el&&ADV[el]===monHere.el?2:1;
+        const advBonus=emult===2?getAdvHitBonus():0;
+        const td=dmg*emult+advBonus;
         if(emult===2)report.advHits++;
-        report.totalDamage+=dmg*emult;
+        report.totalDamage+=td;
         if(emult===2)glog(`⚡ 元素克制 ×2！`);
-        glog(`⚔️ ${EL[el]}${slot.layers}层→${monHere.name} 单体 -${dmg*emult}`);
+        glog(`⚔️ ${EL[el]}${slot.layers}层→${monHere.name} 单体 -${td}`);
         const wasAlive=!monHere.dead;
-        dealDmg(monHere,dmg*emult,`${EL[el]}元素结算`);
+        dealDmg(monHere,td,`${EL[el]}元素结算`);
         if(wasAlive&&monHere.dead)report.killedCount++;
       } else {
         if(!slot.willExplode)return;
@@ -1153,10 +1162,12 @@ function settleExplosions(){
           if(m){
             let emult=1;
             if(m.el&&ADV[el]===m.el){emult=2;report.advHits++;}
-            report.totalDamage+=dmg*emult;
+            const advBonus=emult===2?getAdvHitBonus():0;
+            const td=dmg*emult+advBonus;
+            report.totalDamage+=td;
             if(emult===2)glog(`⚡ 元素克制 ×2！`);
             const wasAlive=!m.dead;
-            dealDmg(m,dmg*emult,`${EL[el]}元素结算`);
+            dealDmg(m,td,`${EL[el]}元素结算`);
             if(wasAlive&&m.dead)report.killedCount++;
           }
           else if(enemyCastleAt(tp)){
@@ -1608,9 +1619,9 @@ function finishMonsters(){
     } else if(G.dayHalf===2){
       // 下午波结束 → 夜晚商店（Day5 下午 Boss 结束则通关）
       if(G.day>=5){
+        G.runVictory=true;
         G.phase='OVER';
-        showMsg('🏆 通关！撑过 Day5 Boss！');
-        glog('🏆 Run 通关！');
+        showRunEnd();
       } else {
         glog(`🌙 第${G.day}天夜晚·进入商店！`);
         G.phase='SHOP';
@@ -1628,9 +1639,22 @@ function finishMonsters(){
 
 function checkGameOver(){
   const allDead=Object.values(G.heroes).every(h=>h.hp<=0);
-  if(allDead){G.phase='OVER';showMsg('💀 游戏结束！所有英雄已倒下。');}
-  if(G.playerCastle&&G.playerCastle.hp<=0){G.phase='OVER';showMsg('💀 失败！我方城堡已被摧毁！');}
-  if(G.enemyCastle&&G.enemyCastle.hp<=0){G.phase='OVER';showMsg('🏰 胜利！敌方城堡已被摧毁！');}
+  if(allDead){
+    G.runVictory=false;
+    G.phase='OVER';
+    showRunEnd();
+    return;
+  }
+  if(G.playerCastle&&G.playerCastle.hp<=0){
+    G.runVictory=false;
+    G.phase='OVER';
+    showRunEnd();
+    return;
+  }
+  if(G.enemyCastle&&G.enemyCastle.hp<=0){
+    G.phase='OVER';
+    showMsg('🏰 胜利！敌方城堡已被摧毁！');
+  }
 }
 
 // ========== UNIT MANAGEMENT ==========
@@ -1770,6 +1794,39 @@ function getSpaceExplosionBonus(){
     if(!u.active)return;
     const p=UNIT_DEFS[u.defId]?.passive;
     if(p?.type!=='spaceExplosionBonus')return;
+    const li=Math.max(0,Math.min(2,(u.level||1)-1));
+    bonus+=(p.bonusByLevel||[])[li]||0;
+  });
+  return bonus;
+}
+function getHealAmpBonus(){
+  let bonus=0;
+  (G.ownedUnits||[]).forEach(u=>{
+    if(!u.active)return;
+    const p=UNIT_DEFS[u.defId]?.passive;
+    if(p?.type!=='healAmpBonus')return;
+    const li=Math.max(0,Math.min(2,(u.level||1)-1));
+    bonus+=(p.bonusByLevel||[])[li]||0;
+  });
+  return bonus;
+}
+function getCastleDamageReduce(){
+  let red=0;
+  (G.ownedUnits||[]).forEach(u=>{
+    if(!u.active)return;
+    const p=UNIT_DEFS[u.defId]?.passive;
+    if(p?.type!=='castleReduce')return;
+    const li=Math.max(0,Math.min(2,(u.level||1)-1));
+    red+=(p.reductionByLevel||[])[li]||0;
+  });
+  return red;
+}
+function getAdvHitBonus(){
+  let bonus=0;
+  (G.ownedUnits||[]).forEach(u=>{
+    if(!u.active)return;
+    const p=UNIT_DEFS[u.defId]?.passive;
+    if(p?.type!=='advHitBonus')return;
     const li=Math.max(0,Math.min(2,(u.level||1)-1));
     bonus+=(p.bonusByLevel||[])[li]||0;
   });
@@ -2091,9 +2148,9 @@ function closeShop(){
   } else {
     G.day++;
     if(G.day>5){
+      G.runVictory=true;
       G.phase='OVER';
-      showMsg('🏆 Run 结束！');
-      glog('🏆 Run 结束！');
+      showRunEnd();
       syncUnitsToHeroes();
       refreshUI();
       return;
@@ -3321,7 +3378,47 @@ function glog(t){
   while(el.children.length>60)el.removeChild(el.firstChild);
 }
 
-function showMsg(t){document.getElementById('msgt').textContent=t;document.getElementById('msg').style.display='block';}
+function showMsg(t){document.getElementById('msgt').textContent=t;document.getElementById('msgd').textContent='';document.getElementById('msg').style.display='block';}
+
+function buildRunEndVM(){
+  const win=!!G.runVictory;
+  const es=G.engineStats||{};
+  const gr=G.growth||{};
+  return{
+    win,
+    title:win?'🏆 Run 通关！':'💀 Run 结束',
+    day:G.day||1,
+    gold:G.gold||0,
+    castleHp:G.playerCastle?.hp||0,
+    summonCount:es.summonCount||0,
+    healCount:es.healCount||0,
+    chainCount:es.chainCount||0,
+    perfectCount:es.perfectCount||0,
+    summonTier:gr.summonTier||0,
+    healTier:gr.healTier||0,
+    chainTier:gr.chainTier||0,
+  };
+}
+function showRunEnd(){
+  if(G.runVictory==null)G.runVictory=false;
+  const vm=buildRunEndVM();
+  const lines=[
+    vm.win?'恭喜通关 Day5 Boss 战！':'本次 Run 未能通关。',
+    `天数 ${vm.day} · 金币 ${vm.gold} · 城堡 ${vm.castleHp} HP`,
+    `引擎 召${vm.summonCount} 疗${vm.healCount} 连${vm.chainCount} 完美${vm.perfectCount}`,
+    `成长 召T${vm.summonTier} 疗T${vm.healTier} 连T${vm.chainTier}`,
+  ];
+  document.getElementById('msgt').textContent=vm.title;
+  document.getElementById('msgd').textContent=lines.join('\n');
+  document.getElementById('msg').style.display='block';
+  glog(vm.title);
+  refreshUI();
+}
+function restartRun(){
+  document.getElementById('msg').style.display='none';
+  document.getElementById('msgd').textContent='';
+  initGame();
+}
 
 // ========== START ==========
 initGame();

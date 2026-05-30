@@ -187,15 +187,41 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 
 /* ===== DEBUG PANEL ===== */
 #debug-panel{
-  display:none;position:fixed;left:8px;bottom:8px;width:320px;max-height:42vh;
-  overflow-y:auto;background:rgba(13,17,23,0.95);border:1px solid #f0a500;
-  border-radius:8px;padding:8px;font-size:10px;line-height:1.45;z-index:300;
-#debug-panel.dragging{cursor:grabbing;user-select:none;}
-  font-family:ui-monospace,monospace;color:#cbd5e1;
+  display:none;position:fixed;left:12px;bottom:12px;width:360px;max-height:55vh;
+  overflow-y:auto;background:#161b22;border:2px solid #f0a500;
+  border-radius:10px;font-size:10px;line-height:1.5;z-index:300;
+  font-family:system-ui,-apple-system,sans-serif;color:#cbd5e1;
 }
-#debug-panel .dbg-title{color:#f0a500;font-weight:bold;margin-bottom:4px;font-size:11px;}
-#debug-panel .dbg-sec{margin-top:6px;border-top:1px solid #21262d;padding-top:4px;}
+#debug-panel .dbg-bar{
+  position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:4px;
+  height:26px;padding:0 8px;background:#1e3a5f;border-bottom:1px solid #30363d;
+  border-radius:8px 8px 0 0;
+  cursor:grab;user-select:none;font-size:11px;font-weight:600;color:#f0a500;
+}
+#debug-panel .dbg-bar.dragging{cursor:grabbing;background:#162d50;}
+#debug-panel .dbg-sec{
+  margin:3px 8px;padding:4px 0;border-bottom:1px solid #21262d;line-height:1.5;
+}
+#debug-panel .dbg-sec:last-child{border-bottom:none;}
+#debug-panel .dbg-lb{color:#64748b;font-weight:500;}
+#debug-panel .dbg-lb{color:#64748b;font-weight:500;display:block;margin-bottom:2px;}
 #debug-panel .dbg-k{color:#64748b;}
+#debug-panel .dbg-cell{background:#0d1117;border-radius:4px;padding:4px 6px;margin:2px 0;}
+#debug-panel .dbg-el{border-radius:2px;padding:0 3px;display:inline-block;}
+#debug-panel .dbg-dmg{color:#ff6060;}
+#debug-panel .dbg-thr{color:#c084fc;}
+#debug-panel .dbg-exp{color:#f59e0b;}
+#debug-panel .dbg-src{color:#60a5fa;}
+#debug-panel .dbg-src-b{color:#4ade80;}
+#debug-panel .dbg-slot{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0;}
+#debug-panel .dbg-slot-item{background:#0d1117;border-radius:3px;padding:2px 5px;font-size:9px;white-space:nowrap;}
+#debug-panel .dbg-log{background:#0d1117;border-radius:4px;padding:4px 6px;max-height:120px;overflow-y:auto;font-size:9px;line-height:1.6;}
+#debug-panel .dbg-mon-list{display:flex;flex-wrap:wrap;gap:2px;margin:2px 0;}
+#debug-panel .dbg-mon-item{background:#0d1117;border-radius:3px;padding:2px 4px;font-size:9px;}
+#debug-panel .dbg-eng{display:flex;gap:6px;flex-wrap:wrap;font-size:9px;}
+#debug-panel .dbg-eng-item{background:#0d1117;border-radius:3px;padding:2px 5px;}
+#debug-panel .dbg-detail{font-size:9px;line-height:1.5;color:#94a3b8;}
+#debug-panel .dbg-arrow{color:#64748b;}
 
 /* Assign popup */
 #ap-modal{
@@ -2872,6 +2898,7 @@ function buildReplayFinalResult(){
     playerCastleHp:G.playerCastle?.hp,
     enemyCastleHp:G.enemyCastle?.hp,
     engineStats:{...(G.engineStats||{})},
+    growth:{...(G.growth||{})},
   };
 }
 
@@ -2947,127 +2974,200 @@ function isDebugMode(){
 }
 
 function buildDebugPanelVM(){
-  const sel=G.selectedCell;
-  let selectedCell=null;
+  var sel=G.selectedCell;
+  var selectedCell=null;
   if(sel){
-    const key=`${sel.r},${sel.c}`;
-    const ec=G.elementCells[key];
-    const pg=G.coreSnapshot?.previewGrid?.grid?.[key];
+    var key=sel.r+','+sel.c;
+    var ec=G.elementCells[key];
+    var pg=G.coreSnapshot?.previewGrid?.grid?.[key];
     selectedCell={
-      coord:key,
-      board:G.board[sel.r]?.[sel.c],
-      elements:ec?{fire:ec.fire.layers,water:ec.water.layers,wind:ec.wind.layers,earth:ec.earth.layers}:null,
-      previewDmg:pg?.preview?.selfCellDamage??pg?.preview?.totalDamage??null,
+      r:sel.r,c:sel.c,coord:key,
       entity:pg?.entity||null,
+      elementField:pg?.elementField||null,
+      entityDamage:pg?.preview?.entityDamage||0,
+      isMonster:pg?.entity?.type==='monster',
+      selfDmg:pg?.preview?.selfCellDamage?.total||0,
+      splashDmg:pg?.preview?.splashDamage?.total||0,
+      selfByEl:pg?.preview?.selfCellDamage?{fire:pg.preview.selfCellDamage.fire||0,water:pg.preview.selfCellDamage.water||0,wind:pg.preview.selfCellDamage.wind||0,earth:pg.preview.selfCellDamage.earth||0}:{},
+      willExplode:!!pg?.preview?.willExplode,
+      explosionDamage:pg?.preview?.explosionDamage||0,
+      splashTargets:pg?.preview?.splashTargets||[],
+      threats:pg?.preview?.threatFromMonsters||[],
+      incomingActions:pg?.preview?.incomingActions||[],
     };
   }
   return {
-    phase:G.phase, day:G.day, dayHalf:G.dayHalf, round:G.round, maxRound:G.maxRound,
+    phase:G.phase,day:G.day,dayHalf:G.dayHalf,round:G.round,maxRound:G.maxRound,wave:G.wave,
+    gold:G.gold,
     selectedCell,
-    slots:G.slots.map((s,i)=>({i,el:s.el,used:!!s.used,hid:s.hid,skill:s.skill||null,sn:s.sn})),
+    slots:G.slots.map(function(s,i){return{i:i,el:s.el,used:!!s.used,hid:s.hid,skill:s.skill||null,sn:s.sn,dir:s.dir};}),
     actionLogTail:(G.actionLog||[]).slice(-8),
-    monsters:G.monsters.filter(m=>!m.dead).map(m=>({
-      name:m.name,pos:{...m.pos},hp:m.hp,
-      nextWarn:(G.monWarn||[]).find(w=>w.r===m.pos.r&&w.c===m.pos.c)||null,
-    })),
+    monsters:G.monsters.filter(function(m){return!m.dead;}).map(function(m){
+      return{name:m.name,pos:{r:m.pos.r,c:m.pos.c},hp:m.hp,nextWarn:(G.monWarn||[]).find(function(w){return w.r===m.pos.r&&w.c===m.pos.c;})||null};
+    }),
     engineStats:{...(G.engineStats||{})},
+    growth:{summonTier:G.growth?.summonTier||0,healTier:G.growth?.healTier||0,chainTier:G.growth?.chainTier||0},
   };
 }
-function buildDebugCellHtml(){
-  var E=['fire','water','wind','earth'];
-  var EC={fire:'火',water:'水',wind:'风',earth:'土'};
-  var sel=G.selectedCell;
-  if(!sel)return'<span class="dbg-k">（点击格子查看）</span>';
-  var r=sel.r,c=sel.c,key=r+','+c;
-  var pg=G.coreSnapshot?.previewGrid?.grid?.[key];
-  var ec=G.elementCells[key]||{};
-  var mon=G.monsters.find(function(m){return!m.dead&&m.pos.r===r&&m.pos.c===c;});
-  if(mon){
-    var elNm=EC[mon.el]||'',hp='<span style="color:#cbd5e1">'+mon.hp+'/'+mon.maxHp+'</span>';
-    var s='<span style="color:#f8d56b">'+(elNm||'?')+'</span> '+hp+' 攻'+mon.atk;
-    var incoming=pg?.preview?.incomingActions||[];
-    if(incoming.length>0){
-      var ord={}; incoming.forEach(function(a){if(!ord[a.element])ord[a.element]=[]; for(var i=0;i<a.amount;i++)ord[a.element].push(a.heroId==='ha'?'A':'B');});
-      var parts=E.filter(function(el){return ord[el]&&ord[el].length>0;}).map(function(el){return EC[el]+ord[el].join('');});
-      var total=0; E.forEach(function(el){var l=pg?.elementField?.[el]?.layers||0; if(l>0)total+=l*(l+1)/2;});
-      s+='，结算 '+parts.join(' ');
-      if(total>0){s+=' <span style="color:#ff6060">-'+total+'</span>';}
-      if(pg?.preview?.entityDamage>=mon.hp&&mon.hp>0)s+='<span style="color:#ff6060">☠</span>';
-    }
-    return s;
-  }
-  var hero=Object.values(G.heroes).find(function(h){return h.pos.r===r&&h.pos.c===c;});
-  if(hero){
-    var lb=hero.id==='ha'?'A':'B';
-    var s='<span style="color:#60a5fa">'+lb+'</span> '+hero.name+' <span style="color:#cbd5e1">'+hero.hp+'/'+hero.maxHp+'</span>';
-    var incoming=pg?.preview?.incomingActions||[];
-    if(incoming.length>0){
-      var ord={}; incoming.forEach(function(a){if(!ord[a.element])ord[a.element]=[]; for(var i=0;i<a.amount;i++)ord[a.element].push(a.heroId==='ha'?'A':'B');});
-      var parts=E.filter(function(el){return ord[el]&&ord[el].length>0;}).map(function(el){return EC[el]+ord[el].join('');});
-      s+='，身上 '+parts.join(' ')+' <span style="color:#94a3b8">暂存</span>';
-    }
-    var thr=pg?.preview?.threatFromMonsters||[];
-    if(thr.length>0)s+='，受击 '+thr.map(function(t){return t.label+':<span style="color:#ff6060">-'+t.dmg+'</span>';}).join(' ');
-    return s;
-  }
-  var incoming=pg?.preview?.incomingActions||[];
-  if(incoming.length>0){
-    var ord={}; incoming.forEach(function(a){if(!ord[a.element])ord[a.element]=[]; for(var i=0;i<a.amount;i++)ord[a.element].push(a.heroId==='ha'?'A':'B');});
-    var parts=E.filter(function(el){return ord[el]&&ord[el].length>0;}).map(function(el){
-      var l=pg?.elementField?.[el]?.layers||0;
-      var ex=l>=G.explosionThreshold?'<span style="color:#f59e0b">💥'+l*(l+1)/2+'</span>':'';
-      return EC[el]+ord[el].join('')+ex;
-    });
-    return'空，回合结束 '+parts.join(' ');
-  }
-  var has=E.some(function(el){return(ec[el]?.layers||0)>0;});
-  if(has){
-    var parts=E.filter(function(el){return(ec[el]?.layers||0)>0;}).map(function(el){
-      var l=ec[el]?.layers||0; return EC[el]+l+'层';
-    });
-    return'空，回合结束 '+parts.join(' ');
-  }
-  return'<span class="dbg-k">空</span>';
-}
-
-
 function renderDebugPanel(){
   if(typeof global!=='undefined'&&global.__TEST__)return;
-  const el=document.getElementById('debug-panel');
+  var el=document.getElementById('debug-panel');
   if(!el)return;
-  if(!isDebugMode()){ el.style.display='none'; el.setAttribute('aria-hidden','true'); return; }
-  el.style.display='block'; el.setAttribute('aria-hidden','false');
-
-  // 拖拽 debug 面板
-  var bar=el.querySelector('.dbg-title');
-  if(bar&&!bar._dragInited){
-    bar._dragInited=1;bar.style.cursor='grab';
-    var ox=0,oy=0,on=0;
-    bar.addEventListener('mousedown',function(e){
-      on=1;ox=e.clientX-el.offsetLeft;oy=e.clientY-el.offsetTop;
-      el.classList.add('dragging');e.preventDefault();
+  if(!isDebugMode()){el.style.display='none';el.setAttribute('aria-hidden','true');return;}
+  el.style.display='block';el.setAttribute('aria-hidden','false');
+  var vm=buildDebugPanelVM();
+  var EC={fire:'火',water:'水',wind:'风',earth:'土'};
+  var ELIC={fire:'#f97316',water:'#0ea5e9',wind:'#a855f7',earth:'#84cc16'};
+  var ES=['fire','water','wind','earth'];
+  // ── 顶部状态条 ──
+  var stateHtml='<span class="dbg-k">phase</span> '+vm.phase
+    +' <span class="dbg-k">D</span>'+vm.day+'<span class="dbg-k">h</span>'+vm.dayHalf
+    +' <span class="dbg-k">R</span>'+vm.round+'/'+vm.maxRound
+    +' <span class="dbg-k">波</span>'+vm.wave
+    +' <span class="dbg-k">金币</span>'+vm.gold;
+  // ── 格子区 ──
+  var cellHtml='';
+  if(vm.selectedCell){
+    var sc=vm.selectedCell;
+    // 头部：坐标
+    cellHtml='<div><span class="dbg-lb" style="display:inline">📍</span> ['+sc.r+','+sc.c+']';
+    // 实体
+    var ent=sc.entity;
+    if(ent){
+      if(ent.type==='monster'){
+        var dieTag=(sc.entityDamage>=ent.hp&&ent.hp>0)?'<span class="dbg-dmg"> ☠</span>':'';
+        cellHtml+=' <span class="dbg-el" style="color:#fca5a5;background:#7f1d1d">👾'+ent.name+'</span>'
+          +' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp
+          +' <span class="dbg-k">攻</span>'+ent.atk
+          +(ent.el?' <span class="dbg-el" style="color:'+ELIC[ent.el]+'">'+EC[ent.el]+'</span>':'')
+          +(sc.entityDamage>0?' <span class="dbg-dmg">-'+sc.entityDamage+dieTag+'</span>':'');
+      }else if(ent.type==='hero'){
+        var c=ent.id==='ha'?'#60a5fa':'#4ade80';
+        cellHtml+=' <span style="color:'+c+'">'+ent.id.toUpperCase()+'</span>'
+          +' <span class="dbg-k">'+ent.name+'</span>'
+          +' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp;
+      }else if(ent.type==='summon'){
+        cellHtml+=' <span class="dbg-el" style="color:#bae6fd;background:rgba(14,165,233,0.25)">💧'+ent.name+'</span>'
+          +' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp+' <span class="dbg-k">攻</span>'+(ent.atk||0);
+      }else if(ent.type==='player_castle'||ent.type==='enemy_castle'){
+        cellHtml+=' 🏰'+ent.name+' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp;
+      }
+    }
+    // 元素场——按元素显示 boardLayers / addedLayers / layers
+    ES.forEach(function(el){
+      var ef=sc.elementField&&sc.elementField[el];
+      if(!ef||!ef.layers)return;
+      var c=ELIC[el];
+      var boardStr=ef.boardLayers>0?ef.boardLayers:'';
+      var addedStr=ef.addedLayers>0?'<span class="dbg-dmg">+'+ef.addedLayers+'</span>':'';
+      if(boardStr||addedStr)cellHtml+=' <span class="dbg-el" style="color:'+c+';background:rgba(0,0,0,0.3)">'
+        +EC[el]+'<span class="dbg-k">'+(boardStr||'0')+'</span>'+addedStr
+        +'<span class="dbg-arrow">→</span>'+ef.layers+'层'
+        +'<span class="dbg-detail"> '+ef.damage+'伤</span>'
+        +'</span>';
     });
-    document.addEventListener('mousemove',function(e){
-      if(!on)return;
-      el.style.left=Math.max(0,Math.min(window.innerWidth-el.offsetWidth,e.clientX-ox))+'px';
-      el.style.top=Math.max(0,Math.min(window.innerHeight-el.offsetHeight,e.clientY-oy))+'px';
+    // 伤害/结算
+    if(sc.isMonster){
+      var sd=sc.selfDmg||0;
+      var sp=sc.splashDmg||0;
+      if(sd>0||sp>0)cellHtml+='<br> <span class="dbg-detail">单体 <span class="dbg-dmg">'+sd+'</span>'
+        +(sp>0?' 波及 <span class="dbg-dmg">'+sp+'</span>':'')
+        +' 总 <span class="dbg-dmg">'+(sd+sp)+'</span></span>';
+      // 按元素分单体伤害来源
+      var selfByEl=sc.selfByEl||{};
+      var parts=ES.filter(function(el){return selfByEl[el]>0;}).map(function(el){
+        return'<span style="color:'+ELIC[el]+'">'+EC[el]+'<span class="dbg-dmg">-'+selfByEl[el]+'</span></span>';
+      });
+      if(parts.length>0)cellHtml+='<br> <span class="dbg-detail">分元素 '+parts.join(' ')+'</span>';
+    }
+    // 空格爆炸
+    if(sc.willExplode){
+      cellHtml+='<br> <span class="dbg-exp">💥 十字引爆 '+sc.explosionDamage+'伤</span>'
+        +' <span class="dbg-detail">波及 '+sc.splashTargets.join(' ')+'</span>';
+    }
+    // 威胁（英雄格）
+    if(sc.threats.length>0){
+      cellHtml+='<br> <span class="dbg-thr">⚠ </span>';
+      sc.threats.forEach(function(t,i){
+        if(i>0)cellHtml+=' ';
+        cellHtml+='<span class="dbg-detail">'+t.label+' <span class="dbg-dmg">-'+t.dmg+'</span></span>';
+      });
+    }
+    // 行动来源——按英雄分组显示
+    var byHero={};
+    sc.incomingActions.forEach(function(a){
+      if(!byHero[a.heroId])byHero[a.heroId]={items:[],total:0};
+      byHero[a.heroId].items.push(a);
+      byHero[a.heroId].total+=a.amount;
     });
-    document.addEventListener('mouseup',function(){on=0;el.classList.remove('dragging');});
+    cellHtml+='<br> <span class="dbg-lb" style="display:inline;font-size:8px">来源</span>';
+    Object.keys(byHero).forEach(function(hid){
+      var ha=byHero[hid];
+      var c=hid==='ha'?'#60a5fa':'#4ade80';
+      cellHtml+=' <span style="color:'+c+'">'+hid.toUpperCase()+'</span>';
+      ha.items.forEach(function(a){
+        cellHtml+=' <span class="dbg-detail">'+a.description+'</span>';
+      });
+    });
+    cellHtml='<div class="dbg-cell">'+cellHtml+'</div>';
+  }else{
+    cellHtml='<div class="dbg-cell"><span class="dbg-k">（点击格子查看）</span></div>';
   }
-
-  const vm=buildDebugPanelVM();
-  const cellHtml=buildDebugCellHtml();
-  const slotHtml=vm.slots.map(s=>`#${s.i+1} ${s.used?'✓':s.el||'-'} h${s.hid??'?'}`).join(' · ');
-  const logHtml=vm.actionLogTail.length
-    ? vm.actionLogTail.map(a=>a.desc||a.type).join('<br>')
+  // ── 怪物列表 ──
+  var monHtml=vm.monsters.length
+    ? vm.monsters.map(function(m){
+        var w=m.nextWarn;
+        var warn=w?' <span class="dbg-exp">'+(w.type==='atk'?'⚔攻击':w.type==='mov'?'M步':'?')+'</span>':'';
+        return '<span class="dbg-mon-item">👾'+m.name
+          +' <span class="dbg-k">('+m.pos.r+','+m.pos.c+')</span>'
+          +' <span class="dbg-k">HP</span>'+m.hp
+          +warn+'</span>';
+      }).join('')
+    : '<div><span class="dbg-k">无存活怪物</span></div>';
+  // ── 行动槽 ──
+  var slotHtml=vm.slots.map(function(s){
+    var usedCls=s.used?'<span style="color:#22c55e">✓</span>':'<span style="color:#64748b">○</span>';
+    var dirLb={up:'↑',down:'↓',left:'←',right:'→'};
+    return '<span class="dbg-slot-item">'+usedCls+' #'+(s.i+1)+' '
+      +(s.el?'<span style="color:'+(ELIC[s.el]||'#888')+'">'+s.el.substring(0,3)+'</span> ':'')
+      +'h'+s.hid
+      +' s'+s.sn+(s.dir?dirLb[s.dir]||s.dir:'')
+      +(s.used?'':' <span class="dbg-detail">'+(s.skill||'')+'</span>')
+      +'</span>';
+  }).join('');
+  // ── 引擎/成长 ──
+  var eng=vm.engineStats;
+  var gr=vm.growth;
+  var engHtml='<span class="dbg-eng-item"><span class="dbg-k">召</span>'+eng.summonCount
+    +'</span><span class="dbg-eng-item"><span class="dbg-k">疗</span>'+eng.healCount
+    +'</span><span class="dbg-eng-item"><span class="dbg-k">连</span>'+eng.chainCount
+    +'</span><span class="dbg-eng-item"><span class="dbg-k">完美</span>'+eng.perfectCount
+    +'</span><span class="dbg-eng-item"><span class="dbg-k">成长</span>'
+    +'召T'+gr.summonTier+' 疗T'+gr.healTier+' 连T'+gr.chainTier+'</span>';
+  // ── actionLog ──
+  var logHtml=vm.actionLogTail.length
+    ? vm.actionLogTail.map(function(a){
+        var d=a.desc||a.type;
+        if(a.type==='USE_SLOT'){d+=' [<span class="dbg-detail">'+(a.el||'')+' sn'+(a.sn)+' '+(a.dir||'')+'</span>]'+(a.cells?' <span class="dbg-detail">'+a.cells.join(',')+'</span>':'');}
+        if(a.type==='MOVE_HERO'){d+=' <span class="dbg-detail">'+a.from.r+','+a.from.c+'</span><span class="dbg-arrow">→</span><span class="dbg-detail">'+a.to.r+','+a.to.c+'</span>';}
+        return d;
+      }).join('<br>')
     : '<span class="dbg-k">（空）</span>';
-  el.innerHTML=`
-    <div class="dbg-title">🛠 Debug · D 切换</div>
-    <div>phase ${vm.phase} · D${vm.day} half${vm.dayHalf} · R${vm.round}/${vm.maxRound}</div>
-    <div class="dbg-sec"><span class="dbg-k">格子</span><br>${cellHtml}</div>
-    <div class="dbg-sec"><span class="dbg-k">行动槽</span> ${slotHtml}</div>
-    <div class="dbg-sec"><span class="dbg-k">引擎</span> 召${vm.engineStats.summonCount||0} 疗${vm.engineStats.healCount||0}</div>
-    <div class="dbg-sec"><span class="dbg-k">actionLog</span><br>${logHtml}</div>`;
+  // ── 组装 ──
+  el.innerHTML='<div class="dbg-bar">🛠 Debug <span style="color:#64748b;font-weight:400">← 拖拽 · D 切换</span></div>'
+    +'<div class="dbg-sec">'+stateHtml+'</div>'
+    +'<div class="dbg-sec"><span class="dbg-lb">📍 格子</span>'+cellHtml+'</div>'
+    +'<div class="dbg-sec"><span class="dbg-lb">👾 怪物</span><div class="dbg-mon-list">'+monHtml+'</div></div>'
+    +'<div class="dbg-sec"><span class="dbg-lb">🎯 行动槽</span><div class="dbg-slot">'+slotHtml+'</div></div>'
+    +'<div class="dbg-sec"><span class="dbg-lb">⚙️ 引擎</span><div class="dbg-eng">'+engHtml+'</div></div>'
+    +'<div class="dbg-sec"><span class="dbg-lb">📝 日志</span><div class="dbg-log">'+logHtml+'</div></div>';
+  // ── 拖拽 ──
+  var bar=el.querySelector('.dbg-bar');
+  if(bar&&!bar._dragInited){bar._dragInited=1;var ox=0,oy=0,on=0;
+    bar.addEventListener('mousedown',function(e){on=1;ox=e.clientX-el.offsetLeft;oy=e.clientY-el.offsetTop;bar.classList.add('dragging');e.preventDefault();});
+    document.addEventListener('mousemove',function(e){if(!on)return;el.style.left=Math.max(0,Math.min(window.innerWidth-el.offsetWidth,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(window.innerHeight-el.offsetHeight,e.clientY-oy))+'px';});
+    document.addEventListener('mouseup',function(){on=0;bar.classList.remove('dragging');});
+  }
 }
 
 function dispatchGameAction(action){

@@ -3220,6 +3220,39 @@ group('Debug 面板 VM', ()=>{
   });
 });
 
+  test('DEBUG2: buildDebugPanelVM 无选中格', ()=>{
+    fresh();
+    G.selectedCell=null;
+    var vm=buildDebugPanelVM();
+    assert.strictEqual(vm.selectedCell,null,'无选中格时 selectedCell=null');
+  });
+  test('DEBUG3: buildDebugPanelVM 怪物格', ()=>{
+    fresh();
+    var m=G.monsters.find(function(x){return !x.dead;});
+    assert.ok(m,'有怪物');
+    G.selectedCell={r:m.pos.r,c:m.pos.c};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    assert.strictEqual(vm.selectedCell.entity.type,'monster','怪物格实体类型');
+    assert.ok(vm.selectedCell.entityDamage>=0,'怪物格有伤害预览');
+  });
+  test('DEBUG4: buildDebugPanelVM 英雄格', ()=>{
+    fresh();
+    var ha=G.heroes.ha;
+    G.selectedCell={r:ha.pos.r,c:ha.pos.c};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    assert.strictEqual(vm.selectedCell.entity.type,'hero','英雄格实体类型');
+    assert.strictEqual(vm.selectedCell.entity.id,'ha','英雄A');
+  });
+  test('DEBUG5: buildDebugPanelVM 空格', ()=>{
+    fresh();
+    G.selectedCell={r:0,c:0};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    assert.ok(vm.selectedCell.entity===null||vm.selectedCell.entity.type===null,'空格无实体');
+  });
+
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

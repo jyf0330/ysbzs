@@ -51,6 +51,10 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 .mm-icon{font-size:13px;line-height:1;}
 .mm-bot{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
 .mm-atkinfo{font-size:6px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;}
+.sm{width:92%;height:92%;border-radius:6px;background:rgba(14,165,233,0.25);border:2px solid #38bdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#bae6fd;position:relative;box-sizing:border-box;}
+.sm-atk{color:#fbbf24;font-weight:bold;font-size:10px;line-height:1.1;}
+.sm-hp{font-size:8px;color:#7dd3fc;}
+.sm-icon{font-size:14px;line-height:1;}
 .em{width:48px;height:48px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;font-weight:bold;cursor:pointer;border:1px solid;}
 
 /* ===== RIGHT PANEL ===== */
@@ -262,6 +266,7 @@ html:-webkit-full-screen #fsb { background:#222; border-color:#666; }
       <div id="ph">⚔️ 玩家回合</div>
       <div id="rc">第1波 · 第1/5小回合</div>
       <div id="gi">💰 <span id="gold">5</span> 金币</div>
+      <div id="es" style="display:none;font-size:10px;color:#67e8f9;margin-top:2px;"></div>
       <div class="turn-actions">
       <button class="etb" id="exa" onclick="execAllHeroSlots()">⚡ 一键执行</button>
       <button class="etb" id="etb" onclick="endPlayerTurn()">结束回合 →</button>
@@ -539,6 +544,67 @@ const UNIT_DEFS = {
       ]}
     }
   },
+  // 水+召唤引擎原型单位
+  sprout_summoner: {
+    id:'sprout_summoner', name:'召芽灵', element:'water', grade:'青铜', priceTier:2, tags:['召唤','水','构筑核心'], tier:1, cost:3,
+    levels: {
+      1:{ hp:20, slots:[
+        {skill:'summonFromCell', sn:1, dir:'right', tier:1, consumeLayers:true},
+        {el:'water', sn:2, dir:'right', tier:1},
+        {el:'water', sn:3, dir:'right', tier:1},
+      ]},
+      2:{ hp:28, slots:[
+        {skill:'summonFromCell', sn:2, dir:'right', tier:2, consumeLayers:true, bonusHp:2},
+        {el:'water', sn:2, dir:'right', tier:2},
+        {el:'water', sn:3, dir:'right', tier:2},
+      ]},
+      3:{ hp:35, slots:[
+        {skill:'summonFromCell', sn:3, dir:'right', tier:3, consumeLayers:true, count:2},
+        {el:'water', sn:3, dir:'right', tier:3},
+        {el:'water', sn:5, dir:'right', tier:3},
+      ]}
+    }
+  },
+  spring_sprite: {
+    id:'spring_sprite', name:'泉泉灵', element:'water', grade:'青铜', priceTier:1, tags:['水','治疗','召唤'], tier:1, cost:2,
+    levels: {
+      1:{ hp:18, slots:[
+        {skill:'healSummons', sn:12, dir:'right', tier:1},
+        {el:'water', sn:1, dir:'right', tier:1},
+        {el:'water', sn:4, dir:'right', tier:1},
+      ]},
+      2:{ hp:24, slots:[
+        {skill:'healSummons', sn:12, dir:'right', tier:2},
+        {el:'water', sn:2, dir:'right', tier:2},
+        {el:'water', sn:6, dir:'right', tier:2},
+      ]},
+      3:{ hp:30, slots:[
+        {skill:'healSummons', sn:12, dir:'right', tier:3},
+        {el:'water', sn:3, dir:'right', tier:3},
+        {el:'water', sn:6, dir:'right', tier:3},
+      ]}
+    }
+  },
+  bubble_sprite: {
+    id:'bubble_sprite', name:'泡泡灵', element:'water', grade:'青铜', priceTier:1, tags:['水','范围'], tier:1, cost:2,
+    levels: {
+      1:{ hp:20, slots:[
+        {el:'water', sn:6, dir:'right', tier:1},
+        {el:'water', sn:6, dir:'right', tier:1},
+        {el:'water', sn:12, dir:'right', tier:1},
+      ]},
+      2:{ hp:25, slots:[
+        {el:'water', sn:6, dir:'right', tier:2},
+        {el:'water', sn:6, dir:'right', tier:2},
+        {el:'water', sn:12, dir:'right', tier:2},
+      ]},
+      3:{ hp:30, slots:[
+        {el:'water', sn:6, dir:'right', tier:3},
+        {el:'water', sn:12, dir:'right', tier:3},
+        {el:'water', sn:12, dir:'right', tier:3},
+      ]}
+    }
+  },
 };
 const UNIT_TIER_POOL = {1:[],2:[],3:[]};
 Object.values(UNIT_DEFS).forEach(u=>{ UNIT_TIER_POOL[u.tier].push(u.id); });
@@ -805,7 +871,7 @@ function findCenterCell(cells){
 // ========== BOARD HELPERS ==========
 function monAt(pos){return G.monsters.find(m=>!m.dead&&m.pos.r===pos.r&&m.pos.c===pos.c);}
 function heroAt(pos){return Object.values(G.heroes).find(h=>h.pos.r===pos.r&&h.pos.c===pos.c);}
-function cellFree(pos){return !monAt(pos)&&!heroAt(pos)&&pos.r>=0&&pos.r<13&&pos.c>=0&&pos.c<13;}
+function cellFree(pos){return !monAt(pos)&&!heroAt(pos)&&!summonAt(pos)&&pos.r>=0&&pos.r<13&&pos.c>=0&&pos.c<13;}
 
 // ========== ELEMENT SYSTEM ==========
 function addEl(pos,el){
@@ -1010,7 +1076,7 @@ function moveHero(r,c){
   if(!G.selHero||G.phase!=='PLAYER')return;
   const hero=G.heroes[G.selHero];
   if(hero._acted){glog('⚠️ 该英雄已行动，本回合无法再移动！');return;}
-  if(heroAt({r,c})||monAt({r,c})||hasElementAt({r,c})||castleAt({r,c})){glog('⚠️ 目标格已占用！');return;}
+  if(heroAt({r,c})||monAt({r,c})||summonAt({r,c})||hasElementAt({r,c})||castleAt({r,c})){glog('⚠️ 目标格已占用！');return;}
   glog(`🚶 ${hero.name}移动到(${r},${c})`);
   dispatchGameAction({type:'MOVE_HERO',heroId:G.selHero,to:{r,c}});
 }
@@ -1186,6 +1252,7 @@ function endPlayerTurn(){
   if(G.phase!=='PLAYER')return;
   commitPlayerActionsToElementField(G);
   settleExplosions();
+  runSummonActions();
   G.phase='MONSTER'; G.selSlot=null; G.selHero=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
   Object.values(G.heroes).forEach(h=>h._acted=false);
   glog('--- 怪物回合 ---');
@@ -1246,7 +1313,7 @@ function monsterAct(m){
       glog(`👾 ${m.name}被${EL[block.el]}${block.layers}阻挡！本回合结束。`);
       ap=0;break;
     }
-    if(!monAt(np)&&!heroAt(np)&&!castleAt(np)){m.pos=np;glog(`👾 ${m.name}→(${np.r},${np.c})`);ap-=1;}
+    if(!monAt(np)&&!heroAt(np)&&!castleAt(np)&&!summonAt(np)){m.pos=np;glog(`👾 ${m.name}→(${np.r},${np.c})`);ap-=1;}
     else break;
   }
 }
@@ -1272,7 +1339,7 @@ function nextMoveFromPos(pos,m){
   if(dr>0)moves.push({r:pos.r+1,c:pos.c});
   for(const mv of moves){
     if(mv.r<0||mv.r>12||mv.c<0||mv.c>12)continue;
-    if(!monAt(mv))return mv;
+    if(!monAt(mv)&&!summonAt(mv)&&!heroAt(mv)&&!castleAt(mv))return mv;
   }
   return null;
 }
@@ -1301,7 +1368,7 @@ function simMonAct(m){
     const np=nextMoveFromPos(pos,m);
     if(!np){stopReason='no_path';break;}
     if(hasElementAt(np)){movCells.push({r:np.r,c:np.c,type:'block',step:4-ap});stopReason='blocked';break;}
-    if(monAt(np)||heroAt(np)||castleAt(np)){stopReason='occupied';break;}
+    if(monAt(np)||heroAt(np)||castleAt(np)||summonAt(np)){stopReason='occupied';break;}
     const stepNum=4-ap;
     movCells.push({r:np.r,c:np.c,type:'mov',step:stepNum});
     pos={r:np.r,c:np.c};
@@ -1404,12 +1471,19 @@ function syncUnitsToHeroes(){
     lvlData.slots.forEach((slotDef,si)=>{
       G.slots.push({
         id:ui*3+si,
-        el:slotDef.el,
+        el:slotDef.el||'water',
         sn:slotDef.sn,
         tier:slotDef.tier,
         dir:slotDef.dir,
         hid:hid,
         used:false,
+        skill:slotDef.skill||null,
+        consumeLayers:!!slotDef.consumeLayers,
+        bonusHp:slotDef.bonusHp||0,
+        count:slotDef.count||1,
+        layers:slotDef.layers,
+        centerBonus:slotDef.centerBonus,
+        conditional:slotDef.conditional,
       });
     });
   });
@@ -1500,6 +1574,94 @@ function damageSummon(summon,dmg){
   if(summon.hp<=0)killSummon(summon);
 }
 
+// 召唤物回合行动：攻击相邻怪物（引擎滚雪球后的 atk 在此兑现）
+function runSummonActions(){
+  if(!G.summons||G.summons.length===0)return;
+  let acted=0;
+  G.summons.filter(s=>!s.dead).forEach(s=>{
+    const dirs=[{r:-1,c:0},{r:1,c:0},{r:0,c:-1},{r:0,c:1}];
+    for(const d of dirs){
+      const tp={r:s.pos.r+d.r,c:s.pos.c+d.c};
+      if(tp.r<0||tp.r>12||tp.c<0||tp.c>12)continue;
+      const m=monAt(tp);
+      if(m){
+        dealDmg(m,s.atk,`${s.name}攻击`);
+        glog(`💧 ${s.name}(ATK${s.atk})→${m.name} -${s.atk}`);
+        acted++;
+        break;
+      }
+    }
+  });
+  if(acted>0)glog(`🌀 召唤物行动：${acted} 次攻击`);
+  checkAllDead();
+}
+
+function chooseElementForSummon(pos){
+  const key=`${pos.r},${pos.c}`;
+  const elData=G.elementCells[key];
+  let best={el:'water',layers:0};
+  if(elData){
+    ['fire','water','wind','earth'].forEach(el=>{
+      const layers=elData[el]?.layers||0;
+      if(layers>best.layers)best={el,layers};
+    });
+  }
+  if(best.layers===0){
+    const top=topElementAt(pos);
+    if(top)best={el:top.el,layers:top.layers};
+  }
+  return best;
+}
+
+function execSummonFromCellSkill(hero,slot){
+  const cells=atkCells(hero.pos,slot.sn,slot.dir);
+  const candidates=cells.filter(p=>!heroAt(p)&&!monAt(p)&&!castleAt(p)&&!summonAt(p));
+  if(candidates.length===0){glog('⚠️ 没有可召唤的空格');return false;}
+  let bestCell=candidates[0],bestLayers=-1;
+  candidates.forEach(p=>{
+    const {layers}=chooseElementForSummon(p);
+    if(layers>bestLayers){bestLayers=layers;bestCell=p;}
+  });
+  const chosen=chooseElementForSummon(bestCell);
+  if(slot.consumeLayers&&chosen.layers>0){
+    const key=`${bestCell.r},${bestCell.c}`;
+    const elSlot=G.elementCells[key]&&G.elementCells[key][chosen.el];
+    if(elSlot){
+      elSlot.layers=Math.max(0,elSlot.layers-1);
+      elSlot.willExplode=elSlot.layers>=G.explosionThreshold;
+      syncBoardElementFromElementCells(bestCell);
+    }
+  }
+  const bonusHp=slot.bonusHp||0;
+  const spawnCount=slot.count||1;
+  for(let i=0;i<spawnCount;i++){
+    const offset=i===0?bestCell:{r:bestCell.r,c:Math.min(12,bestCell.c+i)};
+    if(summonAt(offset)||heroAt(offset)||monAt(offset)||castleAt(offset))continue;
+    spawnSummon(hero.id,offset,{
+      el:chosen.el||'water',
+      hp:3+bonusHp+Math.min(chosen.layers,2),
+      maxHp:5+bonusHp+Math.min(chosen.layers,2),
+      name:chosen.el==='water'?'水灵':'芽灵',
+    });
+  }
+  glog(`🌱 ${hero.name}在(${bestCell.r},${bestCell.c})召唤${EL[chosen.el||'water']}单位！`);
+  return true;
+}
+
+function execHealSummonsSkill(hero,slot){
+  const cells=atkCells(hero.pos,slot.sn,slot.dir);
+  let n=0;
+  G.summons.filter(s=>!s.dead).forEach(s=>{
+    if(cells.some(p=>p.r===s.pos.r&&p.c===s.pos.c)){
+      healSummon(s,2);
+      n++;
+    }
+  });
+  if(n>0)glog(`💧 ${hero.name}治疗${n}个召唤物，攻击成长+${n}`);
+  else glog('⚠️ 范围内没有可治疗的召唤物');
+  return n>0;
+}
+
 // ========== SHOP ==========
 function calcShopTier(day){ return Math.min(Math.ceil(day/2),3); }
 
@@ -1521,6 +1683,18 @@ function openShop(){
 }
 
 const SHOP_POOLS={day1_midday:["fire_starter","water_droplet","wind_breeze","bubble_sprite","pebble_guard"],day1_night:["sprout_summoner","fire_starter","water_droplet","bubble_sprite"],day2_midday:["fluff_speaker","boom_sprite","split_sprite","sprout_summoner","ember_seed","spring_sprite","water_droplet"],day2_night:["fluff_speaker","boom_sprite","split_sprite","ember_seed","spring_sprite","pebble_guard"],day3:["breeze_sprite","pebble_guard","sprout_summoner","fluff_speaker","boom_sprite"]};
+function getShopPoolKey(){
+  const d=G.day||1;
+  if(d>=3)return 'day3';
+  if(G.dayHalf>=2)return `day${d}_night`;
+  return `day${d}_midday`;
+}
+function getShopPoolIds(tier){
+  const pool=SHOP_POOLS[getShopPoolKey()];
+  if(!pool)return null;
+  const ids=[...new Set(pool)].filter(id=>UNIT_DEFS[id]&&UNIT_DEFS[id].tier===tier);
+  return ids.length?ids:null;
+}
 function genShop(){
   // 先快照已冻结的商品，再清空重新生成
   const frozenUnits=(G.shopItems.units||[]).filter(u=>G.shopFrozen.units.has(u.id));
@@ -1530,11 +1704,13 @@ function genShop(){
   const slots=SHOP_PRICE_CONFIG.shopSlots[G.day]||SHOP_PRICE_CONFIG.shopSlots[1];
   const t1Pool=UNIT_TIER_POOL[1]||[];
   const t2Pool=UNIT_TIER_POOL[2]||[];
-  // 生成 Tier1 单位
+  const poolT1=getShopPoolIds(1);
+  // 生成 Tier1 单位（优先 SHOP_POOLS 当日池）
   G.shopItems.units=frozenUnits.filter(u=>UNIT_DEFS[u.defId]?.tier===1);
   for(let i=G.shopItems.units.length;i<slots.unitT1;i++){
-    if(t1Pool.length===0) break;
-    const defId=t1Pool[ri(t1Pool.length)];
+    const pickPool=poolT1||t1Pool;
+    if(pickPool.length===0) break;
+    const defId=poolT1?pickPool[i%pickPool.length]:pickPool[ri(pickPool.length)];
     G.shopItems.units.push({id:`su_${G.nextUnitId}_${i}`,defId,cost:SHOP_PRICE_CONFIG.unitPrice.tier1,frozen:false});
   }
   // 生成 Tier2 单位
@@ -1835,9 +2011,10 @@ function computeMonsterActionPreview(){
 
 // ─── ViewModel 层（读 G，输出纯 JS 描述对象，不创建 DOM）───
 function buildBoardVM(){
-  const hp={},mp={};
+  const hp={},mp={},sp={};
   Object.values(G.heroes).forEach(h=>{hp[k(h.pos)]=h;});
   G.monsters.forEach(m=>{if(!m.dead)mp[k(m.pos)]=m;});
+  (G.summons||[]).filter(s=>!s.dead).forEach(s=>{sp[k(s.pos)]=s;});
   const ps=new Set(G.prevCells.map(p=>k(p)));
   const es=new Set();if(G.explPos)explCells(G.explPos).forEach(p=>es.add(k(p)));
   // 从 coreSnapshot 读取预览数据，不在 VM 层重算
@@ -1880,6 +2057,7 @@ function buildBoardVM(){
       r,c,key,
       hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||[]}:null,
       mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:monCardMap[key]||{atkTargetId:null,atkDmg:0,canAttack:false},previewDamage:pgCell?.preview.entityDamage||0,willDie:pgCell?(pgCell.preview.entityDamage>=mon.hp&&mon.hp>0):false}:null,
+      summon:sp[key]?{id:sp[key].id,name:sp[key].name,hp:sp[key].hp,maxHp:sp[key].maxHp,atk:sp[key].atk,el:sp[key].el}:null,
       el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
       castle:playerCastleAt({r,c})?{side:'player',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp}:enemyCastleAt({r,c})?{side:'enemy',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp}:null,
       classes,pvEl,pvOpacity,monDmg,pvElLayers,pvWillExplode,
@@ -1939,6 +2117,10 @@ function buildPreviewGrid(){
   Object.values(G.heroes).forEach(h=>{
     const key=`${h.pos.r},${h.pos.c}`;
     grid[key].entity={type:'hero',id:h.id,name:h.name,hp:h.hp,maxHp:h.maxHp,atk:null,el:null};
+  });
+  (G.summons||[]).filter(s=>!s.dead).forEach(s=>{
+    const key=`${s.pos.r},${s.pos.c}`;
+    if(grid[key])grid[key].entity={type:'summon',id:s.id,name:s.name,hp:s.hp,maxHp:s.maxHp,atk:s.atk,el:s.el};
   });
   if(G.playerCastle&&G.playerCastle.hp>0){
     const pk=`${G.playerCastle.pos.r},${G.playerCastle.pos.c}`;
@@ -2069,7 +2251,9 @@ function buildSlotsVM(){
 
 function buildTurnVM(){
   const hasExec=G.phase==='PLAYER'&&G.slots.some(s=>!s.used&&s.hid&&G.heroes[s.hid]);
-  return{phase:G.phase,wave:G.wave,day:G.day,dayHalf:G.dayHalf,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER',execAllDisabled:!hasExec};
+  const aliveSummons=(G.summons||[]).filter(s=>!s.dead).length;
+  return{phase:G.phase,wave:G.wave,day:G.day,dayHalf:G.dayHalf,round:Math.min(G.round,G.maxRound),maxRound:G.maxRound,gold:G.gold,endTurnDisabled:G.phase!=='PLAYER',execAllDisabled:!hasExec,
+    engineStats:{summonCount:G.engineStats?.summonCount||0,healCount:G.engineStats?.healCount||0,summonAlive:aliveSummons}};
 }
 
 function buildBattleVM(){
@@ -2185,7 +2369,7 @@ function applyActionToState(action){
     case 'MOVE_HERO':{
       const hero=G.heroes[action.heroId];
       if(!hero||hero._acted)return;
-      if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to)||hasElementAt(action.to))return;
+      if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to)||summonAt(action.to)||hasElementAt(action.to))return;
       if(castleAt(action.to))return;
       const from={r:hero.pos.r,c:hero.pos.c};
       hero.pos={r:action.to.r,c:action.to.c};
@@ -2224,6 +2408,20 @@ function applyActionToState(action){
       const s=G.slots[action.slotId];
       if(!s||s.used||G.phase!=='PLAYER')return;
       const hero=G.heroes[s.hid]; if(!hero)return;
+      if(s.skill==='summonFromCell'){
+        if(!execSummonFromCellSkill(hero,s))return;
+        s.used=true; hero._acted=true;
+        G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
+        G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,skill:s.skill,desc:`${hero.name}：召唤`});
+        break;
+      }
+      if(s.skill==='healSummons'){
+        execHealSummonsSkill(hero,s);
+        s.used=true; hero._acted=true;
+        G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
+        G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,skill:s.skill,desc:`${hero.name}：治疗召唤物`});
+        break;
+      }
       const cells=atkCells(hero.pos,s.sn,s.dir);
       if(cells.length===0)return;
       const center=findCenterCell(cells);
@@ -2340,6 +2538,13 @@ function renderBoard(boardVM){
       mm.innerHTML=`<div class="mm-top"><span class="mm-hp">HP ${cv.mon.hp}</span><span class="mm-atk">攻 ${cv.mon.atk}</span></div><div class="mm-icon">👾</div><div class="mm-atkinfo">${atkInfoHtml}</div><div class="mm-bot">${dmgBotHtml}${expBotHtml}</div>`;
       mm.title=`${cv.mon.name} HP:${cv.mon.hp}/${cv.mon.maxHp} 攻:${cv.mon.atk}`;
       cell.appendChild(mm);
+    }else if(cv.summon){
+      cell.classList.add('hp');
+      const sm=document.createElement('div');
+      sm.className='sm';
+      sm.innerHTML=`<div class="sm-atk">⚔${cv.summon.atk}</div><div class="sm-icon">💧</div><div class="sm-hp">${cv.summon.hp}/${cv.summon.maxHp}</div>`;
+      sm.title=`${cv.summon.name} HP:${cv.summon.hp}/${cv.summon.maxHp} ATK:${cv.summon.atk}`;
+      cell.appendChild(sm);
     }else if(cv.el){
       const em=document.createElement('div');
       em.className='em';
@@ -2548,6 +2753,14 @@ function renderTurn(turnVM){
   document.getElementById('gold').textContent=turnVM.gold;
   document.getElementById('etb').disabled=turnVM.endTurnDisabled;
   document.getElementById('exa').disabled=turnVM.execAllDisabled;
+  const esEl=document.getElementById('es');
+  if(esEl&&turnVM.engineStats){
+    const es=turnVM.engineStats;
+    if(es.summonAlive>0||es.summonCount>0||es.healCount>0){
+      esEl.style.display='';
+      esEl.textContent=`🌀 场上${es.summonAlive} · 累计召${es.summonCount} · 治疗${es.healCount}`;
+    }else esEl.style.display='none';
+  }
 }
 
 // #2 形状图形预览

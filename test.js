@@ -1108,6 +1108,7 @@ group('UNIT_DEFS 单位定义库', ()=>{
     Object.values(UNIT_DEFS).forEach(u=>{
       for(let lv=1;lv<=3;lv++){
         u.levels[lv].slots.forEach((s,si)=>{
+          if(s.skill){assert.ok(['summonFromCell','healSummons'].includes(s.skill),`${u.id} skill非法`);return;}
           assert.ok(validEl.includes(s.el),`${u.id} Lv${lv} slot${si} el非法`);
           assert.ok(s.sn>=1&&s.sn<=20,`${u.id} Lv${lv} slot${si} sn非法`);
           assert.ok(['right','left','up','down'].includes(s.dir),`${u.id} Lv${lv} slot${si} dir非法`);
@@ -2685,6 +2686,90 @@ group('TDD-水召唤引擎',()=>{
     for(let i=0;i<4;i++)healSummon(s,1);
     assert.strictEqual(s.atk,base+4,'4次治疗后 atk=base+4');
     assert.strictEqual(G.engineStats.healCount,4,'healCount=4');
+  });
+});
+
+// TDD-水召唤引擎 · 增量2/3/4
+group('TDD-水召唤引擎·增量2',()=>{
+  test('ENG6:英雄移动被召唤物阻挡',()=>{
+    fresh();
+    spawnSummon('ha',{r:8,c:4});
+    G.selHero='ha';
+    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:8,c:4}});
+    assert.notStrictEqual(G.heroes.ha.pos.r,8,'不应移动到召唤物格');
+  });
+  test('ENG7:cellFree识别召唤物占用',()=>{
+    fresh();
+    assert.ok(cellFree({r:8,c:4}));
+    spawnSummon('ha',{r:8,c:4});
+    assert.ok(!cellFree({r:8,c:4}),'召唤物格不可通行');
+  });
+  test('ENG8:runSummonActions攻击相邻怪物',()=>{
+    fresh();
+    const s=spawnSummon('ha',{r:8,c:4},{atk:3});
+    G.monsters=[{name:'靶',hp:10,maxHp:10,atk:1,ap:0,pos:{r:8,c:5},dead:false,el:null}];
+    runSummonActions();
+    assert.ok(G.monsters[0].hp<10,'相邻怪物应受伤');
+  });
+  test('ENG9:怪物移动被召唤物阻挡',()=>{
+    fresh();
+    spawnSummon('ha',{r:5,c:5});
+    G.monsters=[{name:'怪',hp:6,maxHp:6,atk:1,ap:3,pos:{r:5,c:7},dead:false,el:null}];
+    monsterAct(G.monsters[0]);
+    assert.ok(!summonAt(G.monsters[0].pos),'不应占用召唤物格');
+    assert.ok(G.summons.some(s=>s.pos.r===5&&s.pos.c===5&&!s.dead),'召唤物仍存活');
+  });
+});
+
+group('TDD-水召唤引擎·增量3',()=>{
+  test('ENG10:sprout_summoner与spring_sprite已定义',()=>{
+    assert.ok(UNIT_DEFS.sprout_summoner,'召芽灵');
+    assert.ok(UNIT_DEFS.spring_sprite,'泉泉灵');
+    assert.ok(UNIT_DEFS.sprout_summoner.levels[1].slots.some(s=>s.skill==='summonFromCell'));
+    assert.ok(UNIT_DEFS.spring_sprite.levels[1].slots.some(s=>s.skill==='healSummons'));
+  });
+  test('ENG11:召芽灵召唤槽生成召唤物',()=>{
+    fresh();
+    G.ownedUnits=[]; G.nextUnitId=0;
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
+    syncUnitsToHeroes();
+    const idx=G.slots.findIndex(s=>s.skill==='summonFromCell');
+    assert.ok(idx>=0,'应有召唤技能槽');
+    dispatchGameAction({type:'USE_SLOT',slotId:idx});
+    assert.ok(G.summons.some(s=>!s.dead),'使用召唤槽应生成召唤物');
+  });
+  test('ENG12:chooseElementForSummon选层数最高元素',()=>{
+    fresh();
+    const k='8,4';
+    G.elementCells[k]={fire:{layers:2,willExplode:false},water:{layers:4,willExplode:true},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    const r=chooseElementForSummon({r:8,c:4});
+    assert.strictEqual(r.el,'water');
+    assert.strictEqual(r.layers,4);
+  });
+  test('ENG13:Day1夜池可刷出召芽灵',()=>{
+    fresh(); G.day=1; G.dayHalf=2; G.shopTier=1;
+    genShop();
+    assert.ok(G.shopItems.units.some(u=>u.defId==='sprout_summoner'),'Day1夜晚商店应含召芽灵');
+  });
+});
+
+group('TDD-水召唤引擎·增量4',()=>{
+  test('ENG14:buildBoardVM含召唤物',()=>{
+    fresh();
+    spawnSummon('ha',{r:8,c:4},{atk:5,hp:3,maxHp:3});
+    recomputeCorePreview();
+    const cell=buildBoardVM().find(c=>c.r===8&&c.c===4);
+    assert.ok(cell&&cell.summon,'棋盘VM应含召唤物');
+    assert.strictEqual(cell.summon.atk,5);
+  });
+  test('ENG15:buildTurnVM含引擎统计',()=>{
+    fresh();
+    spawnSummon('ha',{r:8,c:4});
+    healSummon(G.summons[0],1);
+    const vm=buildTurnVM();
+    assert.ok(vm.engineStats,'应有engineStats');
+    assert.strictEqual(vm.engineStats.summonCount,1);
+    assert.strictEqual(vm.engineStats.healCount,1);
   });
 });
 

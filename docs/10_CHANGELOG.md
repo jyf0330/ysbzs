@@ -44,6 +44,7 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
+| 2026-05-30 | feat | 水+召唤引擎（增量2–4）：`runSummonActions` 召唤物邻格攻击；`cellFree`/`moveHero`/`monsterAct`/`simMonAct`/`nextMoveFromPos` 经 `summonAt` 占用阻挡；召芽灵(`summonFromCell`)/泉泉灵(`healSummons`)/泡泡灵占位 + `USE_SLOT` skill 分支 + Day1 夜商店池；`buildBoardVM`/`buildTurnVM`/`buildPreviewGrid` 渲染召唤物与引擎统计。测试 ENG6–ENG15 | index.html / test.js / docs/01/战斗系统.md §12e | node test.js 334/334 |
 | 2026-05-30 | feat | 水+召唤引擎（增量1·纯逻辑）：新增 `G.summons`/`G.engineStats`/`_nextSummonId`；新增 `spawnSummon`(生成水召唤物)、`healSummon`(治疗→atk+1 引擎成长)、`killSummon`/`damageSummon`(死亡原地留1层水)、`summonAt`(占用查询)、`addElementLayers`(规范写入 elementCells)；死亡留水层与 `settleExplosions` 连锁不冲突。来源 `.omx/specs/deep-interview-v1-scope.md` | index.html / test.js | node test.js 324/324 |
 | 2026-05-29 | fix | 全屏布局修复：补 `#wrap` 容器；全屏样式改挂 `html:fullscreen`；棋盘用 `1fr` 网格等比缩放，侧栏固定宽+滚动，修复点全屏界面错乱 | index.html | 手动验证 |
 | 2026-05-29 | feat | 双城堡 + GDD 开局：①`G.playerCastle` 左下 (12,1)、`G.enemyCastle` 右上 (0,11)，打掉敌方获胜、我方被毁失败；②怪物寻路/攻击以英雄优先、可攻我方城堡，不再混淆单城堡；③英雄 (10,1)/(11,1)；④Day1 早上固定教学怪 (1,11) hp6、(0,10) hp10；⑤刷怪区统一右上 `getSpawnCells`；⑥元素十字波及可伤敌方城堡 | index.html / test.js | node test.js 319/319 |

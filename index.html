@@ -605,6 +605,126 @@ const UNIT_DEFS = {
       ]}
     }
   },
+  pebble_guard: {
+    id:'pebble_guard', name:'岩岩灵', element:'earth', grade:'青铜', priceTier:2, tags:['土','前排','防御','挡路'], tier:1, cost:3,
+    levels: {
+      1:{ hp:30, slots:[
+        {el:'earth', sn:4, dir:'right', tier:1},
+        {el:'earth', sn:6, dir:'right', tier:1},
+        {el:'earth', sn:8, dir:'right', tier:1},
+      ]},
+      2:{ hp:45, slots:[
+        {el:'earth', sn:4, dir:'right', tier:2},
+        {el:'earth', sn:6, dir:'right', tier:2},
+        {el:'earth', sn:11, dir:'right', tier:2},
+      ]},
+      3:{ hp:60, slots:[
+        {el:'earth', sn:6, dir:'right', tier:3},
+        {el:'earth', sn:11, dir:'right', tier:3},
+        {el:'earth', sn:18, dir:'right', tier:3},
+      ]}
+    }
+  },
+  fluff_speaker: {
+    id:'fluff_speaker', name:'绒语灵', element:'water', grade:'白银', priceTier:2, tags:['召唤','后排','辅助','增益'], tier:1, cost:4,
+    levels: {
+      1:{ hp:16, slots:[
+        {skill:'healSummons', sn:12, dir:'right', tier:1},
+        {el:'water', sn:1, dir:'right', tier:1},
+        {el:'water', sn:4, dir:'right', tier:1},
+      ]},
+      2:{ hp:24, slots:[
+        {skill:'healSummons', sn:12, dir:'right', tier:2},
+        {el:'water', sn:2, dir:'right', tier:2},
+        {el:'water', sn:6, dir:'right', tier:2},
+      ]},
+      3:{ hp:32, slots:[
+        {skill:'healSummons', sn:12, dir:'right', tier:3},
+        {el:'water', sn:3, dir:'right', tier:3},
+        {el:'water', sn:6, dir:'right', tier:3},
+      ]}
+    }
+  },
+  boom_sprite: {
+    id:'boom_sprite', name:'爆爆灵', element:'fire', grade:'白银', priceTier:2, tags:['召唤','死亡收益','火','铺元素'], tier:1, cost:4,
+    levels: {
+      1:{ hp:16, slots:[
+        {el:'fire', sn:1, dir:'right', tier:1},
+        {el:'fire', sn:2, dir:'right', tier:1},
+        {el:'fire', sn:12, dir:'right', tier:1},
+      ]},
+      2:{ hp:24, slots:[
+        {el:'fire', sn:2, dir:'right', tier:2},
+        {el:'fire', sn:3, dir:'right', tier:2},
+        {el:'fire', sn:12, dir:'right', tier:2},
+      ]},
+      3:{ hp:32, slots:[
+        {el:'fire', sn:3, dir:'right', tier:3},
+        {el:'fire', sn:5, dir:'right', tier:3},
+        {el:'fire', sn:12, dir:'right', tier:3},
+      ]}
+    }
+  },
+  split_sprite: {
+    id:'split_sprite', name:'分分灵', element:'water', grade:'白银', priceTier:2, tags:['召唤','中排','人海'], tier:1, cost:4,
+    levels: {
+      1:{ hp:18, slots:[
+        {skill:'summonFromCell', sn:1, dir:'right', tier:1, consumeLayers:false, count:2},
+        {el:'water', sn:1, dir:'right', tier:1},
+        {el:'water', sn:2, dir:'right', tier:1},
+      ]},
+      2:{ hp:27, slots:[
+        {skill:'summonFromCell', sn:2, dir:'right', tier:2, consumeLayers:false, count:2},
+        {el:'water', sn:2, dir:'right', tier:2},
+        {el:'water', sn:3, dir:'right', tier:2},
+      ]},
+      3:{ hp:36, slots:[
+        {skill:'summonFromCell', sn:3, dir:'right', tier:3, consumeLayers:false, count:3},
+        {el:'water', sn:3, dir:'right', tier:3},
+        {el:'water', sn:5, dir:'right', tier:3},
+      ]}
+    }
+  },
+  ember_seed: {
+    id:'ember_seed', name:'火种灵', element:'fire', grade:'青铜', priceTier:1, tags:['火','铺元素','前排'], tier:1, cost:2,
+    levels: {
+      1:{ hp:18, slots:[
+        {el:'fire', sn:1, dir:'right', tier:1},
+        {el:'fire', sn:2, dir:'right', tier:1},
+        {el:'fire', sn:3, dir:'right', tier:1},
+      ]},
+      2:{ hp:27, slots:[
+        {el:'fire', sn:2, dir:'right', tier:2},
+        {el:'fire', sn:3, dir:'right', tier:2},
+        {el:'fire', sn:5, dir:'right', tier:2},
+      ]},
+      3:{ hp:36, slots:[
+        {el:'fire', sn:3, dir:'right', tier:3},
+        {el:'fire', sn:5, dir:'right', tier:3},
+        {el:'fire', sn:12, dir:'right', tier:3},
+      ]}
+    }
+  },
+  breeze_sprite: {
+    id:'breeze_sprite', name:'风风灵', element:'wind', grade:'白银', priceTier:2, tags:['风','侧击','机动','清散怪'], tier:1, cost:4,
+    levels: {
+      1:{ hp:18, slots:[
+        {el:'wind', sn:7, dir:'right', tier:1},
+        {el:'wind', sn:7, dir:'right', tier:1},
+        {el:'wind', sn:10, dir:'right', tier:1},
+      ]},
+      2:{ hp:27, slots:[
+        {el:'wind', sn:7, dir:'right', tier:2},
+        {el:'wind', sn:10, dir:'right', tier:2},
+        {el:'wind', sn:12, dir:'right', tier:2},
+      ]},
+      3:{ hp:36, slots:[
+        {el:'wind', sn:10, dir:'right', tier:3},
+        {el:'wind', sn:12, dir:'right', tier:3},
+        {el:'wind', sn:18, dir:'right', tier:3},
+      ]}
+    }
+  },
 };
 const UNIT_TIER_POOL = {1:[],2:[],3:[]};
 Object.values(UNIT_DEFS).forEach(u=>{ UNIT_TIER_POOL[u.tier].push(u.id); });
@@ -1290,6 +1410,12 @@ function monsterAct(m){
         damagePlayerCastle(m.atk,`${m.name}攻击`);
         ap-=1;break;
       }
+      const ls=summonAt(lp);
+      if(ls){
+        damageSummon(ls,m.atk);
+        glog(`👾 ${m.name}攻击${ls.name}！-${m.atk}（${ls.dead?0:ls.hp}/${ls.maxHp}）`);
+        ap-=1;break;
+      }
     }
     const dp={r:m.pos.r+1,c:m.pos.c};
     if(dp.r<=12){
@@ -1303,6 +1429,12 @@ function monsterAct(m){
       }
       if(playerCastleAt(dp)){
         damagePlayerCastle(m.atk,`${m.name}攻击`);
+        ap-=1;break;
+      }
+      const ds=summonAt(dp);
+      if(ds){
+        damageSummon(ds,m.atk);
+        glog(`👾 ${m.name}攻击${ds.name}！-${m.atk}（${ds.dead?0:ds.hp}/${ds.maxHp}）`);
         ap-=1;break;
       }
     }
@@ -1358,12 +1490,16 @@ function simMonAct(m){
       const lh=heroAt(lp);
       if(lh){atkCell={r:lp.r,c:lp.c};atkTarget=lh;stopReason='attack';break;}
       if(playerCastleAt(lp)){atkCell={r:lp.r,c:lp.c};atkTarget={id:'playerCastle',name:'我方城堡',hp:G.playerCastle.hp};stopReason='attack';break;}
+      const ls=summonAt(lp);
+      if(ls){atkCell={r:lp.r,c:lp.c};atkTarget=ls;stopReason='attack';break;}
     }
     const dp={r:pos.r+1,c:pos.c};
     if(dp.r<=12){
       const dh=heroAt(dp);
       if(dh){atkCell={r:dp.r,c:dp.c};atkTarget=dh;stopReason='attack';break;}
       if(playerCastleAt(dp)){atkCell={r:dp.r,c:dp.c};atkTarget={id:'playerCastle',name:'我方城堡',hp:G.playerCastle.hp};stopReason='attack';break;}
+      const ds=summonAt(dp);
+      if(ds){atkCell={r:dp.r,c:dp.c};atkTarget=ds;stopReason='attack';break;}
     }
     const np=nextMoveFromPos(pos,m);
     if(!np){stopReason='no_path';break;}
@@ -1991,9 +2127,9 @@ function buildCellInfoMap(){
 }
 
 function computeMonsterActionPreview(){
-  const monActMap={},heroIncomingDmg={},monCardMap={};
+  const monActMap={},heroIncomingDmg={},summonIncomingDmg={},monCardMap={};
   const monFinalSet=new Set(); // 怪物预计停留格（区别于路过格）
-  if(G.phase==='OVER')return{monActMap,heroIncomingDmg,monFinalSet,monCardMap};
+  if(G.phase==='OVER')return{monActMap,heroIncomingDmg,summonIncomingDmg,monFinalSet,monCardMap};
   G.monsters.forEach((m,idx)=>{
     if(m.dead)return;
     const mLabel='M'+(idx+1);
@@ -2002,11 +2138,22 @@ function computeMonsterActionPreview(){
     // 最后一个 mov 类型格为怪物停留位置
     const movOnly=movCells.filter(c=>c.type==='mov');
     if(movOnly.length>0)monFinalSet.add(k(movOnly[movOnly.length-1]));
-    if(atkCell){monActMap[k(atkCell)]={type:'atk',step:null};if(atkTarget){if(!heroIncomingDmg[atkTarget.id])heroIncomingDmg[atkTarget.id]=[];heroIncomingDmg[atkTarget.id].push({label:mLabel,dmg});}}
+    if(atkCell){
+      monActMap[k(atkCell)]={type:'atk',step:null};
+      if(atkTarget){
+        if(atkTarget.kind==='summon'){
+          if(!summonIncomingDmg[atkTarget.id])summonIncomingDmg[atkTarget.id]=[];
+          summonIncomingDmg[atkTarget.id].push({label:mLabel,dmg});
+        }else if(atkTarget.id){
+          if(!heroIncomingDmg[atkTarget.id])heroIncomingDmg[atkTarget.id]=[];
+          heroIncomingDmg[atkTarget.id].push({label:mLabel,dmg});
+        }
+      }
+    }
     // 记录每个怪物自身的攻击目标信息（用于怪物卡显示）
     monCardMap[k(m.pos)]={atkTargetId:atkTarget?.id||null,atkDmg:atkTarget?dmg:0,canAttack:!!atkTarget};
   });
-  return{monActMap,heroIncomingDmg,monFinalSet,monCardMap};
+  return{monActMap,heroIncomingDmg,summonIncomingDmg,monFinalSet,monCardMap};
 }
 
 // ─── ViewModel 层（读 G，输出纯 JS 描述对象，不创建 DOM）───
@@ -2019,8 +2166,8 @@ function buildBoardVM(){
   const es=new Set();if(G.explPos)explCells(G.explPos).forEach(p=>es.add(k(p)));
   // 从 coreSnapshot 读取预览数据，不在 VM 层重算
   const pgGrid=G.coreSnapshot?.previewGrid?.grid||{};
-  const mt=G.coreSnapshot?.monsterThreats||{monActMap:{},heroIncomingDmg:{},monFinalSet:new Set(),monCardMap:{}};
-  const{monActMap,heroIncomingDmg,monFinalSet,monCardMap}=mt;
+  const mt=G.coreSnapshot?.monsterThreats||{monActMap:{},heroIncomingDmg:{},summonIncomingDmg:{},monFinalSet:new Set(),monCardMap:{}};
+  const{monActMap,heroIncomingDmg,summonIncomingDmg,monFinalSet,monCardMap}=mt;
   const ELEMS=['fire','water','wind','earth'];
   const cells=[];
   for(let r=0;r<13;r++)for(let c=0;c<13;c++){
@@ -2057,7 +2204,7 @@ function buildBoardVM(){
       r,c,key,
       hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||[]}:null,
       mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:monCardMap[key]||{atkTargetId:null,atkDmg:0,canAttack:false},previewDamage:pgCell?.preview.entityDamage||0,willDie:pgCell?(pgCell.preview.entityDamage>=mon.hp&&mon.hp>0):false}:null,
-      summon:sp[key]?{id:sp[key].id,name:sp[key].name,hp:sp[key].hp,maxHp:sp[key].maxHp,atk:sp[key].atk,el:sp[key].el}:null,
+      summon:sp[key]?{id:sp[key].id,name:sp[key].name,hp:sp[key].hp,maxHp:sp[key].maxHp,atk:sp[key].atk,el:sp[key].el,incomingDmg:summonIncomingDmg[sp[key].id]||[]}:null,
       el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
       castle:playerCastleAt({r,c})?{side:'player',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp}:enemyCastleAt({r,c})?{side:'enemy',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp}:null,
       classes,pvEl,pvOpacity,monDmg,pvElLayers,pvWillExplode,
@@ -2208,10 +2355,15 @@ function buildPreviewGrid(){
   });
   // 6. 怪物行动预览 → 写入英雄格威胁
   const monsterThreats=computeMonsterActionPreview();
-  const{heroIncomingDmg,monActMap,monFinalSet,monCardMap}=monsterThreats;
+  const{heroIncomingDmg,summonIncomingDmg,monActMap,monFinalSet,monCardMap}=monsterThreats;
   Object.entries(heroIncomingDmg).forEach(([heroId,dmgArr])=>{
     const hero=G.heroes[heroId]; if(!hero)return;
     const key=`${hero.pos.r},${hero.pos.c}`;
+    if(grid[key])grid[key].preview.threatFromMonsters=dmgArr.map(d=>({label:d.label,dmg:d.dmg}));
+  });
+  Object.entries(summonIncomingDmg).forEach(([sid,dmgArr])=>{
+    const s=(G.summons||[]).find(x=>x.id===sid&&!x.dead); if(!s)return;
+    const key=`${s.pos.r},${s.pos.c}`;
     if(grid[key])grid[key].preview.threatFromMonsters=dmgArr.map(d=>({label:d.label,dmg:d.dmg}));
   });
   // 7. 汇总 labels
@@ -2227,7 +2379,7 @@ function buildPreviewGrid(){
     if(preview.threatFromMonsters.length>0)labels.push(`⚠×${preview.threatFromMonsters.length}`);
     cell.preview.labels=labels;
   });
-  return{grid,monActMap,heroIncomingDmg,monFinalSet,monCardMap};
+  return{grid,monActMap,heroIncomingDmg,summonIncomingDmg,monFinalSet,monCardMap};
 }
 
 function buildHeroesVM(){
@@ -2340,7 +2492,7 @@ function recomputeCorePreview(){
   const pg=buildPreviewGrid();
   const monsterStats=buildMonsterStats();
   const cellInfoMap=buildCellInfoMap();
-  const monsterThreats={monActMap:pg.monActMap,heroIncomingDmg:pg.heroIncomingDmg,monFinalSet:pg.monFinalSet,monCardMap:pg.monCardMap};
+  const monsterThreats={monActMap:pg.monActMap,heroIncomingDmg:pg.heroIncomingDmg,summonIncomingDmg:pg.summonIncomingDmg,monFinalSet:pg.monFinalSet,monCardMap:pg.monCardMap};
   const heroStats=buildHeroStats();
   const battleReport=buildBattleReport(monsterStats,monsterThreats);
   G.coreVersion=(G.coreVersion||0)+1;
@@ -2542,7 +2694,9 @@ function renderBoard(boardVM){
       cell.classList.add('hp');
       const sm=document.createElement('div');
       sm.className='sm';
-      sm.innerHTML=`<div class="sm-atk">⚔${cv.summon.atk}</div><div class="sm-icon">💧</div><div class="sm-hp">${cv.summon.hp}/${cv.summon.maxHp}</div>`;
+      const sdmg=(cv.summon.incomingDmg||[]).reduce((s,e)=>s+e.dmg,0);
+      const incHtml=sdmg>0?`<div class="sm-hp" style="color:#fda0a0">⚠${sdmg}</div>`:'';
+      sm.innerHTML=`<div class="sm-atk">⚔${cv.summon.atk}</div><div class="sm-icon">💧</div><div class="sm-hp">${cv.summon.hp}/${cv.summon.maxHp}</div>${incHtml}`;
       sm.title=`${cv.summon.name} HP:${cv.summon.hp}/${cv.summon.maxHp} ATK:${cv.summon.atk}`;
       cell.appendChild(sm);
     }else if(cv.el){

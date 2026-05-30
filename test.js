@@ -2773,6 +2773,53 @@ group('TDD-水召唤引擎·增量4',()=>{
   });
 });
 
+group('TDD-水召唤引擎·增量5',()=>{
+  test('ENG16:引擎闭环 召唤→治疗→攻击→死亡留水',()=>{
+    fresh();
+    const s=spawnSummon('ha',{r:8,c:4});
+    G.monsters=[{name:'靶',hp:20,maxHp:20,atk:1,ap:0,pos:{r:8,c:5},dead:false,el:null}];
+    healSummon(s,1);
+    assert.strictEqual(s.atk,2);
+    runSummonActions();
+    assert.ok(G.monsters[0].hp<20,'治疗成长后应能输出伤害');
+    damageSummon(s,99);
+    assert.ok(s.dead,'召唤物可被击杀');
+    const key='8,4';
+    assert.ok((G.elementCells[key]?.water?.layers||0)>=1,'死亡应留水层');
+  });
+  test('ENG17:怪物攻击相邻召唤物',()=>{
+    fresh();
+    const s=spawnSummon('ha',{r:5,c:6},{hp:6,maxHp:6});
+    G.heroes.ha.pos={r:12,c:0};
+    G.heroes.hb.pos={r:12,c:1};
+    G.monsters=[{name:'怪',hp:6,maxHp:6,atk:2,ap:3,pos:{r:5,c:7},dead:false,el:null}];
+    monsterAct(G.monsters[0]);
+    assert.ok(s.hp<6||s.dead,'相邻怪物应攻击召唤物');
+  });
+  test('ENG18:预览含召唤物受击',()=>{
+    fresh();
+    spawnSummon('ha',{r:5,c:6});
+    G.heroes.ha.pos={r:12,c:0};
+    G.heroes.hb.pos={r:12,c:1};
+    G.monsters=[{name:'怪',hp:6,maxHp:6,atk:2,ap:3,pos:{r:5,c:7},dead:false,el:null}];
+    const prev=computeMonsterActionPreview();
+    const sid=G.summons[0].id;
+    const inc=(prev.summonIncomingDmg&&prev.summonIncomingDmg[sid])||[];
+    assert.ok(inc.length>0,'怪物预览应记录召唤物受击');
+  });
+  test('ENG19:SHOP_POOLS引用单位均有UNIT_DEFS',()=>{
+    const ids=new Set(Object.values(SHOP_POOLS).flat());
+    ids.forEach(id=>assert.ok(UNIT_DEFS[id],`缺少UNIT_DEFS: ${id}`));
+  });
+  test('ENG20:Day2午池genShop可出池内单位',()=>{
+    fresh(); G.day=2; G.dayHalf=1; G.shopTier=1;
+    genShop();
+    const pool=SHOP_POOLS.day2_midday.filter(id=>UNIT_DEFS[id]?.tier===1);
+    assert.ok(pool.length>0);
+    assert.ok(G.shopItems.units.some(u=>pool.includes(u.defId)),'Day2中午商店应刷出池内Tier1单位');
+  });
+});
+
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

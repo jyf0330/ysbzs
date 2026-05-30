@@ -182,12 +182,11 @@ group('城堡系统', ()=>{
     assert.strictEqual(G.enemyCastle.hp,100);
     assert.deepStrictEqual(G.enemyCastle.pos,{r:0,c:11});
   });
-  test('敌方城堡 HP≤0 → 胜利', ()=>{
+  test('敌方城堡 HP≤0 → 胜利且 runVictory', ()=>{
     fresh();
-    G.enemyCastle.hp=0;
-    checkGameOver();
+    damageEnemyCastle(100,'test');
     assert.strictEqual(G.phase,'OVER');
-    assert.ok(_lastMsg.includes('胜利'));
+    assert.strictEqual(G.runVictory,true);
   });
   test('我方城堡 HP≤0 → 失败', ()=>{
     fresh();
@@ -2482,9 +2481,9 @@ group('TDD-召唤',()=>{
 });
 // TDD-商店池
 group('TDD-商店池',()=>{
-  test('T9:Day1夜池',()=>{const p=['sprout_summoner','flame_sprite','drop_sprite','bubble_sprite'];assert.ok(p.includes('sprout_summoner'));assert.ok(!p.includes('fluff_speaker'));});
+  test('T9:Day1夜池无召芽',()=>{assert.ok(!SHOP_POOLS.day1_night.includes('sprout_summoner'));assert.ok(!SHOP_POOLS.day1_night.includes('fluff_speaker'));});
   test('T10:刷新1金',()=>{assert.strictEqual(7-1,6);});
-  test('T11:Day2午池',()=>{const p=['fluff_speaker','boom_sprite','split_sprite'];assert.ok(p.includes('fluff_speaker'));});
+  test('T11:Day4夜池含绒语',()=>{assert.ok(SHOP_POOLS.day4_night.includes('fluff_speaker'));assert.ok(!SHOP_POOLS.day2_midday.includes('fluff_speaker'));});
 });
 // TDD-分分灵
 group('TDD-分分灵',()=>{
@@ -2747,10 +2746,10 @@ group('TDD-水召唤引擎·增量3',()=>{
     assert.strictEqual(r.el,'water');
     assert.strictEqual(r.layers,4);
   });
-  test('ENG13:Day1夜池可刷出召芽灵',()=>{
-    fresh(); G.day=1; G.dayHalf=2; G.shopTier=1;
+  test('ENG13:Day3夜池可刷出召芽灵',()=>{
+    fresh(); G.day=3; G.dayHalf=2; G.shopTier=2;
     genShop();
-    assert.ok(G.shopItems.units.some(u=>u.defId==='sprout_summoner'),'Day1夜晚商店应含召芽灵');
+    assert.ok(G.shopItems.units.some(u=>u.defId==='sprout_summoner'),'Day3夜晚商店应含召芽灵');
   });
 });
 
@@ -2880,10 +2879,11 @@ group('TDD-水召唤引擎·增量6',()=>{
     assert.strictEqual(G.phase,'SHOP','Day1上午结束应进中午商店');
     assert.ok(G.engineStats.summonCount>=1,'应至少召唤1次');
   });
-  test('ENG26:Day1夜池含召芽灵且genShop可刷',()=>{
-    fresh(); G.day=1; G.dayHalf=2; G.phase='SHOP';
+  test('ENG26:Day1夜池不含召芽、Day3夜池含召芽',()=>{
+    assert.ok(!SHOP_POOLS.day1_night.includes('sprout_summoner'),'Day1夜不应有召芽');
+    assert.ok(SHOP_POOLS.day3_night.includes('sprout_summoner'),'Day3夜应有召芽');
+    fresh(); G.day=3; G.dayHalf=2; G.phase='SHOP';
     openShop();
-    assert.ok(SHOP_POOLS.day1_night.includes('sprout_summoner'));
     assert.ok(G.shopItems.units.some(u=>u.defId==='sprout_summoner'));
   });
 });
@@ -2953,7 +2953,7 @@ group('TDD-S2成长与连锁反馈',()=>{
 });
 
 group('TDD-S3 Run与商店',()=>{
-  test('RUN1:城堡HP跨天保留',()=>{
+  test('RUN1:跨天我方城堡保留、敌方城堡回满',()=>{
     fresh();
     G.playerCastle.hp=73;
     G.enemyCastle.hp=41;
@@ -2961,11 +2961,11 @@ group('TDD-S3 Run与商店',()=>{
     G.day=1;
     G.dayHalf=2;
     closeShop();
-    assert.strictEqual(G.playerCastle.hp,73);
-    assert.strictEqual(G.enemyCastle.hp,41);
+    assert.strictEqual(G.playerCastle.hp,73,'我方跨天保留');
+    assert.strictEqual(G.enemyCastle.hp,100,'敌方次日回满');
     assert.strictEqual(G.day,2);
   });
-  test('RUN2:Day5下午Boss战结束通关',()=>{
+  test('RUN2:Day5下午结束进夜晚商店而非自动通关',()=>{
     fresh();
     G.day=5;
     G.dayHalf=2;
@@ -2975,7 +2975,17 @@ group('TDD-S3 Run与商店',()=>{
     G.monsters.forEach(m=>{m.dead=true;});
     G.round=G.maxRound+1;
     finishMonsters();
-    assert.strictEqual(G.phase,'OVER');
+    assert.strictEqual(G.phase,'SHOP');
+    assert.notStrictEqual(G.runVictory,true);
+  });
+  test('RUN2b:Day3早上脚本波含铁甲队长HP24',()=>{
+    fresh();
+    G.day=3;
+    spawnWaveForDay(3,'morning');
+    const elite=G.monsters.find(m=>m.name.includes('铁甲')||m.typeId==='elite');
+    assert.ok(elite,'Day3早上应有精英');
+    assert.strictEqual(elite.hp,24);
+    assert.ok(G.monsters.length>=3,'应含精英+小怪');
   });
   test('RUN3:我方城堡归零失败',()=>{
     fresh();

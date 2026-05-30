@@ -960,6 +960,15 @@ function spawnWaveForDay(day,phase){
     glog('⚔️ 第1天早上：2只教学怪物（右上）');
     return;
   }
+  if(day===3&&phase==='morning'){
+    G.monsters=[
+      {id:'d3_elite',name:'铁甲队长',typeId:'elite',hp:24,maxHp:24,atk:3,ap:3,pos:{r:1,c:11},dead:false,el:null,gold:8},
+      {id:'d3_a',name:'小怪A',typeId:'normal',hp:4,maxHp:4,atk:1,ap:5,pos:{r:0,c:10},dead:false,el:null,gold:2},
+      {id:'d3_b',name:'小怪B',typeId:'normal',hp:4,maxHp:4,atk:1,ap:5,pos:{r:2,c:12},dead:false,el:null,gold:2},
+    ];
+    glog('⚔️ 第3天早上：精英教学波（铁甲队长+小怪）');
+    return;
+  }
   const wavePlan = buildWaveForDay(day,phase);
   if(!wavePlan||!wavePlan.monsters){
     G.monsters=[];
@@ -1617,16 +1626,9 @@ function finishMonsters(){
       G.phase='SHOP';
       openShop();
     } else if(G.dayHalf===2){
-      // 下午波结束 → 夜晚商店（Day5 下午 Boss 结束则通关）
-      if(G.day>=5){
-        G.runVictory=true;
-        G.phase='OVER';
-        showRunEnd();
-      } else {
-        glog(`🌙 第${G.day}天夜晚·进入商店！`);
-        G.phase='SHOP';
-        openShop();
-      }
+      glog(`🌙 第${G.day}天夜晚·进入商店！`);
+      G.phase='SHOP';
+      openShop();
     }
   } else {
     G.phase='PLAYER'; G.hitCount=0; G.previewEvents=[];
@@ -1652,8 +1654,9 @@ function checkGameOver(){
     return;
   }
   if(G.enemyCastle&&G.enemyCastle.hp<=0){
+    G.runVictory=true;
     G.phase='OVER';
-    showMsg('🏰 胜利！敌方城堡已被摧毁！');
+    showRunEnd();
   }
 }
 
@@ -2019,11 +2022,24 @@ function openShop(){
   document.getElementById('so').style.display='block';
 }
 
-const SHOP_POOLS={day1_midday:["fire_starter","water_droplet","wind_breeze","bubble_sprite","pebble_guard"],day1_night:["sprout_summoner","fire_starter","water_droplet","bubble_sprite"],day2_midday:["fluff_speaker","boom_sprite","split_sprite","sprout_summoner","ember_seed","spring_sprite","water_droplet"],day2_night:["fluff_speaker","boom_sprite","split_sprite","ember_seed","spring_sprite","pebble_guard"],day3:["breeze_sprite","pebble_guard","sprout_summoner","fluff_speaker","boom_sprite"]};
+const SHOP_POOLS={
+  day1_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard'],
+  day1_night:['fire_starter','water_droplet','wind_breeze','pebble_guard','bubble_sprite'],
+  day2_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard','ember_seed'],
+  day2_night:['fire_starter','water_droplet','wind_breeze','pebble_guard','bubble_sprite'],
+  day3_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard','ember_seed'],
+  day3_night:['sprout_summoner','fire_starter','water_droplet','wind_breeze','pebble_guard'],
+  day4_midday:['spring_sprite','fire_starter','water_droplet','wind_breeze','pebble_guard'],
+  day4_night:['fluff_speaker','sprout_summoner','spring_sprite','pebble_guard','boom_sprite'],
+  day5_midday:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','sprout_summoner'],
+  day5_night:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','ember_seed'],
+};
 function getShopPoolKey(){
   const d=G.day||1;
-  if(d>=3)return 'day3';
-  if(G.dayHalf>=2)return `day${d}_night`;
+  if(d>=5) return G.dayHalf>=2?'day5_night':'day5_midday';
+  if(d>=4) return G.dayHalf>=2?'day4_night':'day4_midday';
+  if(d>=3) return G.dayHalf>=2?'day3_night':'day3_midday';
+  if(G.dayHalf>=2) return `day${d}_night`;
   return `day${d}_midday`;
 }
 function getShopPoolIds(tier){
@@ -2147,10 +2163,14 @@ function closeShop(){
     glog(`☀️ 第${G.day}天下午·更多怪物来袭！`);
   } else {
     G.day++;
+    if(G.enemyCastle) G.enemyCastle.hp=G.enemyCastle.maxHp;
     if(G.day>5){
-      G.runVictory=true;
-      G.phase='OVER';
-      showRunEnd();
+      G.wave++;
+      G.dayHalf=0;
+      G.round=1; G.hitCount=0;
+      spawnWaveForDay(Math.min(G.day,5),'morning');
+      G.phase='PLAYER';
+      glog(`⚔️ 第${G.day}天战斗开始！`);
       syncUnitsToHeroes();
       refreshUI();
       return;

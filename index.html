@@ -213,6 +213,15 @@ h1{color:#f0a500;margin-bottom:6px;font-size:1.3em;letter-spacing:2px;}
 #debug-panel .dbg-exp{color:#f59e0b;}
 #debug-panel .dbg-src{color:#60a5fa;}
 #debug-panel .dbg-src-b{color:#4ade80;}
+#debug-panel .dbg-src-btn{
+  display:inline-block;margin-left:6px;padding:0 6px;height:18px;
+  font-size:9px;line-height:18px;border-radius:3px;border:1px solid #30363d;
+  background:#0d1117;color:#8b949e;cursor:pointer;font-family:inherit;vertical-align:middle;
+}
+#debug-panel .dbg-src-btn:hover{background:#1e3a5f;color:#f0a500;border-color:#f0a500;}
+#debug-panel .dbg-src-btn.dbg-btn-on{background:#1e3a5f;color:#f0a500;border-color:#f0a500;}
+#debug-panel .dbg-src-detail{font-size:9px;line-height:1.6;color:#94a3b8;margin-top:2px;}
+#debug-panel .dbg-src-indent{color:#64748b;}
 #debug-panel .dbg-slot{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0;}
 #debug-panel .dbg-slot-item{background:#0d1117;border-radius:3px;padding:2px 5px;font-size:9px;white-space:nowrap;}
 #debug-panel .dbg-log{background:#0d1117;border-radius:4px;padding:4px 6px;max-height:120px;overflow-y:auto;font-size:9px;line-height:1.6;}
@@ -2989,6 +2998,9 @@ function buildDebugPanelVM(){
       selfDmg:pg?.preview?.selfCellDamage?.total||0,
       splashDmg:pg?.preview?.splashDamage?.total||0,
       selfByEl:pg?.preview?.selfCellDamage?{fire:pg.preview.selfCellDamage.fire||0,water:pg.preview.selfCellDamage.water||0,wind:pg.preview.selfCellDamage.wind||0,earth:pg.preview.selfCellDamage.earth||0}:{},
+      selfCellDamage:pg?.preview?.selfCellDamage||null,
+      splashDamage:pg?.preview?.splashDamage||null,
+      explosionElements:pg?.preview?.explosionElements||null,
       willExplode:!!pg?.preview?.willExplode,
       explosionDamage:pg?.preview?.explosionDamage||0,
       splashTargets:pg?.preview?.splashTargets||[],
@@ -3000,10 +3012,14 @@ function buildDebugPanelVM(){
     phase:G.phase,day:G.day,dayHalf:G.dayHalf,round:G.round,maxRound:G.maxRound,wave:G.wave,
     gold:G.gold,
     selectedCell,
-    slots:G.slots.map(function(s,i){return{i:i,el:s.el,used:!!s.used,hid:s.hid,skill:s.skill||null,sn:s.sn,dir:s.dir};}),
+    previewGrid:G.coreSnapshot?.previewGrid?.grid||{},
+    slots:G.slots.map(function(s,i){
+      var hero=G.heroes[s.hid];
+      return{i:i,el:s.el,used:!!s.used,hid:s.hid,skill:s.skill||null,sn:s.sn,dir:s.dir,heroPos:hero?{r:hero.pos.r,c:hero.pos.c}:null};
+    }),
     actionLogTail:(G.actionLog||[]).slice(-8),
     monsters:G.monsters.filter(function(m){return!m.dead;}).map(function(m){
-      return{name:m.name,pos:{r:m.pos.r,c:m.pos.c},hp:m.hp,nextWarn:(G.monWarn||[]).find(function(w){return w.r===m.pos.r&&w.c===m.pos.c;})||null};
+      return{name:m.name,pos:{r:m.pos.r,c:m.pos.c},hp:m.hp,atk:m.atk,nextWarn:(G.monWarn||[]).find(function(w){return w.r===m.pos.r&&w.c===m.pos.c;})||null};
     }),
     engineStats:{...(G.engineStats||{})},
     growth:{summonTier:G.growth?.summonTier||0,healTier:G.growth?.healTier||0,chainTier:G.growth?.chainTier||0},
@@ -3017,20 +3033,165 @@ function renderDebugPanel(){
   el.style.display='block';el.setAttribute('aria-hidden','false');
   var vm=buildDebugPanelVM();
   var EC={fire:'火',water:'水',wind:'风',earth:'土'};
-  var ELIC={fire:'#f97316',water:'#0ea5e9',wind:'#a855f7',earth:'#84cc16'};
+  var ELIC2={fire:'#f97316',water:'#0ea5e9',wind:'#a855f7',earth:'#84cc16'};
   var ES=['fire','water','wind','earth'];
-  // ── 顶部状态条 ──
+  var ELIC2N={fire:'🔥',water:'💧',wind:'🌿',earth:'🪨'};
+  // ── 来源模式开关（panel 级闭包）──
+  if(typeof renderDebugPanel._showSources==='undefined')renderDebugPanel._showSources=false;
+  var showSrc=renderDebugPanel._showSources;
+
+  // ── 紧凑一行格式（审核通过的人话版）──
+  function buildDebugOneLiner(sc){
+    var ent=sc&&sc.entity;
+    var ef=sc&&sc.elementField||{};
+    // 元素层简写：只写 layers>0 的，格式“火3(+1)层”
+    var elParts=[];
+    ES.forEach(function(el){
+      var v=ef[el]; if(!v||!v.layers)return;
+      var s=EC[el]+v.layers;
+      if(v.addedLayers>0)s+='(+'+v.addedLayers+')';
+      s+='层';
+      elParts.push(s);
+    });
+    var elStr=elParts.length>0?'，'+elParts.join('，'):'';
+    if(!ent||!ent.type){
+      if(sc&&sc.willExplode)return '💥'+elStr+'引爆，十字'+sc.explosionDamage+'伤';
+      return elParts.length>0?'空'+elStr:'空';
+    }
+    if(ent.type==='monster'){
+      var dmg=sc.selfDmg+sc.splashDmg||sc.entityDamage||0;
+      var die=(sc.entityDamage>=ent.hp&&ent.hp>0)?'☠':'';
+      return '👾'+ent.name+' '+ent.hp+'/'+ent.maxHp+'血，攻'+ent.atk+elStr+(dmg?'，-'+dmg+(die?' '+die:''):'');
+    }
+    if(ent.type==='hero'){
+      var thr=sc.threats||[];
+      var thrStr=thr.length>0?'，受击：'+thr.map(function(t){return t.label+'-'+t.dmg;}).join('，'):'';
+      var c2=ent.id==='ha'?'#60a5fa':'#4ade80';
+      return '<span style="color:'+c2+'">H'+ent.id.toUpperCase().replace('h','')+'</span> '+ent.name+' '+ent.hp+'/'+ent.maxHp+'血'+thrStr;
+    }
+    if(ent.type==='summon'){
+      return '💧'+ent.name+' '+ent.hp+'/'+ent.maxHp+'血，攻'+(ent.atk||0)+elStr;
+    }
+    if(ent.type==='player_castle')return '🏰我方城堡 '+ent.hp+'/'+ent.maxHp+'血';
+    if(ent.type==='enemy_castle')return '🏰敌方城堡 '+ent.hp+'/'+ent.maxHp+'血';
+    return ent.name||'?';
+  }
+
+  // ── 来源明细（选中格子）──
+  function buildSourceDetail(sc,vm){
+    if(!sc)return'';
+    var ent=sc.entity,ef=sc.elementField||{};
+    var lines=[];
+    var indent='<span style="color:#64748b">  ┗ </span>';
+    // 来源名→heroId
+    function hidOfSrc(src){return src=== 'board'?null:(src.charAt(0)==='A'?'ha':'hb');}
+    function posOfHid(hid){
+      var s2=vm.slots.find(function(s){return s.hid===hid&&s.heroPos;});
+      return s2?'('+s2.heroPos.r+','+s2.heroPos.c+')':'';
+    }
+    var ADV2={water:'fire',fire:'wind',wind:'earth',earth:'water'};
+
+    // 1) 元素层来源
+    ES.forEach(function(el){
+      var v=ef[el]; if(!v||!v.layers)return;
+      var parts=[];
+      if(v.boardLayers>0)parts.push('棋盘:'+EC[el]+v.boardLayers+'层');
+      if(v.addedLayers>0){
+        var srcs=v.sources||[];
+        var heroMap={};
+        srcs.forEach(function(s){if(s!=='board')heroMap[s]=(heroMap[s]||0)+1;});
+        Object.keys(heroMap).sort().forEach(function(k){
+          var c3=heroMap[k];
+          var hid=hidOfSrc(k);
+          parts.push(k+':+'+c3+'层'+(hid?posOfHid(hid):''));
+        });
+      }
+      lines.push(indent+EC[el]+' '+v.boardLayers+'层(棋盘)'+(v.addedLayers>0?' + '+v.addedLayers+'层(槽)':'')+' = '+v.layers+'层 | '+parts.join('，'));
+    });
+
+    // 2) 怪物格伤害来源
+    if(ent&&ent.type==='monster'){
+      var sd=sc.selfCellDamage||{total:0};
+      var sp=sc.splashDamage||{total:0,sources:[]};
+      if(sd.total>0||sp.total>0){
+        var selfLines=[];
+        ES.forEach(function(el){
+          var d=sd[el]||0; if(d===0)return;
+          var elLayers=ef[el]?ef[el].layers:0;
+          var em=ent.el;
+          var m2=(em&&ADV2[el]===em)?2:1;
+          selfLines.push(EC[el]+':'+elLayers+'层爆='+(elLayers*(elLayers+1)/2)+'×'+m2+'='+d);
+        });
+        if(selfLines.length>0)lines.push(indent+'单体伤：'+selfLines.join('，'));
+        if(sp.total>0&&sp.sources&&sp.sources.length>0){
+          sp.sources.forEach(function(src){
+            var srcCell=vm.previewGrid&&vm.previewGrid[src.srcKey];
+            var srcLayers=srcCell?(srcCell.elementField[src.el]?srcCell.elementField[src.el].layers:0):0;
+            var m3=(ent.el&&ADV2[src.el]===ent.el)?2:1;
+            lines.push(indent+'波及来自('+src.srcKey+')：'+EC[src.el]+srcLayers+'层爆='+(srcLayers*(srcLayers+1)/2)+'×'+m3+'='+src.dmg);
+          });
+        }
+        var td=sd.total+sp.total;
+        var willDie=td>=ent.hp&&ent.hp>0;
+        lines.push(indent+'合计：-'+td+'伤 ≥ '+ent.hp+'血 '+(willDie?'☠':'存活'));
+      }
+    }
+
+    // 3) 空格爆炸
+    if(sc.willExplode&&sc.explosionElements){
+      sc.explosionElements.forEach(function(expEl){
+        var elLayers2=(ef[expEl.element]&&ef[expEl.element].layers)||0;
+        lines.push(indent+'💥 '+EC[expEl.element]+elLayers2+'层引爆('+sc.r+','+sc.c+')：爆='+(elLayers2*(elLayers2+1)/2)+'+空间加成='+expEl.damage);
+      });
+      (sc.splashTargets||[]).forEach(function(tk){
+        var tCell=vm.previewGrid&&vm.previewGrid[tk];
+        if(!tCell||!tCell.entity||tCell.entity.type!=='monster')return;
+        var tEnt=tCell.entity;
+        var tSpSrc=(tCell.preview&&tCell.preview.splashDamage&&tCell.preview.splashDamage.sources)||[];
+        tSpSrc.filter(function(x){return x.srcKey===sc.coord;}).forEach(function(x){
+          var m3=(tEnt.el&&ADV2[x.el]===tEnt.el)?2:1;
+          lines.push(indent+'波及 '+tk+' '+tEnt.name+'：'+EC[x.el]+'爆'+x.dmg+'×'+m3+'='+x.dmg+' '+(x.dmg>=tEnt.hp?'☠':''));
+        });
+      });
+    }
+
+    // 4) 英雄/召唤物受击（怪物威胁）
+    if(sc.threats&&sc.threats.length>0){
+      sc.threats.forEach(function(t){
+        var idx=parseInt(t.label.replace('M',''),10)-1;
+        var mon=idx>=0&&idx<vm.monsters.length?vm.monsters[idx]:null;
+        var atk=mon?mon.atk:t.dmg;
+        lines.push(indent+t.label+' 攻'+atk+' = '+t.dmg);
+      });
+      var totalThr=sc.threats.reduce(function(s,t){return s+t.dmg;},0);
+      var isHero=ent&&ent.type==='hero';
+      var willSurvive=isHero&&totalThr<ent.hp;
+      lines.push(indent+'合计：受击'+sc.threats.length+'次，总伤'+totalThr+' '+(isHero?(willSurvive?'≥ '+(ent.hp-totalThr)+'血，存活':'≥ '+ent.hp+'血，倒地'):''));
+    }
+
+    if(lines.length===0)return'<div style="font-size:9px;color:#64748b">  （无来源数据）</div>';
+    return'<div class="dbg-src-detail">'+lines.join('<br>')+'</div>';
+  }
+
+  // ── 顶部状态条 + 来源按钮 ──
+  var btnCls=showSrc?'dbg-btn-on':'dbg-btn-off';
+  var btnLabel=showSrc?'🔍 隐藏来源':'🔍 看来源';
   var stateHtml='<span class="dbg-k">phase</span> '+vm.phase
     +' <span class="dbg-k">D</span>'+vm.day+'<span class="dbg-k">h</span>'+vm.dayHalf
     +' <span class="dbg-k">R</span>'+vm.round+'/'+vm.maxRound
     +' <span class="dbg-k">波</span>'+vm.wave
-    +' <span class="dbg-k">金币</span>'+vm.gold;
+    +' <span class="dbg-k">金币</span>'+vm.gold
+    +' <button onclick="renderDebugPanel._showSources=!renderDebugPanel._showSources;renderDebugPanel()" class="dbg-src-btn '+btnCls+'">'+btnLabel+'</button>';
   // ── 格子区 ──
   var cellHtml='';
   if(vm.selectedCell){
     var sc=vm.selectedCell;
     // 头部：坐标
     cellHtml='<div><span class="dbg-lb" style="display:inline">📍</span> ['+sc.r+','+sc.c+']';
+    // 紧凑一行
+    cellHtml+='<div style="font-size:9px;margin:2px 0;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#cbd5e1">'+buildDebugOneLiner(sc)+'</div>';
+    // 来源明细
+    if(showSrc)cellHtml+=buildSourceDetail(sc,vm);
     // 实体
     var ent=sc.entity;
     if(ent){
@@ -3039,7 +3200,7 @@ function renderDebugPanel(){
         cellHtml+=' <span class="dbg-el" style="color:#fca5a5;background:#7f1d1d">👾'+ent.name+'</span>'
           +' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp
           +' <span class="dbg-k">攻</span>'+ent.atk
-          +(ent.el?' <span class="dbg-el" style="color:'+ELIC[ent.el]+'">'+EC[ent.el]+'</span>':'')
+          +(ent.el?' <span class="dbg-el" style="color:'+ELIC2[ent.el]+'">'+EC[ent.el]+'</span>':'')
           +(sc.entityDamage>0?' <span class="dbg-dmg">-'+sc.entityDamage+dieTag+'</span>':'');
       }else if(ent.type==='hero'){
         var c=ent.id==='ha'?'#60a5fa':'#4ade80';
@@ -3057,10 +3218,10 @@ function renderDebugPanel(){
     ES.forEach(function(el){
       var ef=sc.elementField&&sc.elementField[el];
       if(!ef||!ef.layers)return;
-      var c=ELIC[el];
+      var c2=ELIC2[el];
       var boardStr=ef.boardLayers>0?ef.boardLayers:'';
       var addedStr=ef.addedLayers>0?'<span class="dbg-dmg">+'+ef.addedLayers+'</span>':'';
-      if(boardStr||addedStr)cellHtml+=' <span class="dbg-el" style="color:'+c+';background:rgba(0,0,0,0.3)">'
+      if(boardStr||addedStr)cellHtml+=' <span class="dbg-el" style="color:'+c2+';background:rgba(0,0,0,0.3)">'
         +EC[el]+'<span class="dbg-k">'+(boardStr||'0')+'</span>'+addedStr
         +'<span class="dbg-arrow">→</span>'+ef.layers+'层'
         +'<span class="dbg-detail"> '+ef.damage+'伤</span>'
@@ -3068,15 +3229,15 @@ function renderDebugPanel(){
     });
     // 伤害/结算
     if(sc.isMonster){
-      var sd=sc.selfDmg||0;
-      var sp=sc.splashDmg||0;
-      if(sd>0||sp>0)cellHtml+='<br> <span class="dbg-detail">单体 <span class="dbg-dmg">'+sd+'</span>'
-        +(sp>0?' 波及 <span class="dbg-dmg">'+sp+'</span>':'')
-        +' 总 <span class="dbg-dmg">'+(sd+sp)+'</span></span>';
+      var sd2=sc.selfDmg||0;
+      var sp2=sc.splashDmg||0;
+      if(sd2>0||sp2>0)cellHtml+='<br> <span class="dbg-detail">单体 <span class="dbg-dmg">'+sd2+'</span>'
+        +(sp2>0?' 波及 <span class="dbg-dmg">'+sp2+'</span>':'')
+        +' 总 <span class="dbg-dmg">'+(sd2+sp2)+'</span></span>';
       // 按元素分单体伤害来源
       var selfByEl=sc.selfByEl||{};
       var parts=ES.filter(function(el){return selfByEl[el]>0;}).map(function(el){
-        return'<span style="color:'+ELIC[el]+'">'+EC[el]+'<span class="dbg-dmg">-'+selfByEl[el]+'</span></span>';
+        return'<span style="color:'+ELIC2[el]+'">'+EC[el]+'<span class="dbg-dmg">-'+selfByEl[el]+'</span></span>';
       });
       if(parts.length>0)cellHtml+='<br> <span class="dbg-detail">分元素 '+parts.join(' ')+'</span>';
     }
@@ -3103,8 +3264,8 @@ function renderDebugPanel(){
     cellHtml+='<br> <span class="dbg-lb" style="display:inline;font-size:8px">来源</span>';
     Object.keys(byHero).forEach(function(hid){
       var ha=byHero[hid];
-      var c=hid==='ha'?'#60a5fa':'#4ade80';
-      cellHtml+=' <span style="color:'+c+'">'+hid.toUpperCase()+'</span>';
+      var c2=hid==='ha'?'#60a5fa':'#4ade80';
+      cellHtml+=' <span style="color:'+c2+'">'+hid.toUpperCase()+'</span>';
       ha.items.forEach(function(a){
         cellHtml+=' <span class="dbg-detail">'+a.description+'</span>';
       });
@@ -3129,7 +3290,7 @@ function renderDebugPanel(){
     var usedCls=s.used?'<span style="color:#22c55e">✓</span>':'<span style="color:#64748b">○</span>';
     var dirLb={up:'↑',down:'↓',left:'←',right:'→'};
     return '<span class="dbg-slot-item">'+usedCls+' #'+(s.i+1)+' '
-      +(s.el?'<span style="color:'+(ELIC[s.el]||'#888')+'">'+s.el.substring(0,3)+'</span> ':'')
+      +(s.el?'<span style="color:'+(ELIC2[s.el]||'#888')+'">'+s.el.substring(0,3)+'</span> ':'')
       +'h'+s.hid
       +' s'+s.sn+(s.dir?dirLb[s.dir]||s.dir:'')
       +(s.used?'':' <span class="dbg-detail">'+(s.skill||'')+'</span>')

@@ -1,5 +1,7 @@
 # CLAUDE.md · 元素背包史
 
+<!-- ywh: web-game -->
+
 本文件是 Claude 入口薄文件。项目规则入口是 `docs/00_AI_PROJECT_RULES.md`，细则是 `docs/00_AI_WORKFLOW_DETAILS.md`。
 
 ## 必读

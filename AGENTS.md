@@ -7,6 +7,8 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 # AGENTS.md · 元素背包史
 
+<!-- ywh: web-game -->
+
 本文件是 AI 入口薄文件。项目规则入口是 `docs/00_AI_PROJECT_RULES.md`，细则是 `docs/00_AI_WORKFLOW_DETAILS.md`，不要在这里复制完整规则。
 
 ## 开始前必须做

@@ -1,4 +1,13 @@
 
+## 2026-05-30 — Debug 面板 v3 树形详情重构
+
+### 代码（`index.html` / `test.js`）
+- **VM 数据层**：`buildPreviewGrid` 扩展 `elementField`（`beforeLayers`/`addLayers`/`afterLayers`/`directDamage`/`splashDamage`/`pathDamage`/`totalDamage`）、`incomingActions`（`slotIndex`/`sn`/`dir`/`fromR`/`fromC`/`heroName`/`sourceType`/`resolvedEffects`/`sequenceIndex`）、`preview.result`（`totalDamage`/`willDie`/`surviveHp`/`damageBySource`）
+- **怪物威胁增强**：`computeMonsterActionPreview` 输出新增 `stableId`/`alive`/`fromR`/`fromC`/`toR`/`toC`/`attackType`
+- **R8 落地**：我方城堡不承受我方元素伤害（`buildPreviewGrid` 5a 段判定 `player_castle` → `ignoreElDmg=true`）
+- **R9 标注**：路径反伤仅 VM 预览字段（`pathDamage=0`），不改真实怪物行动结算
+- **渲染层**：`renderDebugPanel` 删除旧 `buildDebugOneLiner` + `buildSourceDetail`，替换为 `buildCellTree` 树形详情面板（v3 ┃┣ 格式），只读 VM 不重算
+- 测试新增 DEBUG6~DEBUG15，**391/391 全部通过**
 
 ## 2026-05-30 — 文字战争与代码决策落地（1C–8）
 ## 2026-05-30 — 一键执行：英雄能攻击时不走位

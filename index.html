@@ -2458,6 +2458,7 @@ function computeMonsterActionPreview(){
   G.monsters.forEach((m,idx)=>{
     if(m.dead)return;
     const mLabel='M'+(idx+1);
+    var stableId=m.name+'#'+idx;
     const{movCells,atkCell,atkTarget,dmg}=simMonAct(m);
     movCells.forEach(c=>{if(!monActMap[k(c)])monActMap[k(c)]={type:c.type,step:c.step||null};});
     // 最后一个 mov 类型格为怪物停留位置
@@ -2466,12 +2467,17 @@ function computeMonsterActionPreview(){
     if(atkCell){
       monActMap[k(atkCell)]={type:'atk',step:null};
       if(atkTarget){
-        if(atkTarget.kind==='summon'){
-          if(!summonIncomingDmg[atkTarget.id])summonIncomingDmg[atkTarget.id]=[];
-          summonIncomingDmg[atkTarget.id].push({label:mLabel,dmg});
-        }else if(atkTarget.id){
-          if(!heroIncomingDmg[atkTarget.id])heroIncomingDmg[atkTarget.id]=[];
-          heroIncomingDmg[atkTarget.id].push({label:mLabel,dmg});
+        var thrEntry={label:mLabel,dmg:dmg,stableId:stableId,alive:!m.dead,fromR:m.pos.r,fromC:m.pos.c,attackType:'近战攻击'};
+        if(atkTarget.id){
+          thrEntry.toR=atkTarget.pos?atkTarget.pos.r:null;
+          thrEntry.toC=atkTarget.pos?atkTarget.pos.c:null;
+          if(atkTarget.kind==='summon'){
+            if(!summonIncomingDmg[atkTarget.id])summonIncomingDmg[atkTarget.id]=[];
+            summonIncomingDmg[atkTarget.id].push(thrEntry);
+          }else{
+            if(!heroIncomingDmg[atkTarget.id])heroIncomingDmg[atkTarget.id]=[];
+            heroIncomingDmg[atkTarget.id].push(thrEntry);
+          }
         }
       }
     }
@@ -2549,16 +2555,21 @@ function buildPreviewGrid(){
     grid[cellKey]={cellKey,pos:{r,c},
       entity:{type:null,id:null,name:null,hp:null,maxHp:null,atk:null,el:null},
       elementField:{
-        fire: {boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[]},
-        water:{boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[]},
-        wind: {boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[]},
-        earth:{boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[]},
+        fire: {boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[],
+          beforeLayers:0,addLayers:0,afterLayers:0,directDamage:0,splashDamage:0,pathDamage:0,totalDamage:0},
+        water:{boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[],
+          beforeLayers:0,addLayers:0,afterLayers:0,directDamage:0,splashDamage:0,pathDamage:0,totalDamage:0},
+        wind: {boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[],
+          beforeLayers:0,addLayers:0,afterLayers:0,directDamage:0,splashDamage:0,pathDamage:0,totalDamage:0},
+        earth:{boardLayers:0,addedLayers:0,layers:0,damage:0,sources:[],
+          beforeLayers:0,addLayers:0,afterLayers:0,directDamage:0,splashDamage:0,pathDamage:0,totalDamage:0},
       },
       preview:{incomingActions:[],selfCellDamage:{fire:0,water:0,wind:0,earth:0,total:0},
         splashDamage:{fire:0,water:0,wind:0,earth:0,total:0,sources:[]},
         entityDamage:0,willExplode:false,explosionShape:null,explosionElement:null,
         explosionDamage:0,splashTargets:[],isSplashTarget:false,splashSources:[],
-        threatFromMonsters:[],labels:[],fromSelHero:false},
+        threatFromMonsters:[],labels:[],fromSelHero:false,
+        result:{totalDamage:0,willDie:false,surviveHp:null,damageBySource:{elementDirect:0,explosionSplash:0,monsterThreat:0}}},
     };
   }
   // 2. 写入 elementCells 当前状态到 elementField.boardLayers
@@ -2568,8 +2579,9 @@ function buildPreviewGrid(){
       const slot=elData[el];
       if(slot&&slot.layers>0){
         const ef=grid[key].elementField[el];
-        ef.boardLayers=slot.layers; ef.layers=slot.layers;
-        ef.damage=explDmg(slot.layers); ef.sources.push('board');
+        ef.boardLayers=slot.layers; ef.beforeLayers=slot.layers;
+        ef.layers=slot.layers; ef.afterLayers=slot.layers;
+        ef.damage=explDmg(slot.layers); ef.totalDamage=explDmg(slot.layers); ef.sources.push('board');
       }
     });
   });
@@ -2578,7 +2590,7 @@ function buildPreviewGrid(){
     const key=`${r},${c}`,bc=G.board[r][c];
     if(bc.el&&bc.stk>0){
       const ef=grid[key].elementField[bc.el];
-      if(ef.boardLayers===0){ef.boardLayers=bc.stk;ef.layers=bc.stk;ef.damage=explDmg(bc.stk);ef.sources.push('board');}
+      if(ef.boardLayers===0){ef.boardLayers=bc.stk;ef.beforeLayers=bc.stk;ef.layers=bc.stk;ef.afterLayers=bc.stk;ef.damage=explDmg(bc.stk);ef.totalDamage=explDmg(bc.stk);ef.sources.push('board');}
     }
   }
   // 3. 写入实体
@@ -2605,6 +2617,7 @@ function buildPreviewGrid(){
   // 4. 模拟全部未使用英雄行动槽，写入 elementField 和 preview.incomingActions
   const selHid=G.selHero||(G.selSlot!==null?G.slots[G.selSlot]?.hid:null);
   const heroSlotCount={};
+  var seqCounter=0;
   G.slots.forEach(slot=>{
     if(slot.used)return;
     const hero=G.heroes[slot.hid]; if(!hero||hero.hp<=0)return;
@@ -2624,12 +2637,24 @@ function buildPreviewGrid(){
       const cell=grid[key];
       let layersToAdd=baseLayers;
       if(ap.r===center.r&&ap.c===center.c)layersToAdd+=centerBonus;
-      if(condEl===slot.el){const ef=cell.elementField[condEl];if(ef.boardLayers>0)layersToAdd+=condBonus;}
-      cell.preview.incomingActions.push({source:sLabel,heroId:slot.hid,element:slot.el,amount:layersToAdd,fromSelHero:fromSel,description:`${sLabel}：${EL[slot.el]} +${layersToAdd}`});
+      if(condEl===slot.el){const ef2=cell.elementField[condEl];if(ef2.boardLayers>0)layersToAdd+=condBonus;}
+      var resolved=[];
+      resolved.push('directElement');
+      if(slot.sn===12&&ap.r===center.r&&ap.c===center.c)resolved.push('explosionCenter');
+      else if(slot.sn===12&&!(ap.r===center.r&&ap.c===center.c))resolved.push('splash');
+      if(ap.r===hero.pos.r&&ap.c===hero.pos.c)resolved.push('ignored');
+      seqCounter++;
+      cell.preview.incomingActions.push({
+        source:sLabel,heroId:slot.hid,element:slot.el,amount:layersToAdd,fromSelHero:fromSel,
+        description:`${sLabel}：${EL[slot.el]} +${layersToAdd}`,
+        slotIndex:heroSlotCount[slot.hid],sn:slot.sn,dir:slot.dir,
+        fromR:hero.pos.r,fromC:hero.pos.c,heroName:hero.name,
+        sourceType:'heroSlot',resolvedEffects:resolved,sequenceIndex:seqCounter
+      });
       if(fromSel)cell.preview.fromSelHero=true;
       const ef=cell.elementField[slot.el];
       for(let la=0;la<layersToAdd;la++){
-        if(ef.layers<MAX_STK){ef.addedLayers++;ef.layers=Math.min(ef.boardLayers+ef.addedLayers,MAX_STK);ef.damage=explDmg(ef.layers);ef.sources.push(sLabel);}
+        if(ef.layers<MAX_STK){ef.addedLayers++;ef.addLayers++;ef.layers=Math.min(ef.boardLayers+ef.addedLayers,MAX_STK);ef.afterLayers=ef.layers;ef.damage=explDmg(ef.layers);ef.sources.push(sLabel);}
       }
     });
   });
@@ -2637,19 +2662,34 @@ function buildPreviewGrid(){
   Object.values(grid).forEach(cell=>{
     const{entity,elementField,preview}=cell;
     const isMonster=entity.type==='monster';
+    const isSummon=entity.type==='summon';
+    const isCastle=entity.type==='player_castle'||entity.type==='enemy_castle';
+    const hasEntity=isMonster||isSummon||isCastle;
     const explodingEls=[];
     const spaceBonus=getSpaceExplosionBonus();
     ELEMS.forEach(el=>{
       const ef=elementField[el]; if(ef.layers===0)return;
-      if(isMonster){
-        const emult=(entity.el&&ADV[el]===entity.el)?2:1;
-        const dmg=explDmg(ef.layers)*emult;
-        preview.selfCellDamage[el]=dmg; preview.selfCellDamage.total+=dmg; preview.entityDamage+=dmg;
+      if(hasEntity){
+        // R8: 我方城堡不承受我方元素伤害
+        var ignoreElDmg=false;
+        if(entity.type==='player_castle')ignoreElDmg=true;
+        if(!ignoreElDmg){
+          const emult=(entity.el&&ADV[el]===entity.el)?2:1;
+          const dmg=explDmg(ef.layers)*emult;
+          preview.selfCellDamage[el]=dmg; preview.selfCellDamage.total+=dmg; preview.entityDamage+=dmg;
+          ef.directDamage=dmg; ef.totalDamage=dmg;
+          preview.result.damageBySource.elementDirect+=dmg;
+        }
+      } else if(entity.type==='hero'){
+        // R3: 英雄不承受本格元素伤害
+        ef.directDamage=0;
       } else {
+        // 空地
         if(ef.layers>=G.explosionThreshold){
           const expDmg=explDmg(ef.layers)+spaceBonus;
           explodingEls.push({element:el,layers:ef.layers,damage:expDmg});
           preview.willExplode=true;
+          ef.directDamage=expDmg; ef.splashDamage=ef.layers; ef.totalDamage=expDmg;
         }
       }
     });
@@ -2661,9 +2701,14 @@ function buildPreviewGrid(){
       preview.splashTargets=explCells(cell.pos).map(p=>`${p.r},${p.c}`);
     }
   });
-  // 5b. 第二遍：空格爆炸波及怪物（支持多元素同时爆炸）
+  // 5b. 第二遍：空格爆炸波及实体（支持多元素同时爆炸）
   Object.values(grid).forEach(cell=>{
     if(!cell.preview.willExplode||!cell.preview.explosionElements)return;
+    // 收集 explosionSources（用于被波及格显示来源）
+    if(!cell.preview.explosionSources)cell.preview.explosionSources=[];
+    cell.preview.explosionElements.forEach(expEl=>{
+      cell.preview.explosionSources.push({r:cell.pos.r,c:cell.pos.c,element:expEl.element,layers:expEl.layers});
+    });
     cell.preview.explosionElements.forEach(expEl=>{
       const expDmg=expEl.damage;
       explCells(cell.pos).forEach(tp=>{
@@ -2675,6 +2720,10 @@ function buildPreviewGrid(){
         tCell.preview.splashDamage.total+=splashDmg;
         tCell.preview.splashDamage.sources.push({srcKey:cell.cellKey,el:expEl.element,dmg:splashDmg});
         tCell.preview.entityDamage+=splashDmg; tCell.preview.isSplashTarget=true;
+        // 记录波及来源
+        if(!tCell.preview.explosionSources)tCell.preview.explosionSources=[];
+        tCell.preview.explosionSources.push({r:cell.pos.r,c:cell.pos.c,element:expEl.element,layers:expEl.layers});
+        tCell.preview.result.damageBySource.explosionSplash+=splashDmg;
       });
     });
   });
@@ -2684,12 +2733,25 @@ function buildPreviewGrid(){
   Object.entries(heroIncomingDmg).forEach(([heroId,dmgArr])=>{
     const hero=G.heroes[heroId]; if(!hero)return;
     const key=`${hero.pos.r},${hero.pos.c}`;
-    if(grid[key])grid[key].preview.threatFromMonsters=dmgArr.map(d=>({label:d.label,dmg:d.dmg}));
+    if(grid[key])grid[key].preview.threatFromMonsters=dmgArr.map(function(d){return{label:d.label,dmg:d.dmg,stableId:d.stableId,alive:d.alive,fromR:d.fromR,fromC:d.fromC,toR:d.toR,toC:d.toC,attackType:d.attackType};});
   });
   Object.entries(summonIncomingDmg).forEach(([sid,dmgArr])=>{
     const s=(G.summons||[]).find(x=>x.id===sid&&!x.dead); if(!s)return;
     const key=`${s.pos.r},${s.pos.c}`;
-    if(grid[key])grid[key].preview.threatFromMonsters=dmgArr.map(d=>({label:d.label,dmg:d.dmg}));
+    if(grid[key])grid[key].preview.threatFromMonsters=dmgArr.map(function(d){return{label:d.label,dmg:d.dmg,stableId:d.stableId,alive:d.alive,fromR:d.fromR,fromC:d.fromC,toR:d.toR,toC:d.toC,attackType:d.attackType};});
+  });
+  // 6b. 汇总 result（仅 VM 预览，不改真实结算）
+  Object.values(grid).forEach(cell=>{
+    var r=cell.preview.result;
+    var ent=cell.entity;
+    if(ent&&ent.hp!==null&&ent.hp>0){
+      var thrTotal=0;
+      (cell.preview.threatFromMonsters||[]).forEach(function(t){thrTotal+=t.dmg||0;});
+      r.damageBySource.monsterThreat=thrTotal;
+      r.totalDamage=r.damageBySource.elementDirect+r.damageBySource.explosionSplash+r.damageBySource.monsterThreat;
+      r.willDie=r.totalDamage>=ent.hp;
+      r.surviveHp=Math.max(0,ent.hp-r.totalDamage);
+    }
   });
   // 7. 汇总 labels
   const ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
@@ -2991,6 +3053,7 @@ function buildDebugPanelVM(){
     var pg=G.coreSnapshot?.previewGrid?.grid?.[key];
     selectedCell={
       r:sel.r,c:sel.c,coord:key,
+      pos:{r:sel.r,c:sel.c},
       entity:pg?.entity||null,
       elementField:pg?.elementField||null,
       entityDamage:pg?.preview?.entityDamage||0,
@@ -3004,8 +3067,10 @@ function buildDebugPanelVM(){
       willExplode:!!pg?.preview?.willExplode,
       explosionDamage:pg?.preview?.explosionDamage||0,
       splashTargets:pg?.preview?.splashTargets||[],
+      explosionSources:pg?.preview?.explosionSources||[],
       threats:pg?.preview?.threatFromMonsters||[],
       incomingActions:pg?.preview?.incomingActions||[],
+      result:pg?.preview?.result||{totalDamage:0,willDie:false,surviveHp:null,damageBySource:{elementDirect:0,explosionSplash:0,monsterThreat:0}},
     };
   }
   return {
@@ -3036,241 +3101,186 @@ function renderDebugPanel(){
   var ELIC2={fire:'#f97316',water:'#0ea5e9',wind:'#a855f7',earth:'#84cc16'};
   var ES=['fire','water','wind','earth'];
   var ELIC2N={fire:'🔥',water:'💧',wind:'🌿',earth:'🪨'};
-  // ── 来源模式开关（panel 级闭包）──
-  if(typeof renderDebugPanel._showSources==='undefined')renderDebugPanel._showSources=false;
-  var showSrc=renderDebugPanel._showSources;
+  // ── 树形详情面板格式 v3（只读 VM，不重算）──
+  var ELICON={fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function elColor(el){return ELIC2[el]||'#888';}
 
-  // ── 紧凑一行格式（审核通过的人话版）──
-  function buildDebugOneLiner(sc){
-    var ent=sc&&sc.entity;
-    var ef=sc&&sc.elementField||{};
-    // 元素层简写：只写 layers>0 的，格式“火3(+1)层”
-    var elParts=[];
-    ES.forEach(function(el){
-      var v=ef[el]; if(!v||!v.layers)return;
-      var s=EC[el]+v.layers;
-      if(v.addedLayers>0)s+='(+'+v.addedLayers+')';
-      s+='层';
-      elParts.push(s);
-    });
-    var elStr=elParts.length>0?'，'+elParts.join('，'):'';
-    if(!ent||!ent.type){
-      if(sc&&sc.willExplode)return '💥'+elStr+'引爆，十字'+sc.explosionDamage+'伤';
-      return elParts.length>0?'空'+elStr:'空';
-    }
-    if(ent.type==='monster'){
-      var dmg=sc.selfDmg+sc.splashDmg||sc.entityDamage||0;
-      var die=(sc.entityDamage>=ent.hp&&ent.hp>0)?'☠':'';
-      return '👾'+ent.name+' '+ent.hp+'/'+ent.maxHp+'血，攻'+ent.atk+elStr+(dmg?'，-'+dmg+(die?' '+die:''):'');
-    }
-    if(ent.type==='hero'){
-      var thr=sc.threats||[];
-      var thrStr=thr.length>0?'，受击：'+thr.map(function(t){return t.label+'-'+t.dmg;}).join('，'):'';
-      var c2=ent.id==='ha'?'#60a5fa':'#4ade80';
-      return '<span style="color:'+c2+'">H'+ent.id.toUpperCase().replace('h','')+'</span> '+ent.name+' '+ent.hp+'/'+ent.maxHp+'血'+thrStr;
-    }
-    if(ent.type==='summon'){
-      return '💧'+ent.name+' '+ent.hp+'/'+ent.maxHp+'血，攻'+(ent.atk||0)+elStr;
-    }
-    if(ent.type==='player_castle')return '🏰我方城堡 '+ent.hp+'/'+ent.maxHp+'血';
-    if(ent.type==='enemy_castle')return '🏰敌方城堡 '+ent.hp+'/'+ent.maxHp+'血';
-    return ent.name||'?';
-  }
-
-  // ── 来源明细（选中格子）──
-  function buildSourceDetail(sc,vm){
-    if(!sc)return'';
+  function buildCellTree(sc){
+    if(!sc)return'<div class="dbg-cell"><span class="dbg-k">（无数据）</span></div>';
     var ent=sc.entity,ef=sc.elementField||{};
-    var lines=[];
-    var indent='<span style="color:#64748b">  ┗ </span>';
-    // 来源名→heroId
-    function hidOfSrc(src){return src=== 'board'?null:(src.charAt(0)==='A'?'ha':'hb');}
-    function posOfHid(hid){
-      var s2=vm.slots.find(function(s){return s.hid===hid&&s.heroPos;});
-      return s2?'('+s2.heroPos.r+','+s2.heroPos.c+')':'';
-    }
-    var ADV2={water:'fire',fire:'wind',wind:'earth',earth:'water'};
+    var lines=[],s='';
+    var SEC='<span style="color:#64748b">  ┃ </span>';
+    var ITEM='<span style="color:#64748b">  ┣ </span>';
 
-    // 1) 元素层来源
-    ES.forEach(function(el){
-      var v=ef[el]; if(!v||!v.layers)return;
-      var parts=[];
-      if(v.boardLayers>0)parts.push('棋盘:'+EC[el]+v.boardLayers+'层');
-      if(v.addedLayers>0){
-        var srcs=v.sources||[];
-        var heroMap={};
-        srcs.forEach(function(s){if(s!=='board')heroMap[s]=(heroMap[s]||0)+1;});
-        Object.keys(heroMap).sort().forEach(function(k){
-          var c3=heroMap[k];
-          var hid=hidOfSrc(k);
-          parts.push(k+':+'+c3+'层'+(hid?posOfHid(hid):''));
+    // ── 首行 ──
+    var first='';
+    var pos=sc.pos||{r:sc.r,c:sc.c};
+    if(!ent||!ent.type){
+      first='('+pos.r+','+pos.c+') 空地';
+    }else if(ent.type==='monster'){
+      first='<span style="color:#fca5a5">'+esc(ent.name)+'</span>('+pos.r+','+pos.c+') '+ent.hp+'/'+ent.maxHp+'血';
+      if(ent.atk!==null&&ent.atk!==undefined)first+=' 攻'+ent.atk;
+      if(ent.el)first+=' <span style="color:'+elColor(ent.el)+'">'+ELICON[ent.el]+'</span>';
+    }else if(ent.type==='hero'){
+      var hc=ent.id==='ha'?'#60a5fa':'#4ade80';
+      first='<span style="color:'+hc+'">'+esc(ent.name)+'</span>('+pos.r+','+pos.c+') '+ent.hp+'/'+ent.maxHp+'血';
+    }else if(ent.type==='summon'){
+      first='💧'+esc(ent.name)+'('+pos.r+','+pos.c+') '+ent.hp+'/'+ent.maxHp+'血';
+      if(ent.atk!==null&&ent.atk!==undefined)first+=' 攻'+ent.atk;
+    }else if(ent.type==='player_castle'){
+      first='🏰我方城堡('+pos.r+','+pos.c+') '+ent.hp+'/'+ent.maxHp+'血';
+    }else if(ent.type==='enemy_castle'){
+      first='🏰敌方城堡('+pos.r+','+pos.c+') '+ent.hp+'/'+ent.maxHp+'血';
+    }else{
+      first=esc(ent.name||'?')+'('+pos.r+','+pos.c+') '+ent.hp+'/'+ent.maxHp+'血';
+    }
+    lines.push('<div style="font-weight:bold;color:#e2e8f0">'+first+'</div>');
+
+    // ── 怪物威胁 (仅英雄格) ──
+    if(ent&&ent.type==='hero'){
+      var thr=sc.threats||[];
+      if(thr.length>0){
+        lines.push(SEC+'怪物威胁');
+        thr.forEach(function(t){
+          var aliveTag=t.alive?'若存活':'(已死亡，威胁取消)';
+          var atkDesc=t.attackType||'攻击';
+          var fromRC=(t.fromR!==undefined&&t.fromC!==undefined)?'从('+t.fromR+','+t.fromC+')'+atkDesc:'';
+          var toRC=(t.toR!==undefined&&t.toC!==undefined)?'→('+t.toR+','+t.toC+')':'';
+          lines.push(ITEM+(t.stableId||t.label)+'   打'+t.dmg+'血 ('+fromRC+toRC+')  '+aliveTag);
         });
       }
-      lines.push(indent+EC[el]+' '+v.boardLayers+'层(棋盘)'+(v.addedLayers>0?' + '+v.addedLayers+'层(槽)':'')+' = '+v.layers+'层 | '+parts.join('，'));
-    });
-
-    // 2) 怪物格伤害来源
-    if(ent&&ent.type==='monster'){
-      var sd=sc.selfCellDamage||{total:0};
-      var sp=sc.splashDamage||{total:0,sources:[]};
-      if(sd.total>0||sp.total>0){
-        var selfLines=[];
-        ES.forEach(function(el){
-          var d=sd[el]||0; if(d===0)return;
-          var elLayers=ef[el]?ef[el].layers:0;
-          var em=ent.el;
-          var m2=(em&&ADV2[el]===em)?2:1;
-          selfLines.push(EC[el]+':'+elLayers+'层爆='+(elLayers*(elLayers+1)/2)+'×'+m2+'='+d);
+      // 爆炸波及
+      var expSrcs=sc.explosionSources||[];
+      if(expSrcs.length>0){
+        if(thr.length===0)lines.push(SEC+'爆炸波及');
+        expSrcs.forEach(function(es){
+          lines.push(ITEM+'来自('+es.r+','+es.c+') 💥'+EC[es.element]+es.layers+'层爆炸 波及伤: -'+es.layers);
         });
-        if(selfLines.length>0)lines.push(indent+'单体伤：'+selfLines.join('，'));
-        if(sp.total>0&&sp.sources&&sp.sources.length>0){
-          sp.sources.forEach(function(src){
-            var srcCell=vm.previewGrid&&vm.previewGrid[src.srcKey];
-            var srcLayers=srcCell?(srcCell.elementField[src.el]?srcCell.elementField[src.el].layers:0):0;
-            var m3=(ent.el&&ADV2[src.el]===ent.el)?2:1;
-            lines.push(indent+'波及来自('+src.srcKey+')：'+EC[src.el]+srcLayers+'层爆='+(srcLayers*(srcLayers+1)/2)+'×'+m3+'='+src.dmg);
+      }
+      // 伤害合计
+      var res=sc.result;
+      if(res&&(res.totalDamage>0||thr.length>0||expSrcs.length>0)){
+        var sumText='';
+        if(res.willDie)sumText='→ 倒下(剩'+res.surviveHp+')';
+        else sumText='，存活(剩'+res.surviveHp+')';
+        lines.push(SEC+'伤害合计   -'+res.totalDamage+sumText);
+      }
+    }
+
+    // ── 元素层 ──
+    var hasEl=false;
+    ES.forEach(function(el){
+      var v=ef[el]; if(!v||(v.boardLayers||0)+(v.addedLayers||0)===0&&(v.layers||0)===0)return;
+      hasEl=true;
+    });
+    if(hasEl){
+      lines.push(SEC+'元素层');
+      var isMonsterOrSummon=ent&&(ent.type==='monster'||ent.type==='summon');
+      var isCastle=ent&&(ent.type==='player_castle'||ent.type==='enemy_castle');
+      ES.forEach(function(el){
+        var v=ef[el]; if(!v||!v.layers)return;
+        var board=v.boardLayers||v.beforeLayers||0;
+        var added=v.addedLayers||v.addLayers||0;
+        if(board>0)lines.push(ITEM+'当前     '+EC[el]+': '+board+'层');
+        // 行动来源详情
+        var acts=(sc.incomingActions||[]).filter(function(a){return a.element===el;}).sort(function(a,b){return (a.sequenceIndex||0)-(b.sequenceIndex||0);});
+        acts.forEach(function(a){
+          var hName=a.heroName||(a.heroId==='ha'?'焱A':'岚B');
+          var slotN='H'+(a.heroId==='ha'?'1':'2')+'-S'+(a.slotIndex||'?');
+          var dirChar={up:'↑',down:'↓',left:'←',right:'→'};
+          var d=dirChar[a.dir]||a.dir||'';
+          var effects=a.resolvedEffects||[];
+          var mode='';
+          if(effects.indexOf('explosionCenter')>=0)mode='十字中心';
+          else if(effects.indexOf('splash')>=0)mode='十字波及';
+          else mode='目标格';
+          if(effects.indexOf('ignored')>=0)mode+='(英雄免疫)';
+          var fromRC=(a.fromR!==undefined)?'从('+a.fromR+','+a.fromC+')释放':'';
+          var desc=hName+' '+mode+' '+d+' '+fromRC;
+          lines.push(ITEM+slotN+'      '+EC[el]+': +'+a.amount+'层 ('+desc+')');
+        });
+        lines.push(SEC+'预计     '+EC[el]+': '+v.layers+'层'+(v.layers>=3&&!isMonsterOrSummon&&!isCastle&&!(ent&&ent.type==='hero')?' → 💥爆炸':''));
+      });
+    }
+
+    // ── 本格元素伤害 (实体格非英雄，结算层≥1) ──
+    if(hasEl&&ent&&ent.type!=='hero'){
+      var isMonSumCastle=ent.type==='monster'||ent.type==='summon'||ent.type==='player_castle'||ent.type==='enemy_castle';
+      if(isMonSumCastle){
+        var hasDmg=false;
+        ES.forEach(function(el){var v=ef[el];if(v&&(v.directDamage||0)>0)hasDmg=true;});
+        if(hasDmg){
+          if(ent.type==='player_castle'){
+            lines.push(SEC+'本格元素伤害 [我方城堡免疫我方元素]');
+          }else{
+            lines.push(SEC+'本格元素伤害');
+          }
+          ES.forEach(function(el){
+            var v=ef[el]; if(!v||!v.layers||!v.directDamage)return;
+            var tri='1';
+            for(var i=2;i<=v.layers;i++)tri+='+'+i;
+            tri+='='+v.directDamage;
+            lines.push(ITEM+EC[el]+v.layers+'层   三角伤 '+tri);
           });
         }
-        var td=sd.total+sp.total;
-        var willDie=td>=ent.hp&&ent.hp>0;
-        lines.push(indent+'合计：-'+td+'伤 ≥ '+ent.hp+'血 '+(willDie?'☠':'存活'));
       }
     }
 
-    // 3) 空格爆炸
-    if(sc.willExplode&&sc.explosionElements){
-      sc.explosionElements.forEach(function(expEl){
-        var elLayers2=(ef[expEl.element]&&ef[expEl.element].layers)||0;
-        lines.push(indent+'💥 '+EC[expEl.element]+elLayers2+'层引爆('+sc.r+','+sc.c+')：爆='+(elLayers2*(elLayers2+1)/2)+'+空间加成='+expEl.damage);
+    // ── 爆炸结算 (空地，结算层≥3) ──
+    if(sc.willExplode){
+      lines.push(SEC+'爆炸结算');
+      ES.forEach(function(el){
+        var v=ef[el]; if(!v||!v.layers||v.layers<3)return;
+        var tri='1';
+        for(var i=2;i<=v.layers;i++)tri+='+'+i;
+        tri+='='+(v.directDamage||0);
+        lines.push(ITEM+'中心伤  三角伤 '+tri);
+        lines.push(ITEM+'波及伤  层数直伤 '+(v.splashDamage||v.layers)+' (上下左右各-'+(v.splashDamage||v.layers)+')');
       });
-      (sc.splashTargets||[]).forEach(function(tk){
-        var tCell=vm.previewGrid&&vm.previewGrid[tk];
-        if(!tCell||!tCell.entity||tCell.entity.type!=='monster')return;
-        var tEnt=tCell.entity;
-        var tSpSrc=(tCell.preview&&tCell.preview.splashDamage&&tCell.preview.splashDamage.sources)||[];
-        tSpSrc.filter(function(x){return x.srcKey===sc.coord;}).forEach(function(x){
-          var m3=(tEnt.el&&ADV2[x.el]===tEnt.el)?2:1;
-          lines.push(indent+'波及 '+tk+' '+tEnt.name+'：'+EC[x.el]+'爆'+x.dmg+'×'+m3+'='+x.dmg+' '+(x.dmg>=tEnt.hp?'☠':''));
-        });
+      var st=sc.splashTargets||[];
+      if(st.length>0)lines.push(ITEM+'波及格  '+st.join(' '));
+    }
+
+    // ── 波及伤害 (被其他格爆炸扫到，有实体) ──
+    var expSrcs2=sc.explosionSources||[];
+    if(!sc.willExplode&&expSrcs2.length>0&&ent&&ent.type!=='hero'){
+      lines.push(SEC+'波及伤害');
+      expSrcs2.forEach(function(es){
+        lines.push(ITEM+'来自('+es.r+','+es.c+') 💥'+EC[es.element]+es.layers+'层爆炸 波及伤: -'+es.layers);
       });
     }
 
-    // 4) 英雄/召唤物受击（怪物威胁）
-    if(sc.threats&&sc.threats.length>0){
-      sc.threats.forEach(function(t){
-        var idx=parseInt(t.label.replace('M',''),10)-1;
-        var mon=idx>=0&&idx<vm.monsters.length?vm.monsters[idx]:null;
-        var atk=mon?mon.atk:t.dmg;
-        lines.push(indent+t.label+' 攻'+atk+' = '+t.dmg);
-      });
-      var totalThr=sc.threats.reduce(function(s,t){return s+t.dmg;},0);
-      var isHero=ent&&ent.type==='hero';
-      var willSurvive=isHero&&totalThr<ent.hp;
-      lines.push(indent+'合计：受击'+sc.threats.length+'次，总伤'+totalThr+' '+(isHero?(willSurvive?'≥ '+(ent.hp-totalThr)+'血，存活':'≥ '+ent.hp+'血，倒地'):''));
+    // ── 伤害合计 (实体格非英雄) ──
+    if(ent&&ent.type!=='hero'){
+      var res2=sc.result;
+      if(res2&&res2.totalDamage>0){
+        var sum2='';
+        if(res2.willDie)sum2='≥ 当前'+ent.hp+'血 ☠';
+        else sum2='，存活(剩'+res2.surviveHp+')';
+        lines.push(SEC+'伤害合计   -'+res2.totalDamage+sum2);
+      }
     }
 
-    if(lines.length===0)return'<div style="font-size:9px;color:#64748b">  （无来源数据）</div>';
-    return'<div class="dbg-src-detail">'+lines.join('<br>')+'</div>';
+    // ── 英雄不承受本格元素伤害 ──
+    if(ent&&ent.type==='hero'&&hasEl){
+      lines.push(SEC+'英雄不承受本格元素伤害');
+    }
+
+    return'<div class="dbg-cell">'+lines.join('<br>')+'</div>';
   }
 
-  // ── 顶部状态条 + 来源按钮 ──
-  var btnCls=showSrc?'dbg-btn-on':'dbg-btn-off';
-  var btnLabel=showSrc?'🔍 隐藏来源':'🔍 看来源';
+  // ── 顶部状态条 ──
   var stateHtml='<span class="dbg-k">phase</span> '+vm.phase
     +' <span class="dbg-k">D</span>'+vm.day+'<span class="dbg-k">h</span>'+vm.dayHalf
     +' <span class="dbg-k">R</span>'+vm.round+'/'+vm.maxRound
     +' <span class="dbg-k">波</span>'+vm.wave
-    +' <span class="dbg-k">金币</span>'+vm.gold
-    +' <button onclick="renderDebugPanel._showSources=!renderDebugPanel._showSources;renderDebugPanel()" class="dbg-src-btn '+btnCls+'">'+btnLabel+'</button>';
+    +' <span class="dbg-k">金币</span>'+vm.gold;
   // ── 格子区 ──
   var cellHtml='';
   if(vm.selectedCell){
-    var sc=vm.selectedCell;
-    // 头部：坐标
-    cellHtml='<div><span class="dbg-lb" style="display:inline">📍</span> ['+sc.r+','+sc.c+']';
-    // 紧凑一行
-    cellHtml+='<div style="font-size:9px;margin:2px 0;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#cbd5e1">'+buildDebugOneLiner(sc)+'</div>';
-    // 来源明细
-    if(showSrc)cellHtml+=buildSourceDetail(sc,vm);
-    // 实体
-    var ent=sc.entity;
-    if(ent){
-      if(ent.type==='monster'){
-        var dieTag=(sc.entityDamage>=ent.hp&&ent.hp>0)?'<span class="dbg-dmg"> ☠</span>':'';
-        cellHtml+=' <span class="dbg-el" style="color:#fca5a5;background:#7f1d1d">👾'+ent.name+'</span>'
-          +' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp
-          +' <span class="dbg-k">攻</span>'+ent.atk
-          +(ent.el?' <span class="dbg-el" style="color:'+ELIC2[ent.el]+'">'+EC[ent.el]+'</span>':'')
-          +(sc.entityDamage>0?' <span class="dbg-dmg">-'+sc.entityDamage+dieTag+'</span>':'');
-      }else if(ent.type==='hero'){
-        var c=ent.id==='ha'?'#60a5fa':'#4ade80';
-        cellHtml+=' <span style="color:'+c+'">'+ent.id.toUpperCase()+'</span>'
-          +' <span class="dbg-k">'+ent.name+'</span>'
-          +' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp;
-      }else if(ent.type==='summon'){
-        cellHtml+=' <span class="dbg-el" style="color:#bae6fd;background:rgba(14,165,233,0.25)">💧'+ent.name+'</span>'
-          +' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp+' <span class="dbg-k">攻</span>'+(ent.atk||0);
-      }else if(ent.type==='player_castle'||ent.type==='enemy_castle'){
-        cellHtml+=' 🏰'+ent.name+' <span class="dbg-k">HP</span>'+ent.hp+'/'+ent.maxHp;
-      }
-    }
-    // 元素场——按元素显示 boardLayers / addedLayers / layers
-    ES.forEach(function(el){
-      var ef=sc.elementField&&sc.elementField[el];
-      if(!ef||!ef.layers)return;
-      var c2=ELIC2[el];
-      var boardStr=ef.boardLayers>0?ef.boardLayers:'';
-      var addedStr=ef.addedLayers>0?'<span class="dbg-dmg">+'+ef.addedLayers+'</span>':'';
-      if(boardStr||addedStr)cellHtml+=' <span class="dbg-el" style="color:'+c2+';background:rgba(0,0,0,0.3)">'
-        +EC[el]+'<span class="dbg-k">'+(boardStr||'0')+'</span>'+addedStr
-        +'<span class="dbg-arrow">→</span>'+ef.layers+'层'
-        +'<span class="dbg-detail"> '+ef.damage+'伤</span>'
-        +'</span>';
-    });
-    // 伤害/结算
-    if(sc.isMonster){
-      var sd2=sc.selfDmg||0;
-      var sp2=sc.splashDmg||0;
-      if(sd2>0||sp2>0)cellHtml+='<br> <span class="dbg-detail">单体 <span class="dbg-dmg">'+sd2+'</span>'
-        +(sp2>0?' 波及 <span class="dbg-dmg">'+sp2+'</span>':'')
-        +' 总 <span class="dbg-dmg">'+(sd2+sp2)+'</span></span>';
-      // 按元素分单体伤害来源
-      var selfByEl=sc.selfByEl||{};
-      var parts=ES.filter(function(el){return selfByEl[el]>0;}).map(function(el){
-        return'<span style="color:'+ELIC2[el]+'">'+EC[el]+'<span class="dbg-dmg">-'+selfByEl[el]+'</span></span>';
-      });
-      if(parts.length>0)cellHtml+='<br> <span class="dbg-detail">分元素 '+parts.join(' ')+'</span>';
-    }
-    // 空格爆炸
-    if(sc.willExplode){
-      cellHtml+='<br> <span class="dbg-exp">💥 十字引爆 '+sc.explosionDamage+'伤</span>'
-        +' <span class="dbg-detail">波及 '+sc.splashTargets.join(' ')+'</span>';
-    }
-    // 威胁（英雄格）
-    if(sc.threats.length>0){
-      cellHtml+='<br> <span class="dbg-thr">⚠ </span>';
-      sc.threats.forEach(function(t,i){
-        if(i>0)cellHtml+=' ';
-        cellHtml+='<span class="dbg-detail">'+t.label+' <span class="dbg-dmg">-'+t.dmg+'</span></span>';
-      });
-    }
-    // 行动来源——按英雄分组显示
-    var byHero={};
-    sc.incomingActions.forEach(function(a){
-      if(!byHero[a.heroId])byHero[a.heroId]={items:[],total:0};
-      byHero[a.heroId].items.push(a);
-      byHero[a.heroId].total+=a.amount;
-    });
-    cellHtml+='<br> <span class="dbg-lb" style="display:inline;font-size:8px">来源</span>';
-    Object.keys(byHero).forEach(function(hid){
-      var ha=byHero[hid];
-      var c2=hid==='ha'?'#60a5fa':'#4ade80';
-      cellHtml+=' <span style="color:'+c2+'">'+hid.toUpperCase()+'</span>';
-      ha.items.forEach(function(a){
-        cellHtml+=' <span class="dbg-detail">'+a.description+'</span>';
-      });
-    });
-    cellHtml='<div class="dbg-cell">'+cellHtml+'</div>';
+    cellHtml='<div><span class="dbg-lb" style="display:inline">📍</span> ['+vm.selectedCell.r+','+vm.selectedCell.c+']</div>';
+    cellHtml+=buildCellTree(vm.selectedCell);
   }else{
     cellHtml='<div class="dbg-cell"><span class="dbg-k">（点击格子查看）</span></div>';
   }

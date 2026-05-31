@@ -3252,6 +3252,152 @@ group('Debug 面板 VM', ()=>{
     var vm=buildDebugPanelVM();
     assert.ok(vm.selectedCell.entity===null||vm.selectedCell.entity.type===null,'空格无实体');
   });
+  test('DEBUG6: 怪物格 result 含 totalDamage/willDie/surviveHp', ()=>{
+    fresh();
+    // 在怪物格上放火3层 → 单体伤害6
+    var m=G.monsters.find(function(x){return !x.dead;});
+    G.selectedCell={r:m.pos.r,c:m.pos.c};
+    G.elementCells[m.pos.r+','+m.pos.c]={fire:{layers:3,willExplode:false}};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    var r=vm.selectedCell.result;
+    assert.ok(r,'result 存在');
+    assert.ok(r.totalDamage>0,'totalDamage>0');
+    assert.strictEqual(typeof r.willDie,'boolean','willDie 是 boolean');
+    assert.strictEqual(typeof r.surviveHp,'number','surviveHp 是 number');
+    assert.ok(r.damageBySource.elementDirect>0,'elementDirect>0');
+  });
+  test('DEBUG7: 英雄格 result 含 monsterThreat', ()=>{
+    fresh();
+    var ha=G.heroes.ha;
+    G.selectedCell={r:ha.pos.r,c:ha.pos.c};
+    // 让怪物走到能攻击英雄的位置（相邻格）
+    G.monsters.forEach(function(m,i){var adjR=ha.pos.r+(i===0?1:-1);m.pos={r:adjR,c:ha.pos.c};});
+    G.monWarn=[];
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    var r=vm.selectedCell.result;
+    assert.ok(r.totalDamage>=0,'result.totalDamage');
+    assert.ok(vm.selectedCell.threats.length>0,'英雄格有威胁');
+    // 威胁含新字段
+    var t=vm.selectedCell.threats[0];
+    assert.ok(t.stableId,'stableId 存在');
+    assert.strictEqual(typeof t.alive,'boolean','alive 是 boolean');
+    assert.ok(t.fromR!==undefined,'fromR 存在');
+    assert.ok(t.fromC!==undefined,'fromC 存在');
+    assert.ok(t.attackType,'attackType 存在');
+  });
+  test('DEBUG8: 空格爆炸含 explosionSources', ()=>{
+    fresh();
+    G.selectedCell={r:5,c:5};
+    G.elementCells['5,5']={fire:{layers:4,willExplode:true}};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    assert.ok(vm.selectedCell.willExplode,'willExplode=true');
+    assert.ok(Array.isArray(vm.selectedCell.explosionSources),'explosionSources 是数组');
+  });
+  test('DEBUG9: incomingActions 含新字段 slotIndex/sn/dir/heroName/resolvedEffects', ()=>{
+    fresh();
+    // 选一个英雄能打到的格子
+    var ha=G.heroes.ha;
+    var targetR=ha.pos.r, targetC=ha.pos.c+1;
+    G.selectedCell={r:targetR,c:targetC};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    var acts=vm.selectedCell.incomingActions;
+    assert.ok(acts.length>0,'有空闲槽打到此格');
+    var a=acts[0];
+    assert.ok(a.slotIndex>=1,'slotIndex >=1');
+    assert.ok(a.sn>=1,'sn >=1');
+    assert.ok(a.dir,'dir 存在');
+    assert.ok(a.heroName,'heroName 存在');
+    assert.ok(Array.isArray(a.resolvedEffects),'resolvedEffects 是数组');
+    assert.ok(a.resolvedEffects.indexOf('directElement')>=0,'含 directElement');
+    assert.strictEqual(a.sourceType,'heroSlot','sourceType=heroSlot');
+    assert.ok(a.sequenceIndex>=1,'sequenceIndex>=1');
+  });
+  test('DEBUG10: elementField 含 beforeLayers/addLayers/afterLayers/directDamage', ()=>{
+    fresh();
+    var ha=G.heroes.ha;
+    var targetR=ha.pos.r, targetC=ha.pos.c+1;
+    G.selectedCell={r:targetR,c:targetC};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    var ef=vm.selectedCell.elementField;
+    var elKeys=Object.keys(ef);
+    assert.ok(elKeys.length>=4,'elementField 有4元素');
+    // 检查新字段（ES 未在测试作用域，直接用数组）
+    ['fire','water','wind','earth'].forEach(function(el){
+      var v=ef[el];
+      assert.ok('beforeLayers' in v,'beforeLayers 在 '+el);
+      assert.ok('addLayers' in v,'addLayers 在 '+el);
+      assert.ok('afterLayers' in v,'afterLayers 在 '+el);
+      assert.ok('directDamage' in v,'directDamage 在 '+el);
+      assert.ok('splashDamage' in v,'splashDamage 在 '+el);
+      assert.ok('pathDamage' in v,'pathDamage 在 '+el);
+      assert.ok('totalDamage' in v,'totalDamage 在 '+el);
+      // 新旧一致
+      assert.strictEqual(v.boardLayers,v.beforeLayers,'boardLayers==beforeLayers for '+el);
+    });
+  });
+  test('DEBUG11: 城堡格不承受我方元素伤害', ()=>{
+    fresh();
+    var pc=G.playerCastle;
+    G.selectedCell={r:pc.pos.r,c:pc.pos.c};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    assert.strictEqual(vm.selectedCell.entity.type,'player_castle','我方城堡');
+    var r=vm.selectedCell.result;
+    // 我方城堡免疫我方元素 → damageBySource.elementDirect=0
+    assert.strictEqual(r.damageBySource.elementDirect,0,'我方城堡 elementDirect=0');
+  });
+  test('DEBUG12: 空地不爆炸时无伤害结算', ()=>{
+    fresh();
+    G.selectedCell={r:6,c:6};
+    // 火1层 → 不爆炸
+    G.elementCells['6,6']={fire:{layers:1,willExplode:false}};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    assert.strictEqual(vm.selectedCell.willExplode,false,'willExplode=false');
+    // 空地无实体，无伤害
+    assert.strictEqual(vm.selectedCell.entityDamage,0,'entityDamage=0');
+  });
+  test('DEBUG13: 爆炸格 elementField 含 splashDamage/directDamage', ()=>{
+    fresh();
+    G.selectedCell={r:5,c:5};
+    G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    var ef=vm.selectedCell.elementField.fire;
+    assert.ok(ef.layers>=3,'layers>=3');
+    assert.ok(ef.directDamage>0,'directDamage>0 (中心三角伤)');
+    assert.ok(ef.splashDamage>0,'splashDamage>0 (波及层数直伤)');
+    assert.ok(ef.totalDamage>0,'totalDamage>0');
+  });
+  test('DEBUG14: 怪物格 elementField.directDamage>0', ()=>{
+    fresh();
+    var m=G.monsters.find(function(x){return !x.dead;});
+    G.selectedCell={r:m.pos.r,c:m.pos.c};
+    G.elementCells[m.pos.r+','+m.pos.c]={fire:{layers:2,willExplode:false}};
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    var ef=vm.selectedCell.elementField.fire;
+    assert.ok(ef.directDamage>0,'怪物格 directDamage>0');
+    assert.strictEqual(ef.splashDamage,0,'怪物格 splashDamage=0 (不爆炸)');
+  });
+  test('DEBUG15: 英雄格 threatFromMonsters 更新后仍含旧字段 label/dmg', ()=>{
+    fresh();
+    var ha=G.heroes.ha;
+    G.selectedCell={r:ha.pos.r,c:ha.pos.c};
+    G.monsters.forEach(function(m,i){var adjR=ha.pos.r+(i===0?1:-1);m.pos={r:adjR,c:ha.pos.c};});
+    G.monWarn=[];
+    recomputeCorePreview();
+    var vm=buildDebugPanelVM();
+    var t=vm.selectedCell.threats[0];
+    assert.ok(t.label,'label 旧字段保留');
+    assert.ok(t.dmg!==undefined,'dmg 旧字段保留');
+    assert.ok(t.stableId,'stableId 新字段');
+  });
 
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));

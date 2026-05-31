@@ -13,3 +13,5 @@ references/SuperAutoTest/
 # OS
 .DS_Store
 Thumbs.db
+test-results/
+.superpowers/

@@ -144,6 +144,7 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
+| 2026-05-31 | test | 新增 ysbzs v1 基准测试套件：12 个 case、6 份 fixture、smoke/full npm 脚本，并输出机器/人工可读报告与实现缺口报告；修复 Markdown 报告换行生成。 | benchmarks/ysbzs/* / reports/benchmark/* / package.json | npm run benchmark:smoke / npm run benchmark |
 | 2026-05-30 | feat | S3 Roguelite 壳：删遗物（G.relics/old_fuse）；火种灵 `spaceExplosionBonus` 承接引信；Day4–5 `DAY_ROUND_CONFIG`；Day5 下午 Boss 保底+通关；`closeShop` 修复中午→下午三阶段；城堡跨战回归 RUN1/3。测试 RUN1–5/SH1–3 + `playable_run.js` | index.html / test.js / playable_run.js | node test.js 361/361 |
 | 2026-05-30 | docs | 新增 Run 结构与城堡跨战系统 GDD（拍板：无独立地图/城堡实体格+HP/run≈5天HP100不回满/一天三阶段保留；城堡 HP 已事实跨战，待回归测试+Day5 Boss）；同步游戏概述 GDD 胜负/系统表/阶段表/待决、功能拆解 S3、ROADMAP、一天三阶段文档标“保留” | docs/01/Run结构与城堡跨战系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/一天三阶段系统设计.md | — |
 | 2026-05-30 | docs | 决策落盘「砍掉遗物·商店只卖英雄」（英雄被动/主动即遗物职能）：新增商店与英雄构筑系统 GDD（含遗物代码清理清单 old_fuse/G.relics）；游戏概述 GDD/功能拆解 S3/ROADMAP 去遗物；旧商店方案标遗物段落作废 | docs/01/商店与英雄构筑系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/商店系统策划方案.md | — |

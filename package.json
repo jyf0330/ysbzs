@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "playwright": "^1.60.0"
+  },
+  "scripts": {
+    "benchmark:smoke": "node benchmarks/ysbzs/run-benchmark.mjs --smoke",
+    "benchmark": "node benchmarks/ysbzs/run-benchmark.mjs"
   }
 }

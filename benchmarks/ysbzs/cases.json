@@ -1,0 +1,419 @@
+{
+  "schemaVersion": "ysbzs-benchmark-v1",
+  "suite": "ysbzs v1 基准测试套件",
+  "smokeCases": [
+    "C01",
+    "C05",
+    "C10",
+    "C12"
+  ],
+  "cases": [
+    {
+      "id": "C01",
+      "title": "Phase1 口径检查",
+      "group": "scope",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/04_第一阶段10天怪物刷怪闭环设计.md",
+      "sourceSection": "设计前提",
+      "description": "检查当前口径必须是火伤害闭环+中立召唤流闭环。召唤流不绑定水。水治疗/风牵制/土阻挡应为pending/future。只检查当前有效口径，deprecated/legacyNotes不计。",
+      "allowedVerdicts": [
+        "PASS",
+        "FAIL",
+        "GAP_ONLY"
+      ],
+      "checks": [
+        {
+          "id": "C01a",
+          "label": "召唤流不绑定水",
+          "rule": "召唤流描述为中立召唤流闭环，不是水+召唤。仅检查当前有效口径。",
+          "verdictLogic": "搜索水+召唤/水系召唤等绑定描述。有→FAIL。仅legacy/历史→PASS。"
+        },
+        {
+          "id": "C01b",
+          "label": "水/风/土=pending",
+          "rule": "水治疗(泉泉灵)/风牵制(风风灵)/土阻挡(岩岩灵)应为pending",
+          "verdictLogic": "代码passive active且非当前口径→FAIL。pending→GAP_ONLY。"
+        },
+        {
+          "id": "C01c",
+          "label": "火+召唤=active",
+          "rule": "火系和召唤引擎英雄为active",
+          "verdictLogic": "status=active→PASS。legacy/design_draft→GAP_ONLY。"
+        }
+      ]
+    },
+    {
+      "id": "C02",
+      "title": "大巴扎商店结构检查",
+      "group": "shop",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/03_10天商店闭环验证_大巴扎对齐版.md",
+      "sourceSection": "七、大巴扎对齐检查",
+      "description": "摊位>标签AND>品级>保证位>刷新规则。代码未实现→GAP_ONLY。",
+      "allowedVerdicts": [
+        "PASS",
+        "GAP_ONLY",
+        "NOT_IMPLEMENTED"
+      ],
+      "checks": [
+        {
+          "id": "C02a",
+          "label": "摊位定义",
+          "rule": "stallDefs数组(id/name/tags/weight/fromDay)",
+          "verdictLogic": "fixture有定义→检查代码是否实现。未实现→GAP_ONLY。"
+        },
+        {
+          "id": "C02b",
+          "label": "标签AND过滤",
+          "rule": "filterLogic=AND",
+          "verdictLogic": "fixture定义AND。代码未实现→GAP_ONLY。"
+        },
+        {
+          "id": "C02c",
+          "label": "品级定价结构",
+          "rule": "tier_unified青铜2/白银4/黄金6/钻石8",
+          "verdictLogic": "fixture有定义→检查代码GRADE_BASE。"
+        },
+        {
+          "id": "C02d",
+          "label": "保证位定义",
+          "rule": "Day1召芽灵/Day3/Day5/Day7",
+          "verdictLogic": "fixture有定义。代码实现→PASS。否则→GAP_ONLY。"
+        },
+        {
+          "id": "C02e",
+          "label": "刷新规则",
+          "rule": "首次免费→1→2→3/每天重置",
+          "verdictLogic": "代码有refresh→PASS。否则→GAP_ONLY。"
+        }
+      ]
+    },
+    {
+      "id": "C03",
+      "title": "10天节奏节点检查",
+      "group": "progression",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/03_10天商店闭环验证_大巴扎对齐版.md",
+      "sourceSection": "三、10天完整节点日历",
+      "description": "Day1教学/Day4黄金首触/Day5 pT3/Day7 pT4/Day10最终Boss。代码未实现10天→NOT_IMPLEMENTED/GAP_ONLY。",
+      "allowedVerdicts": [
+        "PASS",
+        "NOT_IMPLEMENTED",
+        "GAP_ONLY"
+      ],
+      "checks": [
+        {
+          "id": "C03a",
+          "label": "Day1教学",
+          "rule": "Day1免费选青铜+夜晚2摊×3格",
+          "verdictLogic": "Day1配置存在→PASS。10天未扩展→NOT_IMPLEMENTED。"
+        },
+        {
+          "id": "C03b",
+          "label": "Day4黄金首触",
+          "rule": "稀有商人1摊×2格黄金100%",
+          "verdictLogic": "Day4稀有商人→PASS。否则→NOT_IMPLEMENTED。"
+        },
+        {
+          "id": "C03c",
+          "label": "Day5 pT3",
+          "rule": "午间黄金50%+Boss半价+夜晚15%",
+          "verdictLogic": "pT3入池→PASS。否则→NOT_IMPLEMENTED。"
+        },
+        {
+          "id": "C03d",
+          "label": "Day7 pT4",
+          "rule": "传说宝箱钻石100%+夜晚10%",
+          "verdictLogic": "pT4入池→PASS。否则→NOT_IMPLEMENTED。"
+        },
+        {
+          "id": "C03e",
+          "label": "Day10最终战",
+          "rule": "final_boss(远古炎核HP=60)",
+          "verdictLogic": "Day10配置→PASS。否则→NOT_IMPLEMENTED。"
+        }
+      ]
+    },
+    {
+      "id": "C04",
+      "title": "Ability pending边界检查",
+      "group": "abilities",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/04_第一阶段10天怪物刷怪闭环设计.md",
+      "sourceSection": "一、Ability System + 执行规则",
+      "description": "全部ability status=pending（第一阶段）。pending未实现→PENDING_OK。",
+      "allowedVerdicts": [
+        "PASS",
+        "PENDING_OK",
+        "GAP_ONLY",
+        "FAIL"
+      ],
+      "checks": [
+        {
+          "id": "C04a",
+          "label": "怪物ability=pending",
+          "rule": "blocker/siege/boss5/boss8/boss10的ability",
+          "verdictLogic": "无ability实现→PENDING_OK。active ability→FAIL。"
+        },
+        {
+          "id": "C04b",
+          "label": "英雄passive=pending",
+          "rule": "ember_seed/fluff_speaker/boom_sprite等7个passive",
+          "verdictLogic": "passive字段存在但未接入ability system→PENDING_OK。已active且不符口径→FAIL。"
+        },
+        {
+          "id": "C04c",
+          "label": "ability framework未启用",
+          "rule": "9个hooks framework未实现",
+          "verdictLogic": "未实现→PENDING_OK。已实现但未接入→GAP_ONLY。"
+        }
+      ]
+    },
+    {
+      "id": "C05",
+      "title": "品级定价检查",
+      "group": "consistency",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/03_10天商店闭环验证_大巴扎对齐版.md §七 + 02_shop_config_bazaar.json",
+      "sourceSection": "§七 大巴扎对齐 + pricing字段",
+      "description": "青铜=2/白银=4/黄金=6/钻石=8。优先文档-fixture自洽；代码未实现→GAP_ONLY。",
+      "allowedVerdicts": [
+        "PASS",
+        "FAIL",
+        "GAP_ONLY"
+      ],
+      "checks": [
+        {
+          "id": "C05a",
+          "label": "文档-fixture一致",
+          "rule": "文档§七值=fixture/shop_rules.json:pricing",
+          "verdictLogic": "一致→PASS。不一致→FAIL。"
+        },
+        {
+          "id": "C05b",
+          "label": "文档-代码GRADE_BASE一致",
+          "rule": "index.html GRADE_BASE=文档值",
+          "verdictLogic": "一致→PASS。代码未定义→GAP_ONLY。"
+        },
+        {
+          "id": "C05c",
+          "label": "json配置一致",
+          "rule": "02_shop_config_bazaar.json pricing=文档值",
+          "verdictLogic": "一致→PASS。不一致→FAIL。"
+        }
+      ]
+    },
+    {
+      "id": "C06",
+      "title": "同名合成与重复出现检查",
+      "group": "shop",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/03_10天商店闭环验证_大巴扎对齐版.md",
+      "sourceSection": "五、合成闭环 + 七、大巴扎对齐",
+      "description": "不排除已拥有英雄；允许同名再次出现。同名重复是合成升级闭环必要条件。",
+      "allowedVerdicts": [
+        "PASS",
+        "FAIL",
+        "GAP_ONLY"
+      ],
+      "checks": [
+        {
+          "id": "C06a",
+          "label": "不排除已拥有",
+          "rule": "excludeOwned=false",
+          "verdictLogic": "excludeOwned=false且代码不filter→PASS。排除了→FAIL。未实现→GAP_ONLY。"
+        },
+        {
+          "id": "C06b",
+          "label": "同名重复规则明确",
+          "rule": "文档§五明确同名合成升阶",
+          "verdictLogic": "文档有→PASS。缺失→FAIL。"
+        },
+        {
+          "id": "C06c",
+          "label": "合成逻辑存在",
+          "rule": "代码有同名→升级Lv2/Lv3",
+          "verdictLogic": "有合成→PASS。否则→GAP_ONLY。"
+        }
+      ]
+    },
+    {
+      "id": "C07",
+      "title": "保证位检查",
+      "group": "shop",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/03_10天商店闭环验证_大巴扎对齐版.md",
+      "sourceSection": "三、10天完整节点日历",
+      "description": "Day1召芽灵/Day3/Day5/Day7关键节点保证位。未来目标→SPEC_TARGET。",
+      "allowedVerdicts": [
+        "PASS",
+        "SPEC_TARGET",
+        "NOT_IMPLEMENTED"
+      ],
+      "checks": [
+        {
+          "id": "C07a",
+          "label": "Day1召芽灵",
+          "rule": "Day1夜晚保证位=召芽灵(4金)",
+          "verdictLogic": "已实现→PASS。未实现→SPEC_TARGET。"
+        },
+        {
+          "id": "C07b",
+          "label": "Day3/5/7保证位",
+          "rule": "已有同名→保证位出同名",
+          "verdictLogic": "已实现→PASS。否则→NOT_IMPLEMENTED。"
+        },
+        {
+          "id": "C07c",
+          "label": "保证位绕过品级骰子",
+          "rule": "保证位独立于概率",
+          "verdictLogic": "文档明确→PASS。否则→SPEC_TARGET。"
+        }
+      ]
+    },
+    {
+      "id": "C08",
+      "title": "经济闭环检查",
+      "group": "economy",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/03_10天商店闭环验证_大巴扎对齐版.md",
+      "sourceSection": "四、经济闭环",
+      "description": "起始金币/收入/击杀金/刷新费/出售返还定义完整。Day5够买pT3，Day7够买pT4。只检查文档-fixture自洽。",
+      "allowedVerdicts": [
+        "PASS",
+        "FAIL",
+        "GAP_ONLY"
+      ],
+      "checks": [
+        {
+          "id": "C08a",
+          "label": "收入来源完整",
+          "rule": "起始6金/日收入/击杀金2-25/出售100%",
+          "verdictLogic": "fixture与文档一致→PASS。"
+        },
+        {
+          "id": "C08b",
+          "label": "Day5能买pT3",
+          "rule": "累计40金，pT3=6金",
+          "verdictLogic": "检查点通过→PASS。数值矛盾→FAIL。"
+        },
+        {
+          "id": "C08c",
+          "label": "Day7能买pT4",
+          "rule": "累计49金，pT4=8金",
+          "verdictLogic": "检查点通过→PASS。数值矛盾→FAIL。"
+        }
+      ]
+    },
+    {
+      "id": "C09",
+      "title": "怪物类型字段完整性检查",
+      "group": "monsters",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/04_第一阶段10天怪物刷怪闭环设计.md",
+      "sourceSection": "二、怪物类型表",
+      "description": "12种怪物每个必须有HP/ATK/AP/Gold/Tags/Role。ability可pending。",
+      "allowedVerdicts": [
+        "PASS",
+        "FAIL",
+        "NOT_IMPLEMENTED"
+      ],
+      "checks": [
+        {
+          "id": "C09a",
+          "label": "12种齐全",
+          "rule": "normal,thick,fast,heavy,swarm,elite,blocker,siege,boss5,minion,boss8,boss10",
+          "verdictLogic": "fixture有12种→检查代码。代码全有→PASS。代码缺失→NOT_IMPLEMENTED。"
+        },
+        {
+          "id": "C09b",
+          "label": "字段完整",
+          "rule": "每种有hp/atk/ap/gold/tags/role",
+          "verdictLogic": "fixture所有12种字段完整→PASS。"
+        },
+        {
+          "id": "C09c",
+          "label": "ability字段占位",
+          "rule": "blocker/siege/boss5/boss8/boss10有ability{id/trigger/status}",
+          "verdictLogic": "有→PASS。缺失字段→FAIL。"
+        }
+      ]
+    },
+    {
+      "id": "C10",
+      "title": "20战斗小段HP/ATK自动计算检查",
+      "group": "data",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/04_第一阶段10天怪物刷怪闭环设计.md",
+      "sourceSection": "四、20个战斗小段表",
+      "description": "用fixture monster_types重算20小段总HP/ATK，与文档值比较。data benchmark，不依赖代码。",
+      "allowedVerdicts": [
+        "PASS",
+        "FAIL"
+      ],
+      "checks": [
+        {
+          "id": "C10a",
+          "label": "20段HP/ATK自动计算",
+          "rule": "Σ(monster.hp*count) vs 文档totalHP",
+          "verdictLogic": "用monster_types.json重算。全部一致→PASS。任一段不一致→FAIL。"
+        }
+      ]
+    },
+    {
+      "id": "C11",
+      "title": "压力曲线检查",
+      "group": "progression",
+      "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/04_第一阶段10天怪物刷怪闭环设计.md",
+      "sourceSection": "七、难度评估",
+      "description": "Day5/7/9/10有明确压力说明。Day9>Day10需解释。Day7-8依赖T4需标注风险。只做文档审计。",
+      "allowedVerdicts": [
+        "PASS",
+        "FAIL"
+      ],
+      "checks": [
+        {
+          "id": "C11a",
+          "label": "关键天有压力说明",
+          "rule": "Day5/7/9/10压力曲线表完整",
+          "verdictLogic": "文档§五压力曲线表完整→PASS。"
+        },
+        {
+          "id": "C11b",
+          "label": "Day9>Day10有解释",
+          "rule": "Day9总HP=443,Day10=386",
+          "verdictLogic": "文档§七已解释Day10单体超强→PASS。无解释→FAIL。"
+        },
+        {
+          "id": "C11c",
+          "label": "T4依赖有替代",
+          "rule": "Day7-8依赖T4时文档有替代过法或标高风险",
+          "verdictLogic": "§七已标注风险→PASS。缺失→FAIL。"
+        }
+      ]
+    },
+    {
+      "id": "C12",
+      "title": "实现缺口与旧ID污染报告",
+      "group": "audit",
+      "sourceDoc": "index.html (当前代码) + docs/01_游戏设计（策划主导）/关卡策划/04_第一阶段10天怪物刷怪闭环设计.md",
+      "sourceSection": "UNIT_DEFS + MONSTER_TYPES + legacy_ids.json",
+      "description": "扫描旧ID，alias/legacy→GAP_ONLY；当正式规则→FAIL。如果没有旧ID污染→PASS。",
+      "allowedVerdicts": [
+        "PASS",
+        "GAP_ONLY",
+        "FAIL"
+      ],
+      "checks": [
+        {
+          "id": "C12a",
+          "label": "旧ID标注清晰",
+          "rule": "legacy_ids.json已标注全部21英雄status",
+          "verdictLogic": "fixture已标注→检查代码是否有将legacy当active。有→FAIL。无→PASS。"
+        },
+        {
+          "id": "C12b",
+          "label": "无口径污染",
+          "rule": "非火+召唤口径英雄不应被当成正式规则",
+          "verdictLogic": "water_torrent/wind_storm/earth_mountain在SHOP_POOLS中但标记legacy→GAP_ONLY。被当成正式→FAIL。"
+        },
+        {
+          "id": "C12c",
+          "label": "MONSTER_TYPES无旧ID",
+          "rule": "只应有文档定义的12种",
+          "verdictLogic": "代码只有旧6种→GAP_ONLY。无旧ID混入→PASS。"
+        }
+      ]
+    }
+  ]
+}

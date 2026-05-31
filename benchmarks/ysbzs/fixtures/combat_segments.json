@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "ysbzs-benchmark-fixture-v1",
+  "sourceDoc": "docs/01_游戏设计（策划主导）/关卡策划/04_第一阶段10天怪物刷怪闭环设计.md",
+  "sourceSection": "四、20 个战斗小段表",
+  "note": "所有 totalHP/totalATK 由 monster_types.json 自动计算，与文档数值完全一致（已验证20/20）",
+  "segments": [
+    {"day":1,"phase":"am","r1":"normal*1","r2":"normal*2","totalHP":18,"totalATK":3,"rounds":2,"allowLeak":false,"designGoal":"教学:火叠层结算死亡"},
+    {"day":1,"phase":"pm","r1":"normal*2","r2":"normal*2","totalHP":24,"totalATK":4,"rounds":2,"allowLeak":false,"designGoal":"教学:第2小回合连续性"},
+    {"day":2,"phase":"am","r1":"normal*2+thick*1","r2":"thick*2","totalHP":42,"totalATK":5,"rounds":2,"allowLeak":true,"designGoal":"第1次遇到厚皮怪"},
+    {"day":2,"phase":"pm","r1":"thick*2+normal*2","r2":"normal*3","totalHP":50,"totalATK":7,"rounds":3,"allowLeak":false,"designGoal":"压力上升+城堡HP消耗"},
+    {"day":3,"phase":"am","r1":"fast*2+normal*2","r2":"heavy*1+thick*1+normal*1","totalHP":46,"totalATK":8,"rounds":3,"allowLeak":true,"designGoal":"第1次快怪+冲锋怪"},
+    {"day":3,"phase":"pm","r1":"fast*2+thick*2","r2":"heavy*2+normal*2","totalHP":58,"totalATK":10,"rounds":3,"allowLeak":true,"designGoal":"持续压力+城堡消耗加深"},
+    {"day":4,"phase":"am","r1":"swarm*3+normal*2","r2":"swarm*4+thick*1","totalHP":43,"totalATK":10,"rounds":3,"allowLeak":true,"designGoal":"第1次小怪群"},
+    {"day":4,"phase":"pm","r1":"elite*1+normal*3","r2":"elite*1+thick*2+swarm*2","totalHP":84,"totalATK":13,"rounds":4,"allowLeak":true,"designGoal":"精英+小怪混合测合成必要性"},
+    {"day":5,"phase":"am","r1":"siege*2+thick*2+normal*2","r2":"siege*3+blocker*2","totalHP":95,"totalATK":16,"rounds":3,"allowLeak":true,"designGoal":"攻城怪+堵路怪(基础版)"},
+    {"day":5,"phase":"pm","r1":"boss5*1+siege*2+normal*2","r2":"boss5*1+thick*2+fast*1","totalHP":121,"totalATK":17,"rounds":4,"allowLeak":true,"designGoal":"Day5 Boss战(基础版无铁壁)"},
+    {"day":6,"phase":"am","r1":"elite*2+swarm*3","r2":"blocker*2+thick*3","totalHP":107,"totalATK":14,"rounds":3,"allowLeak":true,"designGoal":"精英2逼战斗力"},
+    {"day":6,"phase":"pm","r1":"siege*2+fast*2+elite*1","r2":"siege*3+heavy*2+blocker*1","totalHP":95,"totalATK":20,"rounds":4,"allowLeak":true,"designGoal":"多类型混合"},
+    {"day":7,"phase":"am","r1":"elite*3+siege*2","r2":"blocker*3+heavy*2+swarm*2","totalHP":138,"totalATK":22,"rounds":4,"allowLeak":true,"designGoal":"pT4背景下高压关"},
+    {"day":7,"phase":"pm","r1":"boss8*1+elite*2+siege*2","r2":"boss8*1+siege*2+fast*2","totalHP":168,"totalATK":24,"rounds":4,"allowLeak":false,"designGoal":"熔岩核心(基础版无铺火)"},
+    {"day":8,"phase":"am","r1":"elite*2+blocker*2+siege*2","r2":"elite*3+thick*3","totalHP":172,"totalATK":24,"rounds":4,"allowLeak":true,"designGoal":"全精英+堵路混合硬实力检验"},
+    {"day":8,"phase":"pm","r1":"boss8*1+elite*2+fast*2+swarm*3","r2":"boss8*1+heavy*2+siege*2+thick*2","totalHP":199,"totalATK":29,"rounds":4,"allowLeak":false,"designGoal":"强化Boss+大量杂兵"},
+    {"day":9,"phase":"am","r1":"elite*3+siege*3+fast*2","r2":"boss8*1+elite*2+blocker*2","totalHP":204,"totalATK":29,"rounds":4,"allowLeak":true,"designGoal":"最终战前高压减少城堡HP"},
+    {"day":9,"phase":"pm","r1":"boss8*1+elite*3+siege*3+heavy*2","r2":"boss8*1+elite*2+minion*1","totalHP":239,"totalATK":35,"rounds":5,"allowLeak":false,"designGoal":"准最终战测试极限防线"},
+    {"day":10,"phase":"am","r1":"minion*1+elite*3+siege*3","r2":"minion*2+elite*2+swarm*4","totalHP":169,"totalATK":31,"rounds":4,"allowLeak":true,"designGoal":"先清护卫(基础版无光环)"},
+    {"day":10,"phase":"pm","r1":"boss10*1+minion*2+siege*3","r2":"boss10*1+minion*1+elite*2","totalHP":217,"totalATK":28,"rounds":5,"allowLeak":false,"designGoal":"最终战:火爆发vs召唤流(基础版无分裂)"}
+  ]
+}

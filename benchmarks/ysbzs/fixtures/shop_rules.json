@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "ysbzs-benchmark-fixture-v1",
+  "sourceDocs": [
+    "docs/01_游戏设计（策划主导）/关卡策划/03_10天商店闭环验证_大巴扎对齐版.md",
+    "docs/01_游戏设计（策划主导）/关卡策划/02_shop_config_bazaar.json"
+  ],
+  "pricing": {
+    "system": "tier_unified",
+    "bronze": 2,
+    "silver": 4,
+    "gold": 6,
+    "diamond": 8,
+    "sellBack": { "bronze": 1, "silver": 3, "gold": 6 }
+  },
+  "stallSystem": {
+    "enabled": true,
+    "stallCountByDay": { "1": 2, "2": 3, "3": 4, "4": 4, "5": 5, "6+": 5 },
+    "stallSlots": 3,
+    "filterLogic": "AND",
+    "excludeOwned": false,
+    "_excludeOwned_note": "C06: 同名合成要求不排除已拥有英雄",
+    "refresh": {
+      "firstFree": true,
+      "feeCurve": [1, 2, 3],
+      "feeResetsDaily": true,
+      "globalFee": 3
+    },
+    "freeze": {
+      "level": "stall",
+      "cost": 0,
+      "expire": "end_of_night"
+    }
+  },
+  "growthNodes": {
+    "day1_start": { "trigger": "Day1战斗前", "content": "免费选1青铜（引导火苗灵）", "guarantee": true },
+    "day4_midday": { "trigger": "Day4午", "content": "稀有商人1摊×2格, 黄金100%, 价6金", "guarantee": true },
+    "day5_midday": { "trigger": "Day5午", "content": "午间商人2摊×2格, 黄金50%", "guarantee": false },
+    "day5_boss": { "trigger": "Day5杀Boss", "content": "黄金1张半价3金", "guarantee": true },
+    "day5_night": { "trigger": "Day5夜", "content": "黄金15%入夜晚商店池", "guarantee": false },
+    "day6_boss": { "trigger": "Day6杀Boss", "content": "钻石1张免费(0金)", "guarantee": true },
+    "day7_legend": { "trigger": "Day7午", "content": "传说宝箱1摊×2格, 钻石100%, 价8金", "guarantee": true },
+    "day7_night": { "trigger": "Day7夜", "content": "钻石10%入夜晚商店池", "guarantee": false }
+  },
+  "guaranteeSlots": {
+    "day1_night": { "hero": "sprout_summoner", "grade": "silver", "price": 4, "note": "召芽灵固定教学" },
+    "day3_night": { "rule": "已有火英雄同名", "grade": "silver" },
+    "day5_night": { "rule": "已有英雄同名黄金", "grade": "gold" },
+    "day7_night": { "rule": "已有英雄同名钻石", "grade": "diamond" }
+  }
+}

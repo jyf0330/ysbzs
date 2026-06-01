@@ -1,6 +1,6 @@
 {
   "schemaVersion": "ysbzs-benchmark-report-v1",
-  "timestamp": "2026-05-31T13:59:13.829Z",
+  "timestamp": "2026-06-01T08:50:35.736Z",
   "mode": "full",
   "caseStats": {
     "GAP_ONLY": 6,
@@ -9,8 +9,8 @@
     "PASS": 3
   },
   "subStats": {
-    "PASS": 20,
-    "GAP_ONLY": 10,
+    "PASS": 21,
+    "GAP_ONLY": 9,
     "NOT_IMPLEMENTED": 4,
     "PENDING_OK": 2,
     "SPEC_TARGET": 2
@@ -132,19 +132,19 @@
           "checkId": "C04a",
           "label": "怪物ability=pending",
           "verdict": "PENDING_OK",
-          "detail": "怪物无ability实现，全部pending。符合第一阶段规则"
+          "detail": "全部6个怪物ability标记pending"
         },
         {
           "checkId": "C04b",
           "label": "英雄passive=pending",
           "verdict": "PENDING_OK",
-          "detail": "7个被动字段定义，可能部分已执行但标记为pending"
+          "detail": "11个被动字段定义，可能部分已执行但标记为pending"
         },
         {
           "checkId": "C04c",
           "label": "ability framework未启用",
           "verdict": "GAP_ONLY",
-          "detail": "1/9 hooks出现但未形成framework"
+          "detail": "6/9 hooks出现但未形成framework"
         }
       ]
     },
@@ -267,7 +267,7 @@
           "checkId": "C09a",
           "label": "12种齐全",
           "verdict": "NOT_IMPLEMENTED",
-          "detail": "代码仅有6种(normal:  {,thick:   {,fast:    {,heavy:   {,elite:   {,boss:    {)，缺失12种(normal,thick,fast,heavy,swarm,elite,blocker,siege,boss5,minion,boss8,boss10)"
+          "detail": "代码仅有22种(normal:  {,thick:   {,fast:    {,heavy:   {,swarm:   {,elite:   {,boss:    {,blocker: {,ability,siege:   {,ability,boss5:   {,ability,config,minion:  {,ability,boss8:   {,ability,config,boss10:  {,ability,config)，缺失12种(normal,thick,fast,heavy,swarm,elite,blocker,siege,boss5,minion,boss8,boss10)"
         },
         {
           "checkId": "C09b",
@@ -347,8 +347,8 @@
         {
           "checkId": "C12c",
           "label": "MONSTER_TYPES无旧ID",
-          "verdict": "GAP_ONLY",
-          "detail": "缺失swarm,blocker,siege,boss5,minion,boss8,boss10，额外boss"
+          "verdict": "PASS",
+          "detail": "代码22种怪物与fixture一致"
         }
       ]
     }

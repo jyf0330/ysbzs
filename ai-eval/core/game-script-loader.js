@@ -61,6 +61,11 @@ function createExportFooter() {
   try { if (typeof showMsg !== 'undefined') globalThis.showMsg = showMsg; } catch (e) {}
   try { if (typeof buildRunEndVM !== 'undefined') globalThis.buildRunEndVM = buildRunEndVM; } catch (e) {}
   try { if (typeof recomputeCorePreview !== 'undefined') globalThis.recomputeCorePreview = recomputeCorePreview; } catch (e) {}
+  try { if (typeof UNIT_DEFS !== 'undefined') globalThis.UNIT_DEFS = UNIT_DEFS; } catch (e) {}
+  try { if (typeof EL !== 'undefined') globalThis.EL = EL; } catch (e) {}
+  try { if (typeof SHOP_PRICE_CONFIG !== 'undefined') globalThis.SHOP_PRICE_CONFIG = SHOP_PRICE_CONFIG; } catch (e) {}
+  try { if (typeof TIER_MULT !== 'undefined') globalThis.TIER_MULT = TIER_MULT; } catch (e) {}
+  try { if (typeof ADV !== 'undefined') globalThis.ADV = ADV; } catch (e) {}
   try {
     if (typeof G !== 'undefined') {
       Object.defineProperty(globalThis, 'G', {

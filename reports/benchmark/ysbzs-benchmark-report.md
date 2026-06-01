@@ -1,6 +1,6 @@
 # ysbzs v1 基准测试报告
 
-> 时间: 2026-05-31T13:59:13.830Z
+> 时间: 2026-06-01T08:50:35.742Z
 > 模式: FULL (C01-C12)
 > 套件: ysbzs-benchmark-v1
 
@@ -19,8 +19,8 @@
 
 | 判据 | 数量 |
 |------|------|
-| 🟢 PASS | 20 |
-| ⬜ GAP_ONLY | 10 |
+| 🟢 PASS | 21 |
+| ⬜ GAP_ONLY | 9 |
 | ⚪ NOT_IMPLEMENTED | 4 |
 | 🟡 PENDING_OK | 2 |
 | 🔵 SPEC_TARGET | 2 |
@@ -67,9 +67,9 @@
 
 | 检查 | 判据 | 详情 |
 |------|------|------|
-| C04a 怪物ability=pending | 🟡 PENDING_OK | 怪物无ability实现，全部pending。符合第一阶段规则 |
-| C04b 英雄passive=pending | 🟡 PENDING_OK | 7个被动字段定义，可能部分已执行但标记为pending |
-| C04c ability framework未启用 | ⬜ GAP_ONLY | 1/9 hooks出现但未形成framework |
+| C04a 怪物ability=pending | 🟡 PENDING_OK | 全部6个怪物ability标记pending |
+| C04b 英雄passive=pending | 🟡 PENDING_OK | 11个被动字段定义，可能部分已执行但标记为pending |
+| C04c ability framework未启用 | ⬜ GAP_ONLY | 6/9 hooks出现但未形成framework |
 
 ### C05: 品级定价检查 — ⬜ GAP_ONLY
 
@@ -117,7 +117,7 @@
 
 | 检查 | 判据 | 详情 |
 |------|------|------|
-| C09a 12种齐全 | ⚪ NOT_IMPLEMENTED | 代码仅有6种(normal:  {,thick:   {,fast:    {,heavy:   {,elite:   {,boss:    {)，缺失12种(normal,thick,fast,heavy,swarm,elite,blocker,siege,boss5,minion,boss8,boss10) |
+| C09a 12种齐全 | ⚪ NOT_IMPLEMENTED | 代码仅有22种(normal:  {,thick:   {,fast:    {,heavy:   {,swarm:   {,elite:   {,boss:    {,blocker: {,ability,siege:   {,ability,boss5:   {,ability,config,minion:  {,ability,boss8:   {,ability,config,boss10:  {,ability,config)，缺失12种(normal,thick,fast,heavy,swarm,elite,blocker,siege,boss5,minion,boss8,boss10) |
 | C09b 字段完整 | 🟢 PASS | fixture中全部12种怪物字段完整(hp/atk/ap/gold/tags/role) |
 | C09c ability字段占位 | 🟢 PASS | 全部5种需要ability占位的怪物都有ability字段 |
 
@@ -147,5 +147,5 @@
 |------|------|------|
 | C12a 旧ID标注清晰 | ⬜ GAP_ONLY | 8个legacy ID已标注。部分(water_torrent/wind_storm/earth_mountain等)仍在SHOP_POOLS中但属于遗留代码。 |
 | C12b 无口径污染 | ⬜ GAP_ONLY | 1个legacy/utility ID存在于SHOP_POOLS中，属于遗留代码，非新规则主动引用 |
-| C12c MONSTER_TYPES无旧ID | ⬜ GAP_ONLY | 缺失swarm,blocker,siege,boss5,minion,boss8,boss10，额外boss |
+| C12c MONSTER_TYPES无旧ID | 🟢 PASS | 代码22种怪物与fixture一致 |
 

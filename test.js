@@ -1155,15 +1155,15 @@ group('#2 shapeHTML 形状图形预览', ()=>{
   test('包含 inline-grid CSS', ()=>{
     assert.ok(shapeHTML(1,'fire').includes('inline-grid'));
   });
-  test('英雄格为蓝色 #3b82f6', ()=>{
+  test('英雄格为灰蓝色 #7b9db5', ()=>{
     // 形状1: 攻击(0,1)，英雄(0,0)，grid 有两格
-    assert.ok(shapeHTML(1,'fire').includes('#3b82f6'));
+    assert.ok(shapeHTML(1,'fire').includes('#7b9db5'));
   });
-  test('攻击格为 fire 元素颜色 #fb923c', ()=>{
-    assert.ok(shapeHTML(1,'fire').includes('#fb923c'));
+  test('攻击格为 fire 元素颜色 #d4855e', ()=>{
+    assert.ok(shapeHTML(1,'fire').includes('#d4855e'));
   });
-  test('水元素颜色 #38bdf8', ()=>{
-    assert.ok(shapeHTML(1,'water').includes('#38bdf8'));
+  test('水元素颜色 #5e95b5', ()=>{
+    assert.ok(shapeHTML(1,'water').includes('#5e95b5'));
   });
   test('无效 sn 返回空字符串', ()=>{
     assert.strictEqual(shapeHTML(99,'fire'),'');
@@ -2378,6 +2378,265 @@ group('K组：结算与元素落地一致性', ()=>{
       assert.deepStrictEqual(G.heroes.ha.pos,prev,'英雄点击剩余元素格后位置不变');
       const lastLog=logEl.children[logEl.children.length-1]?.textContent||'';
       assert.ok(lastLog.includes('目标格已占用'),'移动点击被阻挡时应写入占用日志');
+    });
+  });
+  test('case_k_015: onCell 选中英雄后点击实体格应显示详情而非尝试移动',()=>{
+    fresh();
+    G.slots.forEach(s=>{s.used=true;});
+    resetDomEl('cd'); resetDomEl('log'); resetDomEl('board');
+    G.monsters=[{id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:7},dead:false,el:null}];
+    // 英雄B在(11,1)，选中英雄A
+    G.selHero='ha';
+    const hbPos={...G.heroes.hb.pos};
+    withRealUi(()=>{
+      // 点击英雄B所在格 → 应清除 selHero 并显示该格详情
+      onCell(hbPos.r,hbPos.c);
+      assert.strictEqual(G.selHero,null,'点击实体格应清除selHero');
+      assert.strictEqual(G.selectedCell.r,hbPos.r,'应选中英雄B所在格');
+      assert.strictEqual(G.selectedCell.c,hbPos.c,'应选中英雄B所在格');
+      const cdEl=document.getElementById('cd');
+      assert.strictEqual(cdEl.style.display,'block','应显示格子详情面板');
+      assert.ok(cdEl.innerHTML.includes('英雄'),'详情应包含英雄信息');
+      // 点击怪物格 → 应清除 selHero 并显示怪物详情
+      G.selHero='ha';
+      onCell(5,7);
+      assert.strictEqual(G.selHero,null,'点击怪物格应清除selHero');
+      assert.ok(cdEl.innerHTML.includes('测试怪'),'详情应包含怪物信息');
+      // 点击空格仍应移动英雄
+      G.selHero='ha';
+      const prev={...G.heroes.ha.pos};
+      onCell(6,6);
+      assert.strictEqual(G.selHero,'ha','移动后selHero保持选中');
+      assert.notDeepStrictEqual(G.heroes.ha.pos,prev,'英雄应移动到空格');
+    });
+  });
+  test('case_k_016: buildPreviewGrid 英雄实体包含行动槽摘要和 acted 状态',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:5,c:5};
+    G.heroes.hb.pos={r:11,c:1};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0},
+             {hid:'ha',el:'water',sn:2,dir:'down',used:false,idx:1},
+             {hid:'hb',el:'wind',sn:1,dir:'left',used:true,idx:2}];
+    G.heroes.ha._acted=false;
+    G.heroes.hb._acted=true;
+    recomputeCorePreview();
+    const haKey='5,5', hbKey='11,1';
+    const haCell=G.coreSnapshot.previewGrid.grid[haKey];
+    const hbCell=G.coreSnapshot.previewGrid.grid[hbKey];
+    assert.strictEqual(haCell.entity.type,'hero','英雄A格entity.type应为hero');
+    assert.ok(haCell.entity.slots,'英雄A实体应包含slots字段');
+    assert.strictEqual(haCell.entity.slots.length,2,'英雄A应有2个未使用行动槽');
+    assert.strictEqual(haCell.entity.slots[0].el,'fire','槽0元素应为fire');
+    assert.strictEqual(haCell.entity._acted,false,'英雄A未行动');
+    assert.strictEqual(hbCell.entity._acted,true,'英雄B已行动');
+    assert.strictEqual(hbCell.entity.slots.length,0,'英雄B无未使用槽(唯一槽已used)');
+  });
+  test('case_k_017: renderCellDetail 英雄详情显示行动槽、acted状态和元素叠层',()=>{
+    fresh();
+    G.slots.forEach(s=>{s.used=true;});
+    G.monsters=[];
+    G.heroes.ha.pos={r:5,c:5};
+    G.heroes.ha._acted=true;
+    // 英雄B在(8,5)，sn=3向上→(7,5)(6,5)(5,5)正好叠到英雄A
+    G.heroes.hb.pos={r:8,c:5};
+    G.heroes.hb._acted=false;
+    G.slots=[{hid:'ha',el:'water',sn:1,dir:'right',used:false,idx:0,tier:1},
+             {hid:'hb',el:'fire',sn:3,dir:'up',used:false,idx:1,tier:1}];
+    recomputeCorePreview();
+    resetDomEl('cd');
+    withRealUi(()=>{
+      G.selectedCell={r:5,c:5};
+      renderCellDetail(getSelectedCellPreview(G));
+      const cdEl=document.getElementById('cd');
+      const html=cdEl.innerHTML;
+      assert.ok(html.includes('英雄'),'详情应包含英雄标签');
+      assert.ok(html.includes('已行动'),'应显示已行动状态');
+      assert.ok(html.includes('行动槽'),'应显示行动槽区块（英雄A有水槽）');
+      // 应显示来自英雄B的火元素叠层
+      const haCell=G.coreSnapshot.previewGrid.grid['5,5'];
+      const allyActions=(haCell.preview.incomingActions||[]).filter(a=>a.heroId!=='ha');
+      assert.ok(allyActions.length>0,'应有来自英雄B的行动叠层');
+      assert.ok(html.includes('友方叠层')||html.includes('📥'),'详情应显示友方叠层区块');
+    });
+  });
+});
+
+// ─── displayBrief/displayDetail TDD ───
+group('K2组：棋盘格子中文短字显示',()=>{
+  const ELNAME={fire:'火',water:'水',wind:'风',earth:'土'};
+
+  test('k2_001: 怪物格 displayBrief 含英雄攻击和元素伤害',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'史莱姆',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4};
+    G.heroes.hb.pos={r:12,c:12};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1}];
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['5,5'];
+    assert.ok(cb,'_cellBriefs 应包含怪物格');
+    assert.ok(cb.brief!==undefined,'brief 应存在');
+    assert.ok(cb.detail,'detail 应存在');
+    assert.strictEqual(cb.type,'monster','type 应为 monster');
+    assert.ok(cb.brief.includes('英1'),'应包含英雄标识 英1');
+    assert.ok(cb.brief.includes('打'),'应包含 打');
+    assert.ok(cb.brief.includes('火'),'应有火元素');
+    assert.ok(cb.brief.includes('总'),'应有总计');
+    assert.ok(cb.detail.attackers.includes('英1'),'detail.attackers 含英1');
+    assert.ok(cb.detail.fire>0,'detail.fire>0');
+    assert.ok(cb.detail.total>0,'detail.total>0');
+  });
+
+  test('k2_002: 怪物格多元素伤害 displayBrief',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'史莱姆',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4};
+    G.heroes.hb.pos={r:6,c:5};
+    G.slots=[{hid:'ha',el:'fire',sn:2,dir:'right',used:false,idx:0,tier:1},
+             {hid:'hb',el:'water',sn:2,dir:'up',used:false,idx:1,tier:1}];
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['5,5'];
+    assert.ok(cb.brief.includes('火'),'应有火元素');
+    assert.ok(cb.brief.includes('水'),'应有水元素');
+    assert.ok(cb.brief.includes('总'),'应有总计');
+    assert.ok(cb.detail.water>0,'detail.water>0');
+  });
+
+  test('k2_003: 怪物格多英雄攻击 displayBrief',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'史莱姆',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4};
+    G.heroes.hb.pos={r:5,c:6};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1},
+             {hid:'hb',el:'fire',sn:1,dir:'left',used:false,idx:1,tier:1}];
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['5,5'];
+    assert.ok(cb.brief.includes('英1'),'应含英1');
+    assert.ok(cb.brief.includes('英2'),'应含英2');
+  });
+
+  test('k2_004: 英雄格被怪物攻击 displayBrief',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'哥布林',hp:10,maxHp:10,atk:2,pos:{r:5,c:5},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4}; // 英雄在怪物左边（怪物向左攻击）
+    G.heroes.hb.pos={r:12,c:12};
+    G.slots.forEach(s=>{s.used=true;});
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['5,4'];
+    assert.ok(cb,'英雄格应存在');
+    assert.strictEqual(cb.type,'hero','type 应为 hero');
+    assert.ok(cb.brief.includes('怪'),'应包含 怪');
+    assert.ok(cb.brief.includes('打'),'应包含 打');
+    assert.ok(cb.detail.incoming>0,'detail.incoming>0');
+  });
+
+  test('k2_005: 英雄格多怪物攻击 displayBrief',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'哥布林',hp:10,maxHp:10,atk:2,pos:{r:5,c:5},dead:false,el:null},
+                {id:'m1',name:'骷髅',hp:8,maxHp:8,atk:3,pos:{r:4,c:4},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4};
+    G.heroes.hb.pos={r:12,c:12};
+    G.slots.forEach(s=>{s.used=true;});
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['5,4'];
+    assert.ok(cb.brief.includes('怪1'),'应含怪1');
+    assert.ok(cb.brief.includes('怪2'),'应含怪2');
+    const totalDmg=cb.detail.incoming;
+    assert.ok(totalDmg>=5,'两怪物总伤害应>=5');
+  });
+
+  test('k2_006: 空格元素场 displayBrief',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:12,c:12};
+    G.heroes.hb.pos={r:11,c:1};
+    G.slots=[{hid:'ha',el:'fire',sn:2,dir:'up',used:false,idx:0,tier:1}];
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['10,12'];
+    assert.strictEqual(cb.type,'empty','type 应为 empty');
+    assert.ok(cb.brief.includes('火'),'应有火元素');
+    assert.ok(!cb.brief.includes('英'),'空格不应有英雄标识');
+  });
+
+  test('k2_007: 空格多元素场 displayBrief',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:7,c:5};
+    G.heroes.hb.pos={r:9,c:5};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'down',used:false,idx:0,tier:1},
+             {hid:'hb',el:'water',sn:1,dir:'up',used:false,idx:1,tier:1}];
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['8,5'];
+    assert.strictEqual(cb.type,'empty','type 应为 empty');
+    assert.ok(cb.brief.includes('火'),'应有火');
+    assert.ok(cb.brief.includes('水'),'应有水');
+  });
+
+  test('k2_008: 无伤害空格 displayBrief 为空',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:12,c:12};
+    G.heroes.hb.pos={r:11,c:1};
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['0,0'];
+    assert.strictEqual(cb.brief,'','无伤害空格brief应为空字符串');
+    assert.strictEqual(cb.type,'empty','type 应为 empty');
+  });
+
+  test('k2_009: 城堡格 displayBrief',()=>{
+    fresh();
+    G.monsters=[];
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['12,1'];
+    assert.ok(cb,'城堡格应存在');
+    assert.strictEqual(cb.type,'player_castle','type 应为 player_castle');
+  });
+
+  test('k2_010: displayBrief 不使用英文缩写',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'史莱姆',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4};
+    G.heroes.hb.pos={r:12,c:12};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1}];
+    recomputeCorePreview();
+    const cb=G.coreSnapshot._cellBriefs['5,5'];
+    assert.ok(!cb.brief.includes('H'),'不应含 H');
+    assert.ok(!cb.brief.includes('M'),'不应含 M');
+    assert.ok(!cb.brief.includes('A'),'不应含 A');
+    assert.ok(!cb.brief.includes('Σ'),'不应含 Σ');
+    const detailStr=JSON.stringify(cb.detail);
+    assert.ok(!detailStr.includes('Σ'),'detail 不应含 Σ');
+  });
+
+  test('k2_011: buildBoardVM 透传 displayBrief',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'史莱姆',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1}];
+    recomputeCorePreview();
+    const bvm=buildBoardVM();
+    const monCell=bvm.find(cv=>cv.r===5&&cv.c===5);
+    assert.ok(monCell,'buildBoardVM 应包含怪物格');
+    assert.ok(monCell.displayBrief,'buildBoardVM 应透传 displayBrief');
+    assert.ok(monCell.displayBrief.includes('英1'),'透传的 displayBrief 应含英1');
+  });
+
+  test('k2_012: renderCellDetail 使用 displayDetail 中文信息',()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'史莱姆',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
+    G.heroes.ha.pos={r:5,c:4};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1}];
+    recomputeCorePreview();
+    resetDomEl('cd');
+    withRealUi(()=>{
+      G.selectedCell={r:5,c:5};
+      renderCellDetail(getSelectedCellPreview(G));
+      const cdEl=document.getElementById('cd');
+      const html=cdEl.innerHTML;
+      // 中文标签
+      assert.ok(html.includes('攻击方')||html.includes('攻击')||html.includes('伤害'),'详情应含中文战斗词汇');
+      assert.ok(!html.includes('selfCellDamage'),'不应泄露内部字段名 selfCellDamage');
+      assert.ok(!html.includes('entityDamage'),'不应泄露内部字段名 entityDamage');
     });
   });
 });

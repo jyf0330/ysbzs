@@ -4,6 +4,7 @@
   },
   "scripts": {
     "benchmark:smoke": "node benchmarks/ysbzs/run-benchmark.mjs --smoke",
-    "benchmark": "node benchmarks/ysbzs/run-benchmark.mjs"
+    "benchmark": "node benchmarks/ysbzs/run-benchmark.mjs",
+    "playtest": "node ai-eval/runners/run-playtest.mjs"
   }
 }

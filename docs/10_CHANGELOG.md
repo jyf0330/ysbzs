@@ -1,4 +1,51 @@
 
+## 2026-06-01 — 羊皮纸手绘风视觉主题重设计
+
+### 视觉（`index.html`）
+- **整体风格切换**：从暗色赛博主题（`#0d1117`底+金色霓虹+红色心跳预警+紫色发光）整体替换为浅色羊皮纸手绘风（暖色纸面+棕色手绘线条+低饱和柔和配色）。
+- **CSS 变量重定义**：`:root` 全部变量替换为羊皮纸主题色系，新增 `--c-text`/`--c-text2`/`--c-title`/`--c-panel-bg`/`--c-panel-border`/`--c-btn-*` 等语义变量。
+- **元素色系柔化**：火 `#d4855e`（陶土）/ 水 `#5e95b5`（灰蓝）/ 风 `#6ea86c`（鼠尾草绿）/ 土 `#b8844a`（赭石），元素背景色改为浅色半透明。
+- **棋盘风格**：格子间隙 2px 透出棋盘底色模拟画线，边框暖棕色 `#b8a590`，格子带 `#e0d8c8` 细边框。
+- **实体卡片**：英雄/怪物/召唤物/城堡卡片改为浅色背景+细边框，去 box-shadow 光晕，选中用虚线描边替代。
+- **UI 面板**：面板背景 `#f5f0e6`，暖棕边框，按钮主色 `#8b6f5a`。
+- **字体**：优先日系圆体/手写体（Hiragino Maru Gothic ProN, Klee, YuKyokasho）。
+- **JS 颜色常量同步**：`EC`/`EB`/`ELIC2` 全部更新为羊皮纸主题色值。
+
+### 测试（`test.js`）
+- shapeHTML 颜色断言同步为新色值（`#d4855e`/`#5e95b5`/`#7b9db5`），416/416 通过。
+
+### 文档
+- `美术风格指南.md`：整体重写为羊皮纸手绘风规范。
+
+## 2026-06-01 — AI 自动试玩 runner
+
+### 工具（`ai-eval/`）
+- **新增 `ai-eval/runners/run-playtest.mjs`**：AI 自动试玩 runner，VM 沙箱内同步驱动完整游戏循环（Day1→Day10），生成 `trace.json`（618事件/10天）和 `summary.json`（提取指标）。商店 AI 按元素协同+价格排序。`npm run playtest` 一键运行。
+- **修改 `ai-eval/core/game-script-loader.js`**：`createExportFooter` 追加桥接 `UNIT_DEFS`、`EL`、`SHOP_PRICE_CONFIG`、`TIER_MULT`、`ADV`，使 runner 能读取游戏常量用于 AI 决策。
+- **新增 npm scripts**：`"playtest": "node ai-eval/runners/run-playtest.mjs"`
+
+### 输出
+- **`reports/playtest/runs/<timestamp>_<commit>/trace.json`**：完整事件记录（GAME_START / DAY_START / ROUND_START / PLAYER_ACTIONS / COMBAT_RESULT / SHOP_OPEN / SHOP_PURCHASE / HERO_STATE / MONSTER_STATE / GAME_OVER）
+- **`summary.json`**：指标提取（result/daysPlayed/kills/gold/purchases/engineStats/wallClockMs）
+
+## 2026-06-01 — 棋盘格子中文短字显示重构
+
+### 代码（`index.html` / `test.js`）
+- **`buildPreviewGrid` 新增**：每个格子计算 `displayBrief`（中文短字，如"英1打1 火3 总3"）、`displayDetail`（战斗详情数据）和 `displayType`（monster/hero/castle/empty），UI 层只读取不重新计算。
+- **`buildBoardVM` 透传**：cell view model 新增 `displayBrief` 字段，从 coreSnapshot 读取。
+- **`renderBoard` 改造**：有 `displayBrief` 时优先显示中文短字，精简底部徽标行（仅保留💥爆炸/☠致死指示器）；无 `displayBrief` 时保留原有 HP/伤害显示。
+- **`renderCellDetail` 增强**：新增"战斗摘要"块，使用 `displayDetail` 展示攻击方/目标/火水风土伤害/总伤害等中文信息。
+- **禁止事项落实**：棋子不再使用 H/M/A/Σ 等英文缩写；UI 层不重新计算元素伤害或怪物攻击目标。
+- **测试**：新增 K2 组 12 个测试（k2_001~k2_012），覆盖怪物格/英雄格/空格/城堡格的 displayBrief 格式、多英雄/多怪物攻击、元素场显示、禁止英文缩写、buildBoardVM 透传和 renderCellDetail 中文验证。总测试数 404→416。
+
+## 2026-06-01 — 格子详情面板增强：英雄信息与移动后交互修复
+
+### 代码（`index.html` / `test.js`）
+- **`onCell` 修复**：选中英雄后点击实体格（英雄/怪物/召唤物/城堡）改为清除选中并显示格子详情，不再静默失败；点击空格仍保持移动行为。
+- **`buildPreviewGrid` 增强**：英雄实体新增 `_acted`（已行动状态）和 `slots`（未使用行动槽摘要，含元素/形状/方向）字段。
+- **`renderCellDetail` 增强**：英雄详情块新增已行动/可行动标签、行动槽列表（元素图标+形状+方向）、友方叠层预览（来自另一英雄的行动槽叠层）。
+- **测试**：新增 `case_k_015`（onCell 实体格交互）、`case_k_016`（英雄实体 slot 字段）、`case_k_017`（英雄详情渲染），总测试数 401→404。
+
 ## 2026-06-01 — AI 工作流同步（上游 ywh-work 反哺）
 
 ### 工作流（`docs/00_AI_WORKFLOW_DETAILS.md`、`docs/00_AI_PROJECT_RULES.md`、`AGENTS.md`、`CLAUDE.md`、`.github/copilot-instructions.md`）

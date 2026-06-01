@@ -14,6 +14,23 @@ test('loader exposes ysbzs replay and action hooks', () => {
   assert.strictEqual(typeof game.context.snapshotCoreStateForReplay, 'function');
   assert.strictEqual(typeof game.context.applyReplaySnapshot, 'function');
   assert.strictEqual(typeof game.context.buildReplayFinalResult, 'function');
+  assert.strictEqual(typeof game.context.G, 'object');
+  assert.strictEqual(typeof game.context.render, 'function');
+  assert.strictEqual(typeof game.context.renderShop, 'function');
+  assert.strictEqual(typeof game.context.glog, 'function');
+  assert.strictEqual(typeof game.context.showMsg, 'function');
+  assert.strictEqual(typeof game.context.buildRunEndVM, 'function');
+  assert.strictEqual(typeof game.context.recomputeCorePreview, 'function');
+});
+
+test('script extraction preserves declarations and supports script attributes', () => {
+  const { extractGameScript } = require('../core/game-script-loader');
+  const html = '<script data-main="true">const a = 1; let b = 2;</script>';
+  const script = extractGameScript(html);
+  assert.match(script, /const a = 1/);
+  assert.match(script, /let b = 2/);
+  assert.doesNotMatch(script, /\bvar a\b/);
+  assert.doesNotMatch(script, /\bvar b\b/);
 });
 
 test('loader starts a fresh game and computes a replay result', () => {
@@ -24,6 +41,22 @@ test('loader starts a fresh game and computes a replay result', () => {
   assert.strictEqual(result.phase, 'PLAYER');
   assert.strictEqual(result.day, 1);
   assert.ok(result.hash);
+});
+
+test('loader instances keep isolated game state', () => {
+  const { loadYsbzsGame } = require('../core/game-script-loader');
+  const first = loadYsbzsGame();
+  const second = loadYsbzsGame();
+
+  first.context.initGame();
+  second.context.initGame();
+  first.context.G.day = 7;
+  first.context.G.gold = 99;
+
+  assert.strictEqual(first.context.G.day, 7);
+  assert.strictEqual(first.context.G.gold, 99);
+  assert.strictEqual(second.context.G.day, 1);
+  assert.notStrictEqual(first.context.G, second.context.G);
 });
 
 async function main() {

@@ -42,9 +42,37 @@ function createDomStub() {
 }
 
 function extractGameScript(html) {
-  const scriptTag = html.match(/<script>([\s\S]+?)<\/script>/);
+  const scriptTag = html.match(/<script\b[^>]*>([\s\S]+?)<\/script>/i);
   if (!scriptTag) throw new Error('Cannot find inline game <script>');
-  return scriptTag[1].replace(/\bconst\b/g, 'var').replace(/\blet\b/g, 'var');
+  return scriptTag[1];
+}
+
+function createExportFooter() {
+  return `
+;(function exportYsbzsBindings() {
+  try { if (typeof initGame !== 'undefined') globalThis.initGame = initGame; } catch (e) {}
+  try { if (typeof dispatchGameAction !== 'undefined') globalThis.dispatchGameAction = dispatchGameAction; } catch (e) {}
+  try { if (typeof snapshotCoreStateForReplay !== 'undefined') globalThis.snapshotCoreStateForReplay = snapshotCoreStateForReplay; } catch (e) {}
+  try { if (typeof applyReplaySnapshot !== 'undefined') globalThis.applyReplaySnapshot = applyReplaySnapshot; } catch (e) {}
+  try { if (typeof buildReplayFinalResult !== 'undefined') globalThis.buildReplayFinalResult = buildReplayFinalResult; } catch (e) {}
+  try { if (typeof render !== 'undefined') globalThis.render = render; } catch (e) {}
+  try { if (typeof renderShop !== 'undefined') globalThis.renderShop = renderShop; } catch (e) {}
+  try { if (typeof glog !== 'undefined') globalThis.glog = glog; } catch (e) {}
+  try { if (typeof showMsg !== 'undefined') globalThis.showMsg = showMsg; } catch (e) {}
+  try { if (typeof buildRunEndVM !== 'undefined') globalThis.buildRunEndVM = buildRunEndVM; } catch (e) {}
+  try { if (typeof recomputeCorePreview !== 'undefined') globalThis.recomputeCorePreview = recomputeCorePreview; } catch (e) {}
+  try {
+    if (typeof G !== 'undefined') {
+      Object.defineProperty(globalThis, 'G', {
+        configurable: true,
+        enumerable: true,
+        get() { return G; },
+        set(value) { G = value; },
+      });
+    }
+  } catch (e) {}
+})();
+`;
 }
 
 function loadYsbzsGame(options = {}) {
@@ -67,7 +95,7 @@ function loadYsbzsGame(options = {}) {
   };
   context.global = context;
   vm.createContext(context);
-  vm.runInContext(extractGameScript(html), context, { filename: htmlPath });
+  vm.runInContext(`${extractGameScript(html)}\n${createExportFooter()}`, context, { filename: htmlPath });
 
   context.render = () => {};
   context.renderShop = () => {};

@@ -2682,6 +2682,39 @@ group('L组：一键执行英雄动作',()=>{
 });
 
 
+group('L2组：AI 战斗入口',()=>{
+  test('case_ai_battle_001: buildAiBattleTurnPlan 生成计划但不修改状态',()=>{
+    fresh();
+    const before={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
+    const plan=buildAiBattleTurnPlan();
+    assert.strictEqual(plan.type,'AI_BATTLE_PLAN');
+    assert.strictEqual(plan.phase,'PLAYER');
+    assert.ok(plan.canRun,'默认教学局应可运行 AI 战斗');
+    assert.ok(plan.actions.length>0,'计划应包含符文施放');
+    assert.ok(plan.summary.includes('AI 计划'),'摘要应说明 AI 计划');
+    assert.deepStrictEqual(G.heroes.ha.pos,before,'规划阶段不应移动英雄');
+  });
+
+  test('case_ai_battle_002: runAiBattleTurn_sync 执行计划并写入 AI_BATTLE 日志',()=>{
+    fresh();
+    const plan=runAiBattleTurn_sync({endTurn:false});
+    assert.ok(plan.canRun,'AI 战斗应能运行');
+    assert.ok(G.slots.some(s=>s.used),'AI 战斗应至少使用一个行动槽');
+    assert.ok((G.actionLog||[]).some(a=>a.type==='AI_BATTLE'),'actionLog 应记录 AI_BATTLE');
+    assert.strictEqual(G.phase,'PLAYER','endTurn=false 时不自动结束回合');
+  });
+
+  test('case_ai_battle_003: buildTurnVM 暴露 AI 战斗按钮状态',()=>{
+    fresh();
+    G.aiBattleStatus={phase:'executing',summary:'AI 计划：移动1步，施放2个符文',moves:1,actions:2};
+    const vm=buildTurnVM();
+    assert.strictEqual(vm.aiBattleBusy,true,'执行中应标记 busy');
+    assert.ok(vm.aiBattleLabel.includes('推演'),'按钮文案应体现推演中');
+    assert.ok(vm.aiBattleHint.includes('移动1步'),'title 应包含计划摘要');
+  });
+});
+
+
 
 group('M组：_acted 英雄行动锁定',()=>{
   test('case_m_001: USE_SLOT 后 hero._acted=true，禁止 MOVE_HERO',()=>{

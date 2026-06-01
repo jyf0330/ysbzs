@@ -1,4 +1,76 @@
 
+## 2026-06-01 — Codex Goal：AI 战斗入口接入
+
+### 代码（`index.html`）
+- **右侧入口升级为 AI 战斗**：`#exa` 从“自动编排”切换为“AI战斗”，点击后先生成当前玩家回合计划，再执行移动、符文施放和结束回合。
+- **浏览器内 AI 战斗代理**：新增 `buildAiBattleTurnPlan()`、`planAiBattleTurn()`、`runAiBattleTurn_sync()`、`runAiBattleTurn_async()`，复用现有 `dispatchGameAction` / `USE_SLOT` / `MOVE_HERO`，不绕过核心战斗规则。
+- **接入自动试玩思路**：前台复用 `ai-eval/runners/run-playtest.mjs` 的“AI 自动打回合”思路，但不让浏览器直接运行 Node runner；旧 `execAllHeroSlots()` 保留为兼容入口。
+- **8×8 边界兼容**：AI 规划使用 `boardRows()` / `boardCols()` / `inBoard()`，避免旧自动走位里写死 13 列导致当前 8×8 棋盘越界。
+- **Game feel 反馈**：AI 按钮增加推演中状态、短节奏动作延迟、禁用态可读样式和 `prefers-reduced-motion` 保护；日志输出 `AI 计划` 与 `AI 战斗执行` 摘要。
+
+### 测试（`test.js`）
+- 新增 `L2组：AI 战斗入口` 3 项测试：计划生成不改状态、同步执行写入 `AI_BATTLE` 日志、按钮 VM 暴露 busy/文案状态。
+
+### 文档
+- `用户界面与操作规范.md` 同步“一键执行”升级为“AI 战斗”的操作语义。
+- `技术架构总览.md` 记录浏览器内 AI 战斗代理函数与 Node 自动试玩 runner 的边界。
+- `HUD与界面信息设计.md` 与 `美术风格指南.md` 同步按钮状态、动效和可读性要求。
+- `docs/00_CURRENT_CONTEXT.md` 更新当前全量测试口径。
+- `tasks/doing/当前任务.md` 写入 RED/GREEN、Playwright 和截图证据。
+
+### 验证
+- RED：`buildAiBattleTurnPlan` / `runAiBattleTurn_sync` / `planAiBattleTurn` 缺失。
+- GREEN：`L2组：AI 战斗入口` 3 项新增测试全部通过。
+- `node test.js`：325/419 通过，94 失败。失败仍集中于当前 8×8 运行棋盘与旧 13×13 测试/GDD 基线不一致及其越界连锁，本 goal 未改核心伤害/怪物/商店规则。
+- Playwright 点击 `#exa`：console 无 error；日志包含 `AI 计划`、`AI 战斗执行`、`怪物回合`；页面无滚动溢出；最终截图 `test-results/ui-ai-battle-goal-final.png`。
+
+## 2026-06-01 — Codex Goal：字体与按钮可读性优化
+
+### 代码（`index.html`）
+- **顶栏状态文字增重**：阶段/天数/波次/小回合提升到 13px，金币 chip 提升到 14px，并增加内边距与行高，减少状态栏挤压感。
+- **右侧行动卡可读性提升**：符文主文字提升到 15px，层数文字提升到 12px；方向按钮扩大到 22×22px CSS 尺寸，执行按钮保持纵向主操作面积。
+- **Debug Dock 可读性收束**：左侧 debug 保持 10px/1.55 行高，作为开发信息可读但不抢主视觉。
+- **底部战报条降高**：压缩底栏 padding、日志高度与主按钮 padding，主按钮仍保持 44px 以上实际触达高度；棋盘提示行改为贴近棋盘底框，避免被底栏遮挡。
+
+### 文档
+- `HUD与界面信息设计.md` 追加当前主界面可读性基线，明确顶栏、行动卡、方向键、主按钮、debug 与棋盘提示的最小字号/触达面积。
+- `美术风格指南.md` 追加“可读性优先于装饰”的主界面验收口径。
+- `tasks/doing/当前任务.md` 更新为本轮 Codex Goal 的执行与验证记录。
+
+### 验证
+- Playwright 打开 `index.html`：console 无 error；页面无滚动溢出；关键文本无横向溢出；最终截图 `test-results/ui-readability-goal-final.png`。
+- 可读性 DOM 指标：顶栏 chip 最小 13px；行动卡主文字 15px；层数文字 12px；方向按钮 29×29px；执行按钮 42×60px；主按钮 181×50px；棋盘提示距离底部战报条 7px。
+- `node test.js`：322/416 通过，94 失败。失败仍集中于当前 8×8 运行棋盘与旧 13×13 测试/GDD 基线不一致及其越界连锁，本 goal 未改核心战斗规则。
+
+## 2026-06-01 — Codex Goal：主界面美术成品化
+
+### 代码（`index.html`）
+- **中央棋盘舞台化**：新增 `#board-stage`、棋盘标题、8×8 坐标轴与战术地图纸面框，减少“表格”感并把棋盘重新确认为第一视觉焦点。
+- **棋子牌面增强**：英雄、怪物、召唤物、城堡实体块扩展为更完整的牌面式占位，修复怪物/英雄像针尖调试标记的问题。
+- **右侧行动槽卡片化**：`renderSlots` 输出结构改为符文行动卡，加入元素色带、编号徽章、元素/层数主信息、形状图、方向控制和主执行按钮分层。
+- **左侧 Debug 降权**：左栏改为“调试书记板 / 只读侧栏”，保持 debug 可用但降低对主画面的视觉抢占。
+- **卷轴与战报层级**：顶栏、底栏和主按钮继续强化压印与卷轴材质；修正“故方城堡”为“敌方城堡”。
+
+### 文档
+- `HUD与界面信息设计.md` 新增 2026-06-01 当前主界面成品化口径，明确固定 1280×720、左 debug dock、中棋盘舞台、右符文行动卡、底战报条。
+- `美术风格指南.md` 新增主界面成品化要求，明确“不是网页后台、是羊皮纸战术桌”的视觉标准。
+
+### 验证
+- Playwright 打开 `index.html`：console 无 error；`#debug-dock` 有内容；棋盘 64 格；行动槽 6 张；页面无滚动溢出；最终截图 `test-results/ui-art-goal-final.png`。
+- `node test.js`：322/416 通过，94 失败。失败仍集中于当前 8×8 运行棋盘与旧 13×13 测试/GDD 基线不一致及其越界连锁，本 goal 未改核心战斗规则。
+
+## 2026-06-01 — 左侧 Debug Dock 与界面定稿美术优化
+
+### 代码（`index.html`）
+- **左侧信息区改为开发调试台**：左栏从正式单位卡切换为常驻 `#debug-dock`，复用 `renderDebugPanel()` 的 VM 和树形详情内容，方便开发期持续查看 phase、格子、怪物、行动槽、引擎统计和 actionLog。
+- **浮动 debug 降级为 fallback**：保留旧 `#debug-panel`，但存在左侧 dock 时自动隐藏浮动面板，避免遮挡棋盘和底部战报。
+- **羊皮纸战术桌美术加强**：补纸张纹理、内框线、双线边框、棋盘纸面高光、按钮压印质感和左右栏纸面层次；棋盘格尺寸从 52px 调整到 58px，提高主战场存在感。
+- **测试环境兼容**：固定分辨率缩放管理增加 Node 测试环境保护，避免 `window.addEventListener` 缺失导致 `test.js` 直接中断。
+
+### 验证
+- Playwright 打开 `index.html`：console 无 error；`#debug-dock` 有内容；旧浮动 debug 为 `display:none`；棋盘 64 格；行动槽 6 张；页面无滚动溢出；截图输出 `test-results/ui-debug-dock-final.png`。
+- `node test.js`：当前结果 322/416 通过，94 失败。失败集中在当前工作区已存在的 8×8 棋盘 / 坐标变更与 13×13 测试基线冲突，以及由此引发的越界连锁；本轮未修改核心战斗规则或棋盘尺寸逻辑。
+
 ## 2026-06-01 — 羊皮纸手绘风视觉主题重设计
 
 ### 视觉（`index.html`）

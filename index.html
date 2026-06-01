@@ -3098,7 +3098,7 @@ function buildCellInfoMap(){
       ['fire','water','wind','earth'].forEach(el=>{
         if(explosionPreview.willExplode)return;
         const slot=cellEl[el];
-        if(slot&&slot.willExplode){explosionPreview={willExplode:true,element:el,damage:explDmg(slot.layers),shape:'cross',affectedCells:explCells({r,c}).map(p=>[p.r,p.c])};}
+        if(slot&&slot.willExplode){const hasX=hasCrossExplosion();explosionPreview={willExplode:true,element:el,damage:explDmg(slot.layers),shape:hasX?'cross':'single',affectedCells:hasX?explCells({r,c}).map(p=>[p.r,p.c]):[[r,c]]};}
       });
     }
     // 波及伤害（读 monStats.splashDamage）
@@ -3365,11 +3365,12 @@ function buildPreviewGrid(){
       }
     });
     if(explodingEls.length>0){
+      const hasX=hasCrossExplosion();
       preview.explosionElements=explodingEls;
       preview.explosionElement=explodingEls[0].element; // 向后兼容
-      preview.explosionShape='cross';
+      preview.explosionShape=hasX?'cross':'single';
       preview.explosionDamage=explodingEls.reduce((s,e)=>s+e.damage,0);
-      preview.splashTargets=explCells(cell.pos).map(p=>`${p.r},${p.c}`);
+      preview.splashTargets=hasX?explCells(cell.pos).map(p=>`${p.r},${p.c}`):[`${cell.pos.r},${cell.pos.c}`];
     }
   });
   // 5b. 第二遍：空格爆炸波及实体（支持多元素同时爆炸）
@@ -3382,7 +3383,8 @@ function buildPreviewGrid(){
     });
     cell.preview.explosionElements.forEach(expEl=>{
       const expDmg=expEl.damage;
-      explCells(cell.pos).forEach(tp=>{
+      const expTargets=hasCrossExplosion()?explCells(cell.pos):[cell.pos];
+      expTargets.forEach(tp=>{
         const tKey=`${tp.r},${tp.c}`,tCell=grid[tKey];
         if(!tCell||tCell.entity.type!=='monster')return;
         const emult=(tCell.entity.el&&ADV[expEl.element]===tCell.entity.el)?2:1;
@@ -4256,7 +4258,7 @@ function renderBoard(boardVM){
 
     // ── 实体块：统一使用 displayBrief ──
     const brief=cv.displayBrief||'';
-    const briefHtml=brief?_fixCls(_colorBrief(brief)):'';
+    const briefHtml=brief?_colorBrief(brief):'';
     let entHtml='',entCls='';
     if(cv.castle){
       const isP=cv.castle.side==='player';

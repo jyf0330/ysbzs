@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 5 天 Run 走查（纯逻辑）
+ * 10 天 Run 走查（纯逻辑）
  * 运行: node playable_run.js
  */
 const fs = require('fs');
@@ -74,7 +74,7 @@ function runRunWalkthrough() {
   const castleStart = G.playerCastle.hp;
   log(`▶ Run 开始 · 我方城堡 ${castleStart} HP`);
 
-  for (let targetDay = 1; targetDay <= 5; targetDay++) {
+  for (let targetDay = 1; targetDay <= 10; targetDay++) {
     while (G.day < targetDay && G.phase !== 'OVER') {
       if (G.phase === 'PLAYER') clearBattleFast();
       else if (G.phase === 'SHOP') closeShop();
@@ -92,23 +92,16 @@ function runRunWalkthrough() {
       log(`   → 中午商店后进下午`);
     }
     if (G.phase === 'PLAYER' && G.dayHalf === 2) {
+      if (G.day === 5) assert(G.monsters.some(m => m.typeId === 'boss5'), 'Day5 下午应有 boss5');
+      if (G.day === 10) assert(G.monsters.some(m => m.typeId === 'boss10'), 'Day10 下午应有 boss10');
       clearBattleFast();
     }
     if (G.phase === 'SHOP' && G.dayHalf === 2) {
-      if (G.day < 5) closeShop();
+      if (G.day <= 10) closeShop();
     }
   }
 
-  if (G.day === 5 && G.phase !== 'OVER') {
-    G.dayHalf = 2;
-    G.phase = 'PLAYER';
-    spawnWaveForDay(5, 'afternoon');
-    assert(G.monsters.some(m => m.typeId === 'boss'), 'Day5 下午应有 Boss');
-    log('▶ Day5 Boss 战');
-    clearBattleFast();
-  }
-
-  assert(G.phase === 'OVER', 'Day5 Boss 后应通关');
+  assert(G.phase === 'OVER', 'Day10 最终战后应通关');
   assert(G.playerCastle.hp === castleStart, '城堡 HP 跨天应保留（本走查未攻城堡）');
 
   return {
@@ -122,7 +115,7 @@ function runRunWalkthrough() {
 try {
   const result = runRunWalkthrough();
   const report = [
-    '# 5 天 Run 走查报告',
+    '# 10 天 Run 走查报告',
     '',
     `- 终局: Day${result.day} · ${result.phase}`,
     `- 城堡 HP: ${result.playerCastleHp}（跨天保留）`,
@@ -132,7 +125,7 @@ try {
     ...steps.map(s => `- ${s}`),
     '',
     '## 结论',
-    'PASS — 5 天三阶段 + Day5 Boss 通关链路可跑通',
+    'PASS — 10 天三阶段 + Day10 最终战通关链路可跑通',
   ].join('\n');
 
   const outDir = path.join(__dirname, 'recordings');

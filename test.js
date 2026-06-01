@@ -878,13 +878,13 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     openShop();
     assert.strictEqual(G.shopTier,1);
     assert.ok(G.shopItems.units.length>0,'应生成单位商品');
-    assert.ok(G.shopItems.consumables.length>0,'应生成强化品');
+    assert.strictEqual(G.shopItems.consumables.length,0,'商店不再生成强化品');
   });
-  test('genShop Day1: 4 T1 + 0 T2 + 1 强化品', ()=>{
+  test('genShop Day1: 5 T1 + 0 强化品', ()=>{
     fresh(); G.shopTier=1; G.day=1;
     genShop();
-    assert.strictEqual(G.shopItems.units.length,4,'Day1应有4个T1单位');
-    assert.strictEqual(G.shopItems.consumables.length,1,'Day1应有1个强化品');
+    assert.strictEqual(G.shopItems.units.length,5,'Day1应有5个T1单位');
+    assert.strictEqual(G.shopItems.consumables.length,0,'Day1不应生成强化品');
   });
   test('shopItems.units 每个商品含 defId/cost/frozen', ()=>{
     fresh(); G.shopTier=1; genShop();
@@ -946,8 +946,8 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     // rollShop 清除冻结
     assert.strictEqual(G.shopFrozen.units.size,0);
     assert.strictEqual(G.shopFrozen.consumables.size,0);
-    assert.strictEqual(G.shopItems.units.length,4,'Day1应生成4个单位');
-    assert.strictEqual(G.shopItems.consumables.length,1,'Day1应生成1个强化品');
+    assert.strictEqual(G.shopItems.units.length,5,'Day1应生成5个单位');
+    assert.strictEqual(G.shopItems.consumables.length,0,'Day1不应生成强化品');
   });
   test('rollShop 金币不足 → 不刷新', ()=>{
     fresh(); G.phase='SHOP'; G.gold=0;
@@ -1105,7 +1105,7 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
     assert.strictEqual(calcShopTier(3),2);
     assert.strictEqual(calcShopTier(4),2);
     assert.strictEqual(calcShopTier(5),3);
-    assert.strictEqual(calcShopTier(10),3);
+    assert.strictEqual(calcShopTier(10),4);
   });
 });
 
@@ -2669,10 +2669,10 @@ group('TDD-WT:十字使属性',()=>{
     const def=UNIT_DEFS['wind_breeze'];
     assert.strictEqual(def.element,'wind');
   });
-  test('WT12:十字使青铜价格3金',()=>{
+  test('WT12:十字使青铜统一价格2金',()=>{
     const def=UNIT_DEFS['wind_breeze'];
     const price=calcUnitPrice(def);
-    assert.strictEqual(price,3,'青铜priceTier?×2=3?');
+    assert.strictEqual(price,2,'青铜统一定价为2金');
   });
 });
 
@@ -3035,7 +3035,7 @@ group('TDD-S3 Run与商店',()=>{
     G.dayHalf=2;
     syncMaxRoundForPhase();
     spawnWaveForDay(5,'afternoon');
-    assert.ok(G.monsters.some(m=>m.typeId==='boss'),'Day5下午应含Boss');
+    assert.ok(G.monsters.some(m=>m.typeId==='boss5'),'Day5下午应含boss5');
     G.monsters.forEach(m=>{m.dead=true;});
     G.round=G.maxRound+1;
     finishMonsters();
@@ -3398,6 +3398,87 @@ group('Debug 面板 VM', ()=>{
     assert.ok(t.dmg!==undefined,'dmg 旧字段保留');
     assert.ok(t.stableId,'stableId 新字段');
   });
+
+group('Goal 03/04 完整实现', ()=>{
+  test('GOAL0304-01: DAY_ROUND_CONFIG 扩展到 Day10', ()=>{
+    for(let d=1; d<=10; d++){
+      assert.ok(DAY_ROUND_CONFIG[d], `缺少 Day${d} 回合配置`);
+      assert.ok(DAY_ROUND_CONFIG[d].morning>=2, `Day${d} morning 回合数不足`);
+      assert.ok(DAY_ROUND_CONFIG[d].afternoon>=2, `Day${d} afternoon 回合数不足`);
+    }
+    assert.strictEqual(DAY_ROUND_CONFIG[10].afternoon,5,'Day10 下午应是最终战 5 回合');
+  });
+  test('GOAL0304-02: DAY_WAVE_CONFIG 扩展到 Day10 且含最终怪', ()=>{
+    for(let d=1; d<=10; d++){
+      assert.ok(DAY_WAVE_CONFIG[d], `缺少 Day${d} 波次配置`);
+      assert.ok(DAY_WAVE_CONFIG[d].morning, `缺少 Day${d} morning`);
+      assert.ok(DAY_WAVE_CONFIG[d].afternoon, `缺少 Day${d} afternoon`);
+    }
+    assert.ok(DAY_WAVE_CONFIG[10].afternoon.allowed.includes('boss10'),'Day10 下午应允许 boss10');
+    const plan=buildWaveForDay(10,'afternoon');
+    assert.ok(plan.monsters.some(m=>m.typeId==='boss10'),'Day10 下午应生成 boss10');
+  });
+  test('GOAL0304-03: 新怪物与 ability 字段可读', ()=>{
+    ['swarm','blocker','siege','boss5','minion','boss8','boss10'].forEach(id=>{
+      assert.ok(MONSTER_TYPES[id], `缺少怪物 ${id}`);
+    });
+    assert.strictEqual(MONSTER_TYPES.blocker.ability.id,'block_path');
+    assert.strictEqual(MONSTER_TYPES.siege.ability.id,'target_castle');
+    assert.strictEqual(MONSTER_TYPES.boss8.ability.id,'lava_surge');
+    assert.strictEqual(MONSTER_TYPES.boss10.ability.id,'core_split');
+  });
+  test('GOAL0304-04: 同品级统一定价，不使用 priceTier 乘法', ()=>{
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fire_starter),2);
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.earth_shield),2,'青铜 priceTier=3 仍应 2 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fluff_speaker),4,'白银统一 4 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.forge_fire),6,'黄金统一 6 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.dragon_flame),8,'钻石统一 8 金');
+  });
+  test('GOAL0304-05: 商店只卖英雄且不生成 consumables', ()=>{
+    fresh(); G.phase='SHOP'; G.day=6; G.dayHalf=2; genShop();
+    assert.ok(G.shopItems.units.length>0,'应有英雄商品');
+    assert.strictEqual(G.shopItems.consumables.length,0,'不应生成强化品');
+    assert.ok(G.shopItems.units.every(u=>UNIT_DEFS[u.defId]),'所有商品都是英雄');
+  });
+  test('GOAL0304-06: pT3/pT4 英雄定义并按天入池', ()=>{
+    ['forge_fire','command_sprout','dragon_flame','prime_sprout'].forEach(id=>assert.ok(UNIT_DEFS[id],`缺少英雄 ${id}`));
+    assert.ok(SHOP_POOLS.day5_night.includes('forge_fire'),'Day5 夜应入池黄金火系');
+    assert.ok(SHOP_POOLS.day7_night.includes('dragon_flame'),'Day7 夜应入池钻石火系');
+    assert.ok(SHOP_POOLS.day7_night.includes('prime_sprout'),'Day7 夜应入池钻石召唤');
+  });
+  test('GOAL0304-07: 奖励节点配置覆盖午间/精英/Boss/特殊事件', ()=>{
+    assert.ok(REWARD_NODE_CONFIG[3].midday,'Day3 应有午间商人');
+    assert.ok(REWARD_NODE_CONFIG[5].boss,'Day5 应有 Boss 奖励');
+    assert.ok(REWARD_NODE_CONFIG[6].boss.free,'Day6 Boss 奖励应免费');
+    assert.ok(REWARD_NODE_CONFIG[7].special,'Day7 应有特殊事件');
+  });
+  test('GOAL0304-08: closeShop 可推进到 Day10 且不再钳制 Day5', ()=>{
+    fresh(); G.phase='SHOP'; G.day=9; G.dayHalf=2; G.enemyCastle.hp=31;
+    closeShop();
+    assert.strictEqual(G.day,10);
+    assert.strictEqual(G.phase,'PLAYER');
+    assert.ok(G.monsters.length>0,'Day10 应刷怪');
+  });
+  test('GOAL0304-09: 召唤物会向最近怪物移动并攻击', ()=>{
+    fresh();
+    G.summons=[];
+    const s=spawnSummon('ha',{r:8,c:4},{hp:6,maxHp:6,atk:1});
+    G.monsters=[{id:'far',name:'远怪',hp:6,maxHp:6,atk:1,ap:0,pos:{r:8,c:7},dead:false,el:null}];
+    runSummonActions();
+    assert.ok(s.pos.c>4,'召唤物应向怪物移动');
+    runSummonActions();
+    assert.ok(G.monsters[0].hp<6,'靠近后应攻击怪物');
+  });
+  test('GOAL0304-10: ability hook 对 boss8 与 boss10 生效', ()=>{
+    fresh();
+    G.monsters=[{id:'b8',typeId:'boss8',name:'熔岩核心',hp:45,maxHp:45,atk:4,ap:5,pos:{r:5,c:5},dead:false,el:null,ability:MONSTER_TYPES.boss8.ability}];
+    runMonsterAbilityHook('onRoundStart',G.monsters[0]);
+    assert.ok((G.elementCells['5,5']?.fire?.layers||0)>=1,'boss8 回合开始应铺火');
+    G.monsters=[{id:'b10',typeId:'boss10',name:'远古炎核',hp:60,maxHp:60,atk:5,ap:5,pos:{r:5,c:5},dead:false,el:null,ability:MONSTER_TYPES.boss10.ability,_abilityTicks:1}];
+    runMonsterAbilityHook('onEveryNthRound',G.monsters[0]);
+    assert.ok(G.monsters.length>1,'boss10 应召唤小怪');
+  });
+});
 
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));

@@ -79,10 +79,11 @@ function runDay1Walkthrough() {
     || G.ownedUnits.some(u => u.defId === 'sprout_summoner');
   assert(hasSprout, '构筑含召芽灵');
 
-  log('▶ 5. Day1 夜池验证');
+  log('▶ 5. Day1/Day3 夜池验证');
   G.dayHalf = 2;
   openShop();
-  assert(SHOP_POOLS.day1_night.includes('sprout_summoner'), 'Day1 夜池含召芽灵');
+  assert(!SHOP_POOLS.day1_night.includes('sprout_summoner'), 'Day1 夜池不含召芽灵');
+  assert(SHOP_POOLS.day3_night.includes('sprout_summoner'), 'Day3 夜池含召芽灵');
 
   return {
     phase: G.phase,

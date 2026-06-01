@@ -787,8 +787,92 @@ const UNIT_DEFS = {
       ]}
     }
   },
+  forge_fire: {
+    id:'forge_fire', name:'锻火灵', element:'fire', grade:'黄金', priceTier:1, tags:['火','黄金','铺火','输出'], tier:3, cost:6,
+    passive:{type:'addElementOnHit',el:'fire',layers:1},
+    levels: {
+      1:{ hp:34, slots:[
+        {el:'fire',sn:5,dir:'right',tier:3},
+        {el:'fire',sn:12,dir:'right',tier:3},
+        {el:'fire',sn:17,dir:'right',tier:3},
+      ]},
+      2:{ hp:44, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4},
+        {el:'fire',sn:12,dir:'right',tier:4},
+        {el:'fire',sn:17,dir:'right',tier:4},
+      ]},
+      3:{ hp:56, slots:[
+        {el:'fire',sn:19,dir:'right',tier:4},
+        {el:'fire',sn:20,dir:'right',tier:4},
+        {el:'fire',sn:12,dir:'right',tier:4},
+      ]}
+    }
+  },
+  command_sprout: {
+    id:'command_sprout', name:'令芽灵', element:'water', grade:'黄金', priceTier:1, tags:['召唤','黄金','增益'], tier:3, cost:6,
+    passive:{type:'buffAllSummons',hpByLevel:[2,4,6],atkByLevel:[1,2,3]},
+    levels: {
+      1:{ hp:30, slots:[
+        {skill:'summonFromCell',sn:2,dir:'right',tier:3,consumeLayers:false,count:2,bonusHp:2},
+        {skill:'healSummons',sn:12,dir:'right',tier:3},
+        {el:'water',sn:6,dir:'right',tier:3},
+      ]},
+      2:{ hp:40, slots:[
+        {skill:'summonFromCell',sn:3,dir:'right',tier:4,consumeLayers:false,count:2,bonusHp:4},
+        {skill:'healSummons',sn:12,dir:'right',tier:4},
+        {el:'water',sn:13,dir:'right',tier:4},
+      ]},
+      3:{ hp:52, slots:[
+        {skill:'summonFromCell',sn:5,dir:'right',tier:4,consumeLayers:false,count:3,bonusHp:6},
+        {skill:'healSummons',sn:12,dir:'right',tier:4},
+        {el:'water',sn:19,dir:'right',tier:4},
+      ]}
+    }
+  },
+  dragon_flame: {
+    id:'dragon_flame', name:'龙焰灵', element:'fire', grade:'钻石', priceTier:1, tags:['火','钻石','终局','引爆'], tier:4, cost:8,
+    passive:{type:'spaceExplosionBonus',bonusByLevel:[2,3,4]},
+    levels: {
+      1:{ hp:42, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4},
+        {el:'fire',sn:12,dir:'right',tier:4},
+        {el:'fire',sn:19,dir:'right',tier:4},
+      ]},
+      2:{ hp:55, slots:[
+        {el:'fire',sn:12,dir:'right',tier:4,layers:2},
+        {el:'fire',sn:19,dir:'right',tier:4},
+        {el:'fire',sn:20,dir:'right',tier:4},
+      ]},
+      3:{ hp:70, slots:[
+        {el:'fire',sn:12,dir:'right',tier:4,layers:3},
+        {el:'fire',sn:19,dir:'right',tier:4,layers:2},
+        {el:'fire',sn:20,dir:'right',tier:4},
+      ]}
+    }
+  },
+  prime_sprout: {
+    id:'prime_sprout', name:'主芽灵', element:'water', grade:'钻石', priceTier:1, tags:['召唤','钻石','终局'], tier:4, cost:8,
+    passive:{type:'splitSproutSummon',countByLevel:[2,3,4],hpMulByLevel:[1,1,1]},
+    levels: {
+      1:{ hp:40, slots:[
+        {skill:'summonFromCell',sn:3,dir:'right',tier:4,consumeLayers:false,count:2,bonusHp:4},
+        {skill:'healSummons',sn:12,dir:'right',tier:4},
+        {el:'water',sn:19,dir:'right',tier:4},
+      ]},
+      2:{ hp:52, slots:[
+        {skill:'summonFromCell',sn:5,dir:'right',tier:4,consumeLayers:false,count:3,bonusHp:6},
+        {skill:'healSummons',sn:12,dir:'right',tier:4},
+        {el:'water',sn:20,dir:'right',tier:4},
+      ]},
+      3:{ hp:66, slots:[
+        {skill:'summonFromCell',sn:12,dir:'right',tier:4,consumeLayers:false,count:4,bonusHp:8},
+        {skill:'healSummons',sn:12,dir:'right',tier:4},
+        {el:'water',sn:20,dir:'right',tier:4,layers:2},
+      ]}
+    }
+  },
 };
-const UNIT_TIER_POOL = {1:[],2:[],3:[]};
+const UNIT_TIER_POOL = {1:[],2:[],3:[],4:[]};
 Object.values(UNIT_DEFS).forEach(u=>{ UNIT_TIER_POOL[u.tier].push(u.id); });
 // ========== 怪物类型配置 ==========
 const MONSTER_TYPES = {
@@ -796,8 +880,15 @@ const MONSTER_TYPES = {
   thick:   { name:'厚皮怪', hp:10, atk:1, ap:4, cost:3, gold:3 },
   fast:    { name:'快速怪', hp:5,  atk:1, ap:7, cost:3, gold:3 },
   heavy:   { name:'冲锋怪', hp:8,  atk:2, ap:3, cost:4, gold:4 },
+  swarm:   { name:'小怪群', hp:3,  atk:1, ap:4, cost:1, gold:1 },
   elite:   { name:'精英怪', hp:18, atk:3, ap:5, cost:8, gold:8 },
   boss:    { name:'小Boss',hp:30, atk:3, ap:4, cost:12,gold:15},
+  blocker: { name:'堵路怪', hp:14, atk:1, ap:3, cost:4, gold:4, ability:{id:'block_path',trigger:'onMoveIntent'} },
+  siege:   { name:'攻城怪', hp:7,  atk:2, ap:5, cost:4, gold:4, ability:{id:'target_castle',trigger:'onChooseTarget'} },
+  boss5:   { name:'炎甲兽', hp:35, atk:4, ap:4, cost:12,gold:15,ability:{id:'iron_wall',trigger:'onBeforeTakeDamage',config:{threshold:5,reduction:2}} },
+  minion:  { name:'Boss护卫',hp:12, atk:2, ap:4, cost:5, gold:5, ability:{id:'guard_aura',trigger:'onChooseTarget'} },
+  boss8:   { name:'熔岩核心',hp:45, atk:4, ap:5, cost:14,gold:20,ability:{id:'lava_surge',trigger:'onRoundStart',config:{el:'fire',layers:1}} },
+  boss10:  { name:'远古炎核',hp:60,atk:5, ap:5, cost:18,gold:25,ability:{id:'core_split',trigger:'onEveryNthRound',config:{n:2,typeId:'normal'}} },
 };
 
 // ========== 每日波次配置 ==========
@@ -822,7 +913,27 @@ const DAY_WAVE_CONFIG = {
   },
   5: {
     morning:   { budget:18, allowed:['normal','thick','fast','heavy','elite','boss'], spawnSize:5, maxAlive:10 },
-    afternoon: { budget:20, allowed:['normal','thick','fast','heavy','elite','boss'], spawnSize:5, maxAlive:10 },
+    afternoon: { budget:20, allowed:['normal','thick','fast','heavy','elite','boss5','siege'], spawnSize:5, maxAlive:10 },
+  },
+  6: {
+    morning:   { budget:22, allowed:['elite','swarm','normal','blocker','thick'], spawnSize:5, maxAlive:10 },
+    afternoon: { budget:24, allowed:['siege','fast','elite','heavy','blocker'], spawnSize:5, maxAlive:10 },
+  },
+  7: {
+    morning:   { budget:28, allowed:['elite','siege','blocker','heavy','swarm'], spawnSize:5, maxAlive:11 },
+    afternoon: { budget:30, allowed:['boss8','elite','siege','fast'], spawnSize:5, maxAlive:11 },
+  },
+  8: {
+    morning:   { budget:34, allowed:['elite','blocker','siege','thick'], spawnSize:5, maxAlive:12 },
+    afternoon: { budget:38, allowed:['boss8','elite','fast','swarm','heavy','siege'], spawnSize:5, maxAlive:12 },
+  },
+  9: {
+    morning:   { budget:42, allowed:['elite','siege','fast','boss8','blocker'], spawnSize:5, maxAlive:13 },
+    afternoon: { budget:46, allowed:['boss8','elite','siege','heavy','minion'], spawnSize:5, maxAlive:13 },
+  },
+  10: {
+    morning:   { budget:40, allowed:['minion','elite','siege','swarm'], spawnSize:5, maxAlive:13 },
+    afternoon: { budget:50, allowed:['boss10','minion','siege','elite'], spawnSize:5, maxAlive:13 },
   },
 };
 
@@ -838,19 +949,35 @@ const SHOP_PRICE_CONFIG = {
   },
   // 每日商店格子构成
   shopSlots: {
-    1: { unitT1:4, unitT2:0, consumable:1 },
-    2: { unitT1:4, unitT2:0, consumable:1 },
-    3: { unitT1:3, unitT2:1, consumable:1 },
-    4: { unitT1:3, unitT2:1, consumable:1 },
-    5: { unitT1:0, unitT2:2, consumable:3 },
+    1: { unitT1:5, unitT2:0, unitT3:0, unitT4:0, consumable:0 },
+    2: { unitT1:5, unitT2:0, unitT3:0, unitT4:0, consumable:0 },
+    3: { unitT1:4, unitT2:1, unitT3:0, unitT4:0, consumable:0 },
+    4: { unitT1:3, unitT2:2, unitT3:0, unitT4:0, consumable:0 },
+    5: { unitT1:2, unitT2:2, unitT3:1, unitT4:0, consumable:0 },
+    6: { unitT1:1, unitT2:3, unitT3:1, unitT4:0, consumable:0 },
+    7: { unitT1:1, unitT2:2, unitT3:1, unitT4:1, consumable:0 },
+    8: { unitT1:0, unitT2:2, unitT3:2, unitT4:1, consumable:0 },
+    9: { unitT1:0, unitT2:1, unitT3:2, unitT4:2, consumable:0 },
+    10:{ unitT1:0, unitT2:1, unitT3:2, unitT4:2, consumable:0 },
   },
   // 每晚固定收入
-  nightIncome: { 1:5, 2:6, 3:7, 4:8, 5:9 },
+  nightIncome: { 1:5, 2:6, 3:7, 4:8, 5:9, 6:10, 7:10, 8:11, 9:12, 10:0 },
   // 利息：每 interestStep 金币 +1，最高 interestMax
   interestStep: 5,
   interestMax: 3,
 };
-const GRADE_BASE={青铜:2,白银:4,黄金:6,钻石:8};function calcUnitPrice(def){return def.cost||(GRADE_BASE[def.grade]||2)*(def.priceTier||1);}
+const GRADE_BASE={青铜:2,白银:4,黄金:6,钻石:8};function calcUnitPrice(def){return GRADE_BASE[def.grade]||def.cost||2;}
+
+const REWARD_NODE_CONFIG={
+  3:{midday:{stalls:1,tier:2,guarantee:['fluff_speaker','spring_sprite']}},
+  4:{midday:{stalls:1,tier:3,guarantee:['forge_fire']},elite:{tier:3,cost:6}},
+  5:{midday:{stalls:2,tier:3,guarantee:['forge_fire','command_sprout']},boss:{tier:3,cost:3,guarantee:['forge_fire']}},
+  6:{boss:{tier:4,cost:0,free:true,guarantee:['dragon_flame','prime_sprout']}},
+  7:{special:{id:'legend_chest',tier:4,cost:8,guarantee:['dragon_flame','prime_sprout']},boss:{tier:4,cost:4}},
+  8:{special:{id:'element_spring',freeRefresh:1}},
+  9:{midday:{stalls:2,tier:4,guarantee:['dragon_flame','prime_sprout']},boss:{tier:4,cost:4}},
+  10:{midday:{stalls:5,tier:4,guarantee:['dragon_flame','prime_sprout']}},
+};
 
 // ========== GAME STATE ==========
 let G;
@@ -879,7 +1006,18 @@ function damageEnemyCastle(dmg,src){
   if(G.enemyCastle.hp<=0)checkGameOver();
 }
 
-const DAY_ROUND_CONFIG={1:{morning:2,afternoon:2},2:{morning:2,afternoon:3},3:{morning:3,afternoon:3},4:{morning:3,afternoon:4},5:{morning:3,afternoon:4}};
+const DAY_ROUND_CONFIG={
+  1:{morning:2,afternoon:2},
+  2:{morning:2,afternoon:3},
+  3:{morning:3,afternoon:3},
+  4:{morning:3,afternoon:4},
+  5:{morning:3,afternoon:4},
+  6:{morning:4,afternoon:4},
+  7:{morning:4,afternoon:4},
+  8:{morning:4,afternoon:5},
+  9:{morning:5,afternoon:5},
+  10:{morning:5,afternoon:5},
+};
 function syncMaxRoundForPhase(){
   const d=G.day||1;
   const phase=G.dayHalf===2?'afternoon':'morning';
@@ -978,20 +1116,26 @@ function buildWaveForDay(day,phase){
       atk: pick.atk, ap: pick.ap,
       cost: pick.cost, gold: pick.gold,
       pos: null, dead: false, el: null,
+      ability: pick.ability || null,
     });
     budget -= pick.cost;
     attempts++;
   }
-  if(day===5&&phase==='afternoon'&&!result.some(m=>m.typeId==='boss')){
-    const boss=MONSTER_TYPES.boss;
+  const forcedBoss = day===10&&phase==='afternoon' ? 'boss10'
+    : day>=7&&phase==='afternoon' ? 'boss8'
+    : day===5&&phase==='afternoon' ? 'boss5'
+    : null;
+  if(forcedBoss&&!result.some(m=>m.typeId===forcedBoss)){
+    const boss=MONSTER_TYPES[forcedBoss];
     if(boss){
       result.push({
-        typeId:'boss',
+        typeId:forcedBoss,
         name:boss.name,
         hp:boss.hp, maxHp:boss.hp,
         atk:boss.atk, ap:boss.ap,
         cost:boss.cost, gold:boss.gold,
         pos:null, dead:false, el:null,
+        ability: boss.ability || null,
       });
     }
   }
@@ -1567,6 +1711,7 @@ function endPlayerTurn(){
 function runMonsters(idx){
   const alive=G.monsters.filter(m=>!m.dead);
   if(idx>=alive.length){finishMonsters();return;}
+  runMonsterAbilityHook('onRoundStart',alive[idx]);
   monsterAct(alive[idx]);
   refreshUI();
   setTimeout(()=>runMonsters(idx+1),350);
@@ -1833,12 +1978,12 @@ function mergeUnits(fromUnit, toUnit){
 }
 
 function addLevelupUnit(){
-  const higherTier=Math.min(G.shopTier+1,3);
+  const higherTier=Math.min(G.shopTier+1,4);
   const pool=UNIT_TIER_POOL[higherTier]||[];
   if(pool.length===0)return;
   const defId=pool[Math.floor(Math.random()*pool.length)];
   const def=UNIT_DEFS[defId];
-  G.shopItems.units.push({id:`su_${G.nextUnitId}`,defId,cost:def.cost,frozen:false});
+  G.shopItems.units.push({id:`su_${G.nextUnitId}`,defId,cost:calcUnitPrice(def),frozen:false});
 }
 
 // ========== 召唤引擎（水+召唤原型 · deep-interview v1-scope 增量1） ==========
@@ -1995,9 +2140,9 @@ function damageSummon(summon,dmg){
 // 召唤物回合行动：攻击相邻怪物（引擎滚雪球后的 atk 在此兑现）
 function runSummonActions(){
   if(!G.summons||G.summons.length===0)return;
-  let acted=0;
-  G.summons.filter(s=>!s.dead).forEach(s=>{
-    const dirs=[{r:-1,c:0},{r:1,c:0},{r:0,c:-1},{r:0,c:1}];
+  let acted=0,moved=0;
+  const dirs=[{r:-1,c:0},{r:1,c:0},{r:0,c:-1},{r:0,c:1}];
+  const attackAdjacent=(s)=>{
     for(const d of dirs){
       const tp={r:s.pos.r+d.r,c:s.pos.c+d.c};
       if(tp.r<0||tp.r>12||tp.c<0||tp.c>12)continue;
@@ -2005,12 +2150,35 @@ function runSummonActions(){
       if(m){
         dealDmg(m,s.atk,`${s.name}攻击`);
         glog(`💧 ${s.name}(ATK${s.atk})→${m.name} -${s.atk}`);
-        acted++;
-        break;
+        return true;
       }
     }
+    return false;
+  };
+  G.summons.filter(s=>!s.dead).forEach(s=>{
+    if(attackAdjacent(s)){acted++;return;}
+    const targets=G.monsters.filter(m=>!m.dead);
+    if(targets.length===0)return;
+    let target=targets[0],best=99;
+    targets.forEach(m=>{
+      const d=Math.abs(m.pos.r-s.pos.r)+Math.abs(m.pos.c-s.pos.c);
+      if(d<best){best=d;target=m;}
+    });
+    const rowStep=Math.sign(target.pos.r-s.pos.r);
+    const colStep=Math.sign(target.pos.c-s.pos.c);
+    const candidates=[
+      {r:s.pos.r,c:s.pos.c+colStep},
+      {r:s.pos.r+rowStep,c:s.pos.c},
+    ].filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+    const np=candidates.find(p=>!monAt(p)&&!heroAt(p)&&!castleAt(p)&&!summonAt(p)&&!hasElementAt(p));
+    if(np){
+      s.pos=np;
+      moved++;
+      glog(`💧 ${s.name}→(${np.r},${np.c})`);
+      if(attackAdjacent(s))acted++;
+    }
   });
-  if(acted>0)glog(`🌀 召唤物行动：${acted} 次攻击`);
+  if(acted>0||moved>0)glog(`🌀 召唤物行动：${moved} 次移动 / ${acted} 次攻击`);
   checkAllDead();
 }
 
@@ -2087,8 +2255,47 @@ function execHealSummonsSkill(hero,slot){
   return n>0;
 }
 
+function runMonsterAbilityHook(trigger,monster){
+  if(!monster||monster.dead)return false;
+  const ability=monster.ability || MONSTER_TYPES[monster.typeId]?.ability;
+  if(!ability||ability.trigger!==trigger)return false;
+  if(ability.id==='lava_surge'){
+    const cfg=ability.config||{};
+    addElementLayers(monster.pos,cfg.el||'fire',cfg.layers||1);
+    glog(`🔥 ${monster.name}引发熔岩涌动`);
+    return true;
+  }
+  if(ability.id==='core_split'){
+    monster._abilityTicks=(monster._abilityTicks||0)+1;
+    const cfg=ability.config||{};
+    const n=cfg.n||2;
+    if(monster._abilityTicks%n!==0)return false;
+    const dirs=[{r:0,c:-1},{r:1,c:0},{r:-1,c:0},{r:0,c:1}];
+    const pos=dirs.map(d=>({r:monster.pos.r+d.r,c:monster.pos.c+d.c}))
+      .find(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13&&cellFree(p)&&!castleAt(p)&&!hasElementAt(p));
+    if(!pos)return false;
+    const typeId=cfg.typeId||'normal';
+    const mt=MONSTER_TYPES[typeId]||MONSTER_TYPES.normal;
+    G.monsters.push({
+      id:`split_${Date.now()}_${G.monsters.length}`,
+      typeId,
+      name:mt.name,
+      hp:mt.hp,maxHp:mt.hp,atk:mt.atk,ap:mt.ap,cost:mt.cost,gold:mt.gold,
+      pos,dead:false,el:null,ability:mt.ability||null,
+    });
+    glog(`🔥 ${monster.name}分裂出${mt.name}`);
+    return true;
+  }
+  return false;
+}
+
 // ========== SHOP ==========
-function calcShopTier(day){ return Math.min(Math.ceil(day/2),3); }
+function calcShopTier(day){
+  if(day>=7)return 4;
+  if(day>=5)return 3;
+  if(day>=3)return 2;
+  return 1;
+}
 
 function openShop(){
   if(G.phase==='OVER')return;
@@ -2117,10 +2324,25 @@ const SHOP_POOLS={
   day4_midday:['spring_sprite','fire_starter','water_droplet','wind_breeze','pebble_guard'],
   day4_night:['fluff_speaker','sprout_summoner','spring_sprite','pebble_guard','boom_sprite'],
   day5_midday:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','sprout_summoner'],
-  day5_night:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','ember_seed'],
+  day5_night:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','ember_seed','forge_fire','command_sprout'],
+  day6_midday:['fluff_speaker','spring_sprite','boom_sprite','split_sprite','forge_fire','command_sprout'],
+  day6_night:['fluff_speaker','spring_sprite','boom_sprite','split_sprite','forge_fire','command_sprout'],
+  day7_midday:['boom_sprite','split_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
+  day7_night:['boom_sprite','split_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
+  day8_midday:['fluff_speaker','spring_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
+  day8_night:['fluff_speaker','spring_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
+  day9_midday:['forge_fire','command_sprout','dragon_flame','prime_sprout','boom_sprite','split_sprite'],
+  day9_night:['forge_fire','command_sprout','dragon_flame','prime_sprout','boom_sprite','split_sprite'],
+  day10_midday:['forge_fire','command_sprout','dragon_flame','prime_sprout','fluff_speaker','spring_sprite'],
+  day10_night:['forge_fire','command_sprout','dragon_flame','prime_sprout','fluff_speaker','spring_sprite'],
 };
 function getShopPoolKey(){
   const d=G.day||1;
+  if(d>=10) return G.dayHalf>=2?'day10_night':'day10_midday';
+  if(d>=9) return G.dayHalf>=2?'day9_night':'day9_midday';
+  if(d>=8) return G.dayHalf>=2?'day8_night':'day8_midday';
+  if(d>=7) return G.dayHalf>=2?'day7_night':'day7_midday';
+  if(d>=6) return G.dayHalf>=2?'day6_night':'day6_midday';
   if(d>=5) return G.dayHalf>=2?'day5_night':'day5_midday';
   if(d>=4) return G.dayHalf>=2?'day4_night':'day4_midday';
   if(d>=3) return G.dayHalf>=2?'day3_night':'day3_midday';
@@ -2136,46 +2358,21 @@ function getShopPoolIds(tier){
 function genShop(){
   // 先快照已冻结的商品，再清空重新生成
   const frozenUnits=(G.shopItems.units||[]).filter(u=>G.shopFrozen.units.has(u.id));
-  const frozenCons=(G.shopItems.consumables||[]).filter(c=>G.shopFrozen.consumables.has(c.id));
   G.shopItems={units:[],consumables:[]};
   // 每日商店格子构成
   const slots=SHOP_PRICE_CONFIG.shopSlots[G.day]||SHOP_PRICE_CONFIG.shopSlots[1];
-  const t1Pool=UNIT_TIER_POOL[1]||[];
-  const t2Pool=UNIT_TIER_POOL[2]||[];
-  const poolT1=getShopPoolIds(1);
-  // 生成 Tier1 单位（优先 SHOP_POOLS 当日池）
-  G.shopItems.units=frozenUnits.filter(u=>UNIT_DEFS[u.defId]?.tier===1);
-  for(let i=G.shopItems.units.length;i<slots.unitT1;i++){
-    const pickPool=poolT1||t1Pool;
-    if(pickPool.length===0) break;
-    const defId=poolT1?pickPool[i%pickPool.length]:pickPool[ri(pickPool.length)];
-    G.shopItems.units.push({id:`su_${G.nextUnitId}_${i}`,defId,cost:SHOP_PRICE_CONFIG.unitPrice.tier1,frozen:false});
-  }
-  // 生成 Tier2 单位
-  const t2Frozen=frozenUnits.filter(u=>UNIT_DEFS[u.defId]?.tier===2);
-  for(const u of t2Frozen) G.shopItems.units.push(u);
-  for(let i=G.shopItems.units.length-slots.unitT1;i<slots.unitT2;i++){
-    if(t2Pool.length===0) break;
-    const defId=t2Pool[ri(t2Pool.length)];
-    G.shopItems.units.push({id:`su_${G.nextUnitId}_${i+100}`,defId,cost:SHOP_PRICE_CONFIG.unitPrice.tier2,frozen:false});
-  }
-  // 生成强化品
-  G.shopItems.consumables=frozenCons;
-  const maxCons=slots.consumable;
-  const conTypes=[
-    {type:'el_up',el:'fire',name:'🔥火元素+1',desc:'给一个行动槽附加1层火元素',cost:3},
-    {type:'el_up',el:'water',name:'💧水元素+1',desc:'给一个行动槽附加1层水元素',cost:3},
-    {type:'el_up',el:'wind',name:'🌿风元素+1',desc:'给一个行动槽附加1层风元素',cost:3},
-    {type:'el_up',el:'earth',name:'🪨土元素+1',desc:'给一个行动槽附加1层土元素',cost:3},
-    {type:'tier_up',name:'⚡伤害+1',desc:'给一个行动槽提升1级伤害倍率',cost:4},
-    {type:'hp_potion',name:'❤️回复药',desc:'恢复一个英雄5点HP',cost:3},
-    {type:'hp_potion2',name:'💖大回复药',desc:'恢复一个英雄10点HP',cost:5},
-    {type:'coin_bag',name:'💰金币袋',desc:'下一天额外获得3金币',cost:2},
-  ];
-  const shuffled=conTypes.sort(()=>ri(3)-1);
-  for(let i=G.shopItems.consumables.length;i<maxCons;i++){
-    const ct=shuffled[i%shuffled.length];
-    G.shopItems.consumables.push({id:`sc_${G.nextUnitId}_${i}`,...ct,frozen:false});
+  const counts={1:slots.unitT1||0,2:slots.unitT2||0,3:slots.unitT3||0,4:slots.unitT4||0};
+  for(let tier=1;tier<=4;tier++){
+    const kept=frozenUnits.filter(u=>UNIT_DEFS[u.defId]?.tier===tier);
+    kept.forEach(u=>G.shopItems.units.push(u));
+    const target=Math.max(0,counts[tier]-kept.length);
+    const pool=getShopPoolIds(tier)||(UNIT_TIER_POOL[tier]||[]);
+    for(let i=0;i<target;i++){
+      if(pool.length===0)break;
+      const defId=pool[(i+G.nextUnitId)%pool.length];
+      const def=UNIT_DEFS[defId];
+      G.shopItems.units.push({id:`su_${G.nextUnitId}_${tier}_${i}`,defId,cost:calcUnitPrice(def),frozen:false});
+    }
   }
 }
 
@@ -2249,11 +2446,19 @@ function closeShop(){
   } else {
     G.day++;
     if(G.enemyCastle) G.enemyCastle.hp=G.enemyCastle.maxHp;
+    if(G.day>10){
+      G.runVictory=true;
+      G.phase='OVER';
+      glog('🏆 十天远征完成！');
+      if(typeof showRunEnd==='function')showRunEnd();
+      refreshUI();
+      return;
+    }
     if(G.day>5){
       G.wave++;
       G.dayHalf=0;
       G.round=1; G.hitCount=0;
-      spawnWaveForDay(Math.min(G.day,5),'morning');
+      spawnWaveForDay(G.day,'morning');
       G.phase='PLAYER';
       glog(`⚔️ 第${G.day}天战斗开始！`);
       syncUnitsToHeroes();

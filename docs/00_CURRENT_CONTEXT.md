@@ -10,7 +10,13 @@
 
 - **游戏概述 GDD**、**召唤引擎系统 GDD**、**功能拆解**、**ROADMAP** 已按 deep-interview 修订。
 - 策划入口：`docs/01_游戏设计（策划主导）/游戏概述文档GDD.md` → `召唤引擎系统GDD.md`。
-- 自动化基线单一来源：`node test.js`，2026-05-30 验证为 **391/391**；`node replay.js recordings/day1_fire_sample.json`；`node e2e/smoke.js`；Day1 走查 `node playable_day1.js`、Run 走查 `node playable_run.js`；入口文件只引用本文件，不复制具体数字。
+- 自动化基线单一来源：`node test.js`，2026-05-31 验证为 **401/401**；`node replay.js recordings/day1_fire_sample.json`；`node e2e/smoke.js`；Day1 走查 `node playable_day1.js`、Run 走查 `node playable_run.js`；入口文件只引用本文件，不复制具体数字。
+
+## 当前实现状态（2026-05-31）
+
+- 关卡策划 03/04 已从文档收束落到代码：Run 支持 Day1-10，Day10 下午为最终战。
+- 商店正式口径：只生成英雄商品；同品级统一价格为青铜2、白银4、黄金6、钻石8。
+- pT3/pT4 英雄、Day6-10 波次、新怪物与最小 monster ability hook 已进入 `index.html`。
 ## 当前协作方式
 
 - 总控 AI 先判断任务类型并生成任务卡。

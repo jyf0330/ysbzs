@@ -1,4 +1,16 @@
 
+## 2026-05-31 — 关卡策划 03/04 代码实现
+
+### 代码（`index.html` / `test.js`）
+- **10 天游玩闭环**：`DAY_ROUND_CONFIG` / `DAY_WAVE_CONFIG` 扩展到 Day10；`closeShop` 不再把 Day6+ 钳制到 Day5，Day10 结束进入 Run 胜利。
+- **商店收束**：`genShop` 改为只生成英雄，移除自动 consumables；`calcUnitPrice` 改为同品级统一价（青铜2、白银4、黄金6、钻石8）；`calcShopTier` 支持 Tier4。
+- **新内容入池**：新增 `forge_fire` / `command_sprout` / `dragon_flame` / `prime_sprout`，并加入 Day5-10 商店池。
+- **新怪与 ability hook**：新增 `swarm` / `blocker` / `siege` / `boss5` / `minion` / `boss8` / `boss10`；补 `runMonsterAbilityHook`，支持 `lava_surge` 与 `core_split` 的最小可测行为。
+- **召唤行为补齐**：召唤物无相邻目标时会向最近怪物移动，接近后攻击。
+- **兼容入口审查修复**：`addLevelupUnit` 最高池同步到 Tier4，并使用同品级统一定价。
+- **走查脚本同步**：`playable_run.js` 改为 10 天游玩链路，`playable_day1.js` 改为 Day1/Day3 当前商店池口径。
+- 测试新增 GOAL0304-01~10，并同步旧商店/价格/Boss 口径，**401/401 全部通过**。
+
 ## 2026-05-30 — Debug 面板 v3 树形详情重构
 
 ### 代码（`index.html` / `test.js`）
@@ -145,6 +157,7 @@
 
 ## 未发布
 | 2026-05-31 | test | 新增 ysbzs v1 基准测试套件：12 个 case、6 份 fixture、smoke/full npm 脚本，并输出机器/人工可读报告与实现缺口报告；修复 Markdown 报告换行生成。 | benchmarks/ysbzs/* / reports/benchmark/* / package.json | npm run benchmark:smoke / npm run benchmark |
+| 2026-05-31 | docs | Superpowers 全流程收束关卡策划 03/04：并行审查 03 商店/经济、04 Day2/刷怪/ability、代码现实；新增统一入口 `03_04_关卡商店刷怪收束计划.md`，将 10 天 run、priceTier 乘法定价、高收入经济、城堡回满、6 英雄上阵、完整 ability system 标为 `[NEEDS_REVIEW]` 或远期草案；原 03/04 文件顶部加状态说明；本轮不改运行代码。 | docs/01_游戏设计（策划主导）/关卡策划/03_04_关卡商店刷怪收束计划.md / docs/01_游戏设计（策划主导）/关卡策划/03_*.md / docs/01_游戏设计（策划主导）/关卡策划/04_*.md / tasks/doing/当前任务.md / docs/superpowers/* | rg 文档引用检查；git diff --check |
 | 2026-05-30 | feat | S3 Roguelite 壳：删遗物（G.relics/old_fuse）；火种灵 `spaceExplosionBonus` 承接引信；Day4–5 `DAY_ROUND_CONFIG`；Day5 下午 Boss 保底+通关；`closeShop` 修复中午→下午三阶段；城堡跨战回归 RUN1/3。测试 RUN1–5/SH1–3 + `playable_run.js` | index.html / test.js / playable_run.js | node test.js 361/361 |
 | 2026-05-30 | docs | 新增 Run 结构与城堡跨战系统 GDD（拍板：无独立地图/城堡实体格+HP/run≈5天HP100不回满/一天三阶段保留；城堡 HP 已事实跨战，待回归测试+Day5 Boss）；同步游戏概述 GDD 胜负/系统表/阶段表/待决、功能拆解 S3、ROADMAP、一天三阶段文档标“保留” | docs/01/Run结构与城堡跨战系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/一天三阶段系统设计.md | — |
 | 2026-05-30 | docs | 决策落盘「砍掉遗物·商店只卖英雄」（英雄被动/主动即遗物职能）：新增商店与英雄构筑系统 GDD（含遗物代码清理清单 old_fuse/G.relics）；游戏概述 GDD/功能拆解 S3/ROADMAP 去遗物；旧商店方案标遗物段落作废 | docs/01/商店与英雄构筑系统GDD.md / docs/01/游戏概述文档GDD.md / docs/01/功能拆解与优先级.md / docs/08_ROADMAP.md / docs/01/商店系统策划方案.md | — |

@@ -156,6 +156,7 @@
 # CHANGELOG · 元素背包史
 
 ## 未发布
+| 2026-06-01 | docs | Superpowers 设计 AI 游戏评测台：确认 `test.js`/`benchmarks`/Playwright smoke/replay 的职责边界，新增通用 `GameAdapter -> Agent -> TraceRecorder -> Evaluator -> Report` spec，暂不改运行代码。 | docs/superpowers/specs/2026-06-01-ai-game-evaluation-harness-design.md / tasks/doing/当前任务.md | 文档自检 |
 | 2026-05-31 | test | 新增 ysbzs v1 基准测试套件：12 个 case、6 份 fixture、smoke/full npm 脚本，并输出机器/人工可读报告与实现缺口报告；修复 Markdown 报告换行生成。 | benchmarks/ysbzs/* / reports/benchmark/* / package.json | npm run benchmark:smoke / npm run benchmark |
 | 2026-05-31 | docs | Superpowers 全流程收束关卡策划 03/04：并行审查 03 商店/经济、04 Day2/刷怪/ability、代码现实；新增统一入口 `03_04_关卡商店刷怪收束计划.md`，将 10 天 run、priceTier 乘法定价、高收入经济、城堡回满、6 英雄上阵、完整 ability system 标为 `[NEEDS_REVIEW]` 或远期草案；原 03/04 文件顶部加状态说明；本轮不改运行代码。 | docs/01_游戏设计（策划主导）/关卡策划/03_04_关卡商店刷怪收束计划.md / docs/01_游戏设计（策划主导）/关卡策划/03_*.md / docs/01_游戏设计（策划主导）/关卡策划/04_*.md / tasks/doing/当前任务.md / docs/superpowers/* | rg 文档引用检查；git diff --check |
 | 2026-05-30 | feat | S3 Roguelite 壳：删遗物（G.relics/old_fuse）；火种灵 `spaceExplosionBonus` 承接引信；Day4–5 `DAY_ROUND_CONFIG`；Day5 下午 Boss 保底+通关；`closeShop` 修复中午→下午三阶段；城堡跨战回归 RUN1/3。测试 RUN1–5/SH1–3 + `playable_run.js` | index.html / test.js / playable_run.js | node test.js 361/361 |

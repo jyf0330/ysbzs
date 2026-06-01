@@ -928,16 +928,16 @@ const MONSTER_TYPES = {
   normal:  { name:'普通怪', hp:6,  atk:1, ap:5, cost:2, gold:2 },
   thick:   { name:'厚皮怪', hp:10, atk:1, ap:4, cost:3, gold:3 },
   fast:    { name:'快速怪', hp:5,  atk:1, ap:7, cost:3, gold:3 },
-  heavy:   { name:'冲锋怪', hp:8,  atk:2, ap:3, cost:4, gold:4 },
+  heavy:   { name:'冲锋怪', hp:10, atk:2, ap:3, cost:4, gold:4 },
   swarm:   { name:'小怪群', hp:3,  atk:1, ap:4, cost:1, gold:1 },
-  elite:   { name:'精英怪', hp:18, atk:3, ap:5, cost:8, gold:8 },
-  boss:    { name:'小Boss',hp:30, atk:3, ap:4, cost:12,gold:15},
-  blocker: { name:'堵路怪', hp:14, atk:1, ap:3, cost:4, gold:4, ability:{id:'block_path',trigger:'onMoveIntent',status:'pending'} },
-  siege:   { name:'攻城怪', hp:7,  atk:2, ap:5, cost:4, gold:4, ability:{id:'target_castle',trigger:'onChooseTarget',status:'pending'} },
-  boss5:   { name:'炎甲兽', hp:35, atk:4, ap:4, cost:12,gold:15,ability:{id:'iron_wall',trigger:'onBeforeTakeDamage',status:'pending',config:{threshold:5,reduction:2}} },
-  minion:  { name:'Boss护卫',hp:12, atk:2, ap:4, cost:5, gold:5, ability:{id:'guard_aura',trigger:'onChooseTarget',status:'pending'} },
-  boss8:   { name:'熔岩核心',hp:45, atk:4, ap:5, cost:14,gold:20,ability:{id:'lava_surge',trigger:'onRoundStart',status:'pending',config:{el:'fire',layers:1}} },
-  boss10:  { name:'远古炎核',hp:60,atk:5, ap:5, cost:18,gold:25,ability:{id:'core_split',trigger:'onEveryNthRound',status:'pending',config:{n:2,typeId:'normal'}} },
+  elite:   { name:'精英怪', hp:25, atk:4, ap:5, cost:8, gold:8 },
+  boss:    { name:'小Boss',hp:40, atk:5, ap:4, cost:12,gold:15},
+  blocker: { name:'堵路怪', hp:20, atk:1, ap:3, cost:4, gold:4, ability:{id:'block_path',trigger:'onMoveIntent',status:'pending'} },
+  siege:   { name:'攻城怪', hp:12, atk:3, ap:5, cost:4, gold:4, ability:{id:'target_castle',trigger:'onChooseTarget',status:'pending'} },
+  boss5:   { name:'炎甲兽', hp:50, atk:6, ap:4, cost:12,gold:15,ability:{id:'iron_wall',trigger:'onBeforeTakeDamage',status:'pending',config:{threshold:5,reduction:2}} },
+  minion:  { name:'Boss护卫',hp:16, atk:2, ap:4, cost:5, gold:5, ability:{id:'guard_aura',trigger:'onChooseTarget',status:'pending'} },
+  boss8:   { name:'熔岩核心',hp:65, atk:6, ap:5, cost:14,gold:20,ability:{id:'lava_surge',trigger:'onRoundStart',status:'pending',config:{el:'fire',layers:1}} },
+  boss10:  { name:'远古炎核',hp:85,atk:8, ap:5, cost:18,gold:25,ability:{id:'core_split',trigger:'onEveryNthRound',status:'pending',config:{n:2,typeId:'normal'}} },
 };
 
 // ========== 每日波次配置 ==========
@@ -945,44 +945,44 @@ const MONSTER_TYPES = {
 // spawnSize: 出生区边长（正方形，右上角）
 const DAY_WAVE_CONFIG = {
   1: {
-    morning:   { budget:4,  allowed:['normal'], spawnSize:3, maxAlive:4 },
-    afternoon: { budget:5,  allowed:['normal'], spawnSize:3, maxAlive:4 },
+    morning:   { budget:5,  allowed:['normal'], spawnSize:3, maxAlive:5 },
+    afternoon: { budget:6,  allowed:['normal'], spawnSize:3, maxAlive:5 },
   },
   2: {
-    morning:   { budget:7,  allowed:['normal','thick'], spawnSize:3, maxAlive:5 },
-    afternoon: { budget:8,  allowed:['normal','thick'], spawnSize:3, maxAlive:5 },
+    morning:   { budget:9,  allowed:['normal','thick'], spawnSize:3, maxAlive:6 },
+    afternoon: { budget:10, allowed:['normal','thick'], spawnSize:3, maxAlive:6 },
   },
   3: {
-    morning:   { budget:10, allowed:['normal','thick','fast','heavy'], spawnSize:4, maxAlive:7 },
-    afternoon: { budget:12, allowed:['normal','thick','fast','heavy'], spawnSize:4, maxAlive:7 },
+    morning:   { budget:13, allowed:['normal','thick','fast','heavy'], spawnSize:4, maxAlive:8 },
+    afternoon: { budget:15, allowed:['normal','thick','fast','heavy'], spawnSize:4, maxAlive:8 },
   },
   4: {
-    morning:   { budget:14, allowed:['normal','thick','fast','heavy','elite'], spawnSize:4, maxAlive:8 },
-    afternoon: { budget:16, allowed:['normal','thick','fast','heavy','elite'], spawnSize:4, maxAlive:8 },
+    morning:   { budget:18, allowed:['normal','thick','fast','heavy','elite'], spawnSize:5, maxAlive:10 },
+    afternoon: { budget:20, allowed:['normal','thick','fast','heavy','elite'], spawnSize:5, maxAlive:10 },
   },
   5: {
-    morning:   { budget:18, allowed:['normal','thick','fast','heavy','elite','boss'], spawnSize:5, maxAlive:10 },
-    afternoon: { budget:20, allowed:['normal','thick','fast','heavy','elite','boss5','siege'], spawnSize:5, maxAlive:10 },
+    morning:   { budget:24, allowed:['normal','thick','fast','heavy','elite','boss'], spawnSize:5, maxAlive:12 },
+    afternoon: { budget:28, allowed:['normal','thick','fast','heavy','elite','boss5','siege'], spawnSize:5, maxAlive:12 },
   },
   6: {
-    morning:   { budget:22, allowed:['elite','swarm','normal','blocker','thick'], spawnSize:5, maxAlive:10 },
-    afternoon: { budget:24, allowed:['siege','fast','elite','heavy','blocker'], spawnSize:5, maxAlive:10 },
+    morning:   { budget:30, allowed:['elite','swarm','normal','blocker','thick'], spawnSize:5, maxAlive:12 },
+    afternoon: { budget:34, allowed:['siege','fast','elite','heavy','blocker'], spawnSize:5, maxAlive:12 },
   },
   7: {
-    morning:   { budget:28, allowed:['elite','siege','blocker','heavy','swarm'], spawnSize:5, maxAlive:11 },
-    afternoon: { budget:30, allowed:['boss8','elite','siege','fast'], spawnSize:5, maxAlive:11 },
+    morning:   { budget:38, allowed:['elite','siege','blocker','heavy','swarm'], spawnSize:5, maxAlive:14 },
+    afternoon: { budget:42, allowed:['boss8','elite','siege','fast'], spawnSize:5, maxAlive:14 },
   },
   8: {
-    morning:   { budget:34, allowed:['elite','blocker','siege','thick'], spawnSize:5, maxAlive:12 },
-    afternoon: { budget:38, allowed:['boss8','elite','fast','swarm','heavy','siege'], spawnSize:5, maxAlive:12 },
+    morning:   { budget:46, allowed:['elite','blocker','siege','thick'], spawnSize:5, maxAlive:14 },
+    afternoon: { budget:50, allowed:['boss8','elite','fast','swarm','heavy','siege'], spawnSize:5, maxAlive:14 },
   },
   9: {
-    morning:   { budget:42, allowed:['elite','siege','fast','boss8','blocker'], spawnSize:5, maxAlive:13 },
-    afternoon: { budget:46, allowed:['boss8','elite','siege','heavy','minion'], spawnSize:5, maxAlive:13 },
+    morning:   { budget:54, allowed:['elite','siege','fast','boss8','blocker'], spawnSize:5, maxAlive:15 },
+    afternoon: { budget:58, allowed:['boss8','elite','siege','heavy','minion'], spawnSize:5, maxAlive:15 },
   },
   10: {
-    morning:   { budget:40, allowed:['minion','elite','siege','swarm'], spawnSize:5, maxAlive:13 },
-    afternoon: { budget:50, allowed:['boss10','minion','siege','elite'], spawnSize:5, maxAlive:13 },
+    morning:   { budget:52, allowed:['minion','elite','siege','swarm'], spawnSize:5, maxAlive:15 },
+    afternoon: { budget:65, allowed:['boss10','minion','siege','elite'], spawnSize:5, maxAlive:15 },
   },
 };
 
@@ -1010,12 +1010,12 @@ const SHOP_PRICE_CONFIG = {
     10:{ unitT1:0, unitT2:1, unitT3:2, unitT4:2, consumable:0 },
   },
   // 每晚固定收入
-  nightIncome: { 1:5, 2:6, 3:7, 4:8, 5:9, 6:10, 7:10, 8:11, 9:12, 10:0 },
+  nightIncome: { 1:3, 2:4, 3:5, 4:6, 5:7, 6:7, 7:8, 8:8, 9:9, 10:0 },
   // 利息：每 interestStep 金币 +1，最高 interestMax
-  interestStep: 5,
-  interestMax: 3,
+  interestStep: 8,
+  interestMax: 2,
 };
-const GRADE_BASE={青铜:2,白银:4,黄金:6,钻石:8};function calcUnitPrice(def){return GRADE_BASE[def.grade]||def.cost||2;}
+const GRADE_BASE={青铜:3,白银:5,黄金:7,钻石:10};function calcUnitPrice(def){return GRADE_BASE[def.grade]||def.cost||2;}
 
 const REWARD_NODE_CONFIG={
   3:{midday:{stalls:1,tier:2,guarantee:['fluff_speaker','spring_sprite']}},
@@ -1078,7 +1078,7 @@ function initGame(){
     phase:'PLAYER',  // PLAYER | MONSTER | SHOP | OVER
     day:1, dayHalf:0, wave:1, round:1, maxRound:2,
     hitCount:0,
-    gold:10,
+    gold:8,
     savedCoins:0,
     board:mkBoard(),
     heroes:{},
@@ -1092,8 +1092,8 @@ function initGame(){
     shopFrozen:{units:new Set(),consumables:new Set()}, // 冻结索引
     shopTier:1,
     // 城堡：左下我方、右上敌方
-    playerCastle:{hp:100,maxHp:100,pos:{r:12,c:1}},
-    enemyCastle:{hp:100,maxHp:100,pos:{r:0,c:11}},
+    playerCastle:{hp:80,maxHp:80,pos:{r:12,c:1}},
+    enemyCastle:{hp:80,maxHp:80,pos:{r:0,c:11}},
     // 召唤引擎（水+召唤原型 · deep-interview v1-scope 增量1）
     summons:[],              // 召唤物实体 [{id,kind,name,hp,maxHp,atk,el,pos,ownerHid,dead}]
     _nextSummonId:0,

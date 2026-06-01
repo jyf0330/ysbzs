@@ -143,7 +143,7 @@ group('initGame 初始化', ()=>{
   test('wave = 1',        ()=> assert.strictEqual(G.wave,1));
   test('round = 1',       ()=> assert.strictEqual(G.round,1));
   test('maxRound = 2',    ()=> assert.strictEqual(G.maxRound,2));
-  test('gold = 10',       ()=> assert.strictEqual(G.gold,10));
+  test('gold = 8',       ()=> assert.strictEqual(G.gold,8));
   test('hitCount = 0',    ()=> assert.strictEqual(G.hitCount,0));
   test('棋盘 13 行',      ()=> assert.strictEqual(G.board.length,13));
   test('棋盘每行 13 列',  ()=> G.board.forEach((row,r)=>
@@ -177,14 +177,14 @@ group('initGame 初始化', ()=>{
 group('城堡系统', ()=>{
   test('双城堡：我方左下、敌方右上', ()=>{
     fresh();
-    assert.strictEqual(G.playerCastle.hp,100);
+    assert.strictEqual(G.playerCastle.hp,80);
     assert.deepStrictEqual(G.playerCastle.pos,{r:12,c:1});
-    assert.strictEqual(G.enemyCastle.hp,100);
+    assert.strictEqual(G.enemyCastle.hp,80);
     assert.deepStrictEqual(G.enemyCastle.pos,{r:0,c:11});
   });
   test('敌方城堡 HP≤0 → 胜利且 runVictory', ()=>{
     fresh();
-    damageEnemyCastle(100,'test');
+    damageEnemyCastle(80,'test');
     assert.strictEqual(G.phase,'OVER');
     assert.strictEqual(G.runVictory,true);
   });
@@ -662,7 +662,7 @@ group('回合管理', ()=>{
     fresh();
     // 清掉(1,11)的教学怪，让空格爆炸能波及城堡(0,11)
     G.monsters=[];
-    G.enemyCastle={hp:1,maxHp:100,pos:{r:0,c:11}};
+    G.enemyCastle={hp:1,maxHp:80,pos:{r:0,c:11}};
     const ck='1,11'; G.elementCells[ck]={fire:{layers:3,willExplode:true}};
     endPlayerTurn();
     assert.strictEqual(G.phase,'OVER','城堡被炸毁应直接结束');
@@ -695,15 +695,15 @@ group('回合管理', ()=>{
     G.round=G.maxRound+1;
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
-    // openShop 增加收入+利息: 5 (day1 income) + floor((10+5)/5)=3 (interest) = 18
-    assert.strictEqual(G.gold, 18);
+    // openShop 增加收入+利息: 3 (day1 income) + floor((8+3)/8)=1 (interest) = 12
+    assert.strictEqual(G.gold, 12);
     assert.ok(G.shopItems.units.length>0,'应已生成商店');
   });
   test('finishMonsters 所有怪死亡+城堡存活 → 不跳商店', ()=>{
     fresh();
     G.dayHalf=2;
     G.monsters.forEach(m=>m.dead=true);
-    G.enemyCastle={hp:100,maxHp:100,pos:{r:0,c:11}};
+    G.enemyCastle={hp:80,maxHp:80,pos:{r:0,c:11}};
     finishMonsters();
     assert.strictEqual(G.phase,'PLAYER','城堡存活时应继续战斗');
   });
@@ -712,7 +712,7 @@ group('回合管理', ()=>{
     G.dayHalf=2;
     G.round=2;
     G.monsters.forEach(m=>m.dead=true);
-    G.enemyCastle={hp:0,maxHp:100,pos:{r:0,c:11}};
+    G.enemyCastle={hp:0,maxHp:80,pos:{r:0,c:11}};
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
   });
@@ -814,11 +814,11 @@ group('buildWaveForDay 波次生成', ()=>{
     const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
     assert.ok(totalCost<=4,`总cost ${totalCost} 不应超过预算4`);
   });
-  test('buildWaveForDay Day1 afternoon 预算=5', ()=>{
+  test('buildWaveForDay Day1 afternoon 预算=6', ()=>{
     const plan=buildWaveForDay(1,'afternoon');
     assert.ok(plan.monsters.length>=2);
     const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
-    assert.ok(totalCost<=5,`总cost ${totalCost} 不应超过预算5`);
+    assert.ok(totalCost<=6,`总cost ${totalCost} 不应超过预算6`);
   });
   test('buildWaveForDay Day3 含强攻/快速怪', ()=>{
     // Day3 allowed: normal/thick/fast/heavy
@@ -832,20 +832,20 @@ group('buildWaveForDay 波次生成', ()=>{
     const types=plan.monsters.map(m=>m.typeId);
     assert.ok(types.includes('elite')||types.includes('normal'),'至少含一种类型');
     const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
-    assert.ok(totalCost<=14,`总cost ${totalCost} 不应超过预算14`);
+    assert.ok(totalCost<=18,`总cost ${totalCost} 不应超过预算18`);
   });
   test('buildWaveForDay Day5 morning 含 boss', ()=>{
     const plan=buildWaveForDay(5,'morning');
     const types=plan.monsters.map(m=>m.typeId);
-    // boss cost=12, 预算18-12=6 够再加几只小怪
+    // boss cost=12, budget=24, 够再加几只小怪
     assert.ok(plan.monsters.length>=1);
     const totalCost=plan.monsters.reduce((s,m)=>s+m.cost,0);
-    assert.ok(totalCost<=18,`总cost ${totalCost} 不应超过预算18`);
+    assert.ok(totalCost<=24,`总cost ${totalCost} 不应超过预算24`);
   });
   test('buildWaveForDay maxAlive 限制', ()=>{
-    // Day1 morning maxAlive=4, 即使预算够也不超过4
+    // Day1 morning maxAlive=5, 即使预算够也不超过5
     const plan=buildWaveForDay(1,'morning');
-    assert.ok(plan.monsters.length<=4,`怪物数 ${plan.monsters.length} 不应超过 maxAlive=4`);
+    assert.ok(plan.monsters.length<=5,`怪物数 ${plan.monsters.length} 不应超过 maxAlive=5`);
   });
   test('buildWaveForDay 无效 day/phase 返回空', ()=>{
     let plan=buildWaveForDay(99,'morning');
@@ -861,12 +861,12 @@ group('buildWaveForDay 波次生成', ()=>{
       assert.ok(m.pos.c>=10&&m.pos.c<13,`怪物 ${m.name} c=${m.pos.c} 应在 10-12`);
     });
   });
-  test('spawnWaveForDay Day4 spawn zone 4x4', ()=>{
+  test('spawnWaveForDay Day4 spawn zone 5x5', ()=>{
     fresh(); G.monsters=[]; G.heroes={};
-    spawnWaveForDay(4,'morning'); // spawnSize=4 → r:0-3, c:9-12
+    spawnWaveForDay(4,'morning'); // spawnSize=5 → r:0-4, c:8-12
     G.monsters.forEach(m=>{
-      assert.ok(m.pos.r>=0&&m.pos.r<4);
-      assert.ok(m.pos.c>=9&&m.pos.c<13);
+      assert.ok(m.pos.r>=0&&m.pos.r<5);
+      assert.ok(m.pos.c>=8&&m.pos.c<13);
     });
   });
 });
@@ -895,13 +895,13 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     });
   });
   test('buyUnit 扣金币并加入 ownedUnits', ()=>{
-    fresh(); G.phase='SHOP'; G.gold=10;
+    fresh(); G.phase='SHOP'; G.gold=8;
     G.shopTier=1; genShop();
     G.ownedUnits=[]; G.nextUnitId=0;
     const item=G.shopItems.units[0];
     const cost=item.cost;
     buyUnit(item.id);
-    assert.strictEqual(G.gold, 10-cost);
+    assert.strictEqual(G.gold, 8-cost);
     assert.strictEqual(G.ownedUnits.length,1);
     assert.strictEqual(G.ownedUnits[0].defId,item.defId);
   });
@@ -913,7 +913,8 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     assert.strictEqual(G.ownedUnits.length,0);
   });
   test('buyUnit 同名单位自动合成', ()=>{
-    fresh(); G.phase='SHOP'; G.gold=10;
+    fresh(); G.phase='SHOP'; G.gold=8;
+    G.shopItems.consumables=[];
     G.shopTier=1; genShop();
     const defId=G.shopItems.units[0].defId;
     // 先手动加一个同名L1单位
@@ -936,13 +937,13 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     assert.strictEqual(G.ownedUnits.length, beforeLen-1);
   });
   test('rollShop 花费 2 金币并重新生成商店', ()=>{
-    fresh(); G.phase='SHOP'; G.gold=10; G.day=1;
+    fresh(); G.phase='SHOP'; G.gold=8; G.day=1;
     G.shopTier=1; genShop();
     // 冻结一个商品
     const uid=G.shopItems.units[0].id;
     G.shopFrozen.units.add(uid);
     rollShop();
-    assert.strictEqual(G.gold,8);
+    assert.strictEqual(G.gold,6);
     // rollShop 清除冻结
     assert.strictEqual(G.shopFrozen.units.size,0);
     assert.strictEqual(G.shopFrozen.consumables.size,0);
@@ -993,14 +994,14 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
   test('openShop 增加日收入+利息', ()=>{
     fresh(); G.day=1; G.gold=5;
     openShop();
-    // Day1 income=5, gold=10, interest=floor(10/5)=2, total=12
-    assert.strictEqual(G.gold, 12);
+    // Day1 income=3, gold=8, interest=floor(8/8)=1, total=9
+    assert.strictEqual(G.gold, 9);
   });
-  test('openShop 利息上限3', ()=>{
+  test('openShop 利息上限2', ()=>{
     fresh(); G.day=2; G.gold=20;
     openShop();
-    // Day2 income=6, gold=26, interest=min(floor(26/5),3)=3, total=29
-    assert.strictEqual(G.gold, 29);
+    // Day2 income=4, gold=24, interest=min(floor(24/8),2)=2, total=26
+    assert.strictEqual(G.gold, 26);
   });
   test('renderTurn 在 SHOP 阶段显示商店文案，不显示小回合', ()=>{
     fresh();
@@ -2777,7 +2778,7 @@ group('N组：一键执行多英雄走位分配',()=>{
     assert.strictEqual(canHeroAttackEnemyFrom({r:5,c:5},'ha'),false,'sn=3 打到(5,8)碰不到(5,10)');
     // 敌方城堡在攻击范围内
     G.monsters=[];
-    G.enemyCastle={hp:100,maxHp:100,pos:{r:0,c:11}};
+    G.enemyCastle={hp:80,maxHp:80,pos:{r:0,c:11}};
     G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
     assert.strictEqual(canHeroAttackEnemyFrom({r:0,c:10},'ha'),true,'攻击范围覆盖敌方城堡');
     // 无可用槽
@@ -2928,16 +2929,16 @@ group('TDD-WT:十字使属性',()=>{
     const def=UNIT_DEFS['wind_breeze'];
     assert.strictEqual(def.element,'wind');
   });
-  test('WT12:十字使青铜统一价格2金',()=>{
+  test('WT12:十字使青铜统一价格3金',()=>{
     const def=UNIT_DEFS['wind_breeze'];
     const price=calcUnitPrice(def);
-    assert.strictEqual(price,2,'青铜统一定价为2金');
+    assert.strictEqual(price,3,'青铜统一定价为3金');
   });
 });
 
 group('TDD-WT:合成',()=>{
   test('WT13:火苗灵青铜+青铜=白银',()=>{
-    fresh();G.phase='SHOP';G.gold=10;G.shopTier=1;G.day=1;
+    fresh();G.phase='SHOP';G.gold=8;G.shopTier=1;G.day=1;
     genShop();
     // buyUnit auto-merges when same defId exists
     G.ownedUnits=[];G.nextUnitId=0;
@@ -3285,7 +3286,7 @@ group('TDD-S3 Run与商店',()=>{
     G.dayHalf=2;
     closeShop();
     assert.strictEqual(G.playerCastle.hp,73,'我方跨天保留');
-    assert.strictEqual(G.enemyCastle.hp,100,'敌方次日回满');
+    assert.strictEqual(G.enemyCastle.hp,80,'敌方次日回满');
     assert.strictEqual(G.day,2);
   });
   test('RUN2:Day5下午结束进夜晚商店而非自动通关',()=>{
@@ -3312,12 +3313,12 @@ group('TDD-S3 Run与商店',()=>{
   });
   test('RUN3:我方城堡归零失败',()=>{
     fresh();
-    damagePlayerCastle(100,'test');
+    damagePlayerCastle(80,'test');
     assert.strictEqual(G.phase,'OVER');
   });
   test('RUN3:敌方城堡归零胜利',()=>{
     fresh();
-    damageEnemyCastle(100,'test');
+    damageEnemyCastle(80,'test');
     assert.strictEqual(G.phase,'OVER');
   });
   test('SH1:genShop不产出relic商品',()=>{
@@ -3396,11 +3397,11 @@ group('TDD-S3 Run与商店',()=>{
     G.ownedUnits=[];
     addOwnedUnit('pebble_guard',{r:10,c:1});
     syncUnitsToHeroes();
-    G.playerCastle.hp=100;
+    G.playerCastle.hp=80;
     damagePlayerCastle(3,'test');
-    assert.strictEqual(G.playerCastle.hp,98,'3-1减伤');
+    assert.strictEqual(G.playerCastle.hp,78,'3-1减伤');
     damagePlayerCastle(1,'test');
-    assert.strictEqual(G.playerCastle.hp,97,'最低仍扣1');
+    assert.strictEqual(G.playerCastle.hp,77,'最低仍扣1');
   });
   test('SH6:风风灵克制额外伤害',()=>{
     fresh();
@@ -3687,11 +3688,11 @@ group('Goal 03/04 完整实现', ()=>{
     assert.strictEqual(MONSTER_TYPES.boss10.ability.id,'core_split');
   });
   test('GOAL0304-04: 同品级统一定价，不使用 priceTier 乘法', ()=>{
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fire_starter),2);
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.earth_shield),2,'青铜 priceTier=3 仍应 2 金');
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fluff_speaker),4,'白银统一 4 金');
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.forge_fire),6,'黄金统一 6 金');
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.dragon_flame),8,'钻石统一 8 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fire_starter),3);
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.earth_shield),3,'青铜 priceTier=3 仍应 3 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fluff_speaker),5,'白银统一 5 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.forge_fire),7,'黄金统一 7 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.dragon_flame),10,'钻石统一 10 金');
   });
   test('GOAL0304-05: 商店只卖英雄且不生成 consumables', ()=>{
     fresh(); G.phase='SHOP'; G.day=6; G.dayHalf=2; genShop();

@@ -59,6 +59,32 @@ test('loader instances keep isolated game state', () => {
   assert.notStrictEqual(first.context.G, second.context.G);
 });
 
+test('trace recorder stores steps and serializes jsonl', () => {
+  const { TraceRecorder } = require('../core/trace-recorder');
+  const recorder = new TraceRecorder('case-a');
+  recorder.record({ step: 0, action: { type: 'USE_SLOT', slotId: 0 }, result: { phase: 'PLAYER' }, errors: [] });
+  recorder.record({ step: 1, action: { type: 'END_PLAYER_TURN' }, result: { phase: 'MONSTER' }, errors: [] });
+  const jsonl = recorder.toJSONL();
+  const lines = jsonl.trim().split('\n').map(line => JSON.parse(line));
+  assert.strictEqual(lines.length, 2);
+  assert.strictEqual(lines[0].scenarioId, 'case-a');
+  assert.strictEqual(lines[1].action.type, 'END_PLAYER_TURN');
+});
+
+test('report writer renders scenario verdict and metrics', () => {
+  const { renderMarkdownReport } = require('../core/report-writer');
+  const md = renderMarkdownReport({
+    scenario: { id: 'case-a', agent: 'script-day1' },
+    verdict: 'PASS',
+    steps: [{}, {}],
+    evaluatorResults: [{ name: 'GoalEvaluator', verdict: 'PASS', messages: ['phaseIs SHOP'] }],
+    outputFiles: { trace: 'ai-eval/reports/case-a.trace.jsonl' },
+  });
+  assert.ok(md.includes('# Evaluation Report: case-a'));
+  assert.ok(md.includes('Verdict: PASS'));
+  assert.ok(md.includes('GoalEvaluator'));
+});
+
 async function main() {
   let pass = 0;
   let fail = 0;

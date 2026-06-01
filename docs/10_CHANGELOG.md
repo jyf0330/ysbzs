@@ -1,4 +1,16 @@
 
+## 2026-06-01 — AI 工作流同步（上游 ywh-work 反哺）
+
+### 工作流（`docs/00_AI_WORKFLOW_DETAILS.md`、`docs/00_AI_PROJECT_RULES.md`、`AGENTS.md`、`CLAUDE.md`、`.github/copilot-instructions.md`）
+- **执行纪律总纲**：新增任务先分类、代码基线/文档基线、设计未拍板不实现、建议来源与执行优先级四条原则。
+- **Codex Goal 适配**：新增完整章节（何时开启、输入优先级、Charter 字段、Goal Skill Hooks、Objective 格式、与任务卡/Superpowers 的关系）。
+- **文档门禁分级**：新增大系统/中等改动/小修改三段。
+- **TDD 前置步骤**：改为 Goal/交互双模式，Goal 模式自主确认即可进入实现。
+- **根目录清理**：新增禁止长期存放临时草稿规则。
+- **Goal Skill Hooks 表**：写入 required/conditional hook 表和条件型 hook 清单。
+- **商店/经济/成长方向**：新增优先向《The Bazaar》结构对齐。
+- **建议来源声明**：外部 AI 建议不是项目真实规则。
+
 ## 2026-05-31 — 关卡策划 03/04 代码实现
 
 ### 代码（`index.html` / `test.js`）

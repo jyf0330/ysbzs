@@ -21,19 +21,24 @@
 }
 body{
   font-family:'Hiragino Maru Gothic ProN','Klee','YuKyokasho','Microsoft YaHei','PingFang SC',sans-serif;
-  background:var(--bg-body);color:var(--c-text);
-  display:flex;flex-direction:column;align-items:center;
-  min-height:100vh;padding:8px 4px;
+  background:#1a1210;color:var(--c-text);
+  overflow:hidden;width:100vw;height:100vh;
   user-select:none;
 }
-h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;font-weight:600;}
-#gw{display:flex;gap:12px;align-items:flex-start;}
+#game-shell{
+  position:absolute;
+  width:1280px;height:720px;
+  transform-origin:top left;
+  overflow:hidden;
+  background:var(--bg-body);
+}
+#gw{display:flex;gap:0;align-items:stretch;flex:1;min-height:0;overflow:hidden;}
 
 /* ===== BOARD ===== */
 #board{
   display:grid;
-  grid-template-columns:repeat(13,var(--cell));
-  grid-template-rows:repeat(13,var(--cell));
+  grid-template-columns:repeat(8,var(--cell));
+  grid-template-rows:repeat(8,var(--cell));
   gap:2px;background:var(--bg-board);border:3px solid var(--c-board-border);border-radius:4px;
 }
 .cell{
@@ -97,7 +102,7 @@ h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;fon
 .ib-empty{color:#8b7d6b;font-size:9px;text-align:center;}
 
 /* ===== RIGHT PANEL ===== */
-#rp{width:290px;display:flex;flex-direction:column;gap:8px;}
+#rp{width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:0;overflow-y:auto;}
 .box{background:var(--c-panel-bg);border:1.5px solid var(--c-panel-border);border-radius:6px;padding:10px;}
 .btt{font-size:12px;color:var(--c-title);font-weight:bold;margin-bottom:6px;border-bottom:1.5px solid #8b7b68;padding-bottom:4px;}
 
@@ -150,7 +155,7 @@ h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;fon
 #log div{border-bottom:1px solid #a89878;padding:1px 0;}
 
 /* ===== SHOP ===== */
-#so{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,50,40,0.85);z-index:100;overflow-y:auto;padding:20px;}
+#so{display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(60,50,40,0.85);z-index:100;overflow-y:auto;padding:20px;}
 #sc{max-width:680px;margin:0 auto;background:var(--c-panel-bg);border:2px solid #8b7d6b;border-radius:8px;padding:20px;}
 .stt{font-size:22px;color:var(--c-title);text-align:center;margin-bottom:12px;}
 .gd{text-align:right;font-size:14px;color:#6a4f3a;font-weight:bold;margin-bottom:10px;}
@@ -170,7 +175,7 @@ h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;fon
 
 /* ===== TOOLTIP ===== */
 #tt{
-  display:none;position:fixed;
+  display:none;position:absolute;
   background:var(--c-panel-bg);border:2px solid #8b7d6b;border-radius:6px;
   padding:10px;z-index:150;font-size:11px;min-width:130px;
 }
@@ -208,7 +213,7 @@ h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;fon
 
 /* ===== MESSAGE ===== */
 #msg{
-  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   background:var(--c-panel-bg);border:2px solid #8b7d6b;border-radius:8px;
   padding:20px 30px;text-align:center;font-size:15px;z-index:200;
 }
@@ -216,7 +221,7 @@ h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;fon
 
 /* ===== DEBUG PANEL ===== */
 #debug-panel{
-  display:none;position:fixed;left:12px;bottom:12px;width:360px;max-height:55vh;
+  display:none;position:absolute;left:12px;bottom:12px;width:360px;max-height:396px;
   overflow-y:auto;background:var(--c-panel-bg);border:2px solid #8b7d6b;
   border-radius:8px;font-size:10px;line-height:1.5;z-index:300;
   font-family:system-ui,-apple-system,sans-serif;color:var(--c-text);
@@ -262,7 +267,7 @@ h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;fon
 
 /* Assign popup */
 #ap-modal{
-  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   background:var(--c-panel-bg);border:2px solid #8b7d6b;border-radius:8px;
   padding:16px 20px;z-index:300;min-width:220px;
 }
@@ -282,118 +287,259 @@ h1{color:var(--c-title);margin-bottom:6px;font-size:1.3em;letter-spacing:1px;fon
 .cd-badge{display:block;padding:1px 4px;font-size:9px;}
 .cd-row{margin:1px 0;line-height:1.4;color:var(--c-text);}
 /* 全屏：html 根元素进全屏，棋盘与侧栏按比例缩放 */
-#wrap{width:100%;max-width:100%;display:flex;flex-direction:column;align-items:center;}
-.board-col{display:flex;flex-direction:column;align-items:center;}
-html:fullscreen,
-html:-webkit-full-screen{background:var(--bg-body);}
-html:fullscreen body,
-html:-webkit-full-screen body{
-  width:100vw;height:100vh;padding:10px 12px;overflow:hidden;
-  align-items:stretch;justify-content:flex-start;
-}
-html:fullscreen #wrap,
-html:-webkit-full-screen #wrap{
-  flex:1;width:100%;min-height:0;max-width:none;align-items:stretch;
-}
-html:fullscreen h1,
-html:-webkit-full-screen h1{font-size:1.05em;margin-bottom:6px;text-align:center;}
-html:fullscreen #gw,
-html:-webkit-full-screen #gw{
-  flex:1;min-height:0;width:100%;align-items:stretch;justify-content:center;
-}
-html:fullscreen .board-col,
-html:-webkit-full-screen .board-col{flex:1;min-width:0;justify-content:center;}
-html:fullscreen #board,
-html:-webkit-full-screen #board{
-  width:min(calc(100vh - 96px), calc(100vw - 320px));
-  height:min(calc(100vh - 96px), calc(100vw - 320px));
-  max-width:100%;
-  grid-template-columns:repeat(13,1fr);
-  grid-template-rows:repeat(13,1fr);
-}
-html:fullscreen .cell,
-html:-webkit-full-screen .cell{width:auto;height:auto;min-width:0;min-height:0;}
-html:fullscreen .ib-e,
-html:-webkit-full-screen .ib-e{font-size:clamp(6px,1vw,11px);}
-html:fullscreen #rp,
-html:-webkit-full-screen #rp{
-  width:300px;flex-shrink:0;max-height:100%;overflow-y:auto;font-size:13px;
-}
-html:fullscreen #log,
-html:-webkit-full-screen #log{flex:1;min-height:80px;max-height:28vh;}
-#fsb {
-  background:#8b7b68; color:var(--c-text); border:1.5px solid #8b7b68; border-radius:4px;
-  cursor:pointer; font-size:14px; padding:2px 8px; margin-left:4px;
-}
-#fsb:hover { background:#8b7b68; }
-html:fullscreen #fsb,
-html:-webkit-full-screen #fsb { background:#8b7b68; }
+#wrap{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.board-col{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-width:0;}
 
-/* ── 响应式：小屏自动缩小棋盘 ── */
-@media (max-width:820px){
-  :root{--cell:42px;}
-  #gw{flex-direction:column;align-items:center;gap:8px;}
-  #rp{width:100%;max-width:420px;}
-  .ib-brief{font-size:7px;}
+/* ===== TOPBAR ===== */
+#topbar{
+  display:flex;align-items:center;gap:12px;flex-wrap:nowrap;
+  background:linear-gradient(180deg,#d4b070 0%,#c8a060 100%);
+  border-bottom:3px solid #8b6a3a;
+  padding:5px 14px;flex-shrink:0;
+  box-shadow:0 2px 6px rgba(60,40,10,0.3);
+  overflow:hidden;
 }
-@media (max-width:600px){
-  :root{--cell:34px;}
-  #board{gap:0;}
-  .ib-brief{font-size:6px;line-height:1.15;}
-  .ib-bot{display:none;}
-  #rp{font-size:11px;}
+#tb-logo{
+  font-size:16px;font-weight:700;color:#3a2810;
+  letter-spacing:2px;white-space:nowrap;
+  border-right:2px solid #8b6a3a;padding-right:12px;
 }
-@media (max-width:460px){
-  :root{--cell:28px;}
-  .ib-brief{font-size:5px;-webkit-line-clamp:2;}
-  .cell{padding:0;}
-  #board{gap:0;border-width:1px;}
+#tb-info{
+  display:flex;align-items:center;gap:6px;font-size:12px;flex-shrink:0;
+  border-right:2px solid #8b6a3a;padding-right:12px;
 }
+#tb-info span{
+  background:rgba(60,40,10,0.12);border:1px solid #8b6a3a;
+  border-radius:4px;padding:2px 7px;color:#2a1a08;white-space:nowrap;
+}
+#tb-resources{
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+  border-right:2px solid #8b6a3a;padding-right:12px;
+}
+#tb-resources span{
+  font-size:13px;font-weight:700;color:#3a2810;
+  background:rgba(60,40,10,0.12);border:1px solid #8b6a3a;
+  border-radius:4px;padding:2px 10px;white-space:nowrap;
+}
+#tb-castles{
+  display:flex;gap:10px;align-items:center;flex:1;
+  border-right:2px solid #8b6a3a;padding-right:12px;
+}
+.castle-info{display:flex;align-items:center;gap:5px;font-size:11px;color:#2a1a08;white-space:nowrap;}
+.castle-hp-bar{width:64px;height:7px;background:rgba(60,40,10,0.25);border-radius:3px;border:1px solid #8b6a3a;overflow:hidden;}
+.castle-hp-fill{height:100%;border-radius:2px;transition:width 0.4s;}
+.castle-hp-fill-p{background:#c84040;}
+.castle-hp-fill-e{background:#803020;}
+#tb-shopbtn{
+  background:#3a2810;color:#f0dca0;border:1.5px solid #8b6a3a;
+  padding:4px 12px;border-radius:5px;cursor:pointer;font-size:12px;
+  white-space:nowrap;font-weight:600;flex-shrink:0;
+}
+#tb-shopbtn:hover{background:#5a3a18;}
+#tb-fsb{
+  background:rgba(60,40,10,0.2);color:#2a1a08;border:1px solid #8b6a3a;
+  padding:3px 7px;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;flex-shrink:0;
+}
+
+/* ===== LEFT PANEL ===== */
+#lp{
+  width:192px;flex-shrink:0;
+  background:var(--c-panel-bg);
+  border-right:2px solid var(--c-panel-border);
+  display:flex;flex-direction:column;overflow-y:auto;
+  padding:10px 8px;
+}
+.lp-title{
+  font-size:13px;font-weight:700;color:var(--c-title);
+  text-align:center;padding:4px 0 8px;
+  border-bottom:2px solid var(--c-panel-border);margin-bottom:8px;letter-spacing:2px;
+}
+.hero-card{
+  background:#faf6ef;border:1.5px solid var(--c-panel-border);
+  border-radius:7px;padding:9px 8px;margin-bottom:10px;cursor:pointer;
+  transition:border-color 0.15s,background 0.15s;
+}
+.hero-card:hover{border-color:#5a4030;background:#f0e8d8;}
+.hero-card.sel{border-color:#5a3010;background:#e8d8b8;box-shadow:0 0 0 2px rgba(90,48,16,0.25);}
+.hc-portrait{font-size:34px;text-align:center;margin-bottom:5px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.2));}
+.hc-nameline{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.hc-name{font-size:13px;font-weight:700;color:var(--c-title);}
+.hc-lv{font-size:10px;color:var(--c-text2);background:#e8d8c0;border-radius:3px;padding:1px 5px;}
+.hc-hp-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;}
+.hc-hp-icon{font-size:11px;color:#c84040;}
+.hc-hp-txt{font-size:11px;color:var(--c-text);min-width:38px;}
+.hc-hpbar{flex:1;height:6px;background:#a89878;border-radius:3px;overflow:hidden;}
+.hc-hpfill{height:100%;border-radius:3px;transition:width 0.3s;}
+.hc-type{font-size:10px;color:var(--c-text2);background:#e0d4c0;border-radius:3px;padding:2px 6px;display:inline-block;}
+.hc-coord{font-size:9px;color:#8b7d6b;margin-top:3px;}
+
+/* ===== RIGHT PANEL overrides ===== */
+#rp{padding:10px 8px;border-left:2px solid var(--c-panel-border);background:var(--c-panel-bg);}
+.rp-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;border-bottom:2px solid var(--c-panel-border);padding-bottom:6px;
+}
+.rp-title{font-size:12px;font-weight:700;color:var(--c-title);letter-spacing:1px;}
+.rp-auto-btn{
+  background:#5a4030;color:#faf6ef;border:1.5px solid #8b6a3a;
+  padding:3px 9px;border-radius:5px;cursor:pointer;font-size:11px;
+}
+.rp-auto-btn:hover{background:#6a5040;}
+.rp-auto-btn:disabled{background:#8b7b68;color:#8b7d6b;cursor:not-allowed;}
+/* Hero group in action slots */
+.asl-hero-group{margin-bottom:10px;}
+.asl-hero-label{
+  display:flex;align-items:center;gap:5px;margin-bottom:4px;
+  font-size:11px;font-weight:700;color:var(--c-title);
+  border-bottom:1px solid #c8b898;padding-bottom:3px;
+}
+/* Action slot card */
+.as-card{
+  display:flex;align-items:center;gap:5px;
+  background:#faf6ef;border:1.5px solid #c8b898;
+  border-radius:5px;padding:4px 6px;margin-bottom:4px;
+  cursor:pointer;transition:border-color 0.15s,background 0.15s;
+}
+.as-card:hover{border-color:#8b6a3a;background:#f0e8d8;}
+.as-card.sel{border-color:#5a3010;background:#e8d8b8;}
+.as-card.used{opacity:0.45;}
+.as-num{
+  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff;
+}
+.as-shape{flex-shrink:0;}
+.as-el{font-size:11px;color:var(--c-title);font-weight:700;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.as-layer{font-size:10px;color:var(--c-text2);white-space:nowrap;flex-shrink:0;}
+.as-dirs{display:flex;gap:2px;flex-shrink:0;}
+.as-dir-btn{
+  width:16px;height:16px;background:#e8d8c0;border:1px solid #8b7b68;
+  color:var(--c-text2);cursor:pointer;font-size:9px;
+  display:flex;align-items:center;justify-content:center;border-radius:2px;
+}
+.as-dir-btn:hover{background:#d8c8b0;}
+.as-dir-btn.active{background:#5a3010;color:#faf6ef;border-color:#5a3010;}
+.as-use-btn{
+  background:none;border:1px solid #8b7b68;border-radius:3px;
+  padding:2px 4px;cursor:pointer;font-size:10px;color:var(--c-text2);flex-shrink:0;
+}
+.as-use-btn:hover{background:#d8c8b0;}
+.as-use-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.rp-bottom{margin-top:auto;padding-top:6px;border-top:1px solid #c8b898;}
+
+/* ===== BOTTOM BAR ===== */
+#bottombar{
+  display:flex;align-items:stretch;
+  background:linear-gradient(0deg,#c8a060 0%,#d4b070 100%);
+  border-top:3px solid #8b6a3a;
+  flex-shrink:0;min-height:80px;
+  box-shadow:0 -2px 6px rgba(60,40,10,0.2);
+}
+#bb-log{
+  flex:1;display:flex;align-items:flex-start;gap:8px;
+  padding:8px 12px;border-right:2px solid #8b6a3a;
+  overflow:hidden;
+}
+.bb-log-toggle{
+  background:#3a2810;color:#f0dca0;border:1.5px solid #8b6a3a;
+  padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px;
+  font-weight:600;white-space:nowrap;flex-shrink:0;align-self:flex-start;
+}
+#log{
+  flex:1;font-size:10px;line-height:1.6;color:#3a2810;
+  max-height:72px;overflow-y:auto;
+}
+#log div{border-bottom:1px solid rgba(60,40,10,0.15);padding:1px 0;}
+#log div::before{content:'◇ ';color:#8b6a3a;font-size:8px;}
+#bb-battle{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 18px;gap:4px;min-width:190px;
+}
+#ph{font-size:13px;font-weight:700;color:#2a1a08;}
+#rc{font-size:11px;color:#5a3810;}
+.battle-start-btn{
+  background:#3a2810;color:#f0dca0;
+  border:2.5px solid #8b6a3a;
+  padding:8px 22px;border-radius:7px;
+  cursor:pointer;font-size:15px;font-weight:700;letter-spacing:2px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.3);transition:all 0.15s;white-space:nowrap;
+}
+.battle-start-btn:hover{background:#5a3818;transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,0.35);}
+.battle-start-btn:disabled{background:#8b7b68;color:#8b7d6b;cursor:not-allowed;transform:none;box-shadow:none;}
 </style>
 </head>
 <body>
+<div id="game-shell">
 <div id="wrap">
-<h1>⚡ 元素背包史 · Demo v0.1</h1>
-<div id="gw">
-  <div class="board-col">
-    <div id="board"></div>
-    <div class="board-hint" style="font-size:10px;color:var(--c-text2);margin-top:4px;text-align:center;">
-      点击英雄→选中 | 再点空格→移动 | 选行动点后可调方向→点"使用"攻击 | 点元素格→查看引爆
+  <!-- Top header bar -->
+  <div id="topbar">
+    <div id="tb-logo">元素背包史 🌿</div>
+    <div id="tb-info">
+      <span id="tb-phase">阶段: 晨曦 ☀️</span>
+      <span>天数: <b id="tb-day">1</b></span>
+      <span>波次: <b id="tb-wave">1</b>/<b id="tb-maxwave">2</b></span>
+      <span id="tb-rc">第1/2小回合</span>
     </div>
-  </div>
-  <div id="rp">
-    <!-- Turn info -->
-    <div class="box">
-      <div id="ph">⚔️ 玩家回合</div>
-      <div id="rc">第1波 · 第1/5小回合</div>
-      <div id="gi">💰 <span id="gold">5</span> 金币</div>
-      <div id="es" style="display:none;font-size:10px;color:#5e95b5;margin-top:2px;"></div>
-      <div class="turn-actions">
-      <button class="etb" id="exa" onclick="execAllHeroSlots()">⚡ 一键执行</button>
-      <button class="etb" id="etb" onclick="endPlayerTurn()">结束回合 →</button>
-      <button id="fsb" onclick="toggleFullscreen()" title="全屏 (F11)">⛶ 全屏</button>
+    <div id="tb-resources">
+      <span>🪙 <b id="gold">8</b></span>
+    </div>
+    <div id="tb-castles">
+      <div class="castle-info">
+        <span>我方城堡</span>
+        <div class="castle-hp-bar"><div id="p-castle-bar" class="castle-hp-fill castle-hp-fill-p" style="width:100%"></div></div>
+        <span id="p-castle-txt">80/80</span>
+      </div>
+      <div class="castle-info">
+        <span>故方城堡</span>
+        <div class="castle-hp-bar"><div id="e-castle-bar" class="castle-hp-fill castle-hp-fill-e" style="width:100%"></div></div>
+        <span id="e-castle-txt">80/80</span>
       </div>
     </div>
-    <!-- Heroes -->
-    <div class="box">
-      <div class="btt">英雄状态</div>
+    <button id="tb-fsb" onclick="toggleFullscreen()" title="全屏 (F11)">⛶ 全屏</button>
+    <button id="tb-shopbtn" onclick="openShop()">🛍 商店</button>
+  </div>
+
+  <!-- Main area: left panel + board + right panel -->
+  <div id="gw">
+    <!-- Left panel: hero unit cards -->
+    <div id="lp">
+      <div class="lp-title">❖ 我方单位 ❖</div>
       <div id="hs"></div>
+      <div id="cd" style="display:none;margin-top:8px;"></div>
     </div>
-    <!-- Action slots -->
-    <div class="box">
-      <div class="btt">行动点（每英雄各3个）</div>
+
+    <!-- Center: board -->
+    <div class="board-col">
+      <div id="board"></div>
+      <div class="board-hint" style="font-size:9px;color:var(--c-text2);margin-top:3px;text-align:center;">
+        点击英雄→选中 | 再点空格→移动 | 选行动点→调方向→点⚔使用
+      </div>
+    </div>
+
+    <!-- Right panel: action slots -->
+    <div id="rp">
+      <div class="rp-header">
+        <span class="rp-title">↠ 行动槽位 <span id="slot-count"></span></span>
+        <button class="rp-auto-btn" id="exa" onclick="execAllHeroSlots()">⚡ 自动编排</button>
+      </div>
       <div id="asl"></div>
-    </div>
-    <!-- Log -->
-    <div class="box">
-      <div class="btt">战斗日志</div>
-      <div id="log"></div>
-    </div>
-    <!-- Cell Detail -->
-    <div class="box" id="cd" style="display:none">
+      <div class="rp-bottom">
+        <div id="es" style="display:none;font-size:10px;color:#5e95b5;margin-bottom:4px;"></div>
+      </div>
     </div>
   </div>
-</div>
+
+  <!-- Bottom bar: log + battle button -->
+  <div id="bottombar">
+    <div id="bb-log">
+      <button class="bb-log-toggle">战斗日志</button>
+      <div id="log"></div>
+    </div>
+    <div id="bb-battle">
+      <div id="ph">⚔️ 玩家回合</div>
+      <div id="rc">第1波 · 晨曦</div>
+      <button class="battle-start-btn" id="etb" onclick="endPlayerTurn()">⚔ 开始战斗</button>
+    </div>
+  </div>
 </div>
 
 <!-- Shop -->
@@ -426,6 +572,7 @@ html:-webkit-full-screen #fsb { background:#8b7b68; }
 </div>
 
 <div id="debug-panel" aria-hidden="true"></div>
+</div><!-- #game-shell -->
 
 <script>
 // ========== CONSTANTS ==========
@@ -945,44 +1092,44 @@ const MONSTER_TYPES = {
 // spawnSize: 出生区边长（正方形，右上角）
 const DAY_WAVE_CONFIG = {
   1: {
-    morning:   { budget:5,  allowed:['normal'], spawnSize:3, maxAlive:5 },
-    afternoon: { budget:6,  allowed:['normal'], spawnSize:3, maxAlive:5 },
+    morning:   { budget:5,  allowed:['normal'], spawnSize:2, maxAlive:5 },
+    afternoon: { budget:6,  allowed:['normal'], spawnSize:2, maxAlive:5 },
   },
   2: {
-    morning:   { budget:9,  allowed:['normal','thick'], spawnSize:3, maxAlive:6 },
-    afternoon: { budget:10, allowed:['normal','thick'], spawnSize:3, maxAlive:6 },
+    morning:   { budget:9,  allowed:['normal','thick'], spawnSize:2, maxAlive:6 },
+    afternoon: { budget:10, allowed:['normal','thick'], spawnSize:2, maxAlive:6 },
   },
   3: {
-    morning:   { budget:13, allowed:['normal','thick','fast','heavy'], spawnSize:4, maxAlive:8 },
-    afternoon: { budget:15, allowed:['normal','thick','fast','heavy'], spawnSize:4, maxAlive:8 },
+    morning:   { budget:13, allowed:['normal','thick','fast','heavy'], spawnSize:3, maxAlive:8 },
+    afternoon: { budget:15, allowed:['normal','thick','fast','heavy'], spawnSize:3, maxAlive:8 },
   },
   4: {
-    morning:   { budget:18, allowed:['normal','thick','fast','heavy','elite'], spawnSize:5, maxAlive:10 },
-    afternoon: { budget:20, allowed:['normal','thick','fast','heavy','elite'], spawnSize:5, maxAlive:10 },
+    morning:   { budget:18, allowed:['normal','thick','fast','heavy','elite'], spawnSize:3, maxAlive:10 },
+    afternoon: { budget:20, allowed:['normal','thick','fast','heavy','elite'], spawnSize:3, maxAlive:10 },
   },
   5: {
-    morning:   { budget:24, allowed:['normal','thick','fast','heavy','elite','boss'], spawnSize:5, maxAlive:12 },
-    afternoon: { budget:28, allowed:['normal','thick','fast','heavy','elite','boss5','siege'], spawnSize:5, maxAlive:12 },
+    morning:   { budget:24, allowed:['normal','thick','fast','heavy','elite','boss'], spawnSize:3, maxAlive:12 },
+    afternoon: { budget:28, allowed:['normal','thick','fast','heavy','elite','boss5','siege'], spawnSize:3, maxAlive:12 },
   },
   6: {
-    morning:   { budget:30, allowed:['elite','swarm','normal','blocker','thick'], spawnSize:5, maxAlive:12 },
-    afternoon: { budget:34, allowed:['siege','fast','elite','heavy','blocker'], spawnSize:5, maxAlive:12 },
+    morning:   { budget:30, allowed:['elite','swarm','normal','blocker','thick'], spawnSize:3, maxAlive:12 },
+    afternoon: { budget:34, allowed:['siege','fast','elite','heavy','blocker'], spawnSize:3, maxAlive:12 },
   },
   7: {
-    morning:   { budget:38, allowed:['elite','siege','blocker','heavy','swarm'], spawnSize:5, maxAlive:14 },
-    afternoon: { budget:42, allowed:['boss8','elite','siege','fast'], spawnSize:5, maxAlive:14 },
+    morning:   { budget:38, allowed:['elite','siege','blocker','heavy','swarm'], spawnSize:3, maxAlive:14 },
+    afternoon: { budget:42, allowed:['boss8','elite','siege','fast'], spawnSize:3, maxAlive:14 },
   },
   8: {
-    morning:   { budget:46, allowed:['elite','blocker','siege','thick'], spawnSize:5, maxAlive:14 },
-    afternoon: { budget:50, allowed:['boss8','elite','fast','swarm','heavy','siege'], spawnSize:5, maxAlive:14 },
+    morning:   { budget:46, allowed:['elite','blocker','siege','thick'], spawnSize:3, maxAlive:14 },
+    afternoon: { budget:50, allowed:['boss8','elite','fast','swarm','heavy','siege'], spawnSize:3, maxAlive:14 },
   },
   9: {
-    morning:   { budget:54, allowed:['elite','siege','fast','boss8','blocker'], spawnSize:5, maxAlive:15 },
-    afternoon: { budget:58, allowed:['boss8','elite','siege','heavy','minion'], spawnSize:5, maxAlive:15 },
+    morning:   { budget:54, allowed:['elite','siege','fast','boss8','blocker'], spawnSize:3, maxAlive:15 },
+    afternoon: { budget:58, allowed:['boss8','elite','siege','heavy','minion'], spawnSize:3, maxAlive:15 },
   },
   10: {
-    morning:   { budget:52, allowed:['minion','elite','siege','swarm'], spawnSize:5, maxAlive:15 },
-    afternoon: { budget:65, allowed:['boss10','minion','siege','elite'], spawnSize:5, maxAlive:15 },
+    morning:   { budget:52, allowed:['minion','elite','siege','swarm'], spawnSize:3, maxAlive:15 },
+    afternoon: { budget:65, allowed:['boss10','minion','siege','elite'], spawnSize:3, maxAlive:15 },
   },
 };
 
@@ -1092,8 +1239,8 @@ function initGame(){
     shopFrozen:{units:new Set(),consumables:new Set()}, // 冻结索引
     shopTier:1,
     // 城堡：左下我方、右上敌方
-    playerCastle:{hp:80,maxHp:80,pos:{r:12,c:1}},
-    enemyCastle:{hp:80,maxHp:80,pos:{r:0,c:11}},
+    playerCastle:{hp:80,maxHp:80,pos:{r:7,c:0}},
+    enemyCastle:{hp:80,maxHp:80,pos:{r:0,c:7}},
     // 召唤引擎（水+召唤原型 · deep-interview v1-scope 增量1）
     summons:[],              // 召唤物实体 [{id,kind,name,hp,maxHp,atk,el,pos,ownerHid,dead}]
     _nextSummonId:0,
@@ -1118,8 +1265,8 @@ function initGame(){
     actionLog:[],
   };
   // 教程默认上阵两个单位（GDD 左下）
-  addOwnedUnit('fire_starter',{r:10,c:1});
-  addOwnedUnit('water_droplet',{r:11,c:1});
+  addOwnedUnit('fire_starter',{r:6,c:0});
+  addOwnedUnit('water_droplet',{r:7,c:1});
   syncUnitsToHeroes();
   spawnWaveForDay(1,'morning');
   syncMaxRoundForPhase();
@@ -1131,7 +1278,7 @@ function initGame(){
 
 function mkBoard(){
   const b=[];
-  for(let r=0;r<13;r++){b[r]=[];for(let c=0;c<13;c++)b[r][c]={r,c,el:null,stk:0};}
+  for(let r=0;r<8;r++){b[r]=[];for(let c=0;c<8;c++)b[r][c]={r,c,el:null,stk:0};}
   return b;
 }
 
@@ -1194,7 +1341,7 @@ function buildWaveForDay(day,phase){
 function getSpawnCells(spawnSize){
   const size=spawnSize||3;
   const cells=[];
-  for(let r=0;r<size;r++)for(let c=13-size;c<13;c++)cells.push({r,c});
+  for(let r=0;r<size;r++)for(let c=8-size;c<8;c++)cells.push({r,c});
   return cells;
 }
 
@@ -1238,7 +1385,7 @@ function assignSpawnPositions(monsters,spawnSize){
     if(i<freeCells.length){
       monsters[i].pos=freeCells[i];
     }else{
-      monsters[i].pos=spawnCells[0]||{r:0,c:12};
+      monsters[i].pos=spawnCells[0]||{r:0,c:7};
     }
   }
 }
@@ -1256,7 +1403,7 @@ function atkCells(heroPos,sn,dir){
   const s=SD[sn]; if(!s)return[];
   return rotCells(s.cells,dir)
     .map(([dr,dc])=>({r:heroPos.r+dr,c:heroPos.c+dc}))
-    .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+    .filter(p=>p.r>=0&&p.r<8&&p.c>=0&&p.c<8);
 }
 
 function findCenterCell(cells){
@@ -1276,7 +1423,7 @@ function findCenterCell(cells){
 // ========== BOARD HELPERS ==========
 function monAt(pos){return G.monsters.find(m=>!m.dead&&m.pos.r===pos.r&&m.pos.c===pos.c);}
 function heroAt(pos){return Object.values(G.heroes).find(h=>h.pos.r===pos.r&&h.pos.c===pos.c);}
-function cellFree(pos){return !monAt(pos)&&!heroAt(pos)&&!summonAt(pos)&&pos.r>=0&&pos.r<13&&pos.c>=0&&pos.c<13;}
+function cellFree(pos){return !monAt(pos)&&!heroAt(pos)&&!summonAt(pos)&&pos.r>=0&&pos.r<8&&pos.c>=0&&pos.c<8;}
 // 检查英雄从指定位置是否能攻击到任何敌方（怪物或城堡）
 function canHeroAttackEnemyFrom(pos,hid){
   const hasEnemy=G.monsters.some(m=>!m.dead);
@@ -1287,7 +1434,7 @@ function canHeroAttackEnemyFrom(pos,hid){
     const shape=SD[s.sn]; if(!shape)continue;
     const cells=rotCells(shape.cells,s.dir)
       .map(([dr,dc])=>({r:pos.r+dr,c:pos.c+dc}))
-      .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+      .filter(p=>p.r>=0&&p.r<8&&p.c>=0&&p.c<8);
     for(const p of cells){
       if(monAt(p))return true;
       if(enemyCastleAt(p))return true;
@@ -1310,7 +1457,7 @@ function calcElementLayerDamage(layers){return layers*(layers+1)/2;}
 
 function explCells(pos){
   return [pos,{r:pos.r-1,c:pos.c},{r:pos.r+1,c:pos.c},{r:pos.r,c:pos.c-1},{r:pos.r,c:pos.c+1}]
-    .filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+    .filter(p=>p.r>=0&&p.r<8&&p.c>=0&&p.c<8);
 }
 
 function topElementAt(pos){
@@ -1983,7 +2130,7 @@ function syncUnitsToHeroes(){
     const def=UNIT_DEFS[unit.defId];
     const lvlData=def.levels[unit.level];
     const hid=ui===0?'ha':'hb';
-    unit.pos=unit.pos||{r:10+ui,c:1};
+    unit.pos=unit.pos||{r:6+ui,c:0};
     G.heroes[hid]={
       id:hid,
       name:def.name+(unit.level>1?` Lv${unit.level}`:''),
@@ -2225,7 +2372,7 @@ function runSummonActions(){
     const candidates=[
       {r:s.pos.r,c:s.pos.c+colStep},
       {r:s.pos.r+rowStep,c:s.pos.c},
-    ].filter(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13);
+    ].filter(p=>p.r>=0&&p.r<8&&p.c>=0&&p.c<8);
     const np=candidates.find(p=>!monAt(p)&&!heroAt(p)&&!castleAt(p)&&!summonAt(p)&&!hasElementAt(p));
     if(np){
       s.pos=np;
@@ -2328,7 +2475,7 @@ function runMonsterAbilityHook(trigger,monster){
     if(monster._abilityTicks%n!==0)return false;
     const dirs=[{r:0,c:-1},{r:1,c:0},{r:-1,c:0},{r:0,c:1}];
     const pos=dirs.map(d=>({r:monster.pos.r+d.r,c:monster.pos.c+d.c}))
-      .find(p=>p.r>=0&&p.r<13&&p.c>=0&&p.c<13&&cellFree(p)&&!castleAt(p)&&!hasElementAt(p));
+      .find(p=>p.r>=0&&p.r<8&&p.c>=0&&p.c<8&&cellFree(p)&&!castleAt(p)&&!hasElementAt(p));
     if(!pos)return false;
     const typeId=cfg.typeId||'normal';
     const mt=MONSTER_TYPES[typeId]||MONSTER_TYPES.normal;
@@ -2441,7 +2588,7 @@ function buyUnit(itemId){
   G.gold-=item.cost;
   G.shopItems.units.splice(idx,1);
   const activeCount=G.ownedUnits.filter(u=>u.active).length;
-  const newUnit=addOwnedUnit(item.defId, activeCount<2?{r:10+activeCount,c:1}:null);
+  const newUnit=addOwnedUnit(item.defId, activeCount<2?{r:6+activeCount,c:0}:null);
   if(!newUnit)return;
   // 检查是否有同名单位可合成
   const existing=G.ownedUnits.find(u=>u.instanceId!==newUnit.instanceId&&u.defId===newUnit.defId&&u.active);
@@ -2667,7 +2814,7 @@ function buildCellInfoMap(){
   });
   // 3. 遍历全棋盘构建 cellInfoMap
   const map={};
-  for(let r=0;r<13;r++)for(let c=0;c<13;c++){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const ky=`${r},${c}`;
     const bc=G.board[r][c];
     const mon=G.monsters.find(m=>!m.dead&&m.pos.r===r&&m.pos.c===c);
@@ -2762,7 +2909,7 @@ function buildBoardVM(){
   const{monActMap,heroIncomingDmg,summonIncomingDmg,monFinalSet,monCardMap}=mt;
   const ELEMS=['fire','water','wind','earth'];
   const cells=[];
-  for(let r=0;r<13;r++)for(let c=0;c<13;c++){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const key=`${r},${c}`,hero=hp[key],mon=mp[key],bc=G.board[r][c];
     const pgCell=pgGrid[key]||null;
     const classes=[];
@@ -2812,7 +2959,7 @@ function buildPreviewGrid(){
   const ELEMS=['fire','water','wind','earth'];
   // 1. 初始化全棋盘 13x13 空 preview cell
   const grid={};
-  for(let r=0;r<13;r++)for(let c=0;c<13;c++){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const cellKey=`${r},${c}`;
     grid[cellKey]={cellKey,pos:{r,c},
       entity:{type:null,id:null,name:null,hp:null,maxHp:null,atk:null,el:null},
@@ -2848,7 +2995,7 @@ function buildPreviewGrid(){
     });
   });
   // 2b. board.el/stk 兼容路径
-  for(let r=0;r<13;r++)for(let c=0;c<13;c++){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const key=`${r},${c}`,bc=G.board[r][c];
     if(bc.el&&bc.stk>0){
       const ef=grid[key].elementField[bc.el];
@@ -3676,8 +3823,8 @@ function renderDebugPanel(){
   // ── 拖拽 ──
   var bar=el.querySelector('.dbg-bar');
   if(bar&&!bar._dragInited){bar._dragInited=1;var ox=0,oy=0,on=0;
-    bar.addEventListener('mousedown',function(e){on=1;ox=e.clientX-el.offsetLeft;oy=e.clientY-el.offsetTop;bar.classList.add('dragging');e.preventDefault();});
-    document.addEventListener('mousemove',function(e){if(!on)return;el.style.left=Math.max(0,Math.min(window.innerWidth-el.offsetWidth,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(window.innerHeight-el.offsetHeight,e.clientY-oy))+'px';});
+    bar.addEventListener('mousedown',function(e){on=1;var S=window._gameScale||1;ox=(e.clientX-(window._gameShellOffX||0))/S-el.offsetLeft;oy=(e.clientY-(window._gameShellOffY||0))/S-el.offsetTop;bar.classList.add('dragging');e.preventDefault();});
+    document.addEventListener('mousemove',function(e){if(!on)return;var S=window._gameScale||1;var lx=(e.clientX-(window._gameShellOffX||0))/S-ox;var ly=(e.clientY-(window._gameShellOffY||0))/S-oy;el.style.left=Math.max(0,Math.min(1280-el.offsetWidth,lx))+'px';el.style.top=Math.max(0,Math.min(720-el.offsetHeight,ly))+'px';});
     document.addEventListener('mouseup',function(){on=0;bar.classList.remove('dragging');});
   }
 }
@@ -4095,81 +4242,144 @@ function showTT(r,c,e){
   `;
   const tt=document.getElementById('tt');
   const bnd=e.target.getBoundingClientRect();
-  let lft=bnd.right+8; let tp=bnd.top;
-  if(lft+150>window.innerWidth)lft=bnd.left-160;
+  const S=window._gameScale||1;
+  const sox=window._gameShellOffX||0;
+  const soy=window._gameShellOffY||0;
+  let lft=(bnd.right-sox)/S+8;
+  let tp=(bnd.top-soy)/S;
+  if(lft+150>1280)lft=(bnd.left-sox)/S-160;
   tt.style.left=lft+'px'; tt.style.top=tp+'px';
   tt.style.display='block';
 }
 function hideTT(){document.getElementById('tt').style.display='none';}
 
 function renderHS(heroesVM){
+  const PORTRAITS={ha:'⚔️',hb:'🔮'};
+  const TYPES={ha:'近战·物理',hb:'远程·法术'};
   let h='';
   heroesVM.forEach(hero=>{
-    h+=`<div class="hi">
-      <div>
-        <span style="color:${hero.col};font-weight:bold;font-size:13px">${hero.name}</span>
-        <div style="font-size:10px;color:var(--c-text2)">📍(${hero.pos.r},${hero.pos.c})</div>
+    const isSel=G.selHero===hero.id;
+    const unit=getUnitByHeroId?.(hero.id);
+    const lvl=unit?unit.level:1;
+    const portrait=PORTRAITS[hero.id]||'🧙';
+    const typeLabel=TYPES[hero.id]||'';
+    h+=`<div class="hero-card${isSel?' sel':''}" onclick="selHero('${hero.id}')">
+      <div class="hc-portrait">${portrait}</div>
+      <div class="hc-nameline">
+        <span class="hc-name">${hero.name}</span>
+        <span class="hc-lv">Lv.${lvl}</span>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:12px">${hero.hp}/${hero.maxHp}</div>
-        <div class="hpb"><div class="hpf" style="width:${hero.pct}%;background:${hero.hpcol}"></div></div>
+      <div class="hc-hp-row">
+        <span class="hc-hp-icon">♥</span>
+        <span class="hc-hp-txt">${hero.hp}/${hero.maxHp}</span>
+        <div class="hc-hpbar"><div class="hc-hpfill" style="width:${hero.pct}%;background:#c84040"></div></div>
       </div>
+      <span class="hc-type">${typeLabel}</span>
+      <div class="hc-coord">📍 (${hero.pos.r},${hero.pos.c})</div>
     </div>`;
   });
   document.getElementById('hs').innerHTML=h;
 }
 
 function renderSlots(slotsVM){
-  let h='<div class="asl-grid">';
+  // Group slots by hero
+  const groups={};
+  const heroOrder=[];
   slotsVM.forEach(s=>{
-    const cls=`as-mini${s.used?' used':''}${s.isSel?' sel':''}`;
-    const dirLabels={up:'↑',down:'↓',left:'←',right:'→'};
-    const heroOpts=Object.values(G.heroes).map(h2=>`<option value="${h2.id}"${s.hid===h2.id?' selected':''}>${h2.id==='ha'?'A':'B'}</option>`).join('');
-    h+=`<div class="${cls}" onclick="selSlot(${s.idx})">
-      <div class="asm-head">
-        <span class="asm-num" style="background:${EC[s.el]};color:#000">${s.idx+1}</span>
-        <span class="asm-lbl">${s.hLabel}</span>
-        ${s.used?'<span class="asm-used">✓</span>':''}
-      </div>
-      <div class="asm-name" style="color:${EC[s.el]}">${EL[s.el]}·${s.sn}号·×${TIER_MULT[s.tier]}</div>
-      <div class="asm-dir-row">
-        ${['up','down','left','right'].map(d=>`<div class="asd${s.dir===d?' da':''}" onclick="event.stopPropagation();setDir(${s.idx},'${d}')">${dirLabels[d]}</div>`).join('')}
-      </div>
-      <div style="display:flex;gap:3px;align-items:center;margin-top:2px">
-        <select style="flex:1;background:#f5f0e6;color:var(--c-text);border:1px solid #8b7b68;border-radius:3px;font-size:9px;padding:1px;" onchange="setHero(${s.idx},this.value)" onclick="event.stopPropagation()">${heroOpts}</select>
-        <button class="ub" style="width:auto;padding:2px 5px;flex-shrink:0" onclick="event.stopPropagation();useSlot(${s.idx})" ${s.disabled?'disabled':''}>${s.used?'✓':'⚔'}</button>
-      </div>
-    </div>`;
+    if(!groups[s.hid]){groups[s.hid]=[];heroOrder.indexOf(s.hid)===-1&&heroOrder.push(s.hid);}
+    groups[s.hid].push(s);
   });
-  h+='</div>';
+  const dirLabels={up:'↑',down:'↓',left:'←',right:'→'};
+  const HERO_ICON={ha:'⚔',hb:'🔮'};
+  const HERO_TYPE={ha:'近战·物理',hb:'远程·法术'};
+  const usedCount=slotsVM.filter(s=>s.used).length;
+  const totalCount=slotsVM.length;
+  const countEl=document.getElementById('slot-count');
+  if(countEl)countEl.textContent=`(${totalCount-usedCount}/${totalCount})`;
+  let h='';
+  heroOrder.forEach(hid=>{
+    const hero=G.heroes[hid];
+    if(!hero)return;
+    const hIcon=HERO_ICON[hid]||'◆';
+    const hType=HERO_TYPE[hid]||'';
+    h+=`<div class="asl-hero-group">
+      <div class="asl-hero-label">${hIcon} ${hero.name} <span style="font-size:10px;font-weight:normal;color:var(--c-text2)">(${hType})</span></div>`;
+    groups[hid].forEach(s=>{
+      const cls=`as-card${s.used?' used':''}${s.isSel?' sel':''}`;
+      const shapeHtml=shapeHTML(s.sn,s.el,5);
+      const tierVal=TIER_MULT[s.tier]||1;
+      const localIdx=groups[hid].indexOf(s)+1;
+      h+=`<div class="${cls}" onclick="selSlot(${s.idx})">
+        <span class="as-num" style="background:${EC[s.el]}">${localIdx}</span>
+        <span class="as-shape">${shapeHtml}</span>
+        <span class="as-el">${EL[s.el]}</span>
+        <span class="as-layer">→${tierVal}层</span>
+        <div class="as-dirs">
+          ${['up','left','right','down'].map(d=>`<div class="as-dir-btn${s.dir===d?' active':''}" onclick="event.stopPropagation();setDir(${s.idx},'${d}')">${dirLabels[d]}</div>`).join('')}
+        </div>
+        <button class="as-use-btn" onclick="event.stopPropagation();useSlot(${s.idx})" ${s.disabled?'disabled':''}>${s.used?'✓':'⚔'}</button>
+      </div>`;
+    });
+    h+='</div>';
+  });
   document.getElementById('asl').innerHTML=h;
 }
 
 function renderTurn(turnVM){
-  const phText={PLAYER:'⚔️ 玩家回合',MONSTER:'👾 怪物行动中…',SHOP:'🛒 商店',OVER:'💀 游戏结束'};
+  const phText={PLAYER:'⚔️ 玩家回合',MONSTER:'👾 怪物行动中…',SHOP:'🛒 商店阶段',OVER:'💀 游戏结束'};
   const dayLabel=`第${turnVM.day||turnVM.wave}天`;
-  const halfLabel=turnVM.dayHalf===0?'早上':(turnVM.dayHalf===1?'下午':'');
+  const halfLabel=turnVM.dayHalf===0?'晨曦':(turnVM.dayHalf===1?'午后':'暮色');
+  const halfIcon=turnVM.dayHalf===0?'☀️':'🌤️';
+  // Bottom bar
   document.getElementById('ph').textContent=phText[turnVM.phase]||turnVM.phase;
   if(turnVM.phase==='SHOP'){
-    document.getElementById('rc').textContent=`${dayLabel}夜晚 · 商店阶段`;
+    document.getElementById('rc').textContent=`${dayLabel} · 商店阶段`;
   }else if(turnVM.phase==='OVER'){
     document.getElementById('rc').textContent=`${dayLabel}${halfLabel} · 战斗结束`;
   }else{
-    document.getElementById('rc').textContent=`${dayLabel}${halfLabel} · ${turnVM.round}/${turnVM.maxRound}小回合`;
+    document.getElementById('rc').textContent=`${dayLabel} · ${turnVM.round}/${turnVM.maxRound}小回合`;
   }
-  document.getElementById('gold').textContent=turnVM.gold;
-  document.getElementById('etb').disabled=turnVM.endTurnDisabled;
-  document.getElementById('exa').disabled=turnVM.execAllDisabled;
+  const etb=document.getElementById('etb');
+  if(etb)etb.disabled=turnVM.endTurnDisabled;
+  const exa=document.getElementById('exa');
+  if(exa)exa.disabled=turnVM.execAllDisabled;
+  // Topbar elements
+  const gold=document.getElementById('gold');
+  if(gold)gold.textContent=turnVM.gold;
+  const tbDay=document.getElementById('tb-day');
+  if(tbDay)tbDay.textContent=turnVM.day||1;
+  const tbWave=document.getElementById('tb-wave');
+  if(tbWave)tbWave.textContent=turnVM.wave||1;
+  const tbMaxWave=document.getElementById('tb-maxwave');
+  if(tbMaxWave)tbMaxWave.textContent=turnVM.maxRound||2;
+  const tbPhase=document.getElementById('tb-phase');
+  if(tbPhase)tbPhase.textContent=`${halfLabel} ${halfIcon}`;
+  const tbRc=document.getElementById('tb-rc');
+  if(tbRc)tbRc.textContent=turnVM.phase==='SHOP'?'商店中':`${turnVM.round}/${turnVM.maxRound}回合`;
+  // Castle HP bars
+  if(G.playerCastle){
+    const pct=Math.max(0,(G.playerCastle.hp/G.playerCastle.maxHp)*100);
+    const bar=document.getElementById('p-castle-bar');
+    if(bar)bar.style.width=pct+'%';
+    const txt=document.getElementById('p-castle-txt');
+    if(txt)txt.textContent=`${G.playerCastle.hp}/${G.playerCastle.maxHp}`;
+  }
+  if(G.enemyCastle){
+    const pct=Math.max(0,(G.enemyCastle.hp/G.enemyCastle.maxHp)*100);
+    const bar=document.getElementById('e-castle-bar');
+    if(bar)bar.style.width=pct+'%';
+    const txt=document.getElementById('e-castle-txt');
+    if(txt)txt.textContent=`${G.enemyCastle.hp}/${G.enemyCastle.maxHp}`;
+  }
+  // Engine stats
   const esEl=document.getElementById('es');
   if(esEl&&turnVM.engineStats){
     const es=turnVM.engineStats;
     if(es.summonAlive>0||es.summonCount>0||es.healCount>0){
       esEl.style.display='';
-      let txt=`🌀 场上${es.summonAlive} · 累计召${es.summonCount} · 治疗${es.healCount}`;
+      let txt=`🌀 场上${es.summonAlive} · 召${es.summonCount} · 疗${es.healCount}`;
       const g=es.growth;
-      if(g&&(g.summonTier||g.healTier||g.chainTier)){
-        txt+=` · 成长 召T${g.summonTier}/疗T${g.healTier}/连T${g.chainTier}`;
-      }
+      if(g&&(g.summonTier||g.healTier||g.chainTier))txt+=` T${g.summonTier}/${g.healTier}/${g.chainTier}`;
       esEl.textContent=txt;
     }else esEl.style.display='none';
   }
@@ -4366,7 +4576,7 @@ function useBackpackItem(bpId){
   } else if(item.type==='board_el'){
     if(G.phase!=='PLAYER'){showMsg('只能在战斗阶段使用棋盘元素！');return;}
     const empty=[];
-    for(let r=0;r<13;r++)for(let c=0;c<13;c++){
+    for(let r=0;r<8;r++)for(let c=0;c<8;c++){
       if(!G.board[r][c].el&&!monAt({r,c})&&!heroAt({r,c}))empty.push({r,c});
     }
     if(empty.length===0){showMsg('没有空格可以放置元素！');return;}
@@ -4450,6 +4660,26 @@ function restartRun(){
   document.getElementById('msgd').textContent='';
   initGame();
 }
+
+// ===== FIXED-RESOLUTION SCALE MANAGER =====
+;(function(){
+  var BASE_W=1280,BASE_H=720;
+  window._gameScale=1;window._gameShellOffX=0;window._gameShellOffY=0;
+  function applyGameScale(){
+    var S=Math.min(window.innerWidth/BASE_W,window.innerHeight/BASE_H);
+    var offX=Math.round((window.innerWidth-BASE_W*S)/2);
+    var offY=Math.round((window.innerHeight-BASE_H*S)/2);
+    var shell=document.getElementById('game-shell');
+    shell.style.transform='scale('+S+')';
+    shell.style.left=offX+'px';
+    shell.style.top=offY+'px';
+    window._gameScale=S;
+    window._gameShellOffX=offX;
+    window._gameShellOffY=offY;
+  }
+  window.addEventListener('resize',applyGameScale);
+  applyGameScale();
+})();
 
 // ========== START ==========
 initGame();

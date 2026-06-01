@@ -182,6 +182,23 @@ body{
 .ib-b.ib-src-b{color:var(--c-hero-b);}
 /* empty cell */
 .ib-empty{color:#8b7d6b;font-size:9px;text-align:center;}
+/* 贴底短字条：实体格子的 brief 显示在底部 */
+.ib-strip{
+  position:absolute;bottom:0;left:0;right:0;z-index:6;
+  font-size:7px;line-height:1.3;text-align:center;
+  padding:1px 3px 2px;
+  background:rgba(248,240,220,0.92);
+  border-top:1px solid rgba(120,88,52,0.18);
+  border-radius:0 0 2px 2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  pointer-events:none;
+}
+/* 右上角徽章：☠ 💥 */
+.ib-corner{
+  position:absolute;top:2px;right:2px;z-index:7;
+  font-size:9px;line-height:1;display:flex;gap:1px;
+  pointer-events:none;
+}
 
 /* ===== RIGHT PANEL ===== */
 #rp{width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:0;overflow-y:auto;}
@@ -659,9 +676,9 @@ body{
     <!-- Left panel: development debug dock -->
     <div id="lp">
       <div class="lp-title">❖ 调试台 ❖</div>
-      <div id="debug-dock" class="debug-panel-surface" aria-hidden="false"></div>
+      <div id="cd" style="display:none;margin-bottom:8px;"></div>
       <div id="hs"></div>
-      <div id="cd" style="display:none;margin-top:8px;"></div>
+      <div id="debug-dock" class="debug-panel-surface" aria-hidden="false"></div>
     </div>
 
     <!-- Center: board -->
@@ -3365,41 +3382,19 @@ function buildPreviewGrid(){
       }
     });
     if(explodingEls.length>0){
-      const hasX=hasCrossExplosion();
+      const xActive=hasCrossExplosion();
       preview.explosionElements=explodingEls;
-      preview.explosionElement=explodingEls[0].element; // 向后兼容
-      preview.explosionShape=hasX?'cross':'single';
+      preview.explosionElement=explodingEls[0].element;
+      preview.explosionShape=xActive?'cross':'single';
       preview.explosionDamage=explodingEls.reduce((s,e)=>s+e.damage,0);
-      preview.splashTargets=hasX?explCells(cell.pos).map(p=>`${p.r},${p.c}`):[`${cell.pos.r},${cell.pos.c}`];
+      preview.splashTargets=xActive
+        ? explCells(cell.pos).map(p=>`${p.r},${p.c}`)
+        : [`${cell.pos.r},${cell.pos.c}`];
+      // 空格爆炸不模拟溅射伤害——只读数据
     }
   });
-  // 5b. 第二遍：空格爆炸波及实体（支持多元素同时爆炸）
-  Object.values(grid).forEach(cell=>{
-    if(!cell.preview.willExplode||!cell.preview.explosionElements)return;
-    // 收集 explosionSources（用于被波及格显示来源）
-    if(!cell.preview.explosionSources)cell.preview.explosionSources=[];
-    cell.preview.explosionElements.forEach(expEl=>{
-      cell.preview.explosionSources.push({r:cell.pos.r,c:cell.pos.c,element:expEl.element,layers:expEl.layers});
-    });
-    cell.preview.explosionElements.forEach(expEl=>{
-      const expDmg=expEl.damage;
-      const expTargets=hasCrossExplosion()?explCells(cell.pos):[cell.pos];
-      expTargets.forEach(tp=>{
-        const tKey=`${tp.r},${tp.c}`,tCell=grid[tKey];
-        if(!tCell||tCell.entity.type!=='monster')return;
-        const emult=(tCell.entity.el&&ADV[expEl.element]===tCell.entity.el)?2:1;
-        const splashDmg=expDmg*emult;
-        tCell.preview.splashDamage[expEl.element]=(tCell.preview.splashDamage[expEl.element]||0)+splashDmg;
-        tCell.preview.splashDamage.total+=splashDmg;
-        tCell.preview.splashDamage.sources.push({srcKey:cell.cellKey,el:expEl.element,dmg:splashDmg});
-        tCell.preview.entityDamage+=splashDmg; tCell.preview.isSplashTarget=true;
-        // 记录波及来源
-        if(!tCell.preview.explosionSources)tCell.preview.explosionSources=[];
-        tCell.preview.explosionSources.push({r:cell.pos.r,c:cell.pos.c,element:expEl.element,layers:expEl.layers});
-        tCell.preview.result.damageBySource.explosionSplash+=splashDmg;
-      });
-    });
-  });
+  // 5b. 移除——预览层不模拟爆炸波及伤害，只读数据
+  // 爆炸形状由 5a 根据 G.elementCells.willExplode + hasCrossExplosion() 决定
   // 6. 怪物行动预览 → 写入英雄格威胁
   const monsterThreats=computeMonsterActionPreview();
   const{heroIncomingDmg,summonIncomingDmg,monActMap,monFinalSet,monCardMap}=monsterThreats;
@@ -4251,30 +4246,40 @@ function renderBoard(boardVM){
   // 修正 class 名
   function _fixCls(s){return s.replace(/([火水风土])​(\d+)/g,(_,el,d)=>(EL_CLASS[el]||'')+'">'+el+d+'</span>');}
 
+  // 覆写 _colorBrief：避免 ZWS class 名导致渲染乱码
+  _colorBrief=function(b){
+    return b.replace(/([\u706b\u6c34\u98ce\u571f])(\d+)/g,function(_,el,d){return '<span class="'+(EL_CLASS[el]||'')+'">'+el+d+'</span>';})
+            .replace(/\u603b(\d+)/g,'<span class="b-sum">\u603b$1</span>');
+  };
   boardVM.forEach(cv=>{
     const cell=document.createElement('div');
     cell.className='cell';
     cv.classes.forEach(cls=>cell.classList.add(cls));
 
-    // ── 实体块：统一使用 displayBrief ──
+    // ── 实体块：永远显示实体 icon，brief 单独贴底显示 ──
     const brief=cv.displayBrief||'';
     const briefHtml=brief?_colorBrief(brief):'';
-    let entHtml='',entCls='';
+    let entHtml='',entCls='',isEntityCell=false;
     if(cv.castle){
       const isP=cv.castle.side==='player';
       entCls='ib-e ib-c '+(isP?'ib-cp':'ib-ce');
-      entHtml=briefHtml?`<span class="ib-brief">${briefHtml}</span>`:`<span>🏰</span>`;
+      entHtml=`<span>🏰</span>`;
+      isEntityCell=true;
     }else if(cv.hero){
       entCls='ib-e ib-h ib-'+(cv.hero.id==='ha'?'ha':'hb')+(cv.hero.isSel?' sel':'');
       const heroLabel=cv.hero.id==='ha'?'英1':'英2';
-      entHtml=briefHtml?`<span class="ib-brief">${briefHtml}</span>`:`<span>${heroLabel}</span>`;
+      entHtml=`<span>${heroLabel}</span>`;
+      isEntityCell=true;
     }else if(cv.mon){
       entCls='ib-e ib-m'+(cv.mon.willDie?' ib-m-die':'');
-      entHtml=briefHtml?`<span class="ib-brief">${briefHtml}</span>`:`<span>👾</span>`;
+      entHtml=`<span>👾</span>`;
+      isEntityCell=true;
     }else if(cv.summon){
       entCls='ib-e ib-s';
-      entHtml=briefHtml?`<span class="ib-brief">${briefHtml}</span>`:`<span>💧</span>`;
+      entHtml=`<span>💧</span>`;
+      isEntityCell=true;
     }else if(briefHtml){
+      // 空元素格：brief 居中显示
       entCls='ib-e ib-el-only';
       entHtml=`<span class="ib-brief">${briefHtml}</span>`;
     }else if(cv.el){
@@ -4289,15 +4294,23 @@ function renderBoard(boardVM){
       cell.appendChild(entEl);
     }
 
-    // ── 底部指示器：仅展示 brief 未覆盖的爆炸/致死标记 ──
-    const badges=[];
-    if(cv.pvWillExplode&&!cv.mon)badges.push(`<span class="ib-b ib-exp">💥</span>`);
-    if(cv.mon&&cv.mon.willDie)badges.push(`<span class="ib-b ib-thr">☠</span>`);
-    if(badges.length>0){
-      const botEl=document.createElement('div');
-      botEl.className='ib-bot';
-      botEl.innerHTML=badges.join('');
-      cell.appendChild(botEl);
+    // ── 贴底短字条：实体格子的攻击/伤害信息 ──
+    if(briefHtml&&isEntityCell){
+      const stripEl=document.createElement('div');
+      stripEl.className='ib-strip';
+      stripEl.innerHTML=briefHtml;
+      cell.appendChild(stripEl);
+    }
+
+    // ── 右上角徽章：致死/爆炸 ──
+    const corners=[];
+    if(cv.mon&&cv.mon.willDie)corners.push('☠');
+    if(cv.pvWillExplode&&!cv.mon)corners.push('💥');
+    if(corners.length>0){
+      const cornerEl=document.createElement('div');
+      cornerEl.className='ib-corner';
+      cornerEl.textContent=corners.join('');
+      cell.appendChild(cornerEl);
     }
 
     // ── 元素预览覆盖层 ──

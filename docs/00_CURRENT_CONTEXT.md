@@ -10,7 +10,7 @@
 
 - **游戏概述 GDD**、**召唤引擎系统 GDD**、**功能拆解**、**ROADMAP** 已按 deep-interview 修订。
 - 策划入口：`docs/01_游戏设计（策划主导）/游戏概述文档GDD.md` → `召唤引擎系统GDD.md`。
-- 自动化基线单一来源：`node test.js`，2026-06-01 当前验证为 **325/419 通过，94 失败**；失败集中在当前 8×8 运行棋盘与旧 13×13 测试/GDD 基线冲突及其越界连锁。`node replay.js recordings/day1_fire_sample.json`；`node e2e/smoke.js`；Day1 走查 `node playable_day1.js`、Run 走查 `node playable_run.js`；入口文件只引用本文件，不复制具体数字。
+- 自动化基线单一来源：`node test.js`，2026-06-01 当前验证为 **405/422 通过，17 失败**；失败集中在当前 8×8 运行棋盘与旧 13×13 测试/GDD 基线冲突及其越界连锁。`node replay.js recordings/day1_fire_sample.json`；`node e2e/smoke.js`；Day1 走查 `node playable_day1.js`、Run 走查 `node playable_run.js`；入口文件只引用本文件，不复制具体数字。
 
 ## 当前实现状态（2026-05-31）
 

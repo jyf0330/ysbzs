@@ -126,7 +126,7 @@ group('常量与形状定义', ()=>{
   });
   test('k(pos) 生成坐标键', ()=>{
     assert.strictEqual(k({r:5,c:3}),'5,3');
-    assert.strictEqual(k({r:0,c:7}),'0,7');
+    assert.strictEqual(k({r:0,c:12}),'0,12');
   });
   test('ri(n) 返回 [0,n) 整数', ()=>{
     for(let i=0;i<200;i++){
@@ -145,9 +145,9 @@ group('initGame 初始化', ()=>{
   test('maxRound = 2',    ()=> assert.strictEqual(G.maxRound,2));
   test('gold = 8',       ()=> assert.strictEqual(G.gold,8));
   test('hitCount = 0',    ()=> assert.strictEqual(G.hitCount,0));
-  test('棋盘 13 行',      ()=> assert.strictEqual(G.board.length,8));
+  test('棋盘 13 行',      ()=> assert.strictEqual(G.board.length,13));
   test('棋盘每行 13 列',  ()=> G.board.forEach((row,r)=>
-    assert.strictEqual(row.length,8,`第${r}行列数错误`)
+    assert.strictEqual(row.length,13,`第${r}行列数错误`)
   ));
   test('英雄存在 HP>0', ()=>{
     assert.ok(G.heroes.ha); const h=Object.values(G.heroes)[0]; assert.ok(h); assert.ok(h.hp>0);
@@ -162,14 +162,14 @@ group('initGame 初始化', ()=>{
   test('背包初始为空数组',       ()=> assert.deepStrictEqual(G.backpack,[]));
   test('_bpCnt 初始为 0',        ()=> assert.strictEqual(G._bpCnt,0));
   test('第 1 波生成 2 只教学怪', ()=> assert.strictEqual(G.monsters.length,2));
-  test('英雄 GDD 站位 (6,0) 与 (7,1)', ()=>{
-    assert.deepStrictEqual(G.heroes.ha.pos,{r:6,c:0});
-    assert.deepStrictEqual(G.heroes.hb.pos,{r:7,c:1});
+  test('英雄 GDD 站位 (10,1) 与 (11,1)', ()=>{
+    assert.deepStrictEqual(G.heroes.ha.pos,{r:10,c:1});
+    assert.deepStrictEqual(G.heroes.hb.pos,{r:11,c:1});
   });
   test('day1 morning 教学怪 GDD 坐标与 HP', ()=>{
-    assert.deepStrictEqual(G.monsters[0].pos,{r:0,c:5});
+    assert.deepStrictEqual(G.monsters[0].pos,{r:0,c:10});
     assert.strictEqual(G.monsters[0].hp,6);
-    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:6});
+    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:11});
     assert.strictEqual(G.monsters[1].hp,10);
   });
 });
@@ -178,9 +178,9 @@ group('城堡系统', ()=>{
   test('双城堡：我方左下、敌方右上', ()=>{
     fresh();
     assert.strictEqual(G.playerCastle.hp,80);
-    assert.deepStrictEqual(G.playerCastle.pos,{r:7,c:0});
+    assert.deepStrictEqual(G.playerCastle.pos,{r:12,c:1});
     assert.strictEqual(G.enemyCastle.hp,80);
-    assert.deepStrictEqual(G.enemyCastle.pos,{r:0,c:7});
+    assert.deepStrictEqual(G.enemyCastle.pos,{r:0,c:11});
   });
   test('敌方城堡 HP≤0 → 胜利且 runVictory', ()=>{
     fresh();
@@ -208,7 +208,7 @@ group('城堡系统', ()=>{
 group('mkBoard 棋盘初始化', ()=>{
   fresh();
   test('所有格初始 el=null, stk=0', ()=>{
-    for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+    for(let r=0;r<13;r++) for(let c=0;c<13;c++){
       assert.strictEqual(G.board[r][c].el, null, `(${r},${c}).el`);
       assert.strictEqual(G.board[r][c].stk, 0,   `(${r},${c}).stk`);
     }
@@ -264,8 +264,8 @@ group('atkCells 攻击范围计算', ()=>{
   });
   test('形状3直线·right·英雄(5,5) → 3格', ()=>{
     const r=atkCells({r:5,c:5},3,'right');
-    assert.strictEqual(r.length,2);
-    assert.deepStrictEqual(r,[{r:5,c:6},{r:5,c:7}]);
+    assert.strictEqual(r.length,3);
+    assert.deepStrictEqual(r,[{r:5,c:6},{r:5,c:7},{r:5,c:8}]);
   });
   test('边界过滤：形状1·left·英雄(0,0) → 空', ()=>{
     assert.strictEqual(atkCells({r:0,c:0},1,'left').length,0);
@@ -275,7 +275,7 @@ group('atkCells 攻击范围计算', ()=>{
   });
   test('形状5·right·5格·全在棋盘内', ()=>{
     const r=atkCells({r:5,c:5},5,'right');
-    assert.strictEqual(r.length,2); // 2格在棋盘内
+    assert.strictEqual(r.length,4); // 4格直线 n=4
   });
   test('所有形状都能生成非空范围（英雄居中时）', ()=>{
     for(let sn=1;sn<=20;sn++){
@@ -315,8 +315,8 @@ group('元素系统', ()=>{
   test('doExplode 清空元素格', ()=>{
     fresh();
     addEl({r:5,c:5},'fire');
-    G.monsters[0].pos={r:7,c:7}; // 移开，避免干扰
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[0].pos={r:9,c:9}; // 移开，避免干扰
+    G.monsters[1].pos={r:8,c:9};
     doExplode({r:5,c:5});
     assert.strictEqual(G.board[5][5].el,null);
     assert.strictEqual(G.board[5][5].stk,0);
@@ -348,7 +348,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     assert.strictEqual(G.board[5][5].stk,2);
   });
   test('验收-2: 火5层+水自动引爆，基础伤害=15', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh();
     for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:7,c:7};
@@ -359,7 +359,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
   test('验收-3: 引爆后原格变水屏1', ()=>{
     fresh();
     for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
-    G.monsters[0].pos={r:7,c:7}; G.monsters[1].pos={r:7,c:7};
+    G.monsters[0].pos={r:9,c:9}; G.monsters[1].pos={r:9,c:8};
     addEl({r:5,c:5},'water');
     assert.strictEqual(G.board[5][5].el,'water');
     assert.strictEqual(G.board[5][5].stk,1);
@@ -375,7 +375,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     assert.ok(keys.has('5,6'),'缺少右');
   });
   test('验收-5: 火层爆炸炸到风属性怪 ×2', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh();
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el='wind';
     G.monsters[1].pos={r:7,c:7};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, ×2=12
@@ -383,7 +383,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     assert.strictEqual(G.monsters[0].hp,8,'20-12=8');
   });
   test('验收-6: 火层爆炸炸到无属性怪不翻倍', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh();
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:7,c:7};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, 不翻倍
@@ -399,7 +399,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
   test('验收-8: 怪物格单体结算，相邻格怪物不受波及', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:4};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10;
     G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=10;
     G.slots[0].hid='ha'; G.slots[0].sn=1; G.slots[0].dir='right'; // 攻击(5,5)
@@ -412,7 +412,6 @@ group('战斗系统验收测试 (10条规则)', ()=>{
   });
   test('验收-9: 引爆伤害能打十字范围内多只怪', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
     G.monsters[0].pos={r:4,c:5}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=20; G.monsters[1].el=null;
     G.board[5][5].el='fire'; G.board[5][5].stk=2; // dmg=3
@@ -454,7 +453,7 @@ group('能力系统测试', ()=>{
   });
   test('能力-2: 有火魔时十字爆炸正常工作', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=10; G.monsters[0].el=null;
     G.monsters[1].pos={r:7,c:7};
     G.monsters[1].hp=20;
@@ -465,7 +464,7 @@ group('能力系统测试', ()=>{
   test('能力-3: hasCrossExplosion 检测', ()=>{
     fresh();
     assert.strictEqual(hasCrossExplosion(),false,'初始无火魔');
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    addOwnedUnit('fire_demon',{r:0,c:0});
     assert.strictEqual(hasCrossExplosion(),true,'上场火魔后应有十字');
   });
 });
@@ -514,9 +513,9 @@ group('useSlot 攻击逻辑', ()=>{
   function setup(heroR,heroC,monR,monC){
     fresh();
     G.heroes.ha.pos={r:heroR,c:heroC};
-    G.heroes.hb.pos={r:0,c:0}; // 移开
+    G.heroes.hb.pos={r:12,c:0}; // 移开
     G.monsters[0].pos={r:monR,c:monC};
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     G.slots[0].hid='ha'; G.slots[0].sn=1; G.slots[0].dir='right';
     G.slots[0].tier=1; G.slots[0].used=false; G.hitCount=0;
     G.explosionThreshold=1; // 测试伤害公式，单次命中即引爆
@@ -547,14 +546,14 @@ group('useSlot 攻击逻辑', ()=>{
   });
   test('3层fire结算：explDmg(3)=6', ()=>{
     fresh();
-    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10; G.monsters[1].pos={r:7,c:7};
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10; G.monsters[1].pos={r:12,c:12};
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,4); // 10-6=4，explDmg(3)=6
   });
   test('6层fire结算：explDmg(6)=21', ()=>{
     fresh();
-    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=25; G.monsters[1].pos={r:7,c:7};
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=25; G.monsters[1].pos={r:12,c:12};
     G.elementCells['5,5']={fire:{layers:6,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,4); // 25-21=4，explDmg(6)=21
@@ -575,13 +574,13 @@ group('useSlot 攻击逻辑', ()=>{
     assert.strictEqual(G.monsters[0].hp,18); // 20-(1×1×2)=18
   });
   test('攻击空地 hitCount 不变', ()=>{
-    setup(5,5, 7,7); // 怪物移远
+    setup(5,5, 9,9); // 怪物移远
     G.hitCount=3;
     useSlot(0);
     assert.strictEqual(G.hitCount,3);
   });
   test('攻击空地生成元素格', ()=>{
-    setup(5,5, 7,7);
+    setup(5,5, 9,9);
     G.slots[0].el='fire';
     G.board[5][6].el=null; G.board[5][6].stk=0;
     useSlot(0);
@@ -603,7 +602,7 @@ group('useSlot 攻击逻辑', ()=>{
   test('多格攻击同时命中多只怪', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:4};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     // 形状3直线right：攻击 (5,5),(5,6),(5,7)
     G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10;
     G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=10;
@@ -616,13 +615,13 @@ group('useSlot 攻击逻辑', ()=>{
   });
 
   test('空地叠层引爆：无怪物时不出错', ()=>{
-    setup(5,5, 7,7); // 怪物移远
+    setup(5,5, 9,9); // 怪物移远
     G.slots[0].el='fire'; G.explosionThreshold=1;
     assert.doesNotThrow(()=>{useSlot(0); settleDamage();});
   });
   test('同格火水各3层同时引爆：各自dmg=6', ()=>{
     fresh();
-    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20; G.monsters[1].pos={r:7,c:7};
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20; G.monsters[1].pos={r:12,c:12};
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:3,willExplode:true},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,8); // 20-6-6=8
@@ -689,11 +688,10 @@ group('回合管理', ()=>{
   });
   test('endPlayerTurn 城堡被炸毁不应覆写 OVER 状态', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
-    // 清掉教学怪，让空格爆炸能波及城堡
+    // 清掉(1,11)的教学怪，让空格爆炸能波及城堡(0,11)
     G.monsters=[];
-    G.enemyCastle={hp:1,maxHp:80,pos:{r:0,c:7}};
-    const ck='1,7'; G.elementCells[ck]={fire:{layers:3,willExplode:true}};
+    G.enemyCastle={hp:1,maxHp:80,pos:{r:0,c:11}};
+    const ck='1,11'; G.elementCells[ck]={fire:{layers:3,willExplode:true}};
     endPlayerTurn();
     assert.strictEqual(G.phase,'OVER','城堡被炸毁应直接结束');
     assert.strictEqual(G.runVictory,true,'炸毁敌方城堡应判定胜利');
@@ -733,7 +731,7 @@ group('回合管理', ()=>{
     fresh();
     G.dayHalf=2;
     G.monsters.forEach(m=>m.dead=true);
-    G.enemyCastle={hp:80,maxHp:80,pos:{r:0,c:7}};
+    G.enemyCastle={hp:80,maxHp:80,pos:{r:0,c:11}};
     finishMonsters();
     assert.strictEqual(G.phase,'PLAYER','城堡存活时应继续战斗');
   });
@@ -742,7 +740,7 @@ group('回合管理', ()=>{
     G.dayHalf=2;
     G.round=2;
     G.monsters.forEach(m=>m.dead=true);
-    G.enemyCastle={hp:0,maxHp:80,pos:{r:0,c:7}};
+    G.enemyCastle={hp:0,maxHp:80,pos:{r:0,c:11}};
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
   });
@@ -750,7 +748,7 @@ group('回合管理', ()=>{
     fresh();
     G.dayHalf=0;
     G.round=G.maxRound+1;
-    G.enemyCastle={hp:100,maxHp:100,pos:{r:0,c:7}};
+    G.enemyCastle={hp:100,maxHp:100,pos:{r:0,c:11}};
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP','超出回合数必须进商店');
   });
@@ -795,8 +793,8 @@ group('怪物 AI', ()=>{
     fresh();
     const m=G.monsters[0];
     m.pos={r:5,c:3};
-    G.heroes.ha.pos={r:6,c:4};
-    G.heroes.hb.pos={r:7,c:7};
+    G.heroes.ha.pos={r:5,c:9};
+    G.heroes.hb.pos={r:12,c:12};
     const np=nextMove(m);
     assert.ok(np && np.c > m.pos.c,'应向右移');
   });
@@ -805,7 +803,7 @@ group('怪物 AI', ()=>{
     const m=G.monsters[0];
     m.pos={r:5,c:6};
     G.heroes.ha.pos={r:5,c:5}; // 怪物左边
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     const prevHp=G.heroes.ha.hp;
     monsterAct(m);
     assert.ok(G.heroes.ha.hp < prevHp,'英雄 HP 应减少');
@@ -815,7 +813,7 @@ group('怪物 AI', ()=>{
     const m=G.monsters[0];
     m.pos={r:5,c:8};
     G.heroes.ha.pos={r:5,c:2};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     G.board[5][7].el='fire'; G.board[5][7].stk=2;
     const prevHp=m.hp;
     monsterAct(m);
@@ -826,9 +824,9 @@ group('怪物 AI', ()=>{
   test('monsterAct 正常移动一格', ()=>{
     fresh();
     const m=G.monsters[0];
-    m.pos={r:5,c:7};
+    m.pos={r:5,c:9};
     G.heroes.ha.pos={r:5,c:2};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     const prevC=m.pos.c;
     monsterAct(m);
     // 应向左移动一格（或停留如果目标有英雄）
@@ -888,7 +886,7 @@ group('buildWaveForDay 波次生成', ()=>{
     spawnWaveForDay(2,'morning'); // spawnSize=3 → 右上角 r:0-2, c:10-12
     G.monsters.forEach(m=>{
       assert.ok(m.pos.r>=0&&m.pos.r<3,`怪物 ${m.name} r=${m.pos.r} 应在 0-2`);
-      assert.ok(m.pos.c>=5&&m.pos.c<8,`怪物 ${m.name} c=${m.pos.c} 应在 5-7`);
+      assert.ok(m.pos.c>=10&&m.pos.c<13,`怪物 ${m.name} c=${m.pos.c} 应在 10-12`);
     });
   });
   test('spawnWaveForDay Day4 spawn zone 5x5', ()=>{
@@ -896,7 +894,7 @@ group('buildWaveForDay 波次生成', ()=>{
     spawnWaveForDay(4,'morning'); // spawnSize=5 → r:0-4, c:8-12
     G.monsters.forEach(m=>{
       assert.ok(m.pos.r>=0&&m.pos.r<5);
-      assert.ok(m.pos.c>=3&&m.pos.c<8);
+      assert.ok(m.pos.c>=8&&m.pos.c<13);
     });
   });
 });
@@ -948,7 +946,7 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     G.shopTier=1; genShop();
     const defId=G.shopItems.units[0].defId;
     // 先手动加一个同名L1单位
-    addOwnedUnit(defId,{r:0,c:0});
+    addOwnedUnit(defId,{r:10,c:1});
     const beforeCount=G.ownedUnits.length;
     buyUnit(G.shopItems.units[0].id);
     // 应该合成为 Lv2，不会增加单位数
@@ -959,7 +957,7 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
   test('sellUnit 返还 unit.level 金币并移除单位', ()=>{
     fresh(); G.phase='SHOP'; G.gold=5;
     // initGame 已有 fire_starter + water_droplet，再加一个 fire_starter
-    addOwnedUnit('fire_starter',{r:0,c:2});
+    addOwnedUnit('fire_starter',{r:12,c:1});
     const unit=G.ownedUnits[2]; // 第三个 unit
     const beforeLen=G.ownedUnits.length;
     sellUnit(unit.instanceId);
@@ -1068,8 +1066,8 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
   test('syncUnitsToHeroes 从 2 个活跃单位构建 heroes/slots', ()=>{
     fresh();
     G.ownedUnits=[];
-    addOwnedUnit('fire_starter',{r:0,c:0});
-    addOwnedUnit('water_droplet',{r:0,c:1});
+    addOwnedUnit('fire_starter',{r:10,c:1});
+    addOwnedUnit('water_droplet',{r:11,c:1});
     syncUnitsToHeroes();
     assert.strictEqual(Object.keys(G.heroes).length,2);
     assert.ok(G.heroes.ha,'ha 应存在');
@@ -1082,7 +1080,7 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
     fresh();
     G.ownedUnits=[];
     const ids=['fire_starter','water_droplet','wind_breeze','earth_shield','balance','ember','fire_blaze'];
-    ids.forEach((id,i)=>addOwnedUnit(id,{r:0,c:i}));
+    ids.forEach((id,i)=>addOwnedUnit(id,{r:10+i,c:1}));
     syncUnitsToHeroes();
     assert.ok(G.ownedUnits.length>=7,'应有7个单位');
     assert.strictEqual(G.ownedUnits[6].active,false,'第7个应inactive');
@@ -1090,8 +1088,8 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
   test('mergeUnits 同 defId 合成升级 Lv1→Lv2', ()=>{
     fresh();
     G.ownedUnits=[];
-    const u1=addOwnedUnit('fire_starter',{r:0,c:0});
-    const u2=addOwnedUnit('fire_starter',{r:0,c:1});
+    const u1=addOwnedUnit('fire_starter',{r:10,c:1});
+    const u2=addOwnedUnit('fire_starter',{r:11,c:1});
     u1.level=1; u1.hp=20;
     u2.level=1; u2.hp=20;
     const ok=mergeUnits(u2,u1);
@@ -1103,8 +1101,8 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
   test('mergeUnits Lv3 不再合成', ()=>{
     fresh();
     G.ownedUnits=[];
-    const u1=addOwnedUnit('fire_starter',{r:0,c:0});
-    const u2=addOwnedUnit('fire_starter',{r:0,c:1});
+    const u1=addOwnedUnit('fire_starter',{r:10,c:1});
+    const u2=addOwnedUnit('fire_starter',{r:11,c:1});
     u1.level=3; u2.level=3;
     const ok=mergeUnits(u2,u1);
     assert.strictEqual(ok,false);
@@ -1113,8 +1111,8 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
   test('mergeUnits 不同 defId 不合成', ()=>{
     fresh();
     G.ownedUnits=[];
-    const u1=addOwnedUnit('fire_starter',{r:0,c:0});
-    const u2=addOwnedUnit('water_droplet',{r:0,c:1});
+    const u1=addOwnedUnit('fire_starter',{r:10,c:1});
+    const u2=addOwnedUnit('water_droplet',{r:11,c:1});
     const ok=mergeUnits(u2,u1);
     assert.strictEqual(ok,false);
     assert.strictEqual(G.ownedUnits.length,2);
@@ -1122,7 +1120,7 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
   test('toggleUnitActive active→bench 切换', ()=>{
     fresh();
     G.ownedUnits=[];
-    addOwnedUnit('fire_starter',{r:0,c:0});
+    addOwnedUnit('fire_starter',{r:10,c:1});
     const u=G.ownedUnits[0];
     assert.strictEqual(u.active,true);
     toggleUnitActive(u.instanceId);
@@ -1215,9 +1213,9 @@ group('threshold=3 引爆阈值（游戏默认）', ()=>{
     fresh();
     G.explosionThreshold=3;
     G.heroes.ha.pos={r:heroR,c:heroC};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     G.monsters[0].pos={r:monR,c:monC}; G.monsters[0].hp=20;
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     // 3 个火元素槽，全部向右
     G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
     G.slots[1].hid='ha'; G.slots[1].el='fire'; G.slots[1].sn=1; G.slots[1].dir='right'; G.slots[1].tier=1; G.slots[1].used=false;
@@ -1247,9 +1245,9 @@ group('threshold=3 引爆阈值（游戏默认）', ()=>{
   test('useSlot 不触发 doExplode（跨元素不立即扣血）', ()=>{
     fresh();
     G.explosionThreshold=3;
-    G.heroes.ha.pos={r:5,c:5}; G.heroes.hb.pos={r:0,c:0};
+    G.heroes.ha.pos={r:5,c:5}; G.heroes.hb.pos={r:12,c:0};
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20;
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     G.board[5][6].el='fire'; G.board[5][6].stk=3; // 棋盘已有火 3 层
     G.slots[0].hid='ha'; G.slots[0].el='water'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
     G.hitCount=0;
@@ -1262,14 +1260,14 @@ group('threshold=3 引爆阈值（游戏默认）', ()=>{
 group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
   test('case_001: 怪物格1层fire结算为单体伤害1', ()=>{
     fresh();
-    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=6; G.monsters[1].pos={r:7,c:7};
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=6; G.monsters[1].pos={r:12,c:12};
     G.elementCells['5,5']={fire:{layers:1,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,5,'单体伤害1：6-1=5');
   });
   test('case_002: 怪物格2层fire结算为单体伤害3', ()=>{
     fresh();
-    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=6; G.monsters[1].pos={r:7,c:7};
+    G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=6; G.monsters[1].pos={r:12,c:12};
     G.elementCells['5,5']={fire:{layers:2,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,3,'单体伤害3：6-3=3');
@@ -1285,9 +1283,8 @@ group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
   });
   test('case_004: 空格3层fire十字引爆，波及相邻怪物', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
     G.monsters[0].pos={r:6,c:5}; G.monsters[0].hp=10; // 在(5,5)正下方
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     // (5,5)是空格（没有怪物）
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
@@ -1296,7 +1293,7 @@ group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
   test('case_005: buildMonsterStats 合并自身格伤害和波及伤害', ()=>{
     fresh();
     G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20;
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     // 自身格有2层fire（单体3伤害，不需要达到阈值）
     G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     // 空格(5,4)有3层fire（达到默认阈值3，触发十字，波及(5,5)）
@@ -1312,7 +1309,7 @@ group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
   test('case_006: 两只怪物都能攻击同一英雄', ()=>{
     fresh();
     G.heroes.ha.pos={r:1,c:0};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:11,c:0};
     G.monsters[0].pos={r:1,c:1}; // 左攻ha
     G.monsters[1].pos={r:0,c:0}; // 下攻ha
     const{heroIncomingDmg}=computeMonsterActionPreview();
@@ -1341,7 +1338,7 @@ group('格子信息层 cellInfoMap（buildCellInfoMap）', ()=>{
   function freshCellInfo(){
     fresh();
     G.explosionThreshold=3;
-    G.heroes.ha.pos={r:6,c:0}; G.heroes.hb.pos={r:0,c:0};
+    G.heroes.ha.pos={r:10,c:1}; G.heroes.hb.pos={r:12,c:0};
     // 清空怪物，方便各 case 自行安排
     G.monsters=[];
   }
@@ -1374,7 +1371,6 @@ group('格子信息层 cellInfoMap（buildCellInfoMap）', ()=>{
 
   test('case_cellinfo_003: 空格 fire=3 willExplode=true → 十字引爆', ()=>{
     freshCellInfo();
-    addOwnedUnit('fire_demon',{r:0,c:0});
     G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
     const ciMap=buildCellInfoMap();
     const ci=ciMap['5,5'];
@@ -1472,7 +1468,7 @@ group('A组：initGame 第一关默认配置', ()=>{
     assert.ok(!els.includes('wind'), 'wind 不应出现在默认槽');
     assert.ok(!els.includes('earth'),'earth 不应出现在默认槽');
   });
-  test('case_init_003: 英雄A hp=20 pos(6,0)，英雄B hp=20 pos(7,1)', ()=>{
+  test('case_init_003: 英雄A hp=20 pos(10,1)，英雄B hp=20 pos(11,1)', ()=>{
     fresh();
     assert.ok(G.heroes.ha,'英雄A存在');
     assert.ok(G.heroes.hb,'英雄B存在');
@@ -1486,11 +1482,11 @@ group('A组：initGame 第一关默认配置', ()=>{
     assert.strictEqual(G.monsters.length,2,'应有2只怪');
     assert.strictEqual(G.monsters[0].name,'教学怪1');
     assert.strictEqual(G.monsters[0].hp,6);
-    assert.deepStrictEqual(G.monsters[0].pos,{r:0,c:5});
+    assert.deepStrictEqual(G.monsters[0].pos,{r:0,c:10});
     assert.strictEqual(G.monsters[0].el,null);
     assert.strictEqual(G.monsters[1].name,'教学怪2');
     assert.strictEqual(G.monsters[1].hp,10);
-    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:6});
+    assert.deepStrictEqual(G.monsters[1].pos,{r:0,c:11});
     assert.strictEqual(G.monsters[1].el,null);
   });
   test('case_init_005: explosionThreshold=3', ()=>{
@@ -1525,7 +1521,7 @@ group('A补：教程默认大十字攻击方块', ()=>{
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
       {id:'m0',name:'命中怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:10,c:10},dead:false,el:null},
     ];
     // 显式设置大十字 sn=12
     G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
@@ -1538,11 +1534,11 @@ group('A补：教程默认大十字攻击方块', ()=>{
   });
 
   test('case_bigcross_002: 大十字可把空格叠到3层并触发十字引爆', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh();
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
-      {id:'m0',name:'波及怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m0',name:'波及怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:8},dead:false,el:null},
+      {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:10,c:10},dead:false,el:null},
     ];
     G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
     seedElCell({r:5,c:7},'fire',2);
@@ -1623,7 +1619,7 @@ group('C组：空格十字爆炸', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'范围内怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'范围外怪',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'范围外怪',hp:10,maxHp:10,atk:1,pos:{r:8,c:8},dead:false,el:null},
     ];
     G.elementCells['5,5']={
       fire:{layers,willExplode:layers>=G.explosionThreshold},
@@ -1643,14 +1639,12 @@ group('C组：空格十字爆炸', ()=>{
     assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
   });
   test('case_empty_cell_003: fire=3 十字爆炸→范围内怪-6，范围外不受伤', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
     setEmptyCell(3);
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,4,'范围内怪 10-6=4');
     assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
   });
   test('case_empty_cell_004: fire=6 十字爆炸→范围内怪-21(下限0)', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
     setEmptyCell(6);
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,0,'范围内怪 10-21=0(下限0)');
@@ -1663,7 +1657,7 @@ group('C组：空格十字爆炸', ()=>{
 group('D组：怪物格 vs 空格行为差异', ()=>{
   test('case_diff_001: fire=3 怪物格单体不波及 vs 空格十字波及', ()=>{
     // 怪物格：主怪在(5,5)fire=3，相邻怪在(5,6)不受波及
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh();
     G.monsters=[
       {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null},
       {id:'m1',name:'相邻',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
@@ -1676,7 +1670,7 @@ group('D组：怪物格 vs 空格行为差异', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'范围内',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'范围外',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'范围外',hp:10,maxHp:10,atk:1,pos:{r:8,c:8},dead:false,el:null},
     ];
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
@@ -1688,7 +1682,7 @@ group('D组：怪物格 vs 空格行为差异', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
@@ -1697,7 +1691,7 @@ group('D组：怪物格 vs 空格行为差异', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'相邻',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     settleDamage();
@@ -1712,7 +1706,7 @@ group('E组：多元素场测试', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'主怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null},
-      {id:'m1',name:'远处',hp:20,maxHp:20,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:20,maxHp:20,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={
       fire:{layers:2,willExplode:false},water:{layers:2,willExplode:false},
@@ -1726,7 +1720,7 @@ group('E组：多元素场测试', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'范围内',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={
       fire:{layers:2,willExplode:false},water:{layers:2,willExplode:false},
@@ -1739,7 +1733,7 @@ group('E组：多元素场测试', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'主怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={
       fire:{layers:3,willExplode:false},water:{layers:2,willExplode:false},
@@ -1749,10 +1743,10 @@ group('E组：多元素场测试', ()=>{
     assert.strictEqual(G.monsters[0].hp,11,'20-6-3=11');
   });
   test('case_multi_004: 空格 fire=3 water=2 → fire十字爆炸6，water未达阈值不爆', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh();
     G.monsters=[
       {id:'m0',name:'范围内',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={
       fire:{layers:3,willExplode:true},water:{layers:2,willExplode:false},
@@ -1762,11 +1756,11 @@ group('E组：多元素场测试', ()=>{
     assert.strictEqual(G.monsters[0].hp,4,'范围内怪 10-6=4，只fire十字爆');
   });
   test('case_multi_005: 空格 fire=3 water=3 两元素均达阈值→各自十字爆',()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh();
     G.slots.forEach(s=>{s.used=true;});
     G.monsters=[
       {id:'m0',name:'范围内',hp:20,maxHp:20,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={
       fire:{layers:3,willExplode:true},water:{layers:3,willExplode:true},
@@ -1797,7 +1791,7 @@ group('G组：buildMonsterStats 预览统计', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={fire:{layers:3,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     const s=buildMonsterStats()['5,5'];
@@ -1811,7 +1805,7 @@ group('G组：buildMonsterStats 预览统计', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     const s=buildMonsterStats()['5,6'];
@@ -1824,7 +1818,7 @@ group('G组：buildMonsterStats 预览统计', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     // 自身格 fire=2 → 单体 explDmg(2)=3
     G.elementCells['5,5']={fire:{layers:2,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
@@ -1839,7 +1833,7 @@ group('G组：buildMonsterStats 预览统计', ()=>{
     fresh();
     G.monsters=[
       {id:'m0',name:'测试怪',hp:6,maxHp:6,atk:1,pos:{r:5,c:5},dead:false,el:null},
-      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
+      {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:12,c:12},dead:false,el:null},
     ];
     G.elementCells['5,5']={fire:{layers:3,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     assert.strictEqual(G.monsters[0].dead,false,'结算前怪物不dead');
@@ -1855,10 +1849,10 @@ group('H组：怪物攻击预警', ()=>{
   test('case_monwarn_001: 怪物一步后到达攻击位→英雄A预警≥1次', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     // 怪物在(5,7)，1步→(5,6)，再检查左侧(5,5)有英雄→攻击
     G.monsters[0].pos={r:5,c:7};
-    G.monsters[1].pos={r:0,c:5};
+    G.monsters[1].pos={r:0,c:10};
     const{heroIncomingDmg}=computeMonsterActionPreview();
     const haIncoming=heroIncomingDmg['ha']||[];
     assert.ok(haIncoming.length>=1,'怪物应在3AP内攻击到英雄A');
@@ -1866,7 +1860,7 @@ group('H组：怪物攻击预警', ()=>{
   test('case_monwarn_002: 两怪均攻击英雄A→hitCount=2，totalDmg=atk1+atk2', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     // 怪1在(5,6)，直接检查lp=(5,5)有英雄→攻击
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].atk=2;
     // 怪2在(4,6)，移动1步到(4,5)后dp=(5,5)有英雄→攻击
@@ -1884,10 +1878,10 @@ group('H组：怪物攻击预警', ()=>{
   test('case_monwarn_003: computeMonsterActionPreview 与 simMonAct 攻击结果一致', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:12,c:0};
     // 怪1在(5,6)，lp=(5,5)有英雄→直接攻击
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].atk=2;
-    G.monsters[1].pos={r:0,c:5};
+    G.monsters[1].pos={r:0,c:10};
     const sim=simMonAct(G.monsters[0]);
     const{heroIncomingDmg}=computeMonsterActionPreview();
     assert.ok(sim.atkTarget,'simMonAct 应检测到攻击目标');
@@ -1904,10 +1898,10 @@ group('I组：核心事件驱动架构（case_core_001~007）', ()=>{
     fresh();
     recomputeCorePreview();
     const v0=G.coreSnapshot._version;
-    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:3,c:3}});
+    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:8,c:1}});
     assert.ok(G.coreSnapshot._version>v0,'版本号应递增');
     assert.ok(G.coreSnapshot,'coreSnapshot 应存在');
-    assert.deepStrictEqual(G.heroes.ha.pos,{r:3,c:3},'英雄位置应已更新');
+    assert.deepStrictEqual(G.heroes.ha.pos,{r:8,c:1},'英雄位置应已更新');
   });
   test('case_core_002: UPDATE_ACTION_SLOT action 触发 recomputeCorePreview，版本号递增', ()=>{
     fresh();
@@ -1928,7 +1922,7 @@ group('I组：核心事件驱动架构（case_core_001~007）', ()=>{
   test('case_core_004: battleReport 包含怪物格单体伤害描述，不含十字引爆', ()=>{
     fresh();
     G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=10;
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     G.elementCells['5,5']={fire:{layers:3,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     recomputeCorePreview();
     const br=G.coreSnapshot.battleReport;
@@ -1939,7 +1933,7 @@ group('I组：核心事件驱动架构（case_core_001~007）', ()=>{
   test('case_core_005: battleReport 包含空格十字引爆描述', ()=>{
     fresh();
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=10;
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     G.elementCells['5,5']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
     recomputeCorePreview();
     const br=G.coreSnapshot.battleReport;
@@ -1949,9 +1943,9 @@ group('I组：核心事件驱动架构（case_core_001~007）', ()=>{
   test('case_core_006: battleReport 包含怪物攻击英雄预警', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
-    G.heroes.hb.pos={r:0,c:0};
+    G.heroes.hb.pos={r:11,c:0};
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].atk=2;
-    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].pos={r:12,c:12};
     recomputeCorePreview();
     const br=G.coreSnapshot.battleReport;
     assert.ok(br.some(l=>l.includes('英雄A')&&l.includes('受击')),'报告应含英雄A受击预警');
@@ -1979,11 +1973,11 @@ group('I组：核心事件驱动架构（case_core_001~007）', ()=>{
 // J组：独立格子预览层 previewGrid
 // ═══════════════════════════════════════════════════════════════
 group('J组：独立格子预览层 previewGrid', ()=>{
-  test('case_pg_001: buildPreviewGrid 返回含 64 格的 grid（13×13）', ()=>{
+  test('case_pg_001: buildPreviewGrid 返回含 169 格的 grid（13×13）', ()=>{
     fresh();
     const pg=buildPreviewGrid();
     assert.ok(pg&&pg.grid,'应返回含 grid 的对象');
-    assert.strictEqual(Object.keys(pg.grid).length,64,'13×13=64 格');
+    assert.strictEqual(Object.keys(pg.grid).length,169,'13×13=169 格');
   });
 
   test('case_pg_002: 每格含 entity / elementField / preview 三大字段', ()=>{
@@ -2096,7 +2090,7 @@ group('J组：独立格子预览层 previewGrid', ()=>{
     const snap=G.coreSnapshot;
     assert.ok('previewGrid' in snap,'coreSnapshot 应含 previewGrid');
     assert.ok(snap.previewGrid&&snap.previewGrid.grid,'previewGrid 应含 grid');
-    assert.strictEqual(Object.keys(snap.previewGrid.grid).length,64,'grid 应有 64 格');
+    assert.strictEqual(Object.keys(snap.previewGrid.grid).length,169,'grid 应有 169 格');
   });
 
   test('case_pg_010: 英雄移动后 previewGrid 更新（hero pos 变化反映到 entity）', ()=>{
@@ -2449,7 +2443,7 @@ group('K组：结算与元素落地一致性', ()=>{
     fresh();
     G.monsters=[];
     G.heroes.ha.pos={r:5,c:5};
-    G.heroes.hb.pos={r:7,c:1};
+    G.heroes.hb.pos={r:11,c:1};
     G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0},
              {hid:'ha',el:'water',sn:2,dir:'down',used:false,idx:1},
              {hid:'hb',el:'wind',sn:1,dir:'left',used:true,idx:2}];
@@ -2474,7 +2468,7 @@ group('K组：结算与元素落地一致性', ()=>{
     G.heroes.ha.pos={r:5,c:5};
     G.heroes.ha._acted=true;
     // 英雄B在(8,5)，sn=3向上→(7,5)(6,5)(5,5)正好叠到英雄A
-    G.heroes.hb.pos={r:6,c:5};
+    G.heroes.hb.pos={r:8,c:5};
     G.heroes.hb._acted=false;
     G.slots=[{hid:'ha',el:'water',sn:1,dir:'right',used:false,idx:0,tier:1},
              {hid:'hb',el:'fire',sn:3,dir:'up',used:false,idx:1,tier:1}];
@@ -2505,7 +2499,7 @@ group('K2组：棋盘格子中文短字显示',()=>{
     fresh();
     G.monsters=[{id:'m0',name:'史莱姆',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
     G.heroes.ha.pos={r:5,c:4};
-    G.heroes.hb.pos={r:7,c:7};
+    G.heroes.hb.pos={r:12,c:12};
     G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1}];
     recomputeCorePreview();
     const cb=G.coreSnapshot._cellBriefs['5,5'];
@@ -2554,7 +2548,7 @@ group('K2组：棋盘格子中文短字显示',()=>{
     fresh();
     G.monsters=[{id:'m0',name:'哥布林',hp:10,maxHp:10,atk:2,pos:{r:5,c:5},dead:false,el:null}];
     G.heroes.ha.pos={r:5,c:4}; // 英雄在怪物左边（怪物向左攻击）
-    G.heroes.hb.pos={r:7,c:7};
+    G.heroes.hb.pos={r:12,c:12};
     G.slots.forEach(s=>{s.used=true;});
     recomputeCorePreview();
     const cb=G.coreSnapshot._cellBriefs['5,4'];
@@ -2570,7 +2564,7 @@ group('K2组：棋盘格子中文短字显示',()=>{
     G.monsters=[{id:'m0',name:'哥布林',hp:10,maxHp:10,atk:2,pos:{r:5,c:5},dead:false,el:null},
                 {id:'m1',name:'骷髅',hp:8,maxHp:8,atk:3,pos:{r:4,c:4},dead:false,el:null}];
     G.heroes.ha.pos={r:5,c:4};
-    G.heroes.hb.pos={r:7,c:7};
+    G.heroes.hb.pos={r:12,c:12};
     G.slots.forEach(s=>{s.used=true;});
     recomputeCorePreview();
     const cb=G.coreSnapshot._cellBriefs['5,4'];
@@ -2583,11 +2577,11 @@ group('K2组：棋盘格子中文短字显示',()=>{
   test('k2_006: 空格元素场 displayBrief',()=>{
     fresh();
     G.monsters=[];
-    G.heroes.ha.pos={r:2,c:3};
-    G.heroes.hb.pos={r:7,c:1};
-    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'left',used:false,idx:0,tier:1}];
+    G.heroes.ha.pos={r:12,c:12};
+    G.heroes.hb.pos={r:11,c:1};
+    G.slots=[{hid:'ha',el:'fire',sn:2,dir:'up',used:false,idx:0,tier:1}];
     recomputeCorePreview();
-    const cb=G.coreSnapshot._cellBriefs['2,2'];
+    const cb=G.coreSnapshot._cellBriefs['10,12'];
     assert.strictEqual(cb.type,'empty','type 应为 empty');
     assert.ok(cb.brief.includes('火'),'应有火元素');
     assert.ok(!cb.brief.includes('英'),'空格不应有英雄标识');
@@ -2596,12 +2590,12 @@ group('K2组：棋盘格子中文短字显示',()=>{
   test('k2_007: 空格多元素场 displayBrief',()=>{
     fresh();
     G.monsters=[];
-    G.heroes.ha.pos={r:3,c:2};
-    G.heroes.hb.pos={r:3,c:4};
-    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1},
-             {hid:'hb',el:'water',sn:1,dir:'left',used:false,idx:1,tier:1}];
+    G.heroes.ha.pos={r:7,c:5};
+    G.heroes.hb.pos={r:9,c:5};
+    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'down',used:false,idx:0,tier:1},
+             {hid:'hb',el:'water',sn:1,dir:'up',used:false,idx:1,tier:1}];
     recomputeCorePreview();
-    const cb=G.coreSnapshot._cellBriefs['3,3'];
+    const cb=G.coreSnapshot._cellBriefs['8,5'];
     assert.strictEqual(cb.type,'empty','type 应为 empty');
     assert.ok(cb.brief.includes('火'),'应有火');
     assert.ok(cb.brief.includes('水'),'应有水');
@@ -2610,8 +2604,8 @@ group('K2组：棋盘格子中文短字显示',()=>{
   test('k2_008: 无伤害空格 displayBrief 为空',()=>{
     fresh();
     G.monsters=[];
-    G.heroes.ha.pos={r:7,c:7};
-    G.heroes.hb.pos={r:7,c:1};
+    G.heroes.ha.pos={r:12,c:12};
+    G.heroes.hb.pos={r:11,c:1};
     recomputeCorePreview();
     const cb=G.coreSnapshot._cellBriefs['0,0'];
     assert.strictEqual(cb.brief,'','无伤害空格brief应为空字符串');
@@ -2622,7 +2616,7 @@ group('K2组：棋盘格子中文短字显示',()=>{
     fresh();
     G.monsters=[];
     recomputeCorePreview();
-    const cb=G.coreSnapshot._cellBriefs['7,0'];
+    const cb=G.coreSnapshot._cellBriefs['12,1'];
     assert.ok(cb,'城堡格应存在');
     assert.strictEqual(cb.type,'player_castle','type 应为 player_castle');
   });
@@ -2631,7 +2625,7 @@ group('K2组：棋盘格子中文短字显示',()=>{
     fresh();
     G.monsters=[{id:'m0',name:'史莱姆',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null}];
     G.heroes.ha.pos={r:5,c:4};
-    G.heroes.hb.pos={r:7,c:7};
+    G.heroes.hb.pos={r:12,c:12};
     G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false,idx:0,tier:1}];
     recomputeCorePreview();
     const cb=G.coreSnapshot._cellBriefs['5,5'];
@@ -2775,8 +2769,8 @@ group('M组：_acted 英雄行动锁定',()=>{
   });
   test('case_m_003: 一键执行跳过 _acted 英雄的走位，仍执行其未用槽',()=>{
     fresh();
-    G.monsters=[{id:'m1',name:'怪',hp:10,maxHp:10,atk:3,el:null,pos:{r:7,c:7},dead:false}];
-    G.heroes.ha.pos={r:6,c:5};
+    G.monsters=[{id:'m1',name:'怪',hp:10,maxHp:10,atk:3,el:null,pos:{r:10,c:10},dead:false}];
+    G.heroes.ha.pos={r:10,c:5};
     G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false},{hid:'ha',el:'fire',sn:2,dir:'right',used:false}];
     dispatchGameAction({type:'USE_SLOT',slotId:0});
     assert.strictEqual(G.heroes.ha._acted,true);
@@ -2802,11 +2796,11 @@ group('N组：一键执行多英雄走位分配',()=>{
   test('case_n_001: 怪物行少于英雄数时B英雄仍走到怪物行附近',()=>{
     fresh();
     G.monsters=[
-      {id:'m1',name:'怪A',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:5},dead:false},
-      {id:'m2',name:'怪B',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:6},dead:false},
+      {id:'m1',name:'怪A',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:10},dead:false},
+      {id:'m2',name:'怪B',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:11},dead:false},
     ];
-    G.heroes.ha.pos={r:6,c:0}; G.heroes.ha._acted=false;
-    G.heroes.hb.pos={r:7,c:1}; G.heroes.hb._acted=false;
+    G.heroes.ha.pos={r:10,c:1}; G.heroes.ha._acted=false;
+    G.heroes.hb.pos={r:11,c:1}; G.heroes.hb._acted=false;
     G.slots=[
       {hid:'ha',el:'fire',sn:1,dir:'right',used:false},
       {hid:'hb',el:'water',sn:2,dir:'right',used:false},
@@ -2821,13 +2815,13 @@ group('N组：一键执行多英雄走位分配',()=>{
     // 但英雄在行5就能攻击到行5的怪物 → 不应移动。
     fresh();
     G.monsters=[
-      {id:'m1',name:'怪A',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:5},dead:false},
-      {id:'m2',name:'怪B',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:5},dead:false},
-      {id:'m3',name:'怪C',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:6},dead:false},
-      {id:'m4',name:'怪D',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:6},dead:false},
+      {id:'m1',name:'怪A',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:10},dead:false},
+      {id:'m2',name:'怪B',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:8},dead:false},
+      {id:'m3',name:'怪C',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:9},dead:false},
+      {id:'m4',name:'怪D',hp:5,maxHp:5,atk:2,el:null,pos:{r:7,c:10},dead:false},
     ];
-    G.heroes.ha.pos={r:5,c:4}; G.heroes.ha._acted=false;
-    G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
+    G.heroes.ha.pos={r:5,c:8}; G.heroes.ha._acted=false;
+    G.slots=[{hid:'ha',el:'fire',sn:2,dir:'right',used:false}];
     const oldPos={r:G.heroes.ha.pos.r,c:G.heroes.ha.pos.c};
     execAllHeroSlots();
     assert.deepStrictEqual(G.heroes.ha.pos,oldPos,'英雄已能攻击行5怪物，密度引导也不应移动');
@@ -2836,21 +2830,21 @@ group('N组：一键执行多英雄走位分配',()=>{
   test('case_n_003: canHeroAttackEnemyFrom 直接测试',()=>{
     fresh();
     // 怪物在攻击范围内
-    G.monsters=[{id:'m1',name:'怪',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:6},dead:false}];
+    G.monsters=[{id:'m1',name:'怪',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:8},dead:false}];
     G.heroes.ha.pos={r:5,c:5};
     G.slots=[{hid:'ha',el:'fire',sn:3,dir:'right',used:false}];
     assert.strictEqual(canHeroAttackEnemyFrom({r:5,c:5},'ha'),true,'sn=3 攻击范围覆盖怪物');
     // 怪物不在攻击范围内
-    G.monsters=[{id:'m2',name:'怪',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:5},dead:false}];
-    assert.strictEqual(canHeroAttackEnemyFrom({r:5,c:5},'ha'),false,'怪物不在攻击范围内');
+    G.monsters=[{id:'m2',name:'怪',hp:5,maxHp:5,atk:2,el:null,pos:{r:5,c:10},dead:false}];
+    assert.strictEqual(canHeroAttackEnemyFrom({r:5,c:5},'ha'),false,'sn=3 打到(5,8)碰不到(5,10)');
     // 敌方城堡在攻击范围内
     G.monsters=[];
-    G.enemyCastle={hp:80,maxHp:80,pos:{r:0,c:7}};
+    G.enemyCastle={hp:80,maxHp:80,pos:{r:0,c:11}};
     G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:false}];
-    assert.strictEqual(canHeroAttackEnemyFrom({r:0,c:5},'ha'),true,'攻击范围覆盖敌方城堡');
+    assert.strictEqual(canHeroAttackEnemyFrom({r:0,c:10},'ha'),true,'攻击范围覆盖敌方城堡');
     // 无可用槽
     G.slots=[{hid:'ha',el:'fire',sn:1,dir:'right',used:true}];
-    assert.strictEqual(canHeroAttackEnemyFrom({r:0,c:5},'ha'),false,'所有槽已用');
+    assert.strictEqual(canHeroAttackEnemyFrom({r:0,c:10},'ha'),false,'所有槽已用');
   });
 });
 
@@ -2864,11 +2858,11 @@ group('TDD-保护: slots+SD不变',()=>{
 // TDD-召唤
 group('TDD-召唤',()=>{
   test('T3:空格HP6',()=>{assert.strictEqual(6+0,6);});
-  test('T4:火3fixture',()=>{fresh();const k='6,4';G.elementCells[k]=G.elementCells[k]||{};G.elementCells[k].fire={layers:3,willExplode:true,damage:6};assert.strictEqual(G.elementCells[k].fire.layers,3);assert.strictEqual(6+3,9);delete G.elementCells[k];});
-  test('T5:水4fixture',()=>{fresh();const k='6,4';G.elementCells[k]=G.elementCells[k]||{};G.elementCells[k].water={layers:4,willExplode:true,damage:10};assert.strictEqual(G.elementCells[k].water.layers,4);assert.strictEqual(6+4,10);delete G.elementCells[k];});
+  test('T4:火3fixture',()=>{fresh();const k='8,4';G.elementCells[k]=G.elementCells[k]||{};G.elementCells[k].fire={layers:3,willExplode:true,damage:6};assert.strictEqual(G.elementCells[k].fire.layers,3);assert.strictEqual(6+3,9);delete G.elementCells[k];});
+  test('T5:水4fixture',()=>{fresh();const k='8,4';G.elementCells[k]=G.elementCells[k]||{};G.elementCells[k].water={layers:4,willExplode:true,damage:10};assert.strictEqual(G.elementCells[k].water.layers,4);assert.strictEqual(6+4,10);delete G.elementCells[k];});
   test('T6:风灵moveAp+1',()=>{assert.ok(true);});
   test('T7:岩岩灵+3HP=12',()=>{assert.strictEqual(6+3+3,12);});
-  test('T8:chooseElementForSummon',()=>{fresh();const k='6,4';G.elementCells[k]=G.elementCells[k]||{};G.elementCells[k].fire={layers:2};G.elementCells[k].water={layers:3};if(typeof chooseElementForSummon==='function'){const r=chooseElementForSummon({r:6,c:4});assert.ok(r);assert.strictEqual(r.el,'water');}else assert.ok(true,'待实现');delete G.elementCells[k];});
+  test('T8:chooseElementForSummon',()=>{fresh();const k='8,4';G.elementCells[k]=G.elementCells[k]||{};G.elementCells[k].fire={layers:2};G.elementCells[k].water={layers:3};if(typeof chooseElementForSummon==='function'){const r=chooseElementForSummon({r:8,c:4});assert.ok(r);assert.strictEqual(r.el,'water');}else assert.ok(true,'待实现');delete G.elementCells[k];});
 });
 // TDD-商店池
 group('TDD-商店池',()=>{
@@ -3009,11 +3003,11 @@ group('TDD-WT:合成',()=>{
     genShop();
     // buyUnit auto-merges when same defId exists
     G.ownedUnits=[];G.nextUnitId=0;
-    addOwnedUnit('fire_starter',{r:0,c:0});G.ownedUnits[0].active=true;
+    addOwnedUnit('fire_starter',{r:10,c:1});G.ownedUnits[0].active=true;
     syncUnitsToHeroes();
     const before=G.ownedUnits.length;
     // Simulate buyUnit merge path: add duplicate
-    addOwnedUnit('fire_starter',{r:0,c:1});G.ownedUnits[1].active=true;
+    addOwnedUnit('fire_starter',{r:11,c:1});G.ownedUnits[1].active=true;
     const ok=mergeUnits(G.ownedUnits[1],G.ownedUnits[0]);
     assert.ok(ok||G.ownedUnits.length<before+1,'合成应成功或数量减少');
   });
@@ -3032,17 +3026,17 @@ group('TDD-水召唤引擎',()=>{
   test('ENG1:spawnSummon生成水召唤物并计数',()=>{
     fresh();
     const before=(G.summons||[]).length;
-    const s=spawnSummon('ha',{r:6,c:4});
+    const s=spawnSummon('ha',{r:8,c:4});
     assert.ok(s,'应返回召唤物');
     assert.strictEqual(s.el,'water','默认水属性');
     assert.strictEqual(s.kind,'summon','kind=summon');
-    assert.ok(summonAt({r:6,c:4}),'summonAt应命中召唤物');
+    assert.ok(summonAt({r:8,c:4}),'summonAt应命中召唤物');
     assert.strictEqual(G.summons.length,before+1,'summons+1');
     assert.strictEqual(G.engineStats.summonCount,1,'summonCount+1');
   });
   test('ENG2:healSummon治疗并atk+1',()=>{
     fresh();
-    const s=spawnSummon('ha',{r:6,c:4},{hp:1,maxHp:3,atk:1});
+    const s=spawnSummon('ha',{r:8,c:4},{hp:1,maxHp:3,atk:1});
     const atk0=s.atk;
     healSummon(s,1);
     assert.strictEqual(s.atk,atk0+1,'每次治疗atk+1（引擎成长）');
@@ -3052,18 +3046,18 @@ group('TDD-水召唤引擎',()=>{
   });
   test('ENG3:召唤物死亡原地留1层水',()=>{
     fresh();
-    const s=spawnSummon('ha',{r:6,c:4});
+    const s=spawnSummon('ha',{r:8,c:4});
     killSummon(s);
     assert.ok(s.dead,'应标记dead');
-    const slot=G.elementCells['6,4']&&G.elementCells['6,4'].water;
+    const slot=G.elementCells['8,4']&&G.elementCells['8,4'].water;
     assert.ok(slot&&slot.layers>=1,'原地应留水层');
-    assert.ok(!summonAt({r:6,c:4}),'已死召唤物不再被summonAt命中');
+    assert.ok(!summonAt({r:8,c:4}),'已死召唤物不再被summonAt命中');
   });
   test('ENG4:死亡留水叠到阈值经settleExplosions引爆相邻怪物',()=>{
     fresh();
-    G.monsters=[{name:'靶',hp:50,maxHp:50,atk:1,ap:0,pos:{r:6,c:5},dead:false,el:null}];
-    for(let i=0;i<3;i++){const s=spawnSummon('ha',{r:6,c:4});damageSummon(s,s.hp);}
-    const slot=G.elementCells['6,4'].water;
+    G.monsters=[{name:'靶',hp:50,maxHp:50,atk:1,ap:0,pos:{r:8,c:5},dead:false,el:null}];
+    for(let i=0;i<3;i++){const s=spawnSummon('ha',{r:8,c:4});damageSummon(s,s.hp);}
+    const slot=G.elementCells['8,4'].water;
     assert.ok(slot.layers>=3,'3次死亡应叠>=3层水');
     assert.ok(slot.willExplode,'达阈值willExplode=true');
     const hp0=G.monsters[0].hp;
@@ -3072,7 +3066,7 @@ group('TDD-水召唤引擎',()=>{
   });
   test('ENG5:连续治疗成长曲线 atk=base+N',()=>{
     fresh();
-    const s=spawnSummon('ha',{r:6,c:4},{hp:10,maxHp:10,atk:1});
+    const s=spawnSummon('ha',{r:8,c:4},{hp:10,maxHp:10,atk:1});
     const base=s.atk;
     for(let i=0;i<4;i++)healSummon(s,1);
     assert.strictEqual(s.atk,base+4,'4次治疗后 atk=base+4');
@@ -3084,21 +3078,21 @@ group('TDD-水召唤引擎',()=>{
 group('TDD-水召唤引擎·增量2',()=>{
   test('ENG6:英雄移动被召唤物阻挡',()=>{
     fresh();
-    spawnSummon('ha',{r:6,c:4});
+    spawnSummon('ha',{r:8,c:4});
     G.selHero='ha';
-    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:6,c:4}});
+    dispatchGameAction({type:'MOVE_HERO',heroId:'ha',to:{r:8,c:4}});
     assert.notStrictEqual(G.heroes.ha.pos.r,8,'不应移动到召唤物格');
   });
   test('ENG7:cellFree识别召唤物占用',()=>{
     fresh();
-    assert.ok(cellFree({r:6,c:4}));
-    spawnSummon('ha',{r:6,c:4});
-    assert.ok(!cellFree({r:6,c:4}),'召唤物格不可通行');
+    assert.ok(cellFree({r:8,c:4}));
+    spawnSummon('ha',{r:8,c:4});
+    assert.ok(!cellFree({r:8,c:4}),'召唤物格不可通行');
   });
   test('ENG8:runSummonActions攻击相邻怪物',()=>{
     fresh();
-    const s=spawnSummon('ha',{r:6,c:4},{atk:3});
-    G.monsters=[{name:'靶',hp:10,maxHp:10,atk:1,ap:0,pos:{r:6,c:5},dead:false,el:null}];
+    const s=spawnSummon('ha',{r:8,c:4},{atk:3});
+    G.monsters=[{name:'靶',hp:10,maxHp:10,atk:1,ap:0,pos:{r:8,c:5},dead:false,el:null}];
     runSummonActions();
     assert.ok(G.monsters[0].hp<10,'相邻怪物应受伤');
   });
@@ -3122,7 +3116,7 @@ group('TDD-水召唤引擎·增量3',()=>{
   test('ENG11:召芽灵召唤槽生成召唤物',()=>{
     fresh();
     G.ownedUnits=[]; G.nextUnitId=0;
-    addOwnedUnit('sprout_summoner',{r:0,c:0});
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
     syncUnitsToHeroes();
     const idx=G.slots.findIndex(s=>s.skill==='summonFromCell');
     assert.ok(idx>=0,'应有召唤技能槽');
@@ -3131,9 +3125,9 @@ group('TDD-水召唤引擎·增量3',()=>{
   });
   test('ENG12:chooseElementForSummon选层数最高元素',()=>{
     fresh();
-    const k='6,4';
+    const k='8,4';
     G.elementCells[k]={fire:{layers:2,willExplode:false},water:{layers:4,willExplode:true},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
-    const r=chooseElementForSummon({r:6,c:4});
+    const r=chooseElementForSummon({r:8,c:4});
     assert.strictEqual(r.el,'water');
     assert.strictEqual(r.layers,4);
   });
@@ -3147,7 +3141,7 @@ group('TDD-水召唤引擎·增量3',()=>{
 group('TDD-水召唤引擎·增量4',()=>{
   test('ENG14:buildBoardVM含召唤物',()=>{
     fresh();
-    spawnSummon('ha',{r:6,c:4},{atk:5,hp:3,maxHp:3});
+    spawnSummon('ha',{r:8,c:4},{atk:5,hp:3,maxHp:3});
     recomputeCorePreview();
     const cell=buildBoardVM().find(c=>c.r===8&&c.c===4);
     assert.ok(cell&&cell.summon,'棋盘VM应含召唤物');
@@ -3155,7 +3149,7 @@ group('TDD-水召唤引擎·增量4',()=>{
   });
   test('ENG15:buildTurnVM含引擎统计',()=>{
     fresh();
-    spawnSummon('ha',{r:6,c:4});
+    spawnSummon('ha',{r:8,c:4});
     healSummon(G.summons[0],1);
     const vm=buildTurnVM();
     assert.ok(vm.engineStats,'应有engineStats');
@@ -3167,8 +3161,8 @@ group('TDD-水召唤引擎·增量4',()=>{
 group('TDD-水召唤引擎·增量5',()=>{
   test('ENG16:引擎闭环 召唤→治疗→攻击→死亡留水',()=>{
     fresh();
-    const s=spawnSummon('ha',{r:6,c:4});
-    G.monsters=[{name:'靶',hp:20,maxHp:20,atk:1,ap:0,pos:{r:6,c:5},dead:false,el:null}];
+    const s=spawnSummon('ha',{r:8,c:4});
+    G.monsters=[{name:'靶',hp:20,maxHp:20,atk:1,ap:0,pos:{r:8,c:5},dead:false,el:null}];
     healSummon(s,1);
     assert.strictEqual(s.atk,2);
     runSummonActions();
@@ -3181,8 +3175,8 @@ group('TDD-水召唤引擎·增量5',()=>{
   test('ENG17:怪物攻击相邻召唤物',()=>{
     fresh();
     const s=spawnSummon('ha',{r:5,c:6},{hp:6,maxHp:6});
-    G.heroes.ha.pos={r:0,c:0};
-    G.heroes.hb.pos={r:7,c:1};
+    G.heroes.ha.pos={r:12,c:0};
+    G.heroes.hb.pos={r:12,c:1};
     G.monsters=[{name:'怪',hp:6,maxHp:6,atk:2,ap:3,pos:{r:5,c:7},dead:false,el:null}];
     monsterAct(G.monsters[0]);
     assert.ok(s.hp<6||s.dead,'相邻怪物应攻击召唤物');
@@ -3190,8 +3184,8 @@ group('TDD-水召唤引擎·增量5',()=>{
   test('ENG18:预览含召唤物受击',()=>{
     fresh();
     spawnSummon('ha',{r:5,c:6});
-    G.heroes.ha.pos={r:0,c:0};
-    G.heroes.hb.pos={r:7,c:1};
+    G.heroes.ha.pos={r:12,c:0};
+    G.heroes.hb.pos={r:12,c:1};
     G.monsters=[{name:'怪',hp:6,maxHp:6,atk:2,ap:3,pos:{r:5,c:7},dead:false,el:null}];
     const prev=computeMonsterActionPreview();
     const sid=G.summons[0].id;
@@ -3214,17 +3208,17 @@ group('TDD-水召唤引擎·增量5',()=>{
 group('TDD-水召唤引擎·增量6',()=>{
   test('ENG21:绒语灵被动增益召唤物',()=>{
     fresh(); G.ownedUnits=[];
-    addOwnedUnit('fluff_speaker',{r:0,c:0});
+    addOwnedUnit('fluff_speaker',{r:10,c:1});
     syncUnitsToHeroes();
-    const s=spawnSummon('ha',{r:6,c:4});
+    const s=spawnSummon('ha',{r:8,c:4});
     assert.strictEqual(s.hp,5,'HP 3+2');
     assert.strictEqual(s.atk,2,'ATK 1+1');
   });
   test('ENG22:爆爆灵召唤物死亡铺火',()=>{
     fresh(); G.ownedUnits=[];
-    addOwnedUnit('boom_sprite',{r:0,c:0});
+    addOwnedUnit('boom_sprite',{r:10,c:1});
     syncUnitsToHeroes();
-    const s=spawnSummon('ha',{r:6,c:4});
+    const s=spawnSummon('ha',{r:8,c:4});
     damageSummon(s,99);
     const key='8,4';
     assert.ok((G.elementCells[key]?.water?.layers||0)>=1,'仍留水层');
@@ -3232,8 +3226,8 @@ group('TDD-水召唤引擎·增量6',()=>{
   });
   test('ENG23:分分灵拆分召芽灵召唤',()=>{
     fresh(); G.ownedUnits=[];
-    addOwnedUnit('sprout_summoner',{r:0,c:0});
-    addOwnedUnit('split_sprite',{r:0,c:1});
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
+    addOwnedUnit('split_sprite',{r:11,c:1});
     syncUnitsToHeroes();
     const idx=G.slots.findIndex(s=>s.skill==='summonFromCell'&&s.hid==='ha');
     dispatchGameAction({type:'USE_SLOT',slotId:idx});
@@ -3244,9 +3238,9 @@ group('TDD-水召唤引擎·增量6',()=>{
   });
   test('ENG24:绒语+分分组合 HP5 ATK2',()=>{
     fresh(); G.ownedUnits=[];
-    addOwnedUnit('sprout_summoner',{r:0,c:0});
-    addOwnedUnit('split_sprite',{r:0,c:1});
-    addOwnedUnit('fluff_speaker',{r:0,c:2});
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
+    addOwnedUnit('split_sprite',{r:11,c:1});
+    addOwnedUnit('fluff_speaker',{r:12,c:1});
     syncUnitsToHeroes();
     const idx=G.slots.findIndex(s=>s.skill==='summonFromCell'&&s.hid==='ha');
     dispatchGameAction({type:'USE_SLOT',slotId:idx});
@@ -3256,8 +3250,8 @@ group('TDD-水召唤引擎·增量6',()=>{
   });
   test('ENG25:Day1上午引擎走查至中午商店',()=>{
     fresh(); G.ownedUnits=[];
-    addOwnedUnit('sprout_summoner',{r:0,c:0});
-    addOwnedUnit('spring_sprite',{r:0,c:1});
+    addOwnedUnit('sprout_summoner',{r:10,c:1});
+    addOwnedUnit('spring_sprite',{r:11,c:1});
     syncUnitsToHeroes();
     G.monsters.forEach(m=>{m.hp=1;m.maxHp=1;});
     let guard=0;
@@ -3282,15 +3276,15 @@ group('TDD-水召唤引擎·增量6',()=>{
 group('TDD-S2成长与连锁反馈',()=>{
   test('GROW1:召唤3次后新召唤物ATK+1',()=>{
     fresh();
-    for(let i=0;i<3;i++) spawnSummon('ha',{r:6,c:4+i});
-    const s=spawnSummon('ha',{r:6,c:6});
+    for(let i=0;i<3;i++) spawnSummon('ha',{r:8,c:4+i});
+    const s=spawnSummon('ha',{r:8,c:8});
     assert.strictEqual(s.atk,2,'第4只应有召唤阶位+1 ATK');
     assert.ok(G.growth,'应有G.growth');
     assert.strictEqual(G.growth.summonTier,1);
   });
   test('GROW2:治疗4次后单次治疗量+1',()=>{
     fresh();
-    const s=spawnSummon('ha',{r:6,c:4},{hp:20,maxHp:20});
+    const s=spawnSummon('ha',{r:8,c:4},{hp:20,maxHp:20});
     for(let i=0;i<4;i++) healSummon(s,2);
     s.hp=1;
     healSummon(s);
@@ -3298,7 +3292,7 @@ group('TDD-S2成长与连锁反馈',()=>{
   });
   test('GROW3:成长局内持久不随initGame外重置',()=>{
     fresh();
-    for(let i=0;i<3;i++) spawnSummon('ha',{r:6,c:i});
+    for(let i=0;i<3;i++) spawnSummon('ha',{r:8,c:i});
     assert.strictEqual(G.engineStats.summonCount,3);
     assert.strictEqual(G.growth.summonTier,1);
     G.monsters.forEach(m=>{m.dead=true;});
@@ -3335,7 +3329,7 @@ group('TDD-S2成长与连锁反馈',()=>{
   });
   test('GROW7:buildTurnVM含成长阶位',()=>{
     fresh();
-    for(let i=0;i<3;i++) spawnSummon('ha',{r:6,c:i});
+    for(let i=0;i<3;i++) spawnSummon('ha',{r:8,c:i});
     const vm=buildTurnVM();
     assert.ok(vm.engineStats.growth,'VM应含growth');
     assert.strictEqual(vm.engineStats.growth.summonTier,1);
@@ -3403,7 +3397,7 @@ group('TDD-S3 Run与商店',()=>{
   test('SH3:火种灵被动空格爆炸+1',()=>{
     fresh();
     G.ownedUnits=[];
-    addOwnedUnit('ember_seed',{r:0,c:0});
+    addOwnedUnit('ember_seed',{r:10,c:1});
     syncUnitsToHeroes();
     assert.strictEqual(getSpaceExplosionBonus(),1);
     G.monsters=[{name:'靶',hp:20,maxHp:20,atk:1,ap:0,pos:{r:5,c:6},dead:false,el:null}];
@@ -3451,10 +3445,10 @@ group('TDD-S3 Run与商店',()=>{
   test('SH4:泉泉灵治疗加成',()=>{
     fresh();
     G.ownedUnits=[];
-    addOwnedUnit('spring_sprite',{r:0,c:0});
+    addOwnedUnit('spring_sprite',{r:10,c:1});
     syncUnitsToHeroes();
     assert.strictEqual(getHealAmpBonus(),1);
-    const s=spawnSummon('ha',{r:6,c:4},{hp:10,maxHp:10});
+    const s=spawnSummon('ha',{r:8,c:4},{hp:10,maxHp:10});
     s.hp=1;
     healSummon(s);
     assert.strictEqual(s.hp,4,'基础2+泉1+阶位0治疗量3');
@@ -3462,7 +3456,7 @@ group('TDD-S3 Run与商店',()=>{
   test('SH5:岩岩灵城堡减伤',()=>{
     fresh();
     G.ownedUnits=[];
-    addOwnedUnit('pebble_guard',{r:0,c:0});
+    addOwnedUnit('pebble_guard',{r:10,c:1});
     syncUnitsToHeroes();
     G.playerCastle.hp=80;
     damagePlayerCastle(3,'test');
@@ -3473,7 +3467,7 @@ group('TDD-S3 Run与商店',()=>{
   test('SH6:风风灵克制额外伤害',()=>{
     fresh();
     G.ownedUnits=[];
-    addOwnedUnit('breeze_sprite',{r:0,c:0});
+    addOwnedUnit('breeze_sprite',{r:10,c:1});
     syncUnitsToHeroes();
     assert.strictEqual(getAdvHitBonus(),1);
     G.monsters=[{name:'火怪',hp:30,maxHp:30,atk:1,ap:0,pos:{r:5,c:6},dead:false,el:'fire'}];
@@ -3537,7 +3531,7 @@ group('Replay 战斗复盘', ()=>{
 group('Debug 面板 VM', ()=>{
   test('DEBUG1: buildDebugPanelVM 含 phase/slots/actionLog', ()=>{
     fresh();
-    G.selectedCell={ r:1, c:7 };
+    G.selectedCell={ r:1, c:11 };
     recomputeCorePreview();
     const vm=buildDebugPanelVM();
     assert.strictEqual(vm.phase, 'PLAYER');
@@ -3789,8 +3783,8 @@ group('Goal 03/04 完整实现', ()=>{
   test('GOAL0304-09: 召唤物会向最近怪物移动并攻击', ()=>{
     fresh();
     G.summons=[];
-    const s=spawnSummon('ha',{r:6,c:4},{hp:6,maxHp:6,atk:1});
-    G.monsters=[{id:'far',name:'远怪',hp:6,maxHp:6,atk:1,ap:0,pos:{r:5,c:7},dead:false,el:null}];
+    const s=spawnSummon('ha',{r:8,c:4},{hp:6,maxHp:6,atk:1});
+    G.monsters=[{id:'far',name:'远怪',hp:6,maxHp:6,atk:1,ap:0,pos:{r:8,c:7},dead:false,el:null}];
     runSummonActions();
     assert.ok(s.pos.c>4,'召唤物应向怪物移动');
     runSummonActions();

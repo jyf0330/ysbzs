@@ -348,7 +348,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     assert.strictEqual(G.board[5][5].stk,2);
   });
   test('验收-2: 火5层+水自动引爆，基础伤害=15', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:7,c:7};
@@ -375,7 +375,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     assert.ok(keys.has('5,6'),'缺少右');
   });
   test('验收-5: 火层爆炸炸到风属性怪 ×2', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el='wind';
     G.monsters[1].pos={r:7,c:7};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, ×2=12
@@ -383,7 +383,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     assert.strictEqual(G.monsters[0].hp,8,'20-12=8');
   });
   test('验收-6: 火层爆炸炸到无属性怪不翻倍', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:7,c:7};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, 不翻倍
@@ -412,7 +412,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
   });
   test('验收-9: 引爆伤害能打十字范围内多只怪', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters[0].pos={r:4,c:5}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:5,c:6}; G.monsters[1].hp=20; G.monsters[1].el=null;
     G.board[5][5].el='fire'; G.board[5][5].stk=2; // dmg=3
@@ -454,7 +454,7 @@ group('能力系统测试', ()=>{
   });
   test('能力-2: 有火魔时十字爆炸正常工作', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=10; G.monsters[0].el=null;
     G.monsters[1].pos={r:7,c:7};
     G.monsters[1].hp=20;
@@ -465,7 +465,7 @@ group('能力系统测试', ()=>{
   test('能力-3: hasCrossExplosion 检测', ()=>{
     fresh();
     assert.strictEqual(hasCrossExplosion(),false,'初始无火魔');
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    addOwnedUnit('fire_demon',{r:0,c:0});
     assert.strictEqual(hasCrossExplosion(),true,'上场火魔后应有十字');
   });
 });
@@ -689,7 +689,7 @@ group('回合管理', ()=>{
   });
   test('endPlayerTurn 城堡被炸毁不应覆写 OVER 状态', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    addOwnedUnit('fire_demon',{r:0,c:0});
     // 清掉教学怪，让空格爆炸能波及城堡
     G.monsters=[];
     G.enemyCastle={hp:1,maxHp:80,pos:{r:0,c:7}};
@@ -1285,7 +1285,7 @@ group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
   });
   test('case_004: 空格3层fire十字引爆，波及相邻怪物', ()=>{
     fresh();
-    addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters[0].pos={r:6,c:5}; G.monsters[0].hp=10; // 在(5,5)正下方
     G.monsters[1].pos={r:7,c:7};
     // (5,5)是空格（没有怪物）
@@ -1374,7 +1374,6 @@ group('格子信息层 cellInfoMap（buildCellInfoMap）', ()=>{
 
   test('case_cellinfo_003: 空格 fire=3 willExplode=true → 十字引爆', ()=>{
     freshCellInfo();
-    addOwnedUnit('fire_demon',{r:0,c:0});
     G.elementCells['5,5']={fire:{layers:3,willExplode:true}};
     const ciMap=buildCellInfoMap();
     const ci=ciMap['5,5'];
@@ -1538,7 +1537,7 @@ group('A补：教程默认大十字攻击方块', ()=>{
   });
 
   test('case_bigcross_002: 大十字可把空格叠到3层并触发十字引爆', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
       {id:'m0',name:'波及怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
@@ -1643,14 +1642,14 @@ group('C组：空格十字爆炸', ()=>{
     assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
   });
   test('case_empty_cell_003: fire=3 十字爆炸→范围内怪-6，范围外不受伤', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     setEmptyCell(3);
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,4,'范围内怪 10-6=4');
     assert.strictEqual(G.monsters[1].hp,10,'范围外怪不受伤');
   });
   test('case_empty_cell_004: fire=6 十字爆炸→范围内怪-21(下限0)', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     setEmptyCell(6);
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,0,'范围内怪 10-21=0(下限0)');
@@ -1663,7 +1662,7 @@ group('C组：空格十字爆炸', ()=>{
 group('D组：怪物格 vs 空格行为差异', ()=>{
   test('case_diff_001: fire=3 怪物格单体不波及 vs 空格十字波及', ()=>{
     // 怪物格：主怪在(5,5)fire=3，相邻怪在(5,6)不受波及
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters=[
       {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:5},dead:false,el:null},
       {id:'m1',name:'相邻',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
@@ -1749,7 +1748,7 @@ group('E组：多元素场测试', ()=>{
     assert.strictEqual(G.monsters[0].hp,11,'20-6-3=11');
   });
   test('case_multi_004: 空格 fire=3 water=2 → fire十字爆炸6，water未达阈值不爆', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     G.monsters=[
       {id:'m0',name:'范围内',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
       {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
@@ -1762,7 +1761,7 @@ group('E组：多元素场测试', ()=>{
     assert.strictEqual(G.monsters[0].hp,4,'范围内怪 10-6=4，只fire十字爆');
   });
   test('case_multi_005: 空格 fire=3 water=3 两元素均达阈值→各自十字爆',()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+    fresh(); addOwnedUnit('fire_demon',{r:0,c:0});
     G.slots.forEach(s=>{s.used=true;});
     G.monsters=[
       {id:'m0',name:'范围内',hp:20,maxHp:20,atk:1,pos:{r:5,c:6},dead:false,el:null},

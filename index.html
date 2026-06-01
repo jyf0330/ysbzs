@@ -772,27 +772,6 @@ const SD = {
  18: {cells:[[0,1],[0,3],[-1,1],[-1,2],[-1,3]],name:'U形5格', n:5, cat:'notch'},
  19: {cells:[[0,1],[0,2],[0,3],[0,4],[0,5],[0,6]],name:'6格直线',n:6, cat:'line'},
  20: {cells:[[0,1],[0,2],[0,3],[1,1],[1,2],[1,3]],name:'2×3矩形',n:6, cat:'square'},
-  fire_demon: {
-    id:'fire_demon', name:'火魔', element:'fire', grade:'钻石', priceTier:1, tags:['火','钻石','终局','十字'], tier:4, cost:8,
-    passive:{type:'crossExplosion',level:1},
-    levels: {
-      1:{ hp:45, slots:[
-        {el:'fire',sn:10,dir:'right',tier:4},
-        {el:'fire',sn:12,dir:'right',tier:4},
-        {el:'fire',sn:19,dir:'right',tier:4},
-      ]},
-      2:{ hp:58, slots:[
-        {el:'fire',sn:12,dir:'right',tier:4,layers:2},
-        {el:'fire',sn:19,dir:'right',tier:4},
-        {el:'fire',sn:20,dir:'right',tier:4},
-      ]},
-      3:{ hp:72, slots:[
-        {el:'fire',sn:12,dir:'right',tier:4,layers:3},
-        {el:'fire',sn:19,dir:'right',tier:4,layers:2},
-        {el:'fire',sn:20,dir:'right',tier:4},
-      ]}
-    }
-  },
 };
 
 const SHAPE_BIG_CROSS = 12;
@@ -947,19 +926,19 @@ const UNIT_DEFS = {
     id:'fire_mouse', name:'🔥火苗鼠', element:'fire', tier:1, cost:2,
     levels: {
       1:{ hp:20, slots:[
-        {el:'fire',sn:1,dir:'right',tier:1},  // 槽1: 目标+1F
-        {el:'fire',sn:1,dir:'right',tier:1},  // 槽2: 目标+1F
-        {el:'fire',sn:12,dir:'right',tier:1,centerBonus:1}, // 槽3: 小十字火，中心+2F 四周+1F
+        {el:'fire',sn:1,dir:'right',tier:1},
+        {el:'fire',sn:1,dir:'right',tier:1},
+        {el:'fire',sn:9,dir:'right',tier:1,centerBonus:1}, // T1中心+2F
       ]},
       2:{ hp:28, slots:[
-        {el:'fire',sn:1,dir:'right',tier:2,layers:2},  // 槽1: 目标+2F
-        {el:'fire',sn:1,dir:'right',tier:2,conditional:{el:'fire',bonus:1}}, // 槽2: 目标+1F，若已有F再+1F
-        {el:'fire',sn:12,dir:'right',tier:2,centerBonus:1}, // 槽3: 小十字火，中心+2F 四周+1F
+        {el:'fire',sn:1,dir:'right',tier:2,layers:2},
+        {el:'fire',sn:1,dir:'right',tier:2,conditional:{el:'fire',bonus:1}},
+        {el:'fire',sn:9,dir:'right',tier:2,centerBonus:1},
       ]},
       3:{ hp:35, slots:[
         {el:'fire',sn:1,dir:'right',tier:3,layers:2},
         {el:'fire',sn:1,dir:'right',tier:3,layers:2,conditional:{el:'fire',bonus:1}},
-        {el:'fire',sn:12,dir:'right',tier:3,centerBonus:2}, // 中心+3F 四周+1F
+        {el:'fire',sn:11,dir:'right',tier:3,centerBonus:2}, // 宽头T中心+3F
       ]}
     }
   },
@@ -967,19 +946,19 @@ const UNIT_DEFS = {
     id:'firecracker', name:'🧨爆竹匠', element:'fire', tier:1, cost:3,
     levels: {
       1:{ hp:20, slots:[
-        {el:'fire',sn:1,dir:'right',tier:1},  // 槽1: 目标+1F
-        {el:'fire',sn:1,dir:'right',tier:1,conditional:{el:'fire',bonus:1}}, // 槽2: 目标有F额外+1F
-        {el:'fire',sn:12,dir:'right',tier:1,centerBonus:1}, // 槽3: 小十字火，中心+2F
+        {el:'fire',sn:1,dir:'right',tier:1},
+        {el:'fire',sn:1,dir:'right',tier:1,conditional:{el:'fire',bonus:1}},
+        {el:'fire',sn:9,dir:'right',tier:1,centerBonus:1},
       ]},
       2:{ hp:25, slots:[
         {el:'fire',sn:1,dir:'right',tier:2,layers:2},
-        {el:'fire',sn:1,dir:'right',tier:2,conditional:{el:'fire',bonus:2}}, // 目标有F额外+2F
-        {el:'fire',sn:12,dir:'right',tier:2,centerBonus:2}, // 中心+3F
+        {el:'fire',sn:1,dir:'right',tier:2,conditional:{el:'fire',bonus:2}},
+        {el:'fire',sn:11,dir:'right',tier:2,centerBonus:2},
       ]},
       3:{ hp:32, slots:[
         {el:'fire',sn:2,dir:'right',tier:3,layers:2},
         {el:'fire',sn:1,dir:'right',tier:3,layers:2,conditional:{el:'fire',bonus:2}},
-        {el:'fire',sn:12,dir:'right',tier:3,centerBonus:3}, // 中心+4F
+        {el:'fire',sn:17,dir:'right',tier:3,centerBonus:3}, // 双层T中心+4F
       ]}
     }
   },
@@ -1252,6 +1231,27 @@ const UNIT_DEFS = {
         {skill:'summonFromCell',sn:12,dir:'right',tier:4,consumeLayers:false,count:4,bonusHp:8},
         {skill:'healSummons',sn:12,dir:'right',tier:4},
         {el:'water',sn:20,dir:'right',tier:4,layers:2},
+      ]}
+    }
+  },
+  fire_demon: {
+    id:'fire_demon', name:'火魔', element:'fire', grade:'钻石', priceTier:1, tags:['火','钻石','终局','十字'], tier:4, cost:8,
+    passive:{type:'crossExplosion',level:1},
+    levels: {
+      1:{ hp:45, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4},
+        {el:'fire',sn:12,dir:'right',tier:4},
+        {el:'fire',sn:19,dir:'right',tier:4},
+      ]},
+      2:{ hp:58, slots:[
+        {el:'fire',sn:12,dir:'right',tier:4,layers:2},
+        {el:'fire',sn:19,dir:'right',tier:4},
+        {el:'fire',sn:20,dir:'right',tier:4},
+      ]},
+      3:{ hp:72, slots:[
+        {el:'fire',sn:12,dir:'right',tier:4,layers:3},
+        {el:'fire',sn:19,dir:'right',tier:4,layers:2},
+        {el:'fire',sn:20,dir:'right',tier:4},
       ]}
     }
   },
@@ -1703,9 +1703,11 @@ function doExplode(pos){
   const oldEl=cell.el;
   const dmg=explDmg(cell.stk);
   const elName=EL[oldEl];
-  glog(`💥 ${elName}${cell.stk}引爆！范围伤害 ${dmg}`);
+    const isCross=hasCrossExplosion();
+  const targets=isCross?explCells(pos):[pos];
+  glog(`💥 ${elName}${cell.stk}引爆！${isCross?'范围伤害 ':'单体伤害 '}${dmg}`);
   cell.el=null; cell.stk=0;
-  explCells(pos).forEach(tp=>{
+  targets.forEach(tp=>{
     const m=monAt(tp);
     if(m){let emult=1;if(m.el&&ADV[oldEl]===m.el){emult=2;glog(`⚡ 元素克制 ×2！`);}dealDmg(m,dmg*emult,`${elName}引爆`);}
   });
@@ -1769,8 +1771,10 @@ function settleExplosions(){
         let dmg=explDmg(slot.layers);
         const spaceBonus=getSpaceExplosionBonus();
         dmg+=spaceBonus;
-        glog(`💥 ${EL[el]}${slot.layers}层引爆！范围伤害 ${dmg}${spaceBonus>0?' (引信+'+spaceBonus+')':''}`);
-        explCells(pos).forEach(tp=>{
+        const crossActive=hasCrossExplosion();
+        const targets=crossActive?explCells(pos):[pos];
+        glog(`💥 ${EL[el]}${slot.layers}层引爆！${crossActive?'范围伤害 ':'单体伤害 '}${dmg}${spaceBonus>0?' (引信+'+spaceBonus+')':''}`);
+        targets.forEach(tp=>{
           const m=monAt(tp);
           if(m){
             let emult=1;
@@ -2503,6 +2507,14 @@ function getCastleDamageReduce(){
   });
   return red;
 }
+function hasCrossExplosion(){
+  return (G.ownedUnits||[]).some(u=>{
+    if(!u.active)return false;
+    const p=UNIT_DEFS[u.defId]?.passive;
+    return p?.type==='crossExplosion';
+  });
+}
+
 function getAdvHitBonus(){
   let bonus=0;
   (G.ownedUnits||[]).forEach(u=>{

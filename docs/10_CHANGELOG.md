@@ -1,6 +1,18 @@
 
 ## 2026-06-01 — Codex Goal：AI 战斗入口接入
 
+
+## 2026-06-01 — 能力系统：火魔十字爆炸
+
+### 代码（`index.html`）
+- **新英雄「火魔」（钻石·火）**：`fire_demon`，tier:4, cost:8。被动 `crossExplosion`：上场时元素空格引爆升级为十字范围。
+- **`hasCrossExplosion()`**：检查场上是否有激活的火魔。
+- **`doExplode()` 改造**：默认只对中心格造成单体伤害，场上存在火魔时才走十字范围。
+- **`settleExplosions()` 改造**：空格爆炸分支同理，`hasCrossExplosion()` 决定走默认单体还是十字。
+
+### 测试（`test.js`）
+- 新增「能力系统测试」组：能力-1 验证无火魔时相邻格不受爆炸波及；能力-2 验证有火魔时十字爆炸正确；能力-3 验证 `hasCrossExplosion()` 检测逻辑。
+
 ### 代码（`index.html`）
 - **右侧入口升级为 AI 战斗**：`#exa` 从“自动编排”切换为“AI战斗”，点击后先生成当前玩家回合计划，再执行移动、符文施放和结束回合。
 - **浏览器内 AI 战斗代理**：新增 `buildAiBattleTurnPlan()`、`planAiBattleTurn()`、`runAiBattleTurn_sync()`、`runAiBattleTurn_async()`，复用现有 `dispatchGameAction` / `USE_SLOT` / `MOVE_HERO`，不绕过核心战斗规则。

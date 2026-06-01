@@ -326,7 +326,7 @@ group('元素系统', ()=>{
     addEl({r:5,c:5},'fire');
     addEl({r:5,c:5},'fire'); // stk=2 → dmg=3
     G.monsters[0].pos={r:5,c:6}; // 右边1格，在爆炸范围内
-    G.monsters[1].pos={r:9,c:9};
+    G.monsters[1].pos={r:7,c:7};
     G.monsters[0].hp=10;
     doExplode({r:5,c:5}); settleDamage();
     assert.strictEqual(G.monsters[0].hp, 7); // 10-3=7
@@ -351,7 +351,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     fresh();
     for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
-    G.monsters[1].pos={r:9,c:9};
+    G.monsters[1].pos={r:7,c:7};
     addEl({r:5,c:5},'water'); // 水克火 → 自动引爆
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,5,'20-15=5');
@@ -377,7 +377,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
   test('验收-5: 火层爆炸炸到风属性怪 ×2', ()=>{
     fresh();
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el='wind';
-    G.monsters[1].pos={r:9,c:9};
+    G.monsters[1].pos={r:7,c:7};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, ×2=12
     doExplode({r:5,c:5}); settleDamage();
     assert.strictEqual(G.monsters[0].hp,8,'20-12=8');
@@ -385,7 +385,7 @@ group('战斗系统验收测试 (10条规则)', ()=>{
   test('验收-6: 火层爆炸炸到无属性怪不翻倍', ()=>{
     fresh();
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
-    G.monsters[1].pos={r:9,c:9};
+    G.monsters[1].pos={r:7,c:7};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // explDmg=6, 不翻倍
     doExplode({r:5,c:5}); settleDamage();
     assert.strictEqual(G.monsters[0].hp,14,'20-6=14');
@@ -434,13 +434,41 @@ group('战斗系统验收测试 (10条规则)', ()=>{
   test('验收-补: 中心格怪物能被引爆伤到', ()=>{
     fresh();
     G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20; G.monsters[0].el=null;
-    G.monsters[1].pos={r:9,c:9};
+    G.monsters[1].pos={r:7,c:7};
     G.board[5][5].el='fire'; G.board[5][5].stk=3; // dmg=6
     doExplode({r:5,c:5}); settleDamage();
     assert.ok(G.monsters[0].hp<20,'中心怪物应被引爆伤到');
   });
 });
 });
+group('能力系统测试', ()=>{
+  test('能力-1: 无火魔时十字爆炸不上场（默认单点）', ()=>{
+    fresh();
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=10;
+    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].hp=20;
+    G.board[5][5].el='fire'; G.board[5][5].stk=2;
+    doExplode({r:5,c:5}); settleDamage();
+    assert.strictEqual(G.monsters[0].hp,10,'无火魔时相邻格不应受伤');
+  });
+  test('能力-2: 有火魔时十字爆炸正常工作', ()=>{
+    fresh();
+    addOwnedUnit('fire_demon',{r:0,c:0});
+    G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=10; G.monsters[0].el=null;
+    G.monsters[1].pos={r:7,c:7};
+    G.monsters[1].hp=20;
+    G.board[5][5].el='fire'; G.board[5][5].stk=2;
+    doExplode({r:5,c:5}); settleDamage();
+    assert.strictEqual(G.monsters[0].hp,7,'有火魔时十字相邻格受伤');
+  });
+  test('能力-3: hasCrossExplosion 检测', ()=>{
+    fresh();
+    assert.strictEqual(hasCrossExplosion(),false,'初始无火魔');
+    addOwnedUnit('fire_demon',{r:0,c:0});
+    assert.strictEqual(hasCrossExplosion(),true,'上场火魔后应有十字');
+  });
+});
+
 
 // ═══════════════════════════════════════════════════════════════
 group('monAt / heroAt / cellFree', ()=>{

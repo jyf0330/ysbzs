@@ -1408,35 +1408,35 @@ function renderCellDetail(cell){
     if(td>0)eHtml+=`<div style="color:${willDie?'#fff':'#c4675a'};background:${willDie?'#c4675a':'rgba(220,38,38,0.15)'};padding:2px 6px;border-radius:3px;margin-top:3px;">预计承伤 ${td}${willDie?' ☠致死':''}</div>`;
     const sd=preview.selfCellDamage||{total:0};
     const sp=preview.splashDamage||{total:0};
-    if(sd.total>0)eHtml+=`<div style="font-size:9px;color:var(--c-text2);margin-top:2px;">单体:${sd.total} 波及:${sp.total}</div>`;
+    if(sd.total>0)eHtml+=`<div style="font-size:12px;color:var(--c-text2);margin-top:2px;">单体:${sd.total} 波及:${sp.total}</div>`;
   }else if(entity.type==='hero'){
     const thr=preview.threatFromMonsters||[];
-    const actedTag=entity._acted?'<span style="color:#b87440;font-size:9px;margin-left:4px;">⚡已行动</span>':'<span style="color:#7a9e7a;font-size:9px;margin-left:4px;">▶可行动</span>';
+    const actedTag=entity._acted?'<span style="color:#b87440;font-size:12px;margin-left:4px;">⚡已行动</span>':'<span style="color:#7a9e7a;font-size:12px;margin-left:4px;">▶可行动</span>';
     eHtml=`<div style="color:${entity.id==='ha'?'#7b9db5':'#7a9e7a'}">英雄${entity.id==='ha'?'A':'B'} ${entity.name}${actedTag}</div><div>HP ${entity.hp}/${entity.maxHp}</div>`;
     // 行动槽
     if(entity.slots&&entity.slots.length>0){
-      eHtml+=`<div style="margin-top:3px;font-size:9px;color:#8b7d6b;">⚔ 行动槽 (${entity.slots.length})</div>`;
+      eHtml+=`<div style="margin-top:3px;font-size:12px;color:#8b7d6b;">⚔ 行动槽 (${entity.slots.length})</div>`;
       entity.slots.forEach(s=>{
-        eHtml+=`<div style="font-size:9px;color:${EC[s.el]};padding-left:8px;">${ELICON[s.el]} ${s.label} ${s.dir}</div>`;
+        eHtml+=`<div style="font-size:12px;color:${EC[s.el]};padding-left:8px;">${ELICON[s.el]} ${s.label} ${s.dir}</div>`;
       });
     }else if(!entity._acted){
-      eHtml+=`<div style="font-size:9px;color:#8b7d6b;margin-top:2px;">无可用行动槽</div>`;
+      eHtml+=`<div style="font-size:12px;color:#8b7d6b;margin-top:2px;">无可用行动槽</div>`;
     }
     // 来自我方另一英雄的元素叠层（preview.incomingActions 中非自身英雄的）
     const allyActions=(preview.incomingActions||[]).filter(a=>a.heroId!==entity.id);
     if(allyActions.length>0){
       const byEl={};
       allyActions.forEach(a=>{byEl[a.element]=(byEl[a.element]||0)+a.amount;});
-      eHtml+=`<div style="margin-top:3px;font-size:9px;color:#5e95b5;">📥 友方叠层</div>`;
+      eHtml+=`<div style="margin-top:3px;font-size:12px;color:#5e95b5;">📥 友方叠层</div>`;
       Object.entries(byEl).forEach(([el,amt])=>{
-        eHtml+=`<div style="font-size:9px;color:${EC[el]};padding-left:8px;">${ELICON[el]} +${amt}层</div>`;
+        eHtml+=`<div style="font-size:12px;color:${EC[el]};padding-left:8px;">${ELICON[el]} +${amt}层</div>`;
       });
     }
     // 怪物威胁
     if(thr.length>0){
       const td=thr.reduce((s,t)=>s+t.dmg,0);
       eHtml+=`<div style="color:#6a5080;margin-top:3px;">⚠ 威胁 ×${thr.length} 总伤 ${td}`;
-      thr.forEach(t=>{eHtml+=`<div style="font-size:9px;color:#6ea86c;">${t.label} -${t.dmg}</div>`;});
+      thr.forEach(t=>{eHtml+=`<div style="font-size:12px;color:#6ea86c;">${t.label} -${t.dmg}</div>`;});
       eHtml+=`</div>`;
     }
   }else if(entity.type==='summon'){
@@ -1455,26 +1455,26 @@ function renderCellDetail(cell){
     if(dd.attackers&&dd.attackers.length>0)combatHtml+=`<div style="font-weight:bold;margin-bottom:4px;">${dd.attackers.join('')} 攻击 ${dd.target}</div>`;
     else if(dd.total>0)combatHtml+=`<div style="font-weight:bold;margin-bottom:4px;">${dd.target} 受到元素伤害</div>`;
     var elLines=[];
-    if(dd.fire>0)elLines.push(`<div style="font-size:10px;color:${EC.fire};padding-left:8px;">🔥 火伤害 ${dd.fire}</div>`);
-    if(dd.water>0)elLines.push(`<div style="font-size:10px;color:${EC.water};padding-left:8px;">💧 水伤害 ${dd.water}</div>`);
-    if(dd.wind>0)elLines.push(`<div style="font-size:10px;color:${EC.wind};padding-left:8px;">🌬 风伤害 ${dd.wind}</div>`);
-    if(dd.earth>0)elLines.push(`<div style="font-size:10px;color:${EC.earth};padding-left:8px;">🪨 土伤害 ${dd.earth}</div>`);
+    if(dd.fire>0)elLines.push(`<div style="font-size:13px;color:${EC.fire};padding-left:8px;">🔥 火伤害 ${dd.fire}</div>`);
+    if(dd.water>0)elLines.push(`<div style="font-size:13px;color:${EC.water};padding-left:8px;">💧 水伤害 ${dd.water}</div>`);
+    if(dd.wind>0)elLines.push(`<div style="font-size:13px;color:${EC.wind};padding-left:8px;">🌬 风伤害 ${dd.wind}</div>`);
+    if(dd.earth>0)elLines.push(`<div style="font-size:13px;color:${EC.earth};padding-left:8px;">🪨 土伤害 ${dd.earth}</div>`);
     if(elLines.length>0)combatHtml+=elLines.join('');
-    if(dd.splash>0)combatHtml+=`<div style="font-size:10px;color:#b87440;padding-left:8px;">💥 爆炸波及 ${dd.splash}</div>`;
-    if(dd.total>0)combatHtml+=`<div style="font-size:10px;color:#b87440;margin-top:2px;">总伤害 ${dd.total}</div>`;
+    if(dd.splash>0)combatHtml+=`<div style="font-size:13px;color:#b87440;padding-left:8px;">💥 爆炸波及 ${dd.splash}</div>`;
+    if(dd.total>0)combatHtml+=`<div style="font-size:13px;color:#b87440;margin-top:2px;">总伤害 ${dd.total}</div>`;
     if(dd.willDie)combatHtml+=`<div style="color:#c4675a;font-weight:bold;margin-top:2px;">☠ 致死</div>`;
   }else if(dd.type==='hero'){
     combatHtml=`<div style="font-weight:bold;margin-bottom:4px;">${(dd.attackers||[]).join('')} 攻击 ${dd.target}</div>`;
-    if(dd.incoming>0)combatHtml+=`<div style="font-size:10px;color:#b87440;margin-top:2px;">总受击伤害 ${dd.incoming}</div>`;
+    if(dd.incoming>0)combatHtml+=`<div style="font-size:13px;color:#b87440;margin-top:2px;">总受击伤害 ${dd.incoming}</div>`;
   }else if(dd.type==='castle'){
     if(dd.attackers&&dd.attackers.length>0)combatHtml+=`<div style="font-weight:bold;margin-bottom:4px;">${dd.attackers.join('')} 攻击${dd.target}</div>`;
-    if(dd.fire>0)combatHtml+=`<div style="font-size:10px;color:${EC.fire};padding-left:8px;">🔥 火伤害 ${dd.fire}</div>`;
-    if(dd.water>0)combatHtml+=`<div style="font-size:10px;color:${EC.water};padding-left:8px;">💧 水伤害 ${dd.water}</div>`;
-    if(dd.monsterDmg>0)combatHtml+=`<div style="font-size:10px;color:#6a5080;padding-left:8px;">怪物伤害 ${dd.monsterDmg}</div>`;
-    if(dd.total>0)combatHtml+=`<div style="font-size:10px;color:#b87440;margin-top:2px;">总伤害 ${dd.total}</div>`;
+    if(dd.fire>0)combatHtml+=`<div style="font-size:13px;color:${EC.fire};padding-left:8px;">🔥 火伤害 ${dd.fire}</div>`;
+    if(dd.water>0)combatHtml+=`<div style="font-size:13px;color:${EC.water};padding-left:8px;">💧 水伤害 ${dd.water}</div>`;
+    if(dd.monsterDmg>0)combatHtml+=`<div style="font-size:13px;color:#6a5080;padding-left:8px;">怪物伤害 ${dd.monsterDmg}</div>`;
+    if(dd.total>0)combatHtml+=`<div style="font-size:13px;color:#b87440;margin-top:2px;">总伤害 ${dd.total}</div>`;
   }else if(dd.type==='empty'){
     combatHtml=`<div style="font-weight:bold;">元素场：${dd.elements||'无'}</div>`;
-    if(dd.total>0)combatHtml+=`<div style="font-size:10px;color:#b87440;margin-top:2px;">总元素伤害 ${dd.total}</div>`;
+    if(dd.total>0)combatHtml+=`<div style="font-size:13px;color:#b87440;margin-top:2px;">总元素伤害 ${dd.total}</div>`;
   }
   if(combatHtml){
     blocks.push(`<div class="cd-block"><div class="cd-blkt">战斗摘要</div>${combatHtml}</div>`);
@@ -1496,13 +1496,13 @@ function renderCellDetail(cell){
   let settleHtml='';
   if(entity&&entity.type==='monster'){
     // no extra, entity block already shows damage
-    settleHtml='<span class="cd-empty" style="font-size:9px;">见实体块伤害</span>';
+    settleHtml='<span class="cd-empty" style="font-size:12px;">见实体块伤害</span>';
   }else if(preview.willExplode){
     const expEls=preview.explosionElements||[{element:preview.explosionElement,layers:0,damage:preview.explosionDamage}];
     expEls.forEach(e=>{
       settleHtml+=`<div style="color:#b87440;">💥 ${ELICON[e.element]}${e.layers}层 → 十字引爆 伤害${e.damage}</div>`;
     });
-    settleHtml+=`<div style="font-size:9px;color:var(--c-text2);">波及: ${(preview.splashTargets||[]).join(' ')}</div>`;
+    settleHtml+=`<div style="font-size:12px;color:var(--c-text2);">波及: ${(preview.splashTargets||[]).join(' ')}</div>`;
   }else{
     const maxLayers=elEntries.length>0?Math.max(...elEntries.map(([,v])=>v.layers)):0;
     const gap=G.explosionThreshold-maxLayers;
@@ -1525,7 +1525,7 @@ function renderCellDetail(cell){
       const tag=hid==='ha'?'A':'B';
       srcHtml+=`<div style="margin:4px 0;"><span style="color:${hid==='ha'?'#7b9db5':'#7a9e7a'};font-weight:bold;">英雄${tag}</span>`;
       as.forEach(a=>{
-        srcHtml+=`<div style="font-size:9px;color:var(--c-text2);padding-left:8px;">槽 ${a.description}</div>`;
+        srcHtml+=`<div style="font-size:12px;color:var(--c-text2);padding-left:8px;">槽 ${a.description}</div>`;
       });
       srcHtml+=`</div>`;
     });
@@ -1628,7 +1628,7 @@ function renderSlots(slotsVM){
     const hIcon=HERO_ICON[hid]||'◆';
     const hType=HERO_TYPE[hid]||'';
     h+=`<div class="asl-hero-group">
-      <div class="asl-hero-label">${hIcon} ${hero.name} <span style="font-size:10px;font-weight:normal;color:var(--c-text2)">(${hType})</span></div>`;
+      <div class="asl-hero-label">${hIcon} ${hero.name} <span style="font-size:13px;font-weight:normal;color:var(--c-text2)">(${hType})</span></div>`;
     groups[hid].forEach(s=>{
       const cls=`as-card${s.used?' used':''}${s.isSel?' sel':''}`;
       const shapeHtml=shapeHTML(s.sn,s.el,6);
@@ -1749,14 +1749,14 @@ function renderShop(){
     <div style="display:flex;gap:4px;margin-bottom:4px">
       <button class="rfb" onclick="rollShop()">🔄 刷新（1💰）</button>
     </div>
-    ${G.shopItems.units.length===0?'<div style="color:#a89880;font-size:12px;padding:4px">已售罄</div>':''}
+    ${G.shopItems.units.length===0?'<div style="color:#a89880;font-size:15px;padding:4px">已售罄</div>':''}
     ${G.shopItems.units.map(item=>{
       const def=UNIT_DEFS[item.defId]; if(!def)return'';
       const lvl=def.levels[1];
       const frozen=G.shopFrozen.units.has(item.id);
       return`<div class="si" style="${frozen?'border:2px solid #7b9db5;':''}">
         <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-          <div style="width:28px;height:28px;border-radius:4px;background:${EC[def.element]};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨'}</div>
+          <div style="width:28px;height:28px;border-radius:4px;background:${EC[def.element]};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨'}</div>
           <div>
             <div class="si-n" style="color:${EC[def.element]}">${def.name} ${item.frozen?'❄️':''}</div>
             <div class="si-s">HP:${lvl.hp} · ${lvl.slots.length}槽 · ${lvl.slots.map(s=>EL[s.el]).join('/')}</div>
@@ -1764,7 +1764,7 @@ function renderShop(){
         </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
           <span class="sic">💰${item.cost}</span>
-          <button class="bb" onclick="freezeShopItem('${item.id}','units')" style="font-size:10px;padding:2px 4px">${frozen?'解冻':'❄️'}</button>
+          <button class="bb" onclick="freezeShopItem('${item.id}','units')" style="font-size:13px;padding:2px 4px">${frozen?'解冻':'❄️'}</button>
           <button class="bb" onclick="buyUnit('${item.id}')" ${G.gold<item.cost?'disabled':''}>购买</button>
         </div>
       </div>`;
@@ -1773,12 +1773,12 @@ function renderShop(){
 
   // === 强化品商店 ===
   h+=`<div class="ss"><div class="sstt">🧪 强化品</div>
-    ${G.shopItems.consumables.length===0?'<div style="color:#a89880;font-size:12px;padding:4px">已售罄</div>':''}
+    ${G.shopItems.consumables.length===0?'<div style="color:#a89880;font-size:15px;padding:4px">已售罄</div>':''}
     ${G.shopItems.consumables.map(item=>{
       const frozen=G.shopFrozen.consumables.has(item.id);
       return`<div class="si" style="${frozen?'border:2px solid #7b9db5;':''}">
         <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-          <span style="font-size:16px">${item.name.split(' ')[0]}</span>
+          <span style="font-size:19px">${item.name.split(' ')[0]}</span>
           <div>
             <div class="si-n">${item.name} ${item.frozen?'❄️':''}</div>
             <div class="si-s">${item.desc}</div>
@@ -1786,7 +1786,7 @@ function renderShop(){
         </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
           <span class="sic">💰${item.cost}</span>
-          <button class="bb" onclick="freezeShopItem('${item.id}','consumables')" style="font-size:10px;padding:2px 4px">${frozen?'解冻':'❄️'}</button>
+          <button class="bb" onclick="freezeShopItem('${item.id}','consumables')" style="font-size:13px;padding:2px 4px">${frozen?'解冻':'❄️'}</button>
           <button class="bb" onclick="buyConsumable('${item.id}')" ${G.gold<item.cost?'disabled':''}>购买</button>
         </div>
       </div>`;
@@ -1798,36 +1798,36 @@ function renderShop(){
   const benchUnits=G.ownedUnits.filter(u=>!u.active);
   h+=`<div class="ss"><div class="sstt">⚔️ 阵容（上阵 ${activeUnits.length}/2）</div>`;
   if(activeUnits.length===0&&benchUnits.length===0){
-    h+=`<div style="color:#a89880;font-size:12px;padding:8px;text-align:center">还没有单位，去商店购买吧</div>`;
+    h+=`<div style="color:#a89880;font-size:15px;padding:8px;text-align:center">还没有单位，去商店购买吧</div>`;
   }
   activeUnits.forEach(u=>{
     const def=UNIT_DEFS[u.defId]; if(!def)return;
     const lvl=def.levels[u.level];
     h+=`<div class="si">
       <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-        <span style="font-size:12px;font-weight:bold;color:#c4a860">⭐上阵 Lv${u.level}</span>
+        <span style="font-size:15px;font-weight:bold;color:#c4a860">⭐上阵 Lv${u.level}</span>
         <span style="color:${EC[def.element]}">${def.name}</span>
-        <span style="font-size:10px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span>
+        <span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span>
       </div>
       <div style="display:flex;gap:3px">
-        ${benchUnits.length>0?`<button class="bb" style="font-size:10px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">→备战</button>`:''}
-        <button class="bb" style="font-size:10px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button>
+        ${benchUnits.length>0?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">→备战</button>`:''}
+        <button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button>
       </div>
     </div>`;
-    h+=`<div style="font-size:10px;color:var(--c-text2);margin:-2px 0 4px 12px">槽: ${lvl.slots.map(s=>`${EL[s.el]}·${SD[s.sn]?.name||s.sn}号·×${TIER_MULT[s.tier]}`).join(' | ')}</div>`;
+    h+=`<div style="font-size:13px;color:var(--c-text2);margin:-2px 0 4px 12px">槽: ${lvl.slots.map(s=>`${EL[s.el]}·${SD[s.sn]?.name||s.sn}号·×${TIER_MULT[s.tier]}`).join(' | ')}</div>`;
   });
   benchUnits.forEach(u=>{
     const def=UNIT_DEFS[u.defId]; if(!def)return;
     const lvl=def.levels[u.level];
     h+=`<div class="si" style="opacity:0.7">
       <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-        <span style="font-size:12px;color:var(--c-text2)">💤备战 Lv${u.level}</span>
+        <span style="font-size:15px;color:var(--c-text2)">💤备战 Lv${u.level}</span>
         <span style="color:${EC[def.element]}">${def.name}</span>
-        <span style="font-size:10px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span>
+        <span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span>
       </div>
       <div style="display:flex;gap:3px">
-        ${activeUnits.length<2?`<button class="bb" style="font-size:10px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">上阵</button>`:''}
-        <button class="bb" style="font-size:10px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button>
+        ${activeUnits.length<2?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">上阵</button>`:''}
+        <button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button>
       </div>
     </div>`;
   });
@@ -1836,12 +1836,12 @@ function renderShop(){
   // === 背包 ===
   h+=`<div class="ss"><div class="sstt">🎒 背包（${G.backpack.length}件）</div>`;
   if(G.backpack.length===0){
-    h+=`<div style="color:#a89880;font-size:12px;padding:8px;text-align:center">背包为空</div>`;
+    h+=`<div style="color:#a89880;font-size:15px;padding:8px;text-align:center">背包为空</div>`;
   } else {
     G.backpack.forEach(bp=>{
       h+=`<div class="si" style="justify-content:space-between">
         <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-          <span style="font-size:14px">${bp.name.split(' ')[0]}</span>
+          <span style="font-size:17px">${bp.name.split(' ')[0]}</span>
           <div>
             <div class="si-n">${bp.name}</div>
             <div class="si-s">${bp.desc}</div>
@@ -1857,12 +1857,12 @@ function renderShop(){
   h+=`<div class="ss"><div class="sstt">当前行动点配置（${G.slots.length}槽）</div>
     ${G.slots.map((s,i)=>{
       const hero=G.heroes[s.hid];
-      return`<div style="font-size:10px;margin:3px 0;display:flex;align-items:center;gap:5px">
+      return`<div style="font-size:13px;margin:3px 0;display:flex;align-items:center;gap:5px">
         <span style="color:#a89880;min-width:28px">槽${i+1}:</span>
         ${shapeHTML(s.sn,s.el,6)}
         <span style="color:${EC[s.el]}">${EL[s.el]}·${SD[s.sn]?.name||s.sn}号</span>
         <span style="color:var(--c-text2)">×${TIER_MULT[s.tier]}</span>
-        <span style="color:#a89880;font-size:9px">(${hero?hero.name:'?'})</span>
+        <span style="color:#a89880;font-size:12px">(${hero?hero.name:'?'})</span>
       </div>`;
     }).join('')}
   </div>`;

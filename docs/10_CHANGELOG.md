@@ -1,3 +1,12 @@
+## 2026-06-02 — Claude/Codex Hook 规则对齐
+
+### 文档
+- `docs/00_AI_WORKFLOW_DETAILS.md`：扩展 Goal Skill Hooks 为 Claude/Codex 共用 hook registry，补充 Claude 无 Codex Goal API 时的兼容写回方式，并把常用 skill 分为 required / conditional / advisory。
+- `CLAUDE.md`：改回与 `AGENTS.md` 同结构同内容的薄入口；Claude/Codex hook 差异统一维护在项目细则中。
+
+### 验证
+- `git diff --check`。
+
 ## 2026-06-02 — 仓库未跟踪文件整理
 
 ### 文件整理

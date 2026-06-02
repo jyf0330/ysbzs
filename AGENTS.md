@@ -1,4 +1,3 @@
-
 # AGENTS.md · 元素背包史
 
 <!-- ywh: web-game -->
@@ -6,8 +5,9 @@
 本文件是 AI 入口薄文件。项目规则入口是 `docs/00_AI_PROJECT_RULES.md`，细则是 `docs/00_AI_WORKFLOW_DETAILS.md`，不要在这里复制完整规则。
 
 ## 开始前必须做
-5. 开工第一步走变更分类表 → 路由到对应 Superpowers 执行链。
-6. 按任务类型创建或更新 `tasks/doing/当前任务.md`，执行 AI 只读任务卡指定范围；只读评审 / 流程审计不创建任务卡。
+
+1. 开工第一步走变更分类表 → 路由到对应 Superpowers 执行链。
+2. 按任务类型创建或更新 `tasks/doing/当前任务.md`，执行 AI 只读任务卡指定范围；只读评审 / 流程审计不创建任务卡。
 
 ## 项目信息
 

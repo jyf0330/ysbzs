@@ -1,3 +1,12 @@
+## 2026-06-02 — AI 规则入口格式整理
+
+### 文档
+- `AGENTS.md`：移除开头空行，将“开始前必须做”编号整理为连续 `1/2`。
+- `docs/00_AI_PROJECT_RULES.md`：修正“必读顺序”段落的 Markdown 列表格式。
+- `docs/00_AI_WORKFLOW_DETAILS.md`：恢复文档一级标题，补齐列表前空行，清理 Goal hook 条件列表的多余空行。
+
+### 验证
+- `git diff --check`。
 
 ## 2026-06-01 — Codex Goal：AI 战斗入口接入
 

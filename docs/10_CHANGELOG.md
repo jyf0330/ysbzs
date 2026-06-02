@@ -1,3 +1,28 @@
+## 2026-06-02 — 单文件拆分模块化重构
+
+### 重构
+- 将 4981 行 index.html 拆分为 4 个文件：
+  - `data.js`（539行）：纯数据层，包含常量、UNIT_DEFS、SHOP_POOLS、MONSTER_TYPES、DAY_WAVE_CONFIG 等
+  - `game.js`（2219行）：核心逻辑层，包含 G 状态管理、战斗逻辑、商店系统、回合控制等
+  - `ui.js`（2022行）：UI 层，包含 ViewModel 构建、DOM 渲染、事件绑定
+  - `index.html`（778行）：入口壳，包含 CSS、HTML 和 3 个 script 标签
+
+### 适配
+- `test.js`：支持多文件加载模式（data.js → game.js → ui.js），同时保留单文件模式兼容
+- 移除 ui.js 中的 DOM 桩代码，避免与测试桩冲突
+
+### 验证
+- `node test.js`：422/422 测试通过，与拆分前一致
+- 保留 `index.html.bak` 作为原始文件备份
+
+## 2026-06-02 — Goal 工作流触发条件明确化
+
+### 文档
+- `docs/00_AI_WORKFLOW_DETAILS.md`：Goal 工作流硬性触发条件改为「用户消息中包含 "goal" 一词」；没有 "goal" 关键词时，即使任务很大也走标准工作流。
+
+### 验证
+- `git diff --check`。
+
 ## 2026-06-02 — Claude/Codex Hook 规则对齐
 
 ### 文档

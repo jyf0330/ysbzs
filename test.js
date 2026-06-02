@@ -25,15 +25,29 @@ global.window = { innerWidth:1920 };
 // 让 setTimeout 同步执行（怪物AI回合立即完成）
 global.setTimeout = fn => { try{ fn(); }catch(e){} };
 
-// ── 载入游戏脚本 ───────────────────────────────────────────────
-const htmlPath = process.env.YSBZS_HTML_PATH || path.join(__dirname, 'index.html');
-const html = fs.readFileSync(htmlPath,'utf8');
-const scriptTag = html.match(/<script>([\s\S]+?)<\/script>/);
-if(!scriptTag) throw new Error('找不到 <script> 标签');
-// 将 const/let 改为 var，使其通过 eval 暴露到当前作用域
-const gameScript = scriptTag[1].replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
+// ── 载入游戏脚本（支持单文件或多文件模式）─────────────────────
 global.__TEST__ = true;
-eval(gameScript); // eslint-disable-line no-eval
+const useMultiFile = fs.existsSync(path.join(__dirname, 'data.js')) && 
+                     fs.existsSync(path.join(__dirname, 'game.js')) &&
+                     fs.existsSync(path.join(__dirname, 'ui.js'));
+
+if (useMultiFile) {
+  // 多文件模式：data.js → game.js → ui.js
+  const dataScript = fs.readFileSync(path.join(__dirname, 'data.js'), 'utf8').replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
+  const gameScript = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8').replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
+  const uiScript = fs.readFileSync(path.join(__dirname, 'ui.js'), 'utf8').replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
+  eval(dataScript);
+  eval(gameScript);
+  eval(uiScript);
+} else {
+  // 单文件模式：从 index.html 加载
+  const htmlPath = process.env.YSBZS_HTML_PATH || path.join(__dirname, 'index.html');
+  const html = fs.readFileSync(htmlPath,'utf8');
+  const scriptTag = html.match(/<script>([\s\S]+?)<\/script>/);
+  if(!scriptTag) throw new Error('找不到 <script> 标签');
+  const gameScript = scriptTag[1].replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
+  eval(gameScript);
+}
 
 // 屏蔽 DOM 渲染函数，只测逻辑
 const _realRender = render;

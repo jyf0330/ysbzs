@@ -980,14 +980,14 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
     assert.strictEqual(G.gold, 5+unit.level);
     assert.strictEqual(G.ownedUnits.length, beforeLen-1);
   });
-  test('rollShop 花费 2 金币并重新生成商店', ()=>{
+  test('rollShop 花费 1 金币并重新生成商店', ()=>{
     fresh(); G.phase='SHOP'; G.gold=8; G.day=1;
     G.shopTier=1; genShop();
     // 冻结一个商品
     const uid=G.shopItems.units[0].id;
     G.shopFrozen.units.add(uid);
     rollShop();
-    assert.strictEqual(G.gold,6);
+    assert.strictEqual(G.gold,7);
     // rollShop 清除冻结
     assert.strictEqual(G.shopFrozen.units.size,0);
     assert.strictEqual(G.shopFrozen.consumables.size,0);
@@ -3009,10 +3009,10 @@ group('TDD-WT:十字使属性',()=>{
     const def=UNIT_DEFS['wind_breeze'];
     assert.strictEqual(def.element,'wind');
   });
-  test('WT12:十字使青铜统一价格3金',()=>{
+  test('WT12:十字使青铜统一价格2金',()=>{
     const def=UNIT_DEFS['wind_breeze'];
     const price=calcUnitPrice(def);
-    assert.strictEqual(price,3,'青铜统一定价为3金');
+    assert.strictEqual(price,2,'青铜统一定价为2金');
   });
 });
 
@@ -3769,11 +3769,11 @@ group('Goal 03/04 完整实现', ()=>{
     assert.strictEqual(MONSTER_TYPES.boss10.ability.id,'core_split');
   });
   test('GOAL0304-04: 同品级统一定价，不使用 priceTier 乘法', ()=>{
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fire_starter),3);
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.earth_shield),3,'青铜 priceTier=3 仍应 3 金');
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fluff_speaker),5,'白银统一 5 金');
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.forge_fire),7,'黄金统一 7 金');
-    assert.strictEqual(calcUnitPrice(UNIT_DEFS.dragon_flame),10,'钻石统一 10 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fire_starter),2);
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.earth_shield),2,'青铜 priceTier=3 仍应 2 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.fluff_speaker),4,'白银统一 4 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.forge_fire),6,'黄金统一 6 金');
+    assert.strictEqual(calcUnitPrice(UNIT_DEFS.dragon_flame),8,'钻石统一 8 金');
   });
   test('GOAL0304-05: 商店只卖英雄且不生成 consumables', ()=>{
     fresh(); G.phase='SHOP'; G.day=6; G.dayHalf=2; genShop();

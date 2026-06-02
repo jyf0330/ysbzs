@@ -1741,131 +1741,113 @@ function shapeHTML(sn,el,sz=7){
 
 function renderShop(){
   document.getElementById('sg').textContent=G.gold;
-  let h='';
-
-  // === 单位商店 ===
-  h+=`<div class="ss">
-    <div class="sstt">🎖️ 单位商店 · Tier ${G.shopTier}</div>
-    <div style="display:flex;gap:4px;margin-bottom:4px">
-      <button class="rfb" onclick="rollShop()">🔄 刷新（1💰）</button>
-    </div>
-    ${G.shopItems.units.length===0?'<div style="color:#a89880;font-size:15px;padding:4px">已售罄</div>':''}
-    ${G.shopItems.units.map(item=>{
-      const def=UNIT_DEFS[item.defId]; if(!def)return'';
-      const lvl=def.levels[1];
-      const frozen=G.shopFrozen.units.has(item.id);
-      return`<div class="si" style="${frozen?'border:2px solid #7b9db5;':''}">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-          <div style="width:28px;height:28px;border-radius:4px;background:${EC[def.element]};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨'}</div>
-          <div>
-            <div class="si-n" style="color:${EC[def.element]}">${def.name} ${item.frozen?'❄️':''}</div>
-            <div class="si-s">HP:${lvl.hp} · ${lvl.slots.length}槽 · ${lvl.slots.map(s=>EL[s.el]).join('/')}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-          <span class="sic">💰${item.cost}</span>
-          <button class="bb" onclick="freezeShopItem('${item.id}','units')" style="font-size:13px;padding:2px 4px">${frozen?'解冻':'❄️'}</button>
-          <button class="bb" onclick="buyUnit('${item.id}')" ${G.gold<item.cost?'disabled':''}>购买</button>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
-
-  // === 强化品商店 ===
-  h+=`<div class="ss"><div class="sstt">🧪 强化品</div>
-    ${G.shopItems.consumables.length===0?'<div style="color:#a89880;font-size:15px;padding:4px">已售罄</div>':''}
-    ${G.shopItems.consumables.map(item=>{
-      const frozen=G.shopFrozen.consumables.has(item.id);
-      return`<div class="si" style="${frozen?'border:2px solid #7b9db5;':''}">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-          <span style="font-size:19px">${item.name.split(' ')[0]}</span>
-          <div>
-            <div class="si-n">${item.name} ${item.frozen?'❄️':''}</div>
-            <div class="si-s">${item.desc}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-          <span class="sic">💰${item.cost}</span>
-          <button class="bb" onclick="freezeShopItem('${item.id}','consumables')" style="font-size:13px;padding:2px 4px">${frozen?'解冻':'❄️'}</button>
-          <button class="bb" onclick="buyConsumable('${item.id}')" ${G.gold<item.cost?'disabled':''}>购买</button>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
-
-  // === 阵容管理 ===
+  const rollCost=(SHOP_PRICE_CONFIG?.consumableBase?.roll)||1;
   const activeUnits=G.ownedUnits.filter(u=>u.active);
   const benchUnits=G.ownedUnits.filter(u=>!u.active);
-  h+=`<div class="ss"><div class="sstt">⚔️ 阵容（上阵 ${activeUnits.length}/2）</div>`;
-  if(activeUnits.length===0&&benchUnits.length===0){
-    h+=`<div style="color:#a89880;font-size:15px;padding:8px;text-align:center">还没有单位，去商店购买吧</div>`;
-  }
-  activeUnits.forEach(u=>{
-    const def=UNIT_DEFS[u.defId]; if(!def)return;
-    const lvl=def.levels[u.level];
-    h+=`<div class="si">
-      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-        <span style="font-size:15px;font-weight:bold;color:#c4a860">⭐上阵 Lv${u.level}</span>
-        <span style="color:${EC[def.element]}">${def.name}</span>
-        <span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span>
-      </div>
-      <div style="display:flex;gap:3px">
-        ${benchUnits.length>0?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">→备战</button>`:''}
-        <button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button>
-      </div>
-    </div>`;
-    h+=`<div style="font-size:13px;color:var(--c-text2);margin:-2px 0 4px 12px">槽: ${lvl.slots.map(s=>`${EL[s.el]}·${SD[s.sn]?.name||s.sn}号·×${TIER_MULT[s.tier]}`).join(' | ')}</div>`;
-  });
-  benchUnits.forEach(u=>{
-    const def=UNIT_DEFS[u.defId]; if(!def)return;
-    const lvl=def.levels[u.level];
-    h+=`<div class="si" style="opacity:0.7">
-      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-        <span style="font-size:15px;color:var(--c-text2)">💤备战 Lv${u.level}</span>
-        <span style="color:${EC[def.element]}">${def.name}</span>
-        <span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span>
-      </div>
-      <div style="display:flex;gap:3px">
-        ${activeUnits.length<2?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">上阵</button>`:''}
-        <button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button>
-      </div>
-    </div>`;
-  });
-  h+=`</div>`;
+  const allOwned=G.ownedUnits||[];
+  const mergeHints={};
+  allOwned.forEach(u=>{mergeHints[u.defId]=(mergeHints[u.defId]||0)+1;});
+  (G.shopItems.units||[]).forEach(it=>{mergeHints[it.defId]=(mergeHints[it.defId]||0)+1;});
+  const canMerge=Object.entries(mergeHints).filter(([,cnt])=>cnt>=3).map(([id])=>UNIT_DEFS[id]?.name).filter(Boolean);
+  const dayLabel=G.dayHalf===2?'夜晚商店':'午后商店';
+  const recommend=(canMerge.length>0)
+    ?`优先合成：${canMerge.slice(0,2).join('、')}`
+    : (G.gold<=2?'金币紧张，优先保留核心与经济节奏':'可刷新找关键件，注意转派成本');
 
-  // === 背包 ===
-  h+=`<div class="ss"><div class="sstt">🎒 背包（${G.backpack.length}件）</div>`;
-  if(G.backpack.length===0){
-    h+=`<div style="color:#a89880;font-size:15px;padding:8px;text-align:center">背包为空</div>`;
-  } else {
-    G.backpack.forEach(bp=>{
-      h+=`<div class="si" style="justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-          <span style="font-size:17px">${bp.name.split(' ')[0]}</span>
-          <div>
-            <div class="si-n">${bp.name}</div>
-            <div class="si-s">${bp.desc}</div>
-          </div>
-        </div>
-        <button class="bb" onclick="useBackpackItem('${bp.bpId}')">使用</button>
+  let h='';
+  h+=`<div class="shop-grid">`;
+
+  // 左栏：阵容与后效
+  h+=`<div class="shop-col">
+    <div class="sstt">⚔️ 阵容与后效</div>
+    ${activeUnits.length===0&&benchUnits.length===0?'<div class="shop-note">还没有单位，先购买核心件。</div>':''}
+    <div class="shop-alert">上阵 ${activeUnits.length}/2 · 可用备战 ${benchUnits.length}</div>
+    <div class="sstt">上阵单位</div>
+    ${activeUnits.map(u=>{
+      const def=UNIT_DEFS[u.defId]; if(!def)return'';
+      const lvl=def.levels[u.level];
+      const nextLvl=def.levels[u.level+1]||null;
+      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
+      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
+      return `<div class="roster-card">
+        <div class="roster-line"><span style="font-size:15px;font-weight:bold;color:#c4a860">⭐ Lv${u.level}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
+        <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
+        <div class="roster-line" style="margin-top:4px">${benchUnits.length>0?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">→备战</button>`:''}<button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button></div>
       </div>`;
-    });
-  }
-  h+=`</div>`;
-
-  // === 当前行动槽 ===
-  h+=`<div class="ss"><div class="sstt">当前行动点配置（${G.slots.length}槽）</div>
-    ${G.slots.map((s,i)=>{
-      const hero=G.heroes[s.hid];
-      return`<div style="font-size:13px;margin:3px 0;display:flex;align-items:center;gap:5px">
-        <span style="color:#a89880;min-width:28px">槽${i+1}:</span>
-        ${shapeHTML(s.sn,s.el,6)}
-        <span style="color:${EC[s.el]}">${EL[s.el]}·${SD[s.sn]?.name||s.sn}号</span>
-        <span style="color:var(--c-text2)">×${TIER_MULT[s.tier]}</span>
-        <span style="color:#a89880;font-size:12px">(${hero?hero.name:'?'})</span>
+    }).join('')}
+    <div class="sstt" style="margin-top:8px">备战单位</div>
+    ${benchUnits.map(u=>{
+      const def=UNIT_DEFS[u.defId]; if(!def)return'';
+      const lvl=def.levels[u.level];
+      const nextLvl=def.levels[u.level+1]||null;
+      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
+      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
+      return `<div class="roster-card" style="opacity:0.8">
+        <div class="roster-line"><span style="font-size:15px;color:var(--c-text2)">💤备战 Lv${u.level}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
+        <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
+        <div class="roster-line" style="margin-top:4px">${activeUnits.length<2?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">上阵</button>`:''}<button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button></div>
       </div>`;
     }).join('')}
   </div>`;
+
+  // 中栏：商品主区
+  h+=`<div class="shop-col">
+    <div class="sstt">🎖️ 单位商店 · Tier ${G.shopTier}</div>
+    <div class="unit-grid">
+      ${G.shopItems.units.length===0?'<div class="shop-note">已售罄</div>':''}
+      ${G.shopItems.units.map(item=>{
+        const def=UNIT_DEFS[item.defId]; if(!def)return'';
+        const lvl=def.levels[1];
+        const nextLvl=def.levels[2]||null;
+        const ownCnt=(allOwned.filter(u=>u.defId===item.defId).length)||0;
+        const toMerge=Math.max(0,3-(ownCnt+1));
+        const mergeHint=(ownCnt>=2)?'购买后可立刻合成升级':(ownCnt===1?`再补 ${toMerge} 张可合成`:'作为新核心起点');
+        const tags=(def.tags||[]).slice(0,3).join(' · ');
+        const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
+        const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
+        return`<div class="unit-card">
+          <div class="unit-head">
+            <div class="unit-meta">
+              <div class="unit-icon" style="background:${EC[def.element]}">${def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨'}</div>
+              <div>
+                <div class="unit-name" style="color:${EC[def.element]}">${def.name}</div>
+                <div class="unit-tags">HP:${lvl.hp} · ${lvl.slots.length}槽 · ${tags||'基础单位'}</div>
+              </div>
+            </div>
+            <span class="sic">💰${item.cost}</span>
+          </div>
+          <div class="unit-hint">${mergeHint}</div>
+          <div class="mini-compare">
+            <div class="mini-level">
+              <div class="mini-level-head">当前 HP ${lvl.hp}</div>
+              ${currentSlots}
+            </div>
+            ${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一级 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}
+          </div>
+          <div class="unit-actions">
+            <button class="bb" onclick="buyUnit('${item.id}')" ${G.gold<item.cost?'disabled':''}>购买</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // 右栏：决策摘要
+  h+=`<div class="shop-col">
+    <div class="sstt" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <span>🧭 决策摘要</span>
+      <button class="bb sl" style="font-size:12px;padding:2px 8px" onclick="closeShop()">完成</button>
+    </div>
+    <div class="shop-stat"><span>阶段</span><span>${dayLabel}</span></div>
+    <div class="shop-stat"><span>天数</span><span>Day ${G.day}</span></div>
+    <div class="shop-stat"><span>金币</span><span>${G.gold}</span></div>
+    <div class="shop-stat"><span>上阵/备战</span><span>${activeUnits.length}/2 · ${benchUnits.length}</span></div>
+    <div class="shop-alert">${recommend}</div>
+    <div class="shop-alert">当前版本：商店仅售英雄卡，构筑深度来自买卖与同名合成。</div>
+    <button class="rfb" style="width:100%;margin-top:4px" onclick="rollShop()">🔄 刷新（${rollCost}💰）</button>
+  </div>`;
+
+  h+=`</div>`;
 
   document.getElementById('scat').innerHTML=h;
 }

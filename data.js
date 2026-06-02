@@ -458,12 +458,12 @@ const DAY_WAVE_CONFIG = {
 
 // ========== 商店价格配置 ==========
 const SHOP_PRICE_CONFIG = {
-  unitPrice: { tier1:3, tier2:6 },
+  unitPrice: { tier1:2, tier2:4, tier3:6, tier4:8 },
   consumableBase: {
     el_random: 3,
     el_specific: 5,
     slot_layers_up: 4,
-    roll: 2,
+    roll: 1,
     freeze: 0,
   },
   shopSlots: {
@@ -510,7 +510,7 @@ const REWARD_NODE_CONFIG = {
 };
 
 // ========== 价格计算 ==========
-const GRADE_BASE = {青铜:3,白银:5,黄金:7,钻石:10};
+const GRADE_BASE = {青铜:2,白银:4,黄金:6,钻石:8};
 function calcUnitPrice(def){ return GRADE_BASE[def.grade] || def.cost || 2; }
 
 // ========== 商店池 ==========

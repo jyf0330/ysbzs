@@ -580,12 +580,12 @@ const DAY_WAVE_CONFIG = {
 
 // ========== 商店价格配置 ==========
 const SHOP_PRICE_CONFIG = {
-  unitPrice: { tier1:3, tier2:6 },
+  unitPrice: { tier1:2, tier2:4, tier3:6, tier4:8 },
   consumableBase: {
     el_random: 3,    // 随机元素强化
     el_specific: 5,  // 指定元素强化
     slot_layers_up: 4, // 行动槽层数+1
-    roll: 2,         // 刷新商店
+    roll: 1,         // 刷新商店
     freeze: 0,       // 锁定商店（免费）
   },
   // 每日商店格子构成
@@ -607,7 +607,7 @@ const SHOP_PRICE_CONFIG = {
   interestStep: 8,
   interestMax: 2,
 };
-const GRADE_BASE={青铜:3,白银:5,黄金:7,钻石:10};function calcUnitPrice(def){return GRADE_BASE[def.grade]||def.cost||2;}
+const GRADE_BASE={青铜:2,白银:4,黄金:6,钻石:8};function calcUnitPrice(def){return GRADE_BASE[def.grade]||def.cost||2;}
 
 const REWARD_NODE_CONFIG={
   3:{midday:{stalls:1,tier:2,guarantee:['fluff_speaker','spring_sprite']}},

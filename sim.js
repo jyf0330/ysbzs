@@ -1,94 +1,167 @@
+#!/usr/bin/env node
 /**
  * 元素背包史 · 文字战斗模拟器
- * 运行：node sim.js [天数]   默认跑2天
+ * 使用 ai-eval VM loader + TraceRecorder
+ * 运行：node sim.js [天数] [--trace=out.jsonl]
  */
 const fs   = require('fs');
 const path = require('path');
+const { loadYsbzsGame } = require('./ai-eval/core/game-script-loader');
+const { TraceRecorder } = require('./ai-eval/core/trace-recorder');
 
-const makeEl = () => ({
-  innerHTML:'', textContent:'', style:{display:''},
-  children:[], disabled:false, scrollTop:0, scrollHeight:0,
-  classList:{ add(){}, remove(){}, has:()=>false },
-  appendChild(c){ this.children.push(c); },
-  removeChild(c){ const i=this.children.indexOf(c); if(i>=0)this.children.splice(i,1); },
-  getBoundingClientRect(){ return {top:0,left:0,right:0,bottom:0}; },
-  onclick:null, title:'',
-});
-const _els = {};
-global.document = {
-  getElementById(id){ if(!_els[id]) _els[id]=makeEl(); return _els[id]; },
-  createElement(){ return makeEl(); },
-  addEventListener(){},
-};
-global.window = { innerWidth:1920 };
-global.setTimeout = fn => { try{ fn(); }catch(e){} };
-
-const htmlPath = path.join(__dirname, 'index.html');
-const html = fs.readFileSync(htmlPath,'utf8');
-const scriptTag = html.match(/<script>([\s\S]+?)<\/script>/);
-if(!scriptTag) throw new Error('找不到 <script> 标签');
-global.__TEST__ = true;
-eval(scriptTag[1].replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var'));
-
-const out = (...a) => process.stdout.write(a.join(' ')+'\n');
-render = ()=>{};
-renderShop = ()=>{};
-glog = msg => {
-  const tag = G ? `[D${G.day}.${G.dayHalf?'下':'上'} R${G.round}/${G.maxRound}]` : '[INIT]';
-  out(`  ${tag} ${msg}`);
-};
-showMsg = t => { out('📢', t); };
-
-// 劫持 dispatch 输出英雄动作细节
-const _realDispatch = dispatchGameAction;
-dispatchGameAction = function(action) {
-  if (action.type === 'MOVE_HERO') {
-    const hero = G.heroes[action.heroId];
-    if (hero) out(`    🚶 ${hero.name} → (${action.to.r},${action.to.c})`);
+// ─── 参数解析 ───
+let maxDays = 2;
+let tracePath = null;
+for (let i = 2; i < process.argv.length; i++) {
+  if (process.argv[i].startsWith('--trace=')) {
+    tracePath = process.argv[i].slice(8);
+  } else {
+    maxDays = parseInt(process.argv[i]) || 2;
   }
-  if (action.type === 'USE_SLOT') {
-    const s = G.slots[action.slotId];
-    const hero = G.heroes[s?.hid];
-    if (hero && s) {
-      const cells = atkCells(hero.pos, s.sn, s.dir);
-      out(`    ⚡ ${hero.name} 使用 ${EL[s.el]}槽#${action.slotId+1} → ${cells.length}格`);
-    }
-  }
-  _realDispatch(action);
-};
+}
 
-const maxDays = parseInt(process.argv[2]) || 2;
+// ─── 加载游戏（VM sandbox） ───
+const game = loadYsbzsGame({ rootDir: __dirname });
+const ctx = game.context;
 
+// 静默 UI
+ctx.render = () => {};
+ctx.renderShop = () => {};
+ctx.showMsg = () => {};
+ctx.glog = () => {};
+
+const out = (...a) => process.stdout.write(a.join(' ') + '\n');
+const recorder = new TraceRecorder('sim');
+
+// ─── 初始化 ───
 out('╔══════════════════════════════════╗');
 out('║  元素背包史 · 文字战斗模拟器    ║');
 out('╚══════════════════════════════════╝');
 out('');
 
-initGame();
+ctx.initGame();
 out('');
 
+// initGame 会创建新 G 对象，必须在 initGame 之后获取引用
+const G = ctx.G;
+
+// ─── 快照工具 ───
+function snapHeroes() {
+  const h = {};
+  for (const [id, hero] of Object.entries(G.heroes || {})) {
+    h[id] = { id, name: hero.name, hp: hero.hp, maxHp: hero.maxHp, pos: { ...hero.pos }, _acted: hero._acted };
+  }
+  return h;
+}
+function snapMonsters() {
+  return (G.monsters || []).map(m => ({
+    id: m.id, name: m.name, typeId: m.typeId,
+    hp: m.hp, maxHp: m.maxHp, atk: m.atk,
+    pos: { ...m.pos }, dead: m.dead, gold: m.gold,
+  }));
+}
+function snapCastles() {
+  return {
+    player: { hp: G.playerCastle?.hp ?? 0, maxHp: G.playerCastle?.maxHp ?? 100 },
+    enemy:  { hp: G.enemyCastle?.hp ?? 0,  maxHp: G.enemyCastle?.maxHp ?? 100 },
+  };
+}
+
+recorder.record({
+  step: 0, phase: 'INIT',
+  action: { type: 'GAME_START' },
+  result: { day: G.day, gold: G.gold, heroes: snapHeroes(), castles: snapCastles() },
+});
+
+// ─── 主循环 ───
 let turn = 0;
+let step = 1;
+
 while (G.day <= maxDays && G.phase !== 'OVER') {
   turn++;
+
   if (G.phase === 'PLAYER') {
-    out(`\n━━━ 第 ${turn} 回合 · D${G.day}${G.dayHalf?'下午':'早上'} R${G.round}/${G.maxRound} ━━━`);
-    const heroes = Object.values(G.heroes).filter(h=>h.hp>0);
-    heroes.forEach(h => out(`  🦸 ${h.name} HP=${h.hp}/${h.maxHp} (${h.pos.r},${h.pos.c}) ${h._acted?'🔒':''}`));
-    const alive = G.monsters.filter(m=>!m.dead);
+    out(`\n━━━ 第 ${turn} 回合 · D${G.day}${G.dayHalf ? '下午' : '早上'} R${G.round}/${G.maxRound} ━━━`);
+    const heroes = Object.values(G.heroes).filter(h => h.hp > 0);
+    heroes.forEach(h => out(`  🦸 ${h.name} HP=${h.hp}/${h.maxHp} (${h.pos.r},${h.pos.c}) ${h._acted ? '🔒' : ''}`));
+    const alive = G.monsters.filter(m => !m.dead);
     out(`  👾 ${alive.length}只存活:`);
     alive.forEach(m => out(`     ${m.name} HP=${m.hp}/${m.maxHp} (${m.pos.r},${m.pos.c})`));
-    execAllHeroSlots();
-    if (G.phase === 'PLAYER') endPlayerTurn();
+
+    const monstersBefore = alive.length;
+    const castleHpBefore = G.playerCastle.hp;
+
+    ctx.execAllHeroSlots();
+
+    const slotsUsed = (G.slots || []).filter(s => s.used).map(s => ({
+      id: s.id, el: s.el, sn: s.sn, tier: s.tier, dir: s.dir, hid: s.hid,
+    }));
+    recorder.record({
+      step: step++, phase: 'PLAYER',
+      action: { type: 'PLAYER_ACTIONS', slotsUsed },
+      result: { heroes: snapHeroes(), monsters: snapMonsters() },
+    });
+
+    if (G.phase === 'PLAYER') ctx.endPlayerTurn();
+
+    const monstersAfter = G.monsters.filter(m => !m.dead).length;
+    const killed = monstersBefore - monstersAfter;
+    const castleDmg = castleHpBefore - G.playerCastle.hp;
+
+    recorder.record({
+      step: step++, phase: 'SETTLE',
+      action: { type: 'COMBAT_RESULT' },
+      result: {
+        monstersKilled: killed,
+        castleDamageTaken: Math.max(0, castleDmg),
+        heroes: snapHeroes(), monsters: snapMonsters(), castles: snapCastles(),
+      },
+    });
+
+    out(`    → 击杀 ${killed} · 城堡 HP ${G.playerCastle.hp}`);
   }
+
   if (G.phase === 'SHOP') {
     out(`\n🏪 Day${G.day} 夜晚 · 金币: ${G.gold}`);
-    closeShop();
+    recorder.record({
+      step: step++, phase: 'SHOP',
+      action: { type: 'SHOP_OPEN' },
+      result: { gold: G.gold, day: G.day },
+    });
+    ctx.closeShop();
+    recorder.record({
+      step: step++, phase: 'SHOP',
+      action: { type: 'SHOP_CLOSE' },
+      result: { gold: G.gold, nextDay: G.day, nextPhase: G.phase },
+    });
   }
+
   if (G.phase === 'OVER') { out(`\n💀 游戏结束！`); break; }
 }
 
+// ─── 结束 ───
 out('');
 out('════════════════════════════════════');
 out(`模拟结束：Day ${G.day} · Phase ${G.phase} · 共 ${turn} 回合`);
-const aliveHeroes = Object.values(G.heroes).filter(h=>h.hp>0);
-out(`存活英雄: ${aliveHeroes.map(h=>`${h.name} HP=${h.hp}`).join(', ') || '无'}`);
+const aliveHeroes = Object.values(G.heroes).filter(h => h.hp > 0);
+out(`存活英雄: ${aliveHeroes.map(h => `${h.name} HP=${h.hp}`).join(', ') || '无'}`);
+
+const result = G.runVictory === true ? 'VICTORY' : G.runVictory === false ? 'DEFEAT' : 'TIMEOUT';
+recorder.record({
+  step: step++, phase: 'OVER',
+  action: { type: 'GAME_OVER' },
+  result: {
+    result, day: G.day, gold: G.gold,
+    heroes: snapHeroes(), monsters: snapMonsters(), castles: snapCastles(),
+  },
+});
+
+out(`\n结果: ${result} (${G.day > 10 ? '通关' : '未通关'})`);
+
+// ─── 输出 trace ───
+if (tracePath) {
+  const dir = path.dirname(tracePath);
+  if (dir && dir !== '.') fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(tracePath, recorder.toJSONL(), 'utf8');
+  out(`\n📝 Trace 已写入: ${tracePath} (${recorder.steps.length} 步)`);
+}

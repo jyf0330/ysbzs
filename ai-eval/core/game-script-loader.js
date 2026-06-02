@@ -47,6 +47,17 @@ function extractGameScript(html) {
   return scriptTag[1];
 }
 
+function loadMultiFileScripts(rootDir) {
+  const files = ['data.js', 'game.js', 'ui.js'];
+  const scripts = [];
+  for (const f of files) {
+    const p = path.join(rootDir, f);
+    if (!fs.existsSync(p)) return null; // fallback to single-file
+    scripts.push(fs.readFileSync(p, 'utf8'));
+  }
+  return scripts;
+}
+
 function createExportFooter() {
   return `
 ;(function exportYsbzsBindings() {
@@ -61,18 +72,50 @@ function createExportFooter() {
   try { if (typeof showMsg !== 'undefined') globalThis.showMsg = showMsg; } catch (e) {}
   try { if (typeof buildRunEndVM !== 'undefined') globalThis.buildRunEndVM = buildRunEndVM; } catch (e) {}
   try { if (typeof recomputeCorePreview !== 'undefined') globalThis.recomputeCorePreview = recomputeCorePreview; } catch (e) {}
+  try { if (typeof execAllHeroSlots !== 'undefined') globalThis.execAllHeroSlots = execAllHeroSlots; } catch (e) {}
+  try { if (typeof endPlayerTurn !== 'undefined') globalThis.endPlayerTurn = endPlayerTurn; } catch (e) {}
+  try { if (typeof closeShop !== 'undefined') globalThis.closeShop = closeShop; } catch (e) {}
+  try { if (typeof atkCells !== 'undefined') globalThis.atkCells = atkCells; } catch (e) {}
   try { if (typeof UNIT_DEFS !== 'undefined') globalThis.UNIT_DEFS = UNIT_DEFS; } catch (e) {}
   try { if (typeof EL !== 'undefined') globalThis.EL = EL; } catch (e) {}
   try { if (typeof SHOP_PRICE_CONFIG !== 'undefined') globalThis.SHOP_PRICE_CONFIG = SHOP_PRICE_CONFIG; } catch (e) {}
   try { if (typeof TIER_MULT !== 'undefined') globalThis.TIER_MULT = TIER_MULT; } catch (e) {}
   try { if (typeof ADV !== 'undefined') globalThis.ADV = ADV; } catch (e) {}
+  try { if (typeof buyUnit !== 'undefined') globalThis.buyUnit = buyUnit; } catch (e) {}
+  try { if (typeof sellUnit !== 'undefined') globalThis.sellUnit = sellUnit; } catch (e) {}
+  try { if (typeof freezeItem !== 'undefined') globalThis.freezeItem = freezeItem; } catch (e) {}
+  try { if (typeof setHero !== 'undefined') globalThis.setHero = setHero; } catch (e) {}
+  try { if (typeof moveHero !== 'undefined') globalThis.moveHero = moveHero; } catch (e) {}
+  try { if (typeof selSlot !== 'undefined') globalThis.selSlot = selSlot; } catch (e) {}
+  try { if (typeof setDir !== 'undefined') globalThis.setDir = setDir; } catch (e) {}
+  try { if (typeof hasCrossExplosion !== 'undefined') globalThis.hasCrossExplosion = hasCrossExplosion; } catch (e) {}
+  try { if (typeof spawnSummon !== 'undefined') globalThis.spawnSummon = spawnSummon; } catch (e) {}
+  try { if (typeof killSummon !== 'undefined') globalThis.killSummon = killSummon; } catch (e) {}
+  try { if (typeof dealDmg !== 'undefined') globalThis.dealDmg = dealDmg; } catch (e) {}
+  try { if (typeof addOwnedUnit !== 'undefined') globalThis.addOwnedUnit = addOwnedUnit; } catch (e) {}
+  try { if (typeof removeOwnedUnit !== 'undefined') globalThis.removeOwnedUnit = removeOwnedUnit; } catch (e) {}
+  try { if (typeof setEmptyCell !== 'undefined') globalThis.setEmptyCell = setEmptyCell; } catch (e) {}
+  try { if (typeof fresh !== 'undefined') globalThis.fresh = fresh; } catch (e) {}
+  try { if (typeof heroAt !== 'undefined') globalThis.heroAt = heroAt; } catch (e) {}
+  try { if (typeof monAt !== 'undefined') globalThis.monAt = monAt; } catch (e) {}
+  try { if (typeof summonAt !== 'undefined') globalThis.summonAt = summonAt; } catch (e) {}
+  try { if (typeof castleAt !== 'undefined') globalThis.castleAt = castleAt; } catch (e) {}
+  try { if (typeof hasElementAt !== 'undefined') globalThis.hasElementAt = hasElementAt; } catch (e) {}
+  try { if (typeof calcElementLayerDamage !== 'undefined') globalThis.calcElementLayerDamage = calcElementLayerDamage; } catch (e) {}
+  try { if (typeof commitPlayerActionsToElementField !== 'undefined') globalThis.commitPlayerActionsToElementField = commitPlayerActionsToElementField; } catch (e) {}
+  try { if (typeof buildPreviewGrid !== 'undefined') globalThis.buildPreviewGrid = buildPreviewGrid; } catch (e) {}
+  try { if (typeof buildBattleReport !== 'undefined') globalThis.buildBattleReport = buildBattleReport; } catch (e) {}
+  try { if (typeof buildHeroStats !== 'undefined') globalThis.buildHeroStats = buildHeroStats; } catch (e) {}
+  try { if (typeof buildMonsterStats !== 'undefined') globalThis.buildMonsterStats = buildMonsterStats; } catch (e) {}
+  try { if (typeof buildMonsterThreats !== 'undefined') globalThis.buildMonsterThreats = buildMonsterThreats; } catch (e) {}
   try {
     if (typeof G !== 'undefined') {
+      var _gVal = G;
       Object.defineProperty(globalThis, 'G', {
         configurable: true,
         enumerable: true,
-        get() { return G; },
-        set(value) { G = value; },
+        get() { return _gVal; },
+        set(value) { _gVal = value; },
       });
     }
   } catch (e) {}
@@ -100,7 +143,26 @@ function loadYsbzsGame(options = {}) {
   };
   context.global = context;
   vm.createContext(context);
-  vm.runInContext(`${extractGameScript(html)}\n${createExportFooter()}`, context, { filename: htmlPath });
+
+  // 检测多文件模式：data.js + game.js + ui.js 存在则用多文件
+  const multiScripts = loadMultiFileScripts(rootDir);
+  if (multiScripts) {
+    const footer = createExportFooter();
+    // data.js 和 game.js 用 var 声明提升到 context，ui.js 也一样
+    const combined = multiScripts.map(s =>
+      s.replace(/\bconst\b/g, 'var').replace(/\blet\b/g, 'var')
+    ).join('\n;\n') + '\n' + footer;
+    vm.runInContext(combined, context, { filename: 'multi-file-bundle' });
+  } else {
+    // 单文件模式：从 index.html 内联 script 提取
+    const scriptContent = extractGameScript(html);
+    const footer = createExportFooter();
+    vm.runInContext(
+      `${scriptContent.replace(/\bconst\b/g, 'var').replace(/\blet\b/g, 'var')}\n${footer}`,
+      context,
+      { filename: htmlPath }
+    );
+  }
 
   context.render = () => {};
   context.renderShop = () => {};

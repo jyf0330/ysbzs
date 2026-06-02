@@ -1,5 +1,7 @@
 # AGENTS.md · 元素背包史 / ysbzs
 
+First read `docs/02_CURRENT_WORKFLOW.md`: hard triggers are `Goal`, `diff`, and `git-c`.
+
 <!-- ywh: web-game -->
 
 AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。

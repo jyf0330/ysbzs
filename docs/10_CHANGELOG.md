@@ -1,3 +1,13 @@
+## 2026-06-03 — Added workflow hard-trigger pointer to root AI entries
+
+### Docs
+- `AGENTS.md` / `CLAUDE.md`: added a first-sentence pointer to `docs/02_CURRENT_WORKFLOW.md` and its `Goal`, `diff`, `git-c` hard triggers.
+
+## 2026-06-03 — Added git-c commit-cleanup trigger
+
+### Docs
+- `docs/02_CURRENT_WORKFLOW.md`: added `git-c` as a hard trigger for log-guided commit cleanup: read logs, group commits by matching log entries, commit unknown leftovers last, and finish with a clean worktree.
+
 ## 2026-06-03 — Workflow doc hardened into system-style routing rules
 
 ### Docs

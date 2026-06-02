@@ -4,7 +4,7 @@ Use this file as project-level routing instructions.
 
 ## Hard Triggers
 
-Only two hard triggers exist: `Goal` and `diff`.
+Only three hard triggers exist: `Goal`, `diff`, and `git-c`.
 
 ## Goal
 
@@ -34,6 +34,24 @@ Run:
 classify task -> trigger planning skills -> propose diff -> report
 ```
 
+## git-c
+
+If the user says `git-c`, enter commit-cleanup mode.
+
+Read project logs and CHANGELOG first.
+Inspect `git status` and diffs.
+Group changes into commits by matching log entries.
+Use precise staging.
+Commit unknown leftovers last.
+Finish with a clean worktree.
+Do not stop unless a High-Risk Exception applies.
+
+Run:
+
+```text
+read logs -> inspect status/diff -> group by log entry -> commit matching groups -> commit leftovers -> verify clean worktree -> report
+```
+
 ## Skill Routing
 
 Always trigger matching skills when available:
@@ -48,7 +66,7 @@ Always trigger matching skills when available:
 | Numbers, rules, levels, systems | `brainstorming`, `writing-plans`, `balance-check`, `ywh-game` |
 | Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
 | Docs, CHANGELOG, workflow rules | `ywh-game`, `verification-before-completion` |
-| Finish or pre-commit check | `verification-before-completion`, `finishing-a-development-branch`, `ywh-game` |
+| `git-c`, finish, pre-commit check | `verification-before-completion`, `finishing-a-development-branch`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
 
 ## Missing Skills

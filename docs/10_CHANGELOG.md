@@ -1,3 +1,18 @@
+## 2026-06-02 — 仓库未跟踪文件整理
+
+### 文件整理
+- 删除误入项目根目录的 `.codex/` 本机 skill 安装拷贝，并在 `.gitignore` 中加入 `.codex/`。
+- 将 `66.png` 归档为 `assets/references/doodle_tactics_66.png`，并同步当前任务卡引用路径。
+- 将 `sprite_up_right_move_package/` 归档到 `assets/sprites/sprite_up_right_move_package/`，保留 README、manifest、原图、逐帧图、spritesheet、GIF 预览和总预览图。
+- 纳入 `tasks/doing/当前任务.md` 作为当前视觉重制任务入口。
+
+### 文档
+- `资源目录结构与命名.md` 补充 `assets/references/` 与 `assets/sprites/` 的用途和当前已归档资源。
+
+### 验证
+- `git status --short --untracked-files=all`。
+- `git diff --check`。
+
 ## 2026-06-02 — AI 规则入口格式整理
 
 ### 文档

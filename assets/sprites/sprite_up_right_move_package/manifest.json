@@ -1,0 +1,1128 @@
+{
+  "name": "sprite_up_right_move_package",
+  "description": "总动作：上走1格(8帧)→右走1格(8帧)，合计16帧，人物造型不变、仅位移+走路缓动",
+  "fps": 12,
+  "gridMovePixels": 28,
+  "totalFrames": 16,
+  "segments": [
+    {
+      "name": "up",
+      "frames": 8,
+      "description": "向上移动一格"
+    },
+    {
+      "name": "right",
+      "frames": 8,
+      "description": "向右移动一格"
+    }
+  ],
+  "sprites": [
+    {
+      "name": "sprite_01",
+      "source": "original/sprite_01.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_01_up_right_sheet.png",
+      "gif": "combo_gif/sprite_01_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_01_combo_01.png",
+        "combo_frames/sprite_01_combo_02.png",
+        "combo_frames/sprite_01_combo_03.png",
+        "combo_frames/sprite_01_combo_04.png",
+        "combo_frames/sprite_01_combo_05.png",
+        "combo_frames/sprite_01_combo_06.png",
+        "combo_frames/sprite_01_combo_07.png",
+        "combo_frames/sprite_01_combo_08.png",
+        "combo_frames/sprite_01_combo_09.png",
+        "combo_frames/sprite_01_combo_10.png",
+        "combo_frames/sprite_01_combo_11.png",
+        "combo_frames/sprite_01_combo_12.png",
+        "combo_frames/sprite_01_combo_13.png",
+        "combo_frames/sprite_01_combo_14.png",
+        "combo_frames/sprite_01_combo_15.png",
+        "combo_frames/sprite_01_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 123,
+        "h": 133
+      }
+    },
+    {
+      "name": "sprite_02",
+      "source": "original/sprite_02.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_02_up_right_sheet.png",
+      "gif": "combo_gif/sprite_02_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_02_combo_01.png",
+        "combo_frames/sprite_02_combo_02.png",
+        "combo_frames/sprite_02_combo_03.png",
+        "combo_frames/sprite_02_combo_04.png",
+        "combo_frames/sprite_02_combo_05.png",
+        "combo_frames/sprite_02_combo_06.png",
+        "combo_frames/sprite_02_combo_07.png",
+        "combo_frames/sprite_02_combo_08.png",
+        "combo_frames/sprite_02_combo_09.png",
+        "combo_frames/sprite_02_combo_10.png",
+        "combo_frames/sprite_02_combo_11.png",
+        "combo_frames/sprite_02_combo_12.png",
+        "combo_frames/sprite_02_combo_13.png",
+        "combo_frames/sprite_02_combo_14.png",
+        "combo_frames/sprite_02_combo_15.png",
+        "combo_frames/sprite_02_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 123,
+        "h": 130
+      }
+    },
+    {
+      "name": "sprite_03",
+      "source": "original/sprite_03.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_03_up_right_sheet.png",
+      "gif": "combo_gif/sprite_03_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_03_combo_01.png",
+        "combo_frames/sprite_03_combo_02.png",
+        "combo_frames/sprite_03_combo_03.png",
+        "combo_frames/sprite_03_combo_04.png",
+        "combo_frames/sprite_03_combo_05.png",
+        "combo_frames/sprite_03_combo_06.png",
+        "combo_frames/sprite_03_combo_07.png",
+        "combo_frames/sprite_03_combo_08.png",
+        "combo_frames/sprite_03_combo_09.png",
+        "combo_frames/sprite_03_combo_10.png",
+        "combo_frames/sprite_03_combo_11.png",
+        "combo_frames/sprite_03_combo_12.png",
+        "combo_frames/sprite_03_combo_13.png",
+        "combo_frames/sprite_03_combo_14.png",
+        "combo_frames/sprite_03_combo_15.png",
+        "combo_frames/sprite_03_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 126,
+        "h": 126
+      }
+    },
+    {
+      "name": "sprite_04",
+      "source": "original/sprite_04.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_04_up_right_sheet.png",
+      "gif": "combo_gif/sprite_04_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_04_combo_01.png",
+        "combo_frames/sprite_04_combo_02.png",
+        "combo_frames/sprite_04_combo_03.png",
+        "combo_frames/sprite_04_combo_04.png",
+        "combo_frames/sprite_04_combo_05.png",
+        "combo_frames/sprite_04_combo_06.png",
+        "combo_frames/sprite_04_combo_07.png",
+        "combo_frames/sprite_04_combo_08.png",
+        "combo_frames/sprite_04_combo_09.png",
+        "combo_frames/sprite_04_combo_10.png",
+        "combo_frames/sprite_04_combo_11.png",
+        "combo_frames/sprite_04_combo_12.png",
+        "combo_frames/sprite_04_combo_13.png",
+        "combo_frames/sprite_04_combo_14.png",
+        "combo_frames/sprite_04_combo_15.png",
+        "combo_frames/sprite_04_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 112,
+        "h": 123
+      }
+    },
+    {
+      "name": "sprite_05",
+      "source": "original/sprite_05.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_05_up_right_sheet.png",
+      "gif": "combo_gif/sprite_05_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_05_combo_01.png",
+        "combo_frames/sprite_05_combo_02.png",
+        "combo_frames/sprite_05_combo_03.png",
+        "combo_frames/sprite_05_combo_04.png",
+        "combo_frames/sprite_05_combo_05.png",
+        "combo_frames/sprite_05_combo_06.png",
+        "combo_frames/sprite_05_combo_07.png",
+        "combo_frames/sprite_05_combo_08.png",
+        "combo_frames/sprite_05_combo_09.png",
+        "combo_frames/sprite_05_combo_10.png",
+        "combo_frames/sprite_05_combo_11.png",
+        "combo_frames/sprite_05_combo_12.png",
+        "combo_frames/sprite_05_combo_13.png",
+        "combo_frames/sprite_05_combo_14.png",
+        "combo_frames/sprite_05_combo_15.png",
+        "combo_frames/sprite_05_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 133,
+        "h": 126
+      }
+    },
+    {
+      "name": "sprite_06",
+      "source": "original/sprite_06.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_06_up_right_sheet.png",
+      "gif": "combo_gif/sprite_06_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_06_combo_01.png",
+        "combo_frames/sprite_06_combo_02.png",
+        "combo_frames/sprite_06_combo_03.png",
+        "combo_frames/sprite_06_combo_04.png",
+        "combo_frames/sprite_06_combo_05.png",
+        "combo_frames/sprite_06_combo_06.png",
+        "combo_frames/sprite_06_combo_07.png",
+        "combo_frames/sprite_06_combo_08.png",
+        "combo_frames/sprite_06_combo_09.png",
+        "combo_frames/sprite_06_combo_10.png",
+        "combo_frames/sprite_06_combo_11.png",
+        "combo_frames/sprite_06_combo_12.png",
+        "combo_frames/sprite_06_combo_13.png",
+        "combo_frames/sprite_06_combo_14.png",
+        "combo_frames/sprite_06_combo_15.png",
+        "combo_frames/sprite_06_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 127,
+        "h": 123
+      }
+    },
+    {
+      "name": "sprite_07",
+      "source": "original/sprite_07.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_07_up_right_sheet.png",
+      "gif": "combo_gif/sprite_07_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_07_combo_01.png",
+        "combo_frames/sprite_07_combo_02.png",
+        "combo_frames/sprite_07_combo_03.png",
+        "combo_frames/sprite_07_combo_04.png",
+        "combo_frames/sprite_07_combo_05.png",
+        "combo_frames/sprite_07_combo_06.png",
+        "combo_frames/sprite_07_combo_07.png",
+        "combo_frames/sprite_07_combo_08.png",
+        "combo_frames/sprite_07_combo_09.png",
+        "combo_frames/sprite_07_combo_10.png",
+        "combo_frames/sprite_07_combo_11.png",
+        "combo_frames/sprite_07_combo_12.png",
+        "combo_frames/sprite_07_combo_13.png",
+        "combo_frames/sprite_07_combo_14.png",
+        "combo_frames/sprite_07_combo_15.png",
+        "combo_frames/sprite_07_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 133,
+        "h": 129
+      }
+    },
+    {
+      "name": "sprite_08",
+      "source": "original/sprite_08.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_08_up_right_sheet.png",
+      "gif": "combo_gif/sprite_08_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_08_combo_01.png",
+        "combo_frames/sprite_08_combo_02.png",
+        "combo_frames/sprite_08_combo_03.png",
+        "combo_frames/sprite_08_combo_04.png",
+        "combo_frames/sprite_08_combo_05.png",
+        "combo_frames/sprite_08_combo_06.png",
+        "combo_frames/sprite_08_combo_07.png",
+        "combo_frames/sprite_08_combo_08.png",
+        "combo_frames/sprite_08_combo_09.png",
+        "combo_frames/sprite_08_combo_10.png",
+        "combo_frames/sprite_08_combo_11.png",
+        "combo_frames/sprite_08_combo_12.png",
+        "combo_frames/sprite_08_combo_13.png",
+        "combo_frames/sprite_08_combo_14.png",
+        "combo_frames/sprite_08_combo_15.png",
+        "combo_frames/sprite_08_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 131,
+        "h": 131
+      }
+    },
+    {
+      "name": "sprite_09",
+      "source": "original/sprite_09.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_09_up_right_sheet.png",
+      "gif": "combo_gif/sprite_09_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_09_combo_01.png",
+        "combo_frames/sprite_09_combo_02.png",
+        "combo_frames/sprite_09_combo_03.png",
+        "combo_frames/sprite_09_combo_04.png",
+        "combo_frames/sprite_09_combo_05.png",
+        "combo_frames/sprite_09_combo_06.png",
+        "combo_frames/sprite_09_combo_07.png",
+        "combo_frames/sprite_09_combo_08.png",
+        "combo_frames/sprite_09_combo_09.png",
+        "combo_frames/sprite_09_combo_10.png",
+        "combo_frames/sprite_09_combo_11.png",
+        "combo_frames/sprite_09_combo_12.png",
+        "combo_frames/sprite_09_combo_13.png",
+        "combo_frames/sprite_09_combo_14.png",
+        "combo_frames/sprite_09_combo_15.png",
+        "combo_frames/sprite_09_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 131,
+        "h": 126
+      }
+    },
+    {
+      "name": "sprite_10",
+      "source": "original/sprite_10.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_10_up_right_sheet.png",
+      "gif": "combo_gif/sprite_10_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_10_combo_01.png",
+        "combo_frames/sprite_10_combo_02.png",
+        "combo_frames/sprite_10_combo_03.png",
+        "combo_frames/sprite_10_combo_04.png",
+        "combo_frames/sprite_10_combo_05.png",
+        "combo_frames/sprite_10_combo_06.png",
+        "combo_frames/sprite_10_combo_07.png",
+        "combo_frames/sprite_10_combo_08.png",
+        "combo_frames/sprite_10_combo_09.png",
+        "combo_frames/sprite_10_combo_10.png",
+        "combo_frames/sprite_10_combo_11.png",
+        "combo_frames/sprite_10_combo_12.png",
+        "combo_frames/sprite_10_combo_13.png",
+        "combo_frames/sprite_10_combo_14.png",
+        "combo_frames/sprite_10_combo_15.png",
+        "combo_frames/sprite_10_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 129,
+        "h": 129
+      }
+    },
+    {
+      "name": "sprite_11",
+      "source": "original/sprite_11.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_11_up_right_sheet.png",
+      "gif": "combo_gif/sprite_11_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_11_combo_01.png",
+        "combo_frames/sprite_11_combo_02.png",
+        "combo_frames/sprite_11_combo_03.png",
+        "combo_frames/sprite_11_combo_04.png",
+        "combo_frames/sprite_11_combo_05.png",
+        "combo_frames/sprite_11_combo_06.png",
+        "combo_frames/sprite_11_combo_07.png",
+        "combo_frames/sprite_11_combo_08.png",
+        "combo_frames/sprite_11_combo_09.png",
+        "combo_frames/sprite_11_combo_10.png",
+        "combo_frames/sprite_11_combo_11.png",
+        "combo_frames/sprite_11_combo_12.png",
+        "combo_frames/sprite_11_combo_13.png",
+        "combo_frames/sprite_11_combo_14.png",
+        "combo_frames/sprite_11_combo_15.png",
+        "combo_frames/sprite_11_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 126,
+        "h": 125
+      }
+    },
+    {
+      "name": "sprite_12",
+      "source": "original/sprite_12.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_12_up_right_sheet.png",
+      "gif": "combo_gif/sprite_12_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_12_combo_01.png",
+        "combo_frames/sprite_12_combo_02.png",
+        "combo_frames/sprite_12_combo_03.png",
+        "combo_frames/sprite_12_combo_04.png",
+        "combo_frames/sprite_12_combo_05.png",
+        "combo_frames/sprite_12_combo_06.png",
+        "combo_frames/sprite_12_combo_07.png",
+        "combo_frames/sprite_12_combo_08.png",
+        "combo_frames/sprite_12_combo_09.png",
+        "combo_frames/sprite_12_combo_10.png",
+        "combo_frames/sprite_12_combo_11.png",
+        "combo_frames/sprite_12_combo_12.png",
+        "combo_frames/sprite_12_combo_13.png",
+        "combo_frames/sprite_12_combo_14.png",
+        "combo_frames/sprite_12_combo_15.png",
+        "combo_frames/sprite_12_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 126,
+        "h": 133
+      }
+    },
+    {
+      "name": "sprite_13",
+      "source": "original/sprite_13.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_13_up_right_sheet.png",
+      "gif": "combo_gif/sprite_13_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_13_combo_01.png",
+        "combo_frames/sprite_13_combo_02.png",
+        "combo_frames/sprite_13_combo_03.png",
+        "combo_frames/sprite_13_combo_04.png",
+        "combo_frames/sprite_13_combo_05.png",
+        "combo_frames/sprite_13_combo_06.png",
+        "combo_frames/sprite_13_combo_07.png",
+        "combo_frames/sprite_13_combo_08.png",
+        "combo_frames/sprite_13_combo_09.png",
+        "combo_frames/sprite_13_combo_10.png",
+        "combo_frames/sprite_13_combo_11.png",
+        "combo_frames/sprite_13_combo_12.png",
+        "combo_frames/sprite_13_combo_13.png",
+        "combo_frames/sprite_13_combo_14.png",
+        "combo_frames/sprite_13_combo_15.png",
+        "combo_frames/sprite_13_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 128,
+        "h": 132
+      }
+    },
+    {
+      "name": "sprite_14",
+      "source": "original/sprite_14.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_14_up_right_sheet.png",
+      "gif": "combo_gif/sprite_14_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_14_combo_01.png",
+        "combo_frames/sprite_14_combo_02.png",
+        "combo_frames/sprite_14_combo_03.png",
+        "combo_frames/sprite_14_combo_04.png",
+        "combo_frames/sprite_14_combo_05.png",
+        "combo_frames/sprite_14_combo_06.png",
+        "combo_frames/sprite_14_combo_07.png",
+        "combo_frames/sprite_14_combo_08.png",
+        "combo_frames/sprite_14_combo_09.png",
+        "combo_frames/sprite_14_combo_10.png",
+        "combo_frames/sprite_14_combo_11.png",
+        "combo_frames/sprite_14_combo_12.png",
+        "combo_frames/sprite_14_combo_13.png",
+        "combo_frames/sprite_14_combo_14.png",
+        "combo_frames/sprite_14_combo_15.png",
+        "combo_frames/sprite_14_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 128,
+        "h": 129
+      }
+    },
+    {
+      "name": "sprite_15",
+      "source": "original/sprite_15.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_15_up_right_sheet.png",
+      "gif": "combo_gif/sprite_15_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_15_combo_01.png",
+        "combo_frames/sprite_15_combo_02.png",
+        "combo_frames/sprite_15_combo_03.png",
+        "combo_frames/sprite_15_combo_04.png",
+        "combo_frames/sprite_15_combo_05.png",
+        "combo_frames/sprite_15_combo_06.png",
+        "combo_frames/sprite_15_combo_07.png",
+        "combo_frames/sprite_15_combo_08.png",
+        "combo_frames/sprite_15_combo_09.png",
+        "combo_frames/sprite_15_combo_10.png",
+        "combo_frames/sprite_15_combo_11.png",
+        "combo_frames/sprite_15_combo_12.png",
+        "combo_frames/sprite_15_combo_13.png",
+        "combo_frames/sprite_15_combo_14.png",
+        "combo_frames/sprite_15_combo_15.png",
+        "combo_frames/sprite_15_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 134,
+        "h": 127
+      }
+    },
+    {
+      "name": "sprite_16",
+      "source": "original/sprite_16.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_16_up_right_sheet.png",
+      "gif": "combo_gif/sprite_16_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_16_combo_01.png",
+        "combo_frames/sprite_16_combo_02.png",
+        "combo_frames/sprite_16_combo_03.png",
+        "combo_frames/sprite_16_combo_04.png",
+        "combo_frames/sprite_16_combo_05.png",
+        "combo_frames/sprite_16_combo_06.png",
+        "combo_frames/sprite_16_combo_07.png",
+        "combo_frames/sprite_16_combo_08.png",
+        "combo_frames/sprite_16_combo_09.png",
+        "combo_frames/sprite_16_combo_10.png",
+        "combo_frames/sprite_16_combo_11.png",
+        "combo_frames/sprite_16_combo_12.png",
+        "combo_frames/sprite_16_combo_13.png",
+        "combo_frames/sprite_16_combo_14.png",
+        "combo_frames/sprite_16_combo_15.png",
+        "combo_frames/sprite_16_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 125,
+        "h": 118
+      }
+    },
+    {
+      "name": "sprite_17",
+      "source": "original/sprite_17.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_17_up_right_sheet.png",
+      "gif": "combo_gif/sprite_17_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_17_combo_01.png",
+        "combo_frames/sprite_17_combo_02.png",
+        "combo_frames/sprite_17_combo_03.png",
+        "combo_frames/sprite_17_combo_04.png",
+        "combo_frames/sprite_17_combo_05.png",
+        "combo_frames/sprite_17_combo_06.png",
+        "combo_frames/sprite_17_combo_07.png",
+        "combo_frames/sprite_17_combo_08.png",
+        "combo_frames/sprite_17_combo_09.png",
+        "combo_frames/sprite_17_combo_10.png",
+        "combo_frames/sprite_17_combo_11.png",
+        "combo_frames/sprite_17_combo_12.png",
+        "combo_frames/sprite_17_combo_13.png",
+        "combo_frames/sprite_17_combo_14.png",
+        "combo_frames/sprite_17_combo_15.png",
+        "combo_frames/sprite_17_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 124,
+        "h": 125
+      }
+    },
+    {
+      "name": "sprite_18",
+      "source": "original/sprite_18.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_18_up_right_sheet.png",
+      "gif": "combo_gif/sprite_18_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_18_combo_01.png",
+        "combo_frames/sprite_18_combo_02.png",
+        "combo_frames/sprite_18_combo_03.png",
+        "combo_frames/sprite_18_combo_04.png",
+        "combo_frames/sprite_18_combo_05.png",
+        "combo_frames/sprite_18_combo_06.png",
+        "combo_frames/sprite_18_combo_07.png",
+        "combo_frames/sprite_18_combo_08.png",
+        "combo_frames/sprite_18_combo_09.png",
+        "combo_frames/sprite_18_combo_10.png",
+        "combo_frames/sprite_18_combo_11.png",
+        "combo_frames/sprite_18_combo_12.png",
+        "combo_frames/sprite_18_combo_13.png",
+        "combo_frames/sprite_18_combo_14.png",
+        "combo_frames/sprite_18_combo_15.png",
+        "combo_frames/sprite_18_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 135,
+        "h": 124
+      }
+    },
+    {
+      "name": "sprite_19",
+      "source": "original/sprite_19.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_19_up_right_sheet.png",
+      "gif": "combo_gif/sprite_19_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_19_combo_01.png",
+        "combo_frames/sprite_19_combo_02.png",
+        "combo_frames/sprite_19_combo_03.png",
+        "combo_frames/sprite_19_combo_04.png",
+        "combo_frames/sprite_19_combo_05.png",
+        "combo_frames/sprite_19_combo_06.png",
+        "combo_frames/sprite_19_combo_07.png",
+        "combo_frames/sprite_19_combo_08.png",
+        "combo_frames/sprite_19_combo_09.png",
+        "combo_frames/sprite_19_combo_10.png",
+        "combo_frames/sprite_19_combo_11.png",
+        "combo_frames/sprite_19_combo_12.png",
+        "combo_frames/sprite_19_combo_13.png",
+        "combo_frames/sprite_19_combo_14.png",
+        "combo_frames/sprite_19_combo_15.png",
+        "combo_frames/sprite_19_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 130,
+        "h": 124
+      }
+    },
+    {
+      "name": "sprite_20",
+      "source": "original/sprite_20.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_20_up_right_sheet.png",
+      "gif": "combo_gif/sprite_20_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_20_combo_01.png",
+        "combo_frames/sprite_20_combo_02.png",
+        "combo_frames/sprite_20_combo_03.png",
+        "combo_frames/sprite_20_combo_04.png",
+        "combo_frames/sprite_20_combo_05.png",
+        "combo_frames/sprite_20_combo_06.png",
+        "combo_frames/sprite_20_combo_07.png",
+        "combo_frames/sprite_20_combo_08.png",
+        "combo_frames/sprite_20_combo_09.png",
+        "combo_frames/sprite_20_combo_10.png",
+        "combo_frames/sprite_20_combo_11.png",
+        "combo_frames/sprite_20_combo_12.png",
+        "combo_frames/sprite_20_combo_13.png",
+        "combo_frames/sprite_20_combo_14.png",
+        "combo_frames/sprite_20_combo_15.png",
+        "combo_frames/sprite_20_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 128,
+        "h": 120
+      }
+    },
+    {
+      "name": "sprite_21",
+      "source": "original/sprite_21.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_21_up_right_sheet.png",
+      "gif": "combo_gif/sprite_21_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_21_combo_01.png",
+        "combo_frames/sprite_21_combo_02.png",
+        "combo_frames/sprite_21_combo_03.png",
+        "combo_frames/sprite_21_combo_04.png",
+        "combo_frames/sprite_21_combo_05.png",
+        "combo_frames/sprite_21_combo_06.png",
+        "combo_frames/sprite_21_combo_07.png",
+        "combo_frames/sprite_21_combo_08.png",
+        "combo_frames/sprite_21_combo_09.png",
+        "combo_frames/sprite_21_combo_10.png",
+        "combo_frames/sprite_21_combo_11.png",
+        "combo_frames/sprite_21_combo_12.png",
+        "combo_frames/sprite_21_combo_13.png",
+        "combo_frames/sprite_21_combo_14.png",
+        "combo_frames/sprite_21_combo_15.png",
+        "combo_frames/sprite_21_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 129,
+        "h": 127
+      }
+    },
+    {
+      "name": "sprite_22",
+      "source": "original/sprite_22.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_22_up_right_sheet.png",
+      "gif": "combo_gif/sprite_22_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_22_combo_01.png",
+        "combo_frames/sprite_22_combo_02.png",
+        "combo_frames/sprite_22_combo_03.png",
+        "combo_frames/sprite_22_combo_04.png",
+        "combo_frames/sprite_22_combo_05.png",
+        "combo_frames/sprite_22_combo_06.png",
+        "combo_frames/sprite_22_combo_07.png",
+        "combo_frames/sprite_22_combo_08.png",
+        "combo_frames/sprite_22_combo_09.png",
+        "combo_frames/sprite_22_combo_10.png",
+        "combo_frames/sprite_22_combo_11.png",
+        "combo_frames/sprite_22_combo_12.png",
+        "combo_frames/sprite_22_combo_13.png",
+        "combo_frames/sprite_22_combo_14.png",
+        "combo_frames/sprite_22_combo_15.png",
+        "combo_frames/sprite_22_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 132,
+        "h": 122
+      }
+    },
+    {
+      "name": "sprite_23",
+      "source": "original/sprite_23.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_23_up_right_sheet.png",
+      "gif": "combo_gif/sprite_23_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_23_combo_01.png",
+        "combo_frames/sprite_23_combo_02.png",
+        "combo_frames/sprite_23_combo_03.png",
+        "combo_frames/sprite_23_combo_04.png",
+        "combo_frames/sprite_23_combo_05.png",
+        "combo_frames/sprite_23_combo_06.png",
+        "combo_frames/sprite_23_combo_07.png",
+        "combo_frames/sprite_23_combo_08.png",
+        "combo_frames/sprite_23_combo_09.png",
+        "combo_frames/sprite_23_combo_10.png",
+        "combo_frames/sprite_23_combo_11.png",
+        "combo_frames/sprite_23_combo_12.png",
+        "combo_frames/sprite_23_combo_13.png",
+        "combo_frames/sprite_23_combo_14.png",
+        "combo_frames/sprite_23_combo_15.png",
+        "combo_frames/sprite_23_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 127,
+        "h": 121
+      }
+    },
+    {
+      "name": "sprite_24",
+      "source": "original/sprite_24.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_24_up_right_sheet.png",
+      "gif": "combo_gif/sprite_24_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_24_combo_01.png",
+        "combo_frames/sprite_24_combo_02.png",
+        "combo_frames/sprite_24_combo_03.png",
+        "combo_frames/sprite_24_combo_04.png",
+        "combo_frames/sprite_24_combo_05.png",
+        "combo_frames/sprite_24_combo_06.png",
+        "combo_frames/sprite_24_combo_07.png",
+        "combo_frames/sprite_24_combo_08.png",
+        "combo_frames/sprite_24_combo_09.png",
+        "combo_frames/sprite_24_combo_10.png",
+        "combo_frames/sprite_24_combo_11.png",
+        "combo_frames/sprite_24_combo_12.png",
+        "combo_frames/sprite_24_combo_13.png",
+        "combo_frames/sprite_24_combo_14.png",
+        "combo_frames/sprite_24_combo_15.png",
+        "combo_frames/sprite_24_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 127,
+        "h": 120
+      }
+    },
+    {
+      "name": "sprite_25",
+      "source": "original/sprite_25.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_25_up_right_sheet.png",
+      "gif": "combo_gif/sprite_25_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_25_combo_01.png",
+        "combo_frames/sprite_25_combo_02.png",
+        "combo_frames/sprite_25_combo_03.png",
+        "combo_frames/sprite_25_combo_04.png",
+        "combo_frames/sprite_25_combo_05.png",
+        "combo_frames/sprite_25_combo_06.png",
+        "combo_frames/sprite_25_combo_07.png",
+        "combo_frames/sprite_25_combo_08.png",
+        "combo_frames/sprite_25_combo_09.png",
+        "combo_frames/sprite_25_combo_10.png",
+        "combo_frames/sprite_25_combo_11.png",
+        "combo_frames/sprite_25_combo_12.png",
+        "combo_frames/sprite_25_combo_13.png",
+        "combo_frames/sprite_25_combo_14.png",
+        "combo_frames/sprite_25_combo_15.png",
+        "combo_frames/sprite_25_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 129,
+        "h": 125
+      }
+    },
+    {
+      "name": "sprite_26",
+      "source": "original/sprite_26.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_26_up_right_sheet.png",
+      "gif": "combo_gif/sprite_26_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_26_combo_01.png",
+        "combo_frames/sprite_26_combo_02.png",
+        "combo_frames/sprite_26_combo_03.png",
+        "combo_frames/sprite_26_combo_04.png",
+        "combo_frames/sprite_26_combo_05.png",
+        "combo_frames/sprite_26_combo_06.png",
+        "combo_frames/sprite_26_combo_07.png",
+        "combo_frames/sprite_26_combo_08.png",
+        "combo_frames/sprite_26_combo_09.png",
+        "combo_frames/sprite_26_combo_10.png",
+        "combo_frames/sprite_26_combo_11.png",
+        "combo_frames/sprite_26_combo_12.png",
+        "combo_frames/sprite_26_combo_13.png",
+        "combo_frames/sprite_26_combo_14.png",
+        "combo_frames/sprite_26_combo_15.png",
+        "combo_frames/sprite_26_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 119,
+        "h": 127
+      }
+    },
+    {
+      "name": "sprite_27",
+      "source": "original/sprite_27.png",
+      "fps": 12,
+      "totalFrames": 16,
+      "gridMovePixels": 28,
+      "segments": {
+        "up": {
+          "startFrame": 1,
+          "endFrame": 8
+        },
+        "right": {
+          "startFrame": 9,
+          "endFrame": 16
+        }
+      },
+      "sheet": "combo_sheets/sprite_27_up_right_sheet.png",
+      "gif": "combo_gif/sprite_27_up_right.gif",
+      "frames": [
+        "combo_frames/sprite_27_combo_01.png",
+        "combo_frames/sprite_27_combo_02.png",
+        "combo_frames/sprite_27_combo_03.png",
+        "combo_frames/sprite_27_combo_04.png",
+        "combo_frames/sprite_27_combo_05.png",
+        "combo_frames/sprite_27_combo_06.png",
+        "combo_frames/sprite_27_combo_07.png",
+        "combo_frames/sprite_27_combo_08.png",
+        "combo_frames/sprite_27_combo_09.png",
+        "combo_frames/sprite_27_combo_10.png",
+        "combo_frames/sprite_27_combo_11.png",
+        "combo_frames/sprite_27_combo_12.png",
+        "combo_frames/sprite_27_combo_13.png",
+        "combo_frames/sprite_27_combo_14.png",
+        "combo_frames/sprite_27_combo_15.png",
+        "combo_frames/sprite_27_combo_16.png"
+      ],
+      "frameSize": {
+        "w": 124,
+        "h": 120
+      }
+    }
+  ]
+}

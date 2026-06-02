@@ -1186,54 +1186,8 @@ function applyActionToState(action){
       break;
     }
     case 'USE_SLOT':{
-      const s=G.slots[action.slotId];
-      if(!s||s.used||G.phase!=='PLAYER')return;
-      const hero=G.heroes[s.hid]; if(!hero)return;
-      if(s.skill==='summonFromCell'){
-        if(!execSummonFromCellSkill(hero,s))return;
-        s.used=true; hero._acted=true;
-        G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
-        G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,skill:s.skill,desc:`${hero.name}：召唤`});
-        break;
-      }
-      if(s.skill==='healSummons'){
-        execHealSummonsSkill(hero,s);
-        s.used=true; hero._acted=true;
-        G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
-        G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,skill:s.skill,desc:`${hero.name}：治疗召唤物`});
-        break;
-      }
-      const cells=atkCells(hero.pos,s.sn,s.dir);
-      if(cells.length===0)return;
-      const center=findCenterCell(cells);
-      const baseLayers=s.layers||1;
-      const centerBonus=s.centerBonus||0;
-      const condEl=s.conditional?.el;
-      const condBonus=s.conditional?.bonus||0;
-      cells.forEach(ap=>{
-        // 不覆盖城堡格
-        if(castleAt(ap))return;
-        const key=`${ap.r},${ap.c}`;
-        if(!G.elementCells[key]) G.elementCells[key]={
-          fire:{layers:0,willExplode:false},
-          water:{layers:0,willExplode:false},
-          wind:{layers:0,willExplode:false},
-          earth:{layers:0,willExplode:false},
-        };
-        const elSlot=G.elementCells[key][s.el];
-        let layersToAdd=baseLayers;
-        if(ap.r===center.r&&ap.c===center.c)layersToAdd+=centerBonus;
-        if(condEl&&elSlot.layers>0)layersToAdd+=condBonus;
-        elSlot.layers=Math.min(elSlot.layers+layersToAdd,MAX_STK);
-        elSlot.willExplode=elSlot.layers>=G.explosionThreshold;
-        const cell=G.board[ap.r][ap.c];
-        if(!cell.el||cell.stk===0){cell.el=s.el;cell.stk=Math.min(layersToAdd,MAX_STK);}
-        else if(cell.el===s.el){cell.stk=Math.min(cell.stk+layersToAdd,MAX_STK);}
-      });
-      s.used=true;
-      hero._acted=true;
-      G.selSlot=null; G.prevCells=[]; G.explPos=null; G.heroPrev=[];
-      G.actionLog.push({type:'USE_SLOT',slotId:action.slotId,heroId:s.hid,el:s.el,sn:s.sn,dir:s.dir,cells:cells.map(c=>`${c.r},${c.c}`),desc:`使用行动块#${action.slotId+1}：${EL[s.el]}`});
+      // 委托 battle.js 的 useSlot 处理全部逻辑
+      useSlot(action.slotId);
       break;
     }
     default:break;
@@ -1770,7 +1724,7 @@ function renderShop(){
       const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
       const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
       return `<div class="roster-card">
-        <div class="roster-line"><span style="font-size:15px;font-weight:bold;color:#c4a860">⭐ Lv${u.level}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
+        <div class="roster-line"><span style="font-size:15px;font-weight:bold;color:#c4a860">⭐ ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
         <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
         <div class="roster-line" style="margin-top:4px">${benchUnits.length>0?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">→备战</button>`:''}<button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button></div>
       </div>`;
@@ -1783,7 +1737,7 @@ function renderShop(){
       const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
       const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
       return `<div class="roster-card" style="opacity:0.8">
-        <div class="roster-line"><span style="font-size:15px;color:var(--c-text2)">💤备战 Lv${u.level}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
+        <div class="roster-line"><span style="font-size:15px;color:var(--c-text2)">💤备战 ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
         <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
         <div class="roster-line" style="margin-top:4px">${activeUnits.length<2?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">上阵</button>`:''}<button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button></div>
       </div>`;

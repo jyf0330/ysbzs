@@ -27,18 +27,20 @@ global.setTimeout = fn => { try{ fn(); }catch(e){} };
 
 // ── 载入游戏脚本（支持单文件或多文件模式）─────────────────────
 global.__TEST__ = true;
-const useMultiFile = fs.existsSync(path.join(__dirname, 'data.js')) && 
-                     fs.existsSync(path.join(__dirname, 'game.js')) &&
-                     fs.existsSync(path.join(__dirname, 'ui.js'));
+const useMultiFile = fs.existsSync(path.join(__dirname, 'game.js'));
 
 if (useMultiFile) {
-  // 多文件模式：data.js → game.js → ui.js
-  const dataScript = fs.readFileSync(path.join(__dirname, 'data.js'), 'utf8').replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
-  const gameScript = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8').replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
-  const uiScript = fs.readFileSync(path.join(__dirname, 'ui.js'), 'utf8').replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
-  eval(dataScript);
-  eval(gameScript);
-  eval(uiScript);
+  // 多文件模式（按依赖顺序加载）
+  const moduleFiles = [
+    'data.js', 'rng.js', 'board.js', 'actions.js', 'elements.js',
+    'waves.js', 'battle.js', 'shop.js', 'game.js', 'ui.js',
+  ];
+  for (const f of moduleFiles) {
+    const fp = path.join(__dirname, f);
+    if (!fs.existsSync(fp)) continue;
+    const script = fs.readFileSync(fp, 'utf8').replace(/\bconst\b/g,'var').replace(/\blet\b/g,'var');
+    eval(script);
+  }
 } else {
   // 单文件模式：从 index.html 加载
   const htmlPath = process.env.YSBZS_HTML_PATH || path.join(__dirname, 'index.html');
@@ -147,6 +149,115 @@ group('常量与形状定义', ()=>{
       const v=ri(10);
       assert.ok(Number.isInteger(v) && v>=0 && v<10, `ri(10) 超出范围: ${v}`);
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+group('rng.js 随机模块', ()=>{
+  test('setRngSeed / getRngSeed', ()=>{
+    setRngSeed(42);
+    assert.strictEqual(getRngSeed(), 42);
+  });
+  test('getRngState / setRngState', ()=>{
+    setRngSeed(100);
+    const state = getRngState();
+    const a = rngNext();
+    setRngState(state);
+    const b = rngNext();
+    assert.strictEqual(a, b, '恢复 state 后输出应相同');
+  });
+  test('同一 seed 产生相同随机序列', ()=>{
+    setRngSeed(12345);
+    const seq1 = [rngNext(), rngNext(), rngNext()];
+    setRngSeed(12345);
+    const seq2 = [rngNext(), rngNext(), rngNext()];
+    assert.deepStrictEqual(seq1, seq2, '同一 seed 的随机序列必须一致');
+  });
+  test('不同 seed 产生不同随机序列', ()=>{
+    setRngSeed(1);
+    const a = rngNext();
+    setRngSeed(2);
+    const b = rngNext();
+    assert.notStrictEqual(a, b, '不同 seed 的输出应不同');
+  });
+  test('rngNext 返回 [0,1)', ()=>{
+    setRngSeed(7);
+    for(let i=0;i<500;i++){
+      const v = rngNext();
+      assert.ok(v >= 0 && v < 1, `rngNext() 超范围: ${v}`);
+    }
+  });
+  test('rngInt(min,max) 边界与分布', ()=>{
+    setRngSeed(42);
+    for(let i=0;i<1000;i++){
+      const v = rngInt(3, 8);
+      assert.ok(Number.isInteger(v) && v >= 3 && v < 8, `rngInt(3,8) 超范围: ${v}`);
+    }
+    assert.strictEqual(rngInt(0,1), 0, 'rngInt(0,1) 应恒为 0');
+  });
+  test('rngPick 单元素/空数组', ()=>{
+    setRngSeed(1);
+    assert.strictEqual(rngPick([42]), 42);
+    assert.strictEqual(rngPick([]), undefined);
+    assert.strictEqual(rngPick(null), undefined);
+  });
+  test('rngPick 稳定分布', ()=>{
+    setRngSeed(99);
+    const pool = ['a','b','c','d','e'];
+    const counts = {};
+    for(let i=0;i<1000;i++){
+      const pick = rngPick(pool);
+      counts[pick] = (counts[pick]||0)+1;
+    }
+    assert.ok(Object.keys(counts).length >= 3, 'rngPick 应至少选到 3 种不同元素');
+    Object.values(counts).forEach(c => assert.ok(c > 0, 'rngPick 某种元素从未被选中'));
+  });
+  test('rngPickWeighted 权重分布', ()=>{
+    setRngSeed(42);
+    const pool = [
+      { item: 'rare', weight: 1 },
+      { item: 'common', weight: 9 },
+    ];
+    let rare = 0, common = 0;
+    for(let i=0;i<1000;i++){
+      const r = rngPickWeighted(pool);
+      if(r.item === 'rare') rare++;
+      else common++;
+    }
+    assert.ok(rare < common, `权重 1:9 下 rare(${rare}) 应少于 common(${common})`);
+    assert.ok(rare > 0, `rare 权重 1 也应至少出现 ${rare}`);
+  });
+  test('rngPickWeighted 空数组/空权重', ()=>{
+    assert.strictEqual(rngPickWeighted([]), null);
+    assert.strictEqual(rngPickWeighted(null), null);
+    const pool = [{ item: 'x', weight: 0 }];
+    const r = rngPickWeighted(pool);
+    assert.ok(r && r.item === 'x', '权重 0 时退化为等概率');
+  });
+  test('rngShuffle 保留所有元素且非平凡', ()=>{
+    setRngSeed(42);
+    const orig = [1,2,3,4,5,6,7,8,9,10,11,12];
+    const shuffled = rngShuffle(orig);
+    assert.strictEqual(shuffled.length, orig.length);
+    assert.deepStrictEqual([...shuffled].sort((a,b)=>a-b), [...orig].sort((a,b)=>a-b));
+    // 跑 5 个不同 seed，至少 1 次顺序改变
+    let allSame = true;
+    for(let s=1;s<=5;s++){
+      setRngSeed(s);
+      if(rngShuffle(orig).some((v,i)=>v !== orig[i])){ allSame=false; break; }
+    }
+    assert.ok(!allSame, '洗牌 5 次至少 1 次顺序改变');
+  });
+  test('rngShuffle 空/null', ()=>{
+    assert.deepStrictEqual(rngShuffle([]), []);
+    assert.deepStrictEqual(rngShuffle(null), []);
+  });
+  test('未设 seed 时 rngNext 正常返回', ()=>{
+    // 清除 seed 后应使用 Math.random 后备
+    setRngSeed(42); // 先设
+    setRngSeed(null);
+    const v = rngNext();
+    assert.ok(typeof v === 'number' && v >= 0 && v < 1, `无 seed 时 rngNext 异常: ${v}`);
   });
 });
 
@@ -1114,15 +1225,28 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
     assert.strictEqual(u1.maxHp,25);
     assert.strictEqual(G.ownedUnits.length,1,'素材单位已移除');
   });
-  test('mergeUnits Lv3 不再合成', ()=>{
+  test('mergeUnits 钻石(Lv4) 不再合成', ()=>{
     fresh();
     G.ownedUnits=[];
     const u1=addOwnedUnit('fire_starter',{r:0,c:0});
     const u2=addOwnedUnit('fire_starter',{r:0,c:1});
-    u1.level=3; u2.level=3;
+    u1.level=4; u2.level=4;
     const ok=mergeUnits(u2,u1);
-    assert.strictEqual(ok,false);
+    assert.strictEqual(ok,false,'钻石档不能再合成');
     assert.strictEqual(G.ownedUnits.length,2,'不应移除任何单位');
+  });
+  test('mergeUnits 青铜→白银→黄金 三阶升级链', ()=>{
+    fresh();
+    G.ownedUnits=[];
+    let u1=addOwnedUnit('fire_starter',{r:0,c:0});
+    let u2=addOwnedUnit('fire_starter',{r:0,c:1});
+    u1.level=1; u2.level=1;
+    assert.ok(mergeUnits(u2,u1),'青铜+青铜→白银');
+    assert.strictEqual(u1.level,2);
+    let u3=addOwnedUnit('fire_starter',{r:0,c:1});
+    u3.level=2;
+    assert.ok(mergeUnits(u3,u1),'白银+白银→黄金');
+    assert.strictEqual(u1.level,3);
   });
   test('mergeUnits 不同 defId 不合成', ()=>{
     fresh();
@@ -1156,7 +1280,7 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
 
 // ═══════════════════════════════════════════════════════════════
 group('UNIT_DEFS 单位定义库', ()=>{
-  test('UNIT_DEFS 含 12 个单位（8 tier1 + 4 tier2）', ()=>{
+  test('单位定义库（含青铜/白银/黄金/钻石四阶）', ()=>{
     const all=Object.values(UNIT_DEFS);
     assert.ok(all.length>=12,`至少12个，当前${all.length}`);
     assert.ok(all.filter(u=>u.tier===1).length>=6,'tier1至少6个');

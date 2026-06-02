@@ -134,6 +134,7 @@ const UNIT_DEFS = {
   },
   pebble_guard: {
     id:'pebble_guard', name:'泡泡灵', element:'water', grade:'青铜', priceTier:1, tags:['水','前排','防御'], tier:1, cost:2,
+    passive:{type:'castleReduce',reductionByLevel:[1,1,2]},
     levels: {
       1:{ hp:22, slots:[
         {el:'water',sn:4,dir:'right',tier:1},{el:'water',sn:6,dir:'right',tier:1},{el:'water',sn:8,dir:'right',tier:1}
@@ -207,57 +208,57 @@ const UNIT_DEFS = {
   sprout_summoner: {
     id:'sprout_summoner', name:'召芽灵', element:'water', grade:'白银', tier:2, cost:4,
     tags:['水','召唤','核心'],
-    passive:{type:'splitSproutSummon'},
+    passive:{type:'splitSproutSummon',countByLevel:[2,2,3],hpMulByLevel:[0.5,0.75,0.6]},
     levels: {
       1:{ hp:18, slots:[
-        {el:'water',sn:1,dir:'right',tier:2,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:2,skill:'summonFromCell'},
         {el:'water',sn:4,dir:'right',tier:2},{el:'water',sn:12,dir:'right',tier:2}
       ]},
       2:{ hp:22, slots:[
-        {el:'water',sn:1,dir:'right',tier:3,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:3,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:3},{el:'water',sn:12,dir:'right',tier:3}
       ]},
       3:{ hp:28, slots:[
-        {el:'water',sn:1,dir:'right',tier:4,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
       ]}
     }
   },
   spring_sprite: {
     id:'spring_sprite', name:'泉泉灵', element:'water', grade:'白银', tier:2, cost:4,
+    passive:{type:'healAmpBonus',bonusByLevel:[1,1,2]},
     tags:['水','治疗','引擎'],
-    passive:{type:'healSummons'},
     levels: {
       1:{ hp:20, slots:[
         {el:'water',sn:4,dir:'right',tier:2},{el:'water',sn:6,dir:'right',tier:2},
-        {el:'water',sn:1,dir:'right',tier:2,special:'healSummons'}
+        {el:'water',sn:1,dir:'right',tier:2,skill:'healSummons'}
       ]},
       2:{ hp:25, slots:[
         {el:'water',sn:6,dir:'right',tier:3},{el:'water',sn:11,dir:'right',tier:3},
-        {el:'water',sn:1,dir:'right',tier:3,special:'healSummons'}
+        {el:'water',sn:1,dir:'right',tier:3,skill:'healSummons'}
       ]},
       3:{ hp:30, slots:[
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:11,dir:'right',tier:4},
-        {el:'water',sn:1,dir:'right',tier:4,special:'healSummons'}
+        {el:'water',sn:1,dir:'right',tier:4,skill:'healSummons'}
       ]}
     }
   },
   fluff_speaker: {
     id:'fluff_speaker', name:'绒语灵', element:'water', grade:'白银', tier:2, cost:4,
     tags:['水','被动','增益'],
-    passive:{type:'buffAllSummons'},
+    passive:{type:'buffAllSummons',hpByLevel:[2,4,6],atkByLevel:[1,1,2]},
     levels: {
       1:{ hp:20, slots:[
         {el:'water',sn:4,dir:'right',tier:2},{el:'water',sn:6,dir:'right',tier:2},
-        {el:'water',sn:1,dir:'right',tier:2,special:'healSummons'}
+        {el:'water',sn:1,dir:'right',tier:2,skill:'healSummons'}
       ]},
       2:{ hp:25, slots:[
         {el:'water',sn:6,dir:'right',tier:3},{el:'water',sn:11,dir:'right',tier:3},
-        {el:'water',sn:1,dir:'right',tier:3,special:'healSummons'}
+        {el:'water',sn:1,dir:'right',tier:3,skill:'healSummons'}
       ]},
       3:{ hp:30, slots:[
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:11,dir:'right',tier:4},
-        {el:'water',sn:1,dir:'right',tier:4,special:'healSummons'}
+        {el:'water',sn:1,dir:'right',tier:4,skill:'healSummons'}
       ]}
     }
   },
@@ -310,6 +311,7 @@ const UNIT_DEFS = {
   },
   ember_seed: {
     id:'ember_seed', name:'火种灵', element:'fire', grade:'青铜', tier:1, cost:2,
+    passive:{type:'spaceExplosionBonus',bonusByLevel:[1,1,2]},
     tags:['火','引信','被动'],
     levels: {
       1:{ hp:20, slots:[
@@ -343,15 +345,15 @@ const UNIT_DEFS = {
     tags:['水','召唤','指挥'],
     levels: {
       1:{ hp:24, slots:[
-        {el:'water',sn:1,dir:'right',tier:3,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:3,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:3},{el:'water',sn:12,dir:'right',tier:3}
       ]},
       2:{ hp:30, slots:[
-        {el:'water',sn:1,dir:'right',tier:4,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
       ]},
       3:{ hp:36, slots:[
-        {el:'water',sn:1,dir:'right',tier:4,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
       ]}
     }
@@ -376,19 +378,51 @@ const UNIT_DEFS = {
     tags:['水','召唤','终极'],
     levels: {
       1:{ hp:30, slots:[
-        {el:'water',sn:1,dir:'right',tier:4,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
       ]},
       2:{ hp:38, slots:[
-        {el:'water',sn:1,dir:'right',tier:4,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
       ]},
       3:{ hp:46, slots:[
-        {el:'water',sn:1,dir:'right',tier:4,special:'summonFromCell'},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
       ]}
     }
   },
+  fire_demon: {
+    id:'fire_demon', name:'火魔', element:'fire', grade:'钻石', tier:4, cost:8,
+    passive:{type:'crossExplosion',level:1},
+    levels: {
+      1:{ hp:45, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4},{el:'fire',sn:19,dir:'right',tier:4}
+      ]},
+      2:{ hp:58, slots:[
+        {el:'fire',sn:12,dir:'right',tier:4,layers:2},{el:'fire',sn:19,dir:'right',tier:4},{el:'fire',sn:20,dir:'right',tier:4}
+      ]},
+      3:{ hp:72, slots:[
+        {el:'fire',sn:12,dir:'right',tier:4,layers:3},{el:'fire',sn:19,dir:'right',tier:4,layers:2},{el:'fire',sn:20,dir:'right',tier:4}
+      ]}
+    }
+  },
+  breeze_sprite: {
+    id:'breeze_sprite', name:'风风灵', element:'wind', grade:'白银', tier:1, cost:4,
+    tags:['风','侧击','机动','清散怪'],
+    passive:{type:'advHitBonus',bonusByLevel:[1,2,3]},
+    levels: {
+      1:{ hp:18, slots:[
+        {el:'wind', sn:7, dir:'right', tier:1},{el:'wind', sn:7, dir:'right', tier:1},{el:'wind', sn:10, dir:'right', tier:1}
+      ]},
+      2:{ hp:27, slots:[
+        {el:'wind', sn:7, dir:'right', tier:2},{el:'wind', sn:10, dir:'right', tier:2},{el:'wind', sn:12, dir:'right', tier:2}
+      ]},
+      3:{ hp:36, slots:[
+        {el:'wind', sn:10, dir:'right', tier:3},{el:'wind', sn:12, dir:'right', tier:3},{el:'wind', sn:18, dir:'right', tier:3}
+      ]}
+    }
+  },
+
 };
 
 // ========== 单位 Tier 池 ==========

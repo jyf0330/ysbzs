@@ -1,3 +1,50 @@
+## 2026-06-03 — Workflow doc hardened into system-style routing rules
+
+### Docs
+- `docs/02_CURRENT_WORKFLOW.md`: shortened the English workflow doc into direct system-style routing instructions for `Goal`, `diff`, skill routing, missing skills, and high-risk exceptions.
+
+## 2026-06-03 — Workflow doc converted to English Goal / diff triggers
+
+### Docs
+- `docs/02_CURRENT_WORKFLOW.md`: converted the workflow trigger doc to English-only wording and replaced the previous planning trigger with `diff`.
+- `docs/02_CURRENT_WORKFLOW.md`: kept only the requested content: `Goal`, `diff`, high-frequency skill routing, missing skill handling, and high-risk exceptions.
+
+## 2026-06-03 — 工作流文档收缩为触发与路由
+
+### 文档
+- `docs/02_CURRENT_WORKFLOW.md`：删除额外治理细则，只保留 `Goal` / `策划` 两个硬触发词、高频 skill 触发矩阵、skill 缺失处理和高风险例外。
+
+## 2026-06-03 — 工作流改为 Goal / 策划双硬触发
+
+### 文档
+- `docs/02_CURRENT_WORKFLOW.md`：按最高频 skill 触发重写工作流，只保留 `Goal` 与 `策划` 两个硬触发词。
+- `docs/02_CURRENT_WORKFLOW.md`：恢复并强化 Superpowers / YWH skill 触发矩阵，覆盖 `using-superpowers`、`brainstorming`、`writing-plans`、`executing-plans`、`systematic-debugging`、`test-driven-development`、`verification-before-completion`、`ywh-game`、`ywh-web-game` 等路径。
+- `docs/02_CURRENT_WORKFLOW.md`：保留 Goal 明确即自主执行、策划模式不直接改代码、Codex / Claude Code 双入口隔离、高风险例外优先等新版口径。
+
+### 说明
+- 本次只改 AI 工作流文档和 changelog，不改游戏运行逻辑。
+
+## 2026-06-03 — 用户指令解析规则补充
+
+### 文档
+- `docs/02_CURRENT_WORKFLOW.md`：新增用户指令解析规则，明确 Goal 明确即默认自主执行，不要求用户额外说"开始"或"继续"。
+- `docs/02_CURRENT_WORKFLOW.md`：补充末尾"策划"、只读 / 审查限制、明确执行词和语义优先规则，避免关键词误判。
+- `docs/02_CURRENT_WORKFLOW.md`：同步流程图，把"解析用户本轮意图"放在 Goal 进入后、任务判断前。
+
+### 说明
+- 高风险例外仍保持最高优先级；本次不改游戏运行逻辑。
+
+## 2026-06-03 — Goal 自主执行流结构优化
+
+### 文档
+- `docs/02_CURRENT_WORKFLOW.md`：把 Codex / Claude Code 双入口改为启动环境说明，避免在 Goal 流程中误写成运行时分流。
+- `docs/02_CURRENT_WORKFLOW.md`：强化 Goal 明确时默认自主推进，brainstorm / writing-plans 仅用于 Goal 不清、玩法发散或需要收束计划。
+- `docs/02_CURRENT_WORKFLOW.md`：明确 TDD / verification 是执行纪律与完成证据，不是用户审批节点；测试失败仅在继续修会扩大范围时请求决策。
+- `docs/02_CURRENT_WORKFLOW.md`：将流程图改为 Mermaid，突出启动环境、Goal 清晰度、自主执行、高风险例外四段关系。
+
+### 说明
+- 本次只改 AI 工作流文档和 changelog，不改游戏运行逻辑。
+
 ## 2026-06-03 — 收尾校准：全文档旧口径清除
 
 ### 文档

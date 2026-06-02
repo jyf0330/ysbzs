@@ -1,0 +1,662 @@
+/**
+ * 元素背包史 · 战斗结算模块
+ * 总调度器：伤害、回合流程、AI、怪物行动、召唤物行动
+ * 依赖：所有下层模块（board/actions/elements/waves）、data.js
+ */
+
+// ========== 城堡伤害 ==========
+
+function damagePlayerCastle(dmg, src) {
+  if (!G.playerCastle || G.playerCastle.hp <= 0) return;
+  const red = getCastleDamageReduce();
+  const td = Math.max(1, (dmg || 0) - red);
+  G.playerCastle.hp = Math.max(0, G.playerCastle.hp - td);
+  glog(`🏰 我方城堡 ${src} -${td}${red > 0 ? ' (护城-' + red + ')' : ''}（${G.playerCastle.hp}/${G.playerCastle.maxHp}）`);
+  if (G.playerCastle.hp <= 0) checkGameOver();
+}
+
+function damageEnemyCastle(dmg, src) {
+  if (!G.enemyCastle || G.enemyCastle.hp <= 0) return;
+  G.enemyCastle.hp = Math.max(0, G.enemyCastle.hp - dmg);
+  glog(`🏰 敌方城堡 ${src} -${dmg}（${G.enemyCastle.hp}/${G.enemyCastle.maxHp}）`);
+  if (G.enemyCastle.hp <= 0) checkGameOver();
+}
+
+// ========== 伤害处理 ==========
+
+function dealDmg(monster, dmg, src) {
+  monster.hp = Math.max(0, monster.hp - dmg);
+  glog(`⚔️ ${src} → ${monster.name} -${dmg}（${monster.hp}/${monster.maxHp}）`);
+  if (monster.hp <= 0) {
+    monster.dead = true;
+    glog(`💀 ${monster.name}被击杀！`);
+    if (monster.gold) {
+      G.gold += monster.gold;
+      glog(`💰 获得 ${monster.gold} 金币！`);
+    }
+  }
+}
+
+// ========== 元素结算 ==========
+
+function settleExplosions() {
+  const report = {
+    chainSegments: 0, advHits: 0, totalDamage: 0,
+    killedCount: 0, clearedWave: false, perfect: false,
+  };
+  const aliveBefore = G.monsters.filter(m => !m.dead).length;
+  const keys = Object.keys(G.elementCells);
+  if (keys.length > 0) glog('--- 结算阶段 ---');
+  keys.forEach(key => {
+    const [r, c] = key.split(',').map(Number);
+    const pos = { r, c };
+    const monHere = monAt(pos);
+    ['fire', 'water', 'wind', 'earth'].forEach(el => {
+      const slot = G.elementCells[key][el];
+      if (!slot || slot.layers === 0) return;
+      if (monHere) {
+        report.chainSegments++;
+        const dmg = explDmg(slot.layers);
+        const emult = monHere.el && ADV[el] === monHere.el ? 2 : 1;
+        const advBonus = emult === 2 ? getAdvHitBonus() : 0;
+        const td = dmg * emult + advBonus;
+        if (emult === 2) report.advHits++;
+        report.totalDamage += td;
+        if (emult === 2) glog(`⚡ 元素克制 ×2！`);
+        glog(`⚔️ ${EL[el]}${slot.layers}层→${monHere.name} 单体 -${td}`);
+        const wasAlive = !monHere.dead;
+        dealDmg(monHere, td, `${EL[el]}元素结算`);
+        if (wasAlive && monHere.dead) report.killedCount++;
+      } else if (heroAt(pos)) {
+        // 英雄身上有层，暂不结算
+      } else {
+        if (!slot.willExplode) return;
+        report.chainSegments++;
+        let dmg = explDmg(slot.layers);
+        const spaceBonus = getSpaceExplosionBonus();
+        dmg += spaceBonus;
+        const crossActive = hasCrossExplosion();
+        const targets = crossActive ? explCells(pos) : [pos];
+        glog(`💥 ${EL[el]}${slot.layers}层引爆！${crossActive ? '范围伤害 ' : '单体伤害 '}${dmg}${spaceBonus > 0 ? ' (引信+' + spaceBonus + ')' : ''}`);
+        targets.forEach(tp => {
+          const m = monAt(tp);
+          if (m) {
+            let emult = 1;
+            if (m.el && ADV[el] === m.el) { emult = 2; report.advHits++; }
+            const advBonus = emult === 2 ? getAdvHitBonus() : 0;
+            const td = dmg * emult + advBonus;
+            report.totalDamage += td;
+            if (emult === 2) glog(`⚡ 元素克制 ×2！`);
+            const wasAlive = !m.dead;
+            dealDmg(m, td, `${EL[el]}元素结算`);
+            if (wasAlive && m.dead) report.killedCount++;
+          } else if (enemyCastleAt(tp)) {
+            report.totalDamage += dmg;
+            damageEnemyCastle(dmg, `${EL[el]}元素结算`);
+          }
+        });
+      }
+      slot.layers = 0; slot.willExplode = false;
+      syncBoardElementFromElementCells(pos);
+    });
+  });
+  report.clearedWave = G.monsters.every(m => m.dead);
+  report.perfect = report.clearedWave && aliveBefore > 0;
+  if (report.perfect) {
+    G.gold += 3;
+    G.engineStats.perfectCount = (G.engineStats.perfectCount || 0) + 1;
+    glog('🌟 完美回合！连锁清场 +3 金');
+  }
+  if (report.chainSegments > 0) {
+    G.engineStats.chainCount = (G.engineStats.chainCount || 0) + report.chainSegments;
+  }
+  G.lastSettle = report;
+  recomputeGrowth();
+  if (report.chainSegments > 0) {
+    glog(`🔗 连锁 ×${report.chainSegments}！克制 ×${report.advHits}！合计 −${report.totalDamage}`);
+  }
+  G.previewEvents = [];
+  checkAllDead();
+  refreshUI();
+}
+
+function settleDamage() { settleExplosions(); }
+
+// ========== 行动槽执行 ==========
+
+function useSlot(idx) {
+  var slot = G.slots[idx];
+  if (!slot || slot.used || G.phase !== 'PLAYER') return;
+  var hero = G.heroes[slot.hid]; if (!hero) return;
+  if (slot.skill === 'summonFromCell') {
+    if (!execSummonFromCellSkill(hero, slot)) return;
+    slot.used = true; hero._acted = true;
+    G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
+    G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：召唤' });
+    refreshUI();
+    return;
+  }
+  if (slot.skill === 'healSummons') {
+    execHealSummonsSkill(hero, slot);
+    slot.used = true; hero._acted = true;
+    G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
+    G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：治疗召唤物' });
+    refreshUI();
+    return;
+  }
+  var cells = atkCells(hero.pos, slot.sn, slot.dir);
+  if (cells.length === 0) { glog('⚠️ 攻击范围为空。'); return; }
+  var center = findCenterCell(cells);
+  var baseLayers = slot.layers || 1;
+  var centerBonus = slot.centerBonus || 0;
+  var condEl = slot.conditional ? slot.conditional.el : null;
+  var condBonus = slot.conditional ? (slot.conditional.bonus || 0) : 0;
+  cells.forEach(function(ap) {
+    if (castleAt(ap)) return;
+    var key = ap.r + ',' + ap.c;
+    if (!G.elementCells[key]) G.elementCells[key] = {
+      fire: { layers: 0, willExplode: false },
+      water: { layers: 0, willExplode: false },
+      wind: { layers: 0, willExplode: false },
+      earth: { layers: 0, willExplode: false },
+    };
+    var elSlot = G.elementCells[key][slot.el];
+    var layersToAdd = baseLayers;
+    if (ap.r === center.r && ap.c === center.c) layersToAdd += centerBonus;
+    if (condEl && elSlot.layers > 0) layersToAdd += condBonus;
+    elSlot.layers = Math.min(elSlot.layers + layersToAdd, MAX_STK);
+    elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
+    var cell = G.board[ap.r][ap.c];
+    if (!cell.el || cell.stk === 0) { cell.el = slot.el; cell.stk = Math.min(layersToAdd, MAX_STK); }
+    else if (cell.el === slot.el) { cell.stk = Math.min(cell.stk + layersToAdd, MAX_STK); }
+  });
+  slot.used = true;
+  hero._acted = true;
+  G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
+  G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, el: slot.el, sn: slot.sn, dir: slot.dir, cells: cells.map(function(c) { return c.r + ',' + c.c; }), desc: '使用行动块#' + (idx + 1) + '：' + EL[slot.el] });
+  refreshUI();
+}
+
+function commitPlayerActionsToElementField(G) {
+  G.slots.forEach((s, idx) => {
+    if (!s.used) return;
+    const hero = G.heroes[s.hid]; if (!hero) return;
+    const cells = atkCells(hero.pos, s.sn, s.dir);
+    const center = findCenterCell(cells);
+    const baseLayers = s.layers || 1;
+    const centerBonus = s.centerBonus || 0;
+    const condEl = s.conditional?.el;
+    const condBonus = s.conditional?.bonus || 0;
+    cells.forEach(ap => {
+      if (castleAt(ap)) return;
+      const key = `${ap.r},${ap.c}`;
+      if (!G.elementCells[key]) G.elementCells[key] = {
+        fire: { layers: 0, willExplode: false },
+        water: { layers: 0, willExplode: false },
+        wind: { layers: 0, willExplode: false },
+        earth: { layers: 0, willExplode: false },
+      };
+      const elSlot = G.elementCells[key][s.el];
+      let layersToAdd = baseLayers;
+      if (ap.r === center.r && ap.c === center.c) layersToAdd += centerBonus;
+      if (condEl && elSlot.layers > 0) layersToAdd += condBonus;
+      if (elSlot.layers === 0) {
+        elSlot.layers = Math.min(layersToAdd, MAX_STK);
+        elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
+      }
+      const cell = G.board[ap.r][ap.c];
+      if (!cell.el || cell.stk === 0) { cell.el = s.el; cell.stk = 1; }
+    });
+  });
+}
+
+function checkAllDead() {
+  if (G.monsters.every(m => m.dead)) {
+    glog('✅ 所有怪物被击杀！');
+  }
+}
+
+function checkGameOver() {
+  const allDead = Object.values(G.heroes).every(h => h.hp <= 0);
+  if (allDead) { G.runVictory = false; G.phase = 'OVER'; showRunEnd(); return; }
+  if (G.playerCastle && G.playerCastle.hp <= 0) { G.runVictory = false; G.phase = 'OVER'; showRunEnd(); return; }
+  if (G.enemyCastle && G.enemyCastle.hp <= 0) { G.runVictory = true; G.phase = 'OVER'; showRunEnd(); }
+}
+
+// ========== 回合管理 ==========
+
+function endPlayerTurn() {
+  if (G.phase !== 'PLAYER') return;
+  G.aiBattleStatus = null;
+  pushReplayStep({ type: 'END_PLAYER_TURN' });
+  commitPlayerActionsToElementField(G);
+  settleExplosions();
+  runSummonActions();
+  if (G.phase === 'OVER') { refreshUI(); return; }
+  G.phase = 'MONSTER'; G.selSlot = null; G.selHero = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
+  Object.values(G.heroes).forEach(h => h._acted = false);
+  glog('--- 怪物回合 ---');
+  computeMonWarn();
+  const hasAtk = G.monWarn.some(w => w.type === 'atk');
+  if (hasAtk) glog('⚠️ 预警：怪物即将攻击英雄！');
+  else if (G.monWarn.length) glog('👁 预警：怪物移动方向已标出。');
+  refreshUI();
+  setTimeout(() => { G.monWarn = []; runMonsters(0); }, 700);
+}
+
+function finishMonsters() {
+  if (G.phase === 'OVER') return;
+  G.round++;
+  const allDead = G.monsters.every(m => m.dead);
+  const castleDead = !G.enemyCastle || G.enemyCastle.hp <= 0;
+  if (G.round > G.maxRound || (allDead && castleDead)) {
+    if (G.dayHalf === 0) {
+      G.dayHalf = 1; G.round = 1; G.hitCount = 0;
+      G.slots.forEach(s => s.used = false);
+      Object.values(G.heroes).forEach(h => h._acted = false);
+      G.previewEvents = [];
+      glog(`🛒 第${G.day}天中午·进入商店！`);
+      G.phase = 'SHOP';
+      openShop();
+    } else if (G.dayHalf === 2) {
+      glog(`🌙 第${G.day}天夜晚·进入商店！`);
+      G.phase = 'SHOP';
+      openShop();
+    }
+  } else {
+    G.phase = 'PLAYER'; G.hitCount = 0; G.previewEvents = [];
+    G.slots.forEach(s => s.used = false);
+    Object.values(G.heroes).forEach(h => h._acted = false);
+    glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
+  }
+  refreshUI();
+}
+
+// ========== 怪物行动 ==========
+
+function monsterAct(m) {
+  if (m.dead) return;
+  let ap = 3;
+  while (ap > 0) {
+    const lp = { r: m.pos.r, c: m.pos.c - 1 };
+    if (lp.c >= 0) {
+      const lh = heroAt(lp);
+      if (lh) {
+        lh.hp = Math.max(0, lh.hp - m.atk);
+        const lu = getUnitByHeroId(lh.id); if (lu) lu.hp = lh.hp;
+        glog(`👾 ${m.name}攻击${lh.name}！-${m.atk}（${lh.hp}/${lh.maxHp}）`);
+        if (lh.hp <= 0) { glog(`💔 ${lh.name}倒下了！`); checkGameOver(); }
+        ap -= 1; break;
+      }
+      if (playerCastleAt(lp)) { damagePlayerCastle(m.atk, `${m.name}攻击`); ap -= 1; break; }
+      const ls = summonAt(lp);
+      if (ls) { damageSummon(ls, m.atk); glog(`👾 ${m.name}攻击${ls.name}！-${m.atk}（${ls.dead ? 0 : ls.hp}/${ls.maxHp}）`); ap -= 1; break; }
+    }
+    const dp = { r: m.pos.r + 1, c: m.pos.c };
+    if (dp.r <= 12) {
+      const dh = heroAt(dp);
+      if (dh) {
+        dh.hp = Math.max(0, dh.hp - m.atk);
+        const du = getUnitByHeroId(dh.id); if (du) du.hp = dh.hp;
+        glog(`👾 ${m.name}攻击${dh.name}！-${m.atk}（${dh.hp}/${dh.maxHp}）`);
+        if (dh.hp <= 0) { glog(`💔 ${dh.name}倒下了！`); checkGameOver(); }
+        ap -= 1; break;
+      }
+      if (playerCastleAt(dp)) { damagePlayerCastle(m.atk, `${m.name}攻击`); ap -= 1; break; }
+      const ds = summonAt(dp);
+      if (ds) { damageSummon(ds, m.atk); glog(`👾 ${m.name}攻击${ds.name}！-${m.atk}（${ds.dead ? 0 : ds.hp}/${ds.maxHp}）`); ap -= 1; break; }
+    }
+    const np = nextMoveFromPos(m.pos, m);
+    if (!np) break;
+    const block = topElementAt(np);
+    if (block) { glog(`👾 ${m.name}被${EL[block.el]}${block.layers}阻挡！本回合结束。`); ap = 0; break; }
+    if (!monAt(np) && !heroAt(np) && !castleAt(np) && !summonAt(np)) { m.pos = np; glog(`👾 ${m.name}→(${np.r},${np.c})`); ap -= 1; }
+    else break;
+  }
+}
+
+function nextMoveFromPos(pos, m) {
+  let best = null, bd = 99;
+  const heroes = Object.values(G.heroes).filter(h => h.hp > 0);
+  heroes.forEach(h => {
+    const d = Math.abs(h.pos.r - pos.r) + Math.abs(h.pos.c - pos.c);
+    if (d < bd) { bd = d; best = { r: h.pos.r, c: h.pos.c }; }
+  });
+  if (G.playerCastle && G.playerCastle.hp > 0) {
+    const cd = Math.abs(G.playerCastle.pos.r - pos.r) + Math.abs(G.playerCastle.pos.c - pos.c);
+    if (cd < bd) { bd = cd; best = { r: G.playerCastle.pos.r, c: G.playerCastle.pos.c }; }
+  }
+  if (!best) return null;
+  const dr = best.r - pos.r, dc = best.c - pos.c;
+  const moves = [];
+  if (dc < 0) moves.push({ r: pos.r, c: pos.c - 1 });
+  if (dc > 0) moves.push({ r: pos.r, c: pos.c + 1 });
+  if (dr < 0) moves.push({ r: pos.r - 1, c: pos.c });
+  if (dr > 0) moves.push({ r: pos.r + 1, c: pos.c });
+  for (const mv of moves) {
+    if (mv.r < 0 || mv.r > 12 || mv.c < 0 || mv.c > 12) continue;
+    if (!monAt(mv) && !summonAt(mv) && !heroAt(mv) && !castleAt(mv)) return mv;
+  }
+  return null;
+}
+
+function nextMove(m) { return nextMoveFromPos(m.pos, m); }
+
+function simMonAct(m) {
+  const startPos = { r: m.pos.r, c: m.pos.c };
+  let pos = { r: m.pos.r, c: m.pos.c };
+  let ap = 3;
+  const movCells = [];
+  let atkCell = null, atkTarget = null, stopReason = 'ap_exhausted';
+  while (ap > 0) {
+    const lp = { r: pos.r, c: pos.c - 1 };
+    if (lp.c >= 0) {
+      const lh = heroAt(lp);
+      if (lh) { atkCell = { r: lp.r, c: lp.c }; atkTarget = lh; stopReason = 'attack'; break; }
+      if (playerCastleAt(lp)) { atkCell = { r: lp.r, c: lp.c }; atkTarget = { id: 'playerCastle', name: '我方城堡', hp: G.playerCastle.hp }; stopReason = 'attack'; break; }
+      const ls = summonAt(lp);
+      if (ls) { atkCell = { r: lp.r, c: lp.c }; atkTarget = ls; stopReason = 'attack'; break; }
+    }
+    const dp = { r: pos.r + 1, c: pos.c };
+    if (dp.r <= 12) {
+      const dh = heroAt(dp);
+      if (dh) { atkCell = { r: dp.r, c: dp.c }; atkTarget = dh; stopReason = 'attack'; break; }
+      if (playerCastleAt(dp)) { atkCell = { r: dp.r, c: dp.c }; atkTarget = { id: 'playerCastle', name: '我方城堡', hp: G.playerCastle.hp }; stopReason = 'attack'; break; }
+      const ds = summonAt(dp);
+      if (ds) { atkCell = { r: dp.r, c: dp.c }; atkTarget = ds; stopReason = 'attack'; break; }
+    }
+    const np = nextMoveFromPos(pos, m);
+    if (!np) { stopReason = 'no_path'; break; }
+    if (hasElementAt(np)) { movCells.push({ r: np.r, c: np.c, type: 'block', step: 4 - ap }); stopReason = 'blocked'; break; }
+    if (monAt(np) || heroAt(np) || castleAt(np) || summonAt(np)) { stopReason = 'occupied'; break; }
+    movCells.push({ r: np.r, c: np.c, type: 'mov', step: 4 - ap });
+    pos = { r: np.r, c: np.c };
+    ap -= 1;
+  }
+  return { movCells, atkCell, atkTarget, dmg: m.atk, startPos, remainAp: ap, stopReason };
+}
+
+function runMonsters(idx) {
+  const alive = G.monsters.filter(m => !m.dead);
+  if (idx >= alive.length) { finishMonsters(); return; }
+  runMonsterAbilityHook('onRoundStart', alive[idx]);
+  monsterAct(alive[idx]);
+  refreshUI();
+  setTimeout(() => runMonsters(idx + 1), 350);
+}
+
+// ========== 怪物能力钩子 ==========
+
+function runMonsterAbilityHook(trigger, monster) {
+  if (!monster || monster.dead) return false;
+  const ability = monster.ability || MONSTER_TYPES[monster.typeId]?.ability;
+  if (!ability || ability.trigger !== trigger) return false;
+  if (ability.id === 'lava_surge') {
+    const cfg = ability.config || {};
+    addElementLayers(monster.pos, cfg.el || 'fire', cfg.layers || 1);
+    glog(`🔥 ${monster.name}引发熔岩涌动`);
+    return true;
+  }
+  if (ability.id === 'core_split') {
+    monster._abilityTicks = (monster._abilityTicks || 0) + 1;
+    const cfg = ability.config || {};
+    const n = cfg.n || 2;
+    if (monster._abilityTicks % n !== 0) return false;
+    const dirs = [{ r: 0, c: -1 }, { r: 1, c: 0 }, { r: -1, c: 0 }, { r: 0, c: 1 }];
+    const pos = dirs.map(d => ({ r: monster.pos.r + d.r, c: monster.pos.c + d.c }))
+      .find(p => p.r >= 0 && p.r < 8 && p.c >= 0 && p.c < 8 && cellFree(p) && !castleAt(p) && !hasElementAt(p));
+    if (!pos) return false;
+    const typeId = cfg.typeId || 'normal';
+    const mt = MONSTER_TYPES[typeId] || MONSTER_TYPES.normal;
+    G.monsters.push({
+      id: `split_${Date.now()}_${G.monsters.length}`,
+      typeId, name: mt.name,
+      hp: mt.hp, maxHp: mt.hp, atk: mt.atk, ap: mt.ap,
+      cost: mt.cost, gold: mt.gold,
+      pos, dead: false, el: null, ability: mt.ability || null,
+    });
+    glog(`🔥 ${monster.name}分裂出${mt.name}`);
+    return true;
+  }
+  return false;
+}
+
+// ========== 预警计算 ==========
+
+function computeMonWarn() {
+  G.monWarn = [];
+  G.monsters.filter(m => !m.dead).forEach(m => {
+    const { atkCell, atkTarget, movCells } = simMonAct(m);
+    if (atkCell && atkTarget) {
+      G.monWarn.push({ r: atkCell.r, c: atkCell.c, type: 'atk' });
+    } else {
+      const movOnly = movCells.filter(c => c.type === 'mov');
+      if (movOnly.length > 0) {
+        const last = movOnly[movOnly.length - 1];
+        G.monWarn.push({ r: last.r, c: last.c, type: 'mov' });
+      }
+    }
+  });
+}
+
+// ========== 召唤物行动 ==========
+
+function runSummonActions() {
+  if (!G.summons || G.summons.length === 0) return;
+  let acted = 0, moved = 0;
+  const dirs = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }];
+  const attackAdjacent = (s) => {
+    for (const d of dirs) {
+      const tp = { r: s.pos.r + d.r, c: s.pos.c + d.c };
+      if (tp.r < 0 || tp.r > 12 || tp.c < 0 || tp.c > 12) continue;
+      const m = monAt(tp);
+      if (m) { dealDmg(m, s.atk, `${s.name}攻击`); glog(`💧 ${s.name}(ATK${s.atk})→${m.name} -${s.atk}`); return true; }
+    }
+    return false;
+  };
+  G.summons.filter(s => !s.dead).forEach(s => {
+    if (attackAdjacent(s)) { acted++; return; }
+    const targets = G.monsters.filter(m => !m.dead);
+    if (targets.length === 0) return;
+    let target = targets[0], best = 99;
+    targets.forEach(m => {
+      const d = Math.abs(m.pos.r - s.pos.r) + Math.abs(m.pos.c - s.pos.c);
+      if (d < best) { best = d; target = m; }
+    });
+    const rowStep = Math.sign(target.pos.r - s.pos.r);
+    const colStep = Math.sign(target.pos.c - s.pos.c);
+    const candidates = [
+      { r: s.pos.r, c: s.pos.c + colStep },
+      { r: s.pos.r + rowStep, c: s.pos.c },
+    ].filter(p => p.r >= 0 && p.r < 8 && p.c >= 0 && p.c < 8);
+    const np = candidates.find(p => !monAt(p) && !heroAt(p) && !castleAt(p) && !summonAt(p) && !hasElementAt(p));
+    if (np) { s.pos = np; moved++; glog(`💧 ${s.name}→(${np.r},${np.c})`); if (attackAdjacent(s)) acted++; }
+  });
+  if (acted > 0 || moved > 0) glog(`🌀 召唤物行动：${moved} 次移动 / ${acted} 次攻击`);
+  checkAllDead();
+}
+
+function execSummonFromCellSkill(hero, slot) {
+  const cells = atkCells(hero.pos, slot.sn, slot.dir);
+  const candidates = cells.filter(p => !heroAt(p) && !monAt(p) && !castleAt(p) && !summonAt(p));
+  if (candidates.length === 0) { glog('⚠️ 没有可召唤的空格'); return false; }
+  let bestCell = candidates[0], bestLayers = -1;
+  candidates.forEach(p => {
+    const { layers } = chooseElementForSummon(p);
+    if (layers > bestLayers) { bestLayers = layers; bestCell = p; }
+  });
+  const chosen = chooseElementForSummon(bestCell);
+  if (slot.consumeLayers && chosen.layers > 0) {
+    const key = `${bestCell.r},${bestCell.c}`;
+    const elSlot = G.elementCells[key] && G.elementCells[key][chosen.el];
+    if (elSlot) {
+      elSlot.layers = Math.max(0, elSlot.layers - 1);
+      elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
+      syncBoardElementFromElementCells(bestCell);
+    }
+  }
+  const u = G.ownedUnits.find(unit => {
+    const h = Object.values(G.heroes || {}).find(heroObj => heroObj.id === hero.id);
+    return h && unit.instanceId === h.unitId;
+  });
+  const isSprout = u && u.defId === 'sprout_summoner';
+  const spawnPlan = isSprout
+    ? calcSproutSpawnParams(hero, slot, chosen)
+    : { count: slot.count || 1, hp: 3 + (slot.bonusHp || 0) + Math.min(chosen.layers, 2), maxHp: 5 + (slot.bonusHp || 0) + Math.min(chosen.layers, 2) };
+  for (let i = 0; i < spawnPlan.count; i++) {
+    const offset = i === 0 ? bestCell : { r: bestCell.r, c: Math.min(12, bestCell.c + i) };
+    if (summonAt(offset) || heroAt(offset) || monAt(offset) || castleAt(offset)) continue;
+    spawnSummon(hero.id, offset, { el: chosen.el || 'water', hp: spawnPlan.hp, maxHp: spawnPlan.maxHp, name: chosen.el === 'water' ? '水灵' : '芽灵' });
+  }
+  glog(`🌱 ${hero.name}在(${bestCell.r},${bestCell.c})召唤${EL[chosen.el || 'water']}单位！`);
+  return true;
+}
+
+function execHealSummonsSkill(hero, slot) {
+  const cells = atkCells(hero.pos, slot.sn, slot.dir);
+  let n = 0;
+  G.summons.filter(s => !s.dead).forEach(s => {
+    if (cells.some(p => p.r === s.pos.r && p.c === s.pos.c)) { healSummon(s); n++; }
+  });
+  if (n > 0) glog(`💧 ${hero.name}治疗${n}个召唤物，攻击成长+${n}`);
+  else glog('⚠️ 范围内没有可治疗的召唤物');
+  return n > 0;
+}
+
+// ========== AI 战斗计划 ==========
+
+const ALLOW_AUTO_MOVE = true;
+
+function _aiPlanKey(pos) { return pos.r + ',' + pos.c; }
+
+function _aiSlotLabel(s, i) { return '#' + (i + 1) + ' ' + (EL[s.el] || s.el) + ' sn' + s.sn + ' ' + (s.dir || 'right'); }
+
+function _aiCellBlocked(pos, movingHeroId, reserved) {
+  if (!inBoard(pos)) return true;
+  if (monAt(pos) || summonAt(pos) || hasElementAt(pos) || castleAt(pos)) return true;
+  const h = heroAt(pos);
+  if (h && h.id !== movingHeroId) return true;
+  return reserved && reserved.has(_aiPlanKey(pos));
+}
+
+function _aiMaxSlotRange(hid) {
+  let maxRange = 1;
+  G.slots.forEach(s => {
+    if (s.used || s.hid !== hid) return;
+    const shape = SD[s.sn]; if (!shape) return;
+    shape.cells.forEach(([dr, dc]) => { if (Math.abs(dc) > maxRange) maxRange = Math.abs(dc); });
+  });
+  return maxRange;
+}
+
+function _aiTargetCells() {
+  const cells = G.monsters.filter(m => !m.dead).map(m => m.pos);
+  if (G.enemyCastle && G.enemyCastle.hp > 0) cells.push(G.enemyCastle.pos);
+  return cells.filter(inBoard);
+}
+
+function _aiChooseMove(hid, heroIdx, reserved) {
+  const hero = G.heroes[hid];
+  const targets = _aiTargetCells();
+  if (!hero || hero._acted || targets.length === 0 || !ALLOW_AUTO_MOVE) return null;
+  if (canHeroAttackEnemyFrom(hero.pos, hid)) return null;
+  const rowDensity = [...new Set(targets.map(t => t.r))].map(r => ({ r, cnt: targets.filter(t => t.r === r).length }))
+    .sort((a, b) => b.cnt - a.cnt || Math.abs(a.r - hero.pos.r) - Math.abs(b.r - hero.pos.r));
+  const maxRange = _aiMaxSlotRange(hid);
+  const minTargetCol = Math.min(...targets.map(t => t.c));
+  const cols = boardCols();
+  const baseCol = Math.max(0, Math.min(cols - 1, minTargetCol - maxRange));
+  const rowTarget = rowDensity.length > 0 ? rowDensity[Math.min(heroIdx, rowDensity.length - 1)].r : hero.pos.r;
+  const candidates = [];
+  for (let off = 0; off < cols; off++) {
+    candidates.push({ r: rowTarget, c: Math.min(cols - 1, baseCol + off) });
+    candidates.push({ r: rowTarget, c: Math.max(0, baseCol - off) });
+  }
+  for (const t of candidates) {
+    if (t.r === hero.pos.r && t.c === hero.pos.c) return null;
+    if (_aiCellBlocked(t, hid, reserved)) continue;
+    return { heroId: hid, from: { r: hero.pos.r, c: hero.pos.c }, to: t, reason: '靠近敌方高密度行' };
+  }
+  return null;
+}
+
+function buildAiBattleTurnPlan() {
+  const plan = {
+    type: 'AI_BATTLE_PLAN', phase: G.phase, canRun: false,
+    moves: [], actions: [], summary: '', reason: '',
+    slotsTotal: (G.slots || []).length, slotsUsable: 0,
+  };
+  if (G.phase !== 'PLAYER') { plan.reason = '当前不是玩家回合'; plan.summary = 'AI 等待玩家回合'; return plan; }
+  const heroIds = Object.keys(G.heroes).filter(hid => G.heroes[hid].hp > 0);
+  const reserved = new Set();
+  for (let heroIdx = 0; heroIdx < heroIds.length; heroIdx++) {
+    const hid = heroIds[heroIdx];
+    const hero = G.heroes[hid];
+    if (!hero) continue;
+    const mv = _aiChooseMove(hid, heroIdx, reserved);
+    if (mv) { plan.moves.push(mv); reserved.add(_aiPlanKey(mv.to)); }
+    else reserved.add(_aiPlanKey(hero.pos));
+  }
+  for (let heroIdx = 0; heroIdx < heroIds.length; heroIdx++) {
+    const hid = heroIds[heroIdx];
+    G.slots.forEach((s, i) => {
+      if (s.used || s.hid !== hid || !G.heroes[s.hid]) return;
+      const moved = plan.moves.find(m => m.heroId === hid);
+      const pos = moved ? moved.to : G.heroes[s.hid].pos;
+      if (atkCells(pos, s.sn, s.dir).length === 0) return;
+      plan.actions.push({ slotId: i, heroId: hid, el: s.el, sn: s.sn, dir: s.dir, label: _aiSlotLabel(s, i) });
+    });
+  }
+  plan.slotsUsable = plan.actions.length;
+  plan.canRun = plan.moves.length > 0 || plan.actions.length > 0;
+  plan.reason = plan.canRun ? 'ready' : '没有可执行的英雄动作';
+  plan.summary = plan.canRun ? `AI 计划：移动${plan.moves.length}步，施放${plan.actions.length}个符文` : 'AI 没有找到可执行动作';
+  return plan;
+}
+
+function planAiBattleTurn() {
+  const plan = buildAiBattleTurnPlan();
+  G.aiBattleStatus = { phase: 'planned', summary: plan.summary, moves: plan.moves.length, actions: plan.actions.length };
+  glog('🧠 ' + plan.summary);
+  refreshUI();
+  return plan;
+}
+
+function executeAiBattlePlan_sync(plan) {
+  if (!plan) plan = buildAiBattleTurnPlan();
+  if (!plan.canRun) { glog('⚠️ ' + (plan.reason || 'AI 没有可执行动作')); return plan; }
+  G.aiBattleStatus = { phase: 'executing', summary: plan.summary, moves: plan.moves.length, actions: plan.actions.length };
+  G.actionLog.push({ type: 'AI_BATTLE', desc: plan.summary, moves: plan.moves.length, actions: plan.actions.length });
+  plan.moves.forEach(m => {
+    G.heroes[m.heroId].pos = { r: m.to.r, c: m.to.c };
+    glog(`🤖 ${G.heroes[m.heroId].name}→(${m.to.r},${m.to.c})`);
+  });
+  plan.actions.forEach(a => {
+    const s = G.slots[a.slotId];
+    if (!s || s.used || !G.heroes[s.hid]) return;
+    if (atkCells(G.heroes[s.hid].pos, s.sn, s.dir).length === 0) return;
+    s.used = true;
+    glog(`🤖 使用 ${G.heroes[s.hid].name}·${_aiSlotLabel(s, a.slotId)}`);
+  });
+  glog(`⚡ AI 战斗执行：移动${plan.moves.length}步，施放${plan.actions.length}个符文。`);
+  return plan;
+}
+
+function runAiBattleTurn_sync(opts) {
+  opts = opts || {};
+  if (G.phase !== 'PLAYER') return buildAiBattleTurnPlan();
+  const plan = planAiBattleTurn();
+  if (!plan.canRun) return plan;
+  executeAiBattlePlan_sync(plan);
+  if (opts.endTurn !== false) endPlayerTurn();
+  return plan;
+}
+
+// ========== 回合/小回合配置 ==========
+
+function syncMaxRoundForPhase() {
+  const d = G.day || 1;
+  const phase = G.dayHalf === 2 ? 'afternoon' : 'morning';
+  const cfg = DAY_ROUND_CONFIG[d] || DAY_ROUND_CONFIG[1];
+  G.maxRound = cfg[phase] || 2;
+}

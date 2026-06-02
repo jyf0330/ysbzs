@@ -1,3 +1,51 @@
+## 2026-06-03 — 收尾校准：全文档旧口径清除
+
+### 文档
+- `03_CURRENT_NUMBERS.md`：Run 5天×3阶段 → 10天（前3教学/4-10成长压力）；同名升阶 lv3 → 四阶青铜→白银→黄金→钻石；价格标 NEEDS_DECISION，保留 2/4/6/8 占位但标注非最终数值。
+- `05_ASSET_AND_FILE_INDEX.md`：全路径核实通过（Excel/json/png/recording 全部存在），Excel 补 ASCII 别名 `ysbzs_shop_master.xlsx`。
+- `08_ROADMAP.md`：S1 目标从"水+召唤引擎滚雪球"改为双闭环口径；S3 run≈5天→10天；历史记录标注旧口径。
+- `AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`：确认清洁，只指向入口，无内嵌游戏设计旧规则。
+- `06_DECISION_LOG.md`：追加收尾校准条目，修复上轮丢失的 06-02 标题。
+
+### 口径
+- 对齐 2026-06-03 拍板 10 条：火伤害闭环+召唤流闭环、四阶档位、10天Run、不做中立召唤、不卖非英雄。
+
+## 2026-06-03 — AI 工作流 skill 口径修正
+
+### 文档
+- `docs/02_CURRENT_WORKFLOW.md`：补充 Superpowers skill 解析口径，明确 Codex 本机的子 skill 路径为 `~/.codex/skills/superpowers/skills/<skill-name>/SKILL.md`，避免把子目录安装误判为缺失。
+- `docs/02_CURRENT_WORKFLOW.md`：补充项目共同规则、各 AI 工具技能、个人工作流三层边界，并把 YWH / Superpowers 涉及 skill 清单写入项目共同规则。
+- `AGENTS.md` 与 `CLAUDE.md`：重新对齐为同一薄入口结构，只保留启动、角色入口、核心纪律、冲突优先级、禁止事项和常用命令。
+
+### 说明
+- 本次不改游戏运行逻辑；只修正 AI 工作流文档、入口一致性和个人工作流同步口径。
+
+## 2026-06-02 — 商店界面设计文档按确认方向收束
+
+### 文档
+- 更新 `docs/01_游戏设计（策划主导）/UI-UX策划/商店界面设计文档.md`：明确商店只卖英雄，不卖宠物 / 道具 / 遗物；将购买 / 出售 / 上阵设为第一优先级，刷新降为次级决策。
+- 文档同步 Prototype-First 验证口径，强调“构筑搭配”为主、“策略博弈”为辅，并把英雄卡、阵容区、主操作提示写入页面结构。
+
+### 对齐
+- 对齐本轮 brainstorm 结论：构筑取向偏 C，策略博弈作为辅助；商店仅售英雄；主操作优先于刷新。
+- 与 `docs/01_游戏设计（策划主导）/商店与英雄构筑系统GDD.md` 的“只卖英雄”方向保持一致。
+
+## 2026-06-02 — 支持外部表注入（英雄与商店池）
+
+### 代码
+- `game.js`：新增外部表接入逻辑，支持在脚本加载前通过 `__YSBZS_TABLES__`（或 `__YSBZS_EXTERNAL_TABLES__`）注入 `UNIT_DEFS` 与 `SHOP_POOLS`。
+- `game.js`：新增 `UNIT_PATCHES` 覆盖能力，可只覆盖英雄属性（名称、各级 HP、各槽 tier）而不替换整表。
+- `game.js`：保留内置默认表作为兜底；未注入外部表时行为不变。
+- `scripts/gen_external_tables_from_xlsx.py`：新增 xlsx 解析脚本，将 `docs/01_游戏设计（策划主导）/关卡策划/ysbzs_英雄表_最新设定_20260531.xlsx` 转为运行时可加载的 `external-tables.js`。
+- `scripts/gen_external_tables_from_xlsx.py`：支持按领域拆分产物，生成 `external-data/unit_patches.json`、`external-data/shop_unlock_pools.json`、`external-data/id_alias.json`、`external-data/meta.json`，同时继续生成 `external-tables.js` 供页面直接加载。
+- `index.html`：改为 JSON 优先加载外部表（先读 `external-data/*.json`），读取失败时自动回退到 `external-tables.js`，避免本地环境差异导致启动失败。
+- `index.html`：在 `game.js` 前加载 `external-tables.js`，实现“外部表自动接入”。
+- `package.json`：新增 `npm run sync:hero-table` 一键同步外部英雄表。
+
+### 用法
+- 宿主可在加载 `game.js` 前设置：`globalThis.__YSBZS_TABLES__ = { UNIT_DEFS: {...}, SHOP_POOLS: {...} }`。
+- 当前仓库默认使用 `external-tables.js`（由 xlsx 自动生成）提供 `UNIT_PATCHES`。
+
 ## 2026-06-02 — 商店价格口径对齐文档
 
 ### 代码
@@ -248,6 +296,35 @@
 - 可读性 DOM 指标：顶栏 chip 最小 13px；行动卡主文字 15px；层数文字 12px；方向按钮 29×29px；执行按钮 42×60px；主按钮 181×50px；棋盘提示距离底部战报条 7px。
 - `node test.js`：322/416 通过，94 失败。失败仍集中于当前 8×8 运行棋盘与旧 13×13 测试/GDD 基线不一致及其越界连锁，本 goal 未改核心战斗规则。
 
+
+## 2026-06-02 — 文档体系统一：单一入口 + 分角色入口 + 当前规则唯一真相
+
+### 新文档结构
+- **总入口** `docs/00_AI_START_HERE.md`：唯一总入口，告诉 AI 项目现状和读取顺序。
+- **分角色入口** `docs/roles/PROGRAMMER_START.md`、`ARTIST_START.md`、`UI_UX_START.md`、`PLANNER_START.md`。
+- **当前规则六文件**：
+  - `01_CURRENT_GAME_SPEC.md` — 游戏规格与核心规则
+  - `02_CURRENT_WORKFLOW.md` — AI 工作流与执行纪律
+  - `03_CURRENT_NUMBERS.md` — 数值基准
+  - `04_CURRENT_UI_ART_SPEC.md` — UI 布局、美术风格与交互规范
+  - `05_ASSET_AND_FILE_INDEX.md` — 文件与素材索引
+  - `06_DECISION_LOG.md` — 决策记录（取代 `09_DECISIONS.md`）
+- **`AGENTS.md`** 重写为极薄入口，只负责指路。
+- **`CLAUDE.md`**、**`.github/copilot-instructions.md`** 统一指向 `docs/00_AI_START_HERE.md`。
+
+### 归档
+- 旧入口文件归档：`00_AI_WORKFLOW_DETAILS.md`、`00_AI_PROJECT_RULES.md`、`00_CURRENT_CONTEXT.md` → `docs/archive/workflow/`
+- 旧决策记录 `09_DECISIONS.md` → `docs/archive/decisions/`
+- 旧策划/程序/美术/测试文档 → `docs/archive/old_specs/`
+- 旧归档 `docs/99_归档/` → 合并到 `docs/archive/old_specs/99_归档/`
+- 根目录历史文件：`ysbzs_shop_pool_ai_basic.md`、`index.html.bak`、`64061.jpeg` → `docs/archive/misc/`
+- archive 根目录添加 README.md，说明用途和使用规则。
+
+### 验证
+- 所有新入口文件和角色入口文件内容自洽。
+- 旧文件路径全部正确归档，archive 目录结构完整。
+
+- 任务卡 `tasks/doing/当前任务.md` 更新引用路径到 archive 版本。
 ## 2026-06-01 — Codex Goal：主界面美术成品化
 
 ### 代码（`index.html`）

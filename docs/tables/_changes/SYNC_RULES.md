@@ -12,9 +12,9 @@
 1. 读取 pending/ 下所有 status = pending 的变更单
 2. 汇总 affected_tables，检查冲突
 3. 无冲突 → 按变更单顺序更新正式表格
-4. 生成同步报告到 reports/
-5. 将已处理变更单移动到 archive/
-6. 归档后的变更单 status → applied
+4. 生成同步报告到 reports/（文件名：YYYY-MM-DD_HH-mm_sync-report.md）
+5. 将已处理变更单移动到 archive/（文件名保留原 pending 名称）
+6. 归档后的变更单 status → applied，并填写 applied_at = YYYY-MM-DD HH:mm
 7. 检查旧口径残留
 8. 汇报本次同步：内容、影响表格、归档文件、残留风险
 ```
@@ -22,10 +22,23 @@
 ## 变更单生命周期
 
 ```
-pending（待同步）
+pending（待同步，必须记录 created_at）
   →（AI 读取并执行）
-  → applied（归档至 archive/）
+  → applied（归档至 archive/，必须记录 applied_at）
 ```
+
+## 时间精度规则
+
+所有变更单和同步报告中的时间字段，**必须精确到分钟**（格式：`YYYY-MM-DD HH:mm`）。
+
+| 字段 | 填写时机 | 格式 |
+|------|----------|------|
+| `created_at` | 创建变更单时 | `YYYY-MM-DD HH:mm` |
+| `applied_at` | 归档变更单时 | `YYYY-MM-DD HH:mm` |
+| 报告文件名 | 生成报告时 | `YYYY-MM-DD_HH-mm_sync-report.md` |
+| 报告正文 `generated_at` | 生成报告时 | `YYYY-MM-DD HH:mm` |
+
+禁止使用只有日期的格式（如 `YYYY-MM-DD`）作为新规范。
 
 ## 冲突处理规则
 
@@ -38,8 +51,9 @@ pending（待同步）
 
 ## 归档规则
 
-- 归档时变更单的 `status` 字段从 `pending` 改为 `applied`。
-- 同步报告文件名格式：`YYYY-MM-DD-sync-report-NNN.md`。
+- 归档时变更单的 `status` 字段从 `pending` 改为 `applied`，并填写 `applied_at`。
+- 归档文件名保留原 pending 中的文件名不变。
+- 同步报告文件名格式：`YYYY-MM-DD_HH-mm_sync-report.md`。
 - `archive/` 和 `reports/` 中的内容不作当前规则，AI 不主动读取。
 - 如需追溯历史变更，用户可指定查看某份同步报告。
 
@@ -49,7 +63,6 @@ pending（待同步）
 
 ```bash
 grep -r "最高 lv3\|lv3 最高" docs/ --include="*.md"
-grep -r "旧规则\|旧口径\|废弃" docs/00_AI_START_HERE.md docs/01_CURRENT_GAME_SPEC.md 2>/dev/null
 ```
 
 如有命中，在同步报告中列出残留风险。

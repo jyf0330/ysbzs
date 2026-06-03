@@ -56,13 +56,11 @@ function settleExplosions() {
       if (!slot || slot.layers === 0) return;
       if (monHere) {
         report.chainSegments++;
-        const dmg = explDmg(slot.layers);
-        const emult = monHere.el && ADV[el] === monHere.el ? 2 : 1;
-        const advBonus = emult === 2 ? getAdvHitBonus() : 0;
-        const td = dmg * emult + advBonus;
-        if (emult === 2) report.advHits++;
+        const r = calcElementDamage(slot.layers, monHere.el, el, { advHitBonus: getAdvHitBonus() });
+        const td = r.damage;
+        if (r.isAdv) report.advHits++;
         report.totalDamage += td;
-        if (emult === 2) glog(`⚡ 元素克制 ×2！`);
+        if (r.isAdv) glog(`⚡ 元素克制 ×2！`);
         glog(`⚔️ ${EL[el]}${slot.layers}层→${monHere.name} 单体 -${td}`);
         const wasAlive = !monHere.dead;
         dealDmg(monHere, td, `${EL[el]}元素结算`);
@@ -72,27 +70,25 @@ function settleExplosions() {
       } else {
         if (!slot.willExplode) return;
         report.chainSegments++;
-        let dmg = explDmg(slot.layers);
         const spaceBonus = getSpaceExplosionBonus();
-        dmg += spaceBonus;
         const crossActive = hasCrossExplosion();
         const targets = crossActive ? explCells(pos) : [pos];
-        glog(`💥 ${EL[el]}${slot.layers}层引爆！${crossActive ? '范围伤害 ' : '单体伤害 '}${dmg}${spaceBonus > 0 ? ' (引信+' + spaceBonus + ')' : ''}`);
+        const expDmg = calcElementDamage(slot.layers, null, el, { spaceBonus }).damage;
+        glog(`💥 ${EL[el]}${slot.layers}层引爆！${crossActive ? '范围伤害 ' : '单体伤害 '}${expDmg}${spaceBonus > 0 ? ' (引信+' + spaceBonus + ')' : ''}`);
         targets.forEach(tp => {
           const m = monAt(tp);
           if (m) {
-            let emult = 1;
-            if (m.el && ADV[el] === m.el) { emult = 2; report.advHits++; }
-            const advBonus = emult === 2 ? getAdvHitBonus() : 0;
-            const td = dmg * emult + advBonus;
+            const r = calcElementDamage(slot.layers, m.el, el, { spaceBonus, advHitBonus: getAdvHitBonus() });
+            const td = r.damage;
+            if (r.isAdv) report.advHits++;
             report.totalDamage += td;
-            if (emult === 2) glog(`⚡ 元素克制 ×2！`);
+            if (r.isAdv) glog(`⚡ 元素克制 ×2！`);
             const wasAlive = !m.dead;
             dealDmg(m, td, `${EL[el]}元素结算`);
             if (wasAlive && m.dead) report.killedCount++;
           } else if (enemyCastleAt(tp)) {
-            report.totalDamage += dmg;
-            damageEnemyCastle(dmg, `${EL[el]}元素结算`);
+            report.totalDamage += expDmg;
+            damageEnemyCastle(expDmg, `${EL[el]}元素结算`);
           }
         });
       }
@@ -200,12 +196,10 @@ function commitPlayerActionsToElementField(G) {
       let layersToAdd = baseLayers;
       if (ap.r === center.r && ap.c === center.c) layersToAdd += centerBonus;
       if (condEl && elSlot.layers > 0) layersToAdd += condBonus;
-      if (elSlot.layers === 0) {
-        elSlot.layers = Math.min(layersToAdd, MAX_STK);
-        elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
-      }
+      elSlot.layers = Math.min(elSlot.layers + layersToAdd, MAX_STK);
+      elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
       const cell = G.board[ap.r][ap.c];
-      if (!cell.el || cell.stk === 0) { cell.el = s.el; cell.stk = 1; }
+      cell.el = s.el; cell.stk = Math.min(elSlot.layers, MAX_STK);
     });
   });
 }
@@ -560,13 +554,35 @@ function _aiChooseMove(hid, heroIdx, reserved) {
   const targets = _aiTargetCells();
   if (!hero || hero._acted || targets.length === 0 || !ALLOW_AUTO_MOVE) return null;
   if (canHeroAttackEnemyFrom(hero.pos, hid)) return null;
-  const rowDensity = [...new Set(targets.map(t => t.r))].map(r => ({ r, cnt: targets.filter(t => t.r === r).length }))
-    .sort((a, b) => b.cnt - a.cnt || Math.abs(a.r - hero.pos.r) - Math.abs(b.r - hero.pos.r));
+
+  // === 增强：推线向敌方城堡方向 ===
+  // 1. 计算最难触及的列（骑士方格最右列 vs 城堡列的最小值，确保总在推进）
   const maxRange = _aiMaxSlotRange(hid);
+  // 包含城堡作为推进目标，确保最终目标列接近城堡 (c=7)
+  const castleCol = G.enemyCastle && G.enemyCastle.hp > 0 ? G.enemyCastle.pos.c : 7;
   const minTargetCol = Math.min(...targets.map(t => t.c));
+  // 目标列 = 到达城堡需要的最小列
+  const pushCol = Math.min(castleCol, Math.max(minTargetCol, hero.pos.c + 1));
+  const baseCol = Math.max(0, Math.min(boardCols() - 1, pushCol - maxRange));
+
+  // 2. 行选择：英雄向怪物行/城堡行移动
+  const density = [...new Set(targets.map(t => t.r))].map(r => ({ r, cnt: targets.filter(t => t.r === r).length }))
+    .sort((a, b) => b.cnt - a.cnt || Math.abs(a.r - hero.pos.r) - Math.abs(b.r - hero.pos.r));
+
+  // 城堡行也是重要目标
+  const castleRowWeight = castleCol <= 7 ? 2 : 0;
+  if (G.enemyCastle && G.enemyCastle.hp > 0) {
+    const cr = G.enemyCastle.pos.r;
+    const existing = density.find(d => d.r === cr);
+    if (existing) existing.cnt += castleRowWeight;
+    else density.push({ r: cr, cnt: castleRowWeight });
+  }
+  density.sort((a, b) => b.cnt - a.cnt || Math.abs(a.r - hero.pos.r) - Math.abs(b.r - hero.pos.r));
+
+  const rowTarget = density.length > 0 ? density[Math.min(heroIdx, density.length - 1)].r : hero.pos.r;
+
+  // 3. 生成候选格（优先推向右方高列）
   const cols = boardCols();
-  const baseCol = Math.max(0, Math.min(cols - 1, minTargetCol - maxRange));
-  const rowTarget = rowDensity.length > 0 ? rowDensity[Math.min(heroIdx, rowDensity.length - 1)].r : hero.pos.r;
   const candidates = [];
   for (let off = 0; off < cols; off++) {
     candidates.push({ r: rowTarget, c: Math.min(cols - 1, baseCol + off) });
@@ -575,7 +591,10 @@ function _aiChooseMove(hid, heroIdx, reserved) {
   for (const t of candidates) {
     if (t.r === hero.pos.r && t.c === hero.pos.c) return null;
     if (_aiCellBlocked(t, hid, reserved)) continue;
-    return { heroId: hid, from: { r: hero.pos.r, c: hero.pos.c }, to: t, reason: '靠近敌方高密度行' };
+    var reason = '推线向城堡';
+    if (castleCol - t.c <= maxRange) reason = '已进入城堡攻击范围';
+    else reason = '推线推进';
+    return { heroId: hid, from: { r: hero.pos.r, c: hero.pos.c }, to: t, reason: reason };
   }
   return null;
 }
@@ -599,12 +618,30 @@ function buildAiBattleTurnPlan() {
   }
   for (let heroIdx = 0; heroIdx < heroIds.length; heroIdx++) {
     const hid = heroIds[heroIdx];
+    // 收集所有可用行动槽，按射程排序（长射程优先，十字形状优先）
+    const heroActions = [];
     G.slots.forEach((s, i) => {
       if (s.used || s.hid !== hid || !G.heroes[s.hid]) return;
       const moved = plan.moves.find(m => m.heroId === hid);
       const pos = moved ? moved.to : G.heroes[s.hid].pos;
       if (atkCells(pos, s.sn, s.dir).length === 0) return;
-      plan.actions.push({ slotId: i, heroId: hid, el: s.el, sn: s.sn, dir: s.dir, label: _aiSlotLabel(s, i) });
+      // 计算射程：最大列偏移（越深越靠近城堡）
+      var maxCol = 0;
+      var hitCastleRange = false;
+      (SD[s.sn]?.cells || []).forEach(function(c) {
+        var dc = Math.abs(c[1] || 0);
+        if (dc > maxCol) maxCol = dc;
+        var tp = { r: pos.r + (c[0]||0), c: pos.c + (c[1]||0) };
+        if (enemyCastleAt(tp)) hitCastleRange = true;
+      });
+      // 十字形状 (sn=12) 和长直线优先，能打到城堡的尤其优先
+      var depthScore = maxCol + (s.sn === 12 ? 2 : 0) + (s.sn >= 10 ? 1 : 0) + (s.layers || 0 > 1 ? 1 : 0) + (hitCastleRange ? 10 : 0);
+      heroActions.push({ slotId: i, hid: hid, sn: s.sn, depthScore: depthScore, label: _aiSlotLabel(s, i), hitCastleRange: hitCastleRange });
+    });
+    // 按深度排序
+    heroActions.sort(function(a, b) { return b.depthScore - a.depthScore; });
+    heroActions.forEach(function(a) {
+      plan.actions.push({ slotId: a.slotId, heroId: hid, sn: a.sn, depthScore: a.depthScore, label: a.label, hitCastleRange: a.hitCastleRange });
     });
   }
   plan.slotsUsable = plan.actions.length;

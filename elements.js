@@ -16,6 +16,29 @@ function addEl(pos, el) {
 function explDmg(stk) { return stk * (stk + 1) / 2; }
 function calcElementLayerDamage(layers) { return layers * (layers + 1) / 2; }
 
+/**
+ * 统一元素伤害计算 — battle.js(实战) 和 ui.js(预览) 共用
+ * 避免两套公式不同步
+ *
+ * @param {number} layers - 元素层数
+ * @param {string|null} targetEl - 目标的元素类型（用于克制判断），null 或无元素则无克制
+ * @param {string} ourEl - 我方元素类型
+ * @param {object} [opts]
+ * @param {number} [opts.advHitBonus=0] - 克制增伤被动加值（风风灵）
+ * @param {number} [opts.spaceBonus=0] - 空格引爆加值（火种灵）
+ * @returns {{ damage: number, isAdv: boolean, baseDmg: number, totalBase: number }}
+ */
+function calcElementDamage(layers, targetEl, ourEl, opts) {
+  opts = opts || {};
+  const baseDmg = explDmg(layers);
+  const totalBase = baseDmg + (opts.spaceBonus || 0);
+  const isAdv = targetEl && ADV[ourEl] === targetEl;
+  const mult = isAdv ? 2 : 1;
+  const advBonus = isAdv ? (opts.advHitBonus || 0) : 0;
+  const damage = totalBase * mult + advBonus;
+  return { damage, isAdv, baseDmg, totalBase };
+}
+
 function explCells(pos) {
   return [pos,
     { r: pos.r - 1, c: pos.c }, { r: pos.r + 1, c: pos.c },
@@ -127,7 +150,7 @@ function getPassiveAura() {
   let buffHp = 0, buffAtk = 0, splitSprout = null;
   (G.ownedUnits || []).forEach(u => {
     const p = UNIT_DEFS[u.defId]?.passive; if (!p) return;
-    const li = Math.max(0, Math.min(2, (u.level || 1) - 1));
+    const li = Math.max(0, Math.min(3, (u.level || 1) - 1));
     if (p.type === 'buffAllSummons') {
       buffHp += (p.hpByLevel || [])[li] || 0;
       buffAtk += (p.atkByLevel || [])[li] || 0;
@@ -144,7 +167,7 @@ function getSpaceExplosionBonus() {
     if (!u.active) return;
     const p = UNIT_DEFS[u.defId]?.passive;
     if (p?.type !== 'spaceExplosionBonus') return;
-    const li = Math.max(0, Math.min(2, (u.level || 1) - 1));
+    const li = Math.max(0, Math.min(3, (u.level || 1) - 1));
     bonus += (p.bonusByLevel || [])[li] || 0;
   });
   return bonus;
@@ -156,7 +179,7 @@ function getHealAmpBonus() {
     if (!u.active) return;
     const p = UNIT_DEFS[u.defId]?.passive;
     if (p?.type !== 'healAmpBonus') return;
-    const li = Math.max(0, Math.min(2, (u.level || 1) - 1));
+    const li = Math.max(0, Math.min(3, (u.level || 1) - 1));
     bonus += (p.bonusByLevel || [])[li] || 0;
   });
   return bonus;
@@ -168,7 +191,7 @@ function getCastleDamageReduce() {
     if (!u.active) return;
     const p = UNIT_DEFS[u.defId]?.passive;
     if (p?.type !== 'castleReduce') return;
-    const li = Math.max(0, Math.min(2, (u.level || 1) - 1));
+    const li = Math.max(0, Math.min(3, (u.level || 1) - 1));
     red += (p.reductionByLevel || [])[li] || 0;
   });
   return red;
@@ -188,7 +211,7 @@ function getAdvHitBonus() {
     if (!u.active) return;
     const p = UNIT_DEFS[u.defId]?.passive;
     if (p?.type !== 'advHitBonus') return;
-    const li = Math.max(0, Math.min(2, (u.level || 1) - 1));
+    const li = Math.max(0, Math.min(3, (u.level || 1) - 1));
     bonus += (p.bonusByLevel || [])[li] || 0;
   });
   return bonus;
@@ -202,7 +225,7 @@ function getOwnerDeathDrop(ownerHid) {
   if (!u) return null;
   const p = UNIT_DEFS[u.defId]?.passive;
   if (p?.type !== 'onSummonDeath') return null;
-  const li = Math.max(0, Math.min(2, (u.level || 1) - 1));
+  const li = Math.max(0, Math.min(3, (u.level || 1) - 1));
   return { el: p.el || 'fire', layers: (p.layersByLevel || [])[li] || 2 };
 }
 

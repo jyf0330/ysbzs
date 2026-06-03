@@ -30,7 +30,8 @@ function readMdFrontmatter(filePath) {
   while ((m = fieldRe.exec(content)) !== null) {
     const k = m[1].trim();
     let v = m[2].trim().replace(/\*{2}/g, '');
-    if (k === '日期') fields.date = v;
+    if (k === 'change_id') fields.changeId = v;
+    if (k === 'created_at') fields.createdAt = v;
     if (k === '影响文件') fields.files = v;
     if (k === '变更等级') fields.level = v;
     if (k === '状态') fields.status = v;
@@ -38,11 +39,24 @@ function readMdFrontmatter(filePath) {
   return {
     file: filePath,
     title: title ? title[1].trim() : '(无标题)',
-    date: fields.date || '(无日期)',
+    changeId: fields.changeId || '(无 change_id)',
+    createdAt: fields.createdAt || '(无 created_at)',
     files: fields.files ? fields.files.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [],
     level: fields.level || '(未分级)',
     status: fields.status || '(未知)',
   };
+}
+
+function nowMinute() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function nowMinuteFile() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
 }
 
 function listPending() {
@@ -64,7 +78,8 @@ function cmdStatus() {
   console.log(`📋 待同步变更单（${pending.length} 个）：\n`);
   pending.forEach((c, i) => {
     console.log(`  ${i + 1}. [${c.level}] ${c.title}`);
-    console.log(`     日期：${c.date}`);
+    console.log(`     change_id：${c.changeId}`);
+    console.log(`     created_at：${c.createdAt}`);
     console.log(`     影响：${c.files.join(', ') || '(未指定)'}`);
     console.log(`     状态：${c.status}`);
     console.log(`     文件：${path.relative(CHANGES_DIR, c.file)}`);
@@ -85,7 +100,8 @@ function cmdCheck() {
   // 格式校验
   pending.forEach(c => {
     if (!c.title || c.title === '(无标题)') errors.push(`  ${c.file}：缺少标题`);
-    if (!c.date || c.date === '(无日期)') errors.push(`  ${c.file}：缺少日期`);
+    if (!c.changeId || c.changeId === '(无 change_id)') errors.push(`  ${c.file}：缺少 change_id`);
+    if (!c.createdAt || c.createdAt === '(无 created_at)') errors.push(`  ${c.file}：缺少 created_at`);
     if (!c.files.length) errors.push(`  ${c.file}：影响文件为空`);
     if (!['P0 紧急', 'P1 重要', 'P2 常规', 'P3 后续'].includes(c.level)) {
       errors.push(`  ${c.file}：无效变更等级 "${c.level}"`);
@@ -151,16 +167,18 @@ function cmdReport(targetFile) {
   }
 
   const c = readMdFrontmatter(pendingPath);
-  const now = new Date().toISOString().slice(0, 10);
-  const reportName = `${now}-sync-report-${path.basename(targetFile, '.md').replace(/^[^-]+-/, '')}.md`;
+  const now = nowMinute();
+  const fileNow = nowMinuteFile();
+  const reportName = `${fileNow}_sync-report.md`;
   const reportPath = path.join(REPORTS_DIR, reportName);
 
   const report = `# 同步报告：${c.title}
 
 ## 基本信息
 
-- **变更单**：${path.basename(c.file)}
-- **同步日期**：${now}
+- **change_id**：${c.changeId}
+- **created_at**：${c.createdAt}
+- **generated_at**：${now}
 - **影响文件**：${c.files.join(', ')}
 - **变更等级**：${c.level}
 

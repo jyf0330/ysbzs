@@ -59,6 +59,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:30, slots:[
         {el:'fire',sn:2,dir:'right',tier:3},{el:'fire',sn:3,dir:'right',tier:3},{el:'fire',sn:5,dir:'right',tier:3}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'fire',sn:5,dir:'right',tier:4},{el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -73,6 +76,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:30, slots:[
         {el:'water',sn:3,dir:'right',tier:3},{el:'water',sn:6,dir:'right',tier:3},{el:'water',sn:12,dir:'right',tier:3}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'water',sn:5,dir:'right',tier:4},{el:'water',sn:10,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -87,6 +93,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:30, slots:[
         {el:'wind',sn:5,dir:'right',tier:3},{el:'wind',sn:7,dir:'right',tier:3},{el:'wind',sn:10,dir:'right',tier:3}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'wind',sn:10,dir:'right',tier:4},{el:'wind',sn:12,dir:'right',tier:4},{el:'wind',sn:19,dir:'right',tier:4}
       ]}
     }
   },
@@ -101,6 +110,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:35, slots:[
         {el:'earth',sn:6,dir:'right',tier:3},{el:'earth',sn:11,dir:'right',tier:3},{el:'earth',sn:18,dir:'right',tier:3}
+      ]},
+      4:{ hp:42, slots:[
+        {el:'earth',sn:6,dir:'right',tier:4},{el:'earth',sn:18,dir:'right',tier:4},{el:'earth',sn:20,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -115,6 +127,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:30, slots:[
         {el:'fire',sn:3,dir:'right',tier:3},{el:'water',sn:3,dir:'right',tier:3},{el:'wind',sn:7,dir:'right',tier:3}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'fire',sn:7,dir:'right',tier:4},{el:'water',sn:7,dir:'right',tier:4},{el:'wind',sn:12,dir:'right',tier:4}
       ]}
     }
   },
@@ -129,12 +144,15 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:28, slots:[
         {el:'fire',sn:5,dir:'right',tier:3},{el:'fire',sn:3,dir:'right',tier:3},{el:'fire',sn:12,dir:'right',tier:3}
+      ]},
+      4:{ hp:34, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:5,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4,layers:2}
       ]}
     }
   },
   pebble_guard: {
     id:'pebble_guard', name:'泡泡灵', element:'water', grade:'青铜', priceTier:1, tags:['水','前排','防御'], tier:1, cost:2,
-    passive:{type:'castleReduce',reductionByLevel:[1,1,2]},
+    passive:{type:'castleReduce',reductionByLevel:[1,1,2,2]},
     levels: {
       1:{ hp:22, slots:[
         {el:'water',sn:4,dir:'right',tier:1},{el:'water',sn:6,dir:'right',tier:1},{el:'water',sn:8,dir:'right',tier:1}
@@ -144,6 +162,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:34, slots:[
         {el:'water',sn:6,dir:'right',tier:3},{el:'water',sn:11,dir:'right',tier:3},{el:'water',sn:18,dir:'right',tier:3}
+      ]},
+      4:{ hp:40, slots:[
+        {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:11,dir:'right',tier:4},{el:'water',sn:18,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -159,6 +180,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:35, slots:[
         {el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4},{el:'fire',sn:17,dir:'right',tier:4}
+      ]},
+      4:{ hp:42, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4,layers:2},{el:'fire',sn:12,dir:'right',tier:4},{el:'fire',sn:19,dir:'right',tier:4}
       ]}
     }
   },
@@ -173,6 +197,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:35, slots:[
         {el:'water',sn:10,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4},{el:'water',sn:13,dir:'right',tier:4}
+      ]},
+      4:{ hp:42, slots:[
+        {el:'water',sn:10,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4,layers:2},{el:'water',sn:20,dir:'right',tier:4}
       ]}
     }
   },
@@ -187,6 +214,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:35, slots:[
         {el:'wind',sn:10,dir:'right',tier:4},{el:'wind',sn:12,dir:'right',tier:4},{el:'wind',sn:19,dir:'right',tier:4}
+      ]},
+      4:{ hp:42, slots:[
+        {el:'wind',sn:10,dir:'right',tier:4,layers:2},{el:'wind',sn:12,dir:'right',tier:4},{el:'wind',sn:19,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -201,6 +231,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:42, slots:[
         {el:'earth',sn:6,dir:'right',tier:4},{el:'earth',sn:11,dir:'right',tier:4},{el:'earth',sn:18,dir:'right',tier:4}
+      ]},
+      4:{ hp:50, slots:[
+        {el:'earth',sn:6,dir:'right',tier:4,layers:2},{el:'earth',sn:18,dir:'right',tier:4},{el:'earth',sn:20,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -208,7 +241,7 @@ const UNIT_DEFS = {
   sprout_summoner: {
     id:'sprout_summoner', name:'召芽灵', element:'water', grade:'白银', tier:2, cost:4,
     tags:['水','召唤','核心'],
-    passive:{type:'splitSproutSummon',countByLevel:[2,2,3],hpMulByLevel:[0.5,0.75,0.6]},
+    passive:{type:'splitSproutSummon',countByLevel:[2,2,3,4],hpMulByLevel:[0.5,0.75,0.6,0.55]},
     levels: {
       1:{ hp:18, slots:[
         {el:'water',sn:1,dir:'right',tier:2,skill:'summonFromCell'},
@@ -221,12 +254,16 @@ const UNIT_DEFS = {
       3:{ hp:28, slots:[
         {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
+      ]},
+      4:{ hp:34, slots:[
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
+        {el:'water',sn:6,dir:'right',tier:4,layers:2},{el:'water',sn:12,dir:'right',tier:4,layers:2}
       ]}
     }
   },
   spring_sprite: {
     id:'spring_sprite', name:'泉泉灵', element:'water', grade:'白银', tier:2, cost:4,
-    passive:{type:'healAmpBonus',bonusByLevel:[1,1,2]},
+    passive:{type:'healAmpBonus',bonusByLevel:[1,1,2,3]},
     tags:['水','治疗','引擎'],
     levels: {
       1:{ hp:20, slots:[
@@ -240,13 +277,17 @@ const UNIT_DEFS = {
       3:{ hp:30, slots:[
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:11,dir:'right',tier:4},
         {el:'water',sn:1,dir:'right',tier:4,skill:'healSummons'}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'water',sn:6,dir:'right',tier:4,layers:2},{el:'water',sn:11,dir:'right',tier:4},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'healSummons',layers:2}
       ]}
     }
   },
   fluff_speaker: {
     id:'fluff_speaker', name:'绒语灵', element:'water', grade:'白银', tier:2, cost:4,
     tags:['水','被动','增益'],
-    passive:{type:'buffAllSummons',hpByLevel:[2,4,6],atkByLevel:[1,1,2]},
+    passive:{type:'buffAllSummons',hpByLevel:[2,4,6,8],atkByLevel:[1,1,2,3]},
     levels: {
       1:{ hp:20, slots:[
         {el:'water',sn:4,dir:'right',tier:2},{el:'water',sn:6,dir:'right',tier:2},
@@ -259,6 +300,10 @@ const UNIT_DEFS = {
       3:{ hp:30, slots:[
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:11,dir:'right',tier:4},
         {el:'water',sn:1,dir:'right',tier:4,skill:'healSummons'}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'water',sn:6,dir:'right',tier:4,layers:2},{el:'water',sn:11,dir:'right',tier:4,layers:2},
+        {el:'water',sn:1,dir:'right',tier:4,skill:'healSummons',layers:2}
       ]}
     }
   },
@@ -275,6 +320,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:30, slots:[
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:11,dir:'right',tier:4},{el:'water',sn:18,dir:'right',tier:4}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'water',sn:6,dir:'right',tier:4,layers:2},{el:'water',sn:11,dir:'right',tier:4},{el:'water',sn:18,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -291,6 +339,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:30, slots:[
         {el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4},{el:'fire',sn:17,dir:'right',tier:4}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4,layers:2},{el:'fire',sn:12,dir:'right',tier:4},{el:'fire',sn:17,dir:'right',tier:4,layers:3}
       ]}
     }
   },
@@ -306,12 +357,15 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:34, slots:[
         {el:'water',sn:6,dir:'right',tier:3},{el:'water',sn:11,dir:'right',tier:3},{el:'water',sn:18,dir:'right',tier:3}
+      ]},
+      4:{ hp:40, slots:[
+        {el:'water',sn:6,dir:'right',tier:4,layers:2},{el:'water',sn:11,dir:'right',tier:4},{el:'water',sn:20,dir:'right',tier:4}
       ]}
     }
   },
   ember_seed: {
     id:'ember_seed', name:'火种灵', element:'fire', grade:'青铜', tier:1, cost:2,
-    passive:{type:'spaceExplosionBonus',bonusByLevel:[1,1,2]},
+    passive:{type:'spaceExplosionBonus',bonusByLevel:[1,1,2,3]},
     tags:['火','引信','被动'],
     levels: {
       1:{ hp:20, slots:[
@@ -322,6 +376,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:30, slots:[
         {el:'fire',sn:5,dir:'right',tier:3},{el:'fire',sn:10,dir:'right',tier:3},{el:'fire',sn:12,dir:'right',tier:3}
+      ]},
+      4:{ hp:36, slots:[
+        {el:'fire',sn:5,dir:'right',tier:4,layers:2},{el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -337,6 +394,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:42, slots:[
         {el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4},{el:'fire',sn:19,dir:'right',tier:4}
+      ]},
+      4:{ hp:50, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4,layers:2},{el:'fire',sn:12,dir:'right',tier:4,layers:2},{el:'fire',sn:19,dir:'right',tier:4}
       ]}
     }
   },
@@ -355,6 +415,10 @@ const UNIT_DEFS = {
       3:{ hp:36, slots:[
         {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
+      ]},
+      4:{ hp:44, slots:[
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell',layers:2},
+        {el:'water',sn:6,dir:'right',tier:4,layers:2},{el:'water',sn:12,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -370,6 +434,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:50, slots:[
         {el:'fire',sn:10,dir:'right',tier:4},{el:'fire',sn:12,dir:'right',tier:4},{el:'fire',sn:19,dir:'right',tier:4}
+      ]},
+      4:{ hp:60, slots:[
+        {el:'fire',sn:10,dir:'right',tier:4,layers:2},{el:'fire',sn:12,dir:'right',tier:4,layers:2},{el:'fire',sn:19,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -388,6 +455,10 @@ const UNIT_DEFS = {
       3:{ hp:46, slots:[
         {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell'},
         {el:'water',sn:6,dir:'right',tier:4},{el:'water',sn:12,dir:'right',tier:4}
+      ]},
+      4:{ hp:55, slots:[
+        {el:'water',sn:1,dir:'right',tier:4,skill:'summonFromCell',layers:2},
+        {el:'water',sn:6,dir:'right',tier:4,layers:2},{el:'water',sn:12,dir:'right',tier:4,layers:2}
       ]}
     }
   },
@@ -403,13 +474,16 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:72, slots:[
         {el:'fire',sn:12,dir:'right',tier:4,layers:3},{el:'fire',sn:19,dir:'right',tier:4,layers:2},{el:'fire',sn:20,dir:'right',tier:4}
+      ]},
+      4:{ hp:85, slots:[
+        {el:'fire',sn:12,dir:'right',tier:4,layers:4},{el:'fire',sn:19,dir:'right',tier:4,layers:3},{el:'fire',sn:20,dir:'right',tier:4,layers:2}
       ]}
     }
   },
   breeze_sprite: {
     id:'breeze_sprite', name:'风风灵', element:'wind', grade:'白银', tier:1, cost:4,
     tags:['风','侧击','机动','清散怪'],
-    passive:{type:'advHitBonus',bonusByLevel:[1,2,3]},
+    passive:{type:'advHitBonus',bonusByLevel:[1,2,3,4]},
     levels: {
       1:{ hp:18, slots:[
         {el:'wind', sn:7, dir:'right', tier:1},{el:'wind', sn:7, dir:'right', tier:1},{el:'wind', sn:10, dir:'right', tier:1}
@@ -419,6 +493,9 @@ const UNIT_DEFS = {
       ]},
       3:{ hp:36, slots:[
         {el:'wind', sn:10, dir:'right', tier:3},{el:'wind', sn:12, dir:'right', tier:3},{el:'wind', sn:18, dir:'right', tier:3}
+      ]},
+      4:{ hp:42, slots:[
+        {el:'wind', sn:10, dir:'right', tier:4,layers:2},{el:'wind', sn:12, dir:'right', tier:4},{el:'wind', sn:18, dir:'right', tier:4,layers:2}
       ]}
     }
   },
@@ -551,22 +628,22 @@ function calcUnitPrice(def){ return GRADE_BASE[def.grade] || def.cost || 2; }
 const SHOP_POOLS = {
   day1_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard'],
   day1_night:['fire_starter','water_droplet','wind_breeze','pebble_guard','bubble_sprite'],
-  day2_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard','ember_seed'],
-  day2_night:['fire_starter','water_droplet','wind_breeze','pebble_guard','bubble_sprite'],
-  day3_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard','ember_seed'],
-  day3_night:['sprout_summoner','fire_starter','water_droplet','wind_breeze','pebble_guard'],
-  day4_midday:['spring_sprite','fire_starter','water_droplet','wind_breeze','pebble_guard'],
-  day4_night:['fluff_speaker','sprout_summoner','spring_sprite','pebble_guard','boom_sprite'],
-  day5_midday:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','sprout_summoner'],
+  day2_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard','ember_seed','ember'],
+  day2_night:['fire_starter','water_droplet','wind_breeze','pebble_guard','bubble_sprite','ember'],
+  day3_midday:['fire_starter','water_droplet','wind_breeze','pebble_guard','ember_seed','ember'],
+  day3_night:['sprout_summoner','fire_starter','water_droplet','wind_breeze','pebble_guard','ember','breeze_sprite'],
+  day4_midday:['spring_sprite','fire_starter','water_droplet','wind_breeze','pebble_guard','ember','fire_blaze'],
+  day4_night:['fluff_speaker','sprout_summoner','spring_sprite','pebble_guard','boom_sprite','ember','breeze_sprite'],
+  day5_midday:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','sprout_summoner','ember','fire_blaze'],
   day5_night:['boom_sprite','split_sprite','fluff_speaker','spring_sprite','ember_seed','forge_fire','command_sprout'],
-  day6_midday:['fluff_speaker','spring_sprite','boom_sprite','split_sprite','forge_fire','command_sprout'],
-  day6_night:['fluff_speaker','spring_sprite','boom_sprite','split_sprite','forge_fire','command_sprout'],
-  day7_midday:['boom_sprite','split_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
-  day7_night:['boom_sprite','split_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
-  day8_midday:['fluff_speaker','spring_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
-  day8_night:['fluff_speaker','spring_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout'],
-  day9_midday:['forge_fire','command_sprout','dragon_flame','prime_sprout','boom_sprite','split_sprite'],
-  day9_night:['forge_fire','command_sprout','dragon_flame','prime_sprout','boom_sprite','split_sprite'],
-  day10_midday:['forge_fire','command_sprout','dragon_flame','prime_sprout','fluff_speaker','spring_sprite'],
-  day10_night:['forge_fire','command_sprout','dragon_flame','prime_sprout','fluff_speaker','spring_sprite'],
+  day6_midday:['fluff_speaker','spring_sprite','boom_sprite','split_sprite','forge_fire','command_sprout','fire_blaze'],
+  day6_night:['fluff_speaker','spring_sprite','boom_sprite','split_sprite','forge_fire','command_sprout','breeze_sprite'],
+  day7_midday:['boom_sprite','split_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout','breeze_sprite'],
+  day7_night:['boom_sprite','split_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout','fire_demon'],
+  day8_midday:['fluff_speaker','spring_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout','breeze_sprite'],
+  day8_night:['fluff_speaker','spring_sprite','forge_fire','command_sprout','dragon_flame','prime_sprout','fire_demon','breeze_sprite'],
+  day9_midday:['forge_fire','command_sprout','dragon_flame','prime_sprout','boom_sprite','split_sprite','breeze_sprite'],
+  day9_night:['forge_fire','command_sprout','dragon_flame','prime_sprout','boom_sprite','split_sprite','fire_demon'],
+  day10_midday:['forge_fire','command_sprout','dragon_flame','prime_sprout','fluff_speaker','spring_sprite','breeze_sprite'],
+  day10_night:['forge_fire','command_sprout','dragon_flame','prime_sprout','fluff_speaker','spring_sprite','fire_demon'],
 };

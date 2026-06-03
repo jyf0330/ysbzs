@@ -1433,6 +1433,8 @@ group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
   });
   test('case_005: buildMonsterStats 合并自身格伤害和波及伤害', ()=>{
     fresh();
+    // 添加火魔使 hasCrossExplosion()=true，空格爆炸才能十字波及
+    G.ownedUnits.push({instanceId:'x_fire_demon',defId:'fire_demon',level:1,hp:45,maxHp:45,pos:{r:0,c:1},active:true});
     G.monsters[0].pos={r:5,c:5}; G.monsters[0].hp=20;
     G.monsters[1].pos={r:7,c:7};
     // 自身格有2层fire（单体3伤害，不需要达到阈值）
@@ -1948,6 +1950,7 @@ group('G组：buildMonsterStats 预览统计', ()=>{
   });
   test('case_monstats_002: 空格 fire=3 波及怪物→splash.fire=6, self=0', ()=>{
     fresh();
+    G.ownedUnits.push({instanceId:'x_fire_demon',defId:'fire_demon',level:1,hp:45,maxHp:45,pos:{r:0,c:1},active:true});
     G.monsters=[
       {id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
       {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
@@ -1961,6 +1964,7 @@ group('G组：buildMonsterStats 预览统计', ()=>{
   });
   test('case_monstats_003: 自身格fire=2 + 空格fire=3波及→总伤3+6=9', ()=>{
     fresh();
+    G.ownedUnits.push({instanceId:'x_fire_demon',defId:'fire_demon',level:1,hp:45,maxHp:45,pos:{r:0,c:1},active:true});
     G.monsters=[
       {id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,pos:{r:5,c:5},dead:false,el:null},
       {id:'m1',name:'远处',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},

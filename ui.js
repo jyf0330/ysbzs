@@ -71,11 +71,13 @@ function buildMonsterStats(){
     ['fire','water','wind','earth'].forEach(el=>{
       const slot=cellEl[el];
       if(!slot||slot.layers===0)return;
-      const emult=m.el&&ADV[el]===m.el?2:1;
-      const d=explDmg(slot.layers)*emult;
-      selfCellDmg[el]+=d; selfCellDmg.total+=d;
+      const r=calcElementDamage(slot.layers,m.el,el,{advHitBonus:getAdvHitBonus()});
+      selfCellDmg[el]+=r.damage; selfCellDmg.total+=r.damage;
     });
-    // 2. 来自空格十字爆炸的波及伤害（空格需达到 willExplode）
+    // 2. 来自空格爆炸的波及伤害（空格需达到 willExplode）
+    // 注意：爆炸范围受 hasCrossExplosion() 影响，无此被动时只炸自身格
+    var _xActive = hasCrossExplosion();
+    function _explRangeCells(p) { return _xActive ? explCells(p) : [p]; }
     Object.entries(G.elementCells).forEach(([srcKey,srcElData])=>{
       if(srcKey===mk)return;
       const [sr,sc]=srcKey.split(',').map(Number);
@@ -83,12 +85,11 @@ function buildMonsterStats(){
       ['fire','water','wind','earth'].forEach(el=>{
         const slot=srcElData[el];
         if(!slot||!slot.willExplode)return;
-        const inRange=explCells({r:sr,c:sc}).some(p=>p.r===m.pos.r&&p.c===m.pos.c);
+        const inRange=_explRangeCells({r:sr,c:sc}).some(p=>p.r===m.pos.r&&p.c===m.pos.c);
         if(!inRange)return;
-        const emult=m.el&&ADV[el]===m.el?2:1;
-        const d=explDmg(slot.layers)*emult;
-        splashDmg[el]+=d; splashDmg.total+=d;
-        splashDmg.sources.push({srcKey,el,dmg:d});
+        const r=calcElementDamage(slot.layers,m.el,el,{spaceBonus:getSpaceExplosionBonus(),advHitBonus:getAdvHitBonus()});
+        splashDmg[el]+=r.damage; splashDmg.total+=r.damage;
+        splashDmg.sources.push({srcKey,el,dmg:r.damage});
       });
     });
     const totalDmg=selfCellDmg.total+splashDmg.total;
@@ -405,8 +406,8 @@ function buildPreviewGrid(){
         var ignoreElDmg=false;
         if(entity.type==='player_castle')ignoreElDmg=true;
         if(!ignoreElDmg){
-          const emult=(entity.el&&ADV[el]===entity.el)?2:1;
-          const dmg=explDmg(ef.layers)*emult;
+          const r=calcElementDamage(ef.layers,entity.el,el,{advHitBonus:getAdvHitBonus()});
+          const dmg=r.damage;
           preview.selfCellDamage[el]=dmg; preview.selfCellDamage.total+=dmg; preview.entityDamage+=dmg;
           ef.directDamage=dmg; ef.totalDamage=dmg;
           preview.result.damageBySource.elementDirect+=dmg;
@@ -417,7 +418,7 @@ function buildPreviewGrid(){
       } else {
         // 空地
         if(ef.layers>=G.explosionThreshold){
-          const expDmg=explDmg(ef.layers)+spaceBonus;
+          const expDmg=calcElementDamage(ef.layers,null,el,{spaceBonus}).damage;
           explodingEls.push({element:el,layers:ef.layers,damage:expDmg});
           preview.willExplode=true;
           ef.directDamage=expDmg; ef.splashDamage=ef.layers; ef.totalDamage=expDmg;

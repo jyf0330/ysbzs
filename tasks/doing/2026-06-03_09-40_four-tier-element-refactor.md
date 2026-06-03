@@ -1,10 +1,13 @@
 # 任务：四阶体系 + 元素伤害统一重构 + 表格同步
 
 task_id: 2026-06-03_09-40_four-tier-element-refactor
-status: READY_TO_VALIDATE
+status: DONE
 priority: P0
 created_at: 2026-06-03 09:40
-updated_at: 2026-06-03 16:30
+updated_at: 2026-06-03 17:00
+done_at: 2026-06-03 17:00
+commit_id: 9f0ab9c
+validation_result: 436/436 通过，无旧口径残留
 last_safe_commit: a383124
 branch: master
 
@@ -28,9 +31,9 @@ branch: master
 - [x] docs/tables/_changes/ — 变更单系统更新
 - [x] scripts/sync-tables.js — 同步脚本更新
 - [x] docs/tables/_changes/pending/2026-06-03-fix-planner-lv3-to-four-tiers.md — 已删除（已同步）
-- [ ] 验收 — `node test.js`
-- [ ] 检查旧口径残留
-- [ ] 提交
+- [x] 验收 — `node test.js`（✅ 436/436）
+- [x] 检查旧口径残留（✅ 无风险）
+- [x] 提交（commit: `9f0ab9c`）
 
 ## 相关文件 related_files
 
@@ -59,20 +62,17 @@ branch: master
 
 ## 下一步 resume_next_step
 
-1. 运行 `node test.js` — 确认测试通过
-2. 检查旧口径残留（是否有 Lv3 相关旧引用）
-3. 确认 `docs/tables/13_代码现状与正式口径差异表.md` 已无差异
-4. `git add` 所有相关文件
-5. `git diff --cached --stat` 确认无混入
-6. 提交：`feat(四阶体系): 英雄四阶合成 + 元素伤害统一 + 表格同步`
-7. 更新 `tasks/index.md` → DONE
+（已完成 — 本任务已 DONE）
+- [x] 验收：`node test.js` 436/436 通过
+- [x] 提交：`9f0ab9c`
+- [x] 更新 `tasks/index.md`
 
 ## 验收 validation_needed
 
-- [ ] `node test.js`
-- [ ] `git diff --stat` — 确认改动的文件全部归属本任务
-- [ ] `git status --short` — 检查遗留脏文件
-- [ ] 旧口径扫描（grep lv3 / Lv3 / tier_3 / tier3 等）
+- [x] `node test.js` — ✅ 436/436 通过
+- [x] `git diff --stat` — ✅ 全部归属本任务
+- [x] `git status --short` — ✅ 无遗留脏文件
+- [x] 旧口径扫描 — ✅ 无风险残留
 
 ## 提交计划 commit_plan
 

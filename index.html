@@ -833,6 +833,28 @@ body{
       }else{
         g.__YSBZS_TABLES__ = Object.assign({}, g.__YSBZS_TABLES__, unitData);
       }
+
+      // 加载 generated-json/ 下的策划数据表
+      var jsonFiles = [
+        'round_config', 'legacy_data', 'pal_units', 'shop_config',
+        'encounter_config', 'battle_config', 'hero_config', 'relic_config',
+        'event_config', 'terrain_config', 'game_config'
+      ];
+      var actionSlots = ['action-slots/action_template_enriched', 'action-slots/action_growth_enriched'];
+      var attackShapes = ['attack-shapes/attack_shape_master', 'attack-shapes/attack_shape_sd_replacement_22'];
+      var allFiles = jsonFiles.concat(actionSlots, attackShapes);
+
+      for (var i = 0; i < allFiles.length; i++) {
+        try {
+          var resp = await fetch('external-data/generated-json/' + allFiles[i] + '.json', {cache:'no-store'});
+          if (resp.ok) {
+            var data = await resp.json();
+            var key = allFiles[i].replace(/\//g, '_');
+            g.__YSBZS_TABLES__[key] = data;
+          }
+        } catch(e) { /* skip missing files */ }
+      }
+
       return true;
     }catch(e){
       console.warn('[ysbzs] JSON external tables unavailable, fallback to external-tables.js', e);

@@ -34,6 +34,7 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'rng.js', 'board.js', 'actions.js', 'elements.js',
     'waves.js', 'battle.js', 'shop.js', 'game.js', 'ui.js',
+    'damage.js', 'terrain.js',
   ];
   for (const f of moduleFiles) {
     const fp = path.join(__dirname, f);

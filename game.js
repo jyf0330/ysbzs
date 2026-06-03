@@ -5,6 +5,10 @@
  * 加载顺序：须在所有下层模块之后加载
  */
 
+// ── 容量常量 ──────────────────────────────────────────────────
+var ACTIVE_CAPACITY = 10;
+var BACKPACK_CAPACITY = 20;
+
 // ========== GAME STATE ==========
 let G;
 
@@ -45,12 +49,15 @@ function initGame() {
 function addOwnedUnit(defId, pos) {
   const def = UNIT_DEFS[defId]; if (!def) return null;
   const lvl = def.levels[1];
+  var sizeMap = {'small': 1, 'medium': 2, 'large': 3};
   const unit = {
     instanceId: 'u_' + (G.nextUnitId++),
     defId: defId, level: 1,
     hp: lvl.hp, maxHp: lvl.hp,
     pos: pos || { r: 0, c: 0 },
     active: true,
+    size: def.size || 'medium',
+    slotSize: sizeMap[def.size] || 2,
   };
   G.ownedUnits.push(unit);
   return unit;
@@ -70,14 +77,26 @@ function syncHeroHPToUnits() {
 }
 
 function syncUnitsToHeroes() {
-  var MAX_ACTIVE = 6;
-  var active = G.ownedUnits.filter(u => u.active).slice(0, MAX_ACTIVE);
+  var MAX_ACTIVE = 6; // safe upper bound
+  // 按容量筛选可上阵单位
+  var sorted = G.ownedUnits.filter(u => u.active).slice(0, MAX_ACTIVE);
+  var selected = [];
+  var usedCapacity = 0;
+  sorted.forEach(function(unit) {
+    var sz = unit.slotSize || 1;
+    if (usedCapacity + sz > ACTIVE_CAPACITY) return;
+    usedCapacity += sz;
+    selected.push(unit);
+  });
+
   G.heroes = {};
   G.slots = [];
-  active.forEach((unit, ui) => {
+  selected.forEach((unit, ui) => {
     if (ui >= 2) return;
     var def = UNIT_DEFS[unit.defId];
+    if (!def) return;
     var lvlData = def.levels[unit.level];
+    if (!lvlData) return;
     var hid = ui === 0 ? 'ha' : 'hb';
     unit.pos = unit.pos || { r: 6 + ui, c: 0 };
     G.heroes[hid] = {
@@ -102,7 +121,7 @@ function syncUnitsToHeroes() {
       });
     });
   });
-  var heroUnits = new Set(active.slice(0, 2));
+  var heroUnits = new Set(selected.slice(0, 2));
   G.ownedUnits.forEach(u => { if (!heroUnits.has(u)) u.active = false; });
 }
 
@@ -179,7 +198,7 @@ function setHero(idx, hid) {
   refreshUI();
 }
 
-// ========== AI ASYNC WRAPPER (browser-specific) ==========
+// ========== AI ASYNC WRAPPER ==========
 async function runAiBattleTurn_async(opts) {
   opts = opts || {};
   if (G.phase !== 'PLAYER') return buildAiBattleTurnPlan();
@@ -251,7 +270,7 @@ if (typeof document !== 'undefined' && typeof document.addEventListener === 'fun
   });
 }
 
-// ========== UI STUBS (implemented in ui.js, overridden at load time) ==========
+// ========== UI STUBS ==========
 function glog() {}
 function showMsg() {}
 function showRunEnd() {}

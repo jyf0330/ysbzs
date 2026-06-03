@@ -16,15 +16,30 @@
 
   var _cache = {};
 
+  // 浏览器运行时，从 __YSBZS_TABLES__ 读取预加载的 JSON
+  var browserTables = g.__YSBZS_TABLES__ || {};
+
   function loadJSON(subPath) {
     var key = 'gjson/' + subPath;
     if (_cache[key]) return _cache[key];
-    if (!fs) return null;
-    var fp = pj.join(ROOT, 'external-data', 'generated-json', subPath);
-    try {
-      _cache[key] = JSON.parse(fs.readFileSync(fp, 'utf8'));
+
+    // 浏览器：从预加载的 __YSBZS_TABLES__ 查找
+    var tableKey = subPath.replace(/\//g, '_').replace(/\.json$/, '');
+    if (browserTables[tableKey]) {
+      _cache[key] = browserTables[tableKey];
       return _cache[key];
-    } catch (e) { return null; }
+    }
+
+    // Node.js 测试环境：fs 读取
+    if (fs) {
+      var fp = pj.join(ROOT, 'external-data', 'generated-json', subPath);
+      try {
+        _cache[key] = JSON.parse(fs.readFileSync(fp, 'utf8'));
+        return _cache[key];
+      } catch (e) { return null; }
+    }
+
+    return null;
   }
 
   function getPalUnits()     { return loadJSON('pal_units.json'); }
@@ -101,9 +116,12 @@
         levels[lv] = { hp: Math.round(baseHp * hpScale[lv - 1]), slots: slots };
       }
 
+      var sizeMap = {'small': 1, 'medium': 2, 'large': 3};
+      var rawSize = m.size || 'medium';
+
       defs[uid] = {
         id: uid, name: m.pal_name, element: m.ysbzs_element || 'wind',
-        grade: m.shop_quality_base || '青铜', size: m.size || 'medium',
+        grade: m.shop_quality_base || '青铜', size: rawSize, slotSize: sizeMap[rawSize] || 2,
         priceTier: tierVal, tags: tags, tier: tierVal, cost: cost, levels: levels,
       };
     });
@@ -257,12 +275,15 @@
 
     // 构建实例
     var baseHp = lvlData ? lvlData.hp : 10;
+    var sizeMap = {'small': 1, 'medium': 2, 'large': 3};
     var instance = {
-      instanceId: null,  // 由调用者分配
+      instanceId: null,
       unitId: uid,
-      defId: uid,  // 旧系统兼容
+      defId: uid,
       name: def.name || uid,
       faction: faction,
+      size: def.size || 'medium',
+      slotSize: sizeMap[def.size] || 2,
       element: def.element || 'wind',
       hp: Math.round(baseHp * hpMul),
       maxHp: Math.round(baseHp * hpMul),
@@ -355,6 +376,26 @@
   g.getExternalActionTemplate = getActionTpl;
   g.getExternalActionGrowth = getActionGrowth;
   g.getExternalPalUnits = getPalUnits;
+
+  // 外部纯 Pal 商店池（不含旧 ID fallback）
+  var externalOnlyPools = null;
+  var sc = getShopConfig();
+  if (sc && sc.shop_source) {
+    var eByDay = {};
+    sc.shop_source.forEach(function (s) {
+      var day = s.unlock_day || 1;
+      if (!eByDay[day]) eByDay[day] = [];
+      eByDay[day].push(s.unit_id);
+    });
+    externalOnlyPools = {};
+    Object.keys(eByDay).sort(function (a, b) { return parseInt(a) - parseInt(b); }).forEach(function (day) {
+      var ids = eByDay[day];
+      externalOnlyPools['day' + day + '_midday'] = ids.slice();
+      externalOnlyPools['day' + day + '_night'] = ids.slice();
+    });
+  }
+  g.__EXTERNAL_ONLY_POOLS__ = externalOnlyPools;
+  g.getExternalOnlyShopPools = function () { return externalOnlyPools; };
 
   g.__EXTERNAL_DATA_LOADED__ = true;
 })();

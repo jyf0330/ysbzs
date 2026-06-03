@@ -1,0 +1,148 @@
+{
+  "hero_master": [
+    {
+      "hero_id": "hero_fire_tamer",
+      "hero_name": "火种驯宠师",
+      "hero_concept": "开局英雄/职业，不是上阵宠物",
+      "element_bias": "fire",
+      "playstyle_tags": "火,爆发,铺火,引爆,前排",
+      "starting_gold": 6,
+      "starting_capacity": 10,
+      "bag_capacity": 20,
+      "event_bias_tags": "火,锻造,爆发,升级",
+      "relic_bias_tags": "火,加层,引爆,宠物强化",
+      "desc": "第一版唯一开局英雄：更容易遇到火系事件、火系遗物和火系宠物。"
+    }
+  ],
+  "hero_starting_config": [
+    {
+      "hero_id": "hero_fire_tamer",
+      "start_slot": "pal_1",
+      "unit_id": "pal_005",
+      "pal_name": "火绒狐",
+      "reason": "低费火系铺场"
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "start_slot": "pal_2",
+      "unit_id": "pal_009",
+      "pal_name": "燎火鹿",
+      "reason": "火系前排输出"
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "start_slot": "relic_1",
+      "relic_id": "relic_hero_fire_seed",
+      "relic_name": "火种徽章",
+      "reason": "青铜专属遗物"
+    }
+  ],
+  "hero_level_rule": [
+    {
+      "hero_id": "hero_fire_tamer",
+      "hero_level": 1,
+      "quality": "青铜",
+      "unlock_condition": "start_run",
+      "hero_xp_required": 0,
+      "reward_group": "hero_fire_lv1",
+      "desc": "开局配置"
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "hero_level": 2,
+      "quality": "白银",
+      "unlock_condition": "hero_xp>=3",
+      "hero_xp_required": 3,
+      "reward_group": "hero_fire_lv2",
+      "desc": "火系事件/遗物权重增强"
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "hero_level": 3,
+      "quality": "黄金",
+      "unlock_condition": "hero_xp>=7",
+      "hero_xp_required": 7,
+      "reward_group": "hero_fire_lv3",
+      "desc": "解锁黄金英雄遗物池"
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "hero_level": 4,
+      "quality": "钻石",
+      "unlock_condition": "hero_xp>=12",
+      "hero_xp_required": 12,
+      "reward_group": "hero_fire_lv4",
+      "desc": "获得/选择核心英雄遗物"
+    }
+  ],
+  "hero_level_reward": [
+    {
+      "reward_group": "hero_fire_lv1",
+      "reward_type": "gain_starting_pal",
+      "value": "pal_005,pal_009",
+      "desc": "获得2只初始火系宠物"
+    },
+    {
+      "reward_group": "hero_fire_lv1",
+      "reward_type": "gain_relic",
+      "value": "relic_hero_fire_seed",
+      "desc": "获得青铜专属遗物"
+    },
+    {
+      "reward_group": "hero_fire_lv2",
+      "reward_type": "event_weight_bonus",
+      "value": "火:+20,锻造:+10",
+      "desc": "提高火系事件权重"
+    },
+    {
+      "reward_group": "hero_fire_lv2",
+      "reward_type": "reward_choice",
+      "value": "pal/relic/upgrade",
+      "desc": "从宠物/遗物/升级奖励中选1"
+    },
+    {
+      "reward_group": "hero_fire_lv3",
+      "reward_type": "unlock_relic_quality",
+      "value": "黄金",
+      "desc": "英雄专属遗物池可出现黄金项"
+    },
+    {
+      "reward_group": "hero_fire_lv4",
+      "reward_type": "gain_core_relic_choice",
+      "value": "hero_fire_core_pool:1",
+      "desc": "从核心火系遗物池选1"
+    }
+  ],
+  "hero_bias": [
+    {
+      "hero_id": "hero_fire_tamer",
+      "target_type": "event",
+      "tag": "火",
+      "weight_bonus": 40
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "target_type": "event",
+      "tag": "锻造",
+      "weight_bonus": 25
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "target_type": "relic",
+      "tag": "火",
+      "weight_bonus": 40
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "target_type": "relic",
+      "tag": "引爆",
+      "weight_bonus": 30
+    },
+    {
+      "hero_id": "hero_fire_tamer",
+      "target_type": "shop_pal",
+      "tag": "火",
+      "weight_bonus": 20
+    }
+  ]
+}

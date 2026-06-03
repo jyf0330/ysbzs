@@ -1,0 +1,724 @@
+{
+  "event_master": [
+    {
+      "event_id": "event_lost_pal",
+      "name": "迷路小宠",
+      "event_kind": "direct",
+      "min_day": 1,
+      "max_day": 10,
+      "tags": "宠物,早期",
+      "base_weight": 100,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_old_stall",
+      "name": "旧货摊",
+      "event_kind": "choice",
+      "min_day": 1,
+      "max_day": 10,
+      "tags": "遗物,宠物,商店",
+      "base_weight": 80,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_training_ground",
+      "name": "训练场",
+      "event_kind": "choice",
+      "min_day": 1,
+      "max_day": 10,
+      "tags": "升级,数值",
+      "base_weight": 80,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_merge_master",
+      "name": "合成师",
+      "event_kind": "choice",
+      "min_day": 2,
+      "max_day": 10,
+      "tags": "升级,宠物",
+      "base_weight": 70,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_fire_forge",
+      "name": "火焰锻炉",
+      "event_kind": "direct",
+      "min_day": 2,
+      "max_day": 10,
+      "tags": "火,锻造,升级",
+      "base_weight": 60,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_water_spring",
+      "name": "水之泉",
+      "event_kind": "choice",
+      "min_day": 2,
+      "max_day": 10,
+      "tags": "水,回复,宠物",
+      "base_weight": 50,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_wind_signpost",
+      "name": "风之路标",
+      "event_kind": "choice",
+      "min_day": 2,
+      "max_day": 10,
+      "tags": "风,宠物,遗物",
+      "base_weight": 50,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_rock_workshop",
+      "name": "岩石工坊",
+      "event_kind": "choice",
+      "min_day": 2,
+      "max_day": 10,
+      "tags": "土,大型,升级",
+      "base_weight": 50,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_castle_scout",
+      "name": "城堡斥候",
+      "event_kind": "choice",
+      "min_day": 3,
+      "max_day": 10,
+      "tags": "情报,敌人,遗物",
+      "base_weight": 45,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_mystery_egg",
+      "name": "神秘蛋",
+      "event_kind": "choice",
+      "min_day": 3,
+      "max_day": 10,
+      "tags": "宠物,高稀有",
+      "base_weight": 45,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_hero_trial",
+      "name": "英雄试炼",
+      "event_kind": "choice",
+      "min_day": 3,
+      "max_day": 10,
+      "tags": "英雄,专属,遗物",
+      "base_weight": 35,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_broken_bag",
+      "name": "破旧背包",
+      "event_kind": "choice",
+      "min_day": 2,
+      "max_day": 10,
+      "tags": "容量,遗物",
+      "base_weight": 55,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_pet牧场",
+      "name": "宠物牧场",
+      "event_kind": "direct",
+      "min_day": 2,
+      "max_day": 10,
+      "tags": "召唤,宠物,成长",
+      "base_weight": 55,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_flame_oath",
+      "name": "火种誓约",
+      "event_kind": "direct",
+      "min_day": 1,
+      "max_day": 10,
+      "tags": "火,英雄,专属",
+      "base_weight": 75,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_tax_collector",
+      "name": "金币税吏",
+      "event_kind": "choice",
+      "min_day": 4,
+      "max_day": 10,
+      "tags": "经济,代价",
+      "base_weight": 35,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    },
+    {
+      "event_id": "event_blood_pact",
+      "name": "血量契约",
+      "event_kind": "choice",
+      "min_day": 4,
+      "max_day": 10,
+      "tags": "代价,遗物",
+      "base_weight": 30,
+      "event_count_slot": "shop_extra",
+      "refresh_with_shop": false,
+      "repeatable": false
+    }
+  ],
+  "event_option": [
+    {
+      "event_id": "event_lost_pal",
+      "option_id": "auto",
+      "option_text": "收留迷路小宠",
+      "option_type": "direct",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_lost_pal"
+    },
+    {
+      "event_id": "event_old_stall",
+      "option_id": "opt_relic",
+      "option_text": "翻找遗物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 2,
+      "reward_group": "reward_random_relic"
+    },
+    {
+      "event_id": "event_old_stall",
+      "option_id": "opt_pal",
+      "option_text": "买便宜宠物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 2,
+      "reward_group": "reward_discount_pal"
+    },
+    {
+      "event_id": "event_training_ground",
+      "option_id": "opt_hp",
+      "option_text": "训练生命",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_buff_hp"
+    },
+    {
+      "event_id": "event_training_ground",
+      "option_id": "opt_atk",
+      "option_text": "训练攻击",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_buff_atk"
+    },
+    {
+      "event_id": "event_training_ground",
+      "option_id": "opt_def",
+      "option_text": "训练防御",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_buff_def"
+    },
+    {
+      "event_id": "event_merge_master",
+      "option_id": "opt_upgrade",
+      "option_text": "升级已有宠物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 3,
+      "reward_group": "reward_upgrade_owned"
+    },
+    {
+      "event_id": "event_merge_master",
+      "option_id": "opt_copy",
+      "option_text": "复制一只已有宠物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 4,
+      "reward_group": "reward_copy_owned"
+    },
+    {
+      "event_id": "event_fire_forge",
+      "option_id": "auto",
+      "option_text": "强化火系宠物",
+      "option_type": "direct",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_fire_upgrade"
+    },
+    {
+      "event_id": "event_water_spring",
+      "option_id": "opt_heal",
+      "option_text": "回复全队",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_heal_all"
+    },
+    {
+      "event_id": "event_water_spring",
+      "option_id": "opt_water_pal",
+      "option_text": "获得水系宠物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 2,
+      "reward_group": "reward_water_pal"
+    },
+    {
+      "event_id": "event_wind_signpost",
+      "option_id": "opt_wind_pal",
+      "option_text": "获得小型风宠物",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_wind_small_pal"
+    },
+    {
+      "event_id": "event_wind_signpost",
+      "option_id": "opt_wind_relic",
+      "option_text": "获得风系遗物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 2,
+      "reward_group": "reward_wind_relic"
+    },
+    {
+      "event_id": "event_rock_workshop",
+      "option_id": "opt_large_buff",
+      "option_text": "强化大型宠物",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_large_buff"
+    },
+    {
+      "event_id": "event_rock_workshop",
+      "option_id": "opt_earth_relic",
+      "option_text": "获得土系遗物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 2,
+      "reward_group": "reward_earth_relic"
+    },
+    {
+      "event_id": "event_castle_scout",
+      "option_id": "opt_info",
+      "option_text": "查看下一波敌人",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_scout_info"
+    },
+    {
+      "event_id": "event_castle_scout",
+      "option_id": "opt_counter",
+      "option_text": "获得反制遗物",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 2,
+      "reward_group": "reward_counter_relic"
+    },
+    {
+      "event_id": "event_mystery_egg",
+      "option_id": "opt_now",
+      "option_text": "立即孵化",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_random_pal"
+    },
+    {
+      "event_id": "event_mystery_egg",
+      "option_id": "opt_later",
+      "option_text": "留到明天",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_high_quality_pal_next_day"
+    },
+    {
+      "event_id": "event_hero_trial",
+      "option_id": "opt_accept",
+      "option_text": "接受试炼",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_hero_relic"
+    },
+    {
+      "event_id": "event_hero_trial",
+      "option_id": "opt_skip",
+      "option_text": "跳过",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_gold_small"
+    },
+    {
+      "event_id": "event_broken_bag",
+      "option_id": "opt_capacity",
+      "option_text": "扩背包",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 2,
+      "reward_group": "reward_bag_capacity"
+    },
+    {
+      "event_id": "event_broken_bag",
+      "option_id": "opt_relic",
+      "option_text": "拿遗物",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_random_relic"
+    },
+    {
+      "event_id": "event_pet牧场",
+      "option_id": "auto",
+      "option_text": "获得召唤倾向宠物",
+      "option_type": "direct",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_summon_pal"
+    },
+    {
+      "event_id": "event_flame_oath",
+      "option_id": "auto",
+      "option_text": "火种回应你",
+      "option_type": "direct",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_fire_relic"
+    },
+    {
+      "event_id": "event_tax_collector",
+      "option_id": "opt_pay",
+      "option_text": "花金币换升级",
+      "option_type": "choice",
+      "cost_type": "gold",
+      "cost_value": 4,
+      "reward_group": "reward_upgrade_owned"
+    },
+    {
+      "event_id": "event_tax_collector",
+      "option_id": "opt_refuse",
+      "option_text": "拒绝，拿金币",
+      "option_type": "choice",
+      "cost_type": "free",
+      "cost_value": 0,
+      "reward_group": "reward_gold_small"
+    },
+    {
+      "event_id": "event_blood_pact",
+      "option_id": "opt_relic",
+      "option_text": "降低HP上限换遗物",
+      "option_type": "choice",
+      "cost_type": "max_hp",
+      "cost_value": 3,
+      "reward_group": "reward_random_relic"
+    },
+    {
+      "event_id": "event_blood_pact",
+      "option_id": "opt_pal",
+      "option_text": "降低HP上限换高稀有宠物",
+      "option_type": "choice",
+      "cost_type": "max_hp",
+      "cost_value": 5,
+      "reward_group": "reward_high_quality_pal"
+    }
+  ],
+  "event_reward": [
+    {
+      "reward_group": "reward_lost_pal",
+      "reward_type": "gain_pal",
+      "pool_id": "small_bronze_pal_pool",
+      "amount": 1,
+      "quality_hint": "青铜"
+    },
+    {
+      "reward_group": "reward_random_relic",
+      "reward_type": "gain_relic",
+      "pool_id": "common_or_hero_relic_70_30",
+      "amount": 1,
+      "quality_hint": "by_day"
+    },
+    {
+      "reward_group": "reward_discount_pal",
+      "reward_type": "gain_pal",
+      "pool_id": "bronze_or_silver_pal_pool",
+      "amount": 1,
+      "quality_hint": "青铜/白银"
+    },
+    {
+      "reward_group": "reward_buff_hp",
+      "reward_type": "buff_pal",
+      "pool_id": "owned_pal",
+      "amount": 3,
+      "quality_hint": "hp+3"
+    },
+    {
+      "reward_group": "reward_buff_atk",
+      "reward_type": "buff_pal",
+      "pool_id": "owned_pal",
+      "amount": 1,
+      "quality_hint": "atk+1"
+    },
+    {
+      "reward_group": "reward_buff_def",
+      "reward_type": "buff_pal",
+      "pool_id": "owned_pal",
+      "amount": 1,
+      "quality_hint": "def+1"
+    },
+    {
+      "reward_group": "reward_upgrade_owned",
+      "reward_type": "upgrade_pal",
+      "pool_id": "owned_pal",
+      "amount": 1,
+      "quality_hint": "升1品级"
+    },
+    {
+      "reward_group": "reward_copy_owned",
+      "reward_type": "gain_pal",
+      "pool_id": "copy_owned_pal",
+      "amount": 1,
+      "quality_hint": "复制"
+    },
+    {
+      "reward_group": "reward_fire_upgrade",
+      "reward_type": "buff_pal",
+      "pool_id": "owned_fire_pal",
+      "amount": 1,
+      "quality_hint": "火宠ATK+1或层数+1"
+    },
+    {
+      "reward_group": "reward_heal_all",
+      "reward_type": "heal_all",
+      "pool_id": "all_owned_pal",
+      "amount": 5,
+      "quality_hint": "全队回复5"
+    },
+    {
+      "reward_group": "reward_water_pal",
+      "reward_type": "gain_pal",
+      "pool_id": "water_pal_pool",
+      "amount": 1,
+      "quality_hint": "水"
+    },
+    {
+      "reward_group": "reward_wind_small_pal",
+      "reward_type": "gain_pal",
+      "pool_id": "wind_small_pal_pool",
+      "amount": 1,
+      "quality_hint": "风小型"
+    },
+    {
+      "reward_group": "reward_wind_relic",
+      "reward_type": "gain_relic",
+      "pool_id": "wind_relic_pool",
+      "amount": 1,
+      "quality_hint": "风"
+    },
+    {
+      "reward_group": "reward_large_buff",
+      "reward_type": "buff_pal",
+      "pool_id": "owned_large_pal",
+      "amount": 2,
+      "quality_hint": "大型宠HP+2/DEF+1"
+    },
+    {
+      "reward_group": "reward_earth_relic",
+      "reward_type": "gain_relic",
+      "pool_id": "earth_relic_pool",
+      "amount": 1,
+      "quality_hint": "土"
+    },
+    {
+      "reward_group": "reward_scout_info",
+      "reward_type": "scout_next_wave",
+      "pool_id": "next_encounter",
+      "amount": 1,
+      "quality_hint": "情报"
+    },
+    {
+      "reward_group": "reward_counter_relic",
+      "reward_type": "gain_relic",
+      "pool_id": "counter_enemy_relic_pool",
+      "amount": 1,
+      "quality_hint": "反制"
+    },
+    {
+      "reward_group": "reward_random_pal",
+      "reward_type": "gain_pal",
+      "pool_id": "random_by_day_pal_pool",
+      "amount": 1,
+      "quality_hint": "当天"
+    },
+    {
+      "reward_group": "reward_high_quality_pal_next_day",
+      "reward_type": "delayed_gain_pal",
+      "pool_id": "higher_quality_pal_pool",
+      "amount": 1,
+      "quality_hint": "次日高一档"
+    },
+    {
+      "reward_group": "reward_hero_relic",
+      "reward_type": "gain_relic",
+      "pool_id": "hero_fire_relic_pool",
+      "amount": 1,
+      "quality_hint": "英雄专属"
+    },
+    {
+      "reward_group": "reward_gold_small",
+      "reward_type": "gain_gold",
+      "pool_id": "",
+      "amount": 3,
+      "quality_hint": "金币"
+    },
+    {
+      "reward_group": "reward_bag_capacity",
+      "reward_type": "capacity_up",
+      "pool_id": "bag_capacity",
+      "amount": 2,
+      "quality_hint": "背包+2"
+    },
+    {
+      "reward_group": "reward_summon_pal",
+      "reward_type": "gain_pal",
+      "pool_id": "summon_tag_pal_pool",
+      "amount": 1,
+      "quality_hint": "召唤倾向"
+    },
+    {
+      "reward_group": "reward_fire_relic",
+      "reward_type": "gain_relic",
+      "pool_id": "hero_fire_relic_pool",
+      "amount": 1,
+      "quality_hint": "火专属"
+    },
+    {
+      "reward_group": "reward_high_quality_pal",
+      "reward_type": "gain_pal",
+      "pool_id": "higher_quality_pal_pool",
+      "amount": 1,
+      "quality_hint": "高稀有"
+    }
+  ],
+  "event_condition": [
+    {
+      "condition_id": "hero_fire_bias",
+      "condition_type": "hero_selected",
+      "param_key": "hero_id",
+      "param_value": "hero_fire_tamer",
+      "note": "提高火/英雄/专属事件权重"
+    },
+    {
+      "condition_id": "has_fire_pal",
+      "condition_type": "has_element",
+      "param_key": "ysbzs_element",
+      "param_value": "fire",
+      "note": "可解锁火系强化选项"
+    },
+    {
+      "condition_id": "has_large_pal",
+      "condition_type": "has_size",
+      "param_key": "size",
+      "param_value": "large",
+      "note": "可解锁大型宠物强化"
+    },
+    {
+      "condition_id": "day_ge_5",
+      "condition_type": "day_min",
+      "param_key": "day",
+      "param_value": 5,
+      "note": "高稀有奖励开始出现"
+    }
+  ],
+  "level_reward": [
+    {
+      "level_type": "run_level",
+      "level": 2,
+      "reward_type": "choice",
+      "reward_pool": "pal/relic/upgrade",
+      "choice_count": 3,
+      "desc": "宠物、遗物、升级三选一"
+    },
+    {
+      "level_type": "run_level",
+      "level": 3,
+      "reward_type": "gain_relic",
+      "reward_pool": "common_or_hero_relic_70_30",
+      "choice_count": 1,
+      "desc": "获得遗物"
+    },
+    {
+      "level_type": "run_level",
+      "level": 4,
+      "reward_type": "upgrade_pal",
+      "reward_pool": "owned_pal",
+      "choice_count": 1,
+      "desc": "升级已有宠物"
+    },
+    {
+      "level_type": "run_level",
+      "level": 5,
+      "reward_type": "choice",
+      "reward_pool": "gold_pal_or_relic",
+      "choice_count": 3,
+      "desc": "黄金倾向奖励"
+    },
+    {
+      "level_type": "hero_level",
+      "level": 2,
+      "reward_type": "event_weight_bonus",
+      "reward_pool": "hero_bias",
+      "choice_count": 0,
+      "desc": "英雄事件/遗物权重增强"
+    },
+    {
+      "level_type": "hero_level",
+      "level": 3,
+      "reward_type": "unlock_relic_quality",
+      "reward_pool": "hero_gold_relic",
+      "choice_count": 0,
+      "desc": "解锁黄金英雄遗物"
+    },
+    {
+      "level_type": "hero_level",
+      "level": 4,
+      "reward_type": "core_relic_choice",
+      "reward_pool": "hero_fire_core_pool",
+      "choice_count": 3,
+      "desc": "核心英雄遗物三选一"
+    }
+  ]
+}

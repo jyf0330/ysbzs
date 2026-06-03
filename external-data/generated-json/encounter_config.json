@@ -1,0 +1,74 @@
+{
+  "encounter_wave": [
+    {
+      "day": 1,
+      "wave_id": "day1_wave1",
+      "castle_enemy_pool": "small_bronze_pal_pool",
+      "enemy_count": 1,
+      "enemy_hp_mul": 0.8,
+      "enemy_atk_mul": 0.8,
+      "reward_gold": 2,
+      "hero_xp": 0
+    },
+    {
+      "day": 2,
+      "wave_id": "day2_wave1",
+      "castle_enemy_pool": "small_bronze_pal_pool",
+      "enemy_count": 2,
+      "enemy_hp_mul": 0.9,
+      "enemy_atk_mul": 0.9,
+      "reward_gold": 3,
+      "hero_xp": 1
+    },
+    {
+      "day": 3,
+      "wave_id": "day3_elite",
+      "castle_enemy_pool": "bronze_mixed_pal_pool",
+      "enemy_count": 3,
+      "enemy_hp_mul": 1.0,
+      "enemy_atk_mul": 1.0,
+      "reward_gold": 4,
+      "hero_xp": 1
+    },
+    {
+      "day": 4,
+      "wave_id": "day4_wave1",
+      "castle_enemy_pool": "bronze_silver_pal_pool",
+      "enemy_count": 3,
+      "enemy_hp_mul": 1.1,
+      "enemy_atk_mul": 1.0,
+      "reward_gold": 4,
+      "hero_xp": 1
+    },
+    {
+      "day": 5,
+      "wave_id": "day5_gold_unlock",
+      "castle_enemy_pool": "silver_gold_pal_pool",
+      "enemy_count": 4,
+      "enemy_hp_mul": 1.2,
+      "enemy_atk_mul": 1.1,
+      "reward_gold": 5,
+      "hero_xp": 1
+    },
+    {
+      "day": 7,
+      "wave_id": "day7_diamond_preview",
+      "castle_enemy_pool": "gold_pal_pool",
+      "enemy_count": 4,
+      "enemy_hp_mul": 1.35,
+      "enemy_atk_mul": 1.2,
+      "reward_gold": 6,
+      "hero_xp": 1
+    },
+    {
+      "day": 10,
+      "wave_id": "day10_final",
+      "castle_enemy_pool": "gold_diamond_pal_pool",
+      "enemy_count": 5,
+      "enemy_hp_mul": 1.5,
+      "enemy_atk_mul": 1.35,
+      "reward_gold": 8,
+      "hero_xp": 1
+    }
+  ]
+}

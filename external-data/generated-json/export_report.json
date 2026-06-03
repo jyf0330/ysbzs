@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "generated_at": "2026-06-03T18:54:51.468Z",
+  "source": "ysbzs_pal_relic_event_pack_2026-06-04_01-29",
+  "errors": [],
+  "row_counts": {
+    "hero_master": 1,
+    "hero_starting_config": 3,
+    "hero_level_rule": 4,
+    "hero_level_reward": 6,
+    "hero_bias": 5,
+    "pal_master": 60,
+    "pal_stats_raw": 60,
+    "pal_stats_ysbzs": 60,
+    "pal_work_suitability": 60,
+    "unit_usage": 60,
+    "action_template": 180,
+    "action_growth": 720,
+    "shop_rule": 12,
+    "shop_source": 60,
+    "relic_master": 17,
+    "relic_effect": 15,
+    "relic_source": 17,
+    "event_master": 16,
+    "event_option": 29,
+    "event_reward": 25,
+    "event_condition": 4,
+    "level_reward": 7,
+    "encounter_wave": 7
+  }
+}

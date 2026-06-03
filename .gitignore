@@ -16,6 +16,14 @@ references/SuperAutoTest/
 
 # OS
 .DS_Store
+
+# external data — track generated-json, ignore temp/backup
+external-data/_*
+external-data/generated-json_backup_*
+*.zip
+
+# 生成报告 — 不提交
+reports/
 Thumbs.db
 test-results/
 .superpowers/

@@ -123,6 +123,21 @@ function spawnWaveForDay(day, phase) {
 }
 
 /**
+ * encounter_config 缺失天数（Day6/8/9）的派生出战配置
+ */
+function buildFallbackPalWaveConfig(day) {
+  var fallbacks = {
+    6: { castle_enemy_pool: 'silver_gold_pal_pool', enemy_count: 4, enemy_hp_mul: 1.28, enemy_atk_mul: 1.15, reward_gold: 5 },
+    8: { castle_enemy_pool: 'gold_diamond_pal_pool', enemy_count: 5, enemy_hp_mul: 1.42, enemy_atk_mul: 1.28, reward_gold: 7 },
+    9: { castle_enemy_pool: 'gold_diamond_pal_pool', enemy_count: 5, enemy_hp_mul: 1.48, enemy_atk_mul: 1.32, reward_gold: 7 },
+  };
+  var cfg = fallbacks[day];
+  if (!cfg) return null;
+  glog('⚙️ 第' + day + '天：Pal 波次由派生配置生成（encounter_config 无此天）');
+  return cfg;
+}
+
+/**
  * 从 encounter_config + Pal 池生成 Pal 敌人波次
  */
 function buildPalWaveForDay(day, phase) {
@@ -130,12 +145,17 @@ function buildPalWaveForDay(day, phase) {
   var enemyPools = (typeof getExternalEnemyPools === 'function') ? getExternalEnemyPools() : null;
   var createUnit = (typeof createPalUnitInstance === 'function') ? createPalUnitInstance : null;
 
-  if (!encWaves || !enemyPools || !createUnit) return null;
+  if (!enemyPools || !createUnit) return null;
 
-  // 找匹配天数的 encounter_wave
+  // 找匹配天数的 encounter_wave，没有则用派生配置
   var waveCfg = null;
-  for (var wi = 0; wi < encWaves.length; wi++) {
-    if (encWaves[wi].day === day) { waveCfg = encWaves[wi]; break; }
+  if (encWaves) {
+    for (var wi = 0; wi < encWaves.length; wi++) {
+      if (encWaves[wi].day === day) { waveCfg = encWaves[wi]; break; }
+    }
+  }
+  if (!waveCfg) {
+    waveCfg = buildFallbackPalWaveConfig(day);
   }
   if (!waveCfg) return null;
 

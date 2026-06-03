@@ -1,0 +1,183 @@
+{
+  "schema": "ysbzs.actionSlotSchemaPatch.v1",
+  "generated_at": "2026-06-04T01:56+09:00",
+  "purpose": "先补齐 JSON 字段，不写游戏接入代码；Pal 行动槽后续引用 shape_sn。",
+  "action_template_required_fields": [
+    {
+      "field": "unit_id",
+      "type": "string",
+      "required": true,
+      "note": "Pal/unit id"
+    },
+    {
+      "field": "slot",
+      "type": "integer",
+      "required": true,
+      "note": "1-3"
+    },
+    {
+      "field": "el",
+      "type": "string",
+      "required": true,
+      "note": "fire/water/wind/earth"
+    },
+    {
+      "field": "shape_sn",
+      "type": "integer",
+      "required": true,
+      "note": "正式引用 attack_shape_master.shape_sn；旧 sn 可做 alias"
+    },
+    {
+      "field": "sn",
+      "type": "integer",
+      "required": false,
+      "note": "旧字段兼容，值应等于 shape_sn"
+    },
+    {
+      "field": "shape_id",
+      "type": "string",
+      "required": false,
+      "note": "冗余展示，例如 T1"
+    },
+    {
+      "field": "shape_name",
+      "type": "string",
+      "required": false,
+      "note": "冗余展示，例如 标准前置T"
+    },
+    {
+      "field": "shape_cat",
+      "type": "string",
+      "required": false,
+      "note": "line/sweep/t_shape/square/remote"
+    },
+    {
+      "field": "shape_status",
+      "type": "string",
+      "required": false,
+      "note": "core/reserve"
+    },
+    {
+      "field": "dir",
+      "type": "string",
+      "required": true,
+      "note": "默认 right，可旋转"
+    },
+    {
+      "field": "requires_full_fit",
+      "type": "boolean",
+      "required": true,
+      "note": "AI 寻位必须完整落在 8×8"
+    },
+    {
+      "field": "shape_fixed",
+      "type": "boolean",
+      "required": true,
+      "note": "默认 true"
+    },
+    {
+      "field": "allow_shape_upgrade",
+      "type": "boolean",
+      "required": true,
+      "note": "少数高阶允许改形状"
+    },
+    {
+      "field": "default_targeting",
+      "type": "string",
+      "required": true,
+      "note": "autoBest/forceTarget"
+    },
+    {
+      "field": "slot_role",
+      "type": "string",
+      "required": false,
+      "note": "single/sweep/remote/summon/heal/field"
+    }
+  ],
+  "action_growth_required_fields": [
+    {
+      "field": "unit_id",
+      "type": "string",
+      "required": true
+    },
+    {
+      "field": "quality",
+      "type": "string",
+      "required": true,
+      "note": "bronze/silver/gold/diamond"
+    },
+    {
+      "field": "level",
+      "type": "integer",
+      "required": true,
+      "note": "1-4 if still used"
+    },
+    {
+      "field": "slot",
+      "type": "integer",
+      "required": true,
+      "note": "1-3"
+    },
+    {
+      "field": "shape_sn_base",
+      "type": "integer",
+      "required": true
+    },
+    {
+      "field": "shape_sn_override",
+      "type": "integer|null",
+      "required": false,
+      "note": "少数高阶形状变化"
+    },
+    {
+      "field": "tier",
+      "type": "integer",
+      "required": true
+    },
+    {
+      "field": "layers",
+      "type": "integer",
+      "required": true
+    },
+    {
+      "field": "value",
+      "type": "number",
+      "required": false
+    },
+    {
+      "field": "summon_count",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "field": "summon_hp",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "field": "heal_value",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "field": "damage_value",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "field": "effect_value",
+      "type": "number",
+      "required": false
+    },
+    {
+      "field": "growth_note",
+      "type": "string",
+      "required": false
+    }
+  ],
+  "compatibility_notes": [
+    "旧 sn 字段保留为 shape_sn 的 alias，避免一次性改坏旧逻辑。",
+    "第一阶段只允许 action_template/action_growth 引用 sn=1-12 的 core 形状；reserve 可先入库但不自动出现在早期 Pal 行动槽。",
+    "shape_sn_override 只有 allow_shape_upgrade=true 的槽可使用。"
+  ]
+}

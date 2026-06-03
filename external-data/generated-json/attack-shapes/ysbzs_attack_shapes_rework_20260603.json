@@ -1,0 +1,2440 @@
+{
+  "schema": "ysbzs.attackShapes.v2",
+  "createdAt": "2026-06-03 23:00 Asia/Tokyo",
+  "source": "根据本轮对话：8×8棋盘；S6双叉/S7近身十字不合格；增加S5/T系变形；AI需要自动寻位与指定目标寻优。",
+  "board": {
+    "rows": 8,
+    "cols": 8
+  },
+  "currentCodeCompatibility": {
+    "existingDefinition": "data.js const SD",
+    "baseDirection": "right",
+    "existingRotator": "actions.js rotCells(cells, dir)",
+    "coordinateRule": "cells 为 [rowOffset, colOffset]，相对英雄 H；[0,1] 是英雄右侧一格。",
+    "importantImplementationNote": "当前 atkCells 会过滤出界格，AI枚举最佳摆法时建议使用 requiresFullFit=true，即形状必须完整落在8×8内。"
+  },
+  "designRules": [
+    "优先直线、横扫、T、方块、远程T；不做蛇形、Z形、复杂斜线、多拐弯。",
+    "S6双叉删除：视觉像漏打中间，不适合作为主攻击块。",
+    "S7近身十字删除：更像防御反击，不适合作为主攻击块。",
+    "T系是第一版重点，可用宽度、距离、双层、偏移、大前置扩展。",
+    "第一版核心池建议只开放 status=core 的12个；reserve 作为中后期/高阶内容。"
+  ],
+  "aiModes": {
+    "autoBest": {
+      "description": "玩家不操作时，AI为所有英雄枚举可站位置、方向、形状，选择总分最高组合。",
+      "scoreWeights": {
+        "hitMonsterCount": 100,
+        "killMonsterCount": 80,
+        "hitEliteOrCastle": 50,
+        "totalDamageValue": 10,
+        "moveDistance": -3,
+        "wastedEmptyCell": -5,
+        "duplicateTargetWithOtherHero": -20
+      },
+      "searchSuggestion": "每个英雄保留Top 8候选；4英雄最多8^4=4096组合。"
+    },
+    "forceTarget": {
+      "description": "玩家指定某英雄攻击某目标时，先过滤必须命中该目标的候选，再按顺带命中更多怪、击杀更多怪、安全站位、移动距离排序。",
+      "priority": [
+        "includeClickedTarget",
+        "hitMoreMonsters",
+        "killMoreMonsters",
+        "saferHeroPosition",
+        "shorterMoveDistance"
+      ]
+    }
+  },
+  "recommendedCoreSn": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "reserveSn": [
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+  ],
+  "rejected": [
+    {
+      "legacyId": "S6",
+      "name": "双叉",
+      "reason": "形状不直观，像漏打中间，玩家理解成本高。"
+    },
+    {
+      "legacyId": "S7",
+      "name": "近身十字",
+      "reason": "更像防御/反击/被包围技能，不适合作为主攻击块；如保留应转成土系守卫被动。"
+    }
+  ],
+  "shapes": [
+    {
+      "id": "A1",
+      "sn": 1,
+      "name": "单点刺",
+      "status": "core",
+      "unlock": "day1",
+      "cat": "line",
+      "n": 1,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "single",
+        "tutorial",
+        "precise"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 56,
+            "right": 56,
+            "down": 56,
+            "left": 56
+          },
+          "total": 224
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        "..H.."
+      ],
+      "note": "教学、补刀、精准点怪"
+    },
+    {
+      "id": "A2",
+      "sn": 2,
+      "name": "二连刺",
+      "status": "core",
+      "unlock": "day1",
+      "cat": "line",
+      "n": 2,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "line",
+        "basic"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 48,
+            "right": 48,
+            "down": 48,
+            "left": 48
+          },
+          "total": 192
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        "..X..",
+        "..H.."
+      ],
+      "note": "基础近战纵向攻击"
+    },
+    {
+      "id": "A3",
+      "sn": 3,
+      "name": "三连枪",
+      "status": "core",
+      "unlock": "day1",
+      "cat": "line",
+      "n": 3,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          0
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "line",
+        "reach"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 40,
+            "right": 40,
+            "down": 40,
+            "left": 40
+          },
+          "total": 160
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        "..X..",
+        "..X..",
+        "..H.."
+      ],
+      "note": "远一点的直线攻击"
+    },
+    {
+      "id": "B1",
+      "sn": 4,
+      "name": "横扫三格",
+      "status": "core",
+      "unlock": "day1",
+      "cat": "sweep",
+      "n": 3,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "wide",
+        "aoe",
+        "clear_line"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 42,
+            "right": 42,
+            "down": 42,
+            "left": 42
+          },
+          "total": 168
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".XXX.",
+        "..H.."
+      ],
+      "note": "最基础横排清怪"
+    },
+    {
+      "id": "B3",
+      "sn": 5,
+      "name": "前二横扫",
+      "status": "core",
+      "unlock": "day2",
+      "cat": "sweep",
+      "n": 3,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          -1
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "remote",
+        "wide",
+        "aoe"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 36,
+            "right": 36,
+            "down": 36,
+            "left": 36
+          },
+          "total": 144
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".XXX.",
+        ".....",
+        "..H.."
+      ],
+      "note": "远程横排，打第二排怪"
+    },
+    {
+      "id": "T1",
+      "sn": 6,
+      "name": "标准前置T",
+      "status": "core",
+      "unlock": "day1",
+      "cat": "t_shape",
+      "n": 4,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          0
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "aoe",
+        "recommended"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 36,
+            "right": 36,
+            "down": 36,
+            "left": 36
+          },
+          "total": 144
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        ".XXX.",
+        "..H.."
+      ],
+      "note": "第一版最推荐，清楚、强、容易出爽感"
+    },
+    {
+      "id": "T2",
+      "sn": 7,
+      "name": "长柄T",
+      "status": "core",
+      "unlock": "day2",
+      "cat": "t_shape",
+      "n": 5,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          0
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "reach",
+        "aoe"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 30,
+            "right": 30,
+            "down": 30,
+            "left": 30
+          },
+          "total": 120
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        "..X..",
+        ".XXX.",
+        "..H.."
+      ],
+      "note": "比标准T更有穿透感，适合枪兵/火系"
+    },
+    {
+      "id": "T3",
+      "sn": 8,
+      "name": "宽头T",
+      "status": "core",
+      "unlock": "day3",
+      "cat": "t_shape",
+      "n": 6,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          0
+        ],
+        [
+          -1,
+          -2
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "wide",
+        "aoe"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 24,
+            "right": 24,
+            "down": 24,
+            "left": 24
+          },
+          "total": 96
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        "XXXXX",
+        "..H.."
+      ],
+      "note": "大横扫+中心补伤，视觉直观"
+    },
+    {
+      "id": "T5",
+      "sn": 9,
+      "name": "双层T",
+      "status": "core",
+      "unlock": "midgame",
+      "cat": "t_shape",
+      "n": 7,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          0
+        ],
+        [
+          -2,
+          -1
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "large_aoe",
+        "high_tier"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 30,
+            "right": 30,
+            "down": 30,
+            "left": 30
+          },
+          "total": 120
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        ".XXX.",
+        ".XXX.",
+        "..H.."
+      ],
+      "note": "强力范围，高阶英雄用"
+    },
+    {
+      "id": "C1",
+      "sn": 10,
+      "name": "前方2×2",
+      "status": "core",
+      "unlock": "day2",
+      "cat": "square",
+      "n": 4,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "square",
+        "compact",
+        "aoe"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 42,
+            "right": 42,
+            "down": 42,
+            "left": 42
+          },
+          "total": 168
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".XX..",
+        ".XX..",
+        ".H..."
+      ],
+      "note": "清密集怪，适合火系"
+    },
+    {
+      "id": "D2",
+      "sn": 11,
+      "name": "远程横三",
+      "status": "core",
+      "unlock": "day2",
+      "cat": "remote",
+      "n": 3,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -1,
+          3
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          3
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          -1
+        ],
+        [
+          -3,
+          0
+        ],
+        [
+          -3,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "remote",
+        "wide",
+        "aoe"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 30,
+            "right": 30,
+            "down": 30,
+            "left": 30
+          },
+          "total": 120
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".XXX.",
+        ".....",
+        ".....",
+        "..H.."
+      ],
+      "note": "后排横扫"
+    },
+    {
+      "id": "D3",
+      "sn": 12,
+      "name": "远程T",
+      "status": "core",
+      "unlock": "day3",
+      "cat": "remote_t",
+      "n": 4,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          0
+        ],
+        [
+          -2,
+          -1
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "remote",
+        "t_shape",
+        "aoe",
+        "mage"
+      ],
+      "ai": {
+        "readability": "high",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 30,
+            "right": 30,
+            "down": 30,
+            "left": 30
+          },
+          "total": 120
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        ".XXX.",
+        ".....",
+        "..H.."
+      ],
+      "note": "远程版前置T，适合法师/召唤"
+    },
+    {
+      "id": "A4",
+      "sn": 13,
+      "name": "隔格枪",
+      "status": "reserve",
+      "unlock": "midgame",
+      "cat": "line",
+      "n": 2,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "skip",
+        "backline"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 40,
+            "right": 40,
+            "down": 40,
+            "left": 40
+          },
+          "total": 160
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        ".....",
+        "..X..",
+        "..H.."
+      ],
+      "note": "跳过前排，打后排"
+    },
+    {
+      "id": "B2",
+      "sn": 14,
+      "name": "横扫五格",
+      "status": "reserve",
+      "unlock": "high_tier",
+      "cat": "sweep",
+      "n": 5,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -1,
+          -2
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "wide",
+        "large_aoe"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 28,
+            "right": 28,
+            "down": 28,
+            "left": 28
+          },
+          "total": 112
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "XXXXX",
+        "..H.."
+      ],
+      "note": "大范围横扫，适合高阶英雄"
+    },
+    {
+      "id": "B4",
+      "sn": 15,
+      "name": "近远双横扫",
+      "status": "reserve",
+      "unlock": "high_tier",
+      "cat": "sweep",
+      "n": 6,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          -1
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "wide",
+        "large_aoe"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 36,
+            "right": 36,
+            "down": 36,
+            "left": 36
+          },
+          "total": 144
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".XXX.",
+        ".XXX.",
+        "..H.."
+      ],
+      "note": "强力范围攻击，适合高级火系/城堡推进"
+    },
+    {
+      "id": "T4",
+      "sn": 16,
+      "name": "短柄宽T",
+      "status": "reserve",
+      "unlock": "midgame",
+      "cat": "t_shape",
+      "n": 6,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -2,
+          2
+        ],
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          -2
+        ],
+        [
+          -2,
+          -1
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -2,
+          2
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "wide",
+        "push"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 24,
+            "right": 24,
+            "down": 24,
+            "left": 24
+          },
+          "total": 96
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "XXXXX",
+        "..X..",
+        "..H.."
+      ],
+      "note": "像顶出去一排，适合远程/风系牵制"
+    },
+    {
+      "id": "T6",
+      "sn": 17,
+      "name": "偏左T",
+      "status": "reserve",
+      "unlock": "midgame",
+      "cat": "t_shape",
+      "n": 4,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          -1
+        ],
+        [
+          -1,
+          -2
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "offset_left"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 36,
+            "right": 36,
+            "down": 36,
+            "left": 36
+          },
+          "total": 144
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".X...",
+        "XXX..",
+        "..H.."
+      ],
+      "note": "有方向选择，但比蛇形清楚"
+    },
+    {
+      "id": "T7",
+      "sn": 18,
+      "name": "偏右T",
+      "status": "reserve",
+      "unlock": "midgame",
+      "cat": "t_shape",
+      "n": 4,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "offset_right"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 36,
+            "right": 36,
+            "down": 36,
+            "left": 36
+          },
+          "total": 144
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "...X.",
+        "..XXX",
+        "..H.."
+      ],
+      "note": "偏左T的右侧版本"
+    },
+    {
+      "id": "T8",
+      "sn": 19,
+      "name": "大前置T",
+      "status": "reserve",
+      "unlock": "high_tier",
+      "cat": "t_shape",
+      "n": 7,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          0
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -1,
+          -2
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "t_shape",
+        "large_aoe",
+        "ultimate"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 20,
+            "right": 20,
+            "down": 20,
+            "left": 20
+          },
+          "total": 80
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        "..X..",
+        "XXXXX",
+        "..H.."
+      ],
+      "note": "高阶大招感，适合Lv4或钻石英雄"
+    },
+    {
+      "id": "C3",
+      "sn": 20,
+      "name": "前方3×2",
+      "status": "reserve",
+      "unlock": "high_tier",
+      "cat": "square",
+      "n": 6,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -2,
+          -1
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "rectangle",
+        "large_aoe"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 36,
+            "right": 36,
+            "down": 36,
+            "left": 36
+          },
+          "total": 144
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".XXX.",
+        ".XXX.",
+        "..H.."
+      ],
+      "note": "高级范围攻击，清场感强"
+    },
+    {
+      "id": "C4",
+      "sn": 21,
+      "name": "小菱形",
+      "status": "reserve",
+      "unlock": "midgame",
+      "cat": "diamond",
+      "n": 5,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -3,
+          0
+        ],
+        [
+          -2,
+          -1
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "front",
+        "diamond",
+        "aoe"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 30,
+            "right": 30,
+            "down": 30,
+            "left": 30
+          },
+          "total": 120
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        "..X..",
+        ".XXX.",
+        "..X..",
+        "..H.."
+      ],
+      "note": "比近身十字更好，因为攻击都在前方"
+    },
+    {
+      "id": "D4",
+      "sn": 22,
+      "name": "远程2×2",
+      "status": "reserve",
+      "unlock": "midgame",
+      "cat": "remote_square",
+      "n": 4,
+      "baseDirection": "right",
+      "coordinateSystem": "relative_to_hero",
+      "cells": [
+        [
+          0,
+          4
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          3
+        ]
+      ],
+      "cellsUpPreview": [
+        [
+          -4,
+          0
+        ],
+        [
+          -4,
+          1
+        ],
+        [
+          -3,
+          0
+        ],
+        [
+          -3,
+          1
+        ]
+      ],
+      "rotations": [
+        "up",
+        "right",
+        "down",
+        "left"
+      ],
+      "mirror": false,
+      "tags": [
+        "remote",
+        "square",
+        "aoe",
+        "mage"
+      ],
+      "ai": {
+        "readability": "medium",
+        "requiresFullFit": true,
+        "legalPlacements8x8": {
+          "byDirection": {
+            "up": 28,
+            "right": 28,
+            "down": 28,
+            "left": 28
+          },
+          "total": 112
+        },
+        "targeting": [
+          "auto_best_cover",
+          "force_include_clicked_target_then_best_cover"
+        ]
+      },
+      "asciiUp": [
+        ".XX..",
+        ".XX..",
+        ".....",
+        ".....",
+        ".H..."
+      ],
+      "note": "远程范围，适合召唤/法师"
+    }
+  ],
+  "sdReplacement20": {
+    "1": {
+      "cells": [
+        [
+          0,
+          1
+        ]
+      ],
+      "name": "单点刺",
+      "n": 1,
+      "cat": "line"
+    },
+    "2": {
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "name": "二连刺",
+      "n": 2,
+      "cat": "line"
+    },
+    "3": {
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "name": "三连枪",
+      "n": 3,
+      "cat": "line"
+    },
+    "4": {
+      "cells": [
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "name": "横扫三格",
+      "n": 3,
+      "cat": "sweep"
+    },
+    "5": {
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "name": "前二横扫",
+      "n": 3,
+      "cat": "sweep"
+    },
+    "6": {
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "name": "标准前置T",
+      "n": 4,
+      "cat": "t_shape"
+    },
+    "7": {
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "name": "长柄T",
+      "n": 5,
+      "cat": "t_shape"
+    },
+    "8": {
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "name": "宽头T",
+      "n": 6,
+      "cat": "t_shape"
+    },
+    "9": {
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "name": "双层T",
+      "n": 7,
+      "cat": "t_shape"
+    },
+    "10": {
+      "cells": [
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "name": "前方2×2",
+      "n": 4,
+      "cat": "square"
+    },
+    "11": {
+      "cells": [
+        [
+          -1,
+          3
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          3
+        ]
+      ],
+      "name": "远程横三",
+      "n": 3,
+      "cat": "remote"
+    },
+    "12": {
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "name": "远程T",
+      "n": 4,
+      "cat": "remote_t"
+    },
+    "13": {
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "name": "隔格枪",
+      "n": 2,
+      "cat": "line"
+    },
+    "14": {
+      "cells": [
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "name": "横扫五格",
+      "n": 5,
+      "cat": "sweep"
+    },
+    "15": {
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "name": "近远双横扫",
+      "n": 6,
+      "cat": "sweep"
+    },
+    "16": {
+      "cells": [
+        [
+          -2,
+          2
+        ],
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "name": "短柄宽T",
+      "n": 6,
+      "cat": "t_shape"
+    },
+    "17": {
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "name": "偏左T",
+      "n": 4,
+      "cat": "t_shape"
+    },
+    "18": {
+      "cells": [
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "name": "偏右T",
+      "n": 4,
+      "cat": "t_shape"
+    },
+    "19": {
+      "cells": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "name": "大前置T",
+      "n": 7,
+      "cat": "t_shape"
+    },
+    "20": {
+      "cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "name": "前方3×2",
+      "n": 6,
+      "cat": "square"
+    }
+  }
+}

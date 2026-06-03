@@ -88,23 +88,22 @@ function spawnWaveForDay(day, phase) {
   // 优先用 Pal 敌人波次（来自 encounter_config）
   var palWave = buildPalWaveForDay(day, phase);
   if (palWave && palWave.monsters && palWave.monsters.length > 0) {
-    // 强制 Boss 兼容：旧系统 boss5/boss8/boss10
-    var forcedBoss = day === 10 && phase === 'afternoon' ? 'boss10'
-      : day >= 7 && phase === 'afternoon' ? 'boss8'
-      : day === 5 && phase === 'afternoon' ? 'boss5'
-      : null;
-    if (forcedBoss && !palWave.monsters.some(function(m) { return m.typeId === forcedBoss; })) {
-      var boss = MONSTER_TYPES[forcedBoss];
-      if (boss) {
-        palWave.monsters.push({
-          id: 'forced_boss_' + day + '_' + phase,
-          typeId: forcedBoss,
-          name: boss.name, hp: boss.hp, maxHp: boss.hp,
-          atk: boss.atk, ap: boss.ap, cost: boss.cost, gold: boss.gold,
-          pos: null, dead: false, el: null, slots: [],
-          ability: boss.ability || null,
-        });
-      }
+    // Boss 从 encounter_config.boss_encounter 读取（不再依赖 MONSTER_TYPES 硬编码）
+    var bossCfg = (typeof getBossEncounterConfig === 'function') ? getBossEncounterConfig(day, phase) : null;
+    if (bossCfg && !palWave.monsters.some(function(m) {
+      return m.typeId === bossCfg.boss_id || (m.unitId && m.unitId === bossCfg.boss_id);
+    })) {
+      palWave.monsters.push({
+        id: 'boss_' + day + '_' + phase,
+        typeId: bossCfg.boss_id,
+        unitId: bossCfg.boss_id,
+        name: bossCfg.name || bossCfg.boss_id,
+        hp: bossCfg.hp, maxHp: bossCfg.hp,
+        atk: bossCfg.atk, ap: bossCfg.ap || 4,
+        cost: bossCfg.cost || 12, gold: bossCfg.gold || 15,
+        pos: null, dead: false, el: null, slots: bossCfg.slots || [],
+        ability: bossCfg.ability || null,
+      });
     }
     assignSpawnPositions(palWave.monsters, palWave.spawnSize);
     G.monsters = palWave.monsters;

@@ -434,7 +434,11 @@ function runMonsters(idx) {
 
 function runMonsterAbilityHook(trigger, monster) {
   if (!monster || monster.dead) return false;
-  const ability = monster.ability || MONSTER_TYPES[monster.typeId]?.ability;
+  var ability = monster.ability || null;
+  if (!ability && typeof getLegacyMonsterTypes === 'function') {
+    var legacyMT = getLegacyMonsterTypes();
+    ability = legacyMT[monster.typeId] ? legacyMT[monster.typeId].ability : null;
+  }
   if (!ability || ability.trigger !== trigger) return false;
   if (ability.id === 'lava_surge') {
     const cfg = ability.config || {};
@@ -452,7 +456,8 @@ function runMonsterAbilityHook(trigger, monster) {
       .find(p => p.r >= 0 && p.r < 8 && p.c >= 0 && p.c < 8 && cellFree(p) && !castleAt(p) && !hasElementAt(p));
     if (!pos) return false;
     const typeId = cfg.typeId || 'normal';
-    const mt = MONSTER_TYPES[typeId] || MONSTER_TYPES.normal;
+    var legacyMT = (typeof getLegacyMonsterTypes === 'function') ? getLegacyMonsterTypes() : {};
+    const mt = legacyMT[typeId] || legacyMT.normal || { name: '未知', hp: 8, atk: 1, ap: 5, cost: 2, gold: 2 };
     G.monsters.push({
       id: `split_${Date.now()}_${G.monsters.length}`,
       typeId, name: mt.name,
@@ -745,6 +750,12 @@ function runAiBattleTurn_sync(opts) {
 function syncMaxRoundForPhase() {
   const d = G.day || 1;
   const phase = G.dayHalf === 2 ? 'afternoon' : 'morning';
+  // 优先从 JSON round_config 读取，fallback 旧 DAY_ROUND_CONFIG
+  var roundVal = (typeof getRoundsForDay === 'function') ? getRoundsForDay(d, phase) : null;
+  if (roundVal != null) {
+    G.maxRound = roundVal;
+    return;
+  }
   const cfg = DAY_ROUND_CONFIG[d] || DAY_ROUND_CONFIG[1];
   G.maxRound = cfg[phase] || 2;
 }

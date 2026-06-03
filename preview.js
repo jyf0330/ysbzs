@@ -187,7 +187,7 @@ function buildTerrainInfo(pos) {
   ELEMS.forEach(function(el) {
     var layers = traps[el] || 0;
     if (layers <= 0) return;
-    var cfg = TRAP_CONFIG[el] || {};
+    var cfg = (typeof getTrapConfig === "function" ? getTrapConfig() : {})[el] || {};
     var dmg = explDmg(layers);
     result.push({
       element: el,
@@ -337,7 +337,7 @@ function buildPreviewGrid(){
     const key=`${h.pos.r},${h.pos.c}`;
     const heroSlots=G.slots.filter(s=>s.hid===h.id&&!s.used).map(s=>({
       el:s.el, sn:s.sn, tier:s.tier, dir:s.dir, idx:s.idx,
-      label:`${EL[s.el]}·${s.sn}号·×${TIER_MULT[s.tier]}`,
+      label:`${EL[s.el]}·${s.sn}号·×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[s.tier] || 0)}`,
     }));
     grid[key].entity={type:'hero',id:h.id,name:h.name,hp:h.hp,maxHp:h.maxHp,_acted:!!h._acted,slots:heroSlots};
   });

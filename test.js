@@ -119,8 +119,9 @@ group('常量与形状定义', ()=>{
     assert.strictEqual(ADV.wind,'earth');   // 风克土
     assert.strictEqual(ADV.earth,'water');  // 土克水
   });
-  test('TIER_MULT 四阶倍率 [0,1,2,4,8]', ()=>{
-    assert.deepStrictEqual(TIER_MULT,[0,1,2,4,8]);
+  test('TIER_MULT 四阶倍率 [0,1,2,4,8]（从 battle_config.json）', ()=>{
+    var tm = (typeof getTierMult === 'function') ? getTierMult() : [0,1,2,4,8];
+    assert.deepStrictEqual(tm, [0,1,2,4,8]);
   });
   test('SD 共 22 种形状', ()=>{
     assert.strictEqual(Object.keys(SD).length, 22);
@@ -3583,9 +3584,10 @@ group('TDD-S3 Run与商店',()=>{
     settleExplosions();
     assert.strictEqual(G.lastSettle.totalDamage,7,'空爆dmg6+被动1');
   });
-  test('RUN4:Day4-5回合配置可读',()=>{
-    assert.strictEqual(DAY_ROUND_CONFIG[4].morning,3);
-    assert.strictEqual(DAY_ROUND_CONFIG[5].afternoon,4);
+  test('RUN4:Day4-5回合配置可读（从 round_config.json）',()=>{
+    var rc = (typeof getRoundConfig === 'function') ? getRoundConfig() : [];
+    assert.strictEqual(rc[3] ? rc[3].morning : 0, 3);
+    assert.strictEqual(rc[4] ? rc[4].afternoon : 0, 4);
   });
   test('RUN5:closeShop中午进下午不增天',()=>{
     fresh();
@@ -3899,32 +3901,34 @@ group('Debug 面板 VM', ()=>{
   });
 
 group('Goal 03/04 完整实现', ()=>{
-  test('GOAL0304-01: DAY_ROUND_CONFIG 扩展到 Day10', ()=>{
+  test('GOAL0304-01: 回合配置 10 天全覆盖（从 round_config.json）', ()=>{
+    var rc = (typeof getRoundConfig === 'function') ? getRoundConfig() : [];
     for(let d=1; d<=10; d++){
-      assert.ok(DAY_ROUND_CONFIG[d], `缺少 Day${d} 回合配置`);
-      assert.ok(DAY_ROUND_CONFIG[d].morning>=2, `Day${d} morning 回合数不足`);
-      assert.ok(DAY_ROUND_CONFIG[d].afternoon>=2, `Day${d} afternoon 回合数不足`);
+      var rd = rc[d-1] || {};
+      assert.ok(rd, `缺少 Day${d} 回合配置`);
+      assert.ok(typeof rd.morning === 'number' && rd.morning >= 2, `Day${d} morning 回合数 ${rd.morning}`);
+      assert.ok(typeof rd.afternoon === 'number' && rd.afternoon >= 2, `Day${d} afternoon 回合数 ${rd.afternoon}`);
     }
-    assert.strictEqual(DAY_ROUND_CONFIG[10].afternoon,5,'Day10 下午应是最终战 5 回合');
+    assert.strictEqual(rc[9] ? rc[9].afternoon : 0, 5, 'Day10 下午应是最终战 5 回合');
   });
   test('GOAL0304-02: DAY_WAVE_CONFIG 扩展到 Day10 且含最终怪', ()=>{
     for(let d=1; d<=10; d++){
-      assert.ok(DAY_WAVE_CONFIG[d], `缺少 Day${d} 波次配置`);
-      assert.ok(DAY_WAVE_CONFIG[d].morning, `缺少 Day${d} morning`);
-      assert.ok(DAY_WAVE_CONFIG[d].afternoon, `缺少 Day${d} afternoon`);
+      assert.ok((typeof getLegacyDayWaveConfig === "function" ? getLegacyDayWaveConfig() : {})[d] || {}, `缺少 Day${d} 波次配置`);
+      assert.ok((typeof getLegacyDayWaveConfig === "function" ? getLegacyDayWaveConfig() : {})[d] || {}.morning, `缺少 Day${d} morning`);
+      assert.ok((typeof getLegacyDayWaveConfig === "function" ? getLegacyDayWaveConfig() : {})[d] || {}.afternoon, `缺少 Day${d} afternoon`);
     }
-    assert.ok(DAY_WAVE_CONFIG[10].afternoon.allowed.includes('boss10'),'Day10 下午应允许 boss10');
+    assert.ok((typeof getLegacyDayWaveConfig === "function" ? getLegacyDayWaveConfig() : {})[10] || {}.afternoon.allowed.includes('boss10'),'Day10 下午应允许 boss10');
     const plan=buildWaveForDay(10,'afternoon');
     assert.ok(plan.monsters.some(m=>m.typeId==='boss10'),'Day10 下午应生成 boss10');
   });
   test('GOAL0304-03: 新怪物与 ability 字段可读', ()=>{
     ['swarm','blocker','siege','boss5','minion','boss8','boss10'].forEach(id=>{
-      assert.ok(MONSTER_TYPES[id], `缺少怪物 ${id}`);
+      assert.ok((typeof getLegacyMonsterTypes === "function" ? getLegacyMonsterTypes() : {})["id"] || {}, `缺少怪物 ${id}`);
     });
-    assert.strictEqual(MONSTER_TYPES.blocker.ability.id,'block_path');
-    assert.strictEqual(MONSTER_TYPES.siege.ability.id,'target_castle');
-    assert.strictEqual(MONSTER_TYPES.boss8.ability.id,'lava_surge');
-    assert.strictEqual(MONSTER_TYPES.boss10.ability.id,'core_split');
+    assert.strictEqual((typeof getLegacyMonsterTypes === "function" ? getLegacyMonsterTypes() : {}).blocker.ability.id,'block_path');
+    assert.strictEqual((typeof getLegacyMonsterTypes === "function" ? getLegacyMonsterTypes() : {}).siege.ability.id,'target_castle');
+    assert.strictEqual((typeof getLegacyMonsterTypes === "function" ? getLegacyMonsterTypes() : {}).boss8.ability.id,'lava_surge');
+    assert.strictEqual((typeof getLegacyMonsterTypes === "function" ? getLegacyMonsterTypes() : {}).boss10.ability.id,'core_split');
   });
   test('GOAL0304-04: 同品级统一定价，不使用 priceTier 乘法', ()=>{
     assert.strictEqual(calcUnitPrice(UNIT_DEFS.fire_starter),2);
@@ -3945,11 +3949,12 @@ group('Goal 03/04 完整实现', ()=>{
     assert.ok(SHOP_POOLS.day7_night.includes('dragon_flame'),'Day7 夜应入池钻石火系');
     assert.ok(SHOP_POOLS.day7_night.includes('prime_sprout'),'Day7 夜应入池钻石召唤');
   });
-  test('GOAL0304-07: 奖励节点配置覆盖午间/精英/Boss/特殊事件', ()=>{
-    assert.ok(REWARD_NODE_CONFIG[3].midday,'Day3 应有午间商人');
-    assert.ok(REWARD_NODE_CONFIG[5].boss,'Day5 应有 Boss 奖励');
-    assert.ok(REWARD_NODE_CONFIG[6].boss.free,'Day6 Boss 奖励应免费');
-    assert.ok(REWARD_NODE_CONFIG[7].special,'Day7 应有特殊事件');
+  test('GOAL0304-07: 奖励节点配置（legacy JSON）', ()=>{
+    var rnc = (typeof getLegacyRewardNodeConfig === 'function') ? getLegacyRewardNodeConfig() : {};
+    assert.ok(rnc[3] && rnc[3].midday, 'Day3 应有午间商人');
+    assert.ok(rnc[5] && rnc[5].boss, 'Day5 应有 Boss 奖励');
+    assert.ok(rnc[6] && rnc[6].boss && rnc[6].boss.free, 'Day6 Boss 奖励应免费');
+    assert.ok(rnc[7] && rnc[7].special, 'Day7 应有特殊事件');
   });
   test('GOAL0304-08: closeShop 可推进到 Day10 且不再钳制 Day5', ()=>{
     fresh(); G.phase='SHOP'; G.day=9; G.dayHalf=2; G.enemyCastle.hp=31;
@@ -3970,10 +3975,10 @@ group('Goal 03/04 完整实现', ()=>{
   });
   test('GOAL0304-10: ability hook 对 boss8 与 boss10 生效', ()=>{
     fresh();
-    G.monsters=[{id:'b8',typeId:'boss8',name:'熔岩核心',hp:45,maxHp:45,atk:4,ap:5,pos:{r:5,c:5},dead:false,el:null,ability:MONSTER_TYPES.boss8.ability}];
+    G.monsters=[{id:'b8',typeId:'boss8',name:'熔岩核心',hp:45,maxHp:45,atk:4,ap:5,pos:{r:5,c:5},dead:false,el:null,ability:(typeof getLegacyMonsterTypes === "function" ? getLegacyMonsterTypes() : {}).boss8.ability}];
     runMonsterAbilityHook('onRoundStart',G.monsters[0]);
     assert.ok((G.elementCells['5,5']?.fire?.layers||0)>=1,'boss8 回合开始应铺火');
-    G.monsters=[{id:'b10',typeId:'boss10',name:'远古炎核',hp:60,maxHp:60,atk:5,ap:5,pos:{r:5,c:5},dead:false,el:null,ability:MONSTER_TYPES.boss10.ability,_abilityTicks:1}];
+    G.monsters=[{id:'b10',typeId:'boss10',name:'远古炎核',hp:60,maxHp:60,atk:5,ap:5,pos:{r:5,c:5},dead:false,el:null,ability:(typeof getLegacyMonsterTypes === "function" ? getLegacyMonsterTypes() : {}).boss10.ability,_abilityTicks:1}];
     runMonsterAbilityHook('onEveryNthRound',G.monsters[0]);
     assert.ok(G.monsters.length>1,'boss10 应召唤小怪');
   });

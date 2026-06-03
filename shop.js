@@ -4,8 +4,12 @@
  * 依赖：data.js（UNIT_DEFS/UNIT_TIER_POOL/SHOP_PRICE_CONFIG/SHOP_POOLS）、game.js（unit mgmt）
  */
 
-// ── 容量常量 ──────────────────────────────────────────────────
+// ── 容量常量（优先从 JSON 读取）────────────────────────────────
 var SHOP_CAPACITY = 10;
+function refreshShopCapacity() {
+  var cfg = (typeof getCapacityConfig === 'function') ? getCapacityConfig() : null;
+  if (cfg && cfg.shop_capacity) SHOP_CAPACITY = cfg.shop_capacity;
+}
 
 function calcShopTier(day) {
   if (day >= 7) return 4;
@@ -16,12 +20,17 @@ function calcShopTier(day) {
 
 function openShop() {
   if (G.phase === 'OVER') return;
+  refreshShopCapacity();
   G.shopTier = calcShopTier(G.day);
-  const income = SHOP_PRICE_CONFIG.nightIncome[G.day] || 0;
+  var eco = (typeof getShopEconomyConfig === 'function') ? getShopEconomyConfig() : null;
+  var nightIncome = (eco && eco.night_income) ? eco.night_income : {};
+  var interestStep = (eco && eco.interest_step != null) ? eco.interest_step : 8;
+  var interestMax = (eco && eco.interest_max != null) ? eco.interest_max : 2;
+  const income = nightIncome[G.day] || 0;
   G.gold += income;
   const interest = Math.min(
-    Math.floor(G.gold / SHOP_PRICE_CONFIG.interestStep),
-    SHOP_PRICE_CONFIG.interestMax
+    Math.floor(G.gold / interestStep),
+    interestMax
   );
   G.gold += interest;
   if (income > 0 || interest > 0) {
@@ -102,7 +111,8 @@ function genShop() {
   // 按 tier 顺序填充，直到格子满
   for (var tier = 1; tier <= 4; tier++) {
     var pool = tierPoolMap[tier] || [];
-    var maxPerTier = extPool ? 8 : (SHOP_PRICE_CONFIG.shopSlots[G.day] || SHOP_PRICE_CONFIG.shopSlots[1])['unitT' + tier] || 3;
+    var legacySlots = (typeof getLegacyShopSlots === 'function') ? getLegacyShopSlots() : null;
+    var maxPerTier = extPool ? 8 : ((legacySlots && legacySlots.by_day) ? ((legacySlots.by_day[G.day] || legacySlots.by_day[1])['unitT' + tier] || 3) : 3);
     var placed = 0;
     // 最多尝试 pool.length * 2 次
     for (var i = 0; i < pool.length * 2 && placed < maxPerTier && usedSlots < SHOP_CAPACITY; i++) {
@@ -120,8 +130,8 @@ function genShop() {
         size: def.size || 'medium',
         slotSize: slotSize,
         quality: def.grade || '青铜',
-        price: calcUnitPrice(def),
-        cost: calcUnitPrice(def),
+        price: (typeof calcUnitPrice === 'function' ? calcUnitPrice : function(d){ return d.price||d.cost||2; })(def),
+        cost: (typeof calcUnitPrice === 'function' ? calcUnitPrice : function(d){ return d.price||d.cost||2; })(def),
         tags: def.tags || [],
         frozen: false,
       });
@@ -209,7 +219,8 @@ function sellUnit(instanceId) {
 
 function rollShop() {
   if (G.phase !== 'SHOP') return;
-  const cost = SHOP_PRICE_CONFIG.consumableBase.roll;
+  var eco = (typeof getShopEconomyConfig === 'function') ? getShopEconomyConfig() : null;
+  var cost = (eco && eco.roll_cost != null) ? eco.roll_cost : 1;
   if (G.gold < cost) { showMsg('💰 金币不足，刷新需要' + cost + '金币！'); return; }
   G.gold -= cost;
   G.shopFrozen = { units: new Set(), consumables: new Set() };
@@ -287,8 +298,8 @@ function addLevelupUnit() {
     size: def.size || 'medium',
     slotSize: def.slotSize || 1,
     quality: def.grade || '青铜',
-    price: calcUnitPrice(def),
-    cost: calcUnitPrice(def),
+    price: (typeof calcUnitPrice === 'function' ? calcUnitPrice : function(d){ return d.price||d.cost||2; })(def),
+    cost: (typeof calcUnitPrice === 'function' ? calcUnitPrice : function(d){ return d.price||d.cost||2; })(def),
     tags: def.tags || [],
     frozen: false,
   });

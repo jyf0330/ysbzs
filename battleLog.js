@@ -39,7 +39,7 @@ function formatBattleEvent(event) {
 
 /** 格式化陷阱触发 */
 function formatTrapTrigger(event) {
-  var cfg = TRAP_CONFIG[event.element] || {};
+  var cfg = (typeof getTrapConfig === "function" ? getTrapConfig() : {})[event.element] || {};
   var name = cfg.name || event.element + '陷阱';
   var hpChange = '';
   if (event.oldHp !== undefined && event.newHp !== undefined) {

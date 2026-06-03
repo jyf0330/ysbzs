@@ -74,7 +74,7 @@ function resolveTerrainOnEnter(monster, pos) {
     if (layers <= 0) return;
 
     var dmg = calcTrapDamage(layers);
-    var cfg = TRAP_CONFIG[el] || {};
+    var cfg = (typeof getTrapConfig === "function") ? (getTrapConfig()[el] || {}) : {};
     var apDelta = cfg.apDelta || 0;
 
     var oldHp = monster.hp;

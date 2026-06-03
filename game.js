@@ -5,15 +5,24 @@
  * 加载顺序：须在所有下层模块之后加载
  */
 
-// ── 容量常量 ──────────────────────────────────────────────────
+// ── 容量常量（优先从 JSON 读取）───────────────────────────────
 var ACTIVE_CAPACITY = 10;
 var BACKPACK_CAPACITY = 20;
+function refreshCapacityFromConfig() {
+  var cfg = (typeof getCapacityConfig === 'function') ? getCapacityConfig() : null;
+  if (cfg) {
+    ACTIVE_CAPACITY = cfg.active_capacity || ACTIVE_CAPACITY;
+    BACKPACK_CAPACITY = cfg.backpack_capacity || BACKPACK_CAPACITY;
+  }
+}
 
 // ========== GAME STATE ==========
 let G;
 
 // ========== INIT ==========
 function initGame() {
+  refreshCapacityFromConfig();
+  var explThr = (typeof getExplosionThreshold === 'function') ? getExplosionThreshold() : 3;
   G = {
     phase: 'PLAYER', day: 1, dayHalf: 0, wave: 1, round: 1, maxRound: 2,
     hitCount: 0, gold: 8, savedCoins: 0,
@@ -29,7 +38,7 @@ function initGame() {
     engineStats: { summonCount: 0, healCount: 0, chainCount: 0, perfectCount: 0 },
     growth: { summonTier: 0, healTier: 0, chainTier: 0 },
     lastSettle: null, runVictory: null, aiBattleStatus: null,
-    elementCells: {}, explosionThreshold: 3, previewEvents: [],
+    elementCells: {}, explosionThreshold: explThr, previewEvents: [],
     selHero: null, selSlot: null, selectedCell: null, prevCells: [], heroPrev: [],
     explPos: null, backpack: [], _bpCnt: 0, monWarn: [],
     coreSnapshot: null, coreVersion: 0, actionLog: [],

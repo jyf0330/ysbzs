@@ -150,194 +150,63 @@ function resetDailyTrack() {
   track.dungeonDay = G.day;
 }
 
-// ========== 商店 AI v2（减少无效买卖、保留金币）==========
+// ========== 商店 AI v3（严格限购 + 保留金币 + 召唤上阵）==========
+var TRACK_SHOP = { buy:0, sell:0, merge:0, refresh:0, wastePairs:0 };
+
 function scoreItem(item) {
   var def = UNIT_DEFS[item.defId];
-  if (!def || item.cost > G.gold) return 0;
-
-  var ownedCnt = G.ownedUnits.filter(u => u.defId === item.defId).length;
-  var active = G.ownedUnits.filter(u => u.active);
-  var hasSameActive = active.some(u => u.defId === item.defId);
-
-  var s = 0;
-  // 同名合成分（越高越好）
-  if (ownedCnt === 0) s = 1;      // 新入手
-  else if (ownedCnt === 1) s = 8; // 可合成1次
-  else if (ownedCnt === 2) s = 16;// 可合成2次（快速钻石）
-  else s = 24;                     // 溢出但可能用于后期阵型
-
-  // 流派分
-  if (FIRE_CORE.has(item.defId)) s += 5;
-  if (SUMMON_CORE.has(item.defId)) s += 5;
-
-  // 关键被动加分
-  if (item.defId === 'fire_demon') s += 15;  // crossExplosion — 对城堡伤害关键
-  if (item.defId === 'breeze_sprite') s += 3; // advHitBonus
-  if (item.defId === 'ember_seed') s += 3;    // spaceExplosionBonus
-
-  // 已有相同活跃英雄 → 减分（防重复买入/卖出循环）
-  if (hasSameActive && ownedCnt >= 2) s -= 3;
-
-  // 已有钻石 → 同名非核心减分
-  if (ownedCnt >= 3 && !FIRE_CORE.has(item.defId) && !SUMMON_CORE.has(item.defId)) s -= 5;
-
+  if (!def) return -999;
+  var ownedCnt = G.ownedUnits.filter(function(u){return u.defId===item.defId;}).length;
+  var active = G.ownedUnits.filter(function(u){return u.active;});
+  var hasSameActive = active.some(function(u){return u.defId===item.defId;});
+  // 如果商店有 fire_demon 但钱不够，非合成高分一律扣分（存钱）
+  var needReserve = (G.shopItems.units||[]).some(function(u){return u.defId==='fire_demon';}) && G.gold<8 && item.defId!=='fire_demon';
+  var s=0;
+  if (ownedCnt===0) s=5; else if (ownedCnt===1) s=15; else if (ownedCnt===2) s=20; else s=25;
+  if (FIRE_CORE.has(item.defId)) s+=6;
+  if (SUMMON_CORE.has(item.defId)) s+=6;
+  if (item.defId==='fire_demon') s+=25;
+  if (item.defId==='ember_seed'||item.defId==='breeze_sprite') s+=4;
+  if (hasSameActive&&ownedCnt>=2) s-=12;
+  if (!FIRE_CORE.has(item.defId)&&!SUMMON_CORE.has(item.defId)&&!hasSameActive) s-=8;
+  if (ownedCnt>=3&&!FIRE_CORE.has(item.defId)&&!SUMMON_CORE.has(item.defId)) s-=15;
+  if (item.defId==='wind_breeze'||item.defId==='pebble_guard'||item.defId==='bubble_sprite') s-=8;
+  if (needReserve&&ownedCnt===0) s-=15;
   return s;
 }
 
 function runShopAI() {
   var ops = [];
-  var prevOwned = G.ownedUnits.length;
-
-  // 第1步：统计当前阵容中是否有召唤英雄
-  var hasSummoner = G.ownedUnits.some(function(u) {
-    return u.active && (SUMMON_CORE.has(u.defId) || u.defId === 'sprout_summoner');
-  });
-  var hasFireDemon = G.ownedUnits.some(function(u) {
-    return u.active && u.defId === 'fire_demon';
-  });
-
-  // 第2步：评分商店商品
-  var items = (G.shopItems.units||[]).map(function(it) {
-    return Object.assign({}, it, {score: scoreItem(it)});
-  });
-  items.sort(function(a,b) { return b.score - a.score; });
-
-  // 第3步：购买 — 保留金币策略
-  var criticalIds = ['fire_demon'];
-  var needSaveGold = false;
-  var criticalCost = 8; // fire_demon 价格
-
-  // 如果场上还没有 fire_demon 且金币不够买，先存钱
-  if (!hasFireDemon && G.gold < criticalCost && items.some(function(it) { return it.defId === 'fire_demon'; })) {
-    needSaveGold = true;
+  // 统计是否有召唤源在库
+  var hasSprout = G.ownedUnits.some(function(u){return u.defId==='sprout_summoner'||u.defId==='command_sprout';});
+  var items = (G.shopItems.units||[]).map(function(it){return Object.assign({},it,{score:scoreItem(it)});});
+  items.sort(function(a,b){return b.score-a.score;});
+  var BUY_THRESHOLD=12;
+  // 购买
+  for (var i=0;i<items.length;i++) {
+    var item=items[i];
+    if (item.score<BUY_THRESHOLD||G.gold<item.cost) continue;
+    var idx=G.shopItems.units.findIndex(function(u){return u.id===item.id;});
+    if (idx===-1) continue;
+    var bg=G.gold; buyUnit(item.id);
+    if (G.gold<bg){ops.push('买'+item.defId+'('+(bg-G.gold)+'g)');TRACK_SHOP.buy++;}
   }
-
-  // 如果商店有火魔且黄金足够，无论如何买
-  if (items.some(function(it) { return it.defId === 'fire_demon'; })) {
-    var fireDemonItem = items.find(function(it) { return it.defId === 'fire_demon'; });
-    if (fireDemonItem && G.gold >= fireDemonItem.cost) {
-      var bg = G.gold;
-      buyUnit(fireDemonItem.id);
-      track.shopBuyCount++;
-      if (G.gold < bg) ops.push('买fire_demon(' + (bg-G.gold) + 'g)');
-      // 重算
-      hasFireDemon = true;
-      needSaveGold = false;
-    }
+  // 有余钱刷新
+  if (G.gold>=5&&!items.some(function(it){return it.score>=BUY_THRESHOLD;})) {
+    var bg=G.gold; rollShop();
+    if (G.gold<bg){ops.push('刷新');TRACK_SHOP.refresh++;}
+    var n2=(G.shopItems.units||[]).map(function(it){return Object.assign({},it,{score:scoreItem(it)});});
+    n2.sort(function(a,b){return b.score-a.score;});
+    for (var j=0;j<n2.length;j++){var it2=n2[j];if(it2.score<BUY_THRESHOLD||G.gold<it2.cost)continue;var ix=G.shopItems.units.findIndex(function(u){return u.id===it2.id;});if(ix===-1)continue;var bg2=G.gold;buyUnit(it2.id);if(G.gold<bg2){ops.push('买'+it2.defId+'('+(bg2-G.gold)+'g)');TRACK_SHOP.buy++;}}
   }
-
-  // 一般购买：只买高分物品，保留金币
-  for (var i = 0; i < items.length; i++) {
-    var item = items[i];
-    if (item.score <= 0) continue;
-
-    // 保留金币策略
-    var minGold = needSaveGold ? criticalCost : 2;
-    if (G.gold - item.cost < minGold) continue; // 保留最低金币
-
-    // fire_demon 已由前面专属逻辑处理
-    if (item.defId === 'fire_demon') continue;
-
-    var idx = G.shopItems.units.findIndex(function(u) { return u.id === item.id; });
-    if (idx === -1) continue;
-
-    var bg = G.gold;
-    buyUnit(item.id);
-    if (G.gold < bg) {
-      ops.push('买' + item.defId + '(' + (bg-G.gold) + 'g)');
-      track.shopBuyCount++;
-      // 检查是否自动合并
-      if (bg - G.gold === item.cost && G.ownedUnits.length <= prevOwned) {
-        track.shopMergeCount++;
-        ops[ops.length-1] += '(合成)';
-      }
-      prevOwned = G.ownedUnits.length;
-    }
-  }
-
-  // 第4步：有余钱且商店无高价值商品 → 刷新一次
-  var hasHighValue = G.shopItems.units.some(function(it) {
-    var sc = scoreItem(it);
-    return sc >= 8 && it.cost <= G.gold - 2;
-  });
-  if (!hasHighValue && G.gold >= 3) {
-    var bg = G.gold;
-    rollShop();
-    if (G.gold < bg) {
-      ops.push('刷新');
-      track.shopRefreshCount++;
-      // 刷新后再买
-      var newItems = (G.shopItems.units||[]).map(function(it) {
-        return Object.assign({}, it, {score: scoreItem(it)});
-      });
-      newItems.sort(function(a,b) { return b.score - a.score; });
-      for (var j = 0; j < newItems.length; j++) {
-        var it2 = newItems[j];
-        if (it2.score < 8 || it2.defId === 'fire_demon') continue;
-        if (G.gold - it2.cost < 2) continue;
-        var idx2 = G.shopItems.units.findIndex(function(u) { return u.id === it2.id; });
-        if (idx2 === -1) continue;
-        var bg2 = G.gold;
-        buyUnit(it2.id);
-        if (G.gold < bg2) {
-          ops.push('买' + it2.defId + '(' + (bg2-G.gold) + 'g)');
-          track.shopBuyCount++;
-        }
-      }
-    }
-  }
-
-  // 第5步：清理备战 — 仅当备战英雄超过5个且急需金币时出售
-  var bench = G.ownedUnits.filter(function(u) { return !u.active; });
-  var nonCoreBench = bench.filter(function(u) { return !STRATEGIC.has(u.defId); });
-
-  // 只卖完全无战略价值的备战单位（且数量多时）
-  while (G.gold < 2 && nonCoreBench.length > 0) {
-    // 卖等级最低的非核心备战
-    nonCoreBench.sort(function(a,b) { return a.level - b.level || a.hp - b.hp; });
-    var loser = nonCoreBench[0];
-    var bg = G.gold;
-    sellUnit(loser.instanceId);
-    if (G.gold > bg) {
-      ops.push('卖' + loser.defId + '(+' + (G.gold-bg) + 'g)');
-      track.shopSellCount++;
-    }
-    bench = G.ownedUnits.filter(function(u) { return !u.active; });
-    nonCoreBench = bench.filter(function(u) { return !STRATEGIC.has(u.defId); });
-  }
-
-  // 第6步：重新选择上阵英雄
-  // 策略：① 有 fire_demon 必上 ② 有召唤英雄时留一个召唤位 ③ 其余按等级
-  var fieldUnits = [];
-  var available = G.ownedUnits.slice();
-
-  // 火魔优先
-  var fd = available.find(function(u) { return u.defId === 'fire_demon'; });
-  if (fd) { fieldUnits.push(fd); }
-
-  // 召唤英雄次之（如果还没上阵且有召唤英雄在备战时）
-  if (!hasSummoner) {
-    var sm = available.find(function(u) {
-      return SUMMON_CORE.has(u.defId) && fieldUnits.indexOf(u) === -1;
-    });
-    if (sm) { fieldUnits.push(sm); }
-  }
-
-  // 补齐到2个
-  while (fieldUnits.length < 2) {
-    var remaining = available.filter(function(u) { return fieldUnits.indexOf(u) === -1; });
-    if (remaining.length === 0) break;
-    // 选最高等级（核心加分）
-    remaining.sort(function(a,b) {
-      var aCore = STRATEGIC.has(a.defId) ? 2 : 0;
-      var bCore = STRATEGIC.has(b.defId) ? 2 : 0;
-      return (b.level + bCore) - (a.level + aCore);
-    });
-    fieldUnits.push(remaining[0]);
-  }
-
-  // 设置活跃状态
-  G.ownedUnits.forEach(function(u) { u.active = fieldUnits.indexOf(u) >= 0 && fieldUnits.indexOf(u) < 2; });
+  // 出售 — 仅备战>3且金币<4时
+  if (G.gold<4){var ben=G.ownedUnits.filter(function(u){return!u.active;});while(ben.length>3&&G.gold<4){ben.sort(function(a,b){var ac=STRATEGIC.has(a.defId)?1:0,bc=STRATEGIC.has(b.defId)?1:0;return(a.level-b.level)||(ac-bc);});var ls=ben[0];if(STRATEGIC.has(ls.defId))break;var bg=G.gold;sellUnit(ls.instanceId);if(G.gold>bg){ops.push('卖'+ls.defId+'(+'+(G.gold-bg)+'g)');TRACK_SHOP.sell++;}ben=G.ownedUnits.filter(function(u){return!u.active;});}}
+  // 上阵选择: fire_demon > 召芽 > 高等级核心
+  var av=G.ownedUnits.slice(),fu=[];
+  var fd=av.find(function(u){return u.defId==='fire_demon';});if(fd)fu.push(fd);
+  if(!hasSprout){var sm=av.find(function(u){return u.defId==='sprout_summoner'&&fu.indexOf(u)===-1;});if(sm)fu.push(sm);}
+  while(fu.length<2){var rm=av.filter(function(u){return fu.indexOf(u)===-1;});if(rm.length===0)break;rm.sort(function(a,b){var ac=STRATEGIC.has(a.defId)?3:0,bc=STRATEGIC.has(b.defId)?3:0;return(b.level+bc)-(a.level+ac);});fu.push(rm[0]);}
+  G.ownedUnits.forEach(function(u){u.active=fu.indexOf(u)>=0&&fu.indexOf(u)<2;});
   syncUnitsToHeroes();
   return ops;
 }
@@ -383,6 +252,35 @@ function verifyPrecision(cp) {
   }
 }
 
+// ========== 覆盖 syncUnitsToHeroes：保存英雄战斗位置 ==========
+var _origSync = syncUnitsToHeroes;
+syncUnitsToHeroes = function() {
+  // 按 unit.instanceId 保存当前战斗位置
+  var sp = {};
+  if (G && G.heroes) {
+    for (var hh in G.heroes) { var uu = getUnitByHeroId(hh); if (uu) sp[uu.instanceId] = {r:G.heroes[hh].pos.r,c:G.heroes[hh].pos.c}; }
+  }
+  _origSync();
+  // 恢复已知位置
+  if (G && G.heroes && sp) {
+    for (var hh2 in G.heroes) {
+      var uu2 = getUnitByHeroId(hh2);
+      if (uu2 && sp[uu2.instanceId]) { G.heroes[hh2].pos = sp[uu2.instanceId]; uu2.pos = sp[uu2.instanceId]; }
+    }
+  }
+  // 新英雄无存档 → 复制任意有存档英雄的行列
+  if (G && G.heroes) {
+    var refPos = null;
+    for (var hh3 in G.heroes) { var uu3 = getUnitByHeroId(hh3); if (uu3 && sp[uu3.instanceId]) { refPos = sp[uu3.instanceId]; break; } }
+    if (refPos) {
+      for (var hh4 in G.heroes) {
+        var uu4 = getUnitByHeroId(hh4);
+        if (uu4 && !sp[uu4.instanceId]) { G.heroes[hh4].pos = {r:refPos.r,c:refPos.c}; uu4.pos = {r:refPos.r,c:refPos.c}; }
+      }
+    }
+  }
+};
+
 // ========== 主循环 ==========
 function run() {
   console.log('=== 10 天流程验收 ===\n');
@@ -426,8 +324,11 @@ function run() {
         endPlayerTurn();
       }
     } else if (G.phase === 'SHOP') {
+      // 在 closeShop 重置城堡前记录
+      var _ehp = G.enemyCastle ? G.enemyCastle.hp : 0;
+      var _php = G.playerCastle ? G.playerCastle.hp : 0;
       var ops = runShopAI();
-      dailyReports.push(Object.assign({}, snapshot(), { shopOps: ops }));
+      dailyReports.push(Object.assign({}, snapshot(), { shopOps: ops, castleHpBeforeReset: {enemy:_ehp, player:_php} }));
       closeShop();
       if (safety % 20 === 0 || G.day <= 2) {
         console.log('  Shop D' + G.day + 'h' + G.dayHalf + ' gold=' + G.gold);

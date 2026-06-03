@@ -3,6 +3,28 @@
 ### Docs
 - `AGENTS.md` / `CLAUDE.md`: added a first-sentence pointer to `docs/02_CURRENT_WORKFLOW.md` and its `Goal`, `diff`, `git-c` hard triggers.
 
+## 2026-06-03 — 文档口径纠正
+
+### 规则变更
+- EL_ADD：按行动槽 layers/tier 加层，不固定 +1
+- 删除 EL_CROSS_REACT 互克相遇覆盖/爆炸规则
+- 同一格可多元素并存，克制不影响元素层
+- 默认引爆范围改为单体；钻石火魔在场/背包/备战区时，火引爆才扩展为十字 5 格
+
+### 文档修正
+- `01_CURRENT_GAME_SPEC.md`：引爆范围改为条件触发
+- `03_CURRENT_NUMBERS.md`：同上，标注青铜/白银/黄金不启用
+- `tables/01_核心规则表.md`：EL_ADD 修正、EL_CROSS_REACT 标记废弃
+- `tables/07_元素规则表.md`：E07 废弃、新增 E07b 多元素并存
+- `tables/10_UI文案表.md`：ET04 范围文案改为条件显示
+- `tables/11_测试用例表.md`：TC62/TC63 说明修正
+- `tables/20_UI信息层级表.md`：B09 改为克制倍率提示
+- `tables/25_战斗日志模板表.md`：E03 废弃、E08/E09 新增
+- `06_DECISION_LOG.md`：追加本决策
+
+### Docs
+- `AGENTS.md` / `CLAUDE.md`: added a first-sentence pointer to `docs/02_CURRENT_WORKFLOW.md` and its `Goal`, `diff`, `git-c` hard triggers.
+
 ## 2026-06-03 — Added git-c commit-cleanup trigger
 
 ### Docs

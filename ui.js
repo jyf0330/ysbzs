@@ -178,6 +178,91 @@ function buildCellInfoMap(){
   return map;
 }
 
+
+// ========== 地形陷阱 UI ==========
+
+/** 读取该格地形陷阱信息 */
+function buildTerrainInfo(pos) {
+  var traps = getTerrain(pos);
+  if (!traps) return [];
+  var result = [];
+  ELEMS.forEach(function(el) {
+    var layers = traps[el] || 0;
+    if (layers <= 0) return;
+    var cfg = TRAP_CONFIG[el] || {};
+    var dmg = explDmg(layers);
+    result.push({
+      element: el,
+      layers: layers,
+      damage: dmg,
+      apDelta: cfg.apDelta || 0,
+      label: cfg.name + layers,
+      desc: cfg.name + layers + '：怪物踩入 -' + dmg + ' HP' + (cfg.apDelta ? '，AP ' + cfg.apDelta : ''),
+    });
+  });
+  return result;
+}
+
+/** 派生单格完整信息（四层：单位/地形/元素/概要） */
+function buildCellInfo(state, pos) {
+  if (!state) state = G;
+  var key = pos.r + ',' + pos.c;
+  var cell = state.board ? state.board[pos.r]?.[pos.c] : null;
+  // 单位层
+  var unit = null;
+  var monster = monAt(pos);
+  var hero = Object.values(state.heroes || {}).find(function(h){return h.pos.r===pos.r&&h.pos.c===pos.c;});
+  var summ = (state.summons||[]).find(function(s){return !s.dead&&s.pos.r===pos.r&&s.pos.c===pos.c;});
+  if (monster) unit = { type:'monster', name:monster.name, hp:monster.hp, maxHp:monster.maxHp, el:monster.el };
+  else if (hero) unit = { type:'hero', name:hero.name, hp:hero.hp, maxHp:hero.maxHp };
+  else if (summ) unit = { type:'summon', name:summ.name, hp:summ.hp, maxHp:summ.maxHp, el:summ.el };
+  else if (playerCastleAt(pos)) unit = { type:'castle', side:'player', hp:state.playerCastle?.hp, maxHp:state.playerCastle?.maxHp };
+  else if (enemyCastleAt(pos)) unit = { type:'castle', side:'enemy', hp:state.enemyCastle?.hp, maxHp:state.enemyCastle?.maxHp };
+  // 元素层
+  var elData = state.elementCells ? state.elementCells[key] : null;
+  var elements = {};
+  if (elData) ELEMS.forEach(function(el){elements[el]=Math.max(0,elData[el]?.layers||0);});
+  else elements = { fire:0, water:0, wind:0, earth:0 };
+  // 地形层
+  var terrain = buildTerrainInfo(pos);
+  // 概要
+  var summary = buildCellSummary(unit, elements, terrain);
+  return { pos:pos, unit:unit, elements:elements, terrain:terrain, summary:summary };
+}
+
+/** 单格短文本概要 */
+function buildCellSummary(unit, elements, terrain) {
+  var parts = [];
+  if (unit) {
+    if (unit.type === 'monster') parts.push(unit.name + ' HP' + unit.hp);
+    else if (unit.type === 'hero') parts.push(unit.name);
+    else if (unit.type === 'summon') parts.push(unit.name);
+    else if (unit.type === 'castle') parts.push(unit.side === 'player' ? '🏰自' : '🏰敌');
+  }
+  var elParts = [];
+  ELEMS.forEach(function(el){if(elements[el]>0)elParts.push(EL[el]+elements[el]);});
+  if (elParts.length > 0) parts.push(elParts.join(' '));
+  if (terrain.length > 0) {
+    var tParts = terrain.map(function(t){return t.label;});
+    parts.push(tParts.join(' '));
+  }
+  return parts.join(' | ');
+}
+
+/** 格式化战斗日志事件 */
+function formatBattleLog(event) {
+  if (!event) return '';
+  switch (event.type) {
+    case 'trap_trigger': {
+      var cfg = TRAP_CONFIG[event.element] || {};
+      var hpText = event.oldHp !== undefined ? 'HP ' + event.oldHp + '→' + event.newHp : '';
+      var apText = event.apDelta ? '，AP ' + event.apDelta : '';
+      return '怪' + event.unitId + ' 踩中' + cfg.name + event.layers + (hpText ? '，' + hpText : '') + apText;
+    }
+    default: return event.type;
+  }
+}
+
 function computeMonsterActionPreview(){
   const monActMap={},heroIncomingDmg={},summonIncomingDmg={},monCardMap={};
   const monFinalSet=new Set(); // 怪物预计停留格（区别于路过格）

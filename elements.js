@@ -129,6 +129,53 @@ function doExplode(pos) {
   refreshUI();
 }
 
+// ========== 地形陷阱 ==========
+
+/** 初始化单格地形结构 */
+function ensureTerrain(pos) {
+  if (!G.terrainCells) G.terrainCells = {};
+  var key = pos.r + ',' + pos.c;
+  if (!G.terrainCells[key]) G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
+  return G.terrainCells[key];
+}
+
+/** 获取单格地形（无则返回空对象） */
+function getTerrain(pos) {
+  if (!G.terrainCells) return { fire:0, water:0, wind:0, earth:0 };
+  return G.terrainCells[pos.r + ',' + pos.c] || { fire:0, water:0, wind:0, earth:0 };
+}
+
+/** 向指定格添加元素陷阱（叠加，不覆盖） */
+function addTrapLayers(pos, el, layers) {
+  if (!layers || layers <= 0) return;
+  var ter = ensureTerrain(pos);
+  ter[el] = (ter[el] || 0) + layers;
+}
+
+/** 元素引爆结算后：将该格元素层转移到地形陷阱 */
+function convertElementsToTrapsAfterExplosion(pos) {
+  var key = pos.r + ',' + pos.c;
+  var elData = G.elementCells[key];
+  if (!elData) return;
+  var changed = false;
+  ELEMS.forEach(function(el) {
+    var slot = elData[el];
+    if (slot && slot.layers > 0) {
+      addTrapLayers(pos, el, slot.layers);
+      slot.layers = 0;
+      slot.willExplode = false;
+      changed = true;
+    }
+  });
+  if (changed) syncBoardElementFromElementCells(pos);
+}
+
+/** 清除指定格的全部陷阱 */
+function clearTerrain(pos) {
+  var key = pos.r + ',' + pos.c;
+  if (G.terrainCells && G.terrainCells[key]) G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
+}
+
 // ========== 引擎成长/统计 ==========
 
 function recomputeGrowth() {

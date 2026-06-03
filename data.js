@@ -17,6 +17,14 @@ const EL_CLASS = {火:'b-el-f',水:'b-el-w',风:'b-el-i',土:'b-el-e'};
 const TIER_MULT = [0,1,2,4,8];
 const MAX_STK = 6;
 
+// ========== 地形陷阱配置 ==========
+const TRAP_CONFIG = {
+  fire:  { name:'火陷阱', damageType:'fire', apDelta:0,  desc:'造成火元素伤害' },
+  water: { name:'水陷阱', damageType:'water', apDelta:0,  desc:'造成水元素伤害' },
+  wind:  { name:'风陷阱', damageType:'wind',  apDelta:-1, desc:'造成风元素伤害，AP-1' },
+  earth: { name:'土陷阱', damageType:'earth', apDelta:-1, desc:'造成土元素伤害，AP-1' },
+};
+
 // ========== 形状定义 ==========
 // cells = [row_offset, col_offset] relative to hero, default "right"
 const SD = {

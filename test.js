@@ -3949,6 +3949,94 @@ group('Goal 03/04 完整实现', ()=>{
   });
 });
 
+
+// ═══════════════════════════════════════════════════════════════
+// 地形陷阱测试（四层棋盘格）
+group('▶ 地形陷阱（四层棋盘）', ()=>{
+
+  function freshTrap(){
+    fresh();
+    // 初始化 terrainCells
+    if(!G.terrainCells) G.terrainCells = {};
+    // 建一个测试怪物在容易触发陷阱的位置
+    G.monsters=[{id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,ap:3,pos:{r:5,c:5},dead:false,el:null,gold:0}];
+  }
+
+  test('陷阱-a: addTrapLayers 叠加陷阱不覆盖', ()=>{
+    freshTrap();
+    addTrapLayers({r:5,c:5},'fire',3);
+    assert.strictEqual(G.terrainCells['5,5'].fire,3,'火陷阱=3');
+    addTrapLayers({r:5,c:5},'fire',2);
+    assert.strictEqual(G.terrainCells['5,5'].fire,5,'火陷阱叠加到5');
+  });
+
+  test('陷阱-b: 同一格不同元素陷阱共存', ()=>{
+    freshTrap();
+    addTrapLayers({r:5,c:5},'fire',3);
+    addTrapLayers({r:5,c:5},'earth',2);
+    assert.strictEqual(G.terrainCells['5,5'].fire,3,'火陷阱=3');
+    assert.strictEqual(G.terrainCells['5,5'].earth,2,'土陷阱=2');
+  });
+
+  test('陷阱-c: getTerrain 读取', ()=>{
+    freshTrap();
+    var t = getTerrain({r:3,c:3});
+    assert.ok(t,'应返回对象');
+    assert.strictEqual(t.fire,0,'默认火=0');
+    assert.strictEqual(t.water,0,'默认水=0');
+  });
+
+  test('陷阱-d: 英雄可站陷阱格不触发', ()=>{
+    freshTrap();
+    addTrapLayers({r:6,c:0},'fire',3);
+    // 英雄默认就在 (6,0)，检查不触发
+    assert.ok(G.heroes.ha,'英雄A存在');
+    assert.strictEqual(G.heroes.ha.hp,20,'英雄HP不变');
+  });
+
+  test('陷阱-e: 怪物移动踩火陷阱扣血', ()=>{
+    freshTrap();
+    addTrapLayers({r:5,c:4},'fire',3);
+    // 手动触发陷阱
+    resolveTerrainOnEnter(G.monsters[0],{r:5,c:4});
+    assert.strictEqual(G.monsters[0].hp,14,'火陷阱3→explDmg(3)=6, 20-6=14');
+    // 陷阱应被清空
+    assert.strictEqual(G.terrainCells['5,4'].fire,0,'触发后陷阱清空');
+  });
+
+  test('陷阱-f: 怪物踩多元素陷阱一起结算', ()=>{
+    freshTrap();
+    addTrapLayers({r:5,c:4},'fire',2);
+    addTrapLayers({r:5,c:4},'water',1);
+    resolveTerrainOnEnter(G.monsters[0],{r:5,c:4});
+    // explDmg(2)=3, explDmg(1)=1 → 总 4
+    assert.strictEqual(G.monsters[0].hp,16,'HP 20-3-1=16');
+  });
+
+  test('陷阱-g: buildTerrainInfo 返回正确结构', ()=>{
+    freshTrap();
+    addTrapLayers({r:3,c:3},'fire',3);
+    var info = buildTerrainInfo({r:3,c:3});
+    assert.ok(Array.isArray(info),'返回数组');
+    assert.strictEqual(info.length,1,'1个元素');
+    assert.strictEqual(info[0].layers,3,'层数=3');
+    assert.strictEqual(info[0].damage,6,'伤害=explDmg(3)=6');
+  });
+
+  test('陷阱-h: buildCellInfo 四层结构', ()=>{
+    freshTrap();
+    addTrapLayers({r:6,c:0},'fire',2);
+    G.elementCells['6,0']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    var info = buildCellInfo(G,{r:6,c:0});
+    assert.ok(info,'有信息');
+    assert.ok(info.unit,'有单位层');
+    assert.ok(info.unit.type==='hero','有英雄');
+    assert.strictEqual(info.elements.fire,3,'元素层火=3');
+    assert.strictEqual(info.terrain.length,1,'地形层有1条');
+    assert.strictEqual(info.terrain[0].layers,2,'地形层陷阱=2');
+    assert.ok(typeof info.summary==='string'&&info.summary.length>0,'概要非空');
+  });
+});
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

@@ -94,6 +94,29 @@ Do not pretend the skill was used.
 Continue with this file's rules.
 Do not edit another tool's skill directory.
 
+## 任务系统入口
+
+项目使用 `tasks/` 目录管理多任务并行。
+
+| 用途 | 文件 |
+|---|---|
+| 任务总览与断线恢复 | `tasks/index.md` |
+| 任务系统细则（含 FILE_CONFLICT_STOP） | `tasks/README.md` |
+| 当前 ACTIVE 任务卡 | `tasks/doing/` 中 |
+| PAUSED 任务卡 | `tasks/paused/` 中 |
+
+每次开始任务或修改文件前，必须先读取 `tasks/index.md` 检查任务状态和文件冲突。
+
+## 冲突硬停规则
+
+如果检测到当前任务要修改的文件与其他任务卡中的 `related_files` 重叠，或工作区脏文件无法归属当前任务，必须：
+
+1. **立即暂停**，不得继续修改或提交
+2. 输出冲突报告
+3. 等待用户拍板
+
+细则见 `tasks/README.md` → `FILE_CONFLICT_STOP 硬规则` 章节。
+
 ## High-Risk Exceptions
 
 Ask the user before:

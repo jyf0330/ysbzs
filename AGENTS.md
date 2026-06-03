@@ -17,6 +17,17 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
    - 涉及文件索引：`docs/05_ASSET_AND_FILE_INDEX.md`
 3. 按任务类型创建或更新 `tasks/doing/当前任务.md`。
 
+## 任务系统
+
+多任务并行管理参见 `tasks/` 目录：
+- `tasks/index.md` — 当前任务总览与断线恢复入口
+- `tasks/README.md` — 任务系统细则与 FILE_CONFLICT_STOP 硬规则
+- `tasks/doing/` — 当前 ACTIVE 任务（最多 1 个）
+- `tasks/paused/` — 暂停任务
+- `tasks/done/` — 已完成任务
+
+每次开始任务或修改文件前，先读 `tasks/index.md` 检查冲突。
+
 ## 核心纪律
 
 - 一个任务只允许一个 AI 修改同一代码文件。

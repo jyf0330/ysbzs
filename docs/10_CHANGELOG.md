@@ -1,3 +1,79 @@
+## 2026-06-03 — 预览一致性修复（排除陷阱伤害干扰）
+
+### 修复
+- `battle.js`：`settleExplosions` 末尾新增 `G._hpAfterSettle` 快照（结算后/怪物移动前的 HP）
+- `scripts/run_10day_simulation.js`：`verifyPrecision` 改用 `G._hpAfterSettle`，排除怪物移动踩陷阱的额外伤害
+
+### 验证
+- `node test.js`：450/450 全部通过（+2 回归测试）
+- 10 天模拟：5 个预览检查点全部一致 ✅
+
+### 根因
+`verifyPrecision` 比较的是结算总伤害（元素 + 陷阱），而 `buildMonsterStats` 只计算元素伤害。两者量纲不同导致虚假差异。
+
+## 2026-06-03 — 拆出 preview.js 预览计算模块（P1）
+
+### 重构
+- 新增 `preview.js`：10 个预览计算函数从 `ui.js` 分离
+- `computeHeroAttackPreview` / `buildMonsterStats` / `buildCellInfoMap` / `computeMonsterActionPreview`
+- `buildTerrainInfo` / `buildCellInfo` / `buildCellSummary` / `buildPreviewGrid` / `buildBattleReport` / `recomputeCorePreview`
+- `preview.js` 在 `ui.js` 之后加载，覆盖同名函数（零行为变化）
+
+### 边界确认
+- `preview.js` 所有函数为纯计算（无 DOM）
+- `ui.js` 保留原定义作为向后兼容存根
+- 信息层计算 vs 显示层渲染职责已分离
+
+## 2026-06-03 — 拆出 battleLog.js 结构化日志模块（P1）
+
+### 重构
+- 新增 `battleLog.js`：`buildTrapTriggerEvent` / `formatBattleEvent` / `formatTrapTrigger` / `formatTrapKill`
+- `terrain.js`：`resolveTerrainOnEnter` 改用结构化事件 + `formatBattleEvent` 格式化，不再直接拼中文
+- `ui.js`：移除 `formatBattleLog`（已移至 `battleLog.js`）
+
+### 测试
++4 项 battleLog 测试（事件结构 / 格式化 / 击杀 / AP 变化），基线 448/448
+
+## 2026-06-03 — 拆出 terrain.js + damage.js 独立模块（P0）
+
+### 重构
+- 新增 `damage.js`：伤害公式统一入口（`explDmg` / `calcElementDamage` / `calcTrapDamage` / `calcAttackDamage`）
+- 新增 `terrain.js`：地形陷阱独立系统（`ensureTerrain` / `getTerrain` / `addTrapLayers` / `convertElementsToTrapsAfterExplosion` / `resolveTerrainOnEnter`）
+- `elements.js`：移除地形函数
+- `battle.js`：移除 `resolveTerrainOnEnter`
+
+### 加载顺序
+`... → elements.js → battle.js → ... → damage.js → terrain.js`（新模块在后加载覆盖同名函数）
+
+## 2026-06-03 — 四层棋盘格实现 + 地形陷阱系统
+
+### 新机制
+- **地形层**（`G.terrainCells`）：独立于元素层的陷阱存储系统
+- **空格引爆生成陷阱**：元素引爆后在该格留下地形陷阱
+- **怪物踩陷阱**：`resolveTerrainOnEnter` — 怪物每移动一格立即结算地形效果
+- **多元素陷阱叠加**：不同元素陷阱可共存，一起结算
+- **英雄免疫**：英雄可站陷阱格不触发
+- **AP 变化**：风陷阱 -1AP，土陷阱 -1AP
+
+### 新函数
+- `addTrapLayers` / `getTerrain` / `ensureTerrain` / `clearTerrain`（elements.js → terrain.js）
+- `convertElementsToTrapsAfterExplosion`（elements.js）
+- `resolveTerrainOnEnter`（battle.js）
+- `buildTerrainInfo` / `buildCellInfo` / `buildCellSummary` / `formatBattleLog`（ui.js）
+
+### 数据配置
+- `data.js`：新增 `TRAP_CONFIG`（火 / 水 / 风 / 土陷阱配置），`ELEMENTS` 常量
+
+### 辅助修正
+- `data.js`：`SHOP_POOLS` 补充 9 个缺失单位（含 fire_demon、breeze_sprite、ember、fire_blaze 等）
+- `data.js`：商店 tier4 槽位 Day5-6 从 0→1，使 fire_demon 可正常出现
+- `battle.js`：`commitPlayerActionsToElementField` 层数累加 bug 修复（`=` → `+=`）
+- `ui.js`：`buildMonsterStats` 空爆范围受 `hasCrossExplosion()` 约束
+- `battle.js`：AI 行动目标增加城堡推进方向权重；行动槽按射程排序
+
+### 测试
++8 项地形陷阱测试，基线 444/444
+
 ## 2026-06-03 — Added workflow hard-trigger pointer to root AI entries
 
 ### Docs

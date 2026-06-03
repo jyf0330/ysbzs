@@ -61,6 +61,7 @@
 | `10` | `10_CHANGELOG.md` | 变更日志 |
 | `roles/` | 各角色入口 | 程序/美术/UI/策划 各自启动指南 |
 | `archive/` | 历史文档 | 追溯用，不作为当前规则 |
+| `tables/_changes/` | 表格变更单系统 | `pending/` 为待同步变更（AI 可读），`archive/` 和 `reports/` 为已同步记录 |
 
 ## 常用命令
 

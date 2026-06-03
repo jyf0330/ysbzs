@@ -4,7 +4,7 @@ Use this file as project-level routing instructions.
 
 ## Hard Triggers
 
-Only three hard triggers exist: `Goal`, `diff`, and `git-c`.
+Only four hard triggers exist: `Goal`, `diff`, `git-c`, and `同步内容`.
 
 ## Goal
 
@@ -50,6 +50,24 @@ Run:
 
 ```text
 read logs -> inspect status/diff -> group by log entry -> commit matching groups -> commit leftovers -> verify clean worktree -> report
+```
+
+## 同步内容
+
+If the user says `同步内容`, enter table-sync mode.
+
+Read `docs/tables/_changes/SYNC_RULES.md` for full rules.
+Read `docs/tables/_changes/pending/` for pending change orders.
+Check for conflicts, then apply changes to formal tables.
+Generate a sync report.
+Archive completed change orders.
+Check for stale/wrong rules in current docs.
+Report what was synced.
+
+Run:
+
+```text
+read SYNC_RULES.md -> read pending/ -> check conflicts -> apply changes -> generate report to reports/ -> archive to archive/ -> check stale rules -> report
 ```
 
 ## Skill Routing

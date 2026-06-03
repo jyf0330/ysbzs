@@ -4,6 +4,7 @@
   },
   "scripts": {
     "sync:hero-table": "python3 scripts/gen_external_tables_from_xlsx.py",
+    "sync:tables": "node scripts/sync-tables.js",
     "benchmark:smoke": "node benchmarks/ysbzs/run-benchmark.mjs --smoke",
     "benchmark": "node benchmarks/ysbzs/run-benchmark.mjs",
     "playtest": "node ai-eval/runners/run-playtest.mjs"

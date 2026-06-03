@@ -36,38 +36,76 @@ classify task -> trigger planning skills -> propose diff -> report
 
 ## git-c
 
-If the user says `git-c`, enter commit-cleanup mode.
+`git-c = 任务感知的多任务批量收口提交器`
 
-Read project logs and CHANGELOG first.
-Inspect `git status` and diffs.
-Group changes into commits by matching log entries.
-Use precise staging.
-Commit unknown leftovers last.
-Finish with a clean worktree.
-Do not stop unless a High-Risk Exception applies.
+如果用户说 `git-c`，进入批量收口模式。
 
-Run:
+### 定位
+
+- 允许工作区同时存在多个任务的未提交改动。
+- 按任务边界自动拆成多个 commit，**每个 commit 只属于一个任务**。
+- 无法归属的文件：自动忽略垃圾文件 → 低风险 leftovers 集合提交 → 高风险 blocked 暂停。
+- **禁止** `git add .` / `git add -A`，只精确暂存。
+
+### 流程
 
 ```text
-read logs -> inspect status/diff -> group by log entry -> commit matching groups -> commit leftovers -> verify clean worktree -> report
+Phase 1 诊断:
+  read tasks/index.md
+  read tasks/doing/*.md  ->  tasks/paused/*.md  (所有任务卡)
+  inspect git status/diff/staged
+  read docs/10_CHANGELOG.md  (辅助判断)
+
+Phase 2 分类:
+  生成 Commit Plan，分四类:
+    Task Groups     — 可归属到任务卡的文件组
+    Ignore Group    — 明显垃圾文件 (已 gitignore 或建议加入)
+    Leftovers Group — 有效项目文件但无法归属，低风险
+    Blocked Group   — 高风险/冲突/无法自动处理
+  输出 Commit Plan。
+  如果存在 Blocked Group -> 暂停，等待用户拍板。
+
+Phase 3 执行:
+  for each Task Group:
+    git add <group files>   (精确暂存，禁止 git add .)
+    verify git diff --cached --stat
+    run validation command  (如 node test.js)
+    git commit
+    update task card (done_at, commit_id)
+  gitignore maintenance commit  (如有需要)
+  Leftovers commit  (低风险可集合提交)
+  update tasks/index.md
 ```
+
+**详细规则（文件分类判断、Ignore/Leftovers/Blocked 标准、Commit Plan 模板等）见 `tasks/README.md` → 「git-c 集成细则」章节。**
 
 ## 同步内容
 
 If the user says `同步内容`, enter table-sync mode.
 
-Read `docs/tables/_changes/SYNC_RULES.md` for full rules.
-Read `docs/tables/_changes/pending/` for pending change orders.
-Check for conflicts, then apply changes to formal tables.
-Generate a sync report.
-Archive completed change orders.
-Check for stale/wrong rules in current docs.
-Report what was synced.
+先执行任务冲突检查：
 
-Run:
+1. 读取 `tasks/index.md`。
+2. 读取 `tasks/doing/` 和 `tasks/paused/` 下所有任务卡的 `related_files`。
+3. 检查同步内容要修改的文件是否属于其他任务卡。
+4. 检查是否与 dirty 文件冲突，触发 `FILE_CONFLICT_STOP` 条件。
+5. 有冲突 → 暂停并输出冲突报告，不执行同步。
+6. 无冲突才继续同步。
+
+同步流程：
 
 ```text
-read SYNC_RULES.md -> read pending/ -> check conflicts -> apply changes -> generate report to reports/ -> archive to archive/ -> check stale rules -> report
+read tasks/index.md + task cards          # 冲突检查
+read SYNC_RULES.md                        # 表格同步细则
+read pending/                             # 待同步变更单
+check conflicts against task cards        # 再次确认
+if conflict -> FILE_CONFLICT_STOP         # 暂停
+apply changes                             # 同步表格
+generate report to reports/               # 生成报告
+archive pending/                          # 归档变更单
+update task cards                         # 归入对应任务 / 新建表格同步任务卡
+update tasks/index.md
+report
 ```
 
 ## Skill Routing
@@ -84,7 +122,7 @@ Always trigger matching skills when available:
 | Numbers, rules, levels, systems | `brainstorming`, `writing-plans`, `balance-check`, `ywh-game` |
 | Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
 | Docs, CHANGELOG, workflow rules | `ywh-game`, `verification-before-completion` |
-| `git-c`, finish, pre-commit check | `verification-before-completion`, `finishing-a-development-branch`, `ywh-game` |
+| `git-c`, finish, pre-commit check | `verification-before-completion`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
 
 ## Missing Skills
@@ -101,11 +139,12 @@ Do not edit another tool's skill directory.
 | 用途 | 文件 |
 |---|---|
 | 任务总览与断线恢复 | `tasks/index.md` |
-| 任务系统细则（含 FILE_CONFLICT_STOP） | `tasks/README.md` |
+| 任务系统细则（含 FILE_CONFLICT_STOP、git-c 集成） | `tasks/README.md` |
 | 当前 ACTIVE 任务卡 | `tasks/doing/` 中 |
 | PAUSED 任务卡 | `tasks/paused/` 中 |
+| 批量收口提交细则 | `tasks/README.md` → 「git-c 集成细则」 |
 
-每次开始任务或修改文件前，必须先读取 `tasks/index.md` 检查任务状态和文件冲突。
+每次开始任务或修改文件前，必须先读取 `tasks/index.md` 检查任务状态和文件冲突。`git-c` 必须先读任务卡再分组提交。
 
 ## 冲突硬停规则
 
@@ -115,7 +154,7 @@ Do not edit another tool's skill directory.
 2. 输出冲突报告
 3. 等待用户拍板
 
-细则见 `tasks/README.md` → `FILE_CONFLICT_STOP 硬规则` 章节。
+细则见 `tasks/README.md` → `FILE_CONFLICT_STOP 硬规则` 和 → `git-c 集成细则` 章节。
 
 ## High-Risk Exceptions
 

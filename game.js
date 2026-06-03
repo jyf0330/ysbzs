@@ -33,9 +33,42 @@ function initGame() {
     selHero: null, selSlot: null, selectedCell: null, prevCells: [], heroPrev: [],
     explPos: null, backpack: [], _bpCnt: 0, monWarn: [],
     coreSnapshot: null, coreVersion: 0, actionLog: [],
+    shopEvents: [],
+    // 英雄系统
+    heroInfo: { id: '', name: '', level: 1, xp: 0 },
+    relics: [],
   };
-  addOwnedUnit('fire_starter', { r: 6, c: 0 });
-  addOwnedUnit('water_droplet', { r: 7, c: 1 });
+
+  // 读取英雄配置作为开局来源
+  var hc = (typeof getExternalHeroConfig === 'function') ? getExternalHeroConfig() : null;
+  var usedHero = null;
+  if (hc && hc.hero_master && hc.hero_master.length > 0) {
+    usedHero = hc.hero_master[0];
+    G.heroInfo = { id: usedHero.hero_id, name: usedHero.hero_name, level: 1, xp: 0 };
+    G.gold = usedHero.starting_gold || 6;
+    // 起始宠物
+    if (hc.hero_starting_config) {
+      var startPositions = [{r:6,c:0},{r:7,c:1}];
+      var palIdx = 0;
+      hc.hero_starting_config.forEach(function(cfg) {
+        if (cfg.start_slot && cfg.start_slot.indexOf('pal_') === 0 && cfg.unit_id) {
+          var pos = palIdx < startPositions.length ? startPositions[palIdx] : { r: 6, c: palIdx };
+          addOwnedUnit(cfg.unit_id, pos);
+          palIdx++;
+        }
+        if (cfg.start_slot === 'relic_1' && cfg.relic_id) {
+          G.relics.push({ id: cfg.relic_id, name: cfg.relic_name || '' });
+        }
+      });
+    }
+  }
+  // fallback：无英雄配置时给默认旧单位
+  if (G.ownedUnits.length < 1) {
+    addOwnedUnit('fire_starter', { r: 6, c: 0 });
+  }
+  if (G.ownedUnits.length < 2) {
+    addOwnedUnit('water_droplet', { r: 7, c: 1 });
+  }
   syncUnitsToHeroes();
   syncMaxRoundForPhase();
   spawnWaveForDay(1, 'morning');
@@ -43,6 +76,147 @@ function initGame() {
   glog('🎮 游戏开始！第一波教学关卡。');
   glog('💡 提示：选中行动点→调整方向→点"使用"发动攻击。');
   glog('💡 点击英雄选中，再点空格移动位置。');
+  if (G.relics.length > 0) {
+    glog('🔮 获得开局遗物：' + G.relics.map(function(r){ return r.name; }).join('、'));
+  }
+}
+
+// ========== 遗物系统 ==========
+
+/** 获得遗物（加入 G.relics） */
+function gainRelic(relicId, relicName) {
+  if (!Array.isArray(G.relics)) G.relics = [];
+  // 未定义重复规则时允许重复
+  G.relics.push({ id: relicId, name: relicName || relicId });
+  glog('🔮 获得遗物：' + (relicName || relicId));
+  refreshUI();
+  // 触发 on_gain_relic 钩子
+  triggerRelicHooks('on_gain_relic', { relicId: relicId });
+}
+
+/** 触发遗物效果钩子 */
+function triggerRelicHooks(triggerType, ctx) {
+  if (!Array.isArray(G.relics) || G.relics.length === 0) return;
+  var rc = (typeof getExternalRelicConfig === 'function') ? getExternalRelicConfig() : null;
+  if (!rc || !rc.relic_effect) return;
+  G.relics.forEach(function(r) {
+    rc.relic_effect.forEach(function(e) {
+      if (e.relic_id === r.id && e.trigger === triggerType) {
+        applyRelicEffect(e, ctx);
+      }
+    });
+  });
+}
+
+/** 应用单个遗物效果 */
+function applyRelicEffect(e, ctx) {
+  switch (e.effect_type) {
+    case 'gain_gold':
+      G.gold = (G.gold || 0) + (e.value || 1);
+      glog('💰 遗物效果：+' + (e.value || 1) + ' 金币');
+      break;
+    case 'add_hp':
+      if (e.target === 'all_allies') {
+        G.ownedUnits.forEach(function(u) {
+          if (u.active) { u.maxHp += (e.value || 2); u.hp += (e.value || 2); }
+        });
+        glog('❤️ 遗物效果：所有上阵单位 HP +' + (e.value || 2));
+      } else if (e.target === 'gained_pal' && ctx && ctx.gainedUnit) {
+        ctx.gainedUnit.maxHp += (e.value || 2);
+        ctx.gainedUnit.hp += (e.value || 2);
+        glog('❤️ 遗物效果：新宠物 HP +' + (e.value || 2));
+      }
+      break;
+    case 'add_atk':
+      if (e.target === 'all_allies') {
+        G.ownedUnits.forEach(function(u) {
+          if (u.active) { u.atk = (u.atk || 0) + (e.value || 1); }
+        });
+        glog('⚔️ 遗物效果：所有上阵单位 ATK +' + (e.value || 1));
+      }
+      break;
+    case 'add_hp_atk':
+      G.ownedUnits.forEach(function(u) {
+        if (u.active && (!e.condition || u.element === 'fire')) {
+          u.maxHp += 2; u.hp += 2;
+          u.atk = (u.atk || 0) + 1;
+        }
+      });
+      glog('❤️⚔️ 遗物效果：火系单位 HP+2 ATK+1');
+      break;
+    case 'add_layer':
+    case 'add_element_layer':
+      // 简单版：下一行动增加 1 层（通过 ctx 的 actionCell）
+      if (ctx && ctx.actionCell && ctx.el === 'fire') {
+        // 留给行动时处理（在 useSlot 中检查更精确）
+      }
+      break;
+    case 'add_bag_capacity':
+      // BACKPACK_CAPACITY + value (后续在购买check中生效)
+      glog('🎒 遗物效果：背包容量 +' + (e.value || 2));
+      break;
+    case 'add_bench_capacity':
+      glog('🪑 遗物效果：备战容量 +' + (e.value || 1));
+      break;
+    case 'enemy_atk_down':
+      if (G.monsters && G.monsters.length > 0) {
+        var target = G.monsters[Math.floor(Math.random() * G.monsters.length)];
+        target.atk = Math.max(0, (target.atk || 0) - (e.value || 1));
+        glog('📖 遗物效果：随机怪物 ATK -' + (e.value || 1));
+      }
+      break;
+    default:
+      // pending 效果略过
+      break;
+  }
+}
+
+// ========== 英雄等级系统 ==========
+
+/** 英雄增加经验，检查升级 */
+function heroAddXp(amount) {
+  if (!G.heroInfo) G.heroInfo = { id: '', name: '', level: 1, xp: 0 };
+  var hc = (typeof getExternalHeroConfig === 'function') ? getExternalHeroConfig() : null;
+  if (!hc || !hc.hero_level_rule) return;
+  G.heroInfo.xp = (G.heroInfo.xp || 0) + (amount || 1);
+  glog('⭐ 英雄经验 +' + (amount || 1) + '（当前 ' + G.heroInfo.xp + '）');
+  // 检查升级
+  var currentLv = G.heroInfo.level || 1;
+  for (var lv = currentLv + 1; lv <= 4; lv++) {
+    var rule = hc.hero_level_rule.find(function(r) { return r.hero_level === lv; });
+    if (rule && G.heroInfo.xp >= rule.hero_xp_required) {
+      G.heroInfo.level = lv;
+      glog('⬆️ 英雄升级 Lv' + lv + '！' + (rule.desc || ''));
+      applyHeroLevelReward(lv);
+    }
+  }
+}
+
+/** 应用英雄等级奖励（简单版） */
+function applyHeroLevelReward(lv) {
+  var hc = (typeof getExternalHeroConfig === 'function') ? getExternalHeroConfig() : null;
+  if (!hc || !hc.hero_level_reward) return;
+  var rewards = hc.hero_level_reward.filter(function(r) { return r.reward_group && r.reward_group.indexOf('lv' + lv) !== -1; });
+  rewards.forEach(function(r) {
+    switch (r.reward_type) {
+      case 'gain_core_relic_choice':
+        if (typeof gainRelic === 'function') gainRelic('relic_hero_charred_crown', '焦灼皇冠');
+        break;
+      case 'gain_relic':
+        if (typeof gainRelic === 'function') gainRelic('relic_coin_bag', '铜钱袋');
+        break;
+      default:
+        glog('🔓 解锁：' + (r.reward_type || '未知奖励'));
+    }
+  });
+}
+
+/** 在战斗结算中给英雄加经验（每天结束/boss击杀） */
+function heroXpFromBattle() {
+  // boss/精英击杀加经验
+  if (G.lastSettle) {
+    if (G.lastSettle.killedCount > 0) heroAddXp(1);
+  }
 }
 
 // ========== UNIT MANAGEMENT ==========
@@ -77,14 +251,16 @@ function syncHeroHPToUnits() {
 }
 
 function syncUnitsToHeroes() {
-  var MAX_ACTIVE = 6; // safe upper bound
-  // 按容量筛选可上阵单位
-  var sorted = G.ownedUnits.filter(u => u.active).slice(0, MAX_ACTIVE);
+  // 按容量筛选可上阵单位（ACTIVE_CAPACITY=10）
+  var sorted = G.ownedUnits.filter(u => u.active).slice(0, 20); // 足够候选
   var selected = [];
   var usedCapacity = 0;
   sorted.forEach(function(unit) {
     var sz = unit.slotSize || 1;
-    if (usedCapacity + sz > ACTIVE_CAPACITY) return;
+    if (usedCapacity + sz > ACTIVE_CAPACITY) {
+      unit.active = false; // 超出容量，改为背包
+      return;
+    }
     usedCapacity += sz;
     selected.push(unit);
   });
@@ -137,6 +313,7 @@ function mergeUnits(fromUnit, toUnit) {
   G.ownedUnits = G.ownedUnits.filter(u => u.instanceId !== fromUnit.instanceId);
   var gradeNames = ['','青铜','白银','黄金','钻石'];
   glog('⬆️ ' + def.name + ' 合成升级！' + (gradeNames[oldLvl]||'Lv'+oldLvl) + '→' + (gradeNames[toUnit.level]||'Lv'+toUnit.level));
+  if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_pal_merged', {});
   addLevelupUnit();
   syncUnitsToHeroes();
   return true;

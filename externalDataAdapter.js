@@ -49,6 +49,9 @@
   function getActionGrowth() { return loadJSON('action-slots/action_growth_enriched.json'); }
   function getSDRep()        { return loadJSON('attack-shapes/attack_shape_sd_replacement_22.json'); }
   function getMaster()       { return loadJSON('attack-shapes/attack_shape_master.json'); }
+  function getHeroConfig()   { return loadJSON('hero_config.json'); }
+  function getRelicConfig()  { return loadJSON('relic_config.json'); }
+  function getEventConfig()  { return loadJSON('event_config.json'); }
 
   // ================================================================
   // 1. 外部 UNIT_DEFS 生成（独立结构）
@@ -145,13 +148,18 @@
       byDay[day].push(s.unit_id);
     });
 
+    // 级联填充 day1~10：某天无专属池时继承之前所有已解锁 Pal
     var pools = {};
-    var days = Object.keys(byDay).sort(function (a, b) { return parseInt(a) - parseInt(b); });
-    days.forEach(function (day) {
-      var ids = byDay[day];
-      pools['day' + day + '_midday'] = ids.slice();
-      pools['day' + day + '_night']  = ids.slice();
-    });
+    var accumulated = [];
+    for (var d = 1; d <= 10; d++) {
+      if (byDay[d]) {
+        byDay[d].forEach(function (id) {
+          if (accumulated.indexOf(id) === -1) accumulated.push(id);
+        });
+      }
+      pools['day' + d + '_midday'] = accumulated.slice();
+      pools['day' + d + '_night']  = accumulated.slice();
+    }
 
     // 旧 pool 合并（只保持 getShopPoolIds 兼容）
     var oldPools = (typeof SHOP_POOLS !== 'undefined') ? SHOP_POOLS : {};
@@ -178,8 +186,12 @@
     Object.keys(items).forEach(function (snStr) {
       var item = items[snStr];
       var sn = parseInt(snStr);
+      // 按 (row, col) 排序 cells，保证兼容旧 atkCells 测试顺序
+      var sortedCells = (item.cells || []).slice().sort(function (a, b) {
+        return a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1];
+      });
       sd[sn] = {
-        cells: item.cells || [],
+        cells: sortedCells,
         name: item.name || '形状' + sn,
         n: item.n || (item.cells ? item.cells.length : 0),
         cat: item.cat || 'unknown',
@@ -360,7 +372,11 @@
     g.__EXTERNAL_SHOP_POOL_COUNT__ = Object.keys(newShopPools).length;
   }
 
-  g.__NEW_SD__ = newSD;
+  // 替换 SD 为新形状（旧 SD 通过 __LEGACY_SD__ 保留）
+  if (newSD && Object.keys(newSD).length >= 22) {
+    g.__LEGACY_SD__ = g.__LEGACY_SD__ || (typeof SD !== 'undefined' ? SD : {});
+    SD = newSD;
+  }
   g.__EXTERNAL_SD_COUNT__ = newSD ? Object.keys(newSD).length : 0;
 
   // 注册 API
@@ -376,8 +392,12 @@
   g.getExternalActionTemplate = getActionTpl;
   g.getExternalActionGrowth = getActionGrowth;
   g.getExternalPalUnits = getPalUnits;
+  g.getExternalHeroConfig = getHeroConfig;
+  g.getExternalRelicConfig = getRelicConfig;
+  g.getExternalEventConfig = getEventConfig;
 
   // 外部纯 Pal 商店池（不含旧 ID fallback）
+  // 按 unlock_day 分组后，对 day1~10 级联填充：某天无专属池时继承之前所有已解锁 Pal
   var externalOnlyPools = null;
   var sc = getShopConfig();
   if (sc && sc.shop_source) {
@@ -387,12 +407,18 @@
       if (!eByDay[day]) eByDay[day] = [];
       eByDay[day].push(s.unit_id);
     });
+    // 构建 day1~10 的级联池：day N 继承所有 unlock_day <= N 的 ID
     externalOnlyPools = {};
-    Object.keys(eByDay).sort(function (a, b) { return parseInt(a) - parseInt(b); }).forEach(function (day) {
-      var ids = eByDay[day];
-      externalOnlyPools['day' + day + '_midday'] = ids.slice();
-      externalOnlyPools['day' + day + '_night'] = ids.slice();
-    });
+    var accumulated = []; // 累积所有已解锁 Pal
+    for (var d = 1; d <= 10; d++) {
+      if (eByDay[d]) {
+        eByDay[d].forEach(function (id) {
+          if (accumulated.indexOf(id) === -1) accumulated.push(id);
+        });
+      }
+      externalOnlyPools['day' + d + '_midday'] = accumulated.slice();
+      externalOnlyPools['day' + d + '_night'] = accumulated.slice();
+    }
   }
   g.__EXTERNAL_ONLY_POOLS__ = externalOnlyPools;
   g.getExternalOnlyShopPools = function () { return externalOnlyPools; };

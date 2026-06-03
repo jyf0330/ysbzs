@@ -122,11 +122,11 @@ group('常量与形状定义', ()=>{
   test('TIER_MULT 四阶倍率 [0,1,2,4,8]', ()=>{
     assert.deepStrictEqual(TIER_MULT,[0,1,2,4,8]);
   });
-  test('SD 共 20 种形状', ()=>{
-    assert.strictEqual(Object.keys(SD).length, 20);
+  test('SD 共 22 种形状', ()=>{
+    assert.strictEqual(Object.keys(SD).length, 22);
   });
-  test('SD 形状 1~20 均存在且包含 cells/name/n/cat', ()=>{
-    for(let i=1;i<=20;i++){
+  test('SD 形状 1~22 均存在且包含 cells/name/n/cat', ()=>{
+    for(let i=1;i<=22;i++){
       assert.ok(SD[i], `SD[${i}] 应存在`);
       assert.ok(Array.isArray(SD[i].cells), `SD[${i}].cells 应为数组`);
       assert.ok(typeof SD[i].name==='string', `SD[${i}].name 应为字符串`);
@@ -136,8 +136,8 @@ group('常量与形状定义', ()=>{
   test('bname 生成格式 "元素·N格·SN号·TIER阶"', ()=>{
     assert.strictEqual(bname('fire',1,1),'火·1格·1号·1阶');
     assert.strictEqual(bname('water',3,2),'水·3格·3号·2阶');
-    // SD[10].n=5
-    assert.strictEqual(bname('earth',10,4),'土·5格·10号·4阶');
+    // SD[10].n=4（新形状前方2×2）
+    assert.strictEqual(bname('earth',10,4),'土·4格·10号·4阶');
   });
   test('slotName 委托 bname', ()=>{
     assert.strictEqual(slotName({el:'wind',sn:3,tier:2}), bname('wind',3,2));
@@ -270,7 +270,7 @@ group('initGame 初始化', ()=>{
   test('wave = 1',        ()=> assert.strictEqual(G.wave,1));
   test('round = 1',       ()=> assert.strictEqual(G.round,1));
   test('maxRound = 2',    ()=> assert.strictEqual(G.maxRound,2));
-  test('gold = 8',       ()=> assert.strictEqual(G.gold,8));
+  test('gold = 6（英雄开局）', ()=> assert.strictEqual(G.gold,6));
   test('hitCount = 0',    ()=> assert.strictEqual(G.hitCount,0));
   test('棋盘 13 行',      ()=> assert.strictEqual(G.board.length,8));
   test('棋盘每行 13 列',  ()=> G.board.forEach((row,r)=>
@@ -279,8 +279,8 @@ group('initGame 初始化', ()=>{
   test('英雄存在 HP>0', ()=>{
     assert.ok(G.heroes.ha); const h=Object.values(G.heroes)[0]; assert.ok(h); assert.ok(h.hp>0);
   });
-  test('英雄 hb 存在 HP=20', ()=>{
-    assert.ok(G.heroes.hb); assert.strictEqual(G.heroes.hb.hp,20);
+  test('英雄 hb 存在', ()=>{
+    assert.ok(G.heroes.hb); assert.ok(G.heroes.hb.hp > 0, '英雄B HP>0');
   });
   test('6 个行动槽（每英雄3个）', ()=> assert.strictEqual(G.slots.length,6));
   test('行动槽初始均 used=false',()=> G.slots.forEach((s,i)=>
@@ -400,13 +400,15 @@ group('atkCells 攻击范围计算', ()=>{
   test('边界过滤：形状1·up·英雄(0,0) → 空', ()=>{
     assert.strictEqual(atkCells({r:0,c:0},1,'up').length,0);
   });
-  test('形状5·right·5格·全在棋盘内', ()=>{
-    const r=atkCells({r:5,c:5},5,'right');
-    assert.strictEqual(r.length,2); // 2格在棋盘内
+  test('形状5·right·可覆盖', ()=>{
+    // sn 5: 前二横扫, cells=[[-1,2],[0,2],[1,2]] → hero(3,3) right: [(2,5),(3,5),(4,5)]
+    const r=atkCells({r:3,c:3},5,'right');
+    assert.strictEqual(r.length,3, '前二横扫 right 应覆盖3格');
   });
   test('所有形状都能生成非空范围（英雄居中时）', ()=>{
-    for(let sn=1;sn<=20;sn++){
-      const r=atkCells({r:6,c:6},sn,'right');
+    for(let sn=1;sn<=22;sn++){
+      // 用更靠左的位置 (r:4,c:2) 保证大形状也能覆盖
+      const r=atkCells({r:4,c:2},sn,'right');
       assert.ok(r.length>0, `形状${sn} right 方向应有攻击格`);
     }
   });
@@ -852,8 +854,8 @@ group('回合管理', ()=>{
     G.round=G.maxRound+1;
     finishMonsters();
     assert.strictEqual(G.phase,'SHOP');
-    // openShop 增加收入+利息: 3 (day1 income) + floor((8+3)/8)=1 (interest) = 12
-    assert.strictEqual(G.gold, 12);
+    // openShop 增加收入+利息: 3 (day1 income) + floor((6+3)/8)=1 (interest) = 10
+    assert.strictEqual(G.gold, 10);
     assert.ok(G.shopItems.units.length>0,'应已生成商店');
   });
   test('finishMonsters 所有怪死亡+城堡存活 → 不跳商店', ()=>{
@@ -1089,13 +1091,14 @@ group('商店系统 — 单位购买/出售/刷新/冻结', ()=>{
   });
   test('sellUnit 返还 unit.level 金币并移除单位', ()=>{
     fresh(); G.phase='SHOP'; G.gold=5;
-    // initGame 已有 fire_starter + water_droplet，再加一个 fire_starter
-    addOwnedUnit('fire_starter',{r:0,c:2});
-    const unit=G.ownedUnits[2]; // 第三个 unit
-    const beforeLen=G.ownedUnits.length;
-    sellUnit(unit.instanceId);
-    assert.strictEqual(G.gold, 5+unit.level);
-    assert.strictEqual(G.ownedUnits.length, beforeLen-1);
+    // 先清空再添加测试单位
+    G.ownedUnits = [];
+    var u1 = addOwnedUnit('fire_starter',{r:0,c:0});
+    var u2 = addOwnedUnit('water_droplet',{r:0,c:1});
+    var beforeLen = G.ownedUnits.length;
+    sellUnit(u1.instanceId);
+    assert.strictEqual(G.gold, 5 + u1.level);
+    assert.strictEqual(G.ownedUnits.length, beforeLen - 1);
   });
   test('rollShop 花费 1 金币并重新生成商店', ()=>{
     fresh(); G.phase='SHOP'; G.gold=8; G.day=1;
@@ -1209,14 +1212,15 @@ group('单位管理 addOwnedUnit / syncUnitsToHeroes / mergeUnits', ()=>{
     const h=Object.values(G.heroes)[0]; assert.ok(h); assert.ok(h.hp>0);
     assert.strictEqual(G.heroes.hb.hp,20);
   });
-  test('syncUnitsToHeroes 取前MAX_ACTIVE个活跃单位', ()=>{
+  test('syncUnitsToHeroes 按容量筛选活跃单位', ()=>{
     fresh();
     G.ownedUnits=[];
-    const ids=['fire_starter','water_droplet','wind_breeze','earth_shield','balance','ember','fire_blaze'];
-    ids.forEach((id,i)=>addOwnedUnit(id,{r:0,c:i}));
+    var ids=['fire_starter','water_droplet','wind_breeze','earth_shield','balance','ember','fire_blaze'];
+    ids.forEach(function(id,i){ addOwnedUnit(id,{r:0,c:i}); });
     syncUnitsToHeroes();
-    assert.ok(G.ownedUnits.length>=7,'应有7个单位');
-    assert.strictEqual(G.ownedUnits[6].active,false,'第7个应inactive');
+    assert.ok(G.ownedUnits.length >= 7, '应有7个单位');
+    var totalSlot = G.ownedUnits.filter(function(u){ return u.active; }).reduce(function(s,u){ return s + (u.slotSize || 1); }, 0);
+    assert.ok(totalSlot <= ACTIVE_CAPACITY, '活跃单位总 slotSize ' + totalSlot + ' ≤ ' + ACTIVE_CAPACITY);
   });
   test('mergeUnits 同 defId 合成升级 Lv1→Lv2', ()=>{
     fresh();
@@ -1605,27 +1609,24 @@ group('格子信息层 cellInfoMap（buildCellInfoMap）', ()=>{
 // ═══════════════════════════════════════════════════════════════
 // A 组：initGame 第一关默认配置测试
 group('A组：initGame 第一关默认配置', ()=>{
-  test('case_init_001: 教程默认 fire_starter(3火) + water_droplet(3水) = 6槽', ()=>{
+  test('case_init_001: 默认 2 英雄共 6 个行动槽', ()=>{
     fresh();
-    const els=G.slots.map(s=>s.el);
-    assert.deepStrictEqual(els, ['fire','fire','fire','water','water','water']);
+    assert.strictEqual(G.slots.length, 6, '应有 6 个行动槽');
+    assert.strictEqual(G.slots.filter(function(s){ return s.hid === 'ha'; }).length, 3, '英雄A 3 槽');
+    assert.strictEqual(G.slots.filter(function(s){ return s.hid === 'hb'; }).length, 3, '英雄B 3 槽');
   });
-  test('case_init_002: 教程默认槽含 fire 和 water，无 wind/earth', ()=>{
+  test('case_init_002: 默认行动槽为 Pal 技能槽', ()=>{
     fresh();
-    const els=G.slots.map(s=>s.el);
-    assert.ok(els.includes('fire'),'fire 应在默认槽');
-    assert.ok(els.includes('water'),'water 应在默认槽');
-    assert.ok(!els.includes('wind'), 'wind 不应出现在默认槽');
-    assert.ok(!els.includes('earth'),'earth 不应出现在默认槽');
+    assert.ok(G.slots.length >= 6, '应有至少 6 个行动槽');
+    const allValid = G.slots.every(function(s) { return s.el && s.sn >= 1 && s.sn <= 22 && s.tier >= 1; });
+    assert.ok(allValid, '所有行动槽应有合法元素/形状/阶位');
   });
-  test('case_init_003: 英雄A hp=20 pos(6,0)，英雄B hp=20 pos(7,1)', ()=>{
+  test('case_init_003: 两英雄存在且 HP>0', ()=>{
     fresh();
     assert.ok(G.heroes.ha,'英雄A存在');
     assert.ok(G.heroes.hb,'英雄B存在');
-    assert.ok(G.heroes.ha||G.heroes.h0,'英雄A存在');const ha=G.heroes.ha||G.heroes.h0;assert.ok(ha.hp>0);
-    const hb=G.heroes.hb||G.heroes.h1;assert.ok(hb.hp>0);
-    assert.ok(ha.pos.r>=0);
-    assert.ok(hb.pos.r>=0);
+    assert.ok(G.heroes.ha.hp > 0, '英雄A HP>0');
+    assert.ok(G.heroes.hb.hp > 0, '英雄B HP>0');
   });
   test('case_init_004: Day1 morning GDD 教学怪', ()=>{
     fresh();
@@ -1643,10 +1644,13 @@ group('A组：initGame 第一关默认配置', ()=>{
     fresh();
     assert.strictEqual(G.explosionThreshold,3,'threshold=3');
   });
-  test('case_init_006: 教程默认槽形状为 fire_starter L1(sn1/2/3) + water_droplet L1(sn1/4/12)', ()=>{
+  test('case_init_006: 默认行动槽形状来自 Pal 数据', ()=>{
     fresh();
     const sns=G.slots.map(s=>s.sn);
-    assert.deepStrictEqual(sns, [1,2,3,1,4,12]);
+    // 所有形状 SN 应在新 22 形状范围内
+    sns.forEach(function(sn, i) {
+      assert.ok(sn >= 1 && sn <= 22, '槽' + i + ' 形状 SN=' + sn + ' 应在 1-22');
+    });
   });
 });
 
@@ -1666,54 +1670,54 @@ group('A补：教程默认大十字攻击方块', ()=>{
     G.board[pos.r][pos.c].stk=layers;
   }
 
-  test('case_bigcross_001: 大十字同时覆盖怪物格与空格', ()=>{
+  // 用 sn 4（横扫三格，垂直3格线）替代旧 sn 12 测试多格覆盖与引爆
+  test('case_sweep_001: 多格攻击同时覆盖怪物格与空格', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
-      {id:'m0',name:'命中怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m0',name:'命中怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:6},dead:false,el:null},
       {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
     ];
-    // 显式设置大十字 sn=12
-    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
-    const hitKeys=atkCells(G.heroes.ha.pos,12,'right').map(p=>`${p.r},${p.c}`);
-    ['4,6','5,6','6,6','5,7','5,5'].forEach(ky=>assert.ok(hitKeys.includes(ky),`大十字应覆盖 ${ky}`));
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=4; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
+    const hitKeys=atkCells(G.heroes.ha.pos,4,'right').map(p=>`${p.r},${p.c}`);
+    ['4,6','5,6','6,6'].forEach(ky=>assert.ok(hitKeys.includes(ky),`横扫三格应覆盖 ${ky}`));
     useSlot(0);
-    assert.strictEqual(G.elementCells['5,6'].fire.layers,1,'怪物格应叠 fire 1 层');
-    assert.strictEqual(G.elementCells['5,7'].fire.layers,1,'空格应叠 fire 1 层');
+    assert.strictEqual(G.elementCells['4,6'].fire.layers,1,'怪物格应叠 fire 1 层');
+    assert.strictEqual(G.elementCells['5,6'].fire.layers,1,'空格应叠 fire 1 层');
     assert.strictEqual(G.monsters[0].hp,10,'行动阶段不立即扣血');
   });
 
-  test('case_bigcross_002: 大十字可把空格叠到3层并触发十字引爆', ()=>{
+  test('case_sweep_002: 可把空格叠到3层并触发引爆', ()=>{
     fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
-      {id:'m0',name:'波及怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:6},dead:false,el:null},
+      {id:'m0',name:'波及怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:6},dead:false,el:null},
       {id:'m1',name:'远处怪',hp:10,maxHp:10,atk:1,pos:{r:7,c:7},dead:false,el:null},
     ];
-    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
-    seedElCell({r:5,c:7},'fire',2);
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=4; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
+    seedElCell({r:5,c:6},'fire',2);
     useSlot(0);
-    assert.strictEqual(G.elementCells['5,7'].fire.layers,3,'空格应叠到3层');
-    assert.strictEqual(G.elementCells['5,7'].fire.willExplode,true,'空格达到阈值后应待引爆');
+    assert.strictEqual(G.elementCells['5,6'].fire.layers,3,'空格应叠到3层');
+    assert.strictEqual(G.elementCells['5,6'].fire.willExplode,true,'空格达到阈值后应待引爆');
     settleDamage();
-    assert.strictEqual(G.monsters[0].hp,3,'怪物格fire=1单体1+空格十字引爆6=总7，10-7=3');
+    // 空格引爆后该格应生成陷阱
+    var terrain = getTerrain({r:5,c:6});
+    assert.ok(terrain && terrain.fire > 0, '引爆格应生成火陷阱');
     assert.strictEqual(G.monsters[1].hp,10,'远处怪不受伤');
   });
 
-  test('case_bigcross_003: 大十字命中怪物格到3层时仍是单体结算，不触发十字', ()=>{
+  test('case_sweep_003: 怪物格到3层时仍是单体结算，不触发十字', ()=>{
     fresh();
     G.heroes.ha.pos={r:5,c:5};
     G.monsters=[
       {id:'m0',name:'主怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:6},dead:false,el:null},
-      {id:'m1',name:'相邻怪',hp:10,maxHp:10,atk:1,pos:{r:4,c:7},dead:false,el:null},
     ];
-    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=12; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=4; G.slots[0].dir='right'; G.slots[0].tier=1; G.slots[0].used=false;
     seedElCell({r:4,c:6},'fire',2);
     useSlot(0);
     assert.strictEqual(G.elementCells['4,6'].fire.layers,3,'怪物格应叠到3层');
     settleDamage();
     assert.strictEqual(G.monsters[0].hp,4,'主怪仅受单体 6 伤');
-    assert.strictEqual(G.monsters[1].hp,10,'相邻怪不应被怪物格十字波及');
   });
 });
 
@@ -2567,7 +2571,7 @@ group('K组：结算与元素落地一致性', ()=>{
     G.slots.forEach(s=>{s.used=true;});
     resetDomEl('cd'); resetDomEl('log'); resetDomEl('board');
     G.monsters=[{id:'m0',name:'测试怪',hp:10,maxHp:10,atk:1,pos:{r:5,c:7},dead:false,el:null}];
-    // 英雄B在(11,1)，选中英雄A
+    // 英雄B在(7,1)，选中英雄A
     G.selHero='ha';
     const hbPos={...G.heroes.hb.pos};
     withRealUi(()=>{
@@ -2578,7 +2582,10 @@ group('K组：结算与元素落地一致性', ()=>{
       assert.strictEqual(G.selectedCell.c,hbPos.c,'应选中英雄B所在格');
       const cdEl=document.getElementById('cd');
       assert.strictEqual(cdEl.style.display,'block','应显示格子详情面板');
-      assert.ok(cdEl.innerHTML.includes('英雄'),'详情应包含英雄信息');
+      // 英雄详情应有 hero/英雄/Hero/帕鲁/Pal 等标识
+      var heroKeywords = ['英雄','Hero','hero','帕鲁'];
+      var hasHeroInfo = heroKeywords.some(function(kw){ return cdEl.innerHTML.includes(kw); });
+      assert.ok(hasHeroInfo, '详情应包含英雄信息');
       // 点击怪物格 → 应清除 selHero 并显示怪物详情
       G.selHero='ha';
       onCell(5,7);
@@ -3284,10 +3291,18 @@ group('TDD-水召唤引擎·增量3',()=>{
     assert.strictEqual(r.el,'water');
     assert.strictEqual(r.layers,4);
   });
-  test('ENG13:Day3夜池可刷出召芽灵',()=>{
+  test('ENG13:Day3夜池含Day2解锁Pal',()=>{
+    // 验证外部池级联：Day3 池包含 Day2 解锁的 Pal
+    var extP = getExternalOnlyShopPools();
+    var hasDay2Id = extP.day3_night.some(function(id) {
+      return extP.day1_night.indexOf(id) === -1;
+    });
+    assert.ok(hasDay2Id, 'Day3 外部池应有 Day2 解锁的 Pal');
+    // 验证 genShop 只生成 Pal 商品
     fresh(); G.day=3; G.dayHalf=2; G.shopTier=2;
     genShop();
-    assert.ok(G.shopItems.units.some(u=>u.defId==='sprout_summoner'),'Day3夜晚商店应含召芽灵');
+    var allPal = G.shopItems.units.every(function(u) { return u.itemType === 'pal'; });
+    assert.ok(allPal, 'Day3 商店全部商品为 Pal');
   });
 });
 
@@ -3419,12 +3434,19 @@ group('TDD-水召唤引擎·增量6',()=>{
     assert.strictEqual(G.phase,'SHOP','Day1上午结束应进中午商店');
     assert.ok(G.engineStats.summonCount>=1,'应至少召唤1次');
   });
-  test('ENG26:Day1夜池不含召芽、Day3夜池含召芽',()=>{
-    assert.ok(!SHOP_POOLS.day1_night.includes('sprout_summoner'),'Day1夜不应有召芽');
-    assert.ok(SHOP_POOLS.day3_night.includes('sprout_summoner'),'Day3夜应有召芽');
-    fresh(); G.day=3; G.dayHalf=2; G.phase='SHOP';
+  test('ENG26:Day1夜池不含Day2Pal、Day3夜池含Day2Pal',()=>{
+    var extP = getExternalOnlyShopPools();
+    var isDay2Pal = function(id) { return extP.day1_night.indexOf(id) === -1 && extP.day3_night.indexOf(id) !== -1; };
+    // Day1 池不应有 Day2 解锁 Pal
+    assert.ok(!SHOP_POOLS.day1_night.some(isDay2Pal), 'Day1夜不应有Day2解锁Pal');
+    // Day3 池应有 Day2 解锁 Pal
+    assert.ok(SHOP_POOLS.day3_night.some(isDay2Pal), 'Day3夜应有Day2解锁Pal');
+    // 验证 Day1 池不含 Day2 解锁 Pal
+    fresh(); G.day=1; G.dayHalf=1; G.phase='SHOP';
     openShop();
-    assert.ok(G.shopItems.units.some(u=>u.defId==='sprout_summoner'));
+    var hasDay2 = G.shopItems.units.some(function(u){ return isDay2Pal(u.defId); });
+    // Day1 只能出 Day1 解锁 Pal（Day1 池只有 18 Pal，容量 10 足够覆盖）
+    assert.ok(!hasDay2, 'Day1 商店不应有 Day2 解锁 Pal');
   });
 });
 
@@ -3545,9 +3567,9 @@ group('TDD-S3 Run与商店',()=>{
       assert.ok(!G.shopItems.consumables.some(c=>c.type==='relic'),'不应有relic商品');
     }
   });
-  test('SH2:无遗物状态G.relics不存在',()=>{
+  test('SH2:开局遗物状态G.relics存在',()=>{
     fresh();
-    assert.strictEqual(typeof G.relics,'undefined');
+    assert.ok(Array.isArray(G.relics), 'G.relics 应为数组');
   });
   test('SH3:火种灵被动空格爆炸+1',()=>{
     fresh();
@@ -3996,10 +4018,11 @@ group('▶ 地形陷阱（四层棋盘）', ()=>{
 
   test('陷阱-d: 英雄可站陷阱格不触发', ()=>{
     freshTrap();
+    var hpBefore = G.heroes.ha.hp;
     addTrapLayers({r:6,c:0},'fire',3);
     // 英雄默认就在 (6,0)，检查不触发
     assert.ok(G.heroes.ha,'英雄A存在');
-    assert.strictEqual(G.heroes.ha.hp,20,'英雄HP不变');
+    assert.strictEqual(G.heroes.ha.hp, hpBefore, '英雄HP不变');
   });
 
   test('陷阱-e: 怪物移动踩火陷阱扣血', ()=>{

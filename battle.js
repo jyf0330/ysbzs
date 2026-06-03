@@ -136,6 +136,7 @@ function useSlot(idx) {
     slot.used = true; hero._acted = true;
     G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：召唤' });
+  if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
     refreshUI();
     return;
   }
@@ -144,6 +145,7 @@ function useSlot(idx) {
     slot.used = true; hero._acted = true;
     G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：治疗召唤物' });
+  if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
     refreshUI();
     return;
   }
@@ -177,6 +179,7 @@ function useSlot(idx) {
   hero._acted = true;
   G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
   G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, el: slot.el, sn: slot.sn, dir: slot.dir, cells: cells.map(function(c) { return c.r + ',' + c.c; }), desc: '使用行动块#' + (idx + 1) + '：' + EL[slot.el] });
+  if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
   refreshUI();
 }
 
@@ -251,6 +254,10 @@ function finishMonsters() {
   const allDead = G.monsters.every(m => m.dead);
   const castleDead = !G.enemyCastle || G.enemyCastle.hp <= 0;
   if (G.round > G.maxRound || (allDead && castleDead)) {
+    if (typeof heroAddXp === 'function') {
+      var hasBoss = G.monsters ? G.monsters.some(function(m) { return m.typeId && (m.typeId.indexOf('boss') >= 0 || m.typeId === 'elite'); }) : false;
+      if (hasBoss) heroAddXp(1); // boss/精英击杀+1经验
+    }
     if (G.dayHalf === 0) {
       G.dayHalf = 1; G.round = 1; G.hitCount = 0;
       G.slots.forEach(s => s.used = false);

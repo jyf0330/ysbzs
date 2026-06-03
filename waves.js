@@ -108,7 +108,7 @@ function spawnWaveForDay(day, phase) {
     }
     assignSpawnPositions(palWave.monsters, palWave.spawnSize);
     G.monsters = palWave.monsters;
-    glog('⚔️ 第' + day + '天' + (phase === 'morning' ? '早上' : '下午') + '：' + G.monsters.length + '只帕鲁怪物出击！');
+    glog('⚔️ 第' + day + '天' + (phase === 'morning' ? '早上' : '下午') + '：' + G.monsters.length + '只帕鲁怪物出击！');; if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_battle_start', {});
     return;
   }
   // fallback: 旧抽象怪物系统
@@ -119,7 +119,7 @@ function spawnWaveForDay(day, phase) {
   }
   assignSpawnPositions(wavePlan.monsters, wavePlan.spawnSize);
   G.monsters = wavePlan.monsters.map((m, i) => ({ id: `d${day}_${phase}_${i}`, ...m }));
-  glog(`⚔️ 第${day}天${phase === 'morning' ? '早上' : '下午'}：${G.monsters.length}只怪物出击！`);
+  glog(`⚔️ 第${day}天${phase === 'morning' ? '早上' : '下午'}：${G.monsters.length}只怪物出击！`);; if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_battle_start', {});
 }
 
 /**

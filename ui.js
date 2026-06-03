@@ -1794,8 +1794,8 @@ function renderShop(){
       const def=UNIT_DEFS[u.defId]; if(!def)return'';
       const lvl=def.levels[u.level];
       const nextLvl=def.levels[u.level+1]||null;
-      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
-      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
+      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${TIER_MULT[slot.tier]}</span></div>`).join('');
+      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
       return `<div class="roster-card">
         <div class="roster-line"><span style="font-size:15px;font-weight:bold;color:#c4a860">⭐ ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
         <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
@@ -1807,8 +1807,8 @@ function renderShop(){
       const def=UNIT_DEFS[u.defId]; if(!def)return'';
       const lvl=def.levels[u.level];
       const nextLvl=def.levels[u.level+1]||null;
-      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
-      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
+      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${TIER_MULT[slot.tier]}</span></div>`).join('');
+      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
       return `<div class="roster-card" style="opacity:0.8">
         <div class="roster-line"><span style="font-size:15px;color:var(--c-text2)">💤备战 ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
         <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
@@ -1830,15 +1830,15 @@ function renderShop(){
         const toMerge=Math.max(0,3-(ownCnt+1));
         const mergeHint=(ownCnt>=2)?'购买后可立刻合成升级':(ownCnt===1?`再补 ${toMerge} 张可合成`:'作为新核心起点');
         const tags=(def.tags||[]).slice(0,3).join(' · ');
-        const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join('');
-        const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
+        const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${TIER_MULT[slot.tier]}</span></div>`).join('');
+        const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${TIER_MULT[slot.tier]}</span></div>`).join(''):'';
         return`<div class="unit-card">
           <div class="unit-head">
             <div class="unit-meta">
               <div class="unit-icon" style="background:${EC[def.element]}">${def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨'}</div>
               <div>
                 <div class="unit-name" style="color:${EC[def.element]}">${def.name}</div>
-                <div class="unit-tags">HP:${lvl.hp} · ${lvl.slots.length}槽 · ${tags||'基础单位'}</div>
+                <div class="unit-tags">${item.quality||'青铜'} · ${item.size||'medium'}(${item.slotSize||1}格) · HP:${lvl.hp} · ${lvl.slots.length}槽 · ${tags||'基础单位'}</div>
               </div>
             </div>
             <span class="sic">💰${item.cost}</span>

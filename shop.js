@@ -30,6 +30,11 @@ function openShop() {
   syncHeroHPToUnits();
   genShop();
   syncUnitsToHeroes();
+  // 商店事件：不占商店10格，不随刷新重置
+  if (!G.shopEvents || G.shopEvents.length === 0) {
+    G.shopEvents = rollShopEvents();
+  }
+  if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_shop_enter', {});
   renderShop();
   document.getElementById('so').style.display = 'block';
 }
@@ -173,12 +178,15 @@ function buyUnit(itemId) {
     u.instanceId !== newUnit.instanceId && u.defId === (newUnit.unitId || newUnit.defId) && u.active
   );
   const unitName = UNIT_DEFS[defId] ? UNIT_DEFS[defId].name : defId;
+  const qualityLabel = item.quality || '青铜';
   if (existing) {
     mergeUnits(newUnit, existing);
-    glog('🛒 购买' + unitName + '，自动合成！');
+    glog('🛒 购买' + qualityLabel + unitName + '，自动合成！');
+    if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_pal_gained', { gainedUnit: newUnit });
   } else {
     if (activeCount >= 2) newUnit.active = false;
-    glog('🛒 购买' + unitName + (newUnit.active ? '，上阵' : '，放入备战'));
+    glog('🛒 购买' + qualityLabel + unitName + (newUnit.active ? '，上阵' : '，放入备战'));
+    if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_pal_gained', { gainedUnit: newUnit });
   }
   syncUnitsToHeroes();
   renderShop();
@@ -222,6 +230,7 @@ function closeShop() {
   document.getElementById('so').style.display = 'none';
   G.shopFrozen = { units: new Set(), consumables: new Set() };
   G.slots.forEach(s => s.used = false);
+  G.shopEvents = []; // 关闭商店时清除事件
   if (G.dayHalf === 1) {
     G.dayHalf = 2;
     G.round = 1; G.hitCount = 0;
@@ -230,6 +239,7 @@ function closeShop() {
     glog('☀️ 第' + G.day + '天下午·更多怪物来袭！');
   } else {
     G.day++;
+    if (typeof heroAddXp === 'function') heroAddXp(1); // 每天结束+1经验
     if (G.enemyCastle) G.enemyCastle.hp = G.enemyCastle.maxHp;
     if (G.day > 10) {
       G.runVictory = true;
@@ -283,6 +293,123 @@ function addLevelupUnit() {
     frozen: false,
   });
   G.nextUnitId++;
+}
+
+// ========== 商店事件系统 ==========
+
+/** 滚动 0-3 个可用商店事件 */
+function rollShopEvents() {
+  var ec = (typeof getExternalEventConfig === 'function') ? getExternalEventConfig() : null;
+  if (!ec || !ec.event_master) return [];
+  var pool = ec.event_master.filter(function(e) {
+    var d = G.day || 1;
+    return (e.min_day || 1) <= d && d <= (e.max_day || 10);
+  });
+  if (pool.length === 0) return [];
+  var count = rngInt(0, pool.length < 3 ? pool.length + 1 : 4); // 0-3
+  var shuffled = pool.slice().sort(function() { return Math.random() - 0.5; });
+  var selected = [];
+  for (var i = 0; i < count && i < shuffled.length; i++) {
+    if (G._doneEvents && G._doneEvents.indexOf(shuffled[i].event_id) !== -1) continue;
+    selected.push(shuffled[i]);
+  }
+  return selected;
+}
+
+function getEventOptions(eventId) {
+  var ec = (typeof getExternalEventConfig === 'function') ? getExternalEventConfig() : null;
+  if (!ec || !ec.event_option) return [];
+  return ec.event_option.filter(function(o) { return o.event_id === eventId; });
+}
+
+function getEventRewards(rewardGroup) {
+  var ec = (typeof getExternalEventConfig === 'function') ? getExternalEventConfig() : null;
+  if (!ec || !ec.event_reward) return [];
+  return ec.event_reward.filter(function(r) { return r.reward_group === rewardGroup; });
+}
+
+function executeEventReward(reward) {
+  if (!G._doneEvents) G._doneEvents = [];
+  switch (reward.reward_type) {
+    case 'gain_gold':
+      G.gold = (G.gold || 0) + (reward.amount || 2);
+      glog('💰 事件奖励：+' + (reward.amount || 2) + ' 金币');
+      break;
+    case 'gain_pal':
+      if (reward.pool_id === 'copy_owned_pal' && G.ownedUnits.length > 0) {
+        var src = G.ownedUnits[Math.floor(Math.random() * G.ownedUnits.length)];
+        if (src) {
+          var copy = createPalUnitInstance({ unitId: src.defId, faction: 'player', quality: src.quality || '青铜' });
+          if (copy) { copy.instanceId = 'u_' + (G.nextUnitId++); copy.slotSize = src.slotSize || 1; G.ownedUnits.push(copy); glog('🎁 事件奖励：复制 ' + (src.name || src.defId)); }
+        }
+      } else {
+        // 从 Pal 池随机选一只
+        var extP = getExternalOnlyPool ? getExternalOnlyPool() : null;
+        var pool = extP ? extP['day' + G.day + '_midday'] : null;
+        if (pool && pool.length > 0) {
+          var uid = pool[Math.floor(Math.random() * pool.length)];
+          var pal = createPalUnitInstance({ unitId: uid, faction: 'player', quality: reward.quality_hint || '青铜' });
+          if (pal) { pal.instanceId = 'u_' + (G.nextUnitId++); pal.slotSize = pal.slotSize || 1; G.ownedUnits.push(pal); glog('🎁 事件奖励：获得 ' + (pal.name || uid)); }
+        }
+      }
+      break;
+    case 'gain_relic':
+      var relicId = 'relic_coin_bag'; // 默认
+      var rc = (typeof getExternalRelicConfig === 'function') ? getExternalRelicConfig() : null;
+      if (rc && rc.relic_master) {
+        var eligible = rc.relic_master.filter(function(r) { return G._doneEvents.indexOf('relic_' + r.relic_id) === -1; });
+        if (eligible.length > 0) relicId = eligible[Math.floor(Math.random() * eligible.length)].relic_id;
+      }
+      if (typeof gainRelic === 'function') gainRelic(relicId, '事件遗物');
+      break;
+    case 'buff_pal':
+      if (G.ownedUnits.length > 0) {
+        var target = G.ownedUnits[Math.floor(Math.random() * G.ownedUnits.length)];
+        if (reward.quality_hint && reward.quality_hint.indexOf('hp') !== -1) {
+          var hpBuff = parseInt(reward.quality_hint.match(/\d+/)) || 3;
+          target.maxHp += hpBuff; target.hp += hpBuff;
+          glog('🎁 事件奖励：' + (target.name || target.defId) + ' HP+' + hpBuff);
+        } else if (reward.quality_hint && reward.quality_hint.indexOf('atk') !== -1) {
+          target.atk = (target.atk || 0) + (reward.amount || 1);
+          glog('🎁 事件奖励：' + (target.name || target.defId) + ' ATK+' + (reward.amount || 1));
+        }
+      }
+      break;
+    case 'upgrade_pal':
+      if (G.ownedUnits.length > 0) {
+        var t = G.ownedUnits[Math.floor(Math.random() * G.ownedUnits.length)];
+        if (t.level < 4) { t.level++; glog('🎁 事件奖励：' + (t.name || t.defId) + ' 升级至 Lv' + t.level); }
+      }
+      break;
+    case 'capacity_up':
+      glog('🎁 事件奖励：背包容量扩大');
+      break;
+    default:
+      glog('🎁 事件奖励：' + (reward.reward_type || '未知'));
+  }
+  if (reward.reward_group && G._doneEvents.indexOf(reward.reward_group) === -1) G._doneEvents.push(reward.reward_group);
+  syncUnitsToHeroes();
+  refreshUI();
+}
+
+/** 执行事件选项（从 UI 调用） */
+function doEventOption(eventId, optionId) {
+  var opts = getEventOptions(eventId);
+  var opt = opts.find(function(o) { return o.option_id === optionId; });
+  if (!opt) return;
+  // 扣费
+  if (opt.cost_type === 'gold' && opt.cost_value > 0) {
+    if ((G.gold || 0) < opt.cost_value) { showMsg('💰 金币不足！'); return; }
+    G.gold -= opt.cost_value;
+  }
+  // 执行奖励
+  var rewards = getEventRewards(opt.reward_group);
+  rewards.forEach(function(r) { executeEventReward(r); });
+  // 标记事件已做
+  if (!G._doneEvents) G._doneEvents = [];
+  G._doneEvents.push(eventId);
+  G.shopEvents = (G.shopEvents || []).filter(function(e) { return e.event_id !== eventId; });
+  renderShop();
 }
 
 // 旧接口别名

@@ -31,8 +31,10 @@
 | `data.js` | 数据定义 |
 | `sim.js` | 战斗模拟 |
 | `test.js` | 自动化测试（TDD 基准） |
-| `external-data/*.json` | 外置配置文件 |
-| `external-tables.js` | 外置配置加载 |
+| `external-data/*.json` | 外置配置文件（手写补丁/别名） |
+| `external-data/generated-json/*.json` | Excel 策划表自动导出产物（英雄、Pal、商店、遗物、事件、遭遇） |
+| `external-tables.js` | 外置配置加载（加载 generated-json 的桥梁） |
+| `scripts/export_excel_to_json.py` | Excel → JSON 导出脚本 |
 
 ## 输出要求
 

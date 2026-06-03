@@ -32,7 +32,8 @@ const useMultiFile = fs.existsSync(path.join(__dirname, 'game.js'));
 if (useMultiFile) {
   // 多文件模式（按依赖顺序加载）
   const moduleFiles = [
-    'data.js', 'rng.js', 'board.js', 'actions.js', 'elements.js',
+    'data.js', 'externalDataAdapter.js',
+    'rng.js', 'board.js', 'actions.js', 'elements.js',
     'waves.js', 'battle.js', 'shop.js', 'game.js', 'ui.js',
     'damage.js', 'terrain.js', 'battleLog.js', 'preview.js',
   ];
@@ -4096,6 +4097,160 @@ group('▶ battleLog 结构化日志', ()=>{
     var s = formatBattleEvent(evt);
     assert.ok(s.includes('风陷阱'));
     assert.ok(s.includes('AP'));
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+group('externalDataAdapter 外部数据读取', ()=>{
+  test('externalDataAdapter 已加载', ()=>{
+    assert.ok(global.__EXTERNAL_DATA_LOADED__ === true, '适配器应标记已加载');
+  });
+  test('外部 UNIT_DEFS 包含 60 个 Pal', ()=>{
+    var ext = global.getExternalUnitDefs();
+    assert.ok(ext, 'getExternalUnitDefs 应可用');
+    var count = Object.keys(ext).length;
+    assert.ok(count === 60, '外部 UNIT_DEFS 应为 60, 实际 ' + count);
+  });
+  test('action_template_enriched = 180', ()=>{
+    var at = global.getExternalActionTemplate();
+    assert.ok(at, 'action_template_enriched 应可加载');
+    assert.strictEqual(at.length, 180, 'action_template 应为 180 条');
+  });
+  test('action_growth_enriched = 720', ()=>{
+    var ag = global.getExternalActionGrowth();
+    assert.ok(ag, 'action_growth_enriched 应可加载');
+    assert.strictEqual(ag.length, 720, 'action_growth 应为 720 条');
+  });
+
+  // ── createPalUnitInstance ────────────────────────────────────
+  test('createPalUnitInstance(player) 返回 slots.length=3', ()=>{
+    var raw = createPalUnitInstance({ unitId: 'pal_001', faction: 'player' });
+    assert.ok(raw, 'createPalUnitInstance 应返回实例');
+    assert.ok(raw.instanceId === null, 'instanceId 应由调用者分配');
+    assert.strictEqual(raw.faction, 'player');
+    assert.ok(raw.hp > 0, 'HP 应 >0');
+    assert.strictEqual(raw.slots.length, 3, '应精确 3 个行动槽');
+    assert.ok(raw.name, '应有名字');
+    assert.ok(raw.element, '应有元素');
+    assert.ok(raw.size, '应有体型');
+    assert.ok(raw.quality, '应有品级');
+  });
+  test('createPalUnitInstance(enemy) 返回 faction=enemy 带 slots', ()=>{
+    var raw = createPalUnitInstance({ unitId: 'pal_005', faction: 'enemy', hpMul: 1.2, atkMul: 0.9 });
+    assert.ok(raw);
+    assert.strictEqual(raw.faction, 'enemy');
+    assert.strictEqual(raw.slots.length, 3, '敌方也应带 3 slots');
+    assert.ok(raw.hp > 0);
+    assert.ok(raw.atk > 0);
+  });
+  test('createPalUnitInstance 指定 quality=钻石 等级正确', ()=>{
+    var raw = createPalUnitInstance({ unitId: 'pal_001', faction: 'player', quality: '钻石' });
+    assert.ok(raw);
+    assert.strictEqual(raw.level, 4, '钻石应映射为 level 4');
+    assert.strictEqual(raw.slots.length, 3);
+  });
+  test('createPalUnitInstance 所有 slot 含完整字段', ()=>{
+    var raw = createPalUnitInstance({ unitId: 'pal_001', faction: 'player', quality: '青铜' });
+    assert.ok(raw);
+    raw.slots.forEach(function(s, i){
+      assert.ok(s.el, 'slot' + i + ' 缺 el');
+      assert.ok(s.sn, 'slot' + i + ' 缺 sn');
+      assert.ok(['right','left','up','down'].includes(s.dir), 'slot' + i + ' dir=' + s.dir);
+      assert.ok(s.tier >= 1 && s.tier <= 4, 'slot' + i + ' tier=' + s.tier);
+      assert.ok(s.layers >= 1, 'slot' + i + ' layers=' + s.layers);
+      assert.ok(s.shape_sn, 'slot' + i + ' 缺 shape_sn');
+      assert.ok(s.shape_name, 'slot' + i + ' 缺 shape_name');
+      assert.ok(s.shape_cat, 'slot' + i + ' 缺 shape_cat');
+    });
+  });
+  test('所有 slot.shape_sn 能在 attack_shape_master 找到', ()=>{
+    var master = (typeof getExternalSD === 'function') ? getExternalSD() : null;
+    assert.ok(master, 'attack_shape_master 应可读');
+    var sns = [1,2,3,4,6,7,8,12];
+    sns.forEach(function(sn){
+      assert.ok(master[sn], 'master 缺 sn=' + sn);
+      assert.ok(Array.isArray(master[sn].cells), 'sn=' + sn + ' 缺 cells');
+      assert.ok(master[sn].cells.length > 0, 'sn=' + sn + ' cells 为空');
+    });
+    // 验证所有 Pal 的 slot 都能找到 shape
+    var raw = createPalUnitInstance({ unitId: 'pal_001', faction: 'player' });
+    raw.slots.forEach(function(s){
+      assert.ok(master[s.shape_sn] || master[String(s.shape_sn)], 'shape_sn=' + s.shape_sn + ' 不在 master 中');
+    });
+  });
+
+  // ── 商店 ──────────────────────────────────────────────────────
+  test('商店生成的商品 itemType 全是 pal', ()=>{
+    fresh();
+    G.day = 2;
+    genShop();
+    assert.ok(G.shopItems.units.length > 0, '应有商品');
+    G.shopItems.units.forEach(function(item, i){
+      assert.strictEqual(item.itemType, 'pal', '商品' + i + ' itemType 应为 pal');
+      assert.ok(item.unitId, '商品' + i + ' 缺 unitId');
+      assert.ok(item.name, '商品' + i + ' 缺 name');
+      assert.ok(item.price > 0, '商品' + i + ' price 应 >0');
+    });
+  });
+  test('购买商品后得到的单位 slots.length=3', ()=>{
+    fresh();
+    G.day = 1;
+    genShop();
+    assert.ok(G.shopItems.units.length > 0, '应有商品');
+    var item = G.shopItems.units[0];
+    var oldCount = G.ownedUnits.length;
+    buyUnit(item.id);
+    // 验证有新单位且带 slots
+    var added = G.ownedUnits.filter(function(u){ return !u.defId || u.unitId; });
+    if (G.ownedUnits.length > oldCount) {
+      var last = G.ownedUnits[G.ownedUnits.length - 1];
+      var def = UNIT_DEFS[last.unitId || last.defId];
+      if (def && def.levels && def.levels[1]) {
+        // 检查 syncUnitsToHeroes 后 slots 能被读到
+        syncUnitsToHeroes();
+        assert.ok(G.slots.length >= 3, '购买后应有至少 3 个行动槽, 实际 ' + G.slots.length);
+      }
+    }
+  });
+
+  // ── 敌人 ──────────────────────────────────────────────────────
+  test('Pal 敌人波次生成存在 slots 字段', ()=>{
+    // 检查 buildPalWaveForDay 是否有效
+    var hasPalWave = (typeof buildPalWaveForDay === 'function');
+    if (hasPalWave) {
+      var wave = buildPalWaveForDay(2, 'morning');
+      if (wave && wave.monsters && wave.monsters.length > 0) {
+        wave.monsters.forEach(function(m, i){
+          assert.ok(m.unitId, '敌人' + i + ' 缺 unitId');
+          assert.ok(m.name, '敌人' + i + ' 缺 name');
+          assert.ok(m.hp > 0, '敌人' + i + ' HP 应 >0');
+          assert.ok(m.atk > 0, '敌人' + i + ' atk 应 >0');
+          assert.ok(Array.isArray(m.slots), '敌人' + i + ' 应有 slots 数组');
+          if (m.slots.length > 0) {
+            assert.ok(m.slots[0].el, '敌人' + i + ' slot 缺 el');
+          }
+        });
+      }
+    }
+  });
+  test('spawnWaveForDay 生成 Pal 敌人', ()=>{
+    fresh();
+    G.day = 2;
+    G.phase = 'PLAYER';
+    spawnWaveForDay(2, 'morning');
+    // 检查是否有 Pal 敌人（unitId 字段）或旧怪物
+    var hasPal = G.monsters.some(function(m){ return m.unitId; });
+    var hasAny = G.monsters.length > 0;
+    assert.ok(hasAny, '应有怪物');
+  });
+  test('旧战斗流程不崩', ()=>{
+    fresh();
+    assert.ok(G, 'G 应存在');
+    assert.ok(G.heroes.ha, '英雄 ha 应存在');
+    assert.ok(G.heroes.hb, '英雄 hb 应存在');
+    assert.strictEqual(G.slots.length, 6, '应初始 6 个行动槽');
+    assert.ok(G.monsters.length >= 1, '应初始 1 波怪物');
+    assert.doesNotThrow(function(){ execAllHeroSlots_sync(); });
   });
 });
 

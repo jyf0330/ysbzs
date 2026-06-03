@@ -64,12 +64,20 @@ function genShop() {
     const pool = getShopPoolIds(tier) || (UNIT_TIER_POOL[tier] || []);
     for (let i = 0; i < target; i++) {
       if (pool.length === 0) break;
-      const defId = pool[(i + G.nextUnitId) % pool.length];
+      var defId = pool[(i + G.nextUnitId) % pool.length];
       const def = UNIT_DEFS[defId];
+      if (!def) continue;
       G.shopItems.units.push({
         id: `su_${G.nextUnitId}_${tier}_${i}`,
-        defId,
+        itemType: 'pal',
+        unitId: defId,
+        defId: defId,
+        name: def.name || defId,
+        size: def.size || 'medium',
+        quality: def.grade || '青铜',
+        price: calcUnitPrice(def),
         cost: calcUnitPrice(def),
+        tags: def.tags || [],
         frozen: false,
       });
     }
@@ -85,17 +93,35 @@ function buyUnit(itemId) {
   G.gold -= item.cost;
   G.shopItems.units.splice(idx, 1);
   const activeCount = G.ownedUnits.filter(u => u.active).length;
-  const newUnit = addOwnedUnit(item.defId, activeCount < 2 ? { r: 6 + activeCount, c: 0 } : null);
+
+  var newUnit = null;
+  var defId = item.unitId || item.defId;
+  var pos = activeCount < 2 ? { r: 6 + activeCount, c: 0 } : null;
+
+  // Pal 商品用工厂创建，旧商品 fallback addOwnedUnit
+  if (item.itemType === 'pal' && typeof createPalUnitInstance === 'function') {
+    var raw = createPalUnitInstance({ unitId: defId, faction: 'player', quality: item.quality || 1, position: pos });
+    if (raw) {
+      raw.instanceId = 'u_' + (G.nextUnitId++);
+      G.ownedUnits.push(raw);
+      newUnit = raw;
+    }
+  }
+  if (!newUnit) {
+    newUnit = addOwnedUnit(defId, pos);
+  }
   if (!newUnit) return;
+
   const existing = G.ownedUnits.find(u =>
-    u.instanceId !== newUnit.instanceId && u.defId === newUnit.defId && u.active
+    u.instanceId !== newUnit.instanceId && u.defId === (newUnit.unitId || newUnit.defId) && u.active
   );
+  const unitName = UNIT_DEFS[defId] ? UNIT_DEFS[defId].name : defId;
   if (existing) {
     mergeUnits(newUnit, existing);
-    glog(`🛒 购买${UNIT_DEFS[item.defId].name}，自动合成！`);
+    glog('🛒 购买' + unitName + '，自动合成！');
   } else {
     if (activeCount >= 2) newUnit.active = false;
-    glog(`🛒 购买${UNIT_DEFS[item.defId].name}${newUnit.active ? '，上阵' : '，放入备战'}`);
+    glog('🛒 购买' + unitName + (newUnit.active ? '，上阵' : '，放入备战'));
   }
   syncUnitsToHeroes();
   renderShop();
@@ -176,8 +202,15 @@ function addLevelupUnit() {
   var def = UNIT_DEFS[defId];
   G.shopItems.units.push({
     id: 'su_' + G.nextUnitId,
+    itemType: 'pal',
+    unitId: defId,
     defId: defId,
+    name: def.name || defId,
+    size: def.size || 'medium',
+    quality: def.grade || '青铜',
+    price: calcUnitPrice(def),
     cost: calcUnitPrice(def),
+    tags: def.tags || [],
     frozen: false,
   });
   G.nextUnitId++;

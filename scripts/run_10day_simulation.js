@@ -46,7 +46,7 @@ global.__TEST__ = true;
 
 // ========== 加载游戏模块 ==========
 const ROOT = path.join(__dirname, '..');
-const MODS = ['data.js','rng.js','board.js','actions.js','elements.js','waves.js','battle.js','shop.js','game.js','ui.js','damage.js','terrain.js','battleLog.js'];
+const MODS = ['data.js','rng.js','board.js','actions.js','elements.js','waves.js','battle.js','shop.js','game.js','ui.js','damage.js','terrain.js','battleLog.js','preview.js'];
 for (const f of MODS) {
   const fp = path.join(ROOT, f);
   if (!fs.existsSync(fp)) continue;

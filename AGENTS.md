@@ -1,6 +1,8 @@
 # AGENTS.md · 元素背包史 / ysbzs
 
-First read `docs/02_CURRENT_WORKFLOW.md`: hard triggers are `Goal`, `diff`, and `git-c`.
+First read `docs/02_CURRENT_WORKFLOW.md`: hard triggers are `Goal`, `策划`, `diff`, and `git-c`.
+
+如果指令以「策划」或 `diff` 结尾 → 只读/策划模式，不改代码。
 
 <!-- ywh: web-game -->
 

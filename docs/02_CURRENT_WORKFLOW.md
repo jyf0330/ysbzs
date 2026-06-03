@@ -4,21 +4,42 @@ Use this file as project-level routing instructions.
 
 ## Hard Triggers
 
-Only four hard triggers exist: `Goal`, `diff`, `git-c`, and `同步内容`.
+| 触发词 | 模式 | 入口 |
+|--------|------|------|
+| `Goal` <目标描述> | 默认执行 | 见本节 |
+| `diff` | 只读分析，出 diff 不动代码 | 见本节 |
+| <目标> `策划` | 只做方案/规则/文档，不改代码 | 见本节 |
+| <目标> `diff` | 同上只读模式 | 见本节 |
+| `git-c` | 批量收口提交 | 见本节 |
+| `同步内容` | 表格同步 | 见本节 |
 
 ## Goal
 
-If the user gives a clear objective, enter `Goal` mode.
+用户说一个开发目标 → 默认按 Goal 推进，不逐步询问。
 
 Do not require words like "start", "continue", or "execute".
 Do not ask for step-by-step approval.
 Do not pause unless a High-Risk Exception applies.
 
-Run:
+启动前必须：
 
 ```text
-read entry docs -> classify task -> trigger skills -> plan steps -> execute -> verify -> update required docs -> report
+1. git status --short                           # 检查 dirty
+2. read tasks/index.md                          # 读任务总览
+3. read tasks/doing/*.md tasks/paused/*.md      # 读任务卡
+4. check related_files overlap                  # FILE_CONFLICT_STOP
+5. 无冲突 → 推进；有冲突 → 暂停输出报告
 ```
+
+推进流程：
+
+```text
+read entry docs -> classify -> check tasks/ + git status ->
+resolve conflicts -> plan -> execute -> verify (node test.js) ->
+update docs -> if auto-commit conditions met -> commit
+```
+
+**详细执行规则（Goal 默认执行、不机械执行、核心层/显示层分离、模块拆分、四层棋盘格）见 `docs/00_AI_START_HERE.md` →「Goal 执行规则」章节。**
 
 ## diff
 
@@ -32,6 +53,21 @@ Run:
 
 ```text
 classify task -> trigger planning skills -> propose diff -> report
+```
+
+## 策划
+
+如果用户指令以「策划」结尾（或含 `diff` 后缀），进入策划/只读模式。
+
+- 只做方案分析、规则收束、表格设计、文档建议
+- **不改代码、不提交、不进入实现**
+- 输出可以是：方案文档、规则冲突报告、数据流分析、表格设计建议
+- 除非用户明确要求执行，否则不进入实现
+
+Run:
+
+```text
+read project entry -> read task cards -> analyze current state -> output plan / diff / suggestion -> stop
 ```
 
 ## git-c
@@ -143,8 +179,9 @@ Do not edit another tool's skill directory.
 | 当前 ACTIVE 任务卡 | `tasks/doing/` 中 |
 | PAUSED 任务卡 | `tasks/paused/` 中 |
 | 批量收口提交细则 | `tasks/README.md` → 「git-c 集成细则」 |
+| Goal 执行规则、核心层分离、模块拆分 | `docs/00_AI_START_HERE.md` → 「Goal 执行规则」 |
 
-每次开始任务或修改文件前，必须先读取 `tasks/index.md` 检查任务状态和文件冲突。`git-c` 必须先读任务卡再分组提交。
+每次开始任务或修改文件前，必须先读取 `tasks/index.md` 检查任务状态和文件冲突。`git-c` 必须先读任务卡再分组提交。以「策划」或 `diff` 结尾的指令进入只读/策划模式，不改代码。
 
 ## 冲突硬停规则
 

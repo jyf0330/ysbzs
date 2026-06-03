@@ -28,6 +28,17 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 
 每次开始任务或修改文件前，先读 `tasks/index.md` 检查冲突。
 
+## 自动提交规则
+
+当任务满足以下**所有**条件时，AI 应自行提交，**不需要请示用户**：
+1. 任务卡已记录（有 `task_id` / `commit_plan`）
+2. 测试全部通过（`node test.js` 无失败）
+3. 暂存区文件全部归属当前任务 `related_files`
+4. 无 FILE_CONFLICT_STOP 触发
+5. 提交信息按任务卡 `commit_plan` 格式
+
+不满足任一条件 → 输出 Commit Plan 让用户确认。
+
 ## 核心纪律
 
 - 一个任务只允许一个 AI 修改同一代码文件。

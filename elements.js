@@ -6,11 +6,13 @@
 
 // ========== 元素层管理 ==========
 
+// 旧式单元素操作（仅 UI 物品放置使用）
+// 注意：普通行动块的元素层由 addElementLayers()/commitPlayerActionsToElementField() 统一处理
 function addEl(pos, el) {
   const cell = G.board[pos.r][pos.c];
   if (!cell.el || cell.stk === 0) { cell.el = el; cell.stk = 1; }
   else if (cell.el === el) { if (cell.stk < MAX_STK) cell.stk++; }
-  else if (ADV[el] === cell.el) { doExplode(pos); cell.el = el; cell.stk = 1; }
+  // EL_CROSS_REACT 已废弃：同一格可多元素并存，互克不触发覆盖/爆炸
 }
 
 function explDmg(stk) { return stk * (stk + 1) / 2; }
@@ -102,7 +104,8 @@ function addElementLayers(pos, el, n) {
   syncBoardElementFromElementCells(pos);
 }
 
-// 旧式引爆（addEl 跨元素反应触发）
+// 旧式引爆（仅 addEl 触发，UI 物品放置使用）
+// EL_CROSS_REACT 已废弃，不再通过跨元素反应触发 doExplode
 // 注意：普通行动块的伤害由 settleExplosions() 统一结算
 function doExplode(pos) {
   const cell = G.board[pos.r][pos.c];
@@ -198,8 +201,8 @@ function getCastleDamageReduce() {
 }
 
 function hasCrossExplosion() {
+  // 钻石火魔在场上或背包/备战区时，火引爆范围扩展为十字 5 格
   return (G.ownedUnits || []).some(u => {
-    if (!u.active) return false;
     const p = UNIT_DEFS[u.defId]?.passive;
     return p?.type === 'crossExplosion';
   });

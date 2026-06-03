@@ -472,22 +472,22 @@ group('战斗系统验收测试 (10条规则)', ()=>{
     assert.strictEqual(G.board[5][5].el,'fire');
     assert.strictEqual(G.board[5][5].stk,2);
   });
-  test('验收-2: 火5层+水自动引爆，基础伤害=15', ()=>{
-    fresh(); addOwnedUnit('fire_demon',{r:2,c:2}); G.ownedUnits[G.ownedUnits.length-1].active=true;
+  test('验收-2: 火5层+水不触发自动引爆（EL_CROSS_REACT 已废弃）', ()=>{
+    fresh();
     for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
     G.monsters[0].pos={r:5,c:6}; G.monsters[0].hp=20; G.monsters[0].el=null;
     G.monsters[1].pos={r:7,c:7};
-    addEl({r:5,c:5},'water'); // 水克火 → 自动引爆
+    addEl({r:5,c:5},'water'); // EL_CROSS_REACT 已废弃：互克不再触发爆炸
     settleDamage();
-    assert.strictEqual(G.monsters[0].hp,5,'20-15=5');
+    assert.strictEqual(G.monsters[0].hp,20,'添加不同元素不触发自动引爆');
   });
-  test('验收-3: 引爆后原格变水屏1', ()=>{
+  test('验收-3: 落水不触发互克，原火格不变', ()=>{
     fresh();
     for(let i=0;i<5;i++) addEl({r:5,c:5},'fire');
     G.monsters[0].pos={r:7,c:7}; G.monsters[1].pos={r:7,c:7};
     addEl({r:5,c:5},'water');
-    assert.strictEqual(G.board[5][5].el,'water');
-    assert.strictEqual(G.board[5][5].stk,1);
+    assert.strictEqual(G.board[5][5].el,'fire','落水不触发互克，原火格不变');
+    assert.strictEqual(G.board[5][5].stk,5,'落水不触发互克，原火层数不变');
   });
   test('验收-4: 引爆范围包含中心和四个方向共5格', ()=>{
     const c=explCells({r:5,c:5});

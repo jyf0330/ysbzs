@@ -249,19 +249,6 @@ function buildCellSummary(unit, elements, terrain) {
   return parts.join(' | ');
 }
 
-/** 格式化战斗日志事件 */
-function formatBattleLog(event) {
-  if (!event) return '';
-  switch (event.type) {
-    case 'trap_trigger': {
-      var cfg = TRAP_CONFIG[event.element] || {};
-      var hpText = event.oldHp !== undefined ? 'HP ' + event.oldHp + '→' + event.newHp : '';
-      var apText = event.apDelta ? '，AP ' + event.apDelta : '';
-      return '怪' + event.unitId + ' 踩中' + cfg.name + event.layers + (hpText ? '，' + hpText : '') + apText;
-    }
-    default: return event.type;
-  }
-}
 
 function computeMonsterActionPreview(){
   const monActMap={},heroIncomingDmg={},summonIncomingDmg={},monCardMap={};

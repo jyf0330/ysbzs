@@ -83,11 +83,15 @@ function resolveTerrainOnEnter(monster, pos) {
     monster.hp = Math.max(0, monster.hp - dmg);
     if (monster.ap !== undefined) monster.ap = Math.max(0, monster.ap + apDelta);
 
-    if (dmg > 0) glog('🔥 ' + monster.name + ' 踩中' + (cfg.name || el) + layers + '！HP ' + oldHp + '→' + monster.hp + (apDelta ? '，AP ' + oldAp + '→' + (monster.ap||3) : ''));
-
-    if (monster.hp <= 0) {
-      monster.dead = true;
-      glog('💀 ' + monster.name + ' 被陷阱击杀！');
+    // 构建结构化事件 → battleLog.js 负责格式化
+    if (dmg > 0 || apDelta) {
+      if (monster.hp <= 0) {
+        monster.dead = true;
+        glog(formatBattleEvent({ type: 'trap_kill', unitName: monster.name }));
+      } else {
+        var evt = buildTrapTriggerEvent(monster, pos, el, layers, dmg, oldHp, monster.hp, apDelta);
+        glog(formatBattleEvent(evt));
+      }
     }
   });
 

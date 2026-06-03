@@ -34,7 +34,7 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'rng.js', 'board.js', 'actions.js', 'elements.js',
     'waves.js', 'battle.js', 'shop.js', 'game.js', 'ui.js',
-    'damage.js', 'terrain.js',
+    'damage.js', 'terrain.js', 'battleLog.js',
   ];
   for (const f of moduleFiles) {
     const fp = path.join(__dirname, f);
@@ -4038,6 +4038,43 @@ group('▶ 地形陷阱（四层棋盘）', ()=>{
     assert.ok(typeof info.summary==='string'&&info.summary.length>0,'概要非空');
   });
 });
+// ═══════════════════════════════════════════════════════════════
+// battleLog 结构化日志
+group('▶ battleLog 结构化日志', ()=>{
+
+  test('BLOG-1: buildTrapTriggerEvent 结构正确', ()=>{
+    var evt = buildTrapTriggerEvent({id:'m1',name:'测试怪'},{r:5,c:5},'fire',3,6,20,14,0);
+    assert.strictEqual(evt.type,'trap_trigger');
+    assert.strictEqual(evt.unitName,'测试怪');
+    assert.strictEqual(evt.element,'fire');
+    assert.strictEqual(evt.layers,3);
+    assert.strictEqual(evt.damage,6);
+    assert.strictEqual(evt.oldHp,20);
+    assert.strictEqual(evt.newHp,14);
+  });
+
+  test('BLOG-2: formatTrapTrigger 含元素名和伤害', ()=>{
+    var evt = {type:'trap_trigger',unitName:'测试怪',element:'fire',layers:3,oldHp:20,newHp:14,apDelta:0};
+    var s = formatBattleEvent(evt);
+    assert.ok(s.includes('测试怪'));
+    assert.ok(s.includes('火陷阱'));
+    assert.ok(s.includes('HP 20→14'));
+  });
+
+  test('BLOG-3: formatTrapKill 含击杀', ()=>{
+    var s = formatBattleEvent({type:'trap_kill',unitName:'测试怪'});
+    assert.ok(s.includes('击杀'));
+    assert.ok(s.includes('测试怪'));
+  });
+
+  test('BLOG-4: 风陷阱含 AP 变化', ()=>{
+    var evt = {type:'trap_trigger',unitName:'测试怪',element:'wind',layers:2,oldHp:20,newHp:17,apDelta:-1};
+    var s = formatBattleEvent(evt);
+    assert.ok(s.includes('风陷阱'));
+    assert.ok(s.includes('AP'));
+  });
+});
+
 Promise.all(_asyncTests).then(() => {
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);

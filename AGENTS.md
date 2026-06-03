@@ -61,4 +61,5 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 
 - 验证：`node test.js`
 - 状态：`git status --short --untracked-files=all`
+- 安全看差异（自动跑测试后出 diff）：`git d`（alias → `.githooks/pre-diff`）
 - 总入口：`docs/00_AI_START_HERE.md`

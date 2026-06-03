@@ -1,0 +1,20 @@
+#!/bin/sh
+# pre-diff: 在 git diff / 看差异前自动跑测试，确认改动没破坏基线
+# 用法: .githooks/pre-diff
+# 也可以用 git d 别名触发
+
+echo "🧪 运行测试（确认基线未破坏）..."
+node test.js > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "❌ 测试未通过！先看 diff："
+  git diff --stat
+  node test.js | tail -5
+  exit 1
+fi
+echo "✅ 测试通过（基线未破坏）"
+echo ""
+echo "📊 改动统计："
+git diff --stat
+echo ""
+echo "📋 完整改动："
+git diff

@@ -221,7 +221,12 @@ function collectPrecision(label) {
 }
 
 function verifyPrecision(cp) {
-  var after = G.monsters.filter(function(m) { return !m.dead; }).map(function(m) { return {id:m.id, hp:m.hp}; });
+  // 用结算后/怪物移动前的 HP（排除陷阱/移动伤害）
+  var hpSrc = G._hpForVerify || {};
+  var after = Object.keys(hpSrc).map(function(id) { return {id: id, hp: hpSrc[id]}; });
+  if (after.length === 0) {
+    after = G.monsters.filter(function(m) { return !m.dead; }).map(function(m) { return {id:m.id, hp:m.hp}; });
+  }
   var diffs = [];
   for (var i = 0; i < cp.snap.length; i++) {
     var mb = cp.snap[i];
@@ -318,8 +323,11 @@ function run() {
         commitPlayerActionsToElementField = function(){};
         endPlayerTurn();
         commitPlayerActionsToElementField = _origCommit;
-        // 5) 验证预览
-        if (needCp) verifyPrecision(cp);
+        // 5) 验证预览（用结算后/怪物移动前的 HP，排除陷阱/移动伤害）
+        if (needCp) {
+          G._hpForVerify = G._hpAfterSettle || {};
+          verifyPrecision(cp);
+        }
       } else {
         endPlayerTurn();
       }

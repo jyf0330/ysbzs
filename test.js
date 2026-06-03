@@ -4025,6 +4025,30 @@ group('▶ 地形陷阱（四层棋盘）', ()=>{
   });
 
   test('陷阱-h: buildCellInfo 四层结构', ()=>{
+
+  test('陷阱-i: settleExplosions 后_G.hpAfterSettle 正确', ()=>{
+    fresh();
+    G.monsters=[{id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,ap:3,pos:{r:5,c:5},dead:false,el:null,gold:0}];
+    G.elementCells['5,5']={fire:{layers:3,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    settleDamage();
+    assert.ok(G._hpAfterSettle,'_hpAfterSettle 存在');
+    assert.strictEqual(G._hpAfterSettle['m0'],14,'火3层→6伤害, 20-6=14');
+  });
+
+  test('陷阱-j: 预览仅计算元素伤害，不包含陷阱伤害', ()=>{
+    fresh();
+    // 怪在 (0,5)，(0,4) 有火陷阱3
+    G.monsters=[{id:'m0',name:'测试怪',hp:20,maxHp:20,atk:1,ap:3,pos:{r:0,c:5},dead:false,el:null,gold:0}];
+    G.elementCells['0,5']={fire:{layers:1,willExplode:false},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};
+    // (0,4) 有火陷阱3（模拟上一轮引爆后的残留）
+    if(!G.terrainCells)G.terrainCells={};
+    G.terrainCells['0,4']={fire:3,water:0,wind:0,earth:0};
+    var stats=buildMonsterStats();
+    var s=stats['0,5'];
+    // 预览只看到 (0,5) 的1层火 → explDmg(1)=1，看不到 (0,4) 的陷阱
+    assert.strictEqual(s.selfCellDamage.total,1,'预览仅元素伤害=1');
+    assert.strictEqual(s.splashDamage.total,0,'预览不包含陷阱');
+  });
     freshTrap();
     addTrapLayers({r:6,c:0},'fire',2);
     G.elementCells['6,0']={fire:{layers:3,willExplode:true},water:{layers:0,willExplode:false},wind:{layers:0,willExplode:false},earth:{layers:0,willExplode:false}};

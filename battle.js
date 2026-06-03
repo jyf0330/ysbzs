@@ -112,6 +112,9 @@ function settleExplosions() {
   }
   G.lastSettle = report;
   recomputeGrowth();
+  // 快照：结算后/怪物移动前的 HP（用于预览验证）
+  G._hpAfterSettle = {};
+  G.monsters.filter(m => !m.dead).forEach(m => { G._hpAfterSettle[m.id] = m.hp; });
   if (report.chainSegments > 0) {
     glog(`🔗 连锁 ×${report.chainSegments}！克制 ×${report.advHits}！合计 −${report.totalDamage}`);
   }

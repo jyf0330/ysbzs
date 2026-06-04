@@ -63,3 +63,8 @@ updated_at: 2026-06-04 17:34
 2026-06-04 16:51：工作区已有 `index.html`、`ui.js` 的商店 UI 改动，用户明确要求在该成果上继续优化，本任务接管这两份文件的商店 UI 范围。
 2026-06-04 17:25：用户追加 Pal 单位格子 HUD 需求，仍落在 `index.html` / `ui.js` 同一 UI 表层文件，补充 `test.js` 覆盖双方 Pal HUD VM。
 2026-06-04 17:34：用户追加怪物格底部信息简化需求，落在 `preview.js` 生成显示短字、`ui.js` / `index.html` 渲染样式、`test.js` 覆盖口径。
+
+
+## 完成记录
+done_at: 2026-06-04 19:15
+commit_id: e40dafb

@@ -3,8 +3,106 @@
  * 管：预览伤害、格子信息、怪物威胁、战斗日志（纯计算，无 DOM）
  * 不管：DOM 渲染、事件绑定、调试面板
  * 依赖：board.js / elements.js / battle.js / terrain.js / damage.js
- * 加载顺序：ui.js → preview.js（覆盖同名函数作为权威源）
+ * 加载顺序：preview.js → ui.js（buildBoardVM 从此层读取 4 层数据）
  */
+
+// ========== 四层棋盘数据（只读 G，供 buildBoardVM 合成 cellVM）==========
+
+/**
+ * unitLayer：英雄、怪物、召唤物占位
+ * 返回 {r,c → {hero, mon, summon, castle}} 对象
+ */
+function buildUnitLayer(){
+  const hp={},mp={},sp={};
+  Object.values(G.heroes).forEach(function(h){ hp[k(h.pos)]=h; });
+  G.monsters.forEach(function(m){ if(!m.dead) mp[k(m.pos)]=m; });
+  (G.summons||[]).filter(function(s){ return !s.dead; }).forEach(function(s){ sp[k(s.pos)]=s; });
+  var layer={};
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var key=r+','+c;
+    layer[key]={hero:hp[key]||null,mon:mp[key]||null,summon:sp[key]||null,
+      castle:playerCastleAt({r:r,c:c})?{side:'player',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp}:enemyCastleAt({r:r,c:c})?{side:'enemy',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp}:null};
+  }
+  return layer;
+}
+
+/**
+ * terrainLayer：陷阱、地形场景（读取 G.terrainCells，不参与规则结算）
+ * 返回 {r,c → {fire, water, wind, earth}} 层数对象
+ */
+function buildTerrainLayer(){
+  var layer={};
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var t=getTerrain({r,c});
+    layer[r+','+c]=t;
+  }
+  return layer;
+}
+
+/**
+ * elementLayer：元素层数、引爆状态（读取 G.elementCells + G.board）
+ * 返回 {r,c → {el, stk, explDmg, cells:{el:{layers,willExplode}}}}
+ */
+function buildElementLayer(){
+  var layer={};
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var key=r+','+c, bc=G.board[r][c];
+    var elData=null;
+    if(bc.el&&bc.stk>0) elData={el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)};
+    var cellsEl=(G.elementCells||{})[key]||{};
+    layer[key]={boardEl:elData,cells:cellsEl};
+  }
+  return layer;
+}
+
+/**
+ * infoLayer：预览、伤害、日志、调试信息（只读 G.coreSnapshot，不计算规则）
+ * 返回 {r,c → {previewDamage, willDie, brief, classes, pvEl, ...}}
+ */
+function buildInfoLayer(){
+  var pgGrid=G.coreSnapshot?.previewGrid?.grid||{};
+  var mt=G.coreSnapshot?.monsterThreats||{monActMap:{},heroIncomingDmg:{},summonIncomingDmg:{},monFinalSet:new Set(),monCardMap:{}};
+  var{monActMap,heroIncomingDmg,summonIncomingDmg,monFinalSet,monCardMap}=mt;
+  var ps=new Set(G.prevCells.map(function(p){return k(p);}));
+  var es=new Set();if(G.explPos)explCells(G.explPos).forEach(function(p){es.add(k(p));});
+  var cellBriefs=(G.coreSnapshot?._cellBriefs||{});
+  var layer={};
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var key=r+','+c, pgCell=pgGrid[key]||null;
+    var classes=[];
+    if(ps.has(key))classes.push('ap');
+    if(es.has(key))classes.push('ep');
+    if(G.explPos&&G.explPos.r===r&&G.explPos.c===c)classes.push('ec');
+    var actData=monActMap[key];
+    if(actData){
+      if(actData.type==='atk')classes.push('mw-atk');
+      else if(monFinalSet.has(key))classes.push('mw-final');
+      else classes.push('mw-mov');
+    }
+    var pvEl=null, pvOpacity=null, monDmg=null, pvElLayers=null, pvWillExplode=false;
+    if(pgCell){
+      var actions=pgCell.preview.incomingActions;
+      if(actions.length>0){pvEl=actions[0].element;pvOpacity=pgCell.preview.fromSelHero?'0.42':'0.20';}
+      ['fire','water','wind','earth'].forEach(function(el){
+        var ef=pgCell.elementField[el];
+        if(ef.addedLayers>0){
+          if(!pvElLayers)pvElLayers={};
+          var isMonCell=pgCell.entity.type==='monster';
+          pvElLayers[el]={add:ef.addedLayers,cur:ef.boardLayers,next:ef.layers,willExplode:!isMonCell&&ef.layers>=G.explosionThreshold,dmg:ef.damage};
+        }
+      });
+      pvWillExplode=pgCell.preview.willExplode;
+      if(pgCell.preview.entityDamage>0)monDmg=pgCell.preview.entityDamage;
+    }
+    layer[key]={classes,pvEl,pvOpacity,monDmg,pvElLayers,pvWillExplode,
+      monStep:actData?.type==='mov'?actData.step:null,
+      brief:cellBriefs[key]?.brief||'',
+      monsterThreat:{heroIncoming:heroIncomingDmg,summonIncoming:summonIncomingDmg,card:monCardMap[key]||null},
+      pgCell:pgCell,
+    };
+  }
+  return layer;
+}
 
 // ========== 预览计算层（只读 G，不创建 DOM）==========
 

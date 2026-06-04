@@ -288,60 +288,30 @@ function computeMonsterActionPreview(){
 
 // ─── ViewModel 层（读 G，输出纯 JS 描述对象，不创建 DOM）───
 function buildBoardVM(){
-  const hp={},mp={},sp={};
-  Object.values(G.heroes).forEach(h=>{hp[k(h.pos)]=h;});
-  G.monsters.forEach(m=>{if(!m.dead)mp[k(m.pos)]=m;});
-  (G.summons||[]).filter(s=>!s.dead).forEach(s=>{sp[k(s.pos)]=s;});
-  const ps=new Set(G.prevCells.map(p=>k(p)));
-  const es=new Set();if(G.explPos)explCells(G.explPos).forEach(p=>es.add(k(p)));
-  // 从 coreSnapshot 读取预览数据，不在 VM 层重算
-  const pgGrid=G.coreSnapshot?.previewGrid?.grid||{};
-  const mt=G.coreSnapshot?.monsterThreats||{monActMap:{},heroIncomingDmg:{},summonIncomingDmg:{},monFinalSet:new Set(),monCardMap:{}};
-  const{monActMap,heroIncomingDmg,summonIncomingDmg,monFinalSet,monCardMap}=mt;
-  const ELEMS=['fire','water','wind','earth'];
-  const cells=[];
-  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
-    const key=`${r},${c}`,hero=hp[key],mon=mp[key],bc=G.board[r][c];
-    const pgCell=pgGrid[key]||null;
-    const classes=[];
-    if(ps.has(key))classes.push('ap');
-    if(es.has(key))classes.push('ep');
-    if(G.explPos&&G.explPos.r===r&&G.explPos.c===c)classes.push('ec');
-    // 怪物路径：区分路过格(橙)、停留格(黄)、攻击格(红)
-    const actData=monActMap[key];
-    if(actData){
-      if(actData.type==='atk')classes.push('mw-atk');
-      else if(monFinalSet.has(key))classes.push('mw-final');
-      else classes.push('mw-mov');
-    }
-    // 从 previewGrid 读取预览信息（不在此层重计算）
-    let pvEl=null,pvOpacity=null,monDmg=null,pvElLayers=null,pvWillExplode=false;
-    if(pgCell){
-      const actions=pgCell.preview.incomingActions;
-      if(actions.length>0){pvEl=actions[0].element;pvOpacity=pgCell.preview.fromSelHero?'0.42':'0.20';}
-      ELEMS.forEach(el=>{
-        const ef=pgCell.elementField[el];
-        if(ef.addedLayers>0){
-          if(!pvElLayers)pvElLayers={};
-          const isMonCell=pgCell.entity.type==='monster';
-          pvElLayers[el]={add:ef.addedLayers,cur:ef.boardLayers,next:ef.layers,willExplode:!isMonCell&&ef.layers>=G.explosionThreshold,dmg:ef.damage};
-        }
-      });
-      pvWillExplode=pgCell.preview.willExplode;
-      if(pgCell.preview.entityDamage>0)monDmg=pgCell.preview.entityDamage;
-    }
+  var ul=buildUnitLayer();
+  var tl=buildTerrainLayer();
+  var el=buildElementLayer();
+  var il=buildInfoLayer();
+  var cells=[];
+  for(var r=0;r<8;r++){for(var c=0;c<8;c++){
+    var key=r+','+c, u=ul[key], t=tl[key], e=el[key], i=il[key];
+    var hero=u.hero, mon=u.mon, summon=u.summon, castle=u.castle;
+    var boardEl=e.boardEl;
+    var pgCell=i.pgCell;
     cells.push({
-      r,c,key,
-      hero:hero?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:heroIncomingDmg[hero.id]||[]}:null,
-      mon:mon?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:monCardMap[key]||{atkTargetId:null,atkDmg:0,canAttack:false},previewDamage:pgCell?.preview.entityDamage||0,willDie:pgCell?(pgCell.preview.entityDamage>=mon.hp&&mon.hp>0):false}:null,
-      summon:sp[key]?{id:sp[key].id,name:sp[key].name,hp:sp[key].hp,maxHp:sp[key].maxHp,atk:sp[key].atk,el:sp[key].el,incomingDmg:summonIncomingDmg[sp[key].id]||[]}:null,
-      el:(bc.el&&bc.stk>0)?{el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)}:null,
-      castle:playerCastleAt({r,c})?{side:'player',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp}:enemyCastleAt({r,c})?{side:'enemy',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp}:null,
-      classes,pvEl,pvOpacity,monDmg,pvElLayers,pvWillExplode,
-      monStep:actData?.type==='mov'?actData.step:null,
-      displayBrief:(G.coreSnapshot?._cellBriefs||{})[key]?.brief||'',
+      r:r,c:c,key:key,
+      key:key,
+      hero:hero&&hero.hp>0?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:i.monsterThreat.heroIncoming[hero.id]||[]}:null,
+      mon:mon&&!mon.dead?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:i.monsterThreat.card||{atkTargetId:null,atkDmg:0,canAttack:false},previewDamage:pgCell?.preview.entityDamage||0,willDie:mon.hp>0&&(pgCell?.preview.entityDamage||0)>=mon.hp}:null,
+      summon:summon&&!summon.dead?{id:summon.id,name:summon.name,hp:summon.hp,maxHp:summon.maxHp,atk:summon.atk,el:summon.el,incomingDmg:i.monsterThreat.summonIncoming[summon.id]||[]}:null,
+      castle:castle,
+      terrain:{fire:t.fire||0,water:t.water||0,wind:t.wind||0,earth:t.earth||0},
+      el:boardEl,
+      classes:i.classes||[],pvEl:i.pvEl,pvOpacity:i.pvOpacity,monDmg:i.monDmg,pvElLayers:i.pvElLayers,pvWillExplode:i.pvWillExplode,
+      monStep:i.monStep,
+      displayBrief:i.brief,
     });
-  }
+  }}
   return cells;
 }
 

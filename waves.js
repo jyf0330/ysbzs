@@ -63,28 +63,6 @@ function getSpawnCells(spawnSize) {
 }
 
 function spawnWaveForDay(day, phase) {
-  // 硬编码教学波
-  if (day === 1 && phase === 'morning') {
-    const monsters = [
-      { id: 'tut_m1', name: '教学怪1', hp: 6, maxHp: 6, atk: 1, dead: false, el: null, gold: 1 },
-      { id: 'tut_m2', name: '教学怪2', hp: 10, maxHp: 10, atk: 1, dead: false, el: null, gold: 1 },
-    ];
-    assignSpawnPositions(monsters, 3);
-    G.monsters = monsters;
-    glog('⚔️ 第1天早上：2只教学怪物（右上）');
-    return;
-  }
-  if (day === 3 && phase === 'morning') {
-    const monsters = [
-      { id: 'd3_elite', name: '铁甲队长', typeId: 'elite', hp: 24, maxHp: 24, atk: 3, ap: 3, dead: false, el: null, gold: 8 },
-      { id: 'd3_a', name: '小怪A', typeId: 'normal', hp: 4, maxHp: 4, atk: 1, ap: 5, dead: false, el: null, gold: 2 },
-      { id: 'd3_b', name: '小怪B', typeId: 'normal', hp: 4, maxHp: 4, atk: 1, ap: 5, dead: false, el: null, gold: 2 },
-    ];
-    assignSpawnPositions(monsters, 3);
-    G.monsters = monsters;
-    glog('⚔️ 第3天早上：精英教学波（铁甲队长+小怪）');
-    return;
-  }
   // 优先用 Pal 敌人波次（来自 encounter_config）
   var palWave = buildPalWaveForDay(day, phase);
   if (palWave && palWave.monsters && palWave.monsters.length > 0) {

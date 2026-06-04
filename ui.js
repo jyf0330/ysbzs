@@ -372,7 +372,7 @@ function buildPreviewGrid(){
     const key=`${h.pos.r},${h.pos.c}`;
     const heroSlots=G.slots.filter(s=>s.hid===h.id&&!s.used).map(s=>({
       el:s.el, sn:s.sn, tier:s.tier, dir:s.dir, idx:s.idx,
-      label:`${EL[s.el]}·${s.sn}号·×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[s.tier] || 0)}`,
+      label:`${EL[s.el]}·${s.sn}号·×${(typeof getTierMult === "function" ? (getTierMult()[s.tier] || 0) : 0)}`,
     }));
     grid[key].entity={type:'hero',id:h.id,name:h.name,hp:h.hp,maxHp:h.maxHp,_acted:!!h._acted,slots:heroSlots};
   });
@@ -1215,8 +1215,8 @@ function renderBoard(boardVM){
       isEntityCell=true;
     }else if(cv.hero){
       entCls='ib-e ib-h ib-'+(cv.hero.id==='ha'?'ha':'hb')+(cv.hero.isSel?' sel':'');
-      const heroLabel=cv.hero.id==='ha'?'英1':'英2';
-      entHtml=`<span>${heroLabel}</span>`;
+      var heroLabel=cv.hero.name||(cv.hero.id==='ha'?'英1':'英2');
+      entHtml=`<span>${heroLabel.length>2?heroLabel.slice(0,2):heroLabel}</span>`;
       isEntityCell=true;
     }else if(cv.mon){
       entCls='ib-e ib-m'+(cv.mon.willDie?' ib-m-die':'');
@@ -1537,7 +1537,7 @@ function renderSlots(slotsVM){
     groups[hid].forEach(s=>{
       const cls=`as-card${s.used?' used':''}${s.isSel?' sel':''}`;
       const shapeHtml=shapeHTML(s.sn,s.el,6);
-      const tierVal=((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[s.tier] || 0)||1;
+      const tierVal=(typeof getTierMult === "function" ? (getTierMult()[s.tier] || 0) : 0)||1;
       const localIdx=groups[hid].indexOf(s)+1;
       h+=`<div class="${cls}" style="--slot-color:${EC[s.el]}" onclick="selSlot(${s.idx})">
         <span class="as-num" style="background:${EC[s.el]}">${localIdx}</span>
@@ -1672,8 +1672,8 @@ function renderShop(){
       const def=UNIT_DEFS[u.defId]; if(!def)return'';
       const lvl=def.levels[u.level];
       const nextLvl=def.levels[u.level+1]||null;
-      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[slot.tier] || 0)}</span></div>`).join('');
-      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[slot.tier] || 0)}</span></div>`).join(''):'';
+      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join('');
+      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join(''):'';
       return `<div class="roster-card">
         <div class="roster-line"><span style="font-size:15px;font-weight:bold;color:#c4a860">⭐ ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
         <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
@@ -1685,8 +1685,8 @@ function renderShop(){
       const def=UNIT_DEFS[u.defId]; if(!def)return'';
       const lvl=def.levels[u.level];
       const nextLvl=def.levels[u.level+1]||null;
-      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[slot.tier] || 0)}</span></div>`).join('');
-      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[slot.tier] || 0)}</span></div>`).join(''):'';
+      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join('');
+      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join(''):'';
       return `<div class="roster-card" style="opacity:0.8">
         <div class="roster-line"><span style="font-size:15px;color:var(--c-text2)">💤备战 ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
         <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
@@ -1708,8 +1708,8 @@ function renderShop(){
         const toMerge=Math.max(0,3-(ownCnt+1));
         const mergeHint=(ownCnt>=2)?'购买后可立刻合成升级':(ownCnt===1?`再补 ${toMerge} 张可合成`:'作为新核心起点');
         const tags=(def.tags||[]).slice(0,3).join(' · ');
-        const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[slot.tier] || 0)}</span></div>`).join('');
-        const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${((typeof getTierMult === "function" ? getTierMult() : [0,1,2,4,8])[slot.tier] || 0)}</span></div>`).join(''):'';
+        const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join('');
+        const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join(''):'';
         return`<div class="unit-card">
           <div class="unit-head">
             <div class="unit-meta">

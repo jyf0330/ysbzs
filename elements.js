@@ -60,6 +60,11 @@ function clearElementAt(pos, el) {
     });
   }
   syncBoardElementFromElementCells(pos);
+  if (G.boardState && G.boardState.cells && G.boardState.cells[key]) {
+    const cell = G.boardState.cells[key];
+    (el ? [el] : ['fire', 'water', 'wind', 'earth']).forEach(function(e) { cell.elementLayer[e] = 0; });
+    cell.meta.updatedAtTurn = G.round || 0;
+  }
 }
 
 // 按结算可识别的规范结构把 n 层 el 元素写入 elementCells
@@ -76,6 +81,11 @@ function addElementLayers(pos, el, n) {
   slot.layers = Math.min(slot.layers + (n || 1), MAX_STK);
   slot.willExplode = slot.layers >= G.explosionThreshold;
   syncBoardElementFromElementCells(pos);
+  // 同步到 boardState */
+  if (G.boardState && G.boardState.cells && G.boardState.cells[key]) {
+    G.boardState.cells[key].elementLayer[el] = slot.layers;
+    G.boardState.cells[key].meta.updatedAtTurn = G.round || 0;
+  }
 }
 
 // 旧式引爆（仅 addEl 触发，UI 物品放置使用）
@@ -91,6 +101,12 @@ function doExplode(pos) {
   const targets = isCross ? explCells(pos) : [pos];
   glog(`💥 ${elName}${cell.stk}引爆！${isCross ? '范围伤害 ' : '单体伤害 '}${dmg}`);
   cell.el = null; cell.stk = 0;
+  // 同步到 boardState（清零主引爆元素）*/
+  const bsKey = pos.r + ',' + pos.c;
+  if (G.boardState && G.boardState.cells && G.boardState.cells[bsKey]) {
+    G.boardState.cells[bsKey].elementLayer[oldEl] = 0;
+    G.boardState.cells[bsKey].meta.updatedAtTurn = G.round || 0;
+  }
   targets.forEach(tp => {
     const m = monAt(tp);
     if (m) {

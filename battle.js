@@ -34,6 +34,11 @@ function dealDmg(monster, dmg, src) {
       G.gold += monster.gold;
       glog(`💰 获得 ${monster.gold} 金币！`);
     }
+    // 同步怪物死亡到 boardState */
+    if (G.boardState && G.boardState.cells) {
+      var dk = monster.pos.r + ',' + monster.pos.c;
+      if (G.boardState.cells[dk]) G.boardState.cells[dk].unitLayer.occupant = null;
+    }
   }
 }
 
@@ -100,6 +105,11 @@ function settleExplosions() {
       }
       slot.layers = 0; slot.willExplode = false;
       syncBoardElementFromElementCells(pos);
+      // 同步到 boardState */
+      if (G.boardState && G.boardState.cells && G.boardState.cells[key]) {
+        G.boardState.cells[key].elementLayer[el] = 0;
+        G.boardState.cells[key].meta.updatedAtTurn = G.round || 0;
+      }
     });
   });
   report.clearedWave = G.monsters.every(m => m.dead);
@@ -122,6 +132,9 @@ function settleExplosions() {
   }
   G.previewEvents = [];
   checkAllDead();
+  // 结算后同步 + 校验 boardState */
+  if (typeof rebuildBoardState === 'function') rebuildBoardState();
+  if (typeof assertBoardState === 'function') assertBoardState('settleExplosions');
   onCoreStateChange();
 }
 
@@ -189,6 +202,16 @@ function useSlot(idx) {
     bazaarRunTrigger('on_element_apply', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid), element: slot.el, el: slot.el, cells: cells, source_cells: cells });
     bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid), cells: cells });
   }
+  // 同步到 boardState */
+  if (G.boardState && G.boardState.cells) {
+    cells.forEach(function(ap) {
+      var k2 = ap.r + ',' + ap.c;
+      if (G.boardState.cells[k2]) {
+        G.boardState.cells[k2].elementLayer[slot.el] = (G.elementCells[k2] && G.elementCells[k2][slot.el] && G.elementCells[k2][slot.el].layers) || 0;
+        G.boardState.cells[k2].meta.updatedAtTurn = G.round || 0;
+      }
+    });
+  }
   onCoreStateChange();
 }
 
@@ -219,6 +242,11 @@ function commitPlayerActionsToElementField(G) {
       elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
       const cell = G.board[ap.r][ap.c];
       cell.el = s.el; cell.stk = Math.min(elSlot.layers, MAX_STK);
+      // 同步到 boardState */
+      if (G.boardState && G.boardState.cells && G.boardState.cells[key]) {
+        G.boardState.cells[key].elementLayer[s.el] = elSlot.layers;
+        G.boardState.cells[key].meta.updatedAtTurn = G.round || 0;
+      }
     });
     s._committed = true;
   });
@@ -276,6 +304,9 @@ function endPlayerTurn() {
 
 function finishMonsters() {
   if (G.phase === 'OVER') return;
+  // 怪物回合结束后更新 + 校验 boardState */
+  if (typeof rebuildBoardState === 'function') rebuildBoardState();
+  if (typeof assertBoardState === 'function') assertBoardState('finishMonsters');
   G.round++;
   const allDead = G.monsters.every(m => m.dead);
   const castleDead = !G.enemyCastle || G.enemyCastle.hp <= 0;
@@ -352,6 +383,13 @@ function monsterAct(m) {
     if (!monAt(np) && !heroAt(np) && !castleAt(np) && !summonAt(np)) {
       var fromPos = { r: m.pos.r, c: m.pos.c };
       m.pos = np;
+      // 同步怪物移动到 boardState */
+      if (G.boardState && G.boardState.cells) {
+        var fk = fromPos.r + ',' + fromPos.c;
+        if (G.boardState.cells[fk]) G.boardState.cells[fk].unitLayer.occupant = null;
+        var nk = np.r + ',' + np.c;
+        if (G.boardState.cells[nk]) G.boardState.cells[nk].unitLayer.occupant = { id: m.id, type: 'monster', hp: m.hp };
+      }
       glog(`👾 ${m.name}→(${np.r},${np.c})`);
       if (typeof writeStructuredLog === 'function') writeStructuredLog('monster_move_step', { monster_id: m.id || m.typeId, monster_name: m.name, from_cell: fromPos, to_cell: np, ap_before: ap, ap_after: ap - 1 }, null);
       if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_monster_move_step', { actor: m, monster: m, from: fromPos, to: np });
@@ -561,7 +599,13 @@ function runSummonActions() {
       { r: s.pos.r + rowStep, c: s.pos.c },
     ].filter(p => p.r >= 0 && p.r < 8 && p.c >= 0 && p.c < 8);
     const np = candidates.find(p => !monAt(p) && !heroAt(p) && !castleAt(p) && !summonAt(p) && !hasElementAt(p));
-    if (np) { s.pos = np; moved++; glog(`💧 ${s.name}→(${np.r},${np.c})`); if (attackAdjacent(s)) acted++; }
+    if (np) { var oldPos = { r: s.pos.r, c: s.pos.c }; s.pos = np; moved++; glog(`💧 ${s.name}→(${np.r},${np.c})`); if (attackAdjacent(s)) acted++;
+      // 同步召唤物移动到 boardState */
+      if (G.boardState && G.boardState.cells) {
+        if (G.boardState.cells[oldPos.r+','+oldPos.c]) G.boardState.cells[oldPos.r+','+oldPos.c].unitLayer.occupant = null;
+        if (G.boardState.cells[np.r+','+np.c]) G.boardState.cells[np.r+','+np.c].unitLayer.occupant = { id: s.id, type: 'summon', hp: s.hp };
+      }
+    }
   });
   if (acted > 0 || moved > 0) glog(`🌀 召唤物行动：${moved} 次移动 / ${acted} 次攻击`);
   checkAllDead();

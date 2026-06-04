@@ -13,15 +13,39 @@
  * 返回 {r,c → {hero, mon, summon, castle}} 对象
  */
 function buildUnitLayer(){
-  const hp={},mp={},sp={};
-  Object.values(G.heroes).forEach(function(h){ hp[k(h.pos)]=h; });
-  G.monsters.forEach(function(m){ if(!m.dead) mp[k(m.pos)]=m; });
-  (G.summons||[]).filter(function(s){ return !s.dead; }).forEach(function(s){ sp[k(s.pos)]=s; });
-  var layer={};
-  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
-    var key=r+','+c;
-    layer[key]={hero:hp[key]||null,mon:mp[key]||null,summon:sp[key]||null,
-      castle:playerCastleAt({r:r,c:c})?{side:'player',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp}:enemyCastleAt({r:r,c:c})?{side:'enemy',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp}:null};
+  var layer = {};
+  var pc = G.playerCastle, ec = G.enemyCastle;
+  var bsCells = G.boardState && G.boardState.cells;
+  for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+    var key = r + ',' + c;
+    var hero = null, mon = null, summon = null, castle = null;
+    if (bsCells) {
+      var occ = bsCells[key] && bsCells[key].unitLayer.occupant;
+      if (occ) {
+        if (occ.type === 'hero' && G.heroes) {
+          var h = G.heroes[occ.id];
+          if (h && h.hp > 0) hero = h;
+        } else if (occ.type === 'monster' && G.monsters) {
+          var m = G.monsters.find(function(x){ return x.id === occ.id && !x.dead; });
+          if (m) mon = m;
+        } else if (occ.type === 'summon' && G.summons) {
+          var s = G.summons.find(function(x){ return x.id === occ.id && !x.dead; });
+          if (s) summon = s;
+        } else if (occ.type === 'castle') {
+          if (occ.id === 'playerCastle' && pc && pc.hp > 0) castle = { side: 'player', hp: pc.hp, maxHp: pc.maxHp };
+          else if (occ.id === 'enemyCastle' && ec && ec.hp > 0) castle = { side: 'enemy', hp: ec.hp, maxHp: ec.maxHp };
+        }
+      }
+    }
+    // DEPRECATED fallback: 旧路径 */
+    if (!hero && G.heroes) { var hh = Object.values(G.heroes).find(function(h){ return h.hp > 0 && h.pos.r === r && h.pos.c === c; }); if (hh) hero = hh; }
+    if (!mon && G.monsters) { var mm = G.monsters.find(function(m){ return !m.dead && m.pos.r === r && m.pos.c === c; }); if (mm) mon = mm; }
+    if (!summon && G.summons) { var ss = G.summons.find(function(s){ return !s.dead && s.pos.r === r && s.pos.c === c; }); if (ss) summon = ss; }
+    if (!castle) {
+      if (pc && pc.hp > 0 && pc.pos.r === r && pc.pos.c === c) castle = { side: 'player', hp: pc.hp, maxHp: pc.maxHp };
+      else if (ec && ec.hp > 0 && ec.pos.r === r && ec.pos.c === c) castle = { side: 'enemy', hp: ec.hp, maxHp: ec.maxHp };
+    }
+    layer[key] = { hero: hero, mon: mon, summon: summon, castle: castle };
   }
   return layer;
 }
@@ -31,10 +55,25 @@ function buildUnitLayer(){
  * 返回 {r,c → {fire, water, wind, earth}} 层数对象
  */
 function buildTerrainLayer(){
-  var layer={};
-  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
-    var t=getTerrain({r,c});
-    layer[r+','+c]=t;
+  var layer = {};
+  var bsCells = G.boardState && G.boardState.cells;
+  for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+    var key = r + ',' + c;
+    var t = { fire: 0, water: 0, wind: 0, earth: 0 };
+    // 优先从 boardState 读取 */
+    if (bsCells && bsCells[key] && bsCells[key].terrainLayer) {
+      var traps = bsCells[key].terrainLayer.traps || [];
+      traps.forEach(function(trap) {
+        if (trap.element && t[trap.element] !== undefined) {
+          t[trap.element] = (t[trap.element] || 0) + (trap.layers || 0);
+        }
+      });
+    }
+    // DEPRECATED fallback */
+    if (!Object.values(t).some(function(v){ return v > 0; }) && G.terrainCells && G.terrainCells[key]) {
+      t = G.terrainCells[key];
+    }
+    layer[key] = t;
   }
   return layer;
 }
@@ -44,13 +83,32 @@ function buildTerrainLayer(){
  * 返回 {r,c → {el, stk, explDmg, cells:{el:{layers,willExplode}}}}
  */
 function buildElementLayer(){
-  var layer={};
-  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
-    var key=r+','+c, bc=G.board[r][c];
-    var elData=null;
-    if(bc.el&&bc.stk>0) elData={el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)};
-    var cellsEl=(G.elementCells||{})[key]||{};
-    layer[key]={boardEl:elData,cells:cellsEl};
+  var layer = {};
+  var bsCells = G.boardState && G.boardState.cells;
+  for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+    var key = r + ',' + c;
+    var elData = null;
+    // 优先从 boardState 读取 */
+    if (bsCells && bsCells[key]) {
+      var el = bsCells[key].elementLayer;
+      // 找有值的元素作为"主元素"显示 */
+      var topEl = null, topStk = 0;
+      var ELS = ['fire', 'water', 'wind', 'earth'];
+      for (var ei = 0; ei < ELS.length; ei++) {
+        var s = el[ELS[ei]];
+        if (s > topStk) { topStk = s; topEl = ELS[ei]; }
+      }
+      if (topEl && topStk > 0) {
+        elData = { el: topEl, stk: topStk, bg: EB[topEl], color: EC[topEl], explDmg: explDmg(topStk) };
+      }
+    }
+    // DEPRECATED fallback */
+    if (!elData && G.board && G.board[r] && G.board[r][c]) {
+      var bc = G.board[r][c];
+      if (bc.el && bc.stk > 0) elData = { el: bc.el, stk: bc.stk, bg: EB[bc.el], color: EC[bc.el], explDmg: explDmg(bc.stk) };
+    }
+    var cellsEl = (G.elementCells || {})[key] || {};
+    layer[key] = { boardEl: elData, cells: cellsEl };
   }
   return layer;
 }
@@ -302,27 +360,42 @@ function buildTerrainInfo(pos) {
 function buildCellInfo(state, pos) {
   if (!state) state = G;
   var key = pos.r + ',' + pos.c;
-  var cell = state.board ? state.board[pos.r]?.[pos.c] : null;
-  // 单位层
+  var bsKey = state.boardState && state.boardState.cells && state.boardState.cells[key];
+  // 单位层（优先 boardState）*/
   var unit = null;
-  var monster = monAt(pos);
-  var hero = Object.values(state.heroes || {}).find(function(h){return h.pos.r===pos.r&&h.pos.c===pos.c;});
-  var summ = (state.summons||[]).find(function(s){return !s.dead&&s.pos.r===pos.r&&s.pos.c===pos.c;});
-  if (monster) unit = { type:'monster', name:monster.name, hp:monster.hp, maxHp:monster.maxHp, el:monster.el };
-  else if (hero) unit = { type:'hero', name:hero.name, hp:hero.hp, maxHp:hero.maxHp };
-  else if (summ) unit = { type:'summon', name:summ.name, hp:summ.hp, maxHp:summ.maxHp, el:summ.el };
-  else if (playerCastleAt(pos)) unit = { type:'castle', side:'player', hp:state.playerCastle?.hp, maxHp:state.playerCastle?.maxHp };
-  else if (enemyCastleAt(pos)) unit = { type:'castle', side:'enemy', hp:state.enemyCastle?.hp, maxHp:state.enemyCastle?.maxHp };
-  // 元素层
-  var elData = state.elementCells ? state.elementCells[key] : null;
-  var elements = {};
-  if (elData) ELEMS.forEach(function(el){elements[el]=Math.max(0,elData[el]?.layers||0);});
-  else elements = { fire:0, water:0, wind:0, earth:0 };
+  if (bsKey && bsKey.unitLayer && bsKey.unitLayer.occupant) {
+    var occ = bsKey.unitLayer.occupant;
+    if (occ.type === 'monster') { var m = (state.monsters||[]).find(function(x){return x.id===occ.id&&!x.dead;}); if (m) unit = { type:'monster', name:m.name, hp:m.hp, maxHp:m.maxHp, el:m.el }; }
+    else if (occ.type === 'hero') { var h = state.heroes && state.heroes[occ.id]; if (h && h.hp > 0) unit = { type:'hero', name:h.name, hp:h.hp, maxHp:h.maxHp }; }
+    else if (occ.type === 'summon') { var s = (state.summons||[]).find(function(x){return x.id===occ.id&&!x.dead;}); if (s) unit = { type:'summon', name:s.name, hp:s.hp, maxHp:s.maxHp, el:s.el }; }
+    else if (occ.type === 'castle') { var cp = occ.id === 'playerCastle' ? state.playerCastle : state.enemyCastle; if (cp && cp.hp > 0) unit = { type:'castle', side: occ.id === 'playerCastle' ? 'player' : 'enemy', hp: cp.hp, maxHp: cp.maxHp }; }
+  }
+  // DEPRECATED fallback */
+  if (!unit) {
+    var monster = monAt(pos); var hero = Object.values(state.heroes || {}).find(function(h){return h.hp>0&&h.pos.r===pos.r&&h.pos.c===pos.c;}); var summ = (state.summons||[]).find(function(s){return !s.dead&&s.pos.r===pos.r&&s.pos.c===pos.c;});
+    if (monster) unit = { type:'monster', name:monster.name, hp:monster.hp, maxHp:monster.maxHp, el:monster.el };
+    else if (hero) unit = { type:'hero', name:hero.name, hp:hero.hp, maxHp:hero.maxHp };
+    else if (summ) unit = { type:'summon', name:summ.name, hp:summ.hp, maxHp:summ.maxHp, el:summ.el };
+    else if (playerCastleAt(pos)) unit = { type:'castle', side:'player', hp:state.playerCastle?.hp, maxHp:state.playerCastle?.maxHp };
+    else if (enemyCastleAt(pos)) unit = { type:'castle', side:'enemy', hp:state.enemyCastle?.hp, maxHp:state.enemyCastle?.maxHp };
+  }
+  // 元素层（优先 boardState）*/
+  var elements = { fire:0, water:0, wind:0, earth:0 };
+  if (bsKey && bsKey.elementLayer) {
+    elements.fire = bsKey.elementLayer.fire || 0; elements.water = bsKey.elementLayer.water || 0; elements.wind = bsKey.elementLayer.wind || 0; elements.earth = bsKey.elementLayer.earth || 0;
+  }
+  if (!Object.values(elements).some(function(v){return v>0;}) && state.elementCells && state.elementCells[key]) {
+    var elData = state.elementCells[key]; ELEMS.forEach(function(el){elements[el]=Math.max(0,elData[el]?.layers||0);});
+  }
   // 地形层
   var terrain = buildTerrainInfo(pos);
-  // 概要
   var summary = buildCellSummary(unit, elements, terrain);
   return { pos:pos, unit:unit, elements:elements, terrain:terrain, summary:summary };
+}
+
+/** 统一单格查询（读写 boardState），注册全局供 dispatch 等使用 */
+function queryCellInfo(r, c) {
+  return buildCellInfo(G, { r: r, c: c });
 }
 
 function buildCellSummary(unit, elements, terrain) {
@@ -663,6 +736,9 @@ function buildHeroStats(){
 
 
 function recomputeCorePreview(){
+  // 预览前确保 boardState 同步 + 校验 */
+  if (typeof rebuildBoardState === 'function') rebuildBoardState();
+  if (typeof assertBoardState === 'function') assertBoardState('recomputeCorePreview');
   const pg=buildPreviewGrid();
   const monsterStats=buildMonsterStats();
   const cellInfoMap=buildCellInfoMap();

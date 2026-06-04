@@ -35,6 +35,18 @@ function addTrapLayers(pos, el, layers) {
   if (!layers || layers <= 0) return;
   var ter = ensureTerrain(pos);
   ter[el] = (ter[el] || 0) + layers;
+  // 同步到 boardState */
+  if (G.boardState && G.boardState.cells) {
+    var key = pos.r + ',' + pos.c;
+    var cell = G.boardState.cells[key];
+    if (cell) {
+      cell.terrainLayer.terrainType = cell.terrainLayer.terrainType || 'element_trap';
+      var existing = cell.terrainLayer.traps.find(function(t){ return t.element === el && t.sourceId === 'terrain_layer'; });
+      if (existing) existing.layers = ter[el];
+      else cell.terrainLayer.traps.push({ id: 'trap_' + el + '_' + key, element: el, layers: ter[el], damage: 0, apDelta: 0, sourceId: 'terrain_layer' });
+      cell.meta.updatedAtTurn = (G && G.round) || 0;
+    }
+  }
 }
 
 /** 元素引爆结算后：将该格元素层转移到地形陷阱 */
@@ -97,4 +109,9 @@ function resolveTerrainOnEnter(monster, pos) {
 
   // 触发后清空该格陷阱
   G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
+  if (G.boardState && G.boardState.cells && G.boardState.cells[key]) {
+    G.boardState.cells[key].terrainLayer.traps = [];
+    G.boardState.cells[key].terrainLayer.terrainType = null;
+    G.boardState.cells[key].meta.updatedAtTurn = G.round || 0;
+  }
 }

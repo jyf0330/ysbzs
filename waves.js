@@ -96,6 +96,9 @@ function spawnWaveForDay(day, phase) {
   }
   assignSpawnPositions(wavePlan.monsters, wavePlan.spawnSize);
   G.monsters = wavePlan.monsters.map((m, i) => ({ id: `d${day}_${phase}_${i}`, ...m }));
+  // 同步怪物生成到 boardState */
+  if (typeof rebuildBoardState === 'function') rebuildBoardState();
+  if (typeof assertBoardState === 'function') assertBoardState('spawnWaveForDay day=' + day);
   glog(`⚔️ 第${day}天${phase === 'morning' ? '早上' : '下午'}：${G.monsters.length}只怪物出击！`);; if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_battle_start', {});
 }
 

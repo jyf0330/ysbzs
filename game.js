@@ -48,6 +48,11 @@ function initGame() {
     relics: [],
   };
 
+  // 初始化统一棋盘格状态
+  initBoardState();
+  rebuildBoardState();
+  assertBoardState('initGame');
+
   // 读取英雄配置作为开局来源
   var hc = (typeof getExternalHeroConfig === 'function') ? getExternalHeroConfig() : null;
   var usedHero = null;

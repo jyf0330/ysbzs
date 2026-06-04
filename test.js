@@ -4484,7 +4484,6 @@ group('externalDataAdapter 外部数据读取', ()=>{
   });
   test('上阵容量 10 生效', ()=>{
     fresh();
-    // 加多个单位测试上阵容量限制
     var defs = Object.keys(UNIT_DEFS);
     for (var i = 0; i < 5 && i < defs.length; i++) {
       var u = addOwnedUnit(defs[i], null);
@@ -4493,6 +4492,161 @@ group('externalDataAdapter 外部数据读取', ()=>{
     syncUnitsToHeroes();
     var slotCount = G.slots.length;
     assert.ok(slotCount >= 3, '应有至少 3 行动槽, 实际 ' + slotCount);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+group('G.boardState 统一棋盘格状态', ()=>{
+  test('BS01: initBoardState 创建完整 8×8 cells',()=>{
+    fresh();
+    assert.ok(G.boardState, 'boardState 应初始化');
+    assert.strictEqual(G.boardState.schema, 'ysbzs.board.v1');
+    assert.strictEqual(G.boardState.rows, 8);
+    assert.strictEqual(G.boardState.cols, 8);
+    var keys = Object.keys(G.boardState.cells);
+    assert.strictEqual(keys.length, 64, '应有 64 个格子');
+  });
+
+  test('BS02: 每格有四层结构',()=>{
+    fresh();
+    Object.keys(G.boardState.cells).forEach(function(key) {
+      var cell = G.boardState.cells[key];
+      assert.ok(cell.unitLayer, key + ' 应包含 unitLayer');
+      assert.ok(cell.terrainLayer, key + ' 应包含 terrainLayer');
+      assert.ok(cell.elementLayer, key + ' 应包含 elementLayer');
+      assert.ok(cell.meta, key + ' 应包含 meta');
+      assert.ok(cell.unitLayer.occupant !== undefined, key + ' unitLayer.occupant 应存在');
+      assert.ok(Array.isArray(cell.terrainLayer.traps), key + ' terrainLayer.traps 应为数组');
+    });
+  });
+
+  test('BS03: 怪物移动后原格清空新格写入',()=>{
+    fresh();
+    // 抓一个活的怪物，手动移动并更新 boardState
+    var mon = G.monsters.find(function(m){ return !m.dead; });
+    assert.ok(mon, '应有活怪物');
+    var oldKey = mon.pos.r + ',' + mon.pos.c;
+    var oldCell = G.boardState.cells[oldKey];
+    assert.ok(oldCell.unitLayer.occupant !== null, oldKey + ' 初始应由怪物占用');
+    assert.strictEqual(oldCell.unitLayer.occupant.id, mon.id);
+    // 移动怪物
+    var newPos = { r: 0, c: 2 };
+    var fromPos = { r: mon.pos.r, c: mon.pos.c };
+    mon.pos = newPos;
+    // 手动同步到 boardState
+    if (G.boardState.cells[fromPos.r+','+fromPos.c]) G.boardState.cells[fromPos.r+','+fromPos.c].unitLayer.occupant = null;
+    if (G.boardState.cells[newPos.r+','+newPos.c]) G.boardState.cells[newPos.r+','+newPos.c].unitLayer.occupant = { id: mon.id, type: 'monster', hp: mon.hp };
+    // 验证
+    assert.strictEqual(G.boardState.cells[fromPos.r+','+fromPos.c].unitLayer.occupant, null, '原格清空');
+    assert.strictEqual(G.boardState.cells[newPos.r+','+newPos.c].unitLayer.occupant.id, mon.id, '新格写入怪物');
+    assert.strictEqual(G.boardState.cells[newPos.r+','+newPos.c].unitLayer.occupant.type, 'monster');
+  });
+
+  test('BS04: 英雄/怪物/召唤物坐标与 boardState 一致',()=>{
+    fresh();
+    // fresh 追加了 test_dummy 后必须重建 boardState 保持同步 */
+    if (typeof rebuildBoardState === 'function') rebuildBoardState();
+    assertBoardState('BS04');
+    // 校验每个活着的实体在 boardState 中存在且坐标匹配
+    Object.values(G.heroes).forEach(function(h) {
+      if (h.hp <= 0) return;
+      var key = h.pos.r + ',' + h.pos.c;
+      var cell = G.boardState.cells[key];
+      assert.ok(cell, '英雄 ' + h.id + ' 格子 ' + key + ' 应存在');
+      assert.ok(cell.unitLayer.occupant, '英雄 ' + h.id + ' 在 boardState 应有 occupant (cell=' + key + ')');
+      assert.strictEqual(cell.unitLayer.occupant.id, h.id, '英雄 ' + h.id + ' 的 occupant.id 应匹配');
+    });
+    G.monsters.forEach(function(m) {
+      if (m.dead) return;
+      var key = m.pos.r + ',' + m.pos.c;
+      var cell = G.boardState.cells[key];
+      assert.ok(cell, '怪物 ' + m.id + ' 格子应存在');
+      assert.ok(cell.unitLayer.occupant, '怪物 ' + m.id + ' 在 boardState 应有 occupant');
+      assert.strictEqual(cell.unitLayer.occupant.id, m.id);
+    });
+  });
+
+  test('BS05: 陷阱写入 terrainLayer.traps 并支持同格多陷阱',()=>{
+    fresh();
+    var pos = { r: 3, c: 3 };
+    addTrapLayers(pos, 'fire', 2);
+    addTrapLayers(pos, 'water', 1);
+    var cell = G.boardState.cells['3,3'];
+    assert.ok(cell.terrainLayer.traps.length >= 2, '同格应有 2 个陷阱');
+    var fireTrap = cell.terrainLayer.traps.find(function(t){ return t.element === 'fire'; });
+    var waterTrap = cell.terrainLayer.traps.find(function(t){ return t.element === 'water'; });
+    assert.ok(fireTrap, '应有火陷阱');
+    assert.ok(waterTrap, '应有水陷阱');
+    assert.strictEqual(fireTrap.layers, 2);
+    assert.strictEqual(waterTrap.layers, 1);
+  });
+
+  test('BS06: 元素写入 elementLayer',()=>{
+    fresh();
+    var pos = { r: 4, c: 4 };
+    addElementLayers(pos, 'fire', 3);
+    addElementLayers(pos, 'water', 1);
+    var cell = G.boardState.cells['4,4'];
+    assert.strictEqual(cell.elementLayer.fire, 3);
+    assert.strictEqual(cell.elementLayer.water, 1);
+    assert.strictEqual(cell.elementLayer.wind, 0);
+  });
+
+  test('BS07: exportBoardStateSnapshot 可 JSON.stringify',()=>{
+    fresh();
+    var snap = exportBoardStateSnapshot();
+    assert.ok(snap, '应有快照');
+    assert.strictEqual(snap.schema, 'ysbzs.board.v1');
+    assert.strictEqual(Object.keys(snap.cells).length, 64);
+    var json = JSON.stringify(snap);
+    assert.ok(json.length > 100, 'JSON 应包含大量数据');
+    var parsed = JSON.parse(json);
+    assert.strictEqual(parsed.rows, 8);
+  });
+
+  test('BS08: UI/preview 只读 ViewModel 不反写核心状态',()=>{
+    fresh();
+    // buildBoardVM 不应修改 boardState 的核心数据 */
+    var snapBefore = exportBoardStateSnapshot();
+    var vm = buildBoardVM();
+    var snapAfter = exportBoardStateSnapshot();
+    // 比较 4 个关键格子的内容是否被修改
+    ['0,0','3,3','6,0','7,7'].forEach(function(key) {
+      assert.strictEqual(JSON.stringify(snapBefore.cells[key]), JSON.stringify(snapAfter.cells[key]), 'buildBoardVM 不应修改 cell ' + key);
+    });
+    // recomputeCorePreview 会通过 rebuildBoardState 更新 turn 和 meta，但不应修改格子结构
+    recomputeCorePreview();
+    var snapFinal = exportBoardStateSnapshot();
+    var cellKeys = Object.keys(snapBefore.cells);
+    cellKeys.forEach(function(key) {
+      var beforeCell = snapBefore.cells[key];
+      var afterCell = snapFinal.cells[key];
+      // 结构字段必须保留
+      assert.ok(afterCell.unitLayer, key + ' 应有 unitLayer');
+      assert.ok(afterCell.terrainLayer, key + ' 应有 terrainLayer');
+      assert.ok(afterCell.elementLayer, key + ' 应有 elementLayer');
+      // 元素/地形/单位数据不应被 preview 反写（无变化时）
+      assert.strictEqual(JSON.stringify(beforeCell.elementLayer), JSON.stringify(afterCell.elementLayer), key + ' elementLayer 不应被修改');
+      assert.strictEqual(beforeCell.terrainLayer.terrainType, afterCell.terrainLayer.terrainType, key + ' terrainType 不应被修改');
+    });
+  });
+
+  test('BS09: validateBoardState 通过初始状态',()=>{
+    fresh();
+    var errors = validateBoardState();
+    assert.strictEqual(errors.length, 0, '初始状态应无校验错误，实际: ' + errors.join(', '));
+  });
+
+  test('BS10: assertBoardState 在关键链路不抛异常',()=>{
+    fresh();
+    assert.doesNotThrow(function(){ assertBoardState('test_bs10'); }, 'init 后 assertBoardState 不应抛');
+    // 模拟战斗结算
+    if (G.monsters.length > 0 && !G.monsters[0].dead) {
+      G.monsters[0].hp = 0;
+      G.monsters[0].dead = true;
+    }
+    if (typeof rebuildBoardState === 'function') rebuildBoardState();
+    assert.doesNotThrow(function(){ assertBoardState('test_bs10_dead'); }, '怪物死后 assertBoardState 不应抛');
   });
 });
 

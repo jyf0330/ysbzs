@@ -101,6 +101,7 @@ function snapshotCoreStateForReplay(){
     engineStats:JSON.parse(JSON.stringify(G.engineStats||{})),
     growth:JSON.parse(JSON.stringify(G.growth||{})),
     _nextSummonId:G._nextSummonId||0,
+    boardState:typeof exportBoardStateSnapshot === 'function' ? exportBoardStateSnapshot() : null,
   };
 }
 

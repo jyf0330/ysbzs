@@ -300,7 +300,6 @@ function buildBoardVM(){
     var pgCell=i.pgCell;
     cells.push({
       r:r,c:c,key:key,
-      key:key,
       hero:hero&&hero.hp>0?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:i.monsterThreat.heroIncoming[hero.id]||[]}:null,
       mon:mon&&!mon.dead?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:i.monsterThreat.card||{atkTargetId:null,atkDmg:0,canAttack:false},previewDamage:pgCell?.preview.entityDamage||0,willDie:mon.hp>0&&(pgCell?.preview.entityDamage||0)>=mon.hp}:null,
       summon:summon&&!summon.dead?{id:summon.id,name:summon.name,hp:summon.hp,maxHp:summon.maxHp,atk:summon.atk,el:summon.el,incomingDmg:i.monsterThreat.summonIncoming[summon.id]||[]}:null,
@@ -1240,6 +1239,21 @@ function renderBoard(boardVM){
       entEl.innerHTML=entHtml;
       if(cv.hero)entEl.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
       cell.appendChild(entEl);
+    }
+
+    // ── 地形陷阱显示（来自 terrainLayer，仅展示）──
+    if(cv.terrain){
+      var trapParts=[];
+      if(cv.terrain.fire>0) trapParts.push('🔥'+cv.terrain.fire);
+      if(cv.terrain.water>0) trapParts.push('💧'+cv.terrain.water);
+      if(cv.terrain.wind>0) trapParts.push('🌬'+cv.terrain.wind);
+      if(cv.terrain.earth>0) trapParts.push('🪨'+cv.terrain.earth);
+      if(trapParts.length>0){
+        var trapEl=document.createElement('div');
+        trapEl.className='ib-trap';
+        trapEl.textContent=trapParts.join(' ');
+        cell.appendChild(trapEl);
+      }
     }
 
     // ── 贴底短字条：实体格子的攻击/伤害信息 ──

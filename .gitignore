@@ -36,7 +36,8 @@ recordings/*.webm
 .codex/
 .claude/
 
-# 参考设计图 — 放 assets/references/ 下统一忽略
+# 精灵图 / 参考设计图 — 本地素材不提交
+assets/sprites/
 assets/references/
 
 # 测试/构建副产品

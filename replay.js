@@ -28,7 +28,6 @@ global.document = {
   createElement() { return makeEl(); },
 };
 global.window = { innerWidth: 1920 };
-global.setTimeout = fn => { try { fn(); } catch (e) { throw e; } };
 global.__TEST__ = true;
 
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');

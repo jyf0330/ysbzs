@@ -559,7 +559,6 @@ try {
     const _els = {};
     global.document = { getElementById(id){if(!_els[id])_els[id]=makeEl();return _els[id]}, createElement(){return makeEl()} };
     global.window = { innerWidth:1920 };
-    global.setTimeout = fn => { try{ fn() }catch(e){} };
     global.__TEST__ = true;
   }
   const gmFiles = [

@@ -38,6 +38,28 @@ function dealDmg(monster, dmg, src) {
   }
 }
 
+// ========== 预览结算模拟（dryRun）==========
+// 深拷贝 G → 真实 settleExplosions → 取伤害数据 → 回滚。
+// 用于 buildPreviewGrid 替代独立结算模拟，确保预览与真实结算逻辑一致。
+
+function dryRunSettle() {
+  if (!G) return null;
+  var snap = {};
+  var keys = ["board","elementCells","terrainCells","monsters","heroes","summons","playerCastle","enemyCastle","engineStats","phase","round","day","dayHalf","hitCount","gold","ownedUnits","slots","explosionThreshold"];
+  keys.forEach(function(k){ snap[k] = JSON.parse(JSON.stringify(G[k])); });
+  var phaseBak = G.phase;
+  G.phase = "DRYRUN";
+  settleExplosions();
+  var dmgMap = {};
+  (snap.monsters || []).forEach(function(m){
+    var cur = G.monsters.find(function(x){ return x.id === m.id; });
+    if (cur && cur.hp !== m.hp) dmgMap[cur.id || m.id] = { before: m.hp, after: cur.hp, damage: m.hp - cur.hp, dead: cur.dead };
+  });
+  keys.forEach(function(k){ G[k] = snap[k]; });
+  G.phase = phaseBak;
+  return dmgMap;
+}
+
 // ========== 元素结算 ==========
 
 function settleExplosions() {
@@ -279,18 +301,14 @@ function endPlayerTurn() {
   } else {
     result = _coreEndPlayerTurn();
   }
-  if (!result || result.over || (result.stateChanges && result.stateChanges.phase === 'OVER')) { onCoreStateChange(['phase']); return; }
+  if (!result || result.over || (result.stateChanges && result.stateChanges.phase === 'OVER')) { onCoreStateChange([CK.PHASE]); return; }
   var warnText = result.warnText || (result.stateChanges && result.stateChanges.warnText);
   glog('--- 怪物回合 ---');
   if (warnText === 'monster_will_attack') glog('⚠️ 预警：怪物即将攻击英雄！');
   else if (warnText === 'monster_moving') glog('👁 预警：怪物移动方向已标出。');
-  if (typeof global !== 'undefined' && global.__TEST__) {
-    G.monWarn = [];
-    runMonstersSync();
-  } else if (typeof setTimeout === 'function') {
-    setTimeout(function() { G.monWarn = []; if (typeof runMonsters === 'function') runMonsters(0); }, 700);
-  }
-  onCoreStateChange(['phase','monWarn','boardState']);
+  G.monWarn = [];
+  runMonstersSync();
+  onCoreStateChange([CK.PHASE,'monWarn',CK.BOARDSTATE]);
 }
 
 function endPlayerTurnSync() {
@@ -299,7 +317,7 @@ function endPlayerTurnSync() {
   if (result.over) { onCoreStateChange(['phase']); return result; }
   G.monWarn = [];
   runMonstersSync();
-  onCoreStateChange(['phase','round','boardState']);
+  onCoreStateChange([CK.PHASE,CK.ROUND,CK.BOARDSTATE]);
   return result;
 }
 
@@ -517,8 +535,7 @@ function runMonsters(idx) {
   runMonsterAbilityHook('onRoundStart', alive[idx]);
   monsterAct(alive[idx]);
   onCoreStateChange();
-  if (typeof setTimeout === 'function') setTimeout(() => runMonsters(idx + 1), 350);
-  else runMonsters(idx + 1);
+  runMonsters(idx + 1);
 }
 
 // ========== 怪物能力钩子 ==========

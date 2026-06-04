@@ -16,3 +16,12 @@ const ELICON = {fire:'🔥',water:'💧',wind:'🌬',earth:'🪨'};
 const ELNAME = {fire:'火',water:'水',wind:'风',earth:'土'};
 const EL_CLASS = {火:'b-el-f',水:'b-el-w',风:'b-el-i',土:'b-el-e'};
 const MAX_STK = 6;
+// ── 核心层刷新 key 枚举（全局通用，供 onCoreStateChange 增量更新契约使用）──
+var CK = {
+  BOARD: "board", PHASE: "phase", ROUND: "round", DAY: "day",
+  GOLD: "gold", MONSTERS: "monsters", HEROES: "heroes", SUMMONS: "summons",
+  SLOTS: "slots", SELECTION: "selection", PREVIEW: "preview",
+  BOARDSTATE: "boardState", TERRAIN: "terrain", ELEMENTS: "elements",
+  CELL: "cell", TURN: "turn", SHOP: "shop", UNITS: "units",
+};
+

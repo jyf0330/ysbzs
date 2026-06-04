@@ -22,9 +22,6 @@ global.document = {
   createElement(){ return makeEl(); },
 };
 global.window = { innerWidth:1920 };
-// 让 setTimeout 同步执行（怪物AI回合立即完成）
-global.setTimeout = fn => { try{ fn(); }catch(e){} };
-
 // ── 载入游戏脚本（支持单文件或多文件模式）─────────────────────
 global.__TEST__ = true;
 const useMultiFile = fs.existsSync(path.join(__dirname, 'game.js'));
@@ -34,8 +31,8 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
-    'damage.js', 'battleLog.js',
-    'waves.js', 'battle.js', 'dispatch.js', 'terrain.js', 'shop.js', 'game.js', 'preview.js',
+    'damage.js', 'waves.js',
+    'battleLog.js', 'battle.js', 'dispatch.js', 'terrain.js', 'shop.js', 'game.js', 'preview.js',
     'ui.js',
   ];
   for (const f of moduleFiles) {

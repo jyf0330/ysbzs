@@ -232,7 +232,7 @@ function buyUnit(itemId) {
     showMsg(code === 'GOLD_NOT_ENOUGH' ? '💰 金币不足！' : code === 'BACKPACK_FULL' ? '⚠️ 背包容量不足，无法购买！' : '⚠️ 购买失败！');
   }
   renderShop();
-  refreshUI(r && r.refresh && r.refresh.changedKeys || ['shop','ownedUnits','heroes','boardState']);
+  refreshUI(r && r.refresh && r.refresh.changedKeys || [CK.SHOP,CK.UNITS,CK.HEROES,CK.BOARDSTATE]);
   return r;
 }
 
@@ -334,7 +334,7 @@ function closeShop() {
   if (panel) panel.style.display = 'none';
   var r = dispatchGameAction({ type: 'CLOSE_SHOP' });
   if (r && r.runEnd && typeof showRunEnd === 'function') showRunEnd();
-  refreshUI(r && r.refresh && r.refresh.changedKeys || ['phase','day','shop','monsters','heroes','boardState']);
+  refreshUI(r && r.refresh && r.refresh.changedKeys || [CK.PHASE,CK.DAY,CK.SHOP,CK.MONSTERS,CK.HEROES,CK.BOARDSTATE]);
   return r;
 }
 
@@ -494,7 +494,7 @@ function doEventOption(eventId, optionId) {
   var r = dispatchGameAction({ type: 'SELECT_EVENT', eventId: eventId, optionId: optionId });
   if (r && !r.ok && r.errors && r.errors[0] && r.errors[0].code === 'GOLD_NOT_ENOUGH') showMsg('💰 金币不足！');
   renderShop();
-  refreshUI(r && r.refresh && r.refresh.changedKeys || ['shop','gold','ownedUnits','events']);
+  refreshUI(r && r.refresh && r.refresh.changedKeys || [CK.SHOP,CK.GOLD,CK.UNITS,'events']);
   return r;
 }
 

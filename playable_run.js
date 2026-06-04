@@ -27,7 +27,6 @@ global.document = {
   createElement() { return makeEl(); },
 };
 global.window = { innerWidth: 1920 };
-global.setTimeout = fn => { try { fn(); } catch (e) { throw e; } };
 global.__TEST__ = true;
 
 const useMultiFile = fs.existsSync(path.join(__dirname, 'game.js'));

@@ -34,6 +34,12 @@ else
   ZIP="$TMPZIP"; NOTE="GitHub: $REPO tag=$TAG"
 fi
 TMPDIR=$(mktemp -d)
+<<<<<<< Updated upstream
+=======
+trap "rm -rf $TMPDIR ${TMPZIP:-}" 2>/dev/null" EXIT
+
+echo "📦 解压 ..."
+>>>>>>> Stashed changes
 unzip -q -o "$ZIP" -d "$TMPDIR"
 SRC=$(find "$TMPDIR" -maxdepth 2 -type d ! -path "$TMPDIR" | head -1)
 [ -z "$SRC" ] && exit 1

@@ -563,11 +563,11 @@ function refreshUI(changedKeys){
   const keys=Array.isArray(changedKeys)?changedKeys:[];
   const vm=buildBattleVM();
   const full=!keys.length||keys.indexOf('all')>=0||keys.indexOf('battle')>=0||keys.indexOf('shop')>=0;
-  if(full||_hasChangedKey(keys,['boardState','board','preview','monsters','summons','terrain','elements','selection']))renderBoard(vm.board);
-  if(full||_hasChangedKey(keys,['heroes','units','boardState']))renderHS(vm.heroes);
-  if(full||_hasChangedKey(keys,['slots','selection','preview']))renderSlots(vm.slots);
-  if(full||_hasChangedKey(keys,['turn','phase','gold','day','round']))renderTurn(vm.turn);
-  if(G.selectedCell&&(full||_hasChangedKey(keys,['selection','boardState','preview','cell']))){
+  if(full||_hasChangedKey(keys,[CK.BOARDSTATE,CK.BOARD,CK.PREVIEW,CK.MONSTERS,CK.SUMMONS,CK.TERRAIN,CK.ELEMENTS,CK.SELECTION]))renderBoard(vm.board);
+  if(full||_hasChangedKey(keys,[CK.HEROES,CK.UNITS,CK.BOARDSTATE]))renderHS(vm.heroes);
+  if(full||_hasChangedKey(keys,[CK.SLOTS,CK.SELECTION,CK.PREVIEW]))renderSlots(vm.slots);
+  if(full||_hasChangedKey(keys,[CK.TURN,CK.PHASE,CK.GOLD,CK.DAY,CK.ROUND]))renderTurn(vm.turn);
+  if(G.selectedCell&&(full||_hasChangedKey(keys,[CK.SELECTION,CK.BOARDSTATE,CK.PREVIEW,CK.CELL]))){
     renderCellDetail(getSelectedCellPreview(G));
   }else if(!G.selectedCell){
     const cdEl=document.getElementById('cd');

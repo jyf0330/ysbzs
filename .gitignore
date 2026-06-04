@@ -16,17 +16,32 @@ references/SuperAutoTest/
 
 # OS
 .DS_Store
+Thumbs.db
 
 # external data — track generated-json, ignore temp/backup
 external-data/_*
 external-data/generated-json_backup_*
 *.zip
 
-# 生成报告 — 不提交
+# 生成报告 / 录制 — 不提交
 reports/
-Thumbs.db
-test-results/
+recordings/*.webm
+
+# 本地工具缓存
+.omx/
+.omx/*
+.reasonix/
+.reasonix/*
 .superpowers/
+.codex/
+.claude/
+
+# 参考设计图 — 放 assets/references/ 下统一忽略
+assets/references/
+
+# 测试/构建副产品
+test-results/
+benchmarks/ysbzs/fixtures/
 11.png
 _apply_shapes.js
 test.js.bak

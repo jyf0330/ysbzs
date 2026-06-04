@@ -445,8 +445,7 @@ function wiringCheck() {
     { type: /buildNewSD/.test(extData) ? '' : 'PASS_WITH_ALIAS', explanation: 'SD 数据由 externalDataAdapter 从 generated-json 加载' });
   check(/UNIT_DEFS/.test(extData) || /EXTDEFS/.test(extData.toUpperCase()) || /defs\[/.test(extData), 'W43', p, 'UNIT_DEFS 由 externalDataAdapter 加载',
     { type: /__EXTERNAL_UNIT_DEFS__/.test(extData) ? '' : 'PASS_WITH_ALIAS', explanation: '从 pal_units.json 加载' });
-  check(/SHOP_PRICE_CONFIG/.test(data) || /getExternalOnlyPool/.test(extData), 'W44', p, '商店配置（data.js 或 externalDataAdapter）',
-    { type: 'PASS_WITH_ALIAS', explanation: '价格数据在 shop_config.json 中由 loader 提供' });
+  check(/getTierMult/.test(extData) || /shop_config/.test(extData), 'W44', p, '商店配置（externalDataAdapter 通过 shop_config.json + getTierMult）');
   check(/encounter_wave/.test(extData) || /buildPalWaveForDay/.test(readText('waves.js')), 'W45', p, '波次配置（encounter_config.json）',
     { type: 'PASS_WITH_ALIAS', explanation: '波次数据已迁移至 encounter_config.json' });
   check(/pal_master/.test(extData) || /MONSTER_TYPES/.test(data), 'W46', p, '怪物定义（pal_master 或 MONSTER_TYPES）',
@@ -643,6 +642,17 @@ function fileStructureCheck() {
     { type: /totalSpent/.test(prCode) ? '' : 'PROJECT_PARTIAL' });
   check(/purchases/.test(prCode), 'S24', p, 'playable_run.js 有购买记录',
     { type: /purchases/.test(prCode) ? '' : 'PROJECT_PARTIAL' });
+
+  // 旧逻辑防回流扫描
+  const uiCode = readText('ui.js');
+  const gameCode2 = readText('game.js');
+  const prevCode = readText('preview.js');
+  check(uiCode.indexOf('genShop_old') < 0, 'S38', p, 'ui.js 无 genShop_old 残留',
+    { type: 'PASS_WITH_ALIAS', explanation: 'genShop_old 已删除，防回流检查' });
+  check(gameCode2.indexOf("fire_starter") < 0 && gameCode2.indexOf("water_droplet") < 0, 'S39', p, 'game.js 无 fire_starter/water_droplet',
+    { type: 'PASS_WITH_ALIAS', explanation: '旧单位 ID 已替换为 Pal ID' });
+  check(uiCode.indexOf('[0,1,2,4,8]') < 0 && prevCode.indexOf('[0,1,2,4,8]') < 0, 'S40', p, 'ui.js/preview.js 无硬编码倍率数组',
+    { type: 'PASS_WITH_ALIAS', explanation: '硬编码 [0,1,2,4,8] 已替换为 getTierMult()' });
 
   // externalDataAdapter 导出 API
   const extCode = readText('externalDataAdapter.js');

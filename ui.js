@@ -1828,9 +1828,6 @@ function toggleUnitActive(instanceId){
 
 // 保留旧函数别名（向后兼容）
 function refreshShop(){ rollShop(); }
-function genShop_old(){
-  G.shopItems=[]; for(let i=0;i<3;i++){const el=['fire','water','wind','earth'][Math.floor(Math.random()*4)],sn=Math.floor(Math.random()*20)+1,tier=1,cost=SD[sn].n<=1?1:SD[sn].n<=3?2:SD[sn].n<=4?3:4;G.shopItems.push({id:`si${i}`,el,sn,tier,name:bname(el,sn,tier),cost});}
-}
 
 // ========== UTILS ==========
 function glog(t){

@@ -71,12 +71,25 @@ function initGame() {
       });
     }
   }
-  // fallback：无英雄配置时给默认旧单位
-  if (G.ownedUnits.length < 1) {
-    addOwnedUnit('fire_starter', { r: 6, c: 0 });
-  }
+  // fallback：无英雄配置时从外部数据源取 Pal
   if (G.ownedUnits.length < 2) {
-    addOwnedUnit('water_droplet', { r: 7, c: 1 });
+    // 从外部商店池或 UNIT_DEFS 获取合法 Pal ID
+    var fallbackPools = (typeof getExternalOnlyShopPools === 'function' ? getExternalOnlyShopPools() : null);
+    var fallbackIds = [];
+    if (fallbackPools) {
+      var day1Pool = fallbackPools['day1_midday'] || fallbackPools['day1_night'] || [];
+      fallbackIds = day1Pool.filter(function(id) { return UNIT_DEFS[id]; });
+    }
+    // 如果 external pool 不可用，从 UNIT_DEFS 取前 2 个 Pal
+    if (fallbackIds.length < 2 && typeof UNIT_DEFS !== 'undefined') {
+      fallbackIds = Object.keys(UNIT_DEFS).filter(function(k) { return k.indexOf('pal_') === 0; }).sort();
+    }
+    if (G.ownedUnits.length < 1 && fallbackIds.length >= 1) {
+      addOwnedUnit(fallbackIds[0], { r: 6, c: 0 });
+    }
+    if (G.ownedUnits.length < 2 && fallbackIds.length >= 2) {
+      addOwnedUnit(fallbackIds[1], { r: 7, c: 1 });
+    }
   }
   syncUnitsToHeroes();
   syncMaxRoundForPhase();

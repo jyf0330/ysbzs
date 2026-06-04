@@ -589,12 +589,6 @@ function buildBattleVM(){
   return{board:buildBoardVM(),heroes:buildHeroesVM(),slots:buildSlotsVM(),turn:buildTurnVM()};
 }
 
-// ─── 核心事件驱动架构 ───
-function buildHeroStats(){
-  return Object.fromEntries(
-    Object.values(G.heroes).map(h=>[h.id,{id:h.id,name:h.name,hp:h.hp,maxHp:h.maxHp,pos:{r:h.pos.r,c:h.pos.c}}])
-  );
-}
 
 function buildBattleReport(monsterStats,monsterThreats){
   const ms=monsterStats||buildMonsterStats();
@@ -665,92 +659,6 @@ function buildBattleReport(monsterStats,monsterThreats){
   return report;
 }
 
-function recomputeCorePreview(){
-  const pg=buildPreviewGrid();
-  const monsterStats=buildMonsterStats();
-  const cellInfoMap=buildCellInfoMap();
-  const monsterThreats={monActMap:pg.monActMap,heroIncomingDmg:pg.heroIncomingDmg,summonIncomingDmg:pg.summonIncomingDmg,monFinalSet:pg.monFinalSet,monCardMap:pg.monCardMap};
-  const heroStats=buildHeroStats();
-  const battleReport=buildBattleReport(monsterStats,monsterThreats);
-  G.coreVersion=(G.coreVersion||0)+1;
-  // ── cellBriefs：从 previewGrid 整理中文短字（debug 面板数据源，UI 只读）──
-  const cellBriefs={};
-  const ELNAME={fire:'火',water:'水',wind:'风',earth:'土'};
-  const HERO_NAME={ha:'英1',hb:'英2'};
-  const EL_ORDER=['fire','water','wind','earth'];
-  function _monIdx(monId){var idx=G.monsters.findIndex(function(m){return m.id===monId&&!m.dead;});return idx>=0?idx+1:null;}
-  function _monLabel(label){return String(label).replace(/^M/,'怪');}
-  function _heroLabel(hid){return HERO_NAME[hid]||hid;}
-  function _elParts(selfCellDmg){
-    var parts=[]; var out={fire:0,water:0,wind:0,earth:0};
-    EL_ORDER.forEach(function(el){var d=selfCellDmg[el]||0;out[el]=d;if(d>0)parts.push(ELNAME[el]+d);});
-    out._str=parts.join(' '); return out;
-  }
-  function _uniqHeroes(acts){var ids=[],seen={};acts.forEach(function(a){if(!seen[a.heroId]){seen[a.heroId]=true;ids.push(a.heroId);}});return ids;}
-  Object.values(pg.grid).forEach(function(cell){
-    var ent=cell.entity, ef=cell.elementField, pv=cell.preview;
-    var brief='', detail=null, dtype=ent.type||'empty';
-    var hasDmg=pv.entityDamage>0;
-    if(ent.type==='monster'||ent.type==='summon'){
-      var hids=_uniqHeroes(pv.incomingActions);
-      var eidx=ent.type==='monster'?_monIdx(ent.id):null;
-      var etag=eidx?'怪'+eidx:(ent.name||'?');
-      var eb=_elParts(pv.selfCellDamage);
-      if(hids.length>0||hasDmg){
-        if(hids.length>0)brief=hids.map(_heroLabel).join('')+'打'+(eidx||etag);
-        if(eb._str)brief+=(brief?' ':'')+eb._str+' 总'+pv.entityDamage;
-        else if(hasDmg)brief+=(brief?' ':'')+'总'+pv.entityDamage;
-        detail={type:ent.type,attackers:hids.map(_heroLabel),target:etag,
-          fire:eb.fire,water:eb.water,wind:eb.wind,earth:eb.earth,
-          splash:pv.splashDamage?.total||0,total:pv.entityDamage,
-          willDie:ent.hp>0&&pv.entityDamage>=ent.hp};
-      }
-    }else if(ent.type==='hero'){
-      var thr=pv.threatFromMonsters||[];
-      if(thr.length>0){
-        var td=thr.reduce(function(s,t){return s+(t.dmg||0);},0);
-        brief=thr.map(function(t){return _monLabel(t.label);}).join('')+'打'+td;
-        detail={type:'hero',attackers:thr.map(function(t){return _monLabel(t.label);}),target:_heroLabel(ent.id),incoming:td};
-      }
-    }else if(ent.type==='player_castle'||ent.type==='enemy_castle'){
-      var hids2=_uniqHeroes(pv.incomingActions);
-      var ctag=ent.type==='player_castle'?'城':'敌城';
-      var eb2=_elParts(pv.selfCellDamage);
-      var cthr=pv.threatFromMonsters||[];
-      var cmDmg=cthr.reduce(function(s,t){return s+(t.dmg||0);},0);
-      if(hids2.length>0||hasDmg||cmDmg>0){
-        if(hids2.length>0)brief=hids2.map(_heroLabel).join('')+'打'+ctag;
-        else if(cmDmg>0)brief=cthr.map(function(t){return _monLabel(t.label);}).join('')+'打'+ctag;
-        if(eb2._str)brief+=(brief?' ':'')+eb2._str;
-        var ct=hasDmg?pv.entityDamage:cmDmg;
-        if(ct>0)brief+=(brief?' ':'')+'总'+ct;
-        detail={type:'castle',attackers:hids2.map(_heroLabel),target:ctag,
-          fire:eb2.fire,water:eb2.water,wind:eb2.wind,earth:eb2.earth,
-          monsterDmg:cmDmg,total:hasDmg?pv.entityDamage:cmDmg};
-      }
-    }else{
-      var elParts=[]; var td3=0;
-      EL_ORDER.forEach(function(el){var f=ef[el];if(!f||f.layers<=0)return;elParts.push(ELNAME[el]+f.layers);td3+=f.damage||0;});
-      if(elParts.length>0){
-        brief=elParts.join(' ')+(elParts.length>1?' 总'+td3:'');
-        detail={type:'empty',elements:elParts.join(' '),total:td3};
-      }
-    }
-    cellBriefs[cell.cellKey]={brief:brief,detail:detail||{},type:dtype};
-  });
-  G.coreSnapshot={
-    _version:G.coreVersion,
-    _ts:Date.now(),
-    previewGrid:{grid:pg.grid},
-    monsterStats,
-    cellInfoMap,
-    monsterThreats,
-    heroStats,
-    battleReport,
-    warnings:[],
-    _cellBriefs:cellBriefs,
-  };
-}
 
 // ========== REPLAY 战斗复盘 ==========
 const REPLAY_VERSION = 1;

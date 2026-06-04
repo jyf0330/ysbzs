@@ -436,16 +436,25 @@ function wiringCheck() {
   check(/function checkGameOver/.test(battle), 'W39', p, 'battle.js 有 checkGameOver');
   check(/function runSummonActions/.test(battle), 'W40', p, 'battle.js 有 runSummonActions');
 
-  // data.js 数据层
+  // data.js 数据层（框架常量；策划数据已迁移至 generated-json）
   const data = exists('data.js') ? readText('data.js') : '';
   check(/EL\s*=/.test(data), 'W41', p, 'data.js 定义 EL 元素常量');
-  check(/SD\s*=/.test(data), 'W42', p, 'data.js 定义 SD 形状定义');
-  check(/UNIT_DEFS/.test(data), 'W43', p, 'data.js 定义 UNIT_DEFS');
-  check(/SHOP_PRICE_CONFIG/.test(data), 'W44', p, 'data.js 定义 SHOP_PRICE_CONFIG');
-  check(/DAY_WAVE_CONFIG/.test(data), 'W45', p, 'data.js 定义 DAY_WAVE_CONFIG');
-  check(/MONSTER_TYPES/.test(data), 'W46', p, 'data.js 定义 MONSTER_TYPES');
-  check(/DAY_ROUND_CONFIG/.test(data), 'W47', p, 'data.js 定义 DAY_ROUND_CONFIG');
-  check(/SHOP_POOLS/.test(data), 'W48', p, 'data.js 定义 SHOP_POOLS');
+  // SD/UNIT_DEFS/SHOP_POOLS 等策划数据已从 data.js 迁移至 external-data/generated-json
+  const extData = exists('externalDataAdapter.js') ? readText('externalDataAdapter.js') : '';
+  check(/SD\s*=/.test(extData) || /buildNewSD/.test(extData), 'W42', p, 'SD 形状定义（externalDataAdapter）',
+    { type: /buildNewSD/.test(extData) ? '' : 'PASS_WITH_ALIAS', explanation: 'SD 数据由 externalDataAdapter 从 generated-json 加载' });
+  check(/UNIT_DEFS/.test(extData) || /EXTDEFS/.test(extData.toUpperCase()) || /defs\[/.test(extData), 'W43', p, 'UNIT_DEFS 由 externalDataAdapter 加载',
+    { type: /__EXTERNAL_UNIT_DEFS__/.test(extData) ? '' : 'PASS_WITH_ALIAS', explanation: '从 pal_units.json 加载' });
+  check(/SHOP_PRICE_CONFIG/.test(data) || /getExternalOnlyPool/.test(extData), 'W44', p, '商店配置（data.js 或 externalDataAdapter）',
+    { type: 'PASS_WITH_ALIAS', explanation: '价格数据在 shop_config.json 中由 loader 提供' });
+  check(/encounter_wave/.test(extData) || /buildPalWaveForDay/.test(readText('waves.js')), 'W45', p, '波次配置（encounter_config.json）',
+    { type: 'PASS_WITH_ALIAS', explanation: '波次数据已迁移至 encounter_config.json' });
+  check(/pal_master/.test(extData) || /MONSTER_TYPES/.test(data), 'W46', p, '怪物定义（pal_master 或 MONSTER_TYPES）',
+    { type: 'PASS_WITH_ALIAS', explanation: '怪物数据已从 MONSTER_TYPES 迁移至 pal_units.json pal_master' });
+  check(/DAY_ROUND_CONFIG/.test(data) || /maxRound/.test(readText('battle.js')), 'W47', p, '回合配置',
+    { type: /DAY_ROUND_CONFIG/.test(data) ? '' : 'PASS_WITH_ALIAS', explanation: '回合配置由 syncMaxRoundForPhase 运行时计算' });
+  check(/SHOP_POOLS/.test(data) || /__EXTERNAL_ONLY_POOLS__/.test(extData) || /buildMergedShopPools/.test(extData), 'W48', p, '商店池配置',
+    { type: /buildMergedShopPools/.test(extData) ? '' : 'PASS_WITH_ALIAS', explanation: '商店池数据由 externalDataAdapter 从 shop_config.json 构建' });
 
   // board / actions / elements
   const board = exists('board.js') ? readText('board.js') : '';

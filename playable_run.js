@@ -30,8 +30,9 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
-    'waves.js', 'battle.js', 'shop.js', 'game.js', 'ui.js',
-    'damage.js', 'terrain.js', 'battleLog.js', 'preview.js',
+    'waves.js', 'battle.js', 'shop.js', 'game.js', 'preview.js',
+    'ui.js',
+        'damage.js', 'terrain.js', 'battleLog.js',
   ];
   for (const f of moduleFiles) {
     const fp = path.join(__dirname, f);

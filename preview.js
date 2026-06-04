@@ -557,6 +557,13 @@ function buildBattleReport(monsterStats,monsterThreats){
   return report;
 }
 
+function buildHeroStats(){
+  return Object.fromEntries(
+    Object.values(G.heroes).map(function(h){return [h.id,{id:h.id,name:h.name,hp:h.hp,maxHp:h.maxHp,pos:{r:h.pos.r,c:h.pos.c}}];})
+  );
+}
+
+
 function recomputeCorePreview(){
   const pg=buildPreviewGrid();
   const monsterStats=buildMonsterStats();

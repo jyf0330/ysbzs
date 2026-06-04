@@ -46,7 +46,9 @@ global.__TEST__ = true;
 
 // ========== 加载游戏模块 ==========
 const ROOT = path.join(__dirname, '..');
-const MODS = ['data.js','rng.js','board.js','actions.js','elements.js','waves.js','battle.js','shop.js','game.js','ui.js','damage.js','terrain.js','battleLog.js','preview.js'];
+// externalDataAdapter.js 的 loadJSON 用 __dirname 定位 JSON，重定向到项目根
+if (typeof __dirname !== 'undefined') __dirname = ROOT;
+const MODS = ['data.js','externalDataAdapter.js','rng.js','board.js','actions.js','elements.js','waves.js','battle.js','shop.js','game.js','preview.js','ui.js','damage.js','terrain.js','battleLog.js'];
 for (const f of MODS) {
   const fp = path.join(ROOT, f);
   if (!fs.existsSync(fp)) continue;
@@ -300,6 +302,18 @@ function run() {
     if (safety % 100 === 0) console.error('  [' + safety + '] D' + G.day + 'h' + G.dayHalf + 'r' + G.round + ' ' + G.phase);
 
     if (G.phase === 'PLAYER') {
+      var plan = executeAiBattlePlan_sync();
+      if (plan && plan.canRun) {
+        var needCp = previewCheckpoints.length < 5;
+        if (needCp) var cp = collectPrecision('D' + G.day + 'h' + G.dayHalf + 'r' + G.round);
+        endPlayerTurn();
+        if (needCp) {
+          G._hpForVerify = G._hpAfterSettle || {};
+          verifyPrecision(cp);
+        }
+      } else {
+        endPlayerTurn();
+      }
       var plan = buildAiBattleTurnPlan();
       if (plan.canRun) {
         // 模拟浏览器流程：先移动，再逐个 useSlot 更新元素场，再结算

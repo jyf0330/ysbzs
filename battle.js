@@ -176,6 +176,7 @@ function useSlot(idx) {
     else if (cell.el === slot.el) { cell.stk = Math.min(cell.stk + layersToAdd, MAX_STK); }
   });
   slot.used = true;
+  slot._committed = true; // useSlot 已写入 elementCells，阻止 commit 重复落地
   hero._acted = true;
   G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
   G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, el: slot.el, sn: slot.sn, dir: slot.dir, cells: cells.map(function(c) { return c.r + ',' + c.c; }), desc: '使用行动块#' + (idx + 1) + '：' + EL[slot.el] });
@@ -185,7 +186,7 @@ function useSlot(idx) {
 
 function commitPlayerActionsToElementField(G) {
   G.slots.forEach((s, idx) => {
-    if (!s.used) return;
+    if (!s.used || s._committed) return; // 跳过 useSlot 已落地的槽
     const hero = G.heroes[s.hid]; if (!hero) return;
     const cells = atkCells(hero.pos, s.sn, s.dir);
     const center = findCenterCell(cells);
@@ -728,8 +729,7 @@ function executeAiBattlePlan_sync(plan) {
     const s = G.slots[a.slotId];
     if (!s || s.used || !G.heroes[s.hid]) return;
     if (atkCells(G.heroes[s.hid].pos, s.sn, s.dir).length === 0) return;
-    s.used = true;
-    glog(`🤖 使用 ${G.heroes[s.hid].name}·${_aiSlotLabel(s, a.slotId)}`);
+    useSlot(a.slotId); // 走统一入口：写元素层、actionLog、遗物hook、UI刷新
   });
   glog(`⚡ AI 战斗执行：移动${plan.moves.length}步，施放${plan.actions.length}个符文。`);
   return plan;

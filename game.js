@@ -419,7 +419,7 @@ async function runAiBattleTurn_async(opts) {
     var s = G.slots[a.slotId];
     if (!s || s.used || !G.heroes[s.hid]) continue;
     if (atkCells(G.heroes[s.hid].pos, s.sn, s.dir).length === 0) continue;
-    s.used = true;
+    useSlot(a.slotId); // 走统一入口：写元素层、actionLog、遗物hook、UI刷新
     await new Promise(function(r) { setTimeout(r, 80); });
   }
   glog('⚡ AI 战斗执行：移动' + plan.moves.length + '步，施放' + plan.actions.length + '个符文。');

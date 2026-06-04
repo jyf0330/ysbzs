@@ -166,7 +166,9 @@ function buildPalWaveForDay(day, phase) {
       ability: null,
     });
   }
-  return { monsters: result, spawnSize: count > 4 ? 4 : count };
+  // spawnSize 最小 3（避免出生格与城堡 {r:0,c:7} 重叠）
+  var spawnSize = Math.max(3, count > 4 ? 4 : count);
+  return { monsters: result, spawnSize: spawnSize };
 }
 
 function assignSpawnPositions(monsters, spawnSize) {

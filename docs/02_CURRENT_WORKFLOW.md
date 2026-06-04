@@ -161,6 +161,22 @@ Always trigger matching skills when available:
 | `git-c`, finish, pre-commit check | `verification-before-completion`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
 
+### Skill Invocation Requirement
+
+When a row in the Skill Routing table matches the current task, the agent must
+invoke the matching Skill tool before answering, planning, or editing files.
+
+If the agent cannot invoke a listed skill because the current AI tool does not
+expose it, the skill is missing, the user explicitly excludes it, or the task
+is a trivial one-command check, the final report must include one of:
+
+- `SKIPPED <skill-name>: <reason>`
+- `UNAVAILABLE <skill-name>: <reason>`
+
+For Claude/DeepSeek sessions, `cys` appends a routing reminder at startup, but
+this file remains the project-level source of truth. The model choice does not
+change this rule.
+
 ## Missing Skills
 
 If a matching skill is unavailable, write `UNAVAILABLE`.

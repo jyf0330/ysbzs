@@ -129,7 +129,7 @@ function settleDamage() { settleExplosions(); }
 
 // ========== 行动槽执行 ==========
 
-function useSlot(idx) {
+function _coreUseSlot(idx) {
   var slot = G.slots[idx];
   if (!slot || slot.used || G.phase !== 'PLAYER') return;
   var hero = G.heroes[slot.hid]; if (!hero) return;
@@ -178,6 +178,7 @@ function useSlot(idx) {
     var cell = G.board[ap.r][ap.c];
     if (!cell.el || cell.stk === 0) { cell.el = slot.el; cell.stk = Math.min(layersToAdd, MAX_STK); }
     else if (cell.el === slot.el) { cell.stk = Math.min(cell.stk + layersToAdd, MAX_STK); }
+    if (typeof syncBoardElementFromElementCells === 'function') syncBoardElementFromElementCells(ap);
   });
   slot.used = true;
   slot._committed = true;
@@ -190,6 +191,13 @@ function useSlot(idx) {
     bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid), cells: cells });
   }
   onCoreStateChange();
+}
+
+function useSlot(idx) {
+  if (typeof dispatchGameAction === 'function' && !(G && G.__dispatching)) {
+    return dispatchGameAction({ type: 'USE_SLOT', slotId: idx });
+  }
+  return _coreUseSlot(idx);
 }
 
 function commitPlayerActionsToElementField(G) {
@@ -219,6 +227,7 @@ function commitPlayerActionsToElementField(G) {
       elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
       const cell = G.board[ap.r][ap.c];
       cell.el = s.el; cell.stk = Math.min(elSlot.layers, MAX_STK);
+      if (typeof syncBoardElementFromElementCells === 'function') syncBoardElementFromElementCells(ap);
     });
     s._committed = true;
   });
@@ -256,22 +265,35 @@ function _coreEndPlayerTurn() {
     var hasAtk = G.monWarn.some(function(w) { return w.type === 'atk'; });
     warnText = hasAtk ? 'monster_will_attack' : 'monster_moving';
   }
-  if (typeof setTimeout === 'function') {
-    setTimeout(function() { G.monWarn = []; if (typeof runMonsters === 'function') runMonsters(0); }, 700);
-  }
   return { phase: 'MONSTER', warnText: warnText, over: false };
 }
 
 
 function endPlayerTurn() {
-  // 委托核心逻辑（不复制），再调 UI
+  // 委托核心逻辑（不复制），再由 UI/入口层决定同步或异步推进怪物阶段
   if (G.phase !== 'PLAYER') return;
   var result = _coreEndPlayerTurn();
   if (result.over) { onCoreStateChange(); return; }
   glog('--- 怪物回合 ---');
   if (result.warnText === 'monster_will_attack') glog('⚠️ 预警：怪物即将攻击英雄！');
   else if (result.warnText === 'monster_moving') glog('👁 预警：怪物移动方向已标出。');
+  if (typeof global !== 'undefined' && global.__TEST__) {
+    G.monWarn = [];
+    runMonstersSync();
+  } else if (typeof setTimeout === 'function') {
+    setTimeout(function() { G.monWarn = []; if (typeof runMonsters === 'function') runMonsters(0); }, 700);
+  }
   onCoreStateChange();
+}
+
+function endPlayerTurnSync() {
+  if (G.phase !== 'PLAYER') return;
+  var result = _coreEndPlayerTurn();
+  if (result.over) { onCoreStateChange(); return result; }
+  G.monWarn = [];
+  runMonstersSync();
+  onCoreStateChange();
+  return result;
 }
 
 function finishMonsters() {
@@ -351,7 +373,9 @@ function monsterAct(m) {
     if (block) { glog(`👾 ${m.name}被${EL[block.el]}${block.layers}阻挡！本回合结束。`); ap = 0; break; }
     if (!monAt(np) && !heroAt(np) && !castleAt(np) && !summonAt(np)) {
       var fromPos = { r: m.pos.r, c: m.pos.c };
+      var occupant = (typeof cloneBoardStateOccupant === 'function') ? cloneBoardStateOccupant('monster', m, { refId: m.id, side: 'enemy' }) : null;
       m.pos = np;
+      if (typeof moveBoardStateUnit === 'function') moveBoardStateUnit(fromPos, np, occupant);
       glog(`👾 ${m.name}→(${np.r},${np.c})`);
       if (typeof writeStructuredLog === 'function') writeStructuredLog('monster_move_step', { monster_id: m.id || m.typeId, monster_name: m.name, from_cell: fromPos, to_cell: np, ap_before: ap, ap_after: ap - 1 }, null);
       if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_monster_move_step', { actor: m, monster: m, from: fromPos, to: np });
@@ -426,6 +450,7 @@ function resolveTerrainOnEnter(monster, pos) {
   // 触发后清空该格陷阱（一次性）
   // 保留元素层不受影响
   G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
+  if (typeof clearBoardStateTerrain === 'function') clearBoardStateTerrain(pos);
 }
 
 function simMonAct(m) {
@@ -462,13 +487,27 @@ function simMonAct(m) {
   return { movCells, atkCell, atkTarget, dmg: m.atk, startPos, remainAp: ap, stopReason };
 }
 
+function runMonstersSync() {
+  const alive = G.monsters.filter(m => !m.dead && m.hp > 0);
+  for (var i = 0; i < alive.length; i++) {
+    if (alive[i].dead || alive[i].hp <= 0) continue;
+    runMonsterAbilityHook('onRoundStart', alive[i]);
+    monsterAct(alive[i]);
+    if (G.phase === 'OVER') break;
+  }
+  if (G.phase !== 'OVER') finishMonsters();
+  return { phase: G.phase, alive: G.monsters.filter(m => !m.dead && m.hp > 0).length };
+}
+
 function runMonsters(idx) {
+  idx = idx || 0;
   const alive = G.monsters.filter(m => !m.dead && m.hp > 0);
   if (idx >= alive.length) { finishMonsters(); return; }
   runMonsterAbilityHook('onRoundStart', alive[idx]);
   monsterAct(alive[idx]);
   onCoreStateChange();
-  setTimeout(() => runMonsters(idx + 1), 350);
+  if (typeof setTimeout === 'function') setTimeout(() => runMonsters(idx + 1), 350);
+  else runMonsters(idx + 1);
 }
 
 // ========== 怪物能力钩子 ==========

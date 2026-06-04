@@ -90,6 +90,7 @@ function snapshotCoreStateForReplay(){
     day:G.day, dayHalf:G.dayHalf, phase:G.phase, round:G.round, maxRound:G.maxRound,
     gold:G.gold, hitCount:G.hitCount, explosionThreshold:G.explosionThreshold,
     board:JSON.parse(JSON.stringify(G.board)),
+    boardState:typeof exportBoardStateSnapshot==='function'?exportBoardStateSnapshot():null,
     elementCells:JSON.parse(JSON.stringify(G.elementCells)),
     heroes:JSON.parse(JSON.stringify(G.heroes)),
     monsters:JSON.parse(JSON.stringify(G.monsters)),
@@ -116,6 +117,7 @@ function applyReplaySnapshot(snap){
     shopFrozen:{units:new Set(),consumables:new Set()},
     runVictory:null, lastSettle:null,
   });
+  if(typeof rebuildBoardState==='function')rebuildBoardState();
   recomputeCorePreview();
 }
 
@@ -540,7 +542,10 @@ function renderDebugPanel(){
 }
 
 function dispatchGameAction(action){
-  applyActionToState(action);
+  if (!G) return;
+  G.__dispatching = true;
+  try { applyActionToState(action); }
+  finally { G.__dispatching = false; }
   pushReplayStep(action);
   recomputeCorePreview();
   if(typeof document!=='undefined')render();
@@ -555,7 +560,9 @@ function applyActionToState(action){
       if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to)||summonAt(action.to)||hasElementAt(action.to))return;
       if(castleAt(action.to))return;
       const from={r:hero.pos.r,c:hero.pos.c};
+      const occ=(typeof cloneBoardStateOccupant==='function')?cloneBoardStateOccupant('hero', hero, {refId:hero.id, side:'player'}):null;
       hero.pos={r:action.to.r,c:action.to.c};
+      if(typeof moveBoardStateUnit==='function')moveBoardStateUnit(from, action.to, occ);
       if(G.selectedCell&&G.selectedCell.r===from.r&&G.selectedCell.c===from.c){G.selectedCell={r:action.to.r,c:action.to.c};}
       G.actionLog.push({type:'MOVE_HERO',heroId:action.heroId,from,to:action.to});
       G.prevCells=[]; G.selSlot=null; G.heroPrev=[];
@@ -589,8 +596,9 @@ function applyActionToState(action){
       break;
     }
     case 'USE_SLOT':{
-      // 委托 battle.js 的 useSlot 处理全部逻辑
-      useSlot(action.slotId);
+      // 委托 battle.js 的核心 USE_SLOT 逻辑；外部直接 useSlot() 会进入本 dispatch。
+      if(typeof _coreUseSlot==='function')_coreUseSlot(action.slotId);
+      else useSlot(action.slotId);
       break;
     }
     default:break;

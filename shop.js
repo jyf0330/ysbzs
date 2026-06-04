@@ -370,7 +370,7 @@ function rollShopEvents() {
   });
   if (pool.length === 0) return [];
   var count = rngInt(0, pool.length < 3 ? pool.length + 1 : 4); // 0-3
-  var shuffled = pool.slice().sort(function() { return Math.random() - 0.5; });
+  var shuffled = (typeof rngShuffle === 'function') ? rngShuffle(pool.slice()) : pool.slice();
   var selected = [];
   for (var i = 0; i < count && i < shuffled.length; i++) {
     if (G._doneEvents && G._doneEvents.indexOf(shuffled[i].event_id) !== -1) continue;
@@ -400,7 +400,7 @@ function executeEventReward(reward) {
       break;
     case 'gain_pal':
       if (reward.pool_id === 'copy_owned_pal' && G.ownedUnits.length > 0) {
-        var src = G.ownedUnits[Math.floor(Math.random() * G.ownedUnits.length)];
+        var src = (typeof rngPick === 'function') ? rngPick(G.ownedUnits) : G.ownedUnits[0];
         if (src) {
           var copy = createPalUnitInstance({ unitId: src.defId, faction: 'player', quality: src.quality || '青铜' });
           if (copy) { copy.instanceId = 'u_' + (G.nextUnitId++); copy.slotSize = src.slotSize || 1; G.ownedUnits.push(copy); glog('🎁 事件奖励：复制 ' + (src.name || src.defId)); }
@@ -410,7 +410,7 @@ function executeEventReward(reward) {
         var extP = getExternalOnlyPool ? getExternalOnlyPool() : null;
         var pool = extP ? extP['day' + G.day + '_midday'] : null;
         if (pool && pool.length > 0) {
-          var uid = pool[Math.floor(Math.random() * pool.length)];
+          var uid = (typeof rngPick === 'function') ? rngPick(pool) : pool[0];
           var pal = createPalUnitInstance({ unitId: uid, faction: 'player', quality: reward.quality_hint || '青铜' });
           if (pal) { pal.instanceId = 'u_' + (G.nextUnitId++); pal.slotSize = pal.slotSize || 1; G.ownedUnits.push(pal); glog('🎁 事件奖励：获得 ' + (pal.name || uid)); }
         }
@@ -421,13 +421,13 @@ function executeEventReward(reward) {
       var rc = (typeof getExternalRelicConfig === 'function') ? getExternalRelicConfig() : null;
       if (rc && rc.relic_master) {
         var eligible = rc.relic_master.filter(function(r) { return G._doneEvents.indexOf('relic_' + r.relic_id) === -1; });
-        if (eligible.length > 0) relicId = eligible[Math.floor(Math.random() * eligible.length)].relic_id;
+        if (eligible.length > 0) relicId = ((typeof rngPick === 'function') ? rngPick(eligible) : eligible[0]).relic_id;
       }
       if (typeof gainRelic === 'function') gainRelic(relicId, '事件遗物');
       break;
     case 'buff_pal':
       if (G.ownedUnits.length > 0) {
-        var target = G.ownedUnits[Math.floor(Math.random() * G.ownedUnits.length)];
+        var target = (typeof rngPick === 'function') ? rngPick(G.ownedUnits) : G.ownedUnits[0];
         if (reward.quality_hint && reward.quality_hint.indexOf('hp') !== -1) {
           var hpBuff = parseInt(reward.quality_hint.match(/\d+/)) || 3;
           target.maxHp += hpBuff; target.hp += hpBuff;
@@ -440,7 +440,7 @@ function executeEventReward(reward) {
       break;
     case 'upgrade_pal':
       if (G.ownedUnits.length > 0) {
-        var t = G.ownedUnits[Math.floor(Math.random() * G.ownedUnits.length)];
+        var t = (typeof rngPick === 'function') ? rngPick(G.ownedUnits) : G.ownedUnits[0];
         if (t.level < 4) { t.level++; glog('🎁 事件奖励：' + (t.name || t.defId) + ' 升级至 Lv' + t.level); }
       }
       break;

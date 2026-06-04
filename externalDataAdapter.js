@@ -942,7 +942,7 @@
         }
       });
     }
-    if (typeof refreshUI === 'function') refreshUI();
+    if (typeof onCoreStateChange === 'function') onCoreStateChange();
     return state.heroInfo;
   }
 

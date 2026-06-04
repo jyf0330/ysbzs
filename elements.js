@@ -12,6 +12,7 @@ function addEl(pos, el) {
   const cell = G.board[pos.r][pos.c];
   if (!cell.el || cell.stk === 0) { cell.el = el; cell.stk = 1; }
   else if (cell.el === el) { if (cell.stk < MAX_STK) cell.stk++; }
+  if (typeof setBoardStateElement === 'function') setBoardStateElement(pos, el, cell.stk || 1);
   // EL_CROSS_REACT 已废弃：同一格可多元素并存，互克不触发覆盖/爆炸;
 }
 
@@ -42,12 +43,14 @@ function syncBoardElementFromElementCells(pos) {
   const key = `${pos.r},${pos.c}`;
   const elData = G.elementCells[key];
   const bc = G.board[pos.r][pos.c];
+  let wrote = false;
   if (elData) {
     for (const el of ['fire', 'water', 'wind', 'earth']) {
-      if (elData[el]?.layers > 0) { bc.el = el; bc.stk = elData[el].layers; return; }
+      if (elData[el]?.layers > 0) { bc.el = el; bc.stk = elData[el].layers; wrote = true; break; }
     }
   }
-  bc.el = null; bc.stk = 0;
+  if (!wrote) { bc.el = null; bc.stk = 0; }
+  if (typeof syncBoardStateElementFromLegacy === 'function') syncBoardStateElementFromLegacy(pos);
 }
 
 function clearElementAt(pos, el) {
@@ -91,6 +94,7 @@ function doExplode(pos) {
   const targets = isCross ? explCells(pos) : [pos];
   glog(`💥 ${elName}${cell.stk}引爆！${isCross ? '范围伤害 ' : '单体伤害 '}${dmg}`);
   cell.el = null; cell.stk = 0;
+  if (typeof clearBoardStateElement === 'function') clearBoardStateElement(pos, oldEl);
   targets.forEach(tp => {
     const m = monAt(tp);
     if (m) {
@@ -272,6 +276,7 @@ function spawnSummon(ownerHid, pos, opts) {
     dead: false,
   };
   G.summons.push(s);
+  if (typeof setBoardStateUnit === 'function') setBoardStateUnit(s.pos, cloneBoardStateOccupant('summon', s, { refId: s.id, side: 'player' }));
   G.engineStats.summonCount++;
   recomputeGrowth();
   applySummonPassives(s);
@@ -290,6 +295,7 @@ function healSummon(summon, amount) {
 function killSummon(summon) {
   if (!summon || summon.dead) return;
   summon.dead = true;
+  if (typeof clearBoardStateUnit === 'function') clearBoardStateUnit(summon.pos, 'summon', summon.id);
   addElementLayers(summon.pos, summon.el || 'water', 1);
   const drop = getOwnerDeathDrop(summon.ownerHid);
   if (drop) addElementLayers(summon.pos, drop.el, drop.layers);

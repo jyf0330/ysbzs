@@ -98,6 +98,7 @@ function fresh(){ initGame(); _lastMsg='';
     if (G.monsters.some(function(m){return m.pos.r===dummyPos.r&&m.pos.c===dummyPos.c;})) dummyPos = {r:1,c:6};
     G.monsters.push({ id:'test_dummy_'+G.monsters.length, name:'测试怪', hp:999, maxHp:999, atk:0, dead:false, el:null, pos:dummyPos });
   }
+  if (typeof rebuildBoardState === 'function') rebuildBoardState();
 }
 function resetDomEl(id){
   const el=document.getElementById(id);
@@ -4493,6 +4494,73 @@ group('externalDataAdapter 外部数据读取', ()=>{
     syncUnitsToHeroes();
     var slotCount = G.slots.length;
     assert.ok(slotCount >= 3, '应有至少 3 行动槽, 实际 ' + slotCount);
+  });
+});
+
+
+group('架构统一：boardState / sync entry / seed RNG', ()=>{
+  test('ARCH-1: initGame 建立 8x8 G.boardState 四层格子', ()=>{
+    fresh();
+    assert.ok(G.boardState && G.boardState.schema === 'ysbzs.board.v1', 'boardState schema 存在');
+    assert.strictEqual(Object.keys(G.boardState.cells).length, 64, '8x8 cells');
+    const cell = G.boardState.cells['0,0'];
+    assert.ok(cell.unitLayer && cell.terrainLayer && cell.elementLayer && cell.meta, '四层字段存在');
+  });
+  test('ARCH-2: 元素写入同步到 boardState.elementLayer', ()=>{
+    fresh();
+    addElementLayers({r:3,c:3}, 'fire', 2);
+    assert.strictEqual(G.boardState.cells['3,3'].elementLayer.fire, 2);
+    assertBoardStateValid('ARCH-2');
+  });
+  test('ARCH-3: 陷阱同格多元素进入 terrainLayer.traps', ()=>{
+    fresh();
+    addTrapLayers({r:4,c:4}, 'fire', 2);
+    addTrapLayers({r:4,c:4}, 'water', 1);
+    const traps = G.boardState.cells['4,4'].terrainLayer.traps;
+    assert.ok(traps.some(t=>t.element==='fire'&&t.layers===2));
+    assert.ok(traps.some(t=>t.element==='water'&&t.layers===1));
+    assertBoardStateValid('ARCH-3');
+  });
+  test('ARCH-4: 怪物移动同步 unitLayer 原格清空新格写入', ()=>{
+    fresh();
+    G.monsters = [{id:'arch_m', name:'架构怪', hp:10, maxHp:10, atk:1, pos:{r:0,c:5}, dead:false, el:null}];
+    rebuildBoardState();
+    const from = {r:0,c:5};
+    const beforeOcc = G.boardState.cells['0,5'].unitLayer.occupant;
+    assert.strictEqual(beforeOcc.id, 'arch_m');
+    monsterAct(G.monsters[0]);
+    const oldCell = G.boardState.cells[from.r+','+from.c];
+    const newKey = G.monsters[0].pos.r + ',' + G.monsters[0].pos.c;
+    assert.ok(!oldCell.unitLayer.occupant || oldCell.unitLayer.occupant.id !== 'arch_m', '原格清空');
+    assert.strictEqual(G.boardState.cells[newKey].unitLayer.occupant.id, 'arch_m', '新格写入');
+    assertBoardStateValid('ARCH-4');
+  });
+  test('ARCH-5: endPlayerTurnSync 可同步跑完怪物阶段', ()=>{
+    fresh();
+    assert.strictEqual(typeof endPlayerTurnSync, 'function');
+    endPlayerTurnSync();
+    assert.ok(['PLAYER','SHOP','OVER'].includes(G.phase), '同步入口完成后不滞留 MONSTER: '+G.phase);
+  });
+  test('ARCH-6: useSlot 仍走玩家入口并产生 USE_SLOT actionLog', ()=>{
+    fresh();
+    const before = G.actionLog.length;
+    useSlot(0);
+    assert.ok(G.actionLog.length > before, 'actionLog 增加');
+    assert.ok(G.actionLog.some(a=>a.type==='USE_SLOT'), '含 USE_SLOT');
+  });
+  test('ARCH-7: 游戏/商店运行时不再直接 Math.random', ()=>{
+    ['game.js','shop.js'].forEach(file=>{
+      const txt = fs.readFileSync(path.join(__dirname, file), 'utf8');
+      assert.ok(!txt.includes('Math.random'), file + ' 不应直接 Math.random');
+    });
+  });
+  test('ARCH-8: 核心文件 DOM 防回流扫描', ()=>{
+    const files = ['actions.js','board.js','preview.js','waves.js','battle.js','dispatch.js','elements.js','terrain.js','damage.js','externalDataAdapter.js'];
+    const forbidden = ['document.','querySelector','innerHTML','classList','refreshUI(','renderBoard(','renderShop(','addEventListener(','requestFullscreen('];
+    files.forEach(file=>{
+      const txt = fs.readFileSync(path.join(__dirname, file), 'utf8');
+      forbidden.forEach(pattern=>assert.ok(!txt.includes(pattern), file + ' 不应包含 ' + pattern));
+    });
   });
 });
 

@@ -13,15 +13,20 @@
  * 返回 {r,c → {hero, mon, summon, castle}} 对象
  */
 function buildUnitLayer(){
-  const hp={},mp={},sp={};
-  Object.values(G.heroes).forEach(function(h){ hp[k(h.pos)]=h; });
-  G.monsters.forEach(function(m){ if(!m.dead) mp[k(m.pos)]=m; });
-  (G.summons||[]).filter(function(s){ return !s.dead; }).forEach(function(s){ sp[k(s.pos)]=s; });
+  if (typeof rebuildBoardState === 'function' && !G.boardState) rebuildBoardState();
   var layer={};
   for(var r=0;r<8;r++)for(var c=0;c<8;c++){
     var key=r+','+c;
-    layer[key]={hero:hp[key]||null,mon:mp[key]||null,summon:sp[key]||null,
-      castle:playerCastleAt({r:r,c:c})?{side:'player',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp}:enemyCastleAt({r:r,c:c})?{side:'enemy',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp}:null};
+    var cell=(G.boardState&&G.boardState.cells)?G.boardState.cells[key]:null;
+    var occ=cell&&cell.unitLayer?cell.unitLayer.occupant:null;
+    var hero=null, mon=null, summon=null, castle=null;
+    if(occ){
+      if(occ.type==='hero')hero=G.heroes[occ.id]||null;
+      else if(occ.type==='monster')mon=(G.monsters||[]).find(function(m){return !m.dead&&m.id===occ.id;})||null;
+      else if(occ.type==='summon')summon=(G.summons||[]).find(function(s){return !s.dead&&s.id===occ.id;})||null;
+      else if(occ.type==='castle')castle=occ.id==='playerCastle'?{side:'player',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp}:occ.id==='enemyCastle'?{side:'enemy',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp}:null;
+    }
+    layer[key]={hero:hero,mon:mon,summon:summon,castle:castle};
   }
   return layer;
 }
@@ -33,8 +38,9 @@ function buildUnitLayer(){
 function buildTerrainLayer(){
   var layer={};
   for(var r=0;r<8;r++)for(var c=0;c<8;c++){
-    var t=getTerrain({r,c});
-    layer[r+','+c]=t;
+    var key=r+','+c;
+    var cell=(G.boardState&&G.boardState.cells)?G.boardState.cells[key]:null;
+    layer[key]=cell?boardStateLayerTrapsToLegacy(cell):getTerrain({r,c});
   }
   return layer;
 }
@@ -46,11 +52,19 @@ function buildTerrainLayer(){
 function buildElementLayer(){
   var layer={};
   for(var r=0;r<8;r++)for(var c=0;c<8;c++){
-    var key=r+','+c, bc=G.board[r][c];
-    var elData=null;
-    if(bc.el&&bc.stk>0) elData={el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)};
+    var key=r+','+c;
+    var cell=(G.boardState&&G.boardState.cells)?G.boardState.cells[key]:null;
     var cellsEl=(G.elementCells||{})[key]||{};
-    layer[key]={boardEl:elData,cells:cellsEl};
+    if(cell&&cell.elementLayer){
+      var first=null;
+      ['fire','water','wind','earth'].forEach(function(el){ if(!first&&(cell.elementLayer[el]||0)>0) first={el:el,stk:cell.elementLayer[el],bg:EB[el],color:EC[el],explDmg:explDmg(cell.elementLayer[el])}; });
+      layer[key]={boardEl:first,cells:cellsEl,elementLayer:cell.elementLayer};
+    } else {
+      var bc=G.board[r][c];
+      var elData=null;
+      if(bc.el&&bc.stk>0) elData={el:bc.el,stk:bc.stk,bg:EB[bc.el],color:EC[bc.el],explDmg:explDmg(bc.stk)};
+      layer[key]={boardEl:elData,cells:cellsEl};
+    }
   }
   return layer;
 }
@@ -207,6 +221,7 @@ function buildMonsterStats(){
 }
 
 function buildCellInfoMap(){
+  if(typeof rebuildBoardState==='function')rebuildBoardState();
   const monStats=buildMonsterStats();
   const{heroIncomingDmg}=computeMonsterActionPreview();
   // 1. 各格来源：未用行动槽作用到的格子
@@ -231,21 +246,24 @@ function buildCellInfoMap(){
     if(!monThreatMap[ky])monThreatMap[ky]={hitCount:0,totalDamage:0,sources:[]};
     dmgArr.forEach(d=>{monThreatMap[ky].hitCount++;monThreatMap[ky].totalDamage+=d.dmg;monThreatMap[ky].sources.push({label:d.label,dmg:d.dmg});});
   });
-  // 3. 遍历全棋盘构建 cellInfoMap
+  // 3. 遍历全棋盘构建 cellInfoMap（读 boardState 派生层，不从 UI/DOM 反推）
+  const unitLayer=buildUnitLayer();
+  const elementLayer=buildElementLayer();
   const map={};
   for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const ky=`${r},${c}`;
-    const bc=G.board[r][c];
-    const mon=G.monsters.find(m=>!m.dead&&m.pos.r===r&&m.pos.c===c);
-    const hero=Object.values(G.heroes).find(h=>h.pos.r===r&&h.pos.c===c);
+    const uLayer=unitLayer[ky]||{};
+    const eLayer=elementLayer[ky]||{};
+    const mon=uLayer.mon||null;
+    const hero=uLayer.hero||null;
     // 实体
     const entities=[];
     if(mon)entities.push({type:'monster',id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el});
     if(hero)entities.push({type:'hero',id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp});
     // 元素场（elementCells 优先，兼容 board.el）
-    const cellEl=G.elementCells[ky]||{};
-    const elementField={fire:cellEl.fire?.layers||0,water:cellEl.water?.layers||0,wind:cellEl.wind?.layers||0,earth:cellEl.earth?.layers||0};
-    if(bc.el&&bc.stk>0&&elementField[bc.el]===0)elementField[bc.el]=bc.stk;
+    const cellEl=eLayer.cells||G.elementCells[ky]||{};
+    const rawEl=eLayer.elementLayer||null;
+    const elementField=rawEl?{fire:rawEl.fire||0,water:rawEl.water||0,wind:rawEl.wind||0,earth:rawEl.earth||0}:{fire:cellEl.fire?.layers||0,water:cellEl.water?.layers||0,wind:cellEl.wind?.layers||0,earth:cellEl.earth?.layers||0};
     // 来源（未用槽）
     const incomingEffects=inEffMap[ky]||[];
     // 单体伤害预览（读 monStats，不重算）
@@ -380,6 +398,7 @@ function computeMonsterActionPreview(){
 }
 
 function buildPreviewGrid(){
+  if(typeof rebuildBoardState==='function')rebuildBoardState();
   const ELEMS=['fire','water','wind','earth'];
   // 1. 初始化全棋盘 13x13 空 preview cell
   const grid={};
@@ -405,7 +424,22 @@ function buildPreviewGrid(){
         result:{totalDamage:0,willDie:false,surviveHp:null,damageBySource:{elementDirect:0,explosionSplash:0,monsterThreat:0}}},
     };
   }
-  // 2. 写入 elementCells 当前状态到 elementField.boardLayers
+  // 2. 写入 boardState 当前元素层到 elementField.boardLayers（G.elementCells 仅兼容桥接）
+  if(G.boardState&&G.boardState.cells){
+    Object.entries(G.boardState.cells).forEach(([key,cell])=>{
+      if(!grid[key]||!cell.elementLayer)return;
+      ELEMS.forEach(el=>{
+        const layers=cell.elementLayer[el]||0;
+        if(layers>0){
+          const ef=grid[key].elementField[el];
+          ef.boardLayers=layers; ef.beforeLayers=layers;
+          ef.layers=layers; ef.afterLayers=layers;
+          ef.damage=explDmg(layers); ef.totalDamage=explDmg(layers); ef.sources.push('boardState');
+        }
+      });
+    });
+  }
+  // 2x. 旧 G.elementCells 兼容路径
   Object.entries(G.elementCells).forEach(([key,elData])=>{
     if(!grid[key])return;
     ELEMS.forEach(el=>{
@@ -426,7 +460,26 @@ function buildPreviewGrid(){
       if(ef.boardLayers===0){ef.boardLayers=bc.stk;ef.beforeLayers=bc.stk;ef.layers=bc.stk;ef.afterLayers=bc.stk;ef.damage=explDmg(bc.stk);ef.totalDamage=explDmg(bc.stk);ef.sources.push('board');}
     }
   }
-  // 3. 写入实体
+  // 3. 写入实体（优先读 boardState unitLayer）
+  if(G.boardState&&G.boardState.cells){
+    Object.entries(G.boardState.cells).forEach(([key,cell])=>{
+      const occ=cell.unitLayer&&cell.unitLayer.occupant;
+      if(!occ||!grid[key])return;
+      if(occ.type==='monster'){
+        const m=(G.monsters||[]).find(x=>!x.dead&&x.id===occ.id); if(m)grid[key].entity={type:'monster',id:m.id,name:m.name,hp:m.hp,maxHp:m.maxHp,atk:m.atk,el:m.el};
+      } else if(occ.type==='hero'){
+        const h=G.heroes[occ.id]; if(h){
+          const heroSlots=G.slots.filter(s=>s.hid===h.id&&!s.used).map(s=>({el:s.el,sn:s.sn,tier:s.tier,dir:s.dir,idx:s.idx,label:`${EL[s.el]}·${s.sn}号·×${(typeof getTierMult === "function" ? (getTierMult()[s.tier] || 0) : 0)}`}));
+          grid[key].entity={type:'hero',id:h.id,name:h.name,hp:h.hp,maxHp:h.maxHp,_acted:!!h._acted,slots:heroSlots};
+        }
+      } else if(occ.type==='summon'){
+        const sm=(G.summons||[]).find(x=>!x.dead&&x.id===occ.id); if(sm)grid[key].entity={type:'summon',id:sm.id,name:sm.name,hp:sm.hp,maxHp:sm.maxHp,atk:sm.atk,el:sm.el};
+      } else if(occ.type==='castle'){
+        if(occ.id==='playerCastle')grid[key].entity={type:'player_castle',id:'playerCastle',name:'我方城堡',hp:G.playerCastle.hp,maxHp:G.playerCastle.maxHp,atk:null,el:null};
+        if(occ.id==='enemyCastle')grid[key].entity={type:'enemy_castle',id:'enemyCastle',name:'敌方城堡',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp,atk:null,el:null};
+      }
+    });
+  } else {
   G.monsters.filter(m=>!m.dead).forEach(m=>{
     const key=`${m.pos.r},${m.pos.c}`;
     grid[key].entity={type:'monster',id:m.id,name:m.name,hp:m.hp,maxHp:m.maxHp,atk:m.atk,el:m.el};
@@ -450,6 +503,7 @@ function buildPreviewGrid(){
   if(G.enemyCastle&&G.enemyCastle.hp>0){
     const ek=`${G.enemyCastle.pos.r},${G.enemyCastle.pos.c}`;
     grid[ek].entity={type:'enemy_castle',id:'enemyCastle',name:'敌方城堡',hp:G.enemyCastle.hp,maxHp:G.enemyCastle.maxHp,atk:null,el:null};
+  }
   }
   // 4. 模拟全部未使用英雄行动槽，写入 elementField 和 preview.incomingActions
   const selHid=G.selHero||(G.selSlot!==null?G.slots[G.selSlot]?.hid:null);
@@ -663,6 +717,7 @@ function buildHeroStats(){
 
 
 function recomputeCorePreview(){
+  if(typeof rebuildBoardState==='function')rebuildBoardState();
   const pg=buildPreviewGrid();
   const monsterStats=buildMonsterStats();
   const cellInfoMap=buildCellInfoMap();

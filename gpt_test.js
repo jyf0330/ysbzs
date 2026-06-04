@@ -1557,6 +1557,58 @@ function runBehaviorTests() {
     glog=_glog3;showMsg=_msg3;
   })();
 
+
+
+  // -------- L: 架构统一验收 (boardState / sync / RNG / no-DOM) --------
+  (function() {
+    const gL = 'L_arch';
+    FRESH();
+    check(!!(G.boardState && G.boardState.schema === 'ysbzs.board.v1'), 'L01', gL, 'boardState_schema_exists');
+    check(Object.keys((G.boardState||{}).cells||{}).length === 64, 'L02', gL, 'boardState_8x8_cells');
+    const c00 = G.boardState && G.boardState.cells && G.boardState.cells['0,0'];
+    check(!!(c00 && c00.unitLayer && c00.terrainLayer && c00.elementLayer && c00.meta), 'L03', gL, 'boardState_cell_has_four_layers');
+
+    addElementLayers({r:3,c:3}, 'fire', 2);
+    check(G.boardState.cells['3,3'].elementLayer.fire === 2, 'L04', gL, 'element_write_syncs_to_boardState');
+    addTrapLayers({r:4,c:4}, 'fire', 2);
+    addTrapLayers({r:4,c:4}, 'water', 1);
+    const traps = G.boardState.cells['4,4'].terrainLayer.traps || [];
+    check(traps.some(t=>t.element==='fire'&&t.layers===2) && traps.some(t=>t.element==='water'&&t.layers===1), 'L05', gL, 'terrain_traps_support_multi_element_stack');
+
+    FRESH();
+    G.monsters = [{id:'l_m', name:'L怪', hp:10, maxHp:10, atk:1, pos:{r:0,c:5}, dead:false, el:null}];
+    rebuildBoardState();
+    const fromKey = '0,5';
+    monsterAct(G.monsters[0]);
+    const toKey = G.monsters[0].pos.r + ',' + G.monsters[0].pos.c;
+    check((!G.boardState.cells[fromKey].unitLayer.occupant || G.boardState.cells[fromKey].unitLayer.occupant.id !== 'l_m') && G.boardState.cells[toKey].unitLayer.occupant.id === 'l_m', 'L06', gL, 'monster_move_updates_boardState_unitLayer');
+    check(typeof validateBoardState === 'function' && validateBoardState().length === 0, 'L07', gL, 'validateBoardState_passes_after_move');
+
+    FRESH();
+    check(typeof endPlayerTurnSync === 'function', 'L08', gL, 'endPlayerTurnSync_exists');
+    endPlayerTurnSync();
+    check(['PLAYER','SHOP','OVER'].includes(G.phase), 'L09', gL, 'sync_monster_phase_finishes_without_async_wait', {explanation:'phase='+G.phase});
+
+    FRESH();
+    const ab = (G.actionLog||[]).length;
+    useSlot(0);
+    check((G.actionLog||[]).length > ab && (G.actionLog||[]).some(a=>a.type==='USE_SLOT'), 'L10', gL, 'direct_useSlot_routes_to_player_action_log');
+
+    const noMathRandomFiles = ['game.js','shop.js'];
+    noMathRandomFiles.forEach((file,idx)=>{
+      const txt = readText(file);
+      check(txt.indexOf('Math.random') < 0, 'L11_'+idx, gL, file + '_does_not_call_Math_random_directly');
+    });
+    const coreFiles = ['actions.js','board.js','preview.js','waves.js','battle.js','dispatch.js','elements.js','terrain.js','damage.js','externalDataAdapter.js'];
+    const forbidden = ['document.','querySelector','innerHTML','classList','refreshUI(','renderBoard(','renderShop(','addEventListener(','requestFullscreen('];
+    coreFiles.forEach((file,idx)=>{
+      const txt = readText(file);
+      const hit = forbidden.find(p=>txt.indexOf(p)>=0);
+      check(!hit, 'L12_'+idx, gL, file + '_core_no_dom_api', {type:hit?'RUNTIME_FAIL':'', explanation:hit?('hit '+hit):''});
+    });
+  })();
+
+
   // 额外数据验证（game 运行时直接读）
   // ════════════════════════════════════════════════════════════════
 
@@ -1621,8 +1673,8 @@ function generateReport() {
   lines.push('');
   lines.push('| 分组 | 总 | 通过 | 失败 | 通过率 |');
   lines.push('|------|:--:|:----:|:----:|:-----:|');
-  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为','K_bazaar':'Bazaar运行时' };
-  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','K_bazaar','__project__'];
+  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为','K_bazaar':'Bazaar运行时','L_arch':'架构统一' };
+  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','K_bazaar','L_arch','__project__'];
   for (const g of groupOrder) {
     const gs = REPORT.groups[g];
     if (!gs || gs.total === 0) continue;
@@ -1715,8 +1767,8 @@ if (JSON_OUT) {
   console.log(`总计: ${s.total} | 通过: ${s.passed} | 失败: ${s.failed} | 警告: ${s.warned}`);
   console.log(`玩家行为测试: ${s.behavior}`);
   console.log(`游戏模块: ${GAME_OK ? '✅ 已加载' : '❌ 未加载'}`);
-  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为','K_bazaar':'Bazaar运行时' };
-  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','K_bazaar','__project__'];
+  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为','K_bazaar':'Bazaar运行时','L_arch':'架构统一' };
+  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','K_bazaar','L_arch','__project__'];
   for (const g of groupOrder) {
     const gs = REPORT.groups[g];
     if (!gs || gs.total === 0) continue;

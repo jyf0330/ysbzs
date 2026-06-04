@@ -94,6 +94,8 @@ function initGame() {
   syncUnitsToHeroes();
   syncMaxRoundForPhase();
   spawnWaveForDay(1, 'morning');
+  if (typeof rebuildBoardState === 'function') rebuildBoardState();
+  if (typeof assertBoardStateValid === 'function') assertBoardStateValid('initGame');
   refreshUI();
   glog('🎮 游戏开始！第一波教学关卡。');
   glog('💡 提示：选中行动点→调整方向→点"使用"发动攻击。');
@@ -182,7 +184,7 @@ function applyRelicEffect(e, ctx) {
       break;
     case 'enemy_atk_down':
       if (G.monsters && G.monsters.length > 0) {
-        var target = G.monsters[Math.floor(Math.random() * G.monsters.length)];
+        var target = (typeof rngPick === 'function') ? rngPick(G.monsters) : G.monsters[0];
         target.atk = Math.max(0, (target.atk || 0) - (e.value || 1));
         glog('📖 遗物效果：随机怪物 ATK -' + (e.value || 1));
       }
@@ -322,6 +324,7 @@ function syncUnitsToHeroes() {
   });
   var heroUnits = new Set(selected.slice(0, 2));
   G.ownedUnits.forEach(u => { if (!heroUnits.has(u)) u.active = false; });
+  if (typeof rebuildBoardState === 'function' && G.boardState) rebuildBoardState();
 }
 
 function mergeUnits(fromUnit, toUnit) {
@@ -368,7 +371,14 @@ function moveHero(r, c) {
     glog('⚠️ 目标格已占用！'); return;
   }
   glog('🚶 ' + hero.name + '移动到(' + r + ',' + c + ')');
-  hero.pos = { r: r, c: c };
+  if (typeof dispatchGameAction === 'function' && !G.__dispatching) {
+    dispatchGameAction({ type: 'MOVE_HERO', heroId: G.selHero, to: { r: r, c: c } });
+  } else {
+    var from = { r: hero.pos.r, c: hero.pos.c };
+    var occ = (typeof cloneBoardStateOccupant === 'function') ? cloneBoardStateOccupant('hero', hero, { refId: hero.id, side: 'player' }) : null;
+    hero.pos = { r: r, c: c };
+    if (typeof moveBoardStateUnit === 'function') moveBoardStateUnit(from, hero.pos, occ);
+  }
   refreshUI();
 }
 

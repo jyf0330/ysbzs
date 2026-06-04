@@ -102,4 +102,4 @@ function rngShuffle(list) {
 }
 
 // ── 旧接口兼容 ──────────────────────────────────────────────
-function ri(n) { return Math.floor(Math.random() * n); }
+function ri(n) { return rngInt(0, n); }

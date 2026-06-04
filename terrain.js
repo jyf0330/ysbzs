@@ -13,11 +13,14 @@ function ensureTerrain(pos) {
   if (!G.terrainCells) G.terrainCells = {};
   var key = pos.r + ',' + pos.c;
   if (!G.terrainCells[key]) G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
+  if (typeof syncBoardStateTerrainFromLegacy === 'function') syncBoardStateTerrainFromLegacy(pos);
   return G.terrainCells[key];
 }
 
 /** 获取单格地形（无则返回空对象） */
 function getTerrain(pos) {
+  var cell = (typeof getBoardStateCell === 'function') ? getBoardStateCell(pos) : null;
+  if (cell && cell.terrainLayer) return boardStateLayerTrapsToLegacy(cell);
   if (!G.terrainCells) return { fire:0, water:0, wind:0, earth:0 };
   return G.terrainCells[pos.r + ',' + pos.c] || { fire:0, water:0, wind:0, earth:0 };
 }
@@ -26,6 +29,7 @@ function getTerrain(pos) {
 function clearTerrain(pos) {
   var key = pos.r + ',' + pos.c;
   if (G.terrainCells && G.terrainCells[key]) G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
+  if (typeof clearBoardStateTerrain === 'function') clearBoardStateTerrain(pos);
 }
 
 // ========== 陷阱操作 ==========
@@ -35,6 +39,7 @@ function addTrapLayers(pos, el, layers) {
   if (!layers || layers <= 0) return;
   var ter = ensureTerrain(pos);
   ter[el] = (ter[el] || 0) + layers;
+  if (typeof addBoardStateTrap === 'function') addBoardStateTrap(pos, { element: el, layers: layers, sourceId: 'element_explosion' });
 }
 
 /** 元素引爆结算后：将该格元素层转移到地形陷阱 */
@@ -97,4 +102,5 @@ function resolveTerrainOnEnter(monster, pos) {
 
   // 触发后清空该格陷阱
   G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
+  if (typeof clearBoardStateTerrain === 'function') clearBoardStateTerrain(pos);
 }

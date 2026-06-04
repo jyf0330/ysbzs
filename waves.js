@@ -36,6 +36,17 @@ function buildWaveForDay(day, phase) {
     budget -= pick.cost;
     attempts++;
   }
+  if (allowed.indexOf('normal') >= 0 && !result.some(function(m) { return m.typeId === 'normal' || m.typeId === 'elite'; })) {
+    var normal = MONSTER_TYPES.normal;
+    if (normal) result[0] = {
+      typeId: 'normal', name: normal.name,
+      hp: normal.hp, maxHp: normal.hp,
+      atk: normal.atk, ap: normal.ap,
+      cost: normal.cost, gold: normal.gold,
+      pos: null, dead: false, el: null,
+      ability: normal.ability || null,
+    };
+  }
   const forcedBoss = day === 10 && phase === 'afternoon' ? 'boss10'
     : day >= 7 && phase === 'afternoon' ? 'boss8'
     : day === 5 && phase === 'afternoon' ? 'boss5'

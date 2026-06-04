@@ -195,6 +195,63 @@ body{
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   pointer-events:none;
 }
+
+/* ===== 棋盘 cell 单位布局：名称主体 + 叠层角标 ===== */
+
+/* 单位卡片：absolute 覆盖 cell，带背景/边框样式 */
+.board-unit{
+  position:absolute;inset:2px;z-index:20;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+/* 抵消旧 ib-e 的宽度/边距干扰 */
+.board-unit.ib-e{width:auto;height:auto;min-height:0;margin:0;}
+.board-unit.ib-e.ib-h,
+.board-unit.ib-e.ib-m,
+.board-unit.ib-e.ib-s,
+.board-unit.ib-e.ib-c{width:auto;min-height:0;margin:0;}
+
+/* 名称主体区：从角标下方开始，居中显示单位名 */
+.unit-main{
+  position:absolute;inset:14px 2px 2px 2px;z-index:20;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:1px;
+  font-size:14px;font-weight:900;line-height:1.2;
+  text-align:center;color:var(--c-text);
+  pointer-events:none;
+}
+.unit-main .unit-name{
+  font-size:15px;font-weight:900;letter-spacing:1px;
+  text-shadow:0 1px 1px rgba(250,246,239,0.6);
+  max-width:100%;overflow:hidden;text-overflow:clip;
+}
+.unit-main .enemy-mark{
+  font-size:20px;line-height:1;
+}
+
+/* 角标基础：18×18 正方形，absolute 叠在 corner */
+.stat-badge{
+  position:absolute;width:18px;height:18px;z-index:30;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.stat-badge.hp-heart{left:1px;top:1px;}
+.stat-badge.element-icon{right:1px;top:1px;}
+
+/* 角标背景图标：填满 badge */
+.badge-icon{
+  position:absolute;inset:0;
+  font-size:18px;line-height:18px;text-align:center;
+}
+/* 角标数字：叠在图标上面 */
+.badge-num{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:bold;
+  color:#fff;z-index:31;
+  text-shadow:0 1px 2px rgba(0,0,0,0.7),0 0 3px rgba(0,0,0,0.4);
+}
+
 /* 右上角徽章：☠ 💥 */
 .ib-corner{
   position:absolute;top:2px;right:2px;z-index:7;

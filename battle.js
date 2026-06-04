@@ -116,7 +116,7 @@ function settleExplosions() {
   recomputeGrowth();
   // 快照：结算后/怪物移动前的 HP（用于预览验证）
   G._hpAfterSettle = {};
-  G.monsters.filter(m => !m.dead).forEach(m => { G._hpAfterSettle[m.id] = m.hp; });
+  G.monsters.filter(m => !m.dead && m.hp > 0).forEach(m => { G._hpAfterSettle[m.id] = m.hp; });
   if (report.chainSegments > 0) {
     glog(`🔗 连锁 ×${report.chainSegments}！克制 ×${report.advHits}！合计 −${report.totalDamage}`);
   }
@@ -316,6 +316,7 @@ function monsterAct(m) {
   if (m.dead) return;
   let ap = 3;
   while (ap > 0) {
+    if (m.dead) break; // 死怪终止
     const lp = { r: m.pos.r, c: m.pos.c - 1 };
     if (lp.c >= 0) {
       const lh = heroAt(lp);
@@ -356,7 +357,9 @@ function monsterAct(m) {
       if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_monster_move_step', { actor: m, monster: m, from: fromPos, to: np });
       ap -= 1;
       resolveTerrainOnEnter(m, np);
+      if (m.dead) break; // 陷阱杀怪后终止
     }
+    if (m.dead) break; // 二次防御
     else break;
   }
 }
@@ -460,7 +463,7 @@ function simMonAct(m) {
 }
 
 function runMonsters(idx) {
-  const alive = G.monsters.filter(m => !m.dead);
+  const alive = G.monsters.filter(m => !m.dead && m.hp > 0);
   if (idx >= alive.length) { finishMonsters(); return; }
   runMonsterAbilityHook('onRoundStart', alive[idx]);
   monsterAct(alive[idx]);

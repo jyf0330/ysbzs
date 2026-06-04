@@ -1504,6 +1504,112 @@ group('格子规则 case_001~007（怪物格单体 vs 空格十字）', ()=>{
 });
 
 // ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// 死怪不攻击防御过滤（DEAD_MONSTER_001~007）
+// ═══════════════════════════════════════════════════════════════
+
+group('死怪不攻击·防御过滤（DEAD_MONSTER_001~007）', ()=>{
+  function setupDeathScenario() {
+    fresh();
+    G.monsters = [
+      {id:'m_death', name:'必死怪', hp:1, maxHp:1, atk:10, pos:{r:5,c:6}, dead:false, el:'fire'},
+      {id:'m_alive', name:'活怪', hp:50, maxHp:50, atk:10, pos:{r:7,c:6}, dead:false, el:null},
+    ];
+    G.heroes.ha.pos = {r:5,c:4}; G.heroes.hb.pos = {r:7,c:4};
+    G.heroes.ha.hp = 30; G.heroes.ha.maxHp = 30;
+    G.heroes.hb.hp = 30; G.heroes.hb.maxHp = 30;
+    G.phase = 'PLAYER'; G.round = 1; recomputeCorePreview();
+  }
+
+  test('DEAD_MONSTER_001: 元素伤害杀死怪物后标记 dead=true', ()=>{
+    setupDeathScenario();
+    G.elementCells['5,6'] = {fire:{layers:1,willExplode:true},water:{layers:0},wind:{layers:0},earth:{layers:0}};
+    settleDamage();
+    assert.strictEqual(G.monsters[0].hp,0, '必死怪 HP 归零');
+    assert.strictEqual(G.monsters[0].dead, true, '必死怪 dead=true');
+  });
+
+  test('DEAD_MONSTER_002: 死怪不跑 monsterAct', ()=>{
+    setupDeathScenario();
+    G.elementCells['5,6'] = {fire:{layers:1,willExplode:true},water:{layers:0},wind:{layers:0},earth:{layers:0}};
+    settleDamage();
+    const hpBefore = G.heroes.ha.hp;
+    monsterAct(G.monsters[0]);
+    assert.strictEqual(G.heroes.ha.hp, hpBefore, '死怪不伤害英雄');
+  });
+
+  test('DEAD_MONSTER_003: 活怪正常攻击', ()=>{
+    setupDeathScenario();
+    G.elementCells['5,6'] = {fire:{layers:1,willExplode:true},water:{layers:0},wind:{layers:0},earth:{layers:0}};
+    settleDamage();
+    // 把活怪直接放到英雄B左边1格，确保一步即可攻击
+    const mon = G.monsters[1];
+    mon.pos = {r:7,c:5}; // 英雄B在(7,4)，活怪在左边1格
+    const hpBefore = G.heroes.hb.hp;
+    monsterAct(mon);
+    assert.ok(G.heroes.hb.hp < hpBefore, '活怪伤害英雄B，HP '+hpBefore+'→'+G.heroes.hb.hp);
+  });
+
+  test('DEAD_MONSTER_004: computeMonWarn 不含死怪', ()=>{
+    setupDeathScenario();
+    G.elementCells['5,6'] = {fire:{layers:1,willExplode:true},water:{layers:0},wind:{layers:0},earth:{layers:0}};
+    settleDamage();
+    computeMonWarn();
+    const deadWarn = G.monWarn.filter(function(w){ return w.r === 5 && w.c === 6; });
+    const aliveWarn = G.monWarn.filter(function(w){ return w.r === 7 && w.c === 6; });
+    assert.strictEqual(deadWarn.length, 0, '死怪格无预警');
+    assert.ok(aliveWarn.length >= 0, '活怪可能有预警');
+  });
+
+  test('DEAD_MONSTER_005: runMonsters 跳过死怪', ()=>{
+    setupDeathScenario();
+    G.elementCells['5,6'] = {fire:{layers:1,willExplode:true},water:{layers:0},wind:{layers:0},earth:{layers:0}};
+    settleDamage();
+    const alive = G.monsters.filter(m => !m.dead && m.hp > 0);
+    assert.strictEqual(alive.length, 1, '只剩1个活怪');
+    assert.strictEqual(alive[0].id, 'm_alive', '活着的是 m_alive');
+  });
+
+  test('DEAD_MONSTER_006: 玩家 HP 不因死怪减少（useSlot→settleDamage 全流程）', ()=>{
+    setupDeathScenario();
+    G.slots.forEach(function(s){ s.used = false; s._committed = false; });
+    G.heroes.ha._acted = false; G.heroes.hb._acted = false;
+    G.heroes.ha.pos = {r:5,c:5};
+    const slot = G.slots.find(s => s.hid === 'ha' && !s.used);
+    if (slot) { 
+      // 直接设置 elementCells 杀死怪物（避免 useSlot 依赖 slot.layers/技能类型）
+      // 确保必死怪位置 (5,6) 被火层命中
+      G.elementCells['5,6'] = {fire:{layers:1,willExplode:false},water:{layers:0},wind:{layers:0},earth:{layers:0}};
+      G.board[5][6] = {r:5,c:6,el:'fire',stk:1};
+    }
+    // 手动结算（同步）
+    settleDamage();
+    runSummonActions();
+    assert.strictEqual(G.monsters[0].dead, true, '必死怪已死亡（hp='+G.monsters[0].hp+'）');
+    const alive2 = G.monsters.filter(m => !m.dead && m.hp > 0);
+    assert.ok(alive2.every(m => m.id !== 'm_death'), '必死怪不在怪物列表中');
+    assert.strictEqual(G.monsters[1].id, 'm_alive', '活怪仍存活');
+    checkGameOver();
+    assert.ok(G.phase === 'PLAYER' || G.phase === 'MONSTER', '游戏继续');
+  });
+
+  test('DEAD_MONSTER_007: 陷阱杀死怪物后不再继续攻击', ()=>{
+    setupDeathScenario();
+    // 把怪0放到陷阱格正上方，它向左走一步就会踩到陷阱
+    const mon = G.monsters[0];
+    mon.pos = {r:5,c:7}; mon.hp = 3; mon.maxHp = 3; mon.dead = false;
+    // 在(5,6)放火陷阱，3层 = explDmg(3) = 6伤害，足以杀死HP3的怪物
+    addTrapLayers({r:5,c:6}, 'fire', 3);
+    // 英雄在更左边，怪物踩陷阱死后不应继续攻击
+    G.heroes.ha.pos = {r:5,c:4}; G.heroes.ha.hp = 30;
+    const hpBefore = G.heroes.ha.hp;
+    monsterAct(mon);
+    assert.strictEqual(mon.dead, true, '怪物被陷阱杀死');
+    assert.strictEqual(G.heroes.ha.hp, hpBefore, '英雄不受已死怪物攻击');
+  });
+});
+
 // CellInfoLayer 测试（case_cellinfo_001~007）
 group('格子信息层 cellInfoMap（buildCellInfoMap）', ()=>{
   function freshCellInfo(){

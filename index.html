@@ -187,13 +187,14 @@ body{
 /* 贴底短字条：实体格子的 brief 显示在底部 */
 .ib-strip{
   position:absolute;bottom:0;left:0;right:0;z-index:6;
-  font-size:10px;line-height:1.3;text-align:center;
-  padding:1px 3px 2px;
+  font-size:8px;line-height:1.2;text-align:center;
+  padding:0 2px 1px;
   background:rgba(248,240,220,0.92);
   border-top:1px solid rgba(120,88,52,0.18);
   border-radius:0 0 2px 2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   pointer-events:none;
+  min-height:10px;
 }
 
 /* ===== 棋盘 cell 单位布局：名称主体 + 叠层角标 ===== */
@@ -213,49 +214,50 @@ body{
 
 /* 名称主体区：从角标下方开始，居中显示单位名 */
 .unit-main{
-  position:absolute;inset:14px 2px 2px 2px;z-index:20;
+  position:absolute;inset:18px 1px 12px 1px;z-index:20;
   display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:1px;
-  font-size:14px;font-weight:900;line-height:1.2;
+  flex-direction:column;gap:0;
+  font-size:12px;font-weight:900;line-height:1.15;
   text-align:center;color:var(--c-text);
   pointer-events:none;
 }
 .unit-main .unit-name{
-  font-size:15px;font-weight:900;letter-spacing:1px;
+  font-size:12px;font-weight:800;letter-spacing:0.5px;
   text-shadow:0 1px 1px rgba(250,246,239,0.6);
   max-width:100%;overflow:hidden;text-overflow:clip;
+  line-height:1.1;
 }
 .unit-main .enemy-mark{
-  font-size:20px;line-height:1;
+  font-size:14px;line-height:1;
 }
 
 /* 角标基础：18×18 正方形，absolute 叠在 corner */
 .stat-badge{
-  position:absolute;width:18px;height:18px;z-index:30;
-  display:flex;align-items:center;justify-content:center;
+  position:absolute;width:20px;height:20px;z-index:30;
   pointer-events:none;
 }
-.stat-badge.hp-heart{left:1px;top:1px;}
-.stat-badge.element-icon{right:1px;top:1px;}
+.stat-badge.hp-heart{left:0;top:0;}
+.stat-badge.element-icon{right:0;top:0;}
 
 /* 角标背景图标：填满 badge */
 .badge-icon{
-  position:absolute;inset:0;
-  font-size:18px;line-height:18px;text-align:center;
+  position:absolute;inset:0;z-index:1;
+  font-size:18px;line-height:20px;text-align:center;
 }
 /* 角标数字：叠在图标上面 */
 .badge-num{
-  position:absolute;inset:0;
+  position:absolute;inset:0;z-index:2;
   display:flex;align-items:center;justify-content:center;
-  font-size:9px;font-weight:bold;
-  color:#fff;z-index:31;
-  text-shadow:0 1px 2px rgba(0,0,0,0.7),0 0 3px rgba(0,0,0,0.4);
+  font-size:8px;font-weight:700;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.85);
+  pointer-events:none;
 }
 
 /* 右上角徽章：☠ 💥 */
 .ib-corner{
-  position:absolute;top:2px;right:2px;z-index:7;
-  font-size:12px;line-height:1;display:flex;gap:1px;
+  position:absolute;top:0;right:22px;z-index:7;
+  font-size:10px;line-height:1;display:flex;gap:1px;
   pointer-events:none;
 }
 

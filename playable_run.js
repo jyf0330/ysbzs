@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 /**
+//
+// smoke-flow：10天流程快进烟测。clearBattleFast() 跳过战斗/元素/陷阱/遗物/怪物回合。
+// 不得以此脚本通过作为战斗系统正确的依据。
+// 真实战斗验收走浏览器 AI 战斗按钮或 scripts/run_10day_simulation.js。
+//
  * 10 天 Run 走查（纯逻辑）
  * 支持多文件模式（同 test.js）
  * 运行: node playable_run.js

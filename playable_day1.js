@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 /**
+//
+// smoke-flow：Day1 走查烟测。不走 AI 规划，直接遍历槽位执行。
+// 只验证 Day1 流程不崩，不验证战斗系统。
+//
  * Day1 水+召唤引擎 · 可玩性走查（纯逻辑，无需浏览器）
  * 运行: node playable_day1.js
  */
@@ -29,8 +33,9 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
-    'waves.js', 'battle.js', 'shop.js', 'game.js', 'ui.js',
-    'damage.js', 'terrain.js', 'battleLog.js', 'preview.js',
+    'waves.js', 'battle.js', 'shop.js', 'game.js', 'preview.js',
+    'ui.js',
+        'damage.js', 'terrain.js', 'battleLog.js',
   ];
   for (const f of moduleFiles) {
     const fp = path.join(__dirname, f);

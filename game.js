@@ -414,15 +414,19 @@ async function runAiBattleTurn_async(opts) {
     if (hero) hero.pos = { r: m.to.r, c: m.to.c };
     await new Promise(function(r) { setTimeout(r, 120); });
   }
+  var usedCount = 0;
   for (var ai = 0; ai < plan.actions.length; ai++) {
     var a = plan.actions[ai];
     var s = G.slots[a.slotId];
     if (!s || s.used || !G.heroes[s.hid]) continue;
     if (atkCells(G.heroes[s.hid].pos, s.sn, s.dir).length === 0) continue;
-    useSlot(a.slotId); // 走统一入口：写元素层、actionLog、遗物hook、UI刷新
+    glog('🤖 使用 ' + G.heroes[s.hid].name + '·' + _aiSlotLabel(s, a.slotId));
+    useSlot(a.slotId);
+    if (s.used) usedCount++;
     await new Promise(function(r) { setTimeout(r, 80); });
   }
-  glog('⚡ AI 战斗执行：移动' + plan.moves.length + '步，施放' + plan.actions.length + '个符文。');
+  plan.executedActions = usedCount;
+  glog('⚡ 我方自动行动：移动' + plan.moves.length + '步，施放' + usedCount + '个符文。');
   if (opts.endTurn !== false) endPlayerTurn();
   if (btn) { btn.disabled = false; btn.classList.remove('ai-busy'); }
   return plan;

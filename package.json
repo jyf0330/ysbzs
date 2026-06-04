@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "js-yaml": "^4.2.0",
     "playwright": "^1.60.0"
   },
   "scripts": {
@@ -7,6 +8,9 @@
     "sync:tables": "node scripts/sync-tables.js",
     "benchmark:smoke": "node benchmarks/ysbzs/run-benchmark.mjs --smoke",
     "benchmark": "node benchmarks/ysbzs/run-benchmark.mjs",
-    "playtest": "node ai-eval/runners/run-playtest.mjs"
+    "playtest": "node ai-eval/runners/run-playtest.mjs",
+    "data:build": "node scripts/export_yaml_to_json.js",
+    "data:validate": "node scripts/validate_yaml_data.js",
+    "data:check": "node scripts/export_yaml_to_json.js && node scripts/validate_yaml_data.js"
   }
 }

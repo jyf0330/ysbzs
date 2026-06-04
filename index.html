@@ -746,7 +746,7 @@ body{
     <div id="rp">
       <div class="rp-header">
         <span class="rp-title">↠ 行动槽位 <span id="slot-count"></span></span>
-        <button class="rp-auto-btn" id="exa" onclick="runAiBattleTurn()" aria-label="AI 战斗">⚡ AI战斗</button>
+        <button class="rp-auto-btn" id="exa" onclick="runAiBattleTurn()" aria-label="一键执行本回合" title="自动选择我方宠物行动，执行完后进入结算/怪物阶段。">⚡ 一键执行本回合</button>
       </div>
       <div id="asl"></div>
       <div class="rp-bottom">
@@ -877,8 +877,11 @@ body{
     await loadScript('board.js');
     await loadScript('actions.js');
     await loadScript('elements.js');
+    await loadScript('damage.js');
     await loadScript('waves.js');
     await loadScript('battle.js');
+    await loadScript('terrain.js');
+    await loadScript('battleLog.js');
     await loadScript('shop.js');
     await loadScript('game.js');
     await loadScript('preview.js');

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
-//
-// smoke-flow：10天流程快进烟测。clearBattleFast() 跳过战斗/元素/陷阱/遗物/怪物回合。
-// 不得以此脚本通过作为战斗系统正确的依据。
-// 真实战斗验收走浏览器 AI 战斗按钮或 scripts/run_10day_simulation.js。
-//
- * 10 天 Run 走查（纯逻辑）
- * 支持多文件模式（同 test.js）
+ * smoke-flow：10天流程快进烟测（非真实战斗验收）
+ *
+ * clearBattleFast() 跳过真实战斗、元素结算、陷阱、遗物钩子、怪物回合。
+ * 此脚本只验证天数推进、商店流程、Boss 节点、流程不崩。
+ * 不得以此脚本通过作为战斗系统、数值平衡、遗物触发、陷阱触发的正确依据。
+ * 真实战斗验收走浏览器 AI 战斗按钮或 scripts/run_10day_simulation.js。
+ *
  * 运行: node playable_run.js
  */
 const fs = require('fs');
@@ -35,9 +35,9 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
+    'damage.js', 'terrain.js', 'battleLog.js',
     'waves.js', 'battle.js', 'shop.js', 'game.js', 'preview.js',
     'ui.js',
-        'damage.js', 'terrain.js', 'battleLog.js',
   ];
   for (const f of moduleFiles) {
     const fp = path.join(__dirname, f);
@@ -66,6 +66,7 @@ function log(msg) {
   steps.push(msg);
 }
 
+// smoke-flow / fast-forward：秒杀怪物跳进结算，不触发元素、陷阱、遗物、怪物回合
 function clearBattleFast() {
   G.monsters.forEach(m => { m.hp = 1; m.maxHp = 1; m.dead = true; });
   G.round = G.maxRound + 1;
@@ -149,6 +150,7 @@ function runRunWalkthrough() {
   var allPurchases = [];
   initGame();
   const castleStart = G.playerCastle.hp;
+  log('▶ [smoke-flow] 快进烟测：clearBattleFast 会跳过真实战斗，仅验证天数/商店/Boss节点');
   log('▶ Run 开始 · 我方城堡 ' + castleStart + ' HP');
   log('▶ 初始单位: ' + G.ownedUnits.map(function(u) {
     var def = UNIT_DEFS[u.defId || u.unitId];
@@ -158,7 +160,7 @@ function runRunWalkthrough() {
   for (let targetDay = 1; targetDay <= 10; targetDay++) {
     while (G.day < targetDay && G.phase !== 'OVER') {
       if (G.phase === 'PLAYER') {
-        log('  ⚔️ Day' + G.day + ' 战斗 · 怪物: ' + G.monsters.length + '只' +
+        log('  ⚔️ [fast-forward] Day' + G.day + ' 战斗 · 怪物: ' + G.monsters.length + '只' +
           (G.monsters[0] ? ' (e.g. ' + G.monsters[0].name + ')' : ''));
         clearBattleFast();
       } else if (G.phase === 'SHOP') {
@@ -246,7 +248,7 @@ try {
   }).join(', ') || '（空）';
 
   var reportLines = [
-    '# 10 天 Run 走查报告',
+    '# 10 天 Run 走查报告（smoke-flow / fast-forward）',
     '',
     '- 终局: Day' + result.day + ' · ' + result.phase,
     '- 城堡 HP: ' + result.playerCastleHp + '（跨天保留）',

@@ -654,6 +654,33 @@ function fileStructureCheck() {
   check(uiCode.indexOf('[0,1,2,4,8]') < 0 && prevCode.indexOf('[0,1,2,4,8]') < 0, 'S40', p, 'ui.js/preview.js 无硬编码倍率数组',
     { type: 'PASS_WITH_ALIAS', explanation: '硬编码 [0,1,2,4,8] 已替换为 getTierMult()' });
 
+  const rootBattleCode = readText('battle.js');
+  const gameAiCode = readText('game.js');
+  const sim10Code = exists('scripts/run_10day_simulation.js') ? readText('scripts/run_10day_simulation.js') : '';
+  const playableRunCode = exists('playable_run.js') ? readText('playable_run.js') : '';
+  check(!/s\.used\s*=\s*true/.test(gameAiCode), 'S41', p, 'game.js AI 自动行动不直接写 slot.used=true',
+    { type: 'PASS_WITH_ALIAS', explanation: 'AI 自动行动应调用 useSlot() 统一入口' });
+  check(/useSlot\(a\.slotId\)|useSlot\(act\.slotId\)/.test(rootBattleCode + gameAiCode), 'S42', p, 'AI 自动行动调用 useSlot 统一入口');
+  check(!/commitPlayerActionsToElementField\s*=\s*function\s*\(\)\s*\{\s*\}/.test(sim10Code), 'S43', p, '10天真实模拟不覆盖 commitPlayerActionsToElementField');
+  check(!exists('scripts/battle.js'), 'S44', p, 'scripts/battle.js 旧核心拷贝已移除/归档');
+  check(/smoke-flow|快进烟测|skip-combat|clearBattleFast\(\) 跳过战斗/.test(playableRunCode), 'S45', p, 'playable_run.js 明确标注 smoke-flow 边界');
+  // 防回流：Node 脚本加载器不回退成只加载 data.js/game.js/ui.js
+  const sim10LoadOrder = sim10Code || '';
+  check(sim10LoadOrder.indexOf('damage.js') >= 0, 'S46', p, '10天模拟脚本加载 damage.js（完整多文件加载）');
+  // 防回流：ui.js 不含 preview.js 核心预览函数
+  const PREVIEW_FNS = ['buildPreviewGrid','buildCellInfoMap','computeMonsterActionPreview','buildBattleReport'];
+  let uiHasPrev = false;
+  for (const fn of PREVIEW_FNS) { if (readText('ui.js').indexOf('function ' + fn + '(') >= 0) { uiHasPrev = true; break; } }
+  check(!uiHasPrev, 'S47', p, 'ui.js 不含 preview.js 核心预览函数');
+  // 防回流：elements.js 不含 damage.js / terrain.js 核心函数
+  const DAMAGE_FNS = ['explDmg','calcElementDamage','calcElementLayerDamage'];
+  const TERRAIN_FNS = ['ensureTerrain','getTerrain','addTrapLayers','clearTerrain','convertElementsToTrapsAfterExplosion'];
+  let elHasDmg = false, elHasTer = false;
+  for (const fn of DAMAGE_FNS) { if (readText('elements.js').indexOf('function ' + fn + '(') >= 0) { elHasDmg = true; break; } }
+  for (const fn of TERRAIN_FNS) { if (readText('elements.js').indexOf('function ' + fn + '(') >= 0) { elHasTer = true; break; } }
+  check(!elHasDmg, 'S48', p, 'elements.js 不含 damage.js 核心函数定义');
+  check(!elHasTer, 'S49', p, 'elements.js 不含 terrain.js 核心函数定义');
+
   // externalDataAdapter 导出 API
   const extCode = readText('externalDataAdapter.js');
   const apis = ['createPalUnitInstance','getExternalUnitDefs','getExternalSD','getExternalEncounterWaves',

@@ -46,9 +46,13 @@ global.__TEST__ = true;
 
 // ========== 加载游戏模块 ==========
 const ROOT = path.join(__dirname, '..');
-// externalDataAdapter.js 的 loadJSON 用 __dirname 定位 JSON，重定向到项目根
-if (typeof __dirname !== 'undefined') __dirname = ROOT;
-const MODS = ['data.js','externalDataAdapter.js','rng.js','board.js','actions.js','elements.js','waves.js','battle.js','shop.js','game.js','preview.js','ui.js','damage.js','terrain.js','battleLog.js'];
+global.__YSBZS_ROOT__ = ROOT;
+const MODS = [
+  'data.js', 'externalDataAdapter.js',
+  'rng.js', 'board.js', 'actions.js', 'elements.js',
+  'damage.js', 'waves.js', 'battle.js', 'terrain.js', 'battleLog.js',
+  'shop.js', 'game.js', 'preview.js', 'ui.js'
+];
 for (const f of MODS) {
   const fp = path.join(ROOT, f);
   if (!fs.existsSync(fp)) continue;
@@ -302,42 +306,12 @@ function run() {
     if (safety % 100 === 0) console.error('  [' + safety + '] D' + G.day + 'h' + G.dayHalf + 'r' + G.round + ' ' + G.phase);
 
     if (G.phase === 'PLAYER') {
-      var plan = executeAiBattlePlan_sync();
+      var plan = runAiBattleTurn_sync({ endTurn: false });
       if (plan && plan.canRun) {
+        // 真实战斗批量路径：复用浏览器/测试同一套 AI 计划执行入口，行动槽统一走 useSlot()
         var needCp = previewCheckpoints.length < 5;
         if (needCp) var cp = collectPrecision('D' + G.day + 'h' + G.dayHalf + 'r' + G.round);
         endPlayerTurn();
-        if (needCp) {
-          G._hpForVerify = G._hpAfterSettle || {};
-          verifyPrecision(cp);
-        }
-      } else {
-        endPlayerTurn();
-      }
-      var plan = buildAiBattleTurnPlan();
-      if (plan.canRun) {
-        // 模拟浏览器流程：先移动，再逐个 useSlot 更新元素场，再结算
-        // 1) 移动英雄
-        for (var mi = 0; mi < plan.moves.length; mi++) {
-          var mv = plan.moves[mi];
-          if (G.heroes[mv.heroId]) G.heroes[mv.heroId].pos = { r: mv.to.r, c: mv.to.c };
-        }
-        // 2) 逐个执行行动槽（useSlot 会正确累加元素层、标记 used）
-        for (var ai = 0; ai < plan.actions.length; ai++) {
-          var act = plan.actions[ai];
-          var slot = G.slots[act.slotId];
-          if (!slot || slot.used) continue;
-          useSlot(act.slotId);
-        }
-        // 3) 收集预览检查点（此时元素场已正确填充）
-        var needCp = previewCheckpoints.length < 5;
-        if (needCp) var cp = collectPrecision('D' + G.day + 'h' + G.dayHalf + 'r' + G.round);
-        // 4) 终止回合（useSlot 已提交所有 action，覆盖 commit 避免重复添加）
-        var _origCommit = commitPlayerActionsToElementField;
-        commitPlayerActionsToElementField = function(){};
-        endPlayerTurn();
-        commitPlayerActionsToElementField = _origCommit;
-        // 5) 验证预览（用结算后/怪物移动前的 HP，排除陷阱/移动伤害）
         if (needCp) {
           G._hpForVerify = G._hpAfterSettle || {};
           verifyPrecision(cp);

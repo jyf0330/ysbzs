@@ -1,0 +1,17 @@
+# === YAML 源数据 · 自动从 JSON 转换 ===
+# 来源: generated-json/battle_config.json
+# 注意: 此文件为人工维护源，修改后运行 node scripts/export_yaml_to_json.js 更新 JSON
+
+schemaVersion: ysbzs.battle_config.v0.1
+updated_at: 2026-06-04 00:00
+design_note: 战斗规则配置。第一版只外置真正需要改动的策划数值。
+combat:
+  explosion_threshold: 3
+legacy_ui_only:
+  tier_mult:
+    - 0
+    - 1
+    - 2
+    - 4
+    - 8
+  note: 仅用于 UI 显示 ×1/×2/×4/×8，不建议作为核心规则配置。

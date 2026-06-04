@@ -12,7 +12,7 @@
 
   var fs = (typeof require !== 'undefined') ? require('fs') : null;
   var pj = (typeof require !== 'undefined') ? require('path') : null;
-  var ROOT = (typeof __dirname !== 'undefined') ? __dirname : '.';
+  var ROOT = g.__YSBZS_ROOT__ || ((typeof __dirname !== 'undefined') ? __dirname : '.');
 
   var _cache = {};
 

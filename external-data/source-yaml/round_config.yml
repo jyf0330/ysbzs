@@ -1,0 +1,38 @@
+# === YAML 源数据 · 自动从 JSON 转换 ===
+# 来源: generated-json/round_config.json
+# 注意: 此文件为人工维护源，修改后运行 node scripts/export_yaml_to_json.js 更新 JSON
+
+schemaVersion: ysbzs.round_config.v0.1
+updated_at: 2026-06-04 00:00
+design_note: 每日上下午最大回合数。迁移自 data.js DAY_ROUND_CONFIG。
+rounds:
+  - day: 1
+    morning: 2
+    afternoon: 2
+  - day: 2
+    morning: 2
+    afternoon: 3
+  - day: 3
+    morning: 3
+    afternoon: 3
+  - day: 4
+    morning: 3
+    afternoon: 4
+  - day: 5
+    morning: 3
+    afternoon: 4
+  - day: 6
+    morning: 4
+    afternoon: 4
+  - day: 7
+    morning: 4
+    afternoon: 4
+  - day: 8
+    morning: 4
+    afternoon: 5
+  - day: 9
+    morning: 5
+    afternoon: 5
+  - day: 10
+    morning: 5
+    afternoon: 5

@@ -240,7 +240,7 @@ function freezeShopItem(itemId, category) {
 function closeShop() {
   document.getElementById('so').style.display = 'none';
   G.shopFrozen = { units: new Set(), consumables: new Set() };
-  G.slots.forEach(s => s.used = false);
+  G.slots.forEach(s => { s.used = false; s._committed = false; });
   G.shopEvents = []; // 关闭商店时清除事件
   if (G.dayHalf === 1) {
     G.dayHalf = 2;

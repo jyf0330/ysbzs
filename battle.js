@@ -133,7 +133,7 @@ function useSlot(idx) {
   var hero = G.heroes[slot.hid]; if (!hero) return;
   if (slot.skill === 'summonFromCell') {
     if (!execSummonFromCellSkill(hero, slot)) return;
-    slot.used = true; hero._acted = true;
+    slot.used = true; slot._committed = true; hero._acted = true;
     G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：召唤' });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
@@ -142,7 +142,7 @@ function useSlot(idx) {
   }
   if (slot.skill === 'healSummons') {
     execHealSummonsSkill(hero, slot);
-    slot.used = true; hero._acted = true;
+    slot.used = true; slot._committed = true; hero._acted = true;
     G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：治疗召唤物' });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
@@ -176,7 +176,7 @@ function useSlot(idx) {
     else if (cell.el === slot.el) { cell.stk = Math.min(cell.stk + layersToAdd, MAX_STK); }
   });
   slot.used = true;
-  slot._committed = true; // useSlot 已写入 elementCells，阻止 commit 重复落地
+  slot._committed = true;
   hero._acted = true;
   G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
   G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, el: slot.el, sn: slot.sn, dir: slot.dir, cells: cells.map(function(c) { return c.r + ',' + c.c; }), desc: '使用行动块#' + (idx + 1) + '：' + EL[slot.el] });
@@ -186,7 +186,7 @@ function useSlot(idx) {
 
 function commitPlayerActionsToElementField(G) {
   G.slots.forEach((s, idx) => {
-    if (!s.used || s._committed) return; // 跳过 useSlot 已落地的槽
+    if (!s.used || s._committed) return;
     const hero = G.heroes[s.hid]; if (!hero) return;
     const cells = atkCells(hero.pos, s.sn, s.dir);
     const center = findCenterCell(cells);
@@ -212,6 +212,7 @@ function commitPlayerActionsToElementField(G) {
       const cell = G.board[ap.r][ap.c];
       cell.el = s.el; cell.stk = Math.min(elSlot.layers, MAX_STK);
     });
+    s._committed = true;
   });
 }
 
@@ -261,7 +262,7 @@ function finishMonsters() {
     }
     if (G.dayHalf === 0) {
       G.dayHalf = 1; G.round = 1; G.hitCount = 0;
-      G.slots.forEach(s => s.used = false);
+      G.slots.forEach(s => { s.used = false; s._committed = false; });
       Object.values(G.heroes).forEach(h => h._acted = false);
       G.previewEvents = [];
       glog(`🛒 第${G.day}天中午·进入商店！`);
@@ -274,7 +275,7 @@ function finishMonsters() {
     }
   } else {
     G.phase = 'PLAYER'; G.hitCount = 0; G.previewEvents = [];
-    G.slots.forEach(s => s.used = false);
+    G.slots.forEach(s => { s.used = false; s._committed = false; });
     Object.values(G.heroes).forEach(h => h._acted = false);
     glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
   }
@@ -366,7 +367,7 @@ function resolveTerrainOnEnter(monster, pos) {
     if (layers <= 0) return;
 
     var dmg = explDmg(layers);
-    var cfg = TRAP_CONFIG[el] || {};
+    var cfg = (typeof getTrapConfig === 'function' ? getTrapConfig() : (typeof TRAP_CONFIG !== 'undefined' ? TRAP_CONFIG : {}))[el] || {};
     var apDelta = cfg.apDelta || 0;
 
     var oldHp = monster.hp;
@@ -722,16 +723,21 @@ function executeAiBattlePlan_sync(plan) {
   G.aiBattleStatus = { phase: 'executing', summary: plan.summary, moves: plan.moves.length, actions: plan.actions.length };
   G.actionLog.push({ type: 'AI_BATTLE', desc: plan.summary, moves: plan.moves.length, actions: plan.actions.length });
   plan.moves.forEach(m => {
+    if (!G.heroes[m.heroId]) return;
     G.heroes[m.heroId].pos = { r: m.to.r, c: m.to.c };
     glog(`🤖 ${G.heroes[m.heroId].name}→(${m.to.r},${m.to.c})`);
   });
+  var usedCount = 0;
   plan.actions.forEach(a => {
     const s = G.slots[a.slotId];
     if (!s || s.used || !G.heroes[s.hid]) return;
     if (atkCells(G.heroes[s.hid].pos, s.sn, s.dir).length === 0) return;
-    useSlot(a.slotId); // 走统一入口：写元素层、actionLog、遗物hook、UI刷新
+    glog(`🤖 使用 ${G.heroes[s.hid].name}·${_aiSlotLabel(s, a.slotId)}`);
+    useSlot(a.slotId);
+    if (s.used) usedCount++;
   });
-  glog(`⚡ AI 战斗执行：移动${plan.moves.length}步，施放${plan.actions.length}个符文。`);
+  plan.executedActions = usedCount;
+  glog(`⚡ 我方自动行动：移动${plan.moves.length}步，施放${usedCount}个符文。`);
   return plan;
 }
 

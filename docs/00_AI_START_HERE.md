@@ -31,6 +31,7 @@
 | UI/交互 | `roles/UI_UX_START.md`, `04_CURRENT_UI_ART_SPEC.md` |
 | 策划/数值 | `roles/PLANNER_START.md`, `03_CURRENT_NUMBERS.md` |
 | 涉及文件/素材 | `05_ASSET_AND_FILE_INDEX.md` |
+| 涉及策划数据 | `17_YAML_DATA_MIGRATION.md` — YAML 源数据维护流程 |
 
 ### 首次进入项目或重构场景
 

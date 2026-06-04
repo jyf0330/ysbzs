@@ -12,33 +12,7 @@ function addEl(pos, el) {
   const cell = G.board[pos.r][pos.c];
   if (!cell.el || cell.stk === 0) { cell.el = el; cell.stk = 1; }
   else if (cell.el === el) { if (cell.stk < MAX_STK) cell.stk++; }
-  // EL_CROSS_REACT 已废弃：同一格可多元素并存，互克不触发覆盖/爆炸
-}
-
-function explDmg(stk) { return stk * (stk + 1) / 2; }
-function calcElementLayerDamage(layers) { return layers * (layers + 1) / 2; }
-
-/**
- * 统一元素伤害计算 — battle.js(实战) 和 ui.js(预览) 共用
- * 避免两套公式不同步
- *
- * @param {number} layers - 元素层数
- * @param {string|null} targetEl - 目标的元素类型（用于克制判断），null 或无元素则无克制
- * @param {string} ourEl - 我方元素类型
- * @param {object} [opts]
- * @param {number} [opts.advHitBonus=0] - 克制增伤被动加值（风风灵）
- * @param {number} [opts.spaceBonus=0] - 空格引爆加值（火种灵）
- * @returns {{ damage: number, isAdv: boolean, baseDmg: number, totalBase: number }}
- */
-function calcElementDamage(layers, targetEl, ourEl, opts) {
-  opts = opts || {};
-  const baseDmg = explDmg(layers);
-  const totalBase = baseDmg + (opts.spaceBonus || 0);
-  const isAdv = targetEl && ADV[ourEl] === targetEl;
-  const mult = isAdv ? 2 : 1;
-  const advBonus = isAdv ? (opts.advHitBonus || 0) : 0;
-  const damage = totalBase * mult + advBonus;
-  return { damage, isAdv, baseDmg, totalBase };
+  // EL_CROSS_REACT 已废弃：同一格可多元素并存，互克不触发覆盖/爆炸;
 }
 
 function explCells(pos) {
@@ -129,52 +103,7 @@ function doExplode(pos) {
   refreshUI();
 }
 
-// ========== 地形陷阱 ==========
 
-/** 初始化单格地形结构 */
-function ensureTerrain(pos) {
-  if (!G.terrainCells) G.terrainCells = {};
-  var key = pos.r + ',' + pos.c;
-  if (!G.terrainCells[key]) G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
-  return G.terrainCells[key];
-}
-
-/** 获取单格地形（无则返回空对象） */
-function getTerrain(pos) {
-  if (!G.terrainCells) return { fire:0, water:0, wind:0, earth:0 };
-  return G.terrainCells[pos.r + ',' + pos.c] || { fire:0, water:0, wind:0, earth:0 };
-}
-
-/** 向指定格添加元素陷阱（叠加，不覆盖） */
-function addTrapLayers(pos, el, layers) {
-  if (!layers || layers <= 0) return;
-  var ter = ensureTerrain(pos);
-  ter[el] = (ter[el] || 0) + layers;
-}
-
-/** 元素引爆结算后：将该格元素层转移到地形陷阱 */
-function convertElementsToTrapsAfterExplosion(pos) {
-  var key = pos.r + ',' + pos.c;
-  var elData = G.elementCells[key];
-  if (!elData) return;
-  var changed = false;
-  ELEMS.forEach(function(el) {
-    var slot = elData[el];
-    if (slot && slot.layers > 0) {
-      addTrapLayers(pos, el, slot.layers);
-      slot.layers = 0;
-      slot.willExplode = false;
-      changed = true;
-    }
-  });
-  if (changed) syncBoardElementFromElementCells(pos);
-}
-
-/** 清除指定格的全部陷阱 */
-function clearTerrain(pos) {
-  var key = pos.r + ',' + pos.c;
-  if (G.terrainCells && G.terrainCells[key]) G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
-}
 
 // ========== 引擎成长/统计 ==========
 

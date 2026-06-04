@@ -48,7 +48,12 @@ function extractGameScript(html) {
 }
 
 function loadMultiFileScripts(rootDir) {
-  const files = ['data.js', 'game.js', 'ui.js'];
+  const files = [
+    'data.js', 'externalDataAdapter.js',
+    'rng.js', 'board.js', 'actions.js', 'elements.js',
+    'damage.js', 'waves.js', 'battle.js', 'terrain.js', 'battleLog.js',
+    'shop.js', 'game.js', 'preview.js', 'ui.js'
+  ];
   const scripts = [];
   for (const f of files) {
     const p = path.join(rootDir, f);
@@ -140,6 +145,10 @@ function loadYsbzsGame(options = {}) {
     clearTimeout() {},
     __TEST__: true,
     __DEBUG__: false,
+    __YSBZS_ROOT__: rootDir,
+    require,
+    __dirname: rootDir,
+    process,
   };
   context.global = context;
   vm.createContext(context);
@@ -150,7 +159,7 @@ function loadYsbzsGame(options = {}) {
     const footer = createExportFooter();
     // data.js 和 game.js 用 var 声明提升到 context，ui.js 也一样
     const combined = multiScripts.map(s =>
-      s.replace(/\bconst\b/g, 'var').replace(/\blet\b/g, 'var')
+      s.replace(/^#!.*\n/, '').replace(/\bconst\b/g, 'var').replace(/\blet\b/g, 'var')
     ).join('\n;\n') + '\n' + footer;
     vm.runInContext(combined, context, { filename: 'multi-file-bundle' });
   } else {

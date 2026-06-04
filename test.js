@@ -34,9 +34,9 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
+    'damage.js', 'terrain.js', 'battleLog.js',
     'waves.js', 'battle.js', 'shop.js', 'game.js', 'preview.js',
     'ui.js',
-        'damage.js', 'terrain.js', 'battleLog.js',
   ];
   for (const f of moduleFiles) {
     const fp = path.join(__dirname, f);
@@ -2902,6 +2902,26 @@ group('L2组：AI 战斗入口',()=>{
     assert.ok(G.slots.some(s=>s.used),'AI 战斗应至少使用一个行动槽');
     assert.ok((G.actionLog||[]).some(a=>a.type==='AI_BATTLE'),'actionLog 应记录 AI_BATTLE');
     assert.strictEqual(G.phase,'PLAYER','endTurn=false 时不自动结束回合');
+  });
+
+  test('case_ai_battle_002b: AI 自动行动必须走 USE_SLOT 统一入口',()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:false});
+    assert.ok((G.actionLog||[]).some(a=>a.type==='USE_SLOT'),'AI 自动行动应产生 USE_SLOT actionLog');
+    assert.ok(G.slots.some(s=>s.used && s._committed),'AI 自动行动使用槽后应标记已落地');
+  });
+
+  test('case_ai_battle_002c: useSlot 后 endPlayerTurn 不重复提交元素层',()=>{
+    fresh();
+    G.monsters=[];
+    G.heroes.ha.pos={r:5,c:5};
+    G.slots[0].hid='ha'; G.slots[0].el='fire'; G.slots[0].sn=1; G.slots[0].dir='right'; G.slots[0].layers=1; G.slots[0].used=false; G.slots[0]._committed=false;
+    useSlot(0);
+    const before=G.elementCells['5,6'].fire.layers;
+    endPlayerTurn();
+    const after=(G.elementCells['5,6']&&G.elementCells['5,6'].fire.layers)||0;
+    assert.ok(before===1 || before===0, 'useSlot 后应有稳定层数或被结算清空');
+    assert.notStrictEqual(after, 2, 'endPlayerTurn 不应把同一槽重复提交到 2 层');
   });
 
   test('case_ai_battle_003: buildTurnVM 暴露 AI 战斗按钮状态',()=>{

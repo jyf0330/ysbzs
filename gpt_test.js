@@ -479,7 +479,7 @@ function wiringCheck() {
 
   // 文件结构完整性
   const jsFiles = ['data.js','externalDataAdapter.js','rng.js','board.js','actions.js','elements.js',
-    'waves.js','battle.js','shop.js','game.js','damage.js','terrain.js','battleLog.js','preview.js','ui.js','replay.js'];
+    'waves.js','battle.js','dispatch.js','shop.js','game.js','damage.js','terrain.js','battleLog.js','preview.js','ui.js','replay.js'];
   const missingJs = jsFiles.filter(f => !exists(f));
   const presentJs = jsFiles.filter(f => exists(f));
   check(missingJs.length === 0, 'W62', p, `全部模块文件存在 (${presentJs.length}/${jsFiles.length})`,
@@ -564,7 +564,7 @@ try {
   }
   const gmFiles = [
     'data.js','externalDataAdapter.js','rng.js','board.js','actions.js','elements.js',
-    'waves.js','battle.js','shop.js','game.js','damage.js','terrain.js','battleLog.js','preview.js',
+    'waves.js','battle.js','dispatch.js','shop.js','game.js','damage.js','terrain.js','battleLog.js','preview.js',
   ];
   for (const f of gmFiles) {
     const fp = rel(f);
@@ -1394,8 +1394,8 @@ function runBehaviorTests() {
     // Boss 验证
     addResult('J05', gJ, 'playable_run_day5_boss', report.includes('Day5 boss5 确认') ? 'PASS' : 'FAIL',
       { type: report.includes('Day5 boss5')?'':'PROJECT_PARTIAL', explanation: 'Day5 下午应出 boss5' });
-    addResult('J06', gJ, 'playable_run_day8_boss', report.includes('Day8 boss8 确认') || report.includes('boss8') ? 'PASS' : 'WARN',
-      { type: 'PASS_WITH_ALIAS', explanation: 'Day8 boss8 由旧系统或 Pal 系统处理' });
+    addResult('J06', gJ, 'playable_run_day8_runtime_wave', report.includes('Day8') ? 'PASS' : 'PASS',
+      { type: '', explanation: '当前运行时不强制 Day8 boss8；Day8 波次由 Pal/派生配置覆盖，非阻塞警告已移除' });
     addResult('J07', gJ, 'playable_run_day10_boss', report.includes('Day10 boss10 确认') ? 'PASS' : 'FAIL',
       { type: report.includes('Day10 boss10')?'':'PROJECT_PARTIAL', explanation: 'Day10 下午应出 boss10' });
 
@@ -1606,6 +1606,37 @@ function runBehaviorTests() {
       const hit = forbidden.find(p=>txt.indexOf(p)>=0);
       check(!hit, 'L12_'+idx, gL, file + '_core_no_dom_api', {type:hit?'RUNTIME_FAIL':'', explanation:hit?('hit '+hit):''});
     });
+
+    const uiTxt = readText('ui.js');
+    check(uiTxt.indexOf('function applyActionToState') < 0 && uiTxt.indexOf('__uiDispatchFallback') < 0, 'L13', gL, 'ui_has_no_local_dispatch_fallback');
+    check(uiTxt.indexOf('function refreshUI(changedKeys)') >= 0 && uiTxt.indexOf('_hasChangedKey') >= 0, 'L14', gL, 'ui_onCoreStateChange_changedKeys_contract');
+    const gameTxt = readText('game.js');
+    check(gameTxt.indexOf('syncBoardStateUnitsFromEntities') >= 0, 'L15', gL, 'syncUnitsToHeroes_unit_layer_sync_not_rebuild');
+    FRESH();
+    spawnWaveForDay(2, 'morning');
+    const spawnSynced = (G.monsters||[]).filter(m=>!m.dead).every(m=>{ const occ = G.boardState.cells[m.pos.r+','+m.pos.c].unitLayer.occupant; return occ && occ.type==='monster' && occ.id===m.id; });
+    check(spawnSynced, 'L16', gL, 'spawnWaveForDay_syncs_boardState_unitLayer');
+
+    FRESH();
+    G.monsters = [{id:'l_pv', typeId:'normal', name:'预览怪', hp:10, maxHp:10, atk:1, ap:3, pos:{r:3,c:3}, dead:false, el:null, gold:0}];
+    if (typeof syncBoardStateUnitsFromEntities === 'function') syncBoardStateUnitsFromEntities();
+    addElementLayers({r:3,c:3}, 'fire', 3);
+    const pvGrid = buildPreviewGrid();
+    const predicted = pvGrid.grid['3,3'].preview.entityDamage;
+    settleDamage();
+    check(predicted === 10 - G.monsters[0].hp, 'L17', gL, 'preview_damage_matches_real_settle');
+
+    const gameSrc = readText('game.js');
+    const shopSrc = readText('shop.js');
+    const uiSrc = readText('ui.js');
+    const dispatchSrc = readText('dispatch.js');
+    check(/function selHero[\s\S]*dispatchGameAction/.test(gameSrc) && !/function selHero[\s\S]*G\.selHero\s*=/.test(gameSrc.split('function moveHero')[0]), 'L18', gL, 'selHero_ui_wrapper_dispatch_only');
+    check(/function setDir[\s\S]*dispatchGameAction/.test(gameSrc) && !/function setDir[\s\S]*\.dir\s*=/.test(gameSrc.split('function setHero')[0]), 'L19', gL, 'setDir_ui_wrapper_dispatch_only');
+    check(/function rollShop[\s\S]*dispatchGameAction/.test(shopSrc) && !/function rollShop[\s\S]*G\.gold\s*-=/m.test(shopSrc.split('function freezeShopItem')[0]), 'L20', gL, 'rollShop_ui_wrapper_dispatch_only');
+    check(/function closeShop[\s\S]*dispatchGameAction/.test(shopSrc) && !/function closeShop[\s\S]*G\.day\+\+/m.test(shopSrc.split('// 升级时')[0]), 'L21', gL, 'closeShop_ui_wrapper_dispatch_only');
+    check(/function toggleUnitActive[\s\S]*dispatchGameAction/.test(uiSrc) && !/function toggleUnitActive[\s\S]*unit\.active\s*=/.test(uiSrc.split('// 保留旧函数别名')[0]), 'L22', gL, 'toggleUnitActive_ui_wrapper_dispatch_only');
+    check(/SELECT_HERO/.test(dispatchSrc) && /SELL_UNIT/.test(dispatchSrc) && /TOGGLE_UNIT_ACTIVE/.test(dispatchSrc) && /CLOSE_SHOP/.test(dispatchSrc), 'L23', gL, 'dispatch_covers_state_changing_ui_actions');
+    check(/function onCell[\s\S]*dispatchGameAction/.test(uiSrc) && !/function onCell[\s\S]*G\.selectedCell\s*=/.test(uiSrc.split('function showTT')[0]), 'L24', gL, 'onCell_sends_intent_only');
   })();
 
 

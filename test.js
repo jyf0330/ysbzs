@@ -34,8 +34,8 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
-    'damage.js', 'terrain.js', 'battleLog.js',
-    'waves.js', 'battle.js', 'shop.js', 'game.js', 'preview.js',
+    'damage.js', 'battleLog.js',
+    'waves.js', 'battle.js', 'dispatch.js', 'terrain.js', 'shop.js', 'game.js', 'preview.js',
     'ui.js',
   ];
   for (const f of moduleFiles) {
@@ -4554,6 +4554,158 @@ group('架构统一：boardState / sync entry / seed RNG', ()=>{
       assert.ok(!txt.includes('Math.random'), file + ' 不应直接 Math.random');
     });
   });
+
+  test('ARCH-9: occupant 只保留索引字段，不存实体快照', ()=>{
+    fresh();
+    const occ = G.boardState.cells['6,0'].unitLayer.occupant;
+    assert.ok(occ && occ.type === 'hero', '英雄 occupant 存在');
+    assert.ok(!('name' in occ), 'occupant 不存 name');
+    assert.ok(!('hp' in occ), 'occupant 不存 hp');
+    assert.ok(!('maxHp' in occ), 'occupant 不存 maxHp');
+  });
+  test('ARCH-10: preview 正常路径不调用 rebuildBoardState 修复状态', ()=>{
+    const txt = fs.readFileSync(path.join(__dirname, 'preview.js'), 'utf8');
+    assert.ok(!txt.includes('rebuildBoardState('), 'preview.js 不应调用 rebuildBoardState');
+    assert.ok(!txt.includes('repairBoardStateFromLegacy('), 'preview.js 不应调用 repairBoardStateFromLegacy');
+  });
+  test('ARCH-11: dispatch.js 成为 UI dispatch 的核心代理', ()=>{
+    fresh();
+    assert.strictEqual(typeof __dispatchGameActionCore, 'function', '核心 dispatch 已加载');
+    const hero = G.heroes.ha;
+    const from = {r: hero.pos.r, c: hero.pos.c};
+    const to = {r: Math.max(0, from.r - 1), c: from.c};
+    if (heroAt(to) || monAt(to) || summonAt(to) || castleAt(to) || hasElementAt(to)) return;
+    const res = dispatchGameAction({type:'MOVE_HERO', heroId:'ha', to});
+    assert.ok(res && res.ok, 'MOVE_HERO dispatch ok');
+    assert.deepStrictEqual(G.heroes.ha.pos, to);
+    assert.strictEqual(G.boardState.cells[to.r+','+to.c].unitLayer.occupant.id, 'ha');
+    assertBoardStateValid('ARCH-11');
+  });
+  test('ARCH-12: onCoreStateChange 接收 changedKeys 契约', ()=>{
+    fresh();
+    onCoreStateChange(['boardState','phase']);
+    assert.deepStrictEqual(G._lastChangedKeys, ['boardState','phase']);
+  });
+  test('ARCH-13: MONSTER_BEHAVIORS 配置存在并可路由默认行为', ()=>{
+    fresh();
+    assert.ok(MONSTER_BEHAVIORS && MONSTER_BEHAVIORS.default && MONSTER_BEHAVIORS.ranged && MONSTER_BEHAVIORS.tank);
+    assert.strictEqual(getMonsterBehavior({typeId:'unknown'}).id, 'default');
+    assert.strictEqual(getMonsterBehavior({behavior:'ranged'}).id, 'ranged');
+  });
+
+  test('ARCH-14: ui.js 不再保留本地 applyActionToState fallback', ()=>{
+    const txt = fs.readFileSync(path.join(__dirname, 'ui.js'), 'utf8');
+    assert.ok(!txt.includes('function applyActionToState'), 'ui.js 不应定义本地 applyActionToState');
+    assert.ok(!txt.includes('__uiDispatchFallback'), 'ui.js 不应保留 fallback 开关');
+  });
+
+  test('ARCH-15: syncUnitsToHeroes 不再破坏性 rebuild boardState', ()=>{
+    const txt = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8');
+    assert.ok(!txt.includes("if (typeof rebuildBoardState === 'function' && G.boardState) rebuildBoardState();"), 'syncUnitsToHeroes 不应调用破坏性 rebuild');
+    assert.ok(txt.includes('syncBoardStateUnitsFromEntities'), '应只同步单位层');
+  });
+
+  test('ARCH-16: spawnWaveForDay 生成怪物后同步 boardState 单位层', ()=>{
+    fresh();
+    spawnWaveForDay(2, 'morning');
+    assert.ok(G.monsters.length > 0, '应生成怪物');
+    G.monsters.filter(m=>!m.dead).forEach(m=>{
+      const occ = G.boardState.cells[m.pos.r+','+m.pos.c].unitLayer.occupant;
+      assert.ok(occ && occ.type==='monster' && occ.id===m.id, '怪物生成后写入 boardState: '+m.id);
+    });
+    assertBoardStateValid('ARCH-16');
+  });
+
+  test('ARCH-17: clearElementAt 和 doExplode 后即时同步 boardState', ()=>{
+    fresh();
+    addElementLayers({r:3,c:3}, 'fire', 2);
+    clearElementAt({r:3,c:3}, 'fire');
+    assert.strictEqual(G.boardState.cells['3,3'].elementLayer.fire, 0, 'clearElementAt 清 boardState');
+    addEl({r:4,c:4}, 'water');
+    doExplode({r:4,c:4});
+    assert.strictEqual(G.boardState.cells['4,4'].elementLayer.water, 0, 'doExplode 清 boardState');
+  });
+
+  test('ARCH-18: onCoreStateChange changedKeys 被传入 refreshUI 增量入口', ()=>{
+    const txt = fs.readFileSync(path.join(__dirname, 'ui.js'), 'utf8');
+    assert.ok(txt.includes('function refreshUI(changedKeys)'), 'refreshUI 接收 changedKeys');
+    assert.ok(txt.includes('_hasChangedKey'), 'UI 有 changedKeys 分支');
+    assert.ok(txt.includes('refreshUI(G._lastChangedKeys)'), 'onCoreStateChange 传递 changedKeys');
+  });
+
+  test('ARCH-19: 预览元素伤害与真实结算保持一致', ()=>{
+    fresh();
+    G.monsters = [{id:'arch_pv', typeId:'normal', name:'预览怪', hp:10, maxHp:10, atk:1, ap:3, pos:{r:3,c:3}, dead:false, el:null, gold:0}];
+    if (typeof syncBoardStateUnitsFromEntities === 'function') syncBoardStateUnitsFromEntities();
+    addElementLayers({r:3,c:3}, 'fire', 3);
+    const pv = buildPreviewGrid();
+    const predicted = pv.grid['3,3'].preview.entityDamage;
+    settleDamage();
+    const actual = 10 - G.monsters[0].hp;
+    assert.strictEqual(predicted, actual, '预览伤害应等于真实结算伤害');
+  });
+
+  test('ARCH-20: 选择/行动槽 UI wrapper 只走 dispatch', ()=>{
+    [selHero, selSlot, setDir, setHero, moveHero].forEach(function(fn){
+      const src = fn.toString();
+      assert.ok(src.includes('dispatchGameAction'), fn.name + ' 应调用 dispatchGameAction');
+    });
+    assert.ok(!selHero.toString().includes('G.selHero ='), 'selHero wrapper 不应直接改 G.selHero');
+    assert.ok(!selSlot.toString().includes('G.selSlot ='), 'selSlot wrapper 不应直接改 G.selSlot');
+    assert.ok(!setDir.toString().includes('.dir ='), 'setDir wrapper 不应直接改 slot.dir');
+    assert.ok(!setHero.toString().includes('.hid ='), 'setHero wrapper 不应直接改 slot.hid');
+  });
+
+  test('ARCH-21: 商店 UI wrapper 只走 dispatch', ()=>{
+    [buyUnit, sellUnit, rollShop, closeShop, toggleUnitActive, doEventOption].forEach(function(fn){
+      const src = fn.toString();
+      assert.ok(src.includes('dispatchGameAction'), fn.name + ' 应调用 dispatchGameAction');
+    });
+    assert.ok(!rollShop.toString().includes('G.gold -='), 'rollShop wrapper 不应直接扣金币');
+    assert.ok(!sellUnit.toString().includes('G.ownedUnits.splice'), 'sellUnit wrapper 不应直接删单位');
+    assert.ok(!closeShop.toString().includes('G.day++'), 'closeShop wrapper 不应直接推进天数');
+    assert.ok(!toggleUnitActive.toString().includes('unit.active='), 'toggleUnitActive wrapper 不应直接切 active');
+  });
+
+  test('ARCH-22: dispatch 已覆盖剩余玩家交互 action', ()=>{
+    var handlers = typeof __dispatchHandlers__ !== 'undefined' ? __dispatchHandlers__ : {};
+    ['SELECT_HERO','CLEAR_SELECTION','SELECT_CELL','SELECT_ACTION_SLOT','SET_ACTION_DIRECTION','UPDATE_ACTION_SLOT','SELL_UNIT','TOGGLE_UNIT_ACTIVE','ROLL_SHOP','SELECT_EVENT','CLOSE_SHOP','FREEZE_SHOP_ITEM'].forEach(function(a){
+      assert.strictEqual(typeof handlers[a], 'function', 'dispatch handler missing: ' + a);
+    });
+  });
+
+  test('ARCH-23: onCell 只发送交互意图，不直接改选择状态', ()=>{
+    const src = onCell.toString();
+    assert.ok(src.includes('dispatchGameAction'), 'onCell 应调用 dispatchGameAction');
+    assert.ok(!src.includes('G.selHero=null'), 'onCell 不应直接清 G.selHero');
+    assert.ok(!src.includes('G.selectedCell='), 'onCell 不应直接写 G.selectedCell');
+  });
+
+  test('ARCH-24: toggleUnitActive 通过 dispatch 后状态改变', ()=>{
+    fresh();
+    G.ownedUnits=[];
+    addOwnedUnit('fire_starter',{r:0,c:0});
+    const u=G.ownedUnits[0];
+    assert.strictEqual(u.active,true);
+    const r1=toggleUnitActive(u.instanceId);
+    assert.ok(r1 && r1.ok, 'toggle active->bench ok');
+    assert.strictEqual(u.active,false);
+    const r2=toggleUnitActive(u.instanceId);
+    assert.ok(r2 && r2.ok, 'toggle bench->active ok');
+    assert.strictEqual(u.active,true);
+  });
+
+  test('ARCH-25: closeShop 通过 dispatch 推进阶段', ()=>{
+    fresh();
+    G.phase='SHOP'; G.dayHalf=1;
+    const beforeDay=G.day;
+    const r=dispatchGameAction({type:'CLOSE_SHOP'});
+    assert.ok(r && r.ok, 'CLOSE_SHOP dispatch ok');
+    assert.strictEqual(G.day,beforeDay,'中午商店关闭不增天');
+    assert.strictEqual(G.dayHalf,2,'推进到下午');
+    assert.strictEqual(G.phase,'PLAYER','回到战斗');
+  });
+
   test('ARCH-8: 核心文件 DOM 防回流扫描', ()=>{
     const files = ['actions.js','board.js','preview.js','waves.js','battle.js','dispatch.js','elements.js','terrain.js','damage.js','externalDataAdapter.js'];
     const forbidden = ['document.','querySelector','innerHTML','classList','refreshUI(','renderBoard(','renderShop(','addEventListener(','requestFullscreen('];

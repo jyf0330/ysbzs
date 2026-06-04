@@ -324,7 +324,7 @@ function syncUnitsToHeroes() {
   });
   var heroUnits = new Set(selected.slice(0, 2));
   G.ownedUnits.forEach(u => { if (!heroUnits.has(u)) u.active = false; });
-  if (typeof rebuildBoardState === 'function' && G.boardState) rebuildBoardState();
+  if (typeof syncBoardStateUnitsFromEntities === 'function' && G.boardState) syncBoardStateUnitsFromEntities();
 }
 
 function mergeUnits(fromUnit, toUnit) {
@@ -350,44 +350,30 @@ function mergeUnits(fromUnit, toUnit) {
 
 // ========== UI INTERACTION ==========
 function selHero(id) {
-  if (G.phase !== 'PLAYER') return;
-  var wasSel = G.selHero === id;
-  G.selHero = wasSel ? null : id;
-  G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
-  if (!wasSel && G.selHero) {
-    var hero = G.heroes[id];
-    if (hero) G.selectedCell = { r: hero.pos.r, c: hero.pos.c };
-  } else if (wasSel) {
-    G.selectedCell = null;
+  // UI wrapper: 只发送选择意图，不直接修改核心 G 状态。
+  if (typeof dispatchGameAction === 'function') {
+    return dispatchGameAction({ type: 'SELECT_HERO', heroId: id });
   }
-  refreshUI();
+  return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] };
 }
 
 function moveHero(r, c) {
+  // UI wrapper: 移动是核心规则动作，必须走 dispatch。
   if (!G.selHero || G.phase !== 'PLAYER') return;
-  var hero = G.heroes[G.selHero];
-  if (hero._acted) { glog('⚠️ 该英雄已行动，本回合无法再移动！'); return; }
-  if (heroAt({ r: r, c: c }) || monAt({ r: r, c: c }) || summonAt({ r: r, c: c }) || hasElementAt({ r: r, c: c }) || castleAt({ r: r, c: c })) {
-    glog('⚠️ 目标格已占用！'); return;
+  var rlt = dispatchGameAction({ type: 'MOVE_HERO', heroId: G.selHero, to: { r: r, c: c } });
+  if (rlt && !rlt.ok && rlt.errors && rlt.errors[0]) {
+    if (rlt.errors[0].code === 'CELL_BLOCKED') glog('⚠️ 目标格已占用！');
+    else if (rlt.errors[0].code === 'HERO_UNAVAILABLE') glog('⚠️ 该英雄已行动，本回合无法再移动！');
   }
-  glog('🚶 ' + hero.name + '移动到(' + r + ',' + c + ')');
-  if (typeof dispatchGameAction === 'function' && !G.__dispatching) {
-    dispatchGameAction({ type: 'MOVE_HERO', heroId: G.selHero, to: { r: r, c: c } });
-  } else {
-    var from = { r: hero.pos.r, c: hero.pos.c };
-    var occ = (typeof cloneBoardStateOccupant === 'function') ? cloneBoardStateOccupant('hero', hero, { refId: hero.id, side: 'player' }) : null;
-    hero.pos = { r: r, c: c };
-    if (typeof moveBoardStateUnit === 'function') moveBoardStateUnit(from, hero.pos, occ);
-  }
-  refreshUI();
+  return rlt;
 }
 
 function selSlot(idx) {
-  if (G.phase !== 'PLAYER') return;
-  var s = G.slots[idx]; if (!s || s.used) return;
-  G.selSlot = idx;
-  updPreview();
-  refreshUI();
+  // UI wrapper: 行动槽选择统一走 dispatch，避免 UI 直接改 G.selSlot。
+  if (typeof dispatchGameAction === 'function') {
+    return dispatchGameAction({ type: 'SELECT_ACTION_SLOT', slotId: idx });
+  }
+  return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] };
 }
 
 function updPreview() {
@@ -398,17 +384,19 @@ function updPreview() {
 }
 
 function setDir(idx, dir) {
-  var s = G.slots[idx]; if (!s) return;
-  s.dir = dir;
-  updPreview();
-  refreshUI();
+  // UI wrapper: 行动槽方向影响规则预览，必须走 dispatch。
+  if (typeof dispatchGameAction === 'function') {
+    return dispatchGameAction({ type: 'SET_ACTION_DIRECTION', slotId: idx, direction: dir });
+  }
+  return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] };
 }
 
 function setHero(idx, hid) {
-  var s = G.slots[idx]; if (!s) return;
-  s.hid = hid;
-  updPreview();
-  refreshUI();
+  // UI wrapper: 行动槽归属影响规则状态，必须走 dispatch。
+  if (typeof dispatchGameAction === 'function') {
+    return dispatchGameAction({ type: 'UPDATE_ACTION_SLOT', slotId: idx, heroId: hid });
+  }
+  return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] };
 }
 
 // ========== AI ASYNC WRAPPER ==========
@@ -489,7 +477,7 @@ if (typeof document !== 'undefined' && typeof document.addEventListener === 'fun
 
 // ========== UI STUBS（核心→UI 通知钩子）==========
 function glog() {}
-function onCoreStateChange() {}
+function onCoreStateChange(changedKeys) { if (G) G._lastChangedKeys = Array.isArray(changedKeys) ? changedKeys.slice() : []; }
 function showMsg() {}
 function showRunEnd() {}
 function refreshUI() {}

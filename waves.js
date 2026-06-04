@@ -96,6 +96,7 @@ function spawnWaveForDay(day, phase) {
     }
     assignSpawnPositions(palWave.monsters, palWave.spawnSize);
     G.monsters = palWave.monsters;
+    if (typeof syncBoardStateUnitsFromEntities === 'function' && G.boardState) syncBoardStateUnitsFromEntities();
     glog('⚔️ 第' + day + '天' + (phase === 'morning' ? '早上' : '下午') + '：' + G.monsters.length + '只帕鲁怪物出击！');; if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_battle_start', {});
     return;
   }
@@ -107,6 +108,7 @@ function spawnWaveForDay(day, phase) {
   }
   assignSpawnPositions(wavePlan.monsters, wavePlan.spawnSize);
   G.monsters = wavePlan.monsters.map((m, i) => ({ id: `d${day}_${phase}_${i}`, ...m }));
+  if (typeof syncBoardStateUnitsFromEntities === 'function' && G.boardState) syncBoardStateUnitsFromEntities();
   glog(`⚔️ 第${day}天${phase === 'morning' ? '早上' : '下午'}：${G.monsters.length}只怪物出击！`);; if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_battle_start', {});
 }
 
@@ -184,7 +186,7 @@ function buildPalWaveForDay(day, phase) {
 
 function assignSpawnPositions(monsters, spawnSize) {
   const spawnCells = getSpawnCells(spawnSize);
-  const freeCells = spawnCells.filter(sc => !monAt(sc) && !heroAt(sc) && !hasElementAt(sc));
+  const freeCells = spawnCells.filter(sc => !monAt(sc) && !heroAt(sc) && !castleAt(sc) && !hasElementAt(sc));
   for (let i = 0; i < monsters.length; i++) {
     if (i < freeCells.length) {
       monsters[i].pos = freeCells[i];

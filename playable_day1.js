@@ -31,8 +31,8 @@ if (useMultiFile) {
   const moduleFiles = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
-    'damage.js', 'terrain.js', 'battleLog.js',
-    'waves.js', 'battle.js', 'shop.js', 'game.js', 'preview.js',
+    'damage.js', 'battleLog.js',
+    'waves.js', 'battle.js', 'dispatch.js', 'terrain.js', 'shop.js', 'game.js', 'preview.js',
     'ui.js',
   ];
   for (const f of moduleFiles) {

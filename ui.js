@@ -542,89 +542,42 @@ function renderDebugPanel(){
 }
 
 function dispatchGameAction(action){
-  if (!G) return;
-  G.__dispatching = true;
-  try { applyActionToState(action); }
-  finally { G.__dispatching = false; }
-  pushReplayStep(action);
-  recomputeCorePreview();
-  if(typeof document!=='undefined')render();
-}
-
-function applyActionToState(action){
-  if(!G.actionLog)G.actionLog=[];
-  switch(action.type){
-    case 'MOVE_HERO':{
-      const hero=G.heroes[action.heroId];
-      if(!hero||hero._acted)return;
-      if(G.phase!=='PLAYER'||heroAt(action.to)||monAt(action.to)||summonAt(action.to)||hasElementAt(action.to))return;
-      if(castleAt(action.to))return;
-      const from={r:hero.pos.r,c:hero.pos.c};
-      const occ=(typeof cloneBoardStateOccupant==='function')?cloneBoardStateOccupant('hero', hero, {refId:hero.id, side:'player'}):null;
-      hero.pos={r:action.to.r,c:action.to.c};
-      if(typeof moveBoardStateUnit==='function')moveBoardStateUnit(from, action.to, occ);
-      if(G.selectedCell&&G.selectedCell.r===from.r&&G.selectedCell.c===from.c){G.selectedCell={r:action.to.r,c:action.to.c};}
-      G.actionLog.push({type:'MOVE_HERO',heroId:action.heroId,from,to:action.to});
-      G.prevCells=[]; G.selSlot=null; G.heroPrev=[];
-      break;
-    }
-    case 'SELECT_ACTION_SLOT':{
-      G.selSlot=G.selSlot===action.slotId?null:action.slotId;
-      G.selHero=null; G.explPos=null; G.heroPrev=[];
-      updPreview();
-      break;
-    }
-    case 'UPDATE_ACTION_SLOT':{
-      const s=G.slots[action.slotId];
-      if(!s)return;
-      if(action.heroId!==undefined)s.hid=action.heroId;
-      if(action.element!==undefined)s.el=action.element;
-      if(action.direction!==undefined)s.dir=action.direction;
-      if(G.selSlot===action.slotId)updPreview();
-      break;
-    }
-    case 'SET_ACTION_DIRECTION':{
-      const s=G.slots[action.slotId];
-      if(!s)return;
-      s.dir=action.direction;
-      if(G.selSlot===action.slotId)updPreview();
-      break;
-    }
-    case 'SET_ACTION_TARGET':{
-      const s=G.slots[action.slotId];
-      if(s&&action.targetCell!==undefined)s.targetCell=action.targetCell;
-      break;
-    }
-    case 'USE_SLOT':{
-      // 委托 battle.js 的核心 USE_SLOT 逻辑；外部直接 useSlot() 会进入本 dispatch。
-      if(typeof _coreUseSlot==='function')_coreUseSlot(action.slotId);
-      else useSlot(action.slotId);
-      break;
-    }
-    default:break;
+  if (!G) return { ok:false, errors:[{ code:'GAME_NOT_READY' }] };
+  if (typeof __dispatchGameActionCore !== 'function') {
+    throw new Error('dispatch.js core not loaded: UI must not use local legacy action fallback');
   }
+  return __dispatchGameActionCore(action);
 }
 
 // refreshUI() = 显式 recompute + render，用于非 dispatchGameAction 的直接调用路径
-function refreshUI(){
+function _hasChangedKey(keys, names){
+  if(!keys||!keys.length)return true;
+  if(keys.indexOf('all')>=0||keys.indexOf('battle')>=0)return true;
+  return names.some(function(n){return keys.indexOf(n)>=0;});
+}
+
+// refreshUI() = 显式 recompute + render；支持 changedKeys 契约，避免核心层只能触发无差别全量刷新。
+function refreshUI(changedKeys){
   recomputeCorePreview();
   if(!G)return;
+  const keys=Array.isArray(changedKeys)?changedKeys:[];
   const vm=buildBattleVM();
-  renderBoard(vm.board);
-  renderHS(vm.heroes);
-  renderSlots(vm.slots);
-  renderTurn(vm.turn);
-  if(G.selectedCell){
+  const full=!keys.length||keys.indexOf('all')>=0||keys.indexOf('battle')>=0||keys.indexOf('shop')>=0;
+  if(full||_hasChangedKey(keys,['boardState','board','preview','monsters','summons','terrain','elements','selection']))renderBoard(vm.board);
+  if(full||_hasChangedKey(keys,['heroes','units','boardState']))renderHS(vm.heroes);
+  if(full||_hasChangedKey(keys,['slots','selection','preview']))renderSlots(vm.slots);
+  if(full||_hasChangedKey(keys,['turn','phase','gold','day','round']))renderTurn(vm.turn);
+  if(G.selectedCell&&(full||_hasChangedKey(keys,['selection','boardState','preview','cell']))){
     renderCellDetail(getSelectedCellPreview(G));
-  }else{
+  }else if(!G.selectedCell){
     const cdEl=document.getElementById('cd');
     if(cdEl)cdEl.style.display='none';
   }
   scheduleDebugPanelUpdate();
 }
 
-// 核心状态变更钩子 → refreshUI
-onCoreStateChange = refreshUI;
+// 核心状态变更钩子：核心层只传 changedKeys，UI 当前仍全量刷新；后续可按 key 做增量渲染。
+onCoreStateChange = function(changedKeys){ G._lastChangedKeys = Array.isArray(changedKeys) ? changedKeys.slice() : []; refreshUI(G._lastChangedKeys); };
 
 // ─── View 层（只接受 VM 参数，只创建 DOM，不计算规则）───
 // render() 是纯 View：不计算规则，调用方负责先调 recomputeCorePreview()
@@ -757,7 +710,7 @@ function renderCellDetail(cell){
   const{entity,elementField,preview}=cell;
   const blocks=[];
   // 位置头
-  let header=`<div class="cd-pos">📍 [${r},${c}]<button class="cd-close" onclick="G.selectedCell=null;refreshUI()">×</button></div>`;
+  let header=`<div class="cd-pos">📍 [${r},${c}]<button class="cd-close" onclick="dispatchGameAction({type:'CLEAR_SELECTION'});">×</button></div>`;
 
   // ── 块1：实体 ──
   let eHtml='';
@@ -901,18 +854,15 @@ function renderCellDetail(cell){
 function onCell(r,c){
   hideTT();
   if(G.selHero){
-    // 点击实体格 → 清除选中并显示格子详情，不尝试移动
+    // UI 只发送意图：实体格=清选择并选格；空格=请求移动。
     if(heroAt({r,c})||monAt({r,c})||summonAt({r,c})||castleAt({r,c})){
-      G.selHero=null; G.prevCells=[]; G.heroPrev=[];
-      G.selectedCell={r,c};
-      refreshUI();
+      dispatchGameAction({ type:'CLEAR_SELECTION', cell:{r:r,c:c} });
       return;
     }
     moveHero(r,c);
     return;
   }
-  G.selectedCell=(G.selectedCell&&G.selectedCell.r===r&&G.selectedCell.c===c)?null:{r,c};
-  refreshUI();
+  dispatchGameAction({ type:'SELECT_CELL', r:r, c:c });
 }
 
 function showTT(r,c,e){
@@ -1270,17 +1220,13 @@ function useBackpackItem(bpId){
 }
 
 function toggleUnitActive(instanceId){
-  const unit=G.ownedUnits.find(u=>u.instanceId===instanceId);
-  if(!unit)return;
-  if(unit.active){
-    unit.active=false;
-  } else {
-    const activeCount=G.ownedUnits.filter(u=>u.active).length;
-    if(activeCount>=2){showMsg('最多上阵2个英雄！请先下阵一个。');return;}
-    unit.active=true;
-  }
-  syncUnitsToHeroes();
-  renderShop(); refreshUI();
+  // UI wrapper: 上阵/下阵会改变阵容状态，必须走 dispatch。
+  if (typeof dispatchGameAction !== 'function') { showMsg('⚠️ dispatch 未加载，无法切换上阵'); return { ok:false, errors:[{code:'DISPATCH_NOT_AVAILABLE'}] }; }
+  var r = dispatchGameAction({ type:'TOGGLE_UNIT_ACTIVE', instanceId:instanceId });
+  if (r && !r.ok && r.errors && r.errors[0] && r.errors[0].code === 'ACTIVE_LIMIT') showMsg('最多上阵2个英雄！请先下阵一个。');
+  renderShop();
+  refreshUI(r && r.refresh && r.refresh.changedKeys || ['shop','ownedUnits','heroes','boardState']);
+  return r;
 }
 
 // 保留旧函数别名（向后兼容）

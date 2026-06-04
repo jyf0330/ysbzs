@@ -82,28 +82,26 @@ function initBoardState(rows, cols) {
 }
 
 function ensureBoardState() {
-  if (!G.boardState || !G.boardState.cells) initBoardState();
+  // boardState 必须由 initGame / replay / debug repair 显式初始化。
+  // 普通读格子不得偷偷创建空 boardState，避免生成与真实 G 脱节的快照。
+  if (!G || !G.boardState || !G.boardState.cells) return null;
   return G.boardState;
 }
 
 function getBoardStateCell(pos) {
   if (!pos) return null;
   var bs = ensureBoardState();
-  return bs.cells[boardStateKey(pos)] || null;
+  return bs && bs.cells ? (bs.cells[boardStateKey(pos)] || null) : null;
 }
 
 function cloneBoardStateOccupant(type, entity, extra) {
+  // occupant 只做索引，不存 name/hp/maxHp 等实体快照。真实数据从 G.heroes/G.monsters/G.summons/castle 读取。
   extra = extra || {};
-  if (!entity) return null;
-  return Object.assign({
-    type: type,
-    id: entity.id || extra.id || null,
-    name: entity.name || extra.name || '',
-    hp: entity.hp != null ? entity.hp : null,
-    maxHp: entity.maxHp != null ? entity.maxHp : null,
-    side: extra.side || null,
-    refId: extra.refId || entity.id || null
-  }, extra);
+  if (!entity && !extra.id) return null;
+  var id = extra.id || (entity && entity.id) || null;
+  var occ = { type: type, id: id };
+  if (extra.side) occ.side = extra.side;
+  return occ;
 }
 
 function setBoardStateUnit(pos, occupant) {
@@ -181,6 +179,27 @@ function addBoardStateTrap(pos, trap) {
 
 function clearBoardStateTerrain(pos) { return setBoardStateTerrainTraps(pos, []); }
 
+function syncBoardStateUnitsFromEntities() {
+  // 正常运行期只同步单位层，不重建元素层/地形层，避免破坏战斗中的 boardState 写入。
+  var bs = ensureBoardState();
+  if (!bs || !bs.cells) return false;
+  Object.keys(bs.cells).forEach(function(key) {
+    bs.cells[key].unitLayer.occupant = null;
+  });
+  if (G.playerCastle && G.playerCastle.hp > 0) setBoardStateUnit(G.playerCastle.pos, cloneBoardStateOccupant('castle', G.playerCastle, { id: 'playerCastle', side: 'player' }));
+  if (G.enemyCastle && G.enemyCastle.hp > 0) setBoardStateUnit(G.enemyCastle.pos, cloneBoardStateOccupant('castle', G.enemyCastle, { id: 'enemyCastle', side: 'enemy' }));
+  Object.values(G.heroes || {}).forEach(function(h) {
+    if (h && h.hp > 0) setBoardStateUnit(h.pos, cloneBoardStateOccupant('hero', h, { side: 'player' }));
+  });
+  (G.monsters || []).forEach(function(m) {
+    if (m && !m.dead && m.hp > 0) setBoardStateUnit(m.pos, cloneBoardStateOccupant('monster', m, { side: 'enemy' }));
+  });
+  (G.summons || []).forEach(function(s) {
+    if (s && !s.dead && s.hp > 0) setBoardStateUnit(s.pos, cloneBoardStateOccupant('summon', s, { side: 'player' }));
+  });
+  return true;
+}
+
 function syncBoardStateElementFromLegacy(pos) {
   var cell = getBoardStateCell(pos);
   if (!cell) return false;
@@ -212,7 +231,8 @@ function syncBoardStateTerrainFromLegacy(pos) {
   return setBoardStateTerrainTraps(pos, legacyTrapMapToList(traps, pos));
 }
 
-function rebuildBoardState() {
+function repairBoardStateFromLegacy() {
+  // 仅用于 initGame / replay load / debug repair。正常战斗流程不得依赖它修正状态。
   initBoardState();
   var bs = G.boardState;
   for (var key in bs.cells) {
@@ -221,19 +241,11 @@ function rebuildBoardState() {
     syncBoardStateElementFromLegacy(pos);
     syncBoardStateTerrainFromLegacy(pos);
   }
-  if (G.playerCastle && G.playerCastle.hp > 0) setBoardStateUnit(G.playerCastle.pos, cloneBoardStateOccupant('castle', G.playerCastle, { id: 'playerCastle', side: 'player' }));
-  if (G.enemyCastle && G.enemyCastle.hp > 0) setBoardStateUnit(G.enemyCastle.pos, cloneBoardStateOccupant('castle', G.enemyCastle, { id: 'enemyCastle', side: 'enemy' }));
-  Object.values(G.heroes || {}).forEach(function(h) {
-    if (h && h.hp > 0) setBoardStateUnit(h.pos, cloneBoardStateOccupant('hero', h, { refId: h.id, side: 'player' }));
-  });
-  (G.monsters || []).forEach(function(m) {
-    if (m && !m.dead && m.hp > 0) setBoardStateUnit(m.pos, cloneBoardStateOccupant('monster', m, { refId: m.id, side: 'enemy' }));
-  });
-  (G.summons || []).forEach(function(s) {
-    if (s && !s.dead && s.hp > 0) setBoardStateUnit(s.pos, cloneBoardStateOccupant('summon', s, { refId: s.id, side: 'player' }));
-  });
+  syncBoardStateUnitsFromEntities();
   return bs;
 }
+
+function rebuildBoardState() { return repairBoardStateFromLegacy(); }
 
 function boardStateLayerTrapsToLegacy(cell) {
   var out = { fire: 0, water: 0, wind: 0, earth: 0 };
@@ -294,8 +306,10 @@ function assertBoardStateValid(label) {
   return true;
 }
 
+function assertBoardState(label) { return assertBoardStateValid(label); }
+
 function exportBoardStateSnapshot() {
-  ensureBoardState();
+  if (!ensureBoardState()) return null;
   return JSON.parse(JSON.stringify(G.boardState));
 }
 

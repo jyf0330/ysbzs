@@ -224,76 +224,81 @@ function _coreBuyUnit(itemId) {
 
 
 function buyUnit(itemId) {
-  if (typeof _coreBuyUnit === "function") {
-    var result = _coreBuyUnit(itemId);
-    if (!result.ok) {
-      if (result.errors && result.errors.length > 0) {
-        var msg = result.errors[0].code === "GOLD_NOT_ENOUGH"
-          ? "💰 金币不足！"
-          : result.errors[0].code === "BACKPACK_FULL"
-            ? "⚠️ 背包容量不足，无法购买！"
-            : "⚠️ 购买失败！";
-        showMsg(msg);
-        if (result.errors[0].code === "BACKPACK_FULL") {
-          glog("⚠️ 背包容量不足，无法购买！");
-        }
-      }
-      return;
-    }
-    if (result.merged) {
-      glog("🛒 购买" + result.qualityLabel + result.unitName + "，自动合成！");
-    } else {
-      glog("🛒 购买" + result.qualityLabel + result.unitName + (result.newUnit.active ? "，上阵" : "，放入备战"));
-    }
-    syncUnitsToHeroes();
-    renderShop();
-    refreshUI();
-    return;
+  // UI wrapper: 购买会改变金币/单位/商店状态，必须走 dispatch。
+  if (typeof dispatchGameAction !== 'function') { showMsg('⚠️ dispatch 未加载，无法购买'); return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] }; }
+  var r = dispatchGameAction({ type: 'BUY_UNIT', itemId: itemId });
+  if (r && !r.ok && r.errors && r.errors.length) {
+    var code = r.errors[0].code;
+    showMsg(code === 'GOLD_NOT_ENOUGH' ? '💰 金币不足！' : code === 'BACKPACK_FULL' ? '⚠️ 背包容量不足，无法购买！' : '⚠️ 购买失败！');
   }
-  if (G.phase !== "SHOP") return;
-  showMsg("[fallback] buy failed");
+  renderShop();
+  refreshUI(r && r.refresh && r.refresh.changedKeys || ['shop','ownedUnits','heroes','boardState']);
+  return r;
 }
 
-
-function sellUnit(instanceId) {
-  if (G.phase !== 'SHOP') return;
+function _coreSellUnit(instanceId) {
+  if (G.phase !== 'SHOP') return { ok: false, errors: [{ code: 'WRONG_PHASE' }] };
   const idx = G.ownedUnits.findIndex(u => u.instanceId === instanceId);
-  if (idx === -1) return;
+  if (idx === -1) return { ok: false, errors: [{ code: 'UNIT_NOT_FOUND' }] };
   const unit = G.ownedUnits[idx];
   const refund = unit.level;
   G.gold += refund;
   G.ownedUnits.splice(idx, 1);
   glog('💸 出售' + (UNIT_DEFS[unit.defId] ? UNIT_DEFS[unit.defId].name : unit.defId) + '，返还' + refund + '金币');
   syncUnitsToHeroes();
+  return { ok: true, unitId: instanceId, refund: refund };
+}
+
+function sellUnit(instanceId) {
+  // UI wrapper: 出售会改变金币/单位状态，必须走 dispatch。
+  if (typeof dispatchGameAction !== 'function') { showMsg('⚠️ dispatch 未加载，无法出售'); return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] }; }
+  var r = dispatchGameAction({ type: 'SELL_UNIT', instanceId: instanceId });
+  if (r && !r.ok) showMsg('⚠️ 出售失败！');
   renderShop();
-  refreshUI();
+  refreshUI(r && r.refresh && r.refresh.changedKeys || ['shop','ownedUnits','heroes','boardState']);
+  return r;
 }
 
 function rollShop() {
-  if (G.phase !== 'SHOP') return;
-  var eco = (typeof getShopEconomyConfig === 'function') ? getShopEconomyConfig() : null;
-  var cost = (eco && eco.roll_cost != null) ? eco.roll_cost : 1;
-  if (G.gold < cost) { showMsg('💰 金币不足，刷新需要' + cost + '金币！'); return; }
-  G.gold -= cost;
-  G.shopFrozen = { units: new Set(), consumables: new Set() };
-  genShop();
-  glog('🔄 商店已刷新！');
+  // UI wrapper: 刷新会改变金币/商店状态，必须走 dispatch。
+  if (typeof dispatchGameAction !== 'function') { showMsg('⚠️ dispatch 未加载，无法刷新'); return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] }; }
+  var r = dispatchGameAction({ type: 'ROLL_SHOP' });
+  if (r && !r.ok && r.errors && r.errors[0] && r.errors[0].code === 'GOLD_NOT_ENOUGH') {
+    var eco = (typeof getShopEconomyConfig === 'function') ? getShopEconomyConfig() : null;
+    var cost = (eco && eco.roll_cost != null) ? eco.roll_cost : 1;
+    showMsg('💰 金币不足，刷新需要' + cost + '金币！');
+  }
   renderShop();
+  return r;
 }
 
 function freezeShopItem(itemId, category) {
-  if (G.phase !== 'SHOP') return;
-  const set = G.shopFrozen[category];
-  if (set.has(itemId)) { set.delete(itemId); glog('❄️ 取消冻结'); }
-  else { set.add(itemId); glog('❄️ 已冻结（刷新时保留）'); }
+  // UI wrapper: 冻结状态也是商店状态，走 dispatch。
+  if (typeof dispatchGameAction !== 'function') return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] };
+  var r = dispatchGameAction({ type: 'FREEZE_SHOP_ITEM', itemId: itemId, category: category });
   renderShop();
+  return r;
 }
 
-function closeShop() {
-  document.getElementById('so').style.display = 'none';
+function _coreToggleUnitActive(instanceId) {
+  const unit = G.ownedUnits.find(u => u.instanceId === instanceId);
+  if (!unit) return { ok: false, errors: [{ code: 'UNIT_NOT_FOUND' }] };
+  if (unit.active) {
+    unit.active = false;
+  } else {
+    const activeCount = G.ownedUnits.filter(u => u.active).length;
+    if (activeCount >= 2) return { ok: false, errors: [{ code: 'ACTIVE_LIMIT' }] };
+    unit.active = true;
+  }
+  syncUnitsToHeroes();
+  return { ok: true, instanceId: instanceId, active: unit.active };
+}
+
+function _coreCloseShop() {
+  if (G.phase !== 'SHOP') return { ok: false, errors: [{ code: 'WRONG_PHASE' }] };
   G.shopFrozen = { units: new Set(), consumables: new Set() };
   G.slots.forEach(s => { s.used = false; s._committed = false; });
-  G.shopEvents = []; // 关闭商店时清除事件
+  G.shopEvents = [];
   if (G.dayHalf === 1) {
     G.dayHalf = 2;
     G.round = 1; G.hitCount = 0;
@@ -302,15 +307,14 @@ function closeShop() {
     glog('☀️ 第' + G.day + '天下午·更多怪物来袭！');
   } else {
     G.day++;
-    if (typeof heroAddXp === 'function') heroAddXp(1); // 每天结束+1经验
+    if (typeof heroAddXp === 'function') heroAddXp(1);
     if (G.enemyCastle) G.enemyCastle.hp = G.enemyCastle.maxHp;
     if (G.day > 10) {
       G.runVictory = true;
       G.phase = 'OVER';
       glog('🏆 十天远征完成！');
-      if (typeof showRunEnd === 'function') showRunEnd();
-      refreshUI();
-      return;
+      syncUnitsToHeroes();
+      return { ok: true, runEnd: true, victory: true };
     }
     G.dayHalf = 0;
     G.wave++;
@@ -320,7 +324,18 @@ function closeShop() {
     glog('⚔️ 第' + G.day + '天战斗开始！');
   }
   syncUnitsToHeroes();
-  refreshUI();
+  return { ok: true, phase: G.phase, day: G.day, dayHalf: G.dayHalf };
+}
+
+function closeShop() {
+  // UI wrapper: 推进天数/阶段/波次是核心规则，必须走 dispatch。
+  if (typeof dispatchGameAction !== 'function') { showMsg('⚠️ dispatch 未加载，无法关闭商店'); return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] }; }
+  var panel = document.getElementById('so');
+  if (panel) panel.style.display = 'none';
+  var r = dispatchGameAction({ type: 'CLOSE_SHOP' });
+  if (r && r.runEnd && typeof showRunEnd === 'function') showRunEnd();
+  refreshUI(r && r.refresh && r.refresh.changedKeys || ['phase','day','shop','monsters','heroes','boardState']);
+  return r;
 }
 
 // 升级时添加免费高共鸣英雄到商店
@@ -452,17 +467,15 @@ function executeEventReward(reward) {
   }
   if (reward.reward_group && G._doneEvents.indexOf(reward.reward_group) === -1) G._doneEvents.push(reward.reward_group);
   syncUnitsToHeroes();
-  refreshUI();
 }
 
-/** 执行事件选项（从 UI 调用） */
-function doEventOption(eventId, optionId) {
+function _coreDoEventOption(eventId, optionId) {
   var opts = getEventOptions(eventId);
   var opt = opts.find(function(o) { return o.option_id === optionId; });
-  if (!opt) return;
+  if (!opt) return { ok: false, errors: [{ code: 'EVENT_OPTION_NOT_FOUND' }] };
   // 扣费
   if (opt.cost_type === 'gold' && opt.cost_value > 0) {
-    if ((G.gold || 0) < opt.cost_value) { showMsg('💰 金币不足！'); return; }
+    if ((G.gold || 0) < opt.cost_value) return { ok: false, errors: [{ code: 'GOLD_NOT_ENOUGH' }] };
     G.gold -= opt.cost_value;
   }
   // 执行奖励
@@ -472,7 +485,17 @@ function doEventOption(eventId, optionId) {
   if (!G._doneEvents) G._doneEvents = [];
   G._doneEvents.push(eventId);
   G.shopEvents = (G.shopEvents || []).filter(function(e) { return e.event_id !== eventId; });
+  return { ok: true, eventId: eventId, optionId: optionId };
+}
+
+/** UI wrapper：事件选择会改变金币/奖励/事件状态，必须走 dispatch。 */
+function doEventOption(eventId, optionId) {
+  if (typeof dispatchGameAction !== 'function') return { ok: false, errors: [{ code: 'DISPATCH_NOT_AVAILABLE' }] };
+  var r = dispatchGameAction({ type: 'SELECT_EVENT', eventId: eventId, optionId: optionId });
+  if (r && !r.ok && r.errors && r.errors[0] && r.errors[0].code === 'GOLD_NOT_ENOUGH') showMsg('💰 金币不足！');
   renderShop();
+  refreshUI(r && r.refresh && r.refresh.changedKeys || ['shop','gold','ownedUnits','events']);
+  return r;
 }
 
 // 旧接口别名

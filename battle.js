@@ -29,6 +29,7 @@ function dealDmg(monster, dmg, src) {
   glog(`⚔️ ${src} → ${monster.name} -${dmg}（${monster.hp}/${monster.maxHp}）`);
   if (monster.hp <= 0) {
     monster.dead = true;
+    if (typeof clearBoardStateUnit === 'function' && monster.pos) clearBoardStateUnit(monster.pos, 'monster', monster.id);
     glog(`💀 ${monster.name}被击杀！`);
     if (monster.gold) {
       G.gold += monster.gold;
@@ -270,29 +271,35 @@ function _coreEndPlayerTurn() {
 
 
 function endPlayerTurn() {
-  // 委托核心逻辑（不复制），再由 UI/入口层决定同步或异步推进怪物阶段
+  // UI 按钮入口：先走 dispatch 统一写入口，再由 UI/入口层推进怪物阶段。
   if (G.phase !== 'PLAYER') return;
-  var result = _coreEndPlayerTurn();
-  if (result.over) { onCoreStateChange(); return; }
+  var result;
+  if (typeof dispatchGameAction === 'function' && !(G && G.__dispatching)) {
+    result = dispatchGameAction({ type: 'END_TURN' });
+  } else {
+    result = _coreEndPlayerTurn();
+  }
+  if (!result || result.over || (result.stateChanges && result.stateChanges.phase === 'OVER')) { onCoreStateChange(['phase']); return; }
+  var warnText = result.warnText || (result.stateChanges && result.stateChanges.warnText);
   glog('--- 怪物回合 ---');
-  if (result.warnText === 'monster_will_attack') glog('⚠️ 预警：怪物即将攻击英雄！');
-  else if (result.warnText === 'monster_moving') glog('👁 预警：怪物移动方向已标出。');
+  if (warnText === 'monster_will_attack') glog('⚠️ 预警：怪物即将攻击英雄！');
+  else if (warnText === 'monster_moving') glog('👁 预警：怪物移动方向已标出。');
   if (typeof global !== 'undefined' && global.__TEST__) {
     G.monWarn = [];
     runMonstersSync();
   } else if (typeof setTimeout === 'function') {
     setTimeout(function() { G.monWarn = []; if (typeof runMonsters === 'function') runMonsters(0); }, 700);
   }
-  onCoreStateChange();
+  onCoreStateChange(['phase','monWarn','boardState']);
 }
 
 function endPlayerTurnSync() {
   if (G.phase !== 'PLAYER') return;
   var result = _coreEndPlayerTurn();
-  if (result.over) { onCoreStateChange(); return result; }
+  if (result.over) { onCoreStateChange(['phase']); return result; }
   G.monWarn = [];
   runMonstersSync();
-  onCoreStateChange();
+  onCoreStateChange(['phase','round','boardState']);
   return result;
 }
 
@@ -329,14 +336,50 @@ function finishMonsters() {
     Object.values(G.heroes).forEach(h => h._acted = false);
     glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
   }
-  onCoreStateChange();
+  onCoreStateChange(['phase','round','boardState']);
 }
 
 // ========== 怪物行动 ==========
 
+var MONSTER_BEHAVIORS = {
+  default: { id: 'default', move: 'chase', attack: 'melee', ap: 3 },
+  ranged: { id: 'ranged', move: 'keep_distance', attack: 'ranged', range: 3, ap: 2 },
+  tank: { id: 'tank', move: 'chase', attack: 'melee', ap: 1 }
+};
+
+function getMonsterBehavior(m) {
+  if (!m) return MONSTER_BEHAVIORS.default;
+  if (m.behavior && MONSTER_BEHAVIORS[m.behavior]) return MONSTER_BEHAVIORS[m.behavior];
+  if (m.typeId && MONSTER_BEHAVIORS[m.typeId]) return MONSTER_BEHAVIORS[m.typeId];
+  if (m.role && MONSTER_BEHAVIORS[m.role]) return MONSTER_BEHAVIORS[m.role];
+  return MONSTER_BEHAVIORS.default;
+}
+
 function monsterAct(m) {
+  var behavior = getMonsterBehavior(m);
+  if (behavior.attack === 'ranged') return monsterActRanged(m, behavior);
+  return monsterActDefault(m, behavior);
+}
+
+function monsterActRanged(m, behavior) {
+  if (!m || m.dead) return;
+  var range = behavior.range || 3;
+  var targets = Object.values(G.heroes || {}).filter(function(h){ return h.hp > 0; });
+  var target = null, dist = 99;
+  targets.forEach(function(h){ var d = Math.abs(h.pos.r - m.pos.r) + Math.abs(h.pos.c - m.pos.c); if (d < dist) { dist = d; target = h; } });
+  if (target && dist <= range) {
+    target.hp = Math.max(0, target.hp - m.atk);
+    var unit = getUnitByHeroId(target.id); if (unit) unit.hp = target.hp;
+    glog('🏹 ' + m.name + '远程攻击' + target.name + '！-' + m.atk + '（' + target.hp + '/' + target.maxHp + '）');
+    if (target.hp <= 0) { glog('💔 ' + target.name + '倒下了！'); checkGameOver(); }
+    return;
+  }
+  return monsterActDefault(m, behavior);
+}
+
+function monsterActDefault(m, behavior) {
   if (m.dead) return;
-  let ap = 3;
+  let ap = (behavior && behavior.ap) || m.ap || 3;
   while (ap > 0) {
     if (m.dead) break; // 死怪终止
     const lp = { r: m.pos.r, c: m.pos.c - 1 };
@@ -443,6 +486,7 @@ function resolveTerrainOnEnter(monster, pos) {
 
     if (monster.hp <= 0) {
       monster.dead = true;
+      if (typeof clearBoardStateUnit === 'function' && monster.pos) clearBoardStateUnit(monster.pos, 'monster', monster.id);
       glog('💀 ' + monster.name + ' 被陷阱击杀！');
     }
   });
@@ -538,13 +582,15 @@ function runMonsterAbilityHook(trigger, monster) {
     const typeId = cfg.typeId || 'normal';
     var legacyMT = (typeof getLegacyMonsterTypes === 'function') ? getLegacyMonsterTypes() : {};
     const mt = legacyMT[typeId] || legacyMT.normal || { name: '未知', hp: 8, atk: 1, ap: 5, cost: 2, gold: 2 };
-    G.monsters.push({
+    const splitMon = {
       id: `split_${Date.now()}_${G.monsters.length}`,
       typeId, name: mt.name,
       hp: mt.hp, maxHp: mt.hp, atk: mt.atk, ap: mt.ap,
       cost: mt.cost, gold: mt.gold,
       pos, dead: false, el: null, ability: mt.ability || null,
-    });
+    };
+    G.monsters.push(splitMon);
+    if (typeof setBoardStateUnit === 'function') setBoardStateUnit(pos, cloneBoardStateOccupant('monster', splitMon, {side:'enemy'}));
     glog(`🔥 ${monster.name}分裂出${mt.name}`);
     return true;
   }
@@ -600,7 +646,7 @@ function runSummonActions() {
       { r: s.pos.r + rowStep, c: s.pos.c },
     ].filter(p => p.r >= 0 && p.r < 8 && p.c >= 0 && p.c < 8);
     const np = candidates.find(p => !monAt(p) && !heroAt(p) && !castleAt(p) && !summonAt(p) && !hasElementAt(p));
-    if (np) { s.pos = np; moved++; glog(`💧 ${s.name}→(${np.r},${np.c})`); if (attackAdjacent(s)) acted++; }
+    if (np) { var fromS={r:s.pos.r,c:s.pos.c}; var occS=(typeof cloneBoardStateOccupant==='function')?cloneBoardStateOccupant('summon', s, {side:'player'}):null; s.pos = np; if(typeof moveBoardStateUnit==='function')moveBoardStateUnit(fromS,np,occS); moved++; glog(`💧 ${s.name}→(${np.r},${np.c})`); if (attackAdjacent(s)) acted++; }
   });
   if (acted > 0 || moved > 0) glog(`🌀 召唤物行动：${moved} 次移动 / ${acted} 次攻击`);
   checkAllDead();

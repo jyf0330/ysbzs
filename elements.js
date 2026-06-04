@@ -104,7 +104,7 @@ function doExplode(pos) {
     }
   });
   G.explPos = null;
-  onCoreStateChange();
+  onCoreStateChange(['boardState','elementCells']);
 }
 
 

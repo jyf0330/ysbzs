@@ -100,7 +100,7 @@ function doExplode(pos) {
     }
   });
   G.explPos = null;
-  refreshUI();
+  onCoreStateChange();
 }
 
 

@@ -29,7 +29,7 @@ function buildBoardVM(){
     cells.push({
       r:r,c:c,key:key,
       key:key,
-      hero:hero&&hero.hp>0?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,isSel:G.selHero===hero.id,incomingDmg:i.monsterThreat.heroIncoming[hero.id]||[]}:null,
+      hero:hero&&hero.hp>0?{id:hero.id,name:hero.name,hp:hero.hp,maxHp:hero.maxHp,unitId:hero.unitId,isSel:G.selHero===hero.id,incomingDmg:i.monsterThreat.heroIncoming[hero.id]||[]}:null,
       mon:mon&&!mon.dead?{id:mon.id,name:mon.name,hp:mon.hp,maxHp:mon.maxHp,atk:mon.atk,el:mon.el,atkInfo:i.monsterThreat.card||{atkTargetId:null,atkDmg:0,canAttack:false},previewDamage:pgCell?.preview.entityDamage||0,willDie:mon.hp>0&&(pgCell?.preview.entityDamage||0)>=mon.hp}:null,
       summon:summon&&!summon.dead?{id:summon.id,name:summon.name,hp:summon.hp,maxHp:summon.maxHp,atk:summon.atk,el:summon.el,incomingDmg:i.monsterThreat.summonIncoming[summon.id]||[]}:null,
       castle:castle,
@@ -615,6 +615,9 @@ function refreshUI(){
   scheduleDebugPanelUpdate();
 }
 
+// 核心状态变更钩子 → refreshUI
+onCoreStateChange = refreshUI;
+
 // ─── View 层（只接受 VM 参数，只创建 DOM，不计算规则）───
 // render() 是纯 View：不计算规则，调用方负责先调 recomputeCorePreview()
 function render(){
@@ -656,52 +659,46 @@ function renderBoard(boardVM){
     cell.className='cell';
     cv.classes.forEach(cls=>cell.classList.add(cls));
 
-    // ── 实体块：永远显示实体 icon，brief 单独贴底显示 ──
-    const brief=cv.displayBrief||'';
-    const briefHtml=brief?_colorBrief(brief):'';
-    let entHtml='',entCls='',isEntityCell=false;
-    if(cv.castle){
-      const isP=cv.castle.side==='player';
-      entCls='ib-e ib-c '+(isP?'ib-cp':'ib-ce');
-      entHtml=`<span>🏰</span>`;
+    // ── 实体块：board-unit(名称主体) + stat-badge(HP/元素角标) + strip(底部短字) ──
+    const brief=cv.displayBrief||"";
+    const briefHtml=brief?_colorBrief(brief):"";
+    const threshold=G.explosionThreshold||3;
+    const ELMAP=typeof ELICON!=="undefined"?ELICON:{fire:"🔥",water:"💧",wind:"🌿",earth:"🪨"};
+    var isEntityCell=false;
+    if(cv.hero){
       isEntityCell=true;
-    }else if(cv.hero){
-      entCls='ib-e ib-h ib-'+(cv.hero.id==='ha'?'ha':'hb')+(cv.hero.isSel?' sel':'');
-      var heroLabel=cv.hero.name||(cv.hero.id==='ha'?'英1':'英2');
-      entHtml=`<span>${heroLabel.length>2?heroLabel.slice(0,2):heroLabel}</span>`;
-      isEntityCell=true;
+      var heroName=cv.hero.name||"";
+      var shortName=heroName.length>2?heroName.slice(0,2):heroName;
+      // 查英雄元素
+      var unit=(G.ownedUnits||[]).find(function(u){return u.instanceId===cv.hero.unitId;});
+      var elIcon="🔥";
+      if(unit&&typeof UNIT_DEFS!=="undefined"&&UNIT_DEFS[unit.defId]){
+        var dEl=UNIT_DEFS[unit.defId].element;
+        if(dEl==="fire")elIcon="🔥";
+        else if(dEl==="water")elIcon="💧";
+        else if(dEl==="wind")elIcon="🌿";
+        else if(dEl==="earth")elIcon="🪨";
+      }
+      cell.innerHTML=`<div class="board-unit ib-e ib-h ib-${cv.hero.id}${cv.hero.isSel?" sel":""}" onclick="event.stopPropagation();selHero('${cv.hero.id}')"><div class="stat-badge hp-heart"><span class="badge-icon">\u2665</span><span class="badge-num">${cv.hero.hp}</span></div><div class="stat-badge element-icon"><span class="badge-icon">${elIcon}</span><span class="badge-num">${threshold}</span></div><div class="unit-main"><span class="unit-name">${shortName}</span></div></div>${briefHtml?`<div class="ib-strip">${briefHtml}</div>`:""}`;
     }else if(cv.mon){
-      entCls='ib-e ib-m'+(cv.mon.willDie?' ib-m-die':'');
-      entHtml=`<span>👾</span>`;
       isEntityCell=true;
+      var monName=cv.mon.name||"";
+      var shortMon=monName.length>2?monName.slice(0,2):monName;
+      cell.innerHTML=`<div class="board-unit ib-e ib-m${cv.mon.willDie?" ib-m-die":""}"><div class="stat-badge hp-heart"><span class="badge-icon">\u2665</span><span class="badge-num">${cv.mon.hp}</span></div><div class="stat-badge element-icon"><span class="badge-icon">${ELMAP[cv.mon.el]||"🔥"}</span><span class="badge-num">${threshold}</span></div><div class="unit-main"><span class="enemy-mark">\uD83D\uDC7E</span><span class="unit-name">${shortMon}</span></div></div>${briefHtml?`<div class="ib-strip">${briefHtml}</div>`:""}`;
     }else if(cv.summon){
-      entCls='ib-e ib-s';
-      entHtml=`<span>💧</span>`;
       isEntityCell=true;
+      var summonName=cv.summon.name||"";
+      var shortSum=summonName.length>2?summonName.slice(0,2):summonName;
+      cell.innerHTML=`<div class="board-unit ib-e ib-s"><div class="stat-badge hp-heart"><span class="badge-icon">\u2665</span><span class="badge-num">${cv.summon.hp}</span></div><div class="stat-badge element-icon"><span class="badge-icon">${ELMAP[cv.summon.el]||"💧"}</span><span class="badge-num">${threshold}</span></div><div class="unit-main"><span class="unit-name">${shortSum}</span></div></div>${briefHtml?`<div class="ib-strip">${briefHtml}</div>`:""}`;
+    }else if(cv.castle){
+      isEntityCell=true;
+      const isP=cv.castle.side==="player";
+      cell.innerHTML=`<div class="board-unit ib-e ib-c ${isP?"ib-cp":"ib-ce"}"><div class="stat-badge hp-heart"><span class="badge-icon">\u2665</span><span class="badge-num">${cv.castle.hp||0}</span></div><div class="stat-badge element-icon"><span class="badge-icon">\uD83D\uDD25</span><span class="badge-num">${threshold}</span></div><div class="unit-main"><span class="unit-name">\uD83C\uDFF0</span></div></div>${briefHtml?`<div class="ib-strip">${briefHtml}</div>`:""}`;
     }else if(briefHtml){
-      // 空元素格：brief 居中显示
-      entCls='ib-e ib-el-only';
-      entHtml=`<span class="ib-brief">${briefHtml}</span>`;
+      cell.innerHTML=`<div class="ib-e ib-el-only"><span class="ib-brief">${briefHtml}</span></div>`;
     }else if(cv.el){
-      entCls='ib-e ib-el-only';
-      entHtml='<span class="ib-empty">·</span>';
+      cell.innerHTML=`<div class="ib-e ib-el-only"><span class="ib-empty">\u00B7</span></div>`;
     }
-    if(entHtml){
-      const entEl=document.createElement('div');
-      entEl.className=entCls||'ib-e';
-      entEl.innerHTML=entHtml;
-      if(cv.hero)entEl.onclick=(e)=>{e.stopPropagation();selHero(cv.hero.id);};
-      cell.appendChild(entEl);
-    }
-
-    // ── 贴底短字条：实体格子的攻击/伤害信息 ──
-    if(briefHtml&&isEntityCell){
-      const stripEl=document.createElement('div');
-      stripEl.className='ib-strip';
-      stripEl.innerHTML=briefHtml;
-      cell.appendChild(stripEl);
-    }
-
     // ── 右上角徽章：致死/爆炸 ──
     const corners=[];
     if(cv.mon&&cv.mon.willDie)corners.push('☠');

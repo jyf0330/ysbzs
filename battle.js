@@ -122,7 +122,7 @@ function settleExplosions() {
   }
   G.previewEvents = [];
   checkAllDead();
-  refreshUI();
+  onCoreStateChange();
 }
 
 function settleDamage() { settleExplosions(); }
@@ -140,7 +140,7 @@ function useSlot(idx) {
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：召唤' });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
     if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid) });
-    refreshUI();
+    onCoreStateChange();
     return;
   }
   if (slot.skill === 'healSummons') {
@@ -150,7 +150,7 @@ function useSlot(idx) {
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：治疗召唤物' });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
     if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid) });
-    refreshUI();
+    onCoreStateChange();
     return;
   }
   var cells = atkCells(hero.pos, slot.sn, slot.dir);
@@ -189,7 +189,7 @@ function useSlot(idx) {
     bazaarRunTrigger('on_element_apply', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid), element: slot.el, el: slot.el, cells: cells, source_cells: cells });
     bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid), cells: cells });
   }
-  refreshUI();
+  onCoreStateChange();
 }
 
 function commitPlayerActionsToElementField(G) {
@@ -267,11 +267,11 @@ function endPlayerTurn() {
   // 委托核心逻辑（不复制），再调 UI
   if (G.phase !== 'PLAYER') return;
   var result = _coreEndPlayerTurn();
-  if (result.over) { refreshUI(); return; }
+  if (result.over) { onCoreStateChange(); return; }
   glog('--- 怪物回合 ---');
   if (result.warnText === 'monster_will_attack') glog('⚠️ 预警：怪物即将攻击英雄！');
   else if (result.warnText === 'monster_moving') glog('👁 预警：怪物移动方向已标出。');
-  refreshUI();
+  onCoreStateChange();
 }
 
 function finishMonsters() {
@@ -307,7 +307,7 @@ function finishMonsters() {
     Object.values(G.heroes).forEach(h => h._acted = false);
     glog(`--- 玩家回合 · 第${G.round}/${G.maxRound}小回合 ---`);
   }
-  refreshUI();
+  onCoreStateChange();
 }
 
 // ========== 怪物行动 ==========
@@ -467,7 +467,7 @@ function runMonsters(idx) {
   if (idx >= alive.length) { finishMonsters(); return; }
   runMonsterAbilityHook('onRoundStart', alive[idx]);
   monsterAct(alive[idx]);
-  refreshUI();
+  onCoreStateChange();
   setTimeout(() => runMonsters(idx + 1), 350);
 }
 
@@ -752,7 +752,7 @@ function planAiBattleTurn() {
   const plan = buildAiBattleTurnPlan();
   G.aiBattleStatus = { phase: 'planned', summary: plan.summary, moves: plan.moves.length, actions: plan.actions.length };
   glog('🧠 ' + plan.summary);
-  refreshUI();
+  onCoreStateChange();
   return plan;
 }
 

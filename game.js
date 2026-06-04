@@ -477,8 +477,9 @@ if (typeof document !== 'undefined' && typeof document.addEventListener === 'fun
   });
 }
 
-// ========== UI STUBS ==========
+// ========== UI STUBS（核心→UI 通知钩子）==========
 function glog() {}
+function onCoreStateChange() {}
 function showMsg() {}
 function showRunEnd() {}
 function refreshUI() {}

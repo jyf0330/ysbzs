@@ -681,6 +681,27 @@ function fileStructureCheck() {
   check(!elHasDmg, 'S48', p, 'elements.js 不含 damage.js 核心函数定义');
   check(!elHasTer, 'S49', p, 'elements.js 不含 terrain.js 核心函数定义');
 
+  // 防回流：核心层无 DOM API 扫描
+  var DOM_BANNED = ['document.','querySelector','innerHTML','classList','refreshUI(','renderBoard(','renderShop(','addEventListener(','requestFullscreen('];
+  var DOM_CORE_FILES = ['damage.js','terrain.js','elements.js','actions.js','board.js','preview.js','waves.js','battle.js','dispatch.js'];
+  var domViolations = 0;
+  for (var di = 0; di < DOM_CORE_FILES.length; di++) {
+    var fname = DOM_CORE_FILES[di];
+    if (!exists(fname)) continue;
+    var fcontent = readText(fname);
+    for (var ki = 0; ki < DOM_BANNED.length; ki++) {
+      var kw = DOM_BANNED[ki];
+      var idx = fcontent.indexOf(kw);
+      if (idx >= 0) {
+        domViolations++;
+        addResult('S50_dom_' + fname.replace('.js',''), p, fname + ' 无 DOM API: ' + kw, 'FAIL',
+          { type: 'PROJECT_PARTIAL', explanation: fname + ':' + idx + ' 含 ' + kw, recommendation: '将 DOM 调用迁移至 ui.js' });
+        break; // 每个文件只报一条
+      }
+    }
+  }
+  if (domViolations === 0) addResult('S50_dom_all_clean', p, '核心文件无 DOM API 调用', 'PASS');
+
   // externalDataAdapter 导出 API
   const extCode = readText('externalDataAdapter.js');
   const apis = ['createPalUnitInstance','getExternalUnitDefs','getExternalSD','getExternalEncounterWaves',

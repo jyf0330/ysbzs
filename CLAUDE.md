@@ -1,5 +1,18 @@
 # CLAUDE.md · 元素背包史 / ysbzs
 
+## 核心层无 DOM 硬规则
+
+1. 核心层不得直接操作 DOM。
+2. 核心层不得调用 document / querySelector / innerHTML / classList / refreshUI / render / addEventListener。
+3. 核心层只负责状态、棋盘纯对象、规则结算、结构化事件。
+4. UI 层只负责读取 ViewModel / 日志格式化结果并渲染 DOM。
+5. 棋盘格状态必须来自统一核心对象：G.boardState / G.coreBoard / G.cells。
+6. 玩家行为验收必须走真实入口：按钮 / dispatch / autoExecuteTurn。
+7. 直接调用内部函数只能做单元测试，不能当玩家链路验收。
+8. 不得复制两套战斗、预览、移动、陷阱、日志逻辑。
+
+---
+
 First read `docs/02_CURRENT_WORKFLOW.md`: hard triggers are `Goal`, `策划`, `diff`, and `git-c`.
 
 如果指令以「策划」或 `diff` 结尾 → 只读/策划模式，不改代码。

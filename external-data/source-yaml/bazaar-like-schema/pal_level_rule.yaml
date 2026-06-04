@@ -1,0 +1,55 @@
+schema: ysbzs.bazaar_like.pal_level_rule.v1
+notes:
+  - "Pal quality and Pal level are separated."
+  - "quality/tier controls shop price, pool timing, rarity, and merge path."
+  - "level controls HP, slots/layers, and small stat growth."
+pal_level_rules:
+  global:
+    max_level: 3
+    level_up_sources:
+      - merge_same_pal
+      - event_train_pal
+      - hero_level_reward
+      - battle_reward
+    levels:
+      - level: 1
+        hp_mult: 1.00
+        atk_mult: 1.00
+        layer_bonus: 0
+        slot_value_bonus: 0
+        notes: "Base state."
+      - level: 2
+        hp_mult: 1.25
+        atk_mult: 1.10
+        layer_bonus: 1
+        slot_value_bonus: 1
+        notes: "Small growth; do not add new slot in first version."
+      - level: 3
+        hp_mult: 1.55
+        atk_mult: 1.25
+        layer_bonus: 2
+        slot_value_bonus: 2
+        notes: "Max level for first version."
+  per_pal_overrides:
+    - pal_id: pal_fire_seed
+      levels:
+        - level: 1
+          hp: 10
+          slots_profile: fire_basic_lv1
+        - level: 2
+          hp: 13
+          slots_profile: fire_basic_lv2
+        - level: 3
+          hp: 16
+          slots_profile: fire_basic_lv3
+    - pal_id: pal_water_drop
+      levels:
+        - level: 1
+          hp: 10
+          slots_profile: water_basic_lv1
+        - level: 2
+          hp: 13
+          slots_profile: water_basic_lv2
+        - level: 3
+          hp: 16
+          slots_profile: water_basic_lv3

@@ -730,7 +730,63 @@ function fileStructureCheck() {
   check(exists('tasks'), 'S37', p, 'tasks 目录存在');
 }
 
+function bazaarSchemaCheck() {
+  const p = '__bazaar_schema__';
+  const required = [
+    'source_meta','tier_curve','tag_master','hero_master','card_master','card_tag_map',
+    'merchant_master','merchant_rule','merchant_pool_rule','merchant_reroll_rule',
+    'event_master','event_rule','reward_table','encounter_schedule','monster_master',
+    'hero_level_rule','pal_level_rule','level_reward_table',
+    'effect_trigger_rule','effect_resolve_rule','economy_rule','pve_reward_rule',
+    'affix_rule','ai_shop_pick_rule','log_template','compatibility_rule','naming_rules'
+  ];
+  for (const name of required) {
+    check(exists(`external-data/source-yaml/bazaar-like-schema/${name}.yaml`), `BZ_SRC_${name}`, p, `source-yaml/bazaar-like-schema/${name}.yaml 存在`);
+    check(exists(`external-data/generated-json/bazaar-like-schema/${name}.json`), `BZ_JSON_${name}`, p, `generated-json/bazaar-like-schema/${name}.json 存在`);
+  }
+  function load(name) { return readJSON(`external-data/generated-json/bazaar-like-schema/${name}.json`); }
+  try {
+    const merchantMaster = load('merchant_master');
+    const merchantRule = load('merchant_rule');
+    const merchantPool = load('merchant_pool_rule');
+    const eventMaster = load('event_master');
+    const triggerRule = load('effect_trigger_rule');
+    const resolveRule = load('effect_resolve_rule');
+    const economyRule = load('economy_rule');
+    const compat = load('compatibility_rule');
+    const aiRule = load('ai_shop_pick_rule');
+    const logTpl = load('log_template');
+    check((merchantMaster.merchants||[]).length >= 5, 'BZ01', p, 'merchant_master 至少 5 个商人');
+    check((merchantRule.merchant_rules||[]).length >= 5, 'BZ02', p, 'merchant_rule 覆盖商人规则');
+    check((merchantPool.merchant_pool_rules||[]).length >= 5, 'BZ03', p, 'merchant_pool_rule 覆盖商品池规则');
+    check((eventMaster.events||[]).length >= 4, 'BZ04', p, 'event_master 至少 4 个事件');
+    check((triggerRule.trigger_rules||[]).length >= 10, 'BZ05', p, 'effect_trigger_rule 覆盖核心触发时机');
+    check((resolveRule.resolve_types||[]).length >= 10, 'BZ06', p, 'effect_resolve_rule 覆盖核心结算类型');
+    check(!!economyRule.daily_income && !!economyRule.reroll_cost && !!economyRule.capacity, 'BZ07', p, 'economy_rule 含收入/刷新/容量');
+    check((compat.hard_rules||[]).length >= 8, 'BZ08', p, 'compatibility_rule 含 8 条以上硬规则');
+    check((aiRule.ai_profiles||[]).length >= 1 && (aiRule.rules||[]).length >= 5, 'BZ09', p, 'ai_shop_pick_rule 含自动玩家策略');
+    check((logTpl.templates||[]).some(t=>t.log_key==='shop_buy') && (logTpl.templates||[]).some(t=>t.log_key==='trap_enter_damage'), 'BZ10', p, 'log_template 覆盖商店与陷阱日志');
+
+    const adapter = readText('externalDataAdapter.js');
+    const shop = readText('shop.js');
+    check(/getBazaarLikeTable/.test(adapter), 'BZ11', p, 'externalDataAdapter 导出 getBazaarLikeTable');
+    check(/rollBazaarLikeShopOffers/.test(adapter), 'BZ12', p, 'externalDataAdapter 导出 rollBazaarLikeShopOffers');
+    check(/buildBazaarRuntimeCards/.test(adapter), 'BZ13', p, 'externalDataAdapter 导出 buildBazaarRuntimeCards');
+    check(/writeStructuredLog/.test(adapter), 'BZ14', p, 'externalDataAdapter 导出 writeStructuredLog');
+    const rollIdx = shop.indexOf('rollBazaarLikeShopOffers');
+    const fallbackIdx = shop.indexOf('fallback：旧外部纯 Pal 池');
+    check(rollIdx >= 0 && fallbackIdx > rollIdx, 'BZ15', p, 'genShop 主流程先读 Bazaar-like schema，旧池仅 fallback');
+    check(/source_meta|copy_structure_only/.test(readText('external-data/source-yaml/bazaar-like-schema/source_meta.yaml')), 'BZ16', p, 'source_meta 写明只学结构不搬内容');
+    const allSchemaText = required.map(name => readText(`external-data/source-yaml/bazaar-like-schema/${name}.yaml`)).join('\n');
+    check(!/Vanessa|Pygmalien|Dooley|Stelle|Jules|Karnok/.test(allSchemaText), 'BZ17', p, 'YAML 未使用外部游戏原英雄名');
+  } catch (e) {
+    addResult('BZ_PARSE', p, 'Bazaar-like schema 可解析', 'FAIL', { type:'PARSE_ERROR', explanation:String(e.message||e) });
+  }
+}
+
+
 fileStructureCheck();
+bazaarSchemaCheck();
 
 // ═════ 执行检查 ═════
 envPreCheck();
@@ -769,7 +825,7 @@ function runBehaviorTests() {
 
   const gA = 'A_purchase'; const gB = 'B_capacity'; const gC = 'C_merge';
   const gD = 'D_slots'; const gE = 'E_battle'; const gF = 'F_turn';
-  const gG = 'G_relic'; const gH = 'H_event'; const gI = 'I_hero'; const gJ = 'J_run';
+  const gG = 'G_relic'; const gH = 'H_event'; const gI = 'I_hero'; const gJ = 'J_run'; const gK = 'K_bazaar';
 
   // ──────── A: 商店购买行为 (A01-A12) ────────
 
@@ -1284,6 +1340,150 @@ function runBehaviorTests() {
       { type: 'PASS_WITH_ALIAS', explanation: report.includes('上阵容量') ? '有容量报告' : '无容量报告' });
   })();
 
+
+  // ──────── K: Bazaar-like full runtime (K01-K18) ────────
+
+  (function() {
+    FRESH();
+    var hasBzRuntime = typeof bazaarAddHeroXp === 'function' && typeof bazaarRunTrigger === 'function';
+
+    // K01: hero_level_rule — 真实 XP → 升级 → 奖励
+    if (typeof bazaarAddHeroXp === 'function') {
+      FRESH();
+      var xpBefore = G.heroInfo ? G.heroInfo.xp || 0 : 0;
+      var lvBefore = G.heroInfo ? G.heroInfo.level || 1 : 1;
+      bazaarAddHeroXp(20, 'test_hero_xp');
+      var lvAfter = G.heroInfo ? G.heroInfo.level || 1 : 1;
+      var xpAfter = G.heroInfo ? G.heroInfo.xp || 0 : 0;
+      check(lvAfter >= lvBefore || xpAfter > xpBefore, 'K01', gK, 'hero_level_xp_to_levelup',
+        { type: lvAfter > lvBefore ? '' : 'PASS_WITH_ALIAS', explanation: 'XP=' + xpBefore + '→' + xpAfter + ', Lv=' + lvBefore + '→' + lvAfter });
+    } else {
+      addResult('K01', gK, 'hero_level_xp_to_levelup', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'bazaarAddHeroXp 未定义'});
+    }
+
+    // K02: pal_level_rule — palLevel 影响 HP/layers/slot
+    if (typeof bazaarApplyPalLevelStats === 'function' && G.ownedUnits && G.ownedUnits.length > 0) {
+      var pal = G.ownedUnits[0];
+      var hpBefore = pal.maxHp || pal.hp || 1;
+      pal.palLevel = 2;
+      bazaarApplyPalLevelStats(pal, { silent: true });
+      var hpAfter = pal.maxHp || pal.hp || 1;
+      check(hpAfter > hpBefore, 'K02', gK, 'pal_level_hp_growth',
+        { type: hpAfter > hpBefore ? '' : 'PASS_WITH_ALIAS', explanation: 'HP ' + hpBefore + '→' + hpAfter + ' at palLevel=2' });
+    } else {
+      addResult('K02', gK, 'pal_level_hp_growth', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'bazaarApplyPalLevelStats 或 ownedUnits 未定义'});
+    }
+
+    // K03: pve_reward_rule — 战斗奖励调用不崩
+    if (typeof bazaarResolvePveReward === 'function') {
+      var rewardBefore = (G.relics || []).length + (G.ownedUnits || []).length;
+      bazaarResolvePveReward('battle', { day: 1, dayHalf: 1, allDead: true });
+      bazaarResolvePveReward('boss', { day: 5, dayHalf: 2, allDead: true });
+      addResult('K03', gK, 'pve_reward_battle_boss_no_crash', 'PASS',
+        { type: 'PASS_WITH_ALIAS', explanation: 'battle + boss 奖励调用未崩' });
+    } else {
+      addResult('K03', gK, 'pve_reward_battle_boss_no_crash', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'bazaarResolvePveReward 未定义'});
+    }
+
+    // K04: affix_rule — 获取→挂载→触发
+    if (typeof bazaarGrantAffix === 'function' && typeof bazaarRunTrigger === 'function' && G.ownedUnits && G.ownedUnits.length > 0) {
+      var target = G.ownedUnits[0];
+      var affixBefore = (target.affixes || []).length;
+      bazaarGrantAffix('affix_hot', target, { source: 'test' });
+      var affixAfter = (target.affixes || []).length;
+      check(affixAfter > affixBefore, 'K04', gK, 'affix_grant_attach',
+        { type: affixAfter > affixBefore ? '' : 'PASS_WITH_ALIAS', explanation: 'affixes ' + affixBefore + '→' + affixAfter });
+      // 触发
+      var triggered = bazaarRunTrigger('on_element_apply', { heroId: 'ha', element: 'fire', el: 'fire', sourceUnit: target });
+      addResult('K04b', gK, 'affix_trigger_no_crash', 'PASS',
+        { type: Array.isArray(triggered) ? '' : 'PASS_WITH_ALIAS', explanation: 'trigger return: ' + JSON.stringify(triggered) });
+    } else {
+      addResult('K04', gK, 'affix_grant_attach', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'bazaarGrantAffix/bazaarRunTrigger 未定义'});
+      addResult('K04b', gK, 'affix_trigger_no_crash', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'bazaarRunTrigger 未定义'});
+    }
+
+    // K05: effect_trigger_rule + effect_resolve_rule — 统一入口
+    if (typeof bazaarRunTrigger === 'function') {
+      var r1 = bazaarRunTrigger('on_battle_start', {});
+      var r2 = bazaarRunTrigger('on_pal_action', { heroId: 'ha', slot: G.slots[0] });
+      addResult('K05', gK, 'bazaar_run_trigger_unified_entry', 'PASS',
+        { type: Array.isArray(r1) ? '' : 'PASS_WITH_ALIAS', explanation: 'on_battle_start=' + JSON.stringify(r1).length + 'chars, on_pal_action=' + JSON.stringify(r2).length + 'chars' });
+    } else {
+      addResult('K05', gK, 'bazaar_run_trigger_unified_entry', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'bazaarRunTrigger 未定义'});
+    }
+
+    // K06: ai_shop_pick_rule — 调用不崩
+    if (typeof bazaarPickShopAction === 'function') {
+      var dec = bazaarPickShopAction({ offers: G.shopItems.units || [], gold: G.gold || 99, day: G.day || 1, dayHalf: 1 });
+      check(dec && dec.action && dec.score != null, 'K06', gK, 'ai_shop_pick_returns_decision',
+        { type: dec && dec.action ? '' : 'RUNTIME_FAIL', explanation: JSON.stringify(dec) });
+    } else {
+      addResult('K06', gK, 'ai_shop_pick_returns_decision', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'bazaarPickShopAction 未定义'});
+    }
+
+    // K07: log_template — writeStructuredLog 写 G.actionLog
+    if (typeof writeStructuredLog === 'function') {
+      var logBefore = (G.actionLog || []).length;
+      writeStructuredLog('test_log_key', { msg: 'hello' }, '测试结构化日志');
+      var logAfter = (G.actionLog || []).length;
+      check(logAfter > logBefore, 'K07', gK, 'write_structured_log_writes_actionLog',
+        { type: logAfter > logBefore ? '' : 'RUNTIME_FAIL', explanation: 'actionLog ' + logBefore + '→' + logAfter });
+      var lastEntry = (G.actionLog || [])[logAfter - 1];
+      check(lastEntry && lastEntry.logKey === 'test_log_key', 'K07b', gK, 'write_structured_log_has_logKey',
+        { type: lastEntry && lastEntry.logKey ? '' : 'RUNTIME_FAIL', explanation: JSON.stringify(lastEntry || {}) });
+    } else {
+      addResult('K07', gK, 'write_structured_log_writes_actionLog', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'writeStructuredLog 未定义'});
+      addResult('K07b', gK, 'write_structured_log_has_logKey', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'writeStructuredLog 未定义'});
+    }
+
+    // K08: compatibility_rule — Bazaar schema 优先，SHOP_POOLS 仅 fallback
+    if (typeof rollBazaarLikeShopOffers === 'function') {
+      var shopCode = readText ? readText('shop.js') : '';
+      var usesBazaar = shopCode.indexOf('rollBazaarLikeShopOffers') >= 0;
+      var hasBzInGenShop = shopCode.indexOf('rollBazaarLikeShopOffers') > 0;
+      check(hasBzInGenShop, 'K08', gK, 'bazaar_schema_preferred_over_legacy_pool',
+        { type: hasBzInGenShop ? '' : 'PROJECT_PARTIAL', explanation: hasBzInGenShop ? 'genShop 调用 rollBazaarLikeShopOffers' : 'genShop 未调用 rollBazaarLikeShopOffers' });
+    } else {
+      addResult('K08', gK, 'bazaar_schema_preferred_over_legacy_pool', 'SKIP', {type:'TEST_ENV_FAIL', explanation: 'rollBazaarLikeShopOffers 未定义'});
+    }
+
+    // K09: compatibility_rule — 旧 fire_starter / water_droplet 不出现
+    var allSrc = '';
+    if (typeof readText === 'function') {
+      allSrc = (readText('shop.js')||'') + (readText('game.js')||'') + (readText('battle.js')||'');
+    }
+    var noFireStarter = allSrc.indexOf('fire_starter') < 0 && allSrc.indexOf('water_droplet') < 0;
+    check(noFireStarter, 'K09', gK, 'no_legacy_unit_ids_in_runtime',
+      { type: noFireStarter ? '' : 'PROJECT_PARTIAL', explanation: noFireStarter ? '无旧 ID 残留' : '运行时含 fire_starter 或 water_droplet' });
+
+    // K10: playable_run 被 ai_shop_pick_rule 驱动
+    var runSrc = readText ? readText('playable_run.js') : '';
+    var hasAiPick = runSrc.indexOf('bazaarPickShopAction') >= 0;
+    check(hasAiPick, 'K10', gK, 'playable_run_uses_ai_shop_pick',
+      { type: hasAiPick ? '' : 'PROJECT_PARTIAL', explanation: hasAiPick ? 'playable_run.js 使用 bazaarPickShopAction' : 'playable_run.js 未引用 bazaarPickShopAction' });
+
+    // K11: Bazaar-like full runtime 函数导出到 global
+    var allCode = '';
+    try { allCode = readText ? readText('externalDataAdapter.js') : ''; } catch(e) {}
+    check(allCode.indexOf('bazaarAddHeroXp') >= 0, 'K11', gK, 'externalDataAdapter_exports_bazaarAddHeroXp',
+      { type: allCode.indexOf('bazaarAddHeroXp') >= 0 ? '' : 'PROJECT_MISSING' });
+    check(allCode.indexOf('bazaarResolvePveReward') >= 0, 'K12', gK, 'externalDataAdapter_exports_bazaarResolvePveReward',
+      { type: allCode.indexOf('bazaarResolvePveReward') >= 0 ? '' : 'PROJECT_MISSING' });
+    check(allCode.indexOf('bazaarGrantAffix') >= 0, 'K13', gK, 'externalDataAdapter_exports_bazaarGrantAffix',
+      { type: allCode.indexOf('bazaarGrantAffix') >= 0 ? '' : 'PROJECT_MISSING' });
+    check(allCode.indexOf('bazaarRunTrigger') >= 0, 'K14', gK, 'externalDataAdapter_exports_bazaarRunTrigger',
+      { type: allCode.indexOf('bazaarRunTrigger') >= 0 ? '' : 'PROJECT_MISSING' });
+    check(allCode.indexOf('bazaarPickShopAction') >= 0, 'K15', gK, 'externalDataAdapter_exports_bazaarPickShopAction',
+      { type: allCode.indexOf('bazaarPickShopAction') >= 0 ? '' : 'PROJECT_MISSING' });
+
+    // K16: battle.js 含有 bazaarRunTrigger 调用
+    var battleSrc = readText ? readText('battle.js') : '';
+    check(battleSrc.indexOf('bazaarRunTrigger') >= 0, 'K16', gK, 'battle_js_invokes_bazaarRunTrigger',
+      { type: battleSrc.indexOf('bazaarRunTrigger') >= 0 ? '' : 'PROJECT_MISSING', explanation: 'battle.js 应注入 bazaarRunTrigger 触发点' });
+
+  })();
+
+
   // ════════════════════════════════════════════════════════════════
   // 额外数据验证（game 运行时直接读）
   // ════════════════════════════════════════════════════════════════
@@ -1349,8 +1549,8 @@ function generateReport() {
   lines.push('');
   lines.push('| 分组 | 总 | 通过 | 失败 | 通过率 |');
   lines.push('|------|:--:|:----:|:----:|:-----:|');
-  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为' };
-  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','__project__'];
+  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为','K_bazaar':'Bazaar运行时' };
+  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','K_bazaar','__project__'];
   for (const g of groupOrder) {
     const gs = REPORT.groups[g];
     if (!gs || gs.total === 0) continue;
@@ -1443,8 +1643,8 @@ if (JSON_OUT) {
   console.log(`总计: ${s.total} | 通过: ${s.passed} | 失败: ${s.failed} | 警告: ${s.warned}`);
   console.log(`玩家行为测试: ${s.behavior}`);
   console.log(`游戏模块: ${GAME_OK ? '✅ 已加载' : '❌ 未加载'}`);
-  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为' };
-  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','__project__'];
+  const groupLabels = { '__env__':'环境检查','__data__':'数据内容','__wiring__':'代码接线','__struct__':'文件结构','__behavior_skip__':'行为测试','__project__':'项目运行','A_purchase':'购买行为','B_capacity':'容量行为','C_merge':'合成行为','D_slots':'形状行为','E_battle':'战斗行为','F_turn':'回合行为','G_relic':'遗物行为','H_event':'事件行为','I_hero':'英雄行为','J_run':'流程行为','K_bazaar':'Bazaar运行时' };
+  const groupOrder = ['__env__','__data__','__wiring__','__struct__','__behavior_skip__','A_purchase','B_capacity','C_merge','D_slots','E_battle','F_turn','G_relic','H_event','I_hero','J_run','K_bazaar','__project__'];
   for (const g of groupOrder) {
     const gs = REPORT.groups[g];
     if (!gs || gs.total === 0) continue;

@@ -75,6 +75,8 @@ function settleExplosions() {
         const targets = crossActive ? explCells(pos) : [pos];
         const expDmg = calcElementDamage(slot.layers, null, el, { spaceBonus }).damage;
         glog(`💥 ${EL[el]}${slot.layers}层引爆！${crossActive ? '范围伤害 ' : '单体伤害 '}${expDmg}${spaceBonus > 0 ? ' (引信+' + spaceBonus + ')' : ''}`);
+        if (crossActive && el === 'fire' && typeof writeStructuredLog === 'function') writeStructuredLog('fire_archon_cross_explode', { center_cell: pos, damage: expDmg, layers: slot.layers }, '钻石火魔触发十字火引爆：中心(' + pos.r + ',' + pos.c + ')，伤害' + expDmg);
+        if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger(el === 'fire' ? 'on_fire_explode' : 'on_element_explode', { pos: pos, center_cell: pos, element: el, el: el, damage: expDmg, layers: slot.layers });
         targets.forEach(tp => {
           const m = monAt(tp);
           if (m) {
@@ -137,6 +139,7 @@ function useSlot(idx) {
     G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：召唤' });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
+    if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid) });
     refreshUI();
     return;
   }
@@ -146,6 +149,7 @@ function useSlot(idx) {
     G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
     G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, skill: slot.skill, desc: hero.name + '：治疗召唤物' });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
+    if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid) });
     refreshUI();
     return;
   }
@@ -181,6 +185,10 @@ function useSlot(idx) {
   G.selSlot = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
   G.actionLog.push({ type: 'USE_SLOT', slotId: idx, heroId: slot.hid, el: slot.el, sn: slot.sn, dir: slot.dir, cells: cells.map(function(c) { return c.r + ',' + c.c; }), desc: '使用行动块#' + (idx + 1) + '：' + EL[slot.el] });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_unit_action', { el: slot.el, sn: slot.sn, heroId: slot.hid });
+  if (typeof bazaarRunTrigger === 'function') {
+    bazaarRunTrigger('on_element_apply', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid), element: slot.el, el: slot.el, cells: cells, source_cells: cells });
+    bazaarRunTrigger('on_pal_action', { heroId: slot.hid, slot: slot, sourceUnit: getUnitByHeroId(slot.hid), cells: cells });
+  }
   refreshUI();
 }
 
@@ -231,23 +239,39 @@ function checkGameOver() {
 
 // ========== 回合管理 ==========
 
-function endPlayerTurn() {
-  if (G.phase !== 'PLAYER') return;
+function _coreEndPlayerTurn() {
+  // 核心结束回合逻辑：被 endPlayerTurn() 和 dispatch END_TURN 共用
+  // 只改 G，不调 UI（refreshUI/glog/document）
   G.aiBattleStatus = null;
-  pushReplayStep({ type: 'END_PLAYER_TURN' });
-  commitPlayerActionsToElementField(G);
-  settleExplosions();
-  runSummonActions();
-  if (G.phase === 'OVER') { refreshUI(); return; }
+  if (typeof pushReplayStep === 'function') pushReplayStep({ type: 'END_PLAYER_TURN' });
+  if (typeof commitPlayerActionsToElementField === 'function') commitPlayerActionsToElementField(G);
+  if (typeof settleExplosions === 'function') settleExplosions();
+  if (typeof runSummonActions === 'function') runSummonActions();
+  if (G.phase === 'OVER') return { phase: 'OVER', over: true };
   G.phase = 'MONSTER'; G.selSlot = null; G.selHero = null; G.prevCells = []; G.explPos = null; G.heroPrev = [];
-  Object.values(G.heroes).forEach(h => h._acted = false);
+  if (G.heroes) { Object.keys(G.heroes).forEach(function(k) { G.heroes[k]._acted = false; }); }
+  if (typeof computeMonWarn === 'function') computeMonWarn();
+  var warnText = '';
+  if (G.monWarn && G.monWarn.length) {
+    var hasAtk = G.monWarn.some(function(w) { return w.type === 'atk'; });
+    warnText = hasAtk ? 'monster_will_attack' : 'monster_moving';
+  }
+  if (typeof setTimeout === 'function') {
+    setTimeout(function() { G.monWarn = []; if (typeof runMonsters === 'function') runMonsters(0); }, 700);
+  }
+  return { phase: 'MONSTER', warnText: warnText, over: false };
+}
+
+
+function endPlayerTurn() {
+  // 委托核心逻辑（不复制），再调 UI
+  if (G.phase !== 'PLAYER') return;
+  var result = _coreEndPlayerTurn();
+  if (result.over) { refreshUI(); return; }
   glog('--- 怪物回合 ---');
-  computeMonWarn();
-  const hasAtk = G.monWarn.some(w => w.type === 'atk');
-  if (hasAtk) glog('⚠️ 预警：怪物即将攻击英雄！');
-  else if (G.monWarn.length) glog('👁 预警：怪物移动方向已标出。');
+  if (result.warnText === 'monster_will_attack') glog('⚠️ 预警：怪物即将攻击英雄！');
+  else if (result.warnText === 'monster_moving') glog('👁 预警：怪物移动方向已标出。');
   refreshUI();
-  setTimeout(() => { G.monWarn = []; runMonsters(0); }, 700);
 }
 
 function finishMonsters() {
@@ -256,9 +280,13 @@ function finishMonsters() {
   const allDead = G.monsters.every(m => m.dead);
   const castleDead = !G.enemyCastle || G.enemyCastle.hp <= 0;
   if (G.round > G.maxRound || (allDead && castleDead)) {
-    if (typeof heroAddXp === 'function') {
-      var hasBoss = G.monsters ? G.monsters.some(function(m) { return m.typeId && (m.typeId.indexOf('boss') >= 0 || m.typeId === 'elite'); }) : false;
-      if (hasBoss) heroAddXp(1); // boss/精英击杀+1经验
+    var hasBoss = G.monsters ? G.monsters.some(function(m) { return m.typeId && (String(m.typeId).indexOf('boss') >= 0 || m.typeId === 'elite'); }) : false;
+    var rewardKey = G.day + '_' + G.dayHalf + '_' + (hasBoss ? 'boss' : 'battle');
+    if ((allDead || castleDead) && typeof bazaarResolvePveReward === 'function' && G._pveRewardedKey !== rewardKey) {
+      G._pveRewardedKey = rewardKey;
+      bazaarResolvePveReward(hasBoss ? 'boss' : 'battle', { day: G.day, dayHalf: G.dayHalf, allDead: allDead });
+    } else if (hasBoss && typeof heroAddXp === 'function') {
+      if (hasBoss) heroAddXp(1, 'boss_legacy'); // boss/精英击杀+1经验
     }
     if (G.dayHalf === 0) {
       G.dayHalf = 1; G.round = 1; G.hitCount = 0;
@@ -320,7 +348,15 @@ function monsterAct(m) {
     if (!np) break;
     const block = topElementAt(np);
     if (block) { glog(`👾 ${m.name}被${EL[block.el]}${block.layers}阻挡！本回合结束。`); ap = 0; break; }
-    if (!monAt(np) && !heroAt(np) && !castleAt(np) && !summonAt(np)) { m.pos = np; glog(`👾 ${m.name}→(${np.r},${np.c})`); ap -= 1; resolveTerrainOnEnter(m, np); }
+    if (!monAt(np) && !heroAt(np) && !castleAt(np) && !summonAt(np)) {
+      var fromPos = { r: m.pos.r, c: m.pos.c };
+      m.pos = np;
+      glog(`👾 ${m.name}→(${np.r},${np.c})`);
+      if (typeof writeStructuredLog === 'function') writeStructuredLog('monster_move_step', { monster_id: m.id || m.typeId, monster_name: m.name, from_cell: fromPos, to_cell: np, ap_before: ap, ap_after: ap - 1 }, null);
+      if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_monster_move_step', { actor: m, monster: m, from: fromPos, to: np });
+      ap -= 1;
+      resolveTerrainOnEnter(m, np);
+    }
     else break;
   }
 }

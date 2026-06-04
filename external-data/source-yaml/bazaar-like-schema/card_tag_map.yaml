@@ -1,0 +1,19 @@
+schema: ysbzs.bazaar_like.card_tag_map.v1
+notes: "Optional denormalized mapping. card_master.tags is primary for simple runtime."
+maps:
+  - card_id: pal_fire_seed
+    tags: [pal, fire, ranged, burst, small]
+  - card_id: pal_water_drop
+    tags: [pal, water, heal, control, small]
+  - card_id: pal_trap_mole
+    tags: [pal, earth, trap, control, medium]
+  - card_id: pal_fire_archon
+    tags: [pal, fire, burst, hero_only, large]
+  - card_id: relic_ember_badge
+    tags: [relic, fire, hero_only]
+  - card_id: merchant_basic_pals
+    tags: [merchant, pal, common]
+  - card_id: merchant_element_pals
+    tags: [merchant, pal, fire, water, wind, earth]
+  - card_id: event_find_relic
+    tags: [event, relic, common]

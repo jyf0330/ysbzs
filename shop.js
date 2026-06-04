@@ -80,8 +80,6 @@ function genShop() {
   const frozenUnits = (G.shopItems.units || []).filter(u => G.shopFrozen.units.has(u.id));
   G.shopItems = { units: [], consumables: [] };
 
-  // 优先用外部纯 Pal 池
-  var extPool = getExternalOnlyPool();
   var usedSlots = 0;
 
   // 先把冻结的商品恢复（按旧逻辑，不计入容量？暂保持原有行为）
@@ -89,6 +87,34 @@ function genShop() {
     G.shopItems.units.push(u);
     usedSlots += u.slotSize || 1;
   });
+
+  // 主流程：Bazaar-like YAML schema -> merchant/rule/pool -> offers。
+  // 旧 SHOP_POOLS 仅在 schema 不可用时作为 fallback。
+  if (typeof rollBazaarLikeShopOffers === 'function') {
+    var rolled = rollBazaarLikeShopOffers({ day: G.day || 1, dayHalf: G.dayHalf || 1, heroId: G.heroInfo && G.heroInfo.id });
+    if (rolled && rolled.offers && rolled.offers.length > 0) {
+      G.shopMerchant = rolled.merchant || null;
+      G.shopRule = rolled.rule || null;
+      for (var bi = 0; bi < rolled.offers.length && usedSlots < SHOP_CAPACITY; bi++) {
+        var offer = rolled.offers[bi];
+        var os = offer.slotSize || 1;
+        if (usedSlots + os > SHOP_CAPACITY) continue;
+        G.shopItems.units.push(offer);
+        usedSlots += os;
+      }
+      if (typeof writeStructuredLog === 'function') {
+        writeStructuredLog('shop_offer_roll', {
+          merchant_id: G.shopMerchant && G.shopMerchant.merchant_id,
+          offer_count: G.shopItems.units.length,
+          schema: 'bazaar-like-schema'
+        });
+      }
+      return;
+    }
+  }
+
+  // fallback：旧外部纯 Pal 池 / SHOP_POOLS
+  var extPool = getExternalOnlyPool();
 
   // 按 tier 遍历填充
   var tierPoolMap = {};
@@ -141,67 +167,93 @@ function genShop() {
   }
 }
 
-function buyUnit(itemId) {
-  if (G.phase !== 'SHOP') return;
-  const idx = G.shopItems.units.findIndex(u => u.id === itemId);
-  if (idx === -1) return;
-  const item = G.shopItems.units[idx];
-  if (G.gold < item.cost) { showMsg('💰 金币不足！'); return; }
 
-  // 背包容量检查
+function _coreBuyUnit(itemId) {
+  // 核心购买逻辑：只改状态，不调 UI。返回结构化结果供 wrapper 使用。
+  if (G.phase !== 'SHOP') return { ok: false, errors: [{ code: 'WRONG_PHASE' }] };
+  var idx = (G.shopItems.units || []).findIndex(function(u) { return u.id === itemId; });
+  if (idx === -1) return { ok: false, errors: [{ code: 'ITEM_NOT_FOUND' }] };
+  var item = G.shopItems.units[idx];
+  if (G.gold < item.cost) return { ok: false, errors: [{ code: 'GOLD_NOT_ENOUGH' }], item: item };
+
   var slotSize = item.slotSize || 1;
   var backpackUsed = 0;
-  G.ownedUnits.forEach(function(u) {
-    if (!u.active) backpackUsed += (u.slotSize || 1);
-  });
-  if (backpackUsed + slotSize > 20) {
-    showMsg('🎒 背包已满（' + backpackUsed + '/' + 20 + '）！');
-    glog('⚠️ 背包容量不足，无法购买！');
-    return;
-  }
+  (G.ownedUnits || []).forEach(function(u) { if (!u.active) backpackUsed += (u.slotSize || 1); });
+  if (backpackUsed + slotSize > 20) return { ok: false, errors: [{ code: 'BACKPACK_FULL' }], item: item };
 
   G.gold -= item.cost;
   G.shopItems.units.splice(idx, 1);
-  const activeCount = G.ownedUnits.filter(u => u.active).length;
-
-  var newUnit = null;
+  var activeCount = (G.ownedUnits || []).filter(function(u) { return u.active; }).length;
   var defId = item.unitId || item.defId;
   var pos = activeCount < 2 ? { r: 6 + activeCount, c: 0 } : null;
 
-  // Pal 商品用工厂创建，旧商品 fallback addOwnedUnit
+  var newUnit = null;
   if (item.itemType === 'pal' && typeof createPalUnitInstance === 'function') {
     var raw = createPalUnitInstance({ unitId: defId, faction: 'player', quality: item.quality || 1, position: pos });
-    if (raw) {
-      raw.instanceId = 'u_' + (G.nextUnitId++);
-      raw.slotSize = slotSize;
-      G.ownedUnits.push(raw);
-      newUnit = raw;
-    }
+    if (raw) { raw.instanceId = 'u_' + (G.nextUnitId++); raw.slotSize = slotSize; G.ownedUnits.push(raw); newUnit = raw; }
   }
-  if (!newUnit) {
+  if (!newUnit && typeof addOwnedUnit === 'function') {
     newUnit = addOwnedUnit(defId, pos);
     if (newUnit) newUnit.slotSize = slotSize;
   }
-  if (!newUnit) return;
+  if (!newUnit) return { ok: false, errors: [{ code: 'CREATE_UNIT_FAILED' }], item: item };
 
-  const existing = G.ownedUnits.find(u =>
-    u.instanceId !== newUnit.instanceId && u.defId === (newUnit.unitId || newUnit.defId) && u.active
-  );
-  const unitName = UNIT_DEFS[defId] ? UNIT_DEFS[defId].name : defId;
-  const qualityLabel = item.quality || '青铜';
-  if (existing) {
+  var existing = (G.ownedUnits || []).find(function(u) {
+    return u.instanceId !== newUnit.instanceId && u.defId === (newUnit.unitId || newUnit.defId) && u.active;
+  });
+  var defs = (typeof UNIT_DEFS !== 'undefined') ? UNIT_DEFS : {};
+  var unitName = defs[defId] ? defs[defId].name : defId;
+  var qualityLabel = item.quality || '青铜';
+  var merged = false;
+  if (existing && typeof mergeUnits === 'function') {
     mergeUnits(newUnit, existing);
-    glog('🛒 购买' + qualityLabel + unitName + '，自动合成！');
-    if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_pal_gained', { gainedUnit: newUnit });
+    merged = true;
   } else {
     if (activeCount >= 2) newUnit.active = false;
-    glog('🛒 购买' + qualityLabel + unitName + (newUnit.active ? '，上阵' : '，放入备战'));
-    if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_pal_gained', { gainedUnit: newUnit });
   }
-  syncUnitsToHeroes();
-  renderShop();
-  refreshUI();
+  if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_pal_gained', { gainedUnit: newUnit });
+
+  return {
+    ok: true, item: item, defId: defId, newUnit: newUnit,
+    merged: merged, unitName: unitName, qualityLabel: qualityLabel,
+    activeCount: activeCount, errors: []
+  };
 }
+
+
+
+
+function buyUnit(itemId) {
+  if (typeof _coreBuyUnit === "function") {
+    var result = _coreBuyUnit(itemId);
+    if (!result.ok) {
+      if (result.errors && result.errors.length > 0) {
+        var msg = result.errors[0].code === "GOLD_NOT_ENOUGH"
+          ? "💰 金币不足！"
+          : result.errors[0].code === "BACKPACK_FULL"
+            ? "⚠️ 背包容量不足，无法购买！"
+            : "⚠️ 购买失败！";
+        showMsg(msg);
+        if (result.errors[0].code === "BACKPACK_FULL") {
+          glog("⚠️ 背包容量不足，无法购买！");
+        }
+      }
+      return;
+    }
+    if (result.merged) {
+      glog("🛒 购买" + result.qualityLabel + result.unitName + "，自动合成！");
+    } else {
+      glog("🛒 购买" + result.qualityLabel + result.unitName + (result.newUnit.active ? "，上阵" : "，放入备战"));
+    }
+    syncUnitsToHeroes();
+    renderShop();
+    refreshUI();
+    return;
+  }
+  if (G.phase !== "SHOP") return;
+  showMsg("[fallback] buy failed");
+}
+
 
 function sellUnit(instanceId) {
   if (G.phase !== 'SHOP') return;

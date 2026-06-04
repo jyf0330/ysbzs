@@ -1,0 +1,277 @@
+{
+  "schema": "ysbzs.bazaar_like.encounter_schedule.v1",
+  "notes": [
+    "This is a compressed ysbzs version, not a direct copy of any specific game schedule.",
+    "hour can be mapped to current morning/afternoon/night structure if UI is not ready."
+  ],
+  "days": [
+    {
+      "day": 1,
+      "income": 3,
+      "hours": [
+        {
+          "hour": 0,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_basic_pals",
+                "merchant_element_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_train_pal"
+              ]
+            },
+            {
+              "type": "free_reward",
+              "reward_pool_id": "reward_free_small_gold"
+            }
+          ]
+        },
+        {
+          "hour": 1,
+          "type": "battle",
+          "encounter_id": "wave_day1_morning"
+        },
+        {
+          "hour": 2,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_basic_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_train_pal"
+              ]
+            }
+          ]
+        },
+        {
+          "hour": 3,
+          "type": "battle",
+          "encounter_id": "wave_day1_afternoon"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "income": 4,
+      "hours": [
+        {
+          "hour": 0,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_basic_pals",
+                "merchant_element_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_train_pal",
+                "event_find_relic"
+              ]
+            }
+          ]
+        },
+        {
+          "hour": 1,
+          "type": "battle",
+          "encounter_id": "wave_day2_morning"
+        },
+        {
+          "hour": 2,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_basic_pals",
+                "merchant_element_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_train_pal",
+                "event_find_relic"
+              ]
+            }
+          ]
+        },
+        {
+          "hour": 3,
+          "type": "battle",
+          "encounter_id": "wave_day2_afternoon"
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "income": 6,
+      "unlock_notes": [
+        "pT3/gold starts entering pool."
+      ],
+      "hours": [
+        {
+          "hour": 0,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_element_pals",
+                "merchant_summon_pals",
+                "merchant_gold_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_train_pal",
+                "event_find_relic",
+                "event_ember_trial"
+              ]
+            },
+            {
+              "type": "free_reward",
+              "reward_pool_id": "reward_free_small_gold"
+            }
+          ]
+        },
+        {
+          "hour": 1,
+          "type": "battle",
+          "encounter_id": "wave_day5_morning"
+        },
+        {
+          "hour": 2,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_gold_pals",
+                "merchant_element_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_find_relic",
+                "event_pack_expand"
+              ]
+            }
+          ]
+        },
+        {
+          "hour": 3,
+          "type": "boss",
+          "encounter_id": "boss_day5"
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "income": 7,
+      "unlock_notes": [
+        "pT4/diamond starts entering pool."
+      ],
+      "hours": [
+        {
+          "hour": 0,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_gold_pals",
+                "merchant_diamond_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_find_relic",
+                "event_ember_trial",
+                "event_pack_expand"
+              ]
+            }
+          ]
+        },
+        {
+          "hour": 1,
+          "type": "battle",
+          "encounter_id": "wave_day7_morning"
+        },
+        {
+          "hour": 2,
+          "options": [
+            {
+              "type": "merchant",
+              "pool": [
+                "merchant_diamond_pals",
+                "merchant_gold_pals"
+              ]
+            },
+            {
+              "type": "event",
+              "pool": [
+                "event_find_relic",
+                "event_ember_trial"
+              ]
+            }
+          ]
+        },
+        {
+          "hour": 3,
+          "type": "battle",
+          "encounter_id": "wave_day7_afternoon"
+        }
+      ]
+    }
+  ],
+  "default_day_template": {
+    "income_formula": "3 + floor(day / 2)",
+    "hours": [
+      {
+        "hour": 0,
+        "options": [
+          {
+            "type": "merchant"
+          },
+          {
+            "type": "event"
+          },
+          {
+            "type": "free_reward"
+          }
+        ]
+      },
+      {
+        "hour": 1,
+        "type": "battle"
+      },
+      {
+        "hour": 2,
+        "options": [
+          {
+            "type": "merchant"
+          },
+          {
+            "type": "event"
+          }
+        ]
+      },
+      {
+        "hour": 3,
+        "type": "battle"
+      }
+    ]
+  }
+}

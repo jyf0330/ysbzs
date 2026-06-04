@@ -1,0 +1,85 @@
+schema: ysbzs.bazaar_like.reward_table.v1
+reward_pools:
+  - reward_pool_id: reward_train_pal_basic
+    rewards:
+      - reward_id: train_selected_pal_hp
+        type: modify_selected_pal
+        weight: 40
+        params:
+          hp_delta: 2
+      - reward_id: train_selected_pal_layer
+        type: modify_selected_pal
+        weight: 40
+        params:
+          layer_delta: 1
+      - reward_id: upgrade_random_pal_quality
+        type: upgrade_random_pal
+        weight: 20
+        params:
+          max_tier: gold
+
+  - reward_pool_id: reward_relic_common
+    rewards:
+      - reward_id: gain_relic_trap_map
+        type: gain_card
+        weight: 35
+        params:
+          card_id: relic_trap_map
+      - reward_id: gain_relic_spring_bottle
+        type: gain_card
+        weight: 35
+        params:
+          card_id: relic_spring_bottle
+      - reward_id: gain_gold
+        type: gain_gold
+        weight: 30
+        params:
+          amount: 3
+
+  - reward_pool_id: reward_ember_trial
+    rewards:
+      - reward_id: gain_relic_ember_badge
+        type: gain_card
+        weight: 50
+        params:
+          card_id: relic_ember_badge
+      - reward_id: upgrade_fire_pal
+        type: upgrade_by_tag
+        weight: 35
+        params:
+          required_tag: fire
+          max_tier: diamond
+      - reward_id: add_fire_layers_start
+        type: add_run_modifier
+        weight: 15
+        params:
+          modifier_id: fire_start_plus_1
+
+  - reward_pool_id: reward_capacity_up
+    rewards:
+      - reward_id: active_capacity_plus_1
+        type: capacity_up
+        weight: 40
+        params:
+          target: active
+          amount: 1
+      - reward_id: backpack_capacity_plus_2
+        type: capacity_up
+        weight: 40
+        params:
+          target: backpack
+          amount: 2
+      - reward_id: shop_capacity_plus_1
+        type: capacity_up
+        weight: 20
+        params:
+          target: shop
+          amount: 1
+
+  - reward_pool_id: reward_free_small_gold
+    rewards:
+      - reward_id: free_gold_2
+        type: gain_gold
+        weight: 100
+        params:
+          amount: 2

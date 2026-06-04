@@ -1,0 +1,27 @@
+{
+  "schema": "ysbzs.bazaar_like.hero_master.v1",
+  "heroes": [
+    {
+      "hero_id": "ember_tamer",
+      "name": "火种驯宠师",
+      "enabled": true,
+      "starting_pals": [
+        "pal_fire_seed"
+      ],
+      "starting_relics": [
+        "relic_ember_badge"
+      ],
+      "bias_tags": {
+        "fire": 40,
+        "summon": 20,
+        "burst": 20,
+        "common": 20
+      },
+      "exclusive_pool_tags": [
+        "fire",
+        "hero_only"
+      ],
+      "notes": "First version only has one starting hero. Hero affects event/relic weights, not direct shop-only content."
+    }
+  ]
+}

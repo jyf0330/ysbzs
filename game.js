@@ -238,6 +238,7 @@ function heroXpFromBattle() {
   // boss/精英击杀加经验
   if (G.lastSettle) {
     if (G.lastSettle.killedCount > 0) heroAddXp(1);
+  if (typeof bazaarApplyHeroLevelReward === 'function') return bazaarApplyHeroLevelReward(lv, { source: 'hero_level' });
   }
 }
 
@@ -248,7 +249,7 @@ function addOwnedUnit(defId, pos) {
   var sizeMap = {'small': 1, 'medium': 2, 'large': 3};
   const unit = {
     instanceId: 'u_' + (G.nextUnitId++),
-    defId: defId, level: 1,
+    defId: defId, level: 1, palLevel: 1, affixes: [],
     hp: lvl.hp, maxHp: lvl.hp,
     pos: pos || { r: 0, c: 0 },
     active: true,
@@ -329,12 +330,15 @@ function mergeUnits(fromUnit, toUnit) {
   var oldLvl = toUnit.level;
   toUnit.level++;
   var def = UNIT_DEFS[toUnit.defId];
-  var lvlData = def.levels[toUnit.level];
+  var lvlData = (typeof bazaarGetEffectiveUnitLevelData === 'function') ? bazaarGetEffectiveUnitLevelData(toUnit, def) : def.levels[toUnit.level];
   toUnit.maxHp = lvlData.hp;
-  toUnit.hp = Math.min(toUnit.hp + (lvlData.hp - def.levels[oldLvl].hp), lvlData.hp);
+  toUnit.hp = Math.min(toUnit.hp + (lvlData.hp - (def.levels[oldLvl] ? def.levels[oldLvl].hp : toUnit.hp)), lvlData.hp);
   G.ownedUnits = G.ownedUnits.filter(u => u.instanceId !== fromUnit.instanceId);
   var gradeNames = ['','青铜','白银','黄金','钻石'];
-  glog('⬆️ ' + def.name + ' 合成升级！' + (gradeNames[oldLvl]||'Lv'+oldLvl) + '→' + (gradeNames[toUnit.level]||'Lv'+toUnit.level));
+  var mergeMsg = '⬆️ ' + def.name + ' 合成升级！' + (gradeNames[oldLvl]||'Lv'+oldLvl) + '→' + (gradeNames[toUnit.level]||'Lv'+toUnit.level);
+  if (typeof writeStructuredLog === 'function') writeStructuredLog('pal_merge', { unit_id: toUnit.defId, before: oldLvl, after: toUnit.level }, mergeMsg);
+  else glog(mergeMsg);
+  if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_pal_merge', { sourceUnit: toUnit, targetUnit: toUnit });
   if (typeof triggerRelicHooks === 'function') triggerRelicHooks('on_pal_merged', {});
   addLevelupUnit();
   syncUnitsToHeroes();

@@ -1,0 +1,83 @@
+schema: ysbzs.bazaar_like.affix_rule.v1
+notes:
+  - "词缀/印记系统。第一版只建结构，不强制普通商店出售词缀。"
+  - "每个 Pal/Relic 默认最多 1 个 affix，防止组合爆炸。"
+affix_config:
+  max_affix_per_card: 1
+  allowed_categories: [pal, relic]
+  sources:
+    - event
+    - level_reward
+    - boss_reward
+  shop_sellable: false
+affixes:
+  - affix_id: affix_hot
+    name: 炽热
+    tier: bronze
+    tags: [fire, burst]
+    allowed_categories: [pal]
+    effect_refs:
+      - effect_affix_hot_plus_fire_layer
+  - affix_id: affix_spring
+    name: 回泉
+    tier: bronze
+    tags: [water, heal]
+    allowed_categories: [pal, relic]
+    effect_refs:
+      - effect_affix_spring_heal
+  - affix_id: affix_swift
+    name: 疾风
+    tier: silver
+    tags: [wind, control]
+    allowed_categories: [pal]
+    effect_refs:
+      - effect_affix_swift_ap
+  - affix_id: affix_thick
+    name: 厚土
+    tier: silver
+    tags: [earth, shield]
+    allowed_categories: [pal, relic]
+    effect_refs:
+      - effect_affix_thick_shield
+  - affix_id: affix_hidden_trap
+    name: 伏陷
+    tier: gold
+    tags: [trap, control]
+    allowed_categories: [pal]
+    effect_refs:
+      - effect_affix_hidden_trap_layers
+affix_effects:
+  - effect_id: effect_affix_hot_plus_fire_layer
+    trigger_id: on_element_apply
+    condition:
+      element_any: [fire]
+    type: add_element_layers
+    params:
+      element: fire
+      layers: 1
+      target_scope: source_cells
+  - effect_id: effect_affix_spring_heal
+    trigger_id: on_pal_action
+    type: heal
+    params:
+      amount: 1
+      target_scope: lowest_hp_ally
+  - effect_id: effect_affix_swift_ap
+    trigger_id: on_pal_action
+    type: modify_ap
+    params:
+      amount: -1
+      target_scope: nearest_enemy
+  - effect_id: effect_affix_thick_shield
+    trigger_id: on_battle_start
+    type: add_shield
+    params:
+      amount: 2
+      target_scope: source_owner
+  - effect_id: effect_affix_hidden_trap_layers
+    trigger_id: on_element_apply
+    type: add_trap_layers
+    params:
+      element: earth
+      layers: 1
+      target_cells: source_cells

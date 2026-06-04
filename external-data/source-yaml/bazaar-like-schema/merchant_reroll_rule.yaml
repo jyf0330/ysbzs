@@ -1,0 +1,27 @@
+schema: ysbzs.bazaar_like.merchant_reroll_rule.v1
+merchant_reroll_rules:
+  - merchant_id: merchant_basic_pals
+    reroll_times: 2
+    reroll_cost: 1
+    reroll_cost_curve: flat
+    allow_reroll_when_empty: true
+  - merchant_id: merchant_element_pals
+    reroll_times: 2
+    reroll_cost: 1
+    reroll_cost_curve: flat
+    allow_reroll_when_empty: true
+  - merchant_id: merchant_summon_pals
+    reroll_times: 1
+    reroll_cost: 2
+    reroll_cost_curve: flat
+    allow_reroll_when_empty: true
+  - merchant_id: merchant_gold_pals
+    reroll_times: 1
+    reroll_cost: 3
+    reroll_cost_curve: flat
+    allow_reroll_when_empty: true
+  - merchant_id: merchant_diamond_pals
+    reroll_times: 1
+    reroll_cost: 4
+    reroll_cost_curve: flat
+    allow_reroll_when_empty: true

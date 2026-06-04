@@ -73,55 +73,55 @@ function clearBattleFast() {
   finishMonsters();
 }
 
-/** 从商店购买 Pal（最简策略） */
+/** 从商店购买 Pal（读取 ai_shop_pick_rule 的自动玩家策略） */
 function buyFromShop() {
   if (G.phase !== 'SHOP') return [];
   var bought = [];
-  var units = G.shopItems.units || [];
-  if (units.length === 0) return [];
-
-  var qualMap = {'钻石':4,'黄金':3,'白银':2,'青铜':1};
-
-  // 排序：quality 降序 > slotSize 升序 > price 升序
-  units.sort(function(a, b) {
-    var qa = qualMap[a.quality] || 1;
-    var qb = qualMap[b.quality] || 1;
-    if (qa !== qb) return qb - qa;
-    var sa = a.slotSize || 999;
-    var sb = b.slotSize || 999;
-    if (sa !== sb) return sa - sb;
-    return (a.cost || 999) - (b.cost || 999);
-  });
-
-  var maxBuy = 2;
-  var attempts = 0;
-  var idx = 0;
-  while (attempts < maxBuy && idx < (G.shopItems.units || []).length && G.phase === 'SHOP') {
-    var currentItems = G.shopItems.units || [];
-    if (idx >= currentItems.length) break;
-    var item = currentItems[idx];
-    if (!item) { idx++; continue; }
-    if (G.gold < item.cost) { idx++; continue; }
+  var maxSteps = 6;
+  var stepsUsed = 0;
+  while (stepsUsed < maxSteps && G.phase === 'SHOP') {
+    stepsUsed++;
+    var units = G.shopItems.units || [];
+    if (units.length === 0) break;
+    var decision = (typeof bazaarPickShopAction === 'function')
+      ? bazaarPickShopAction({ offers: units, gold: G.gold, day: G.day, dayHalf: G.dayHalf })
+      : null;
+    if (!decision) break;
+    if (decision.action === 'reroll' && typeof rollShop === 'function') {
+      var beforeGoldReroll = G.gold;
+      rollShop();
+      if (G.gold >= beforeGoldReroll) break;
+      continue;
+    }
+    if (decision.action !== 'buy' || !decision.item) break;
+    var item = decision.item;
+    if (G.gold < item.cost) break;
 
     var slotSize = item.slotSize || 1;
     var backpackUsed = 0;
     G.ownedUnits.forEach(function(u) {
       if (!u.active) backpackUsed += (u.slotSize || 1);
     });
-    if (backpackUsed + slotSize > BACKPACK_CAPACITY) { idx++; continue; }
+    if (backpackUsed + (item.slotSize || 1) > BACKPACK_CAPACITY) break;
 
     var goldBefore = G.gold;
     buyUnit(item.id);
     var goldAfter = G.gold;
-    if (goldAfter >= goldBefore) { idx++; continue; }
+    if (goldAfter >= goldBefore) break;
 
     bought.push({
-      day: G.day, phase: G.dayHalf === 1 ? 'noon' : 'night',
-      unitId: item.unitId || item.defId, name: item.name,
-      price: item.cost, quality: item.quality,
-      slotSize: slotSize, goldBefore: goldBefore, goldAfter: goldAfter,
+      day: G.day,
+      phase: G.dayHalf === 1 ? 'noon' : 'night',
+      unitId: item.unitId || item.defId,
+      name: item.name,
+      price: item.cost,
+      quality: item.quality,
+      slotSize: item.slotSize || 1,
+      aiAction: decision.action,
+      aiScore: decision.score,
+      goldBefore,
+      goldAfter,
     });
-    attempts++;
   }
   return bought;
 }

@@ -1,0 +1,62 @@
+{
+  "schema": "ysbzs.bazaar_like.tier_curve.v1",
+  "tiers": [
+    {
+      "tier": "bronze",
+      "display_name": "青铜",
+      "poolTier": 1,
+      "min_day": 1,
+      "default_price": 2,
+      "weight_curve": {
+        "day_1_2": 80,
+        "day_3_4": 55,
+        "day_5_6": 30,
+        "day_7_plus": 12
+      }
+    },
+    {
+      "tier": "silver",
+      "display_name": "白银",
+      "poolTier": 2,
+      "min_day": 1,
+      "default_price": 4,
+      "weight_curve": {
+        "day_1_2": 20,
+        "day_3_4": 40,
+        "day_5_6": 45,
+        "day_7_plus": 30
+      }
+    },
+    {
+      "tier": "gold",
+      "display_name": "黄金",
+      "poolTier": 3,
+      "min_day": 5,
+      "default_price": 6,
+      "weight_curve": {
+        "day_1_2": 0,
+        "day_3_4": 5,
+        "day_5_6": 25,
+        "day_7_plus": 38
+      }
+    },
+    {
+      "tier": "diamond",
+      "display_name": "钻石",
+      "poolTier": 4,
+      "min_day": 7,
+      "default_price": 8,
+      "weight_curve": {
+        "day_1_2": 0,
+        "day_3_4": 0,
+        "day_5_6": 0,
+        "day_7_plus": 20
+      }
+    }
+  ],
+  "quality_upgrade": {
+    "merge_rule": "same_id_2_to_1",
+    "max_tier": "diamond",
+    "notes": "First version keeps 2-combine-1. Do not introduce complex upgrade fragments yet."
+  }
+}

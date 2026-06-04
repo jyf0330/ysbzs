@@ -77,8 +77,23 @@ function buildTurnVM(){
       lastSettle:G.lastSettle||null}};
 }
 
+function buildCastleHudVM(){
+  const threshold=String(G.explosionThreshold||3);
+  const elementIcon=(typeof ELICON!=='undefined'&&ELICON.fire)||'🔥';
+  const buildSide=(castle,label)=>({
+    label,
+    hpText:String(Math.max(0,castle?.hp||0)),
+    thresholdText:threshold,
+    elementIcon
+  });
+  return{
+    player:buildSide(G.playerCastle,'我方'),
+    enemy:buildSide(G.enemyCastle,'敌方')
+  };
+}
+
 function buildBattleVM(){
-  return{board:buildBoardVM(),heroes:buildHeroesVM(),slots:buildSlotsVM(),turn:buildTurnVM()};
+  return{board:buildBoardVM(),heroes:buildHeroesVM(),slots:buildSlotsVM(),turn:buildTurnVM(),castleHud:buildCastleHudVM()};
 }
 
 
@@ -1048,19 +1063,28 @@ function renderTurn(turnVM){
   const tbRc=document.getElementById('tb-rc');
   if(tbRc)tbRc.textContent=turnVM.phase==='SHOP'?'商店中':`${turnVM.round}/${turnVM.maxRound}回合`;
   // Castle HP bars
-  if(G.playerCastle){
+  const castleHud=buildCastleHudVM();
+  if(G.playerCastle&&castleHud.player){
     const pct=Math.max(0,(G.playerCastle.hp/G.playerCastle.maxHp)*100);
     const bar=document.getElementById('p-castle-bar');
     if(bar)bar.style.width=pct+'%';
     const txt=document.getElementById('p-castle-txt');
-    if(txt)txt.textContent=`${G.playerCastle.hp}/${G.playerCastle.maxHp}`;
+    if(txt)txt.textContent=castleHud.player.hpText;
+    const el=document.getElementById('p-castle-el');
+    if(el)el.textContent=castleHud.player.elementIcon;
+    const th=document.getElementById('p-castle-threshold');
+    if(th)th.textContent=castleHud.player.thresholdText;
   }
-  if(G.enemyCastle){
+  if(G.enemyCastle&&castleHud.enemy){
     const pct=Math.max(0,(G.enemyCastle.hp/G.enemyCastle.maxHp)*100);
     const bar=document.getElementById('e-castle-bar');
     if(bar)bar.style.width=pct+'%';
     const txt=document.getElementById('e-castle-txt');
-    if(txt)txt.textContent=`${G.enemyCastle.hp}/${G.enemyCastle.maxHp}`;
+    if(txt)txt.textContent=castleHud.enemy.hpText;
+    const el=document.getElementById('e-castle-el');
+    if(el)el.textContent=castleHud.enemy.elementIcon;
+    const th=document.getElementById('e-castle-threshold');
+    if(th)th.textContent=castleHud.enemy.thresholdText;
   }
   // Engine stats
   const esEl=document.getElementById('es');
@@ -1098,117 +1122,121 @@ function shapeHTML(sn,el,sz=7){
 
 function renderShop(){
   document.getElementById('sg').textContent=G.gold;
-  const rollCost=(typeof getShopEconomyConfig === "function" ? (getShopEconomyConfig().roll_cost || 1) : 1)||1;
-  const activeUnits=G.ownedUnits.filter(u=>u.active);
-  const benchUnits=G.ownedUnits.filter(u=>!u.active);
-  const allOwned=G.ownedUnits||[];
-  const mergeHints={};
-  allOwned.forEach(u=>{mergeHints[u.defId]=(mergeHints[u.defId]||0)+1;});
-  (G.shopItems.units||[]).forEach(it=>{mergeHints[it.defId]=(mergeHints[it.defId]||0)+1;});
-  const canMerge=Object.entries(mergeHints).filter(([,cnt])=>cnt>=3).map(([id])=>UNIT_DEFS[id]?.name).filter(Boolean);
-  const dayLabel=G.dayHalf===2?'夜晚商店':'午后商店';
-  const recommend=(canMerge.length>0)
-    ?`优先合成：${canMerge.slice(0,2).join('、')}`
-    : (G.gold<=2?'金币紧张，优先保留核心与经济节奏':'可刷新找关键件，注意转派成本');
-
-  let h='';
-  h+=`<div class="shop-grid">`;
-
-  // 左栏：阵容与后效
-  h+=`<div class="shop-col">
-    <div class="sstt">⚔️ 阵容与后效</div>
-    ${activeUnits.length===0&&benchUnits.length===0?'<div class="shop-note">还没有单位，先购买核心件。</div>':''}
-    <div class="shop-alert">上阵 ${activeUnits.length}/2 · 可用备战 ${benchUnits.length}</div>
-    <div class="sstt">上阵单位</div>
-    ${activeUnits.map(u=>{
-      const def=UNIT_DEFS[u.defId]; if(!def)return'';
-      const lvl=def.levels[u.level];
-      const nextLvl=def.levels[u.level+1]||null;
-      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join('');
-      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join(''):'';
-      return `<div class="roster-card">
-        <div class="roster-line"><span style="font-size:15px;font-weight:bold;color:#c4a860">⭐ ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
-        <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
-        <div class="roster-line" style="margin-top:4px">${benchUnits.length>0?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">→备战</button>`:''}<button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button></div>
-      </div>`;
-    }).join('')}
-    <div class="sstt" style="margin-top:8px">备战单位</div>
-    ${benchUnits.map(u=>{
-      const def=UNIT_DEFS[u.defId]; if(!def)return'';
-      const lvl=def.levels[u.level];
-      const nextLvl=def.levels[u.level+1]||null;
-      const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join('');
-      const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join(''):'';
-      return `<div class="roster-card" style="opacity:0.8">
-        <div class="roster-line"><span style="font-size:15px;color:var(--c-text2)">💤备战 ${['','青铜','白银','黄金','钻石'][u.level]}</span><span style="color:${EC[def.element]}">${def.name}</span><span style="font-size:13px;color:var(--c-text2)">HP:${u.hp}/${u.maxHp}</span></div>
-        <div class="mini-compare"><div class="mini-level"><div class="mini-level-head">当前</div>${currentSlots}</div>${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一阶 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}</div>
-        <div class="roster-line" style="margin-top:4px">${activeUnits.length<2?`<button class="bb" style="font-size:13px;padding:2px 4px" onclick="toggleUnitActive('${u.instanceId}')">上阵</button>`:''}<button class="bb" style="font-size:13px;padding:2px 4px;background:#c4907a" onclick="sellUnit('${u.instanceId}')">💸出售</button></div>
-      </div>`;
-    }).join('')}
-  </div>`;
-
-  // 中栏：商品主区
-  h+=`<div class="shop-col">
-    <div class="sstt">🎖️ 单位商店 · Tier ${G.shopTier}</div>
-    <div class="unit-grid">
-      ${G.shopItems.units.length===0?'<div class="shop-note">已售罄</div>':''}
-      ${G.shopItems.units.map(item=>{
-        const def=UNIT_DEFS[item.defId]; if(!def)return'';
-        const lvl=def.levels[1];
-        const nextLvl=def.levels[2]||null;
-        const ownCnt=(allOwned.filter(u=>u.defId===item.defId).length)||0;
-        const toMerge=Math.max(0,3-(ownCnt+1));
-        const mergeHint=(ownCnt>=2)?'购买后可立刻合成升级':(ownCnt===1?`再补 ${toMerge} 张可合成`:'作为新核心起点');
-        const tags=(def.tags||[]).slice(0,3).join(' · ');
-        const currentSlots=(lvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join('');
-        const nextSlots=nextLvl?(nextLvl.slots||[]).map(slot=>`<div class="unit-slot-dot compact">${shapeHTML(slot.sn,slot.el,5)}<span class="unit-slot-meta">${EL[slot.el]}·${SD[slot.sn]?SD[slot.sn].name:''}×${(typeof getTierMult === "function" ? (getTierMult()[slot.tier] || 0) : 0)}</span></div>`).join(''):'';
-        return`<div class="unit-card">
-          <div class="unit-head">
-            <div class="unit-meta">
-              <div class="unit-icon" style="background:${EC[def.element]}">${def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨'}</div>
-              <div>
-                <div class="unit-name" style="color:${EC[def.element]}">${def.name}</div>
-                <div class="unit-tags">${item.quality||'青铜'} · ${item.size||'medium'}(${item.slotSize||1}格) · HP:${lvl.hp} · ${lvl.slots.length}槽 · ${tags||'基础单位'}</div>
-              </div>
-            </div>
-            <span class="sic">💰${item.cost}</span>
-          </div>
-          <div class="unit-hint">${mergeHint}</div>
-          <div class="mini-compare">
-            <div class="mini-level">
-              <div class="mini-level-head">当前 HP ${lvl.hp}</div>
-              ${currentSlots}
-            </div>
-            ${nextLvl?`<div class="mini-level"><div class="mini-level-head">下一级 HP ${nextLvl.hp}</div>${nextSlots}</div>`:''}
-          </div>
-          <div class="unit-actions">
-            <button class="bb" onclick="buyUnit('${item.id}')" ${G.gold<item.cost?'disabled':''}>购买</button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
-
-  // 右栏：决策摘要
-  h+=`<div class="shop-col">
-    <div class="sstt" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-      <span>🧭 决策摘要</span>
-      <button class="bb sl" style="font-size:12px;padding:2px 8px" onclick="closeShop()">完成</button>
-    </div>
-    <div class="shop-stat"><span>阶段</span><span>${dayLabel}</span></div>
-    <div class="shop-stat"><span>天数</span><span>Day ${G.day}</span></div>
-    <div class="shop-stat"><span>金币</span><span>${G.gold}</span></div>
-    <div class="shop-stat"><span>上阵/备战</span><span>${activeUnits.length}/2 · ${benchUnits.length}</span></div>
-    <div class="shop-alert">${recommend}</div>
-    <div class="shop-alert">当前版本：商店仅售英雄卡，构筑深度来自买卖与同名合成。</div>
-    <button class="rfb" style="width:100%;margin-top:4px" onclick="rollShop()">🔄 刷新（${rollCost}💰）</button>
-  </div>`;
-
-  h+=`</div>`;
-
+  var dl=G.dayHalf===2?'夜晚商店':'午后商店';
+  var hl=document.getElementById('shop-day-phase-label');
+  if(hl)hl.textContent='Day '+G.day+' '+dl;
+  var au=G.ownedUnits.filter(function(u){return u.active;});
+  var bu=G.ownedUnits.filter(function(u){return !u.active;});
+  var allOwned=G.ownedUnits||[];
+  var rc=(typeof getShopEconomyConfig === 'function'?(getShopEconomyConfig().roll_cost||1):1)||1;
+  var rb=document.querySelector('.shop-btn.refresh');
+  if(rb)rb.textContent='🔄 刷新 '+rc+'💰';
+  // Footer roster
+  var ft=document.getElementById('shop-footer');
+  if(ft){
+    var ro=document.getElementById('shop-roster-area');
+    if(ro){
+      var rh='<span class="shop-bench-label">上阵 '+au.length+'/2</span>';
+      rh+=au.map(function(u){
+        var d=UNIT_DEFS[u.defId];
+        return d?'<span class="shop-footer-unit" title="'+d.name+'" style="color:'+EC[d.element]+'" ondblclick=\'showUnitDetail(null,"'+u.defId+'")\' onclick=\'showUnitDetail(null,"'+u.defId+'")\'>'+(['','青铜','白银','黄金','钻石'][u.level]||'')+' '+d.name+'</span>':'';
+      }).join('');
+      rh+='<span class="shop-bench-label">备战 '+bu.length+'</span>';
+      ro.innerHTML=rh;
+    }
+    var he=document.getElementById('shop-hint');
+    if(he){
+      var mh={};
+      allOwned.forEach(function(u){mh[u.defId]=(mh[u.defId]||0)+1;});
+      (G.shopItems.units||[]).forEach(function(it){mh[it.defId]=(mh[it.defId]||0)+1;});
+      var cm=Object.entries(mh).filter(function(e){return e[1]>=2;}).map(function(e){var d=UNIT_DEFS[e[0]];return d?d.name:'';}).filter(Boolean);
+      he.textContent=cm.length>0?'💡 可合成：'+cm.slice(0,3).join('、'):'当前只售英雄卡 · 买同名自动升阶';
+    }
+  }
+  // Main grid: only units, slim cards
+  var h='<div class="shop-grid"><div class="shop-col"><div class="sstt">🎖️ Tier '+G.shopTier+' · 共'+(G.shopItems.units||[]).length+'件</div><div class="unit-grid">';
+  if((G.shopItems.units||[]).length===0)h+='<div class="shop-note">已售罄</div>';
+  (G.shopItems.units||[]).forEach(function(item){
+    var def=UNIT_DEFS[item.defId]; if(!def)return;
+    var lvl=def.levels[1];
+    var oc=(allOwned.filter(function(u){return u.defId===item.defId;}).length)||0;
+    var mh=oc>=1?'已有'+oc+' · 买后升阶':'新核心起点';
+    var tags=(def.tags||[]).slice(0,2).join('/');
+    var slots=(lvl.slots||[]);
+    var slotChips=slots.slice(0,3).map(function(s){
+      var sn=SD[s.sn]?SD[s.sn].name:'';
+      var mult=(typeof getTierMult==='function'?(getTierMult()[s.tier]||0):0);
+      return '<span class="unit-chip">'+shapeHTML(s.sn,s.el,5)+'<span>'+EL[s.el]+'·'+sn+'×'+mult+'</span></span>';
+    }).join('');
+    if(slots.length>3)slotChips+='<span class="unit-chip">+'+(slots.length-3)+'槽</span>';
+    h+='<div class="unit-card" title="'+def.name+' · '+(tags||'基础单位')+'"><div class="unit-head">'+
+      '<div class="unit-meta"><div class="unit-icon" style="background:'+EC[def.element]+'">'+(def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨')+'</div>'+
+      '<div><div class="unit-name" style="color:'+EC[def.element]+'">'+def.name+'</div>'+
+      '<div class="unit-tags">'+item.quality+' · '+(item.size||'medium')+'('+(item.slotSize||1)+'格) · HP'+lvl.hp+(tags?' · '+tags:'')+'</div></div></div>'+
+      '<span class="sic">💰'+item.cost+'</span></div>'+
+      '<div class="unit-chip-row">'+slotChips+'</div>'+
+      (mh?'<div class="unit-hint">'+mh+'</div>':'')+
+      '<div class="unit-actions"><button class="bb sl" style="font-size:12px;padding:2px 6px" onclick=\'showUnitDetail("'+item.id+'")\'>📋详情</button>'+
+      '<button class="bb" onclick=\'buyUnit("'+item.id+'")\' '+(G.gold<item.cost?'disabled':'')+'>购买</button></div></div>';
+  });
+  h+='</div></div></div>';
   document.getElementById('scat').innerHTML=h;
 }
 
+// Detail overlay
+function showUnitDetail(itemId, defIdOverride){
+  var item,def;
+  if(itemId){
+    item=(G.shopItems.units||[]).find(function(it){return it.id===itemId;});
+    if(!item)return;
+    def=UNIT_DEFS[item.defId];
+  }else if(defIdOverride){
+    def=UNIT_DEFS[defIdOverride];
+    var owned=G.ownedUnits.find(function(u){return u.defId===defIdOverride;});
+    if(!owned)return;
+    item={defId:defIdOverride,cost:0,quality:['','青铜','白银','黄金','钻石'][owned.level],level:owned.level,size:owned.size,slotSize:owned.slotSize};
+  }
+  if(!def||!item)return;
+  var grade=['','青铜','白银','黄金','钻石'];
+  var itemLevel=item.level||1;
+  var lvl=def.levels[itemLevel]||def.levels[1];
+  var nextLvl=def.levels[itemLevel+1]||null;
+  var oc=(G.ownedUnits||[]).filter(function(u){return u.defId===item.defId;}).length;
+  var sellBack=Math.max(1,Math.floor((item.cost||3)/2));
+  // Build slots HTML
+  function slotHTML(lv,next){return (lv.slots||[]).map(function(s,i){return '<div class="shop-detail-slot"><span class="shop-detail-slot-shape">'+shapeHTML(s.sn,s.el,8)+'</span><span>'+EL[s.el]+'·'+(SD[s.sn]?SD[s.sn].name:'')+'×'+(typeof getTierMult==='function'?(getTierMult()[s.tier]||0):0)+'</span>'+(next?'<span class="shop-detail-up">→ tier'+(s.tier+1)+'</span>':'')+'</div>';}).join('');}
+  var h='<div class="shop-detail-overlay" onclick="closeUnitDetail()"><div class="shop-detail-panel" onclick="event.stopPropagation()">'+
+    '<div class="shop-detail-close" onclick="closeUnitDetail()">✕</div>'+
+    '<div class="shop-detail-icon" style="background:'+EC[def.element]+'">'+(def.element==='fire'?'🔥':def.element==='water'?'💧':def.element==='wind'?'🌿':'🪨')+'</div>'+
+    '<div class="shop-detail-name" style="color:'+EC[def.element]+'">'+def.name+'</div>'+
+    '<div class="shop-detail-meta">'+item.quality+' · '+(def.tags||[]).join(' · ')+' · '+(item.size||'medium')+'('+(item.slotSize||1)+'格)</div>'+
+
+    '<div class="shop-detail-section">属性</div>'+
+    '<div class="shop-detail-stat"><span>HP</span><span>'+lvl.hp+'</span></div>'+
+    '<div class="shop-detail-stat"><span>售价</span><span>💰'+item.cost+(sellBack>0?'（出售返还'+sellBack+'💰）':'')+'</span></div>'+
+    '<div class="shop-detail-stat"><span>容量</span><span>'+(item.size||'medium')+'('+(item.slotSize||1)+'格)</span></div>'+
+
+    '<div class="shop-detail-section">行动槽</div><div class="shop-detail-slots">'+slotHTML(lvl,false)+'</div>'+
+
+    (nextLvl?'<div class="shop-detail-section">下一阶：'+grade[itemLevel+1]+'</div>'+
+    '<div class="shop-detail-stat"><span>HP</span>'+nextLvl.hp+'</div><div class="shop-detail-slots">'+slotHTML(nextLvl,true)+'</div>':'')+
+
+    '<div class="shop-detail-section">合成进度</div>'+
+    '<div class="shop-detail-bar"><div class="shop-detail-bar-fill" style="width:'+Math.min(100,oc/2*100)+'%"></div></div>'+
+    '<div class="shop-detail-stat"><span>已拥有</span><span>'+oc+'</span></div>'+
+    (oc>0?'<div class="shop-detail-stat shop-detail-synth">再购1张可合成升级</div>':'<div class="shop-detail-stat shop-detail-synth">首张入手新核心</div>')+
+
+    '<div class="shop-detail-actions">'+
+      (item.cost>0?'<button class="shop-btn" onclick=\'buyUnit("'+item.id+'");closeUnitDetail();\'>💰 购买</button>':'')+
+      (oc>0?'<button class="shop-btn done" onclick=\'closeUnitDetail();sellUnit("'+G.ownedUnits.filter(function(u){return u.defId===item.defId;})[0].instanceId+'");\'>💸 出售已有</button>':'')+
+    '</div></div></div>';
+  var ov=document.createElement('div');ov.id='shop-detail-container';ov.innerHTML=h;
+  document.getElementById('sc').appendChild(ov);
+}
+function closeUnitDetail(){
+  var el=document.getElementById('shop-detail-container');
+  if(el)el.remove();
+}
 function buyConsumable(itemId){
   if(G.phase!=='SHOP')return;
   const idx=G.shopItems.consumables.findIndex(c=>c.id===itemId);

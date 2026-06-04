@@ -92,6 +92,7 @@ function resolveTerrainOnEnter(monster, pos) {
     if (dmg > 0 || apDelta) {
       if (monster.hp <= 0) {
         monster.dead = true;
+        if (typeof clearBoardStateUnit === 'function' && monster.pos) clearBoardStateUnit(monster.pos, 'monster', monster.id);
         glog(formatBattleEvent({ type: 'trap_kill', unitName: monster.name }));
       } else {
         var evt = buildTrapTriggerEvent(monster, pos, el, layers, dmg, oldHp, monster.hp, apDelta);

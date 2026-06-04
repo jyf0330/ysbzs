@@ -4706,6 +4706,41 @@ group('架构统一：boardState / sync entry / seed RNG', ()=>{
     assert.strictEqual(G.phase,'PLAYER','回到战斗');
   });
 
+
+  test('ARCH-26: resolveTerrainOnEnter 只保留 terrain.js 权威实现且陷阱击杀同步 boardState', ()=>{
+    const battleSrc = fs.readFileSync(path.join(__dirname, 'battle.js'), 'utf8');
+    const terrainSrc = fs.readFileSync(path.join(__dirname, 'terrain.js'), 'utf8');
+    assert.ok(!/function\s+resolveTerrainOnEnter\s*\(/.test(battleSrc), 'battle.js 不应保留重复 resolveTerrainOnEnter');
+    assert.ok(/function\s+resolveTerrainOnEnter\s*\(/.test(terrainSrc), 'terrain.js 保留权威 resolveTerrainOnEnter');
+    fresh();
+    G.monsters = [{id:'arch_trap_dead', name:'陷阱怪', hp:1, maxHp:1, atk:1, ap:3, pos:{r:4,c:4}, dead:false, el:null, gold:0}];
+    if (typeof syncBoardStateUnitsFromEntities === 'function') syncBoardStateUnitsFromEntities();
+    addTrapLayers({r:4,c:4}, 'fire', 3);
+    resolveTerrainOnEnter(G.monsters[0], {r:4,c:4});
+    assert.strictEqual(G.monsters[0].dead, true, '怪物应被陷阱击杀');
+    assert.strictEqual(G.boardState.cells['4,4'].unitLayer.occupant, null, '陷阱击杀后 boardState occupant 应清空');
+    assert.strictEqual((G.boardState.cells['4,4'].terrainLayer.traps||[]).length, 0, '陷阱触发后 boardState traps 应清空');
+  });
+
+  test('ARCH-27: index/test/gpt/playable 加载顺序统一为 battleLog 早于 terrain', ()=>{
+    ['index.html','test.js','gpt_test.js','playable_run.js','playable_day1.js'].forEach(file=>{
+      const txt = fs.readFileSync(path.join(__dirname, file), 'utf8');
+      const a = txt.indexOf('battleLog.js');
+      const b = txt.indexOf('terrain.js');
+      assert.ok(a >= 0 && b >= 0 && a < b, file + ' 应先加载 battleLog.js 再加载 terrain.js');
+    });
+  });
+
+  test('ARCH-28: board.js 不保留无人调用写 API，repair 不破坏性重建已有对象', ()=>{
+    const src = fs.readFileSync(path.join(__dirname, 'board.js'), 'utf8');
+    assert.ok(!src.includes('function addBoardStateElement'), '未使用 addBoardStateElement 应删除');
+    assert.ok(!src.includes('function setCellAt'), '旧写别名 setCellAt 应删除');
+    fresh();
+    const oldRef = G.boardState;
+    repairBoardStateFromLegacy();
+    assert.strictEqual(G.boardState, oldRef, 'repairBoardStateFromLegacy 不应替换已有 boardState 对象');
+  });
+
   test('ARCH-8: 核心文件 DOM 防回流扫描', ()=>{
     const files = ['actions.js','board.js','preview.js','waves.js','battle.js','dispatch.js','elements.js','terrain.js','damage.js','externalDataAdapter.js'];
     const forbidden = ['document.','querySelector','innerHTML','classList','refreshUI(','renderBoard(','renderShop(','addEventListener(','requestFullscreen('];

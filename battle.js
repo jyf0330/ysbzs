@@ -461,41 +461,8 @@ function nextMove(m) { return nextMoveFromPos(m.pos, m); }
 
 // ========== 地形陷阱结算 ==========
 
-/** 怪物进入格子时触发地形陷阱 */
-function resolveTerrainOnEnter(monster, pos) {
-  if (!G.terrainCells) return;
-  var key = pos.r + ',' + pos.c;
-  var traps = G.terrainCells[key];
-  if (!traps) return;
-
-  ELEMS.forEach(function(el) {
-    var layers = traps[el] || 0;
-    if (layers <= 0) return;
-
-    var dmg = explDmg(layers);
-    var cfg = (typeof getTrapConfig === 'function' ? getTrapConfig() : (typeof TRAP_CONFIG !== 'undefined' ? TRAP_CONFIG : {}))[el] || {};
-    var apDelta = cfg.apDelta || 0;
-
-    var oldHp = monster.hp;
-    var oldAp = monster.ap || 3;
-
-    monster.hp = Math.max(0, monster.hp - dmg);
-    if (monster.ap !== undefined) monster.ap = Math.max(0, monster.ap + apDelta);
-
-    if (dmg > 0) glog('🔥 ' + monster.name + ' 踩中' + cfg.name + layers + '！HP ' + oldHp + '→' + monster.hp + (apDelta ? '，AP ' + oldAp + '→' + (monster.ap||3) : ''));
-
-    if (monster.hp <= 0) {
-      monster.dead = true;
-      if (typeof clearBoardStateUnit === 'function' && monster.pos) clearBoardStateUnit(monster.pos, 'monster', monster.id);
-      glog('💀 ' + monster.name + ' 被陷阱击杀！');
-    }
-  });
-
-  // 触发后清空该格陷阱（一次性）
-  // 保留元素层不受影响
-  G.terrainCells[key] = { fire:0, water:0, wind:0, earth:0 };
-  if (typeof clearBoardStateTerrain === 'function') clearBoardStateTerrain(pos);
-}
+// resolveTerrainOnEnter 的权威实现位于 terrain.js。
+// 这里不再保留重复定义，避免 battle.js 版与 terrain.js 版互相覆盖导致特性丢失。
 
 function simMonAct(m) {
   const startPos = { r: m.pos.r, c: m.pos.c };

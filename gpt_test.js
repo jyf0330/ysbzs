@@ -479,7 +479,7 @@ function wiringCheck() {
 
   // 文件结构完整性
   const jsFiles = ['data.js','externalDataAdapter.js','rng.js','board.js','actions.js','elements.js',
-    'waves.js','battle.js','dispatch.js','shop.js','game.js','damage.js','terrain.js','battleLog.js','preview.js','ui.js','replay.js'];
+    'waves.js','battleLog.js','battle.js','dispatch.js','shop.js','game.js','damage.js','terrain.js','preview.js','ui.js','replay.js'];
   const missingJs = jsFiles.filter(f => !exists(f));
   const presentJs = jsFiles.filter(f => exists(f));
   check(missingJs.length === 0, 'W62', p, `全部模块文件存在 (${presentJs.length}/${jsFiles.length})`,
@@ -564,7 +564,7 @@ try {
   }
   const gmFiles = [
     'data.js','externalDataAdapter.js','rng.js','board.js','actions.js','elements.js',
-    'waves.js','battle.js','dispatch.js','shop.js','game.js','damage.js','terrain.js','battleLog.js','preview.js',
+    'waves.js','battleLog.js','battle.js','dispatch.js','shop.js','game.js','damage.js','terrain.js','preview.js',
   ];
   for (const f of gmFiles) {
     const fp = rel(f);
@@ -1637,6 +1637,23 @@ function runBehaviorTests() {
     check(/function toggleUnitActive[\s\S]*dispatchGameAction/.test(uiSrc) && !/function toggleUnitActive[\s\S]*unit\.active\s*=/.test(uiSrc.split('// 保留旧函数别名')[0]), 'L22', gL, 'toggleUnitActive_ui_wrapper_dispatch_only');
     check(/SELECT_HERO/.test(dispatchSrc) && /SELL_UNIT/.test(dispatchSrc) && /TOGGLE_UNIT_ACTIVE/.test(dispatchSrc) && /CLOSE_SHOP/.test(dispatchSrc), 'L23', gL, 'dispatch_covers_state_changing_ui_actions');
     check(/function onCell[\s\S]*dispatchGameAction/.test(uiSrc) && !/function onCell[\s\S]*G\.selectedCell\s*=/.test(uiSrc.split('function showTT')[0]), 'L24', gL, 'onCell_sends_intent_only');
+    const battleSrc2 = readText('battle.js');
+    const terrainSrc2 = readText('terrain.js');
+    check(!/function\s+resolveTerrainOnEnter\s*\(/.test(battleSrc2) && /function\s+resolveTerrainOnEnter\s*\(/.test(terrainSrc2), 'L25', gL, 'resolveTerrainOnEnter_single_authoritative_definition');
+    ['index.html','test.js','gpt_test.js','playable_run.js','playable_day1.js'].forEach(function(file,idx){
+      var t = readText(file); var a=t.indexOf('battleLog.js'), b=t.indexOf('terrain.js');
+      check(a>=0 && b>=0 && a<b, 'L26_'+idx, gL, file+'_loads_battleLog_before_terrain', {type:(a>=0&&b>=0&&a<b)?'':'RUNTIME_FAIL', explanation:'battleLog='+a+' terrain='+b});
+    });
+    const boardSrc2 = readText('board.js');
+    check(boardSrc2.indexOf('function addBoardStateElement')<0 && boardSrc2.indexOf('function setCellAt')<0, 'L27', gL, 'boardState_dead_write_aliases_removed');
+    FRESH();
+    G.monsters=[{id:'gpt_trap_dead', name:'陷阱怪', hp:1, maxHp:1, atk:1, ap:3, pos:{r:4,c:4}, dead:false, el:null, gold:0}];
+    if(typeof syncBoardStateUnitsFromEntities==='function') syncBoardStateUnitsFromEntities();
+    addTrapLayers({r:4,c:4}, 'fire', 3);
+    resolveTerrainOnEnter(G.monsters[0], {r:4,c:4});
+    var occTrap = G.boardState.cells['4,4'].unitLayer.occupant;
+    var trapsTrap = G.boardState.cells['4,4'].terrainLayer.traps || [];
+    check(G.monsters[0].dead && !occTrap && trapsTrap.length===0, 'L28', gL, 'terrain_trap_kill_clears_boardState_unit_and_traps');
   })();
 
 

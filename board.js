@@ -137,14 +137,6 @@ function setBoardStateElement(pos, el, layers) {
   return true;
 }
 
-function addBoardStateElement(pos, el, layers) {
-  var cell = getBoardStateCell(pos);
-  if (!cell || !cell.elementLayer || !el) return false;
-  cell.elementLayer[el] = Math.min(MAX_STK || 99, (cell.elementLayer[el] || 0) + (layers || 0));
-  cell.meta.updatedAtTurn = G.coreVersion || 0;
-  return true;
-}
-
 function clearBoardStateElement(pos, el) {
   var cell = getBoardStateCell(pos);
   if (!cell || !cell.elementLayer) return false;
@@ -233,8 +225,20 @@ function syncBoardStateTerrainFromLegacy(pos) {
 
 function repairBoardStateFromLegacy() {
   // 仅用于 initGame / replay load / debug repair。正常战斗流程不得依赖它修正状态。
-  initBoardState();
+  // 修复版：不破坏性替换 G.boardState 对象；仅在缺失或尺寸变化时初始化结构，然后重填内容。
+  var rows = boardRows(), cols = boardCols();
+  if (!G.boardState || !G.boardState.cells || G.boardState.rows !== rows || G.boardState.cols !== cols) {
+    initBoardState(rows, cols);
+  }
   var bs = G.boardState;
+  Object.keys(bs.cells).forEach(function(key) {
+    var cell = bs.cells[key];
+    cell.unitLayer.occupant = null;
+    cell.terrainLayer.terrainType = null;
+    cell.terrainLayer.traps = [];
+    ['fire', 'water', 'wind', 'earth'].forEach(function(el) { cell.elementLayer[el] = 0; });
+    cell.meta.updatedAtTurn = G.coreVersion || 0;
+  });
   for (var key in bs.cells) {
     var parts = key.split(',').map(Number);
     var pos = { r: parts[0], c: parts[1] };
@@ -313,12 +317,5 @@ function exportBoardStateSnapshot() {
   return JSON.parse(JSON.stringify(G.boardState));
 }
 
-// 兼容旧名
+// 兼容旧名：仅保留只读 getCellAt，写入统一使用 setBoardStateUnit/setBoardStateElement/addBoardStateTrap。
 function getCellAt(pos) { return getBoardStateCell(pos); }
-function setCellAt(pos, layerName, value) {
-  var cell = getBoardStateCell(pos);
-  if (!cell) return false;
-  cell[layerName] = value;
-  cell.meta.updatedAtTurn = G.coreVersion || 0;
-  return true;
-}

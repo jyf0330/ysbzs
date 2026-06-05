@@ -15,6 +15,23 @@
   var ROOT = g.__YSBZS_ROOT__ || ((typeof __dirname !== 'undefined') ? __dirname : '.');
 
   var _cache = {};
+  g.__FALLBACK_HITS__ = g.__FALLBACK_HITS__ || {};
+  g.__STRICT_FALLBACK_ERRORS__ = g.__STRICT_FALLBACK_ERRORS__ || [];
+  g.__LEGACY_FALLBACK_POLICY__ = g.__LEGACY_FALLBACK_POLICY__ || (g.__YSBZS_STRICT_LEGACY__ ? 'strict' : 'warn');
+
+  function isLegacyFallbackStrictMode() {
+    return g.__LEGACY_FALLBACK_POLICY__ === 'strict';
+  }
+
+  function recordLegacyFallback(name, meta) {
+    if (!g.__FALLBACK_HITS__) g.__FALLBACK_HITS__ = {};
+    g.__FALLBACK_HITS__[name] = (g.__FALLBACK_HITS__[name] || 0) + 1;
+    var err = { name: name, meta: meta || null, strict: isLegacyFallbackStrictMode() };
+    if (!g.__STRICT_FALLBACK_ERRORS__) g.__STRICT_FALLBACK_ERRORS__ = [];
+    g.__STRICT_FALLBACK_ERRORS__.push(err);
+    if (isLegacyFallbackStrictMode()) throw new Error('legacy fallback hit: ' + name);
+    return err;
+  }
 
   // 浏览器运行时，从 __YSBZS_TABLES__ 读取预加载的 JSON
   var browserTables = g.__YSBZS_TABLES__ || {};
@@ -1118,6 +1135,7 @@
     // legacy 旧单位补全
     var legacyData = getLegacyData();
     var legacyUD = legacyData.unit_defs || {};
+    if (Object.keys(legacyUD).length > 0) recordLegacyFallback('merge_legacy_unit_defs', { count: Object.keys(legacyUD).length });
     Object.keys(legacyUD).forEach(function (k) {
       if (!merged[k]) merged[k] = legacyUD[k];
     });
@@ -1207,21 +1225,27 @@
   // ── Legacy 兼容全局（旧测试/旧代码引用，主路径不应使用）─
   var legacyData = getLegacyData();
   if (typeof MONSTER_TYPES === 'undefined' && legacyData.monster_types) {
+    recordLegacyFallback('legacy_global_monster_types', { count: Object.keys(legacyData.monster_types || {}).length });
     MONSTER_TYPES = legacyData.monster_types;
   }
   if (typeof DAY_WAVE_CONFIG === 'undefined' && legacyData.day_wave_config) {
+    recordLegacyFallback('legacy_global_day_wave_config', { count: Object.keys(legacyData.day_wave_config || {}).length });
     DAY_WAVE_CONFIG = legacyData.day_wave_config;
   }
   if (typeof DAY_ROUND_CONFIG === 'undefined' && legacyData.day_round_config) {
+    recordLegacyFallback('legacy_global_day_round_config', { count: Object.keys(legacyData.day_round_config || {}).length });
     DAY_ROUND_CONFIG = legacyData.day_round_config;
   }
   if (typeof REWARD_NODE_CONFIG === 'undefined' && legacyData.reward_node_config) {
+    recordLegacyFallback('legacy_global_reward_node_config', { count: Object.keys(legacyData.reward_node_config || {}).length });
     REWARD_NODE_CONFIG = legacyData.reward_node_config;
   }
   if (typeof SHOP_PRICE_CONFIG === 'undefined' && legacyData.shop_price_config) {
+    recordLegacyFallback('legacy_global_shop_price_config', { count: Object.keys(legacyData.shop_price_config || {}).length });
     SHOP_PRICE_CONFIG = legacyData.shop_price_config;
   }
   if (typeof UNIT_TIER_POOL === 'undefined' && legacyData.unit_tier_pool) {
+    recordLegacyFallback('legacy_global_unit_tier_pool', { count: Object.keys(legacyData.unit_tier_pool || {}).length });
     UNIT_TIER_POOL = legacyData.unit_tier_pool;
   }
   g.getExternalBattleConfig = function () { return loadJSON('battle_config.json'); };
@@ -1327,11 +1351,8 @@
   // ── 新增配置读取 ──────────────────────────────────────────
 
   /** fallback 命中计数器，测试可检查 */
-  g.__FALLBACK_HITS__ = {};
-
   function _fallbackWarn(name) {
-    if (!g.__FALLBACK_HITS__) g.__FALLBACK_HITS__ = {};
-    g.__FALLBACK_HITS__[name] = (g.__FALLBACK_HITS__[name] || 0) + 1;
+    recordLegacyFallback(name);
   }
 
   /** 获取地形/陷阱配置 */
@@ -1412,6 +1433,17 @@
   if (typeof calcUnitPrice === 'undefined' || typeof calcUnitPrice !== 'function') {
     calcUnitPrice = function(def) { return g.calcUnitPrice(def); };
   }
+  g.setLegacyFallbackStrictMode = function(enabled) {
+    g.__LEGACY_FALLBACK_POLICY__ = enabled ? 'strict' : 'warn';
+    return g.__LEGACY_FALLBACK_POLICY__;
+  };
+  g.getLegacyFallbackReport = function() {
+    return {
+      policy: g.__LEGACY_FALLBACK_POLICY__,
+      hits: Object.assign({}, g.__FALLBACK_HITS__ || {}),
+      errors: (g.__STRICT_FALLBACK_ERRORS__ || []).slice()
+    };
+  };
 
   // 按 unlock_day 分组后，对 day1~10 级联填充：某天无专属池时继承之前所有已解锁 Pal
   var externalOnlyPools = null;

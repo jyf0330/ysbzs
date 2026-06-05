@@ -1,3 +1,19 @@
+## 2026-06-04 — 架构风险前 5 项最小修复
+
+### 修复
+- `dispatch.js`：新增 `SELECT_EXPLOSION_CELL` / `CLEAR_EXPLOSION_CELL` / `BUY_CONSUMABLE` / `USE_BACKPACK_ITEM`，把 tooltip 选择、商店消耗品购买、背包物品使用并入统一玩家入口。
+- `ui.js`：`showTT`、`buyConsumable`、`useBackpackItem` 改为只发送交互意图，不再直接写 `G.explPos / G.gold / G.backpack / hero.hp`。
+- `battle.js`：新增 `writeBattleStructuredLog`，给怪物攻击/移动、召唤物移动/攻击、召唤生成补结构化日志双写；同时清理 8×8 残留的 `12/13` 边界判断。
+- `externalDataAdapter.js`：新增 legacy fallback strict mode，暴露 `setLegacyFallbackStrictMode` / `getLegacyFallbackReport`，并对 legacy merge / legacy global 注入 / runtime fallback 命中做结构化记录。
+- `dispatch.js`：背包元素瓶改走 `addElementLayers`，避免只写 `G.board` 不写 `G.elementCells` 的双真相源问题。
+
+### 测试
+- `test.js`：新增 7 项 ARCH 回归，覆盖 tooltip 入口、消耗品/背包入口、结构化日志、legacy strict mode、8×8 边界。
+- `node test.js`：514/514 通过
+- `node gpt_test.js`：465/465 通过
+- `node playable_day1.js`：通过
+- `node playable_run.js`：通过
+
 ## 2026-06-03 — 预览一致性修复（排除陷阱伤害干扰）
 
 ### 修复

@@ -868,14 +868,14 @@ function onCell(r,c){
 function showTT(r,c,e){
   if(G.phase!=='PLAYER')return;
   const bc=G.board[r][c]; if(!bc.el)return;
-  G.explPos={r,c}; refreshUI();
+  dispatchGameAction({ type:'SELECT_EXPLOSION_CELL', r:r, c:c });
   const dmg=explDmg(bc.stk);
   document.getElementById('ttc').innerHTML=`
     <div class="ttl"><b style="color:${EC[bc.el]}">${EL[bc.el]}元素格</b></div>
     <div class="ttl">层数：${bc.stk}</div>
     <div class="ttl">引爆伤害：${dmg}</div>
     <div class="ttl">范围：十字5格（含中心）</div>
-    <button class="ttc" onclick="hideTT();G.explPos=null;refreshUI()">关闭</button>
+    <button class="ttc" onclick="dispatchGameAction({type:'CLEAR_EXPLOSION_CELL'});hideTT()">关闭</button>
   `;
   const tt=document.getElementById('tt');
   const bnd=e.target.getBoundingClientRect();
@@ -1165,58 +1165,34 @@ function renderShop(){
 }
 
 function buyConsumable(itemId){
-  if(G.phase!=='SHOP')return;
-  const idx=G.shopItems.consumables.findIndex(c=>c.id===itemId);
-  if(idx===-1)return;
-  const item=G.shopItems.consumables[idx];
-  if(G.gold<item.cost){showMsg('💰 金币不足！');return;}
-  G.gold-=item.cost;
-  G.shopItems.consumables.splice(idx,1);
-  if(item.type==='coin_bag'){
-    G.gold+=3;
-    glog('💰 金币袋：获得3金币！');
-  } else if(item.type==='hp_potion'||item.type==='hp_potion2'){
-    G.backpack.push({...item,bpId:`bp_${G._bpCnt++}`});
-    glog(`📦 ${item.name} 放入背包，可在阵容区使用`);
-  } else if(item.type==='board_el'){
-    G.backpack.push({...item,bpId:`bp_${G._bpCnt++}`});
-    glog(`📦 ${item.name} 放入背包，可在战斗中使用`);
-  } else if(item.type==='el_up'||item.type==='el_up2'||item.type==='el_up3'||item.type==='tier_up'){
-    G.backpack.push({...item,bpId:`bp_${G._bpCnt++}`});
-    glog(`📦 ${item.name} 放入背包，可在阵容区装备到行动槽`);
+  if (typeof dispatchGameAction !== 'function') { showMsg('⚠️ dispatch 未加载，无法购买商品'); return { ok:false, errors:[{code:'DISPATCH_NOT_AVAILABLE'}] }; }
+  const r = dispatchGameAction({ type:'BUY_CONSUMABLE', itemId:itemId });
+  if (!r || !r.ok) {
+    const code = r && r.errors && r.errors[0] && r.errors[0].code;
+    if (code === 'GOLD_NOT_ENOUGH') showMsg('💰 金币不足！');
+    else if (code === 'WRONG_PHASE') showMsg('⚠️ 当前不在商店阶段');
+    else if (code === 'ITEM_NOT_SUPPORTED') showMsg('⚠️ 该商品暂未开放');
+    return r;
   }
   renderShop();
+  refreshUI(r && r.refresh && r.refresh.changedKeys || ['shop','gold','backpack']);
+  return r;
 }
 
 function useBackpackItem(bpId){
-  const idx=G.backpack.findIndex(b=>b.bpId===bpId);
-  if(idx===-1)return;
-  const item=G.backpack[idx];
-  if(item.type==='hp_potion'||item.type==='hp_potion2'){
-    const heal=item.type==='hp_potion'?5:10;
-    const heroes=Object.values(G.heroes).filter(h=>h.hp>0);
-    if(heroes.length===0){showMsg('没有存活的英雄！');return;}
-    const h=heroes[0];
-    const oldHp=h.hp;
-    h.hp=Math.min(h.hp+heal,h.maxHp);
-    const u=getUnitByHeroId(h.id); if(u)u.hp=h.hp;
-    glog(`💚 ${h.name} 恢复 ${h.hp-oldHp} HP（${h.hp}/${h.maxHp}）`);
-  } else if(item.type==='board_el'){
-    if(G.phase!=='PLAYER'){showMsg('只能在战斗阶段使用棋盘元素！');return;}
-    const empty=[];
-    for(let r=0;r<8;r++)for(let c=0;c<8;c++){
-      if(!G.board[r][c].el&&!monAt({r,c})&&!heroAt({r,c}))empty.push({r,c});
-    }
-    if(empty.length===0){showMsg('没有空格可以放置元素！');return;}
-    const pos=empty[ri(empty.length)];
-    addEl(pos,item.el||'fire');
-    glog(`🌱 在(${pos.r},${pos.c})放置1层${EL[item.el||'fire']}元素`);
-  } else {
-    showMsg('该物品功能开发中');
-    return;
+  if (typeof dispatchGameAction !== 'function') { showMsg('⚠️ dispatch 未加载，无法使用背包物品'); return { ok:false, errors:[{code:'DISPATCH_NOT_AVAILABLE'}] }; }
+  const r = dispatchGameAction({ type:'USE_BACKPACK_ITEM', bpId:bpId });
+  if (!r || !r.ok) {
+    const code = r && r.errors && r.errors[0] && r.errors[0].code;
+    if (code === 'NO_LIVING_HERO') showMsg('没有存活的英雄！');
+    else if (code === 'WRONG_PHASE') showMsg('只能在战斗阶段使用棋盘元素！');
+    else if (code === 'NO_EMPTY_CELL') showMsg('没有空格可以放置元素！');
+    else if (code === 'ITEM_NOT_SUPPORTED') showMsg('该物品功能开发中');
+    return r;
   }
-  G.backpack.splice(idx,1);
-  renderShop(); refreshUI();
+  renderShop();
+  refreshUI(r && r.refresh && r.refresh.changedKeys || ['backpack','heroes','boardState','elements','preview','board']);
+  return r;
 }
 
 function toggleUnitActive(instanceId){

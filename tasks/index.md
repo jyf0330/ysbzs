@@ -1,6 +1,6 @@
 # 当前任务总览
 
-updated_at: 2026-06-04 17:25
+updated_at: 2026-06-04 22:52
 
 ## 项目状态
 
@@ -26,12 +26,28 @@ updated_at: 2026-06-04 17:25
 | P1 模块拆分：preview.js | ✅ DONE | `0422d95` |
 | 预览一致性修复（排除陷阱干扰） | ✅ DONE | `6b7f485` |
 
+### ✅ 已完成
+
+| 任务 | 状态 | 提交 |
+|------|:----:|------|
+| 架构二次证据审计（只读） | ✅ DONE | 无提交 |
+| 商店 UI 首屏密度优化 | ✅ DONE | `e40dafb` |
+
 ### ⏸ 暂停
 
 | 任务 | 状态 |
 |------|:----:|
 | 商店界面设计文档编写 | PAUSED |
 | 商店 UI 首屏密度优化 | PAUSED |
+
+### 🚧 当前 ACTIVE Goal
+
+1. **架构风险前 5 项最小修复（READY_TO_VALIDATE）**
+   - dispatch 化长尾玩家入口，禁止 UI 直接改核心状态
+   - 统一关键战斗/商店结构化日志出口
+   - 增加 legacy fallback strict mode 与命中校验
+   - 清理 8×8 棋盘残留 `12/13` 边界
+   - 补真实入口回归测试，覆盖入口 → 状态 → 结构化日志 → 渲染
 
 ### ⏩ 下一推荐 Goal
 
@@ -50,7 +66,7 @@ data.js → rng.js → board.js → actions.js → elements.js
 
 ## 工作区状态
 
-当前 git status 含未提交改动：gpt_test.js / ui.js / index.html / preview.js / test.js / reports / recordings
+当前 git status 以实时命令结果为准；架构 top5 修复已完成主验证，等待决定是否顺手修旧 `e2e/smoke.js` selector 后再提交。
 
 ## 断线恢复规则
 

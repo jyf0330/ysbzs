@@ -1,10 +1,10 @@
 # 任务：商店 UI 首屏密度优化
 
 task_id: 2026-06-04_16-51_shop-ui-density-pass
-status: READY_TO_VALIDATE
+status: DONE
 priority: P0
 created_at: 2026-06-04 16:51
-updated_at: 2026-06-04 17:34
+updated_at: 2026-06-04 22:31
 
 ## 目标
 

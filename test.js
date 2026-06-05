@@ -53,6 +53,7 @@ if (useMultiFile) {
 
 // 屏蔽 DOM 渲染函数，只测逻辑
 const _realRender = render;
+const _realRenderShop = renderShop;
 const _realGlog = glog;
 render      = ()=>{};
 renderShop  = ()=>{};
@@ -103,10 +104,10 @@ function resetDomEl(id){
   return el;
 }
 function withRealUi(fn){
-  const oldRender=render, oldGlog=glog;
-  render=_realRender; glog=_realGlog;
+  const oldRender=render, oldRenderShop=renderShop, oldGlog=glog;
+  render=_realRender; renderShop=_realRenderShop; glog=_realGlog;
   try{ fn(); }
-  finally{ render=oldRender; glog=oldGlog; }
+  finally{ render=oldRender; renderShop=oldRenderShop; glog=oldGlog; }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4666,7 +4667,7 @@ group('架构统一：boardState / sync entry / seed RNG', ()=>{
 
   test('ARCH-22: dispatch 已覆盖剩余玩家交互 action', ()=>{
     var handlers = typeof __dispatchHandlers__ !== 'undefined' ? __dispatchHandlers__ : {};
-    ['SELECT_HERO','CLEAR_SELECTION','SELECT_CELL','SELECT_ACTION_SLOT','SET_ACTION_DIRECTION','UPDATE_ACTION_SLOT','SELL_UNIT','TOGGLE_UNIT_ACTIVE','ROLL_SHOP','SELECT_EVENT','CLOSE_SHOP','FREEZE_SHOP_ITEM'].forEach(function(a){
+    ['SELECT_HERO','CLEAR_SELECTION','SELECT_CELL','SELECT_ACTION_SLOT','SET_ACTION_DIRECTION','UPDATE_ACTION_SLOT','SELL_UNIT','TOGGLE_UNIT_ACTIVE','ROLL_SHOP','SELECT_EVENT','CLOSE_SHOP','FREEZE_SHOP_ITEM','SELECT_EXPLOSION_CELL','CLEAR_EXPLOSION_CELL','BUY_CONSUMABLE','USE_BACKPACK_ITEM'].forEach(function(a){
       assert.strictEqual(typeof handlers[a], 'function', 'dispatch handler missing: ' + a);
     });
   });
@@ -4736,6 +4737,86 @@ group('架构统一：boardState / sync entry / seed RNG', ()=>{
     const oldRef = G.boardState;
     repairBoardStateFromLegacy();
     assert.strictEqual(G.boardState, oldRef, 'repairBoardStateFromLegacy 不应替换已有 boardState 对象');
+  });
+
+  test('ARCH-29: showTT 只走 dispatch，不直接写 G.explPos', ()=>{
+    const src = showTT.toString();
+    const uiSrc = fs.readFileSync(path.join(__dirname, 'ui.js'), 'utf8');
+    assert.ok(src.includes('dispatchGameAction'), 'showTT 应调用 dispatchGameAction');
+    assert.ok(!src.includes('G.explPos='), 'showTT 不应直接写 G.explPos');
+    assert.ok(!uiSrc.includes("hideTT();G.explPos=null;refreshUI()"), 'tooltip 关闭按钮不应内联直改 G.explPos');
+  });
+
+  test('ARCH-30: buyConsumable / useBackpackItem wrapper 只走 dispatch', ()=>{
+    const buySrc = buyConsumable.toString();
+    const useSrc = useBackpackItem.toString();
+    assert.ok(buySrc.includes('dispatchGameAction'), 'buyConsumable 应走 dispatchGameAction');
+    assert.ok(!buySrc.includes('G.gold-='), 'buyConsumable 不应直接扣金币');
+    assert.ok(!buySrc.includes('G.backpack.push'), 'buyConsumable 不应直接写背包');
+    assert.ok(useSrc.includes('dispatchGameAction'), 'useBackpackItem 应走 dispatchGameAction');
+    assert.ok(!useSrc.includes('G.backpack.splice'), 'useBackpackItem 不应直接删背包物品');
+    assert.ok(!useSrc.includes('h.hp='), 'useBackpackItem 不应直接改英雄血量');
+    assert.ok(!useSrc.includes('addEl('), 'useBackpackItem 不应直接调用 addEl');
+  });
+
+  test('ARCH-31: buyConsumable 真实入口覆盖 状态/结构化日志/DOM', ()=>{
+    fresh();
+    G.phase = 'SHOP';
+    G.gold = 5;
+    G.shopItems.consumables = [{ id:'coin_arch', type:'coin_bag', cost:1, name:'金币袋' }];
+    resetDomEl('sg');
+    resetDomEl('scat');
+    withRealUi(()=>{
+      const r = buyConsumable('coin_arch');
+      assert.ok(r && r.ok, 'buyConsumable wrapper 应成功');
+    });
+    assert.strictEqual(G.gold, 7, '买金币袋后净增 2 金');
+    assert.ok((G.actionLog||[]).some(a=>a.logKey==='shop_buy_consumable'), '应写入结构化日志 shop_buy_consumable');
+    assert.strictEqual(String(document.getElementById('sg').textContent), '7', 'renderShop 应刷新金币 DOM');
+  });
+
+  test('ARCH-32: useBackpackItem 真实入口覆盖 状态/结构化日志/DOM', ()=>{
+    fresh();
+    setRngSeed(1);
+    G.phase = 'PLAYER';
+    G.backpack = [{ bpId:'bp_arch', type:'board_el', el:'fire', name:'火瓶' }];
+    resetDomEl('board');
+    withRealUi(()=>{
+      const r = useBackpackItem('bp_arch');
+      assert.ok(r && r.ok, 'useBackpackItem wrapper 应成功');
+    });
+    assert.strictEqual(G.backpack.length, 0, '使用后应移出背包');
+    assert.ok(Object.keys(G.elementCells||{}).length > 0, '应向棋盘写入元素');
+    assert.ok((G.actionLog||[]).some(a=>a.logKey==='use_backpack_item'), '应写入结构化日志 use_backpack_item');
+    assert.ok(document.getElementById('board').children.length >= 64, 'refreshUI 应渲染棋盘格');
+  });
+
+  test('ARCH-33: battle.js 不再残留 12/13 边界', ()=>{
+    const src = fs.readFileSync(path.join(__dirname, 'battle.js'), 'utf8');
+    assert.ok(!/<=\s*12|>=\s*13|>\s*12|Math\.min\(\s*12\s*,|Math\.max\(\s*12\s*,|<\s*13/.test(src), 'battle.js 不应再出现 8x8 之外的边界判断');
+  });
+
+  test('ARCH-34: 怪物攻击写入结构化日志', ()=>{
+    fresh();
+    G.monsters = [{id:'arch_log_m', name:'日志怪', hp:10, maxHp:10, atk:2, ap:3, pos:{r:5,c:0}, dead:false, el:null}];
+    G.heroes.ha.pos = {r:5,c:1};
+    if (typeof syncUnitsToHeroes === 'function') syncUnitsToHeroes();
+    if (typeof syncBoardStateUnitsFromEntities === 'function') syncBoardStateUnitsFromEntities();
+    const before = G.actionLog.length;
+    monsterAct(G.monsters[0]);
+    assert.ok(G.actionLog.length > before, 'monsterAct 后应新增日志');
+    assert.ok(G.actionLog.some(a=>a.logKey==='monster_attack'), '应写入结构化 monster_attack');
+  });
+
+  test('ARCH-35: legacy fallback strict mode 可拦截正式路径 fallback', ()=>{
+    fresh();
+    assert.strictEqual(typeof setLegacyFallbackStrictMode, 'function', '应暴露 strict mode 开关');
+    setLegacyFallbackStrictMode(true);
+    try {
+      assert.throws(()=>calcUnitPrice({}), /legacy fallback/i, 'strict mode 下 calcUnitPrice fallback 应抛错');
+    } finally {
+      setLegacyFallbackStrictMode(false);
+    }
   });
 
   test('ARCH-8: 核心文件 DOM 防回流扫描', ()=>{

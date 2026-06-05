@@ -22,6 +22,22 @@ function damageEnemyCastle(dmg, src) {
   if (G.enemyCastle.hp <= 0) checkGameOver();
 }
 
+function writeBattleStructuredLog(logKey, data, fallbackText) {
+  if (typeof writeStructuredLog === 'function') return writeStructuredLog(logKey, data, fallbackText);
+  if (!Array.isArray(G.actionLog)) G.actionLog = [];
+  var entry = {
+    type: String(logKey || 'battle_log').toUpperCase(),
+    logKey: logKey,
+    day: G.day,
+    phase: G.phase,
+    data: data || {},
+    desc: fallbackText || logKey
+  };
+  G.actionLog.push(entry);
+  if (fallbackText && typeof glog === 'function') glog(fallbackText);
+  return entry;
+}
+
 // ========== 伤害处理 ==========
 
 function dealDmg(monster, dmg, src) {
@@ -388,7 +404,16 @@ function monsterActRanged(m, behavior) {
   if (target && dist <= range) {
     target.hp = Math.max(0, target.hp - m.atk);
     var unit = getUnitByHeroId(target.id); if (unit) unit.hp = target.hp;
-    glog('🏹 ' + m.name + '远程攻击' + target.name + '！-' + m.atk + '（' + target.hp + '/' + target.maxHp + '）');
+    writeBattleStructuredLog('monster_attack', {
+      monster_id: m.id || m.typeId,
+      monster_name: m.name,
+      attack_type: 'ranged',
+      target_type: 'hero',
+      target_id: target.id,
+      target_name: target.name,
+      damage: m.atk,
+      after_hp: target.hp
+    }, '🏹 ' + m.name + '远程攻击' + target.name + '！-' + m.atk + '（' + target.hp + '/' + target.maxHp + '）');
     if (target.hp <= 0) { glog('💔 ' + target.name + '倒下了！'); checkGameOver(); }
     return;
   }
@@ -406,27 +431,93 @@ function monsterActDefault(m, behavior) {
       if (lh) {
         lh.hp = Math.max(0, lh.hp - m.atk);
         const lu = getUnitByHeroId(lh.id); if (lu) lu.hp = lh.hp;
-        glog(`👾 ${m.name}攻击${lh.name}！-${m.atk}（${lh.hp}/${lh.maxHp}）`);
+        writeBattleStructuredLog('monster_attack', {
+          monster_id: m.id || m.typeId,
+          monster_name: m.name,
+          attack_type: 'melee',
+          target_type: 'hero',
+          target_id: lh.id,
+          target_name: lh.name,
+          damage: m.atk,
+          after_hp: lh.hp
+        }, `👾 ${m.name}攻击${lh.name}！-${m.atk}（${lh.hp}/${lh.maxHp}）`);
         if (lh.hp <= 0) { glog(`💔 ${lh.name}倒下了！`); checkGameOver(); }
         ap -= 1; break;
       }
-      if (playerCastleAt(lp)) { damagePlayerCastle(m.atk, `${m.name}攻击`); ap -= 1; break; }
+      if (playerCastleAt(lp)) {
+        damagePlayerCastle(m.atk, `${m.name}攻击`);
+        writeBattleStructuredLog('monster_attack', {
+          monster_id: m.id || m.typeId,
+          monster_name: m.name,
+          attack_type: 'melee',
+          target_type: 'player_castle',
+          damage: m.atk,
+          after_hp: G.playerCastle && G.playerCastle.hp
+        }, `👾 ${m.name}攻击我方城堡！-${m.atk}（${G.playerCastle.hp}/${G.playerCastle.maxHp}）`);
+        ap -= 1; break;
+      }
       const ls = summonAt(lp);
-      if (ls) { damageSummon(ls, m.atk); glog(`👾 ${m.name}攻击${ls.name}！-${m.atk}（${ls.dead ? 0 : ls.hp}/${ls.maxHp}）`); ap -= 1; break; }
+      if (ls) {
+        damageSummon(ls, m.atk);
+        writeBattleStructuredLog('monster_attack', {
+          monster_id: m.id || m.typeId,
+          monster_name: m.name,
+          attack_type: 'melee',
+          target_type: 'summon',
+          target_id: ls.id,
+          target_name: ls.name,
+          damage: m.atk,
+          after_hp: ls.dead ? 0 : ls.hp
+        }, `👾 ${m.name}攻击${ls.name}！-${m.atk}（${ls.dead ? 0 : ls.hp}/${ls.maxHp}）`);
+        ap -= 1; break;
+      }
     }
     const dp = { r: m.pos.r + 1, c: m.pos.c };
-    if (dp.r <= 12) {
+    if (inBoard(dp)) {
       const dh = heroAt(dp);
       if (dh) {
         dh.hp = Math.max(0, dh.hp - m.atk);
         const du = getUnitByHeroId(dh.id); if (du) du.hp = dh.hp;
-        glog(`👾 ${m.name}攻击${dh.name}！-${m.atk}（${dh.hp}/${dh.maxHp}）`);
+        writeBattleStructuredLog('monster_attack', {
+          monster_id: m.id || m.typeId,
+          monster_name: m.name,
+          attack_type: 'melee',
+          target_type: 'hero',
+          target_id: dh.id,
+          target_name: dh.name,
+          damage: m.atk,
+          after_hp: dh.hp
+        }, `👾 ${m.name}攻击${dh.name}！-${m.atk}（${dh.hp}/${dh.maxHp}）`);
         if (dh.hp <= 0) { glog(`💔 ${dh.name}倒下了！`); checkGameOver(); }
         ap -= 1; break;
       }
-      if (playerCastleAt(dp)) { damagePlayerCastle(m.atk, `${m.name}攻击`); ap -= 1; break; }
+      if (playerCastleAt(dp)) {
+        damagePlayerCastle(m.atk, `${m.name}攻击`);
+        writeBattleStructuredLog('monster_attack', {
+          monster_id: m.id || m.typeId,
+          monster_name: m.name,
+          attack_type: 'melee',
+          target_type: 'player_castle',
+          damage: m.atk,
+          after_hp: G.playerCastle && G.playerCastle.hp
+        }, `👾 ${m.name}攻击我方城堡！-${m.atk}（${G.playerCastle.hp}/${G.playerCastle.maxHp}）`);
+        ap -= 1; break;
+      }
       const ds = summonAt(dp);
-      if (ds) { damageSummon(ds, m.atk); glog(`👾 ${m.name}攻击${ds.name}！-${m.atk}（${ds.dead ? 0 : ds.hp}/${ds.maxHp}）`); ap -= 1; break; }
+      if (ds) {
+        damageSummon(ds, m.atk);
+        writeBattleStructuredLog('monster_attack', {
+          monster_id: m.id || m.typeId,
+          monster_name: m.name,
+          attack_type: 'melee',
+          target_type: 'summon',
+          target_id: ds.id,
+          target_name: ds.name,
+          damage: m.atk,
+          after_hp: ds.dead ? 0 : ds.hp
+        }, `👾 ${m.name}攻击${ds.name}！-${m.atk}（${ds.dead ? 0 : ds.hp}/${ds.maxHp}）`);
+        ap -= 1; break;
+      }
     }
     const np = nextMoveFromPos(m.pos, m);
     if (!np) break;
@@ -437,8 +528,7 @@ function monsterActDefault(m, behavior) {
       var occupant = (typeof cloneBoardStateOccupant === 'function') ? cloneBoardStateOccupant('monster', m, { refId: m.id, side: 'enemy' }) : null;
       m.pos = np;
       if (typeof moveBoardStateUnit === 'function') moveBoardStateUnit(fromPos, np, occupant);
-      glog(`👾 ${m.name}→(${np.r},${np.c})`);
-      if (typeof writeStructuredLog === 'function') writeStructuredLog('monster_move_step', { monster_id: m.id || m.typeId, monster_name: m.name, from_cell: fromPos, to_cell: np, ap_before: ap, ap_after: ap - 1 }, null);
+      writeBattleStructuredLog('monster_move_step', { monster_id: m.id || m.typeId, monster_name: m.name, from_cell: fromPos, to_cell: np, ap_before: ap, ap_after: ap - 1 }, `👾 ${m.name}→(${np.r},${np.c})`);
       if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_monster_move_step', { actor: m, monster: m, from: fromPos, to: np });
       ap -= 1;
       resolveTerrainOnEnter(m, np);
@@ -468,7 +558,7 @@ function nextMoveFromPos(pos, m) {
   if (dr < 0) moves.push({ r: pos.r - 1, c: pos.c });
   if (dr > 0) moves.push({ r: pos.r + 1, c: pos.c });
   for (const mv of moves) {
-    if (mv.r < 0 || mv.r > 12 || mv.c < 0 || mv.c > 12) continue;
+    if (!inBoard(mv)) continue;
     if (!monAt(mv) && !summonAt(mv) && !heroAt(mv) && !castleAt(mv)) return mv;
   }
   return null;
@@ -498,7 +588,7 @@ function simMonAct(m) {
       if (ls) { atkCell = { r: lp.r, c: lp.c }; atkTarget = ls; stopReason = 'attack'; break; }
     }
     const dp = { r: pos.r + 1, c: pos.c };
-    if (dp.r <= 12) {
+    if (inBoard(dp)) {
       const dh = heroAt(dp);
       if (dh) { atkCell = { r: dp.r, c: dp.c }; atkTarget = dh; stopReason = 'attack'; break; }
       if (playerCastleAt(dp)) { atkCell = { r: dp.r, c: dp.c }; atkTarget = { id: 'playerCastle', name: '我方城堡', hp: G.playerCastle.hp }; stopReason = 'attack'; break; }
@@ -608,9 +698,19 @@ function runSummonActions() {
   const attackAdjacent = (s) => {
     for (const d of dirs) {
       const tp = { r: s.pos.r + d.r, c: s.pos.c + d.c };
-      if (tp.r < 0 || tp.r > 12 || tp.c < 0 || tp.c > 12) continue;
+      if (!inBoard(tp)) continue;
       const m = monAt(tp);
-      if (m) { dealDmg(m, s.atk, `${s.name}攻击`); glog(`💧 ${s.name}(ATK${s.atk})→${m.name} -${s.atk}`); return true; }
+      if (m) {
+        dealDmg(m, s.atk, `${s.name}攻击`);
+        writeBattleStructuredLog('summon_attack', {
+          summon_id: s.id,
+          summon_name: s.name,
+          target_id: m.id,
+          target_name: m.name,
+          damage: s.atk
+        }, `💧 ${s.name}(ATK${s.atk})→${m.name} -${s.atk}`);
+        return true;
+      }
     }
     return false;
   };
@@ -630,7 +730,20 @@ function runSummonActions() {
       { r: s.pos.r + rowStep, c: s.pos.c },
     ].filter(p => p.r >= 0 && p.r < 8 && p.c >= 0 && p.c < 8);
     const np = candidates.find(p => !monAt(p) && !heroAt(p) && !castleAt(p) && !summonAt(p) && !hasElementAt(p));
-    if (np) { var fromS={r:s.pos.r,c:s.pos.c}; var occS=(typeof cloneBoardStateOccupant==='function')?cloneBoardStateOccupant('summon', s, {side:'player'}):null; s.pos = np; if(typeof moveBoardStateUnit==='function')moveBoardStateUnit(fromS,np,occS); moved++; glog(`💧 ${s.name}→(${np.r},${np.c})`); if (attackAdjacent(s)) acted++; }
+    if (np) {
+      var fromS={r:s.pos.r,c:s.pos.c};
+      var occS=(typeof cloneBoardStateOccupant==='function')?cloneBoardStateOccupant('summon', s, {side:'player'}):null;
+      s.pos = np;
+      if(typeof moveBoardStateUnit==='function')moveBoardStateUnit(fromS,np,occS);
+      moved++;
+      writeBattleStructuredLog('summon_move', {
+        summon_id: s.id,
+        summon_name: s.name,
+        from_cell: fromS,
+        to_cell: np
+      }, `💧 ${s.name}→(${np.r},${np.c})`);
+      if (attackAdjacent(s)) acted++;
+    }
   });
   if (acted > 0 || moved > 0) glog(`🌀 召唤物行动：${moved} 次移动 / ${acted} 次攻击`);
   checkAllDead();
@@ -664,11 +777,17 @@ function execSummonFromCellSkill(hero, slot) {
     ? calcSproutSpawnParams(hero, slot, chosen)
     : { count: slot.count || 1, hp: 3 + (slot.bonusHp || 0) + Math.min(chosen.layers, 2), maxHp: 5 + (slot.bonusHp || 0) + Math.min(chosen.layers, 2) };
   for (let i = 0; i < spawnPlan.count; i++) {
-    const offset = i === 0 ? bestCell : { r: bestCell.r, c: Math.min(12, bestCell.c + i) };
+    const offset = i === 0 ? bestCell : { r: bestCell.r, c: Math.min(boardCols() - 1, bestCell.c + i) };
     if (summonAt(offset) || heroAt(offset) || monAt(offset) || castleAt(offset)) continue;
     spawnSummon(hero.id, offset, { el: chosen.el || 'water', hp: spawnPlan.hp, maxHp: spawnPlan.maxHp, name: chosen.el === 'water' ? '水灵' : '芽灵' });
   }
-  glog(`🌱 ${hero.name}在(${bestCell.r},${bestCell.c})召唤${EL[chosen.el || 'water']}单位！`);
+  writeBattleStructuredLog('summon_spawn', {
+    hero_id: hero.id,
+    hero_name: hero.name,
+    source_cell: bestCell,
+    element: chosen.el || 'water',
+    summon_count: spawnPlan.count
+  }, `🌱 ${hero.name}在(${bestCell.r},${bestCell.c})召唤${EL[chosen.el || 'water']}单位！`);
   return true;
 }
 

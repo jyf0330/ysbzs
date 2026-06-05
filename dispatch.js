@@ -131,6 +131,18 @@
     return handlers.SELECT_CELL(payload);
   });
 
+  register('SELECT_EXPLOSION_CELL', function(payload) {
+    var r = payload.r, c = payload.c;
+    if (r == null || c == null) return { ok: false, errors: [{ code: 'INVALID_POS' }] };
+    G.explPos = { r: r, c: c };
+    return { ok: true, stateChanges: { explPos: G.explPos }, refresh: { scope: 'battle', changedKeys: ['preview','board'] } };
+  });
+
+  register('CLEAR_EXPLOSION_CELL', function() {
+    G.explPos = null;
+    return { ok: true, stateChanges: { explPos: null }, refresh: { scope: 'battle', changedKeys: ['preview','board'] } };
+  });
+
   // ========= BUY_UNIT =========
     register("BUY_UNIT", function(payload) {
     var itemId = payload.itemId;
@@ -222,6 +234,105 @@
     if (set.has(itemId)) set.delete(itemId);
     else set.add(itemId);
     return { ok: true, refresh: { scope: 'shop', changedKeys: ['shop'] } };
+  });
+
+  register('BUY_CONSUMABLE', function(payload) {
+    if (G.phase !== 'SHOP') return { ok: false, errors: [{ code: 'WRONG_PHASE' }] };
+    var itemId = payload.itemId;
+    var list = G.shopItems && G.shopItems.consumables || [];
+    var idx = list.findIndex(function(c) { return c.id === itemId; });
+    if (idx < 0) return { ok: false, errors: [{ code: 'ITEM_NOT_FOUND' }] };
+    var item = list[idx];
+    if (G.gold < item.cost) return { ok: false, errors: [{ code: 'GOLD_NOT_ENOUGH' }] };
+    G.gold -= item.cost;
+    list.splice(idx, 1);
+    var msg = '';
+    if (item.type === 'coin_bag') {
+      G.gold += 3;
+      msg = '💰 金币袋：获得3金币！';
+    } else if (item.type === 'hp_potion' || item.type === 'hp_potion2') {
+      G.backpack.push(Object.assign({}, item, { bpId: 'bp_' + (G._bpCnt++) }));
+      msg = '📦 ' + item.name + ' 放入背包，可在阵容区使用';
+    } else if (item.type === 'board_el') {
+      G.backpack.push(Object.assign({}, item, { bpId: 'bp_' + (G._bpCnt++) }));
+      msg = '📦 ' + item.name + ' 放入背包，可在战斗中使用';
+    } else if (item.type === 'el_up' || item.type === 'el_up2' || item.type === 'el_up3' || item.type === 'tier_up') {
+      G.backpack.push(Object.assign({}, item, { bpId: 'bp_' + (G._bpCnt++) }));
+      msg = '📦 ' + item.name + ' 放入背包，可在阵容区装备到行动槽';
+    } else {
+      return { ok: false, errors: [{ code: 'ITEM_NOT_SUPPORTED' }] };
+    }
+    if (typeof writeStructuredLog === 'function') {
+      writeStructuredLog('shop_buy_consumable', {
+        item_id: item.id,
+        item_type: item.type,
+        cost: item.cost,
+        gold_after: G.gold
+      }, msg);
+    }
+    return {
+      ok: true,
+      stateChanges: { gold: G.gold, backpackCount: (G.backpack || []).length },
+      refresh: { scope: 'shop', changedKeys: ['shop','gold','backpack'] }
+    };
+  });
+
+  register('USE_BACKPACK_ITEM', function(payload) {
+    var bpId = payload.bpId;
+    var list = G.backpack || [];
+    var idx = list.findIndex(function(item) { return item.bpId === bpId; });
+    if (idx < 0) return { ok: false, errors: [{ code: 'BACKPACK_ITEM_NOT_FOUND' }] };
+    var item = list[idx];
+    var msg = '';
+    var changedKeys = ['backpack'];
+    if (item.type === 'hp_potion' || item.type === 'hp_potion2') {
+      var heal = item.type === 'hp_potion' ? 5 : 10;
+      var heroes = Object.values(G.heroes || {}).filter(function(h) { return h.hp > 0; });
+      if (heroes.length === 0) return { ok: false, errors: [{ code: 'NO_LIVING_HERO' }] };
+      var hero = heroes[0];
+      var oldHp = hero.hp;
+      hero.hp = Math.min(hero.maxHp, hero.hp + heal);
+      var unit = typeof getUnitByHeroId === 'function' ? getUnitByHeroId(hero.id) : null;
+      if (unit) unit.hp = hero.hp;
+      msg = '💚 ' + hero.name + ' 恢复 ' + (hero.hp - oldHp) + ' HP（' + hero.hp + '/' + hero.maxHp + '）';
+      changedKeys = ['backpack','heroes','boardState'];
+      if (typeof writeStructuredLog === 'function') {
+        writeStructuredLog('use_backpack_item', {
+          item_id: item.bpId,
+          item_type: item.type,
+          target_hero_id: hero.id,
+          before_hp: oldHp,
+          after_hp: hero.hp
+        }, msg);
+      }
+    } else if (item.type === 'board_el') {
+      if (G.phase !== 'PLAYER') return { ok: false, errors: [{ code: 'WRONG_PHASE' }] };
+      var empty = [];
+      for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+        if (!G.board[r][c].el && !monAt({ r: r, c: c }) && !heroAt({ r: r, c: c }) && !castleAt({ r: r, c: c }) && !summonAt({ r: r, c: c })) empty.push({ r: r, c: c });
+      }
+      if (empty.length === 0) return { ok: false, errors: [{ code: 'NO_EMPTY_CELL' }] };
+      var pos = empty[ri(empty.length)];
+      addElementLayers(pos, item.el || 'fire', 1);
+      msg = '🌱 在(' + pos.r + ',' + pos.c + ')放置1层' + EL[item.el || 'fire'] + '元素';
+      changedKeys = ['backpack','boardState','elements','preview','board'];
+      if (typeof writeStructuredLog === 'function') {
+        writeStructuredLog('use_backpack_item', {
+          item_id: item.bpId,
+          item_type: item.type,
+          element: item.el || 'fire',
+          target_cell: pos
+        }, msg);
+      }
+    } else {
+      return { ok: false, errors: [{ code: 'ITEM_NOT_SUPPORTED' }] };
+    }
+    list.splice(idx, 1);
+    return {
+      ok: true,
+      stateChanges: { backpackCount: list.length },
+      refresh: { scope: 'battle', changedKeys: changedKeys }
+    };
   });
 
   // ========= MOVE_HERO =========

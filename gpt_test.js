@@ -172,7 +172,7 @@ function envDataCheck() {
   const er = DATA.exportRep || {};
   const rc = er.row_counts || {};
   const counts = [
-    ['pal_master', 60], ['action_template', 180], ['action_growth', 720],
+    ['pal_master', 127], ['action_template', 180], ['action_growth', 720],
     ['shop_source', 60], ['event_master', 16], ['relic_master', 17],
   ];
   for (const [k, v] of counts) {
@@ -182,21 +182,21 @@ function envDataCheck() {
 
   // ── pal_units ──
   const palMaster = arrFrom(DATA.palUnits, ['pal_master']);
-  check(palMaster.length === 60, `DAT02_pal_count`, prefix, `pal_master count=60`,
-    { type: palMaster.length === 60 ? '' : 'DATA_MISSING', explanation: `实际 ${palMaster.length}` });
+  check(palMaster.length === 127, `DAT02_pal_count`, prefix, `pal_master count=127`,
+    { type: palMaster.length === 127 ? '' : 'DATA_MISSING', explanation: `实际 ${palMaster.length}` });
   REPORT.metrics.palCount = palMaster.length;
 
   const palStats = arrFrom(DATA.palUnits, ['pal_stats_ysbzs']);
-  check(palStats.length === 60, `DAT03_pal_stats`, prefix, `pal_stats_ysbzs count=60`,
-    { type: palStats.length === 60 ? '' : 'DATA_MISSING', explanation: `实际 ${palStats.length}` });
+  check(palStats.length === 127, `DAT03_pal_stats`, prefix, `pal_stats_ysbzs count=127`,
+    { type: palStats.length === 127 ? '' : 'DATA_MISSING', explanation: `实际 ${palStats.length}` });
 
   const palUsage = arrFrom(DATA.palUnits, ['unit_usage']);
   check(palUsage.length === 60, `DAT04_pal_usage`, prefix, `unit_usage count=60`,
     { type: palUsage.length === 60 ? '' : 'DATA_MISSING', explanation: `实际 ${palUsage.length}` });
 
   const palIdSet = new Set(palMaster.map(x => String(firstValue(x, ['unit_id', 'pal_id', 'id']))));
-  check(palIdSet.size === 60, `DAT05_pal_id_set`, prefix, `pal unit_id 数量=60`,
-    { type: palIdSet.size === 60 ? '' : 'DATA_MISSING', explanation: `实际 ${palIdSet.size}` });
+  check(palIdSet.size === 127, `DAT05_pal_id_set`, prefix, `pal unit_id 数量=127`,
+    { type: palIdSet.size === 127 ? '' : 'DATA_MISSING', explanation: `实际 ${palIdSet.size}` });
 
   // sizes
   const sizes = [...new Set(palMaster.map(x => String(firstValue(x, ['size', 'unit_size']))).filter(Boolean))];

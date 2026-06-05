@@ -1,10 +1,14 @@
 # 任务：敌人出题导向的数据表整理
 
 task_id: 2026-06-05_16-21_enemy-led-planner-tables
-status: READY_TO_VALIDATE
+status: DONE
 priority: P0
 created_at: 2026-06-05 16:21
-updated_at: 2026-06-06 01:14
+updated_at: 2026-06-06 12:30
+done_at: 2026-06-06
+commits:
+  - e775d7a (feat(data): 宠物主表换源为策划表 127 只 + 面板全量同步)
+  - 7af3b92 (docs(data): 敌人出题包 — 怪物模板/波次/机制ID/事件表 + pal_source 映射)
 
 ## 目标
 

@@ -1,0 +1,1323 @@
+event_master:
+- event_id: evt_coupon_stall
+  name: 优惠摊
+  day_min: 1
+  day_max: 3
+  spawn_node: night_shop_extra
+  event_type: 经济/商店优惠
+  base_weight: 92
+  reward_tier: 青铜
+  build_bias:
+  - 通用经济
+  target_problem_tags:
+  - 前期刷新平滑
+  condition_ids: []
+  notes: Day1-Day3 的前期经济缓冲事件。
+- event_id: evt_training_yard
+  name: 训练场
+  day_min: 1
+  day_max: 4
+  spawn_node: midday_event
+  event_type: 成长/训练
+  base_weight: 84
+  reward_tier: 青铜
+  build_bias:
+  - 面板补强
+  target_problem_tags:
+  - 早期站场
+  - 早期输出平滑
+  condition_ids:
+  - cond_has_owned_unit
+  notes: 当前只做简单数值训练，不拉出复杂剧情。
+- event_id: evt_targeted_recruit
+  name: 定向招募处
+  day_min: 2
+  day_max: 5
+  spawn_node: night_shop_extra
+  event_type: 招募/定向补位
+  base_weight: 72
+  reward_tier: 白银
+  build_bias:
+  - 召唤
+  - 坦克/破盾
+  target_problem_tags:
+  - 召唤滚雪球
+  - 厚盾守门
+  condition_ids: []
+  notes: 单行事件，真正的二选一发生在参数化候选组里。
+- event_id: evt_merge_broker
+  name: 合成中介
+  day_min: 3
+  day_max: 6
+  spawn_node: midday_event
+  event_type: 成长/复制升阶
+  base_weight: 64
+  reward_tier: 白银
+  build_bias:
+  - 复制
+  - 升阶
+  target_problem_tags:
+  - 中期战力抬升
+  condition_ids:
+  - cond_has_owned_bronze_unit
+  notes: 偏 Bazaar 的成长交易节点。
+- event_id: evt_salvage_counter
+  name: 回收柜台
+  day_min: 2
+  day_max: 6
+  spawn_node: midday_event
+  event_type: 经济/换购
+  base_weight: 58
+  reward_tier: 白银
+  build_bias:
+  - 阵容纠偏
+  target_problem_tags:
+  - 卡手修正
+  - 经济回收
+  condition_ids:
+  - cond_has_owned_bronze_or_silver_unit
+  notes: 交出旧件换现金，并给下一夜店一个纠偏位。
+- event_id: evt_element_workbench
+  name: 元素工坊
+  day_min: 3
+  day_max: 7
+  spawn_node: midday_event
+  event_type: 构筑工坊
+  base_weight: 60
+  reward_tier: 白银
+  build_bias:
+  - 火系构筑
+  - 召唤构筑
+  target_problem_tags:
+  - 中前期 build 定向
+  condition_ids:
+  - cond_fire_or_summon_bias
+  notes: 只卖 build 方向，不直接替代下一战情报。
+- event_id: evt_gold_caravan
+  name: 黄金商队
+  day_min: 4
+  day_max: 5
+  spawn_node: elite_reward_event
+  event_type: 精英奖励/黄金预览
+  base_weight: 44
+  reward_tier: 黄金预览
+  build_bias:
+  - 黄金预览
+  - 经济
+  target_problem_tags:
+  - Day4 首见黄金
+  condition_ids:
+  - cond_gold_preview_window
+  notes: 严格卡在 Day4-Day5，保证 Day4 首次见金。
+- event_id: evt_bounty_contract
+  name: 悬赏合同
+  day_min: 3
+  day_max: 6
+  spawn_node: midday_event
+  event_type: 风险回报/改下一战
+  base_weight: 48
+  reward_tier: 精英奖励
+  build_bias:
+  - 爆发
+  - 穿盾
+  - 控制
+  target_problem_tags:
+  - 精英守门
+  - 先攻
+  - 坚固
+  - 连击
+  condition_ids:
+  - cond_next_battle_exists
+  notes: 少量尖塔味风险回报，但保持计算化。
+- event_id: evt_wave_scout
+  name: 波次侦察
+  day_min: 3
+  day_max: 8
+  spawn_node: midday_event
+  event_type: 情报/对策
+  base_weight: 54
+  reward_tier: 白银
+  build_bias:
+  - 按题备货
+  target_problem_tags:
+  - 光环
+  - 偷奖
+  - 召唤
+  - 回盾
+  condition_ids:
+  - cond_next_battle_exists
+  notes: 不直绑波次行 ID，只读题型标签和参数。
+- event_id: evt_breaker_shop
+  name: 破坚商店
+  day_min: 4
+  day_max: 8
+  spawn_node: night_shop_extra
+  event_type: 对策商店
+  base_weight: 58
+  reward_tier: 黄金前置
+  build_bias:
+  - 破甲
+  - 穿盾
+  - 高单发
+  target_problem_tags:
+  - 坚固
+  - 护盾家族
+  condition_ids: []
+  notes: 固定指向坚固/护盾题的答案位。
+- event_id: evt_summon_contract
+  name: 召唤合同
+  day_min: 4
+  day_max: 7
+  spawn_node: midday_event
+  event_type: 召唤成长
+  base_weight: 50
+  reward_tier: 黄金前置
+  build_bias:
+  - 召唤
+  target_problem_tags:
+  - 召唤滚雪球
+  condition_ids:
+  - cond_next_battle_exists
+  notes: 一个选招募，一个选临时 buff。
+- event_id: evt_pressure_loan
+  name: 压力借贷
+  day_min: 5
+  day_max: 8
+  spawn_node: night_shop_extra
+  event_type: 经济/风险回报
+  base_weight: 40
+  reward_tier: 黄金
+  build_bias:
+  - 贪经济
+  target_problem_tags:
+  - 5 回合清场压力
+  condition_ids:
+  - cond_next_battle_exists
+  notes: 纯量化的借贷契约，不做剧情利息。
+- event_id: evt_diamond_outpost
+  name: 钻石前哨
+  day_min: 6
+  day_max: 7
+  spawn_node: boss_reward_event
+  event_type: Boss奖励/钻石预览
+  base_weight: 34
+  reward_tier: 钻石预览
+  build_bias:
+  - 钻石预览
+  - 经济
+  target_problem_tags:
+  - Day6 首见钻石
+  condition_ids:
+  - cond_diamond_preview_window
+  notes: 严格卡在 Day6-Day7，保证 Day6 首次见钻。
+- event_id: evt_final_supply
+  name: 终局补给
+  day_min: 8
+  day_max: 10
+  spawn_node: boss_reward_event
+  event_type: Boss补给/终局对策
+  base_weight: 32
+  reward_tier: 终局
+  build_bias:
+  - Boss 对策
+  target_problem_tags:
+  - Boss 护盾
+  - Boss 坚固
+  - 压城
+  condition_ids:
+  - cond_boss_counter_window
+  - cond_next_battle_exists
+  notes: 用 3 选 1 的候选包承接 Boss 对策，而不是纯送卡。
+event_options:
+- event_id: evt_coupon_stall
+  option_id: opt_free_refresh
+  option_text: 领 1 次免费刷新
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: 本店刷新免费 1 次
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 通用经济
+  target_problem: 前期刷新平滑
+  mechanic_ids: []
+  params:
+    free_refresh: 1
+    scope: current_shop
+  remarks: 旧 event_config 无 free_refresh 执行器，需挂 shop_phase_refresh_credit。
+- event_id: evt_coupon_stall
+  option_id: opt_take_coin
+  option_text: 放弃刷新，直接拿 +1 金
+  cost_type: free
+  cost_value: 0
+  integration_level: bridge_now
+  immediate_reward: +1 金
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 通用经济
+  target_problem: 前期现金补足
+  mechanic_ids: []
+  params:
+    gold: 1
+  remarks: 可直接桥接成旧 gain_gold 奖励。
+- event_id: evt_training_yard
+  option_id: opt_hp_drill
+  option_text: 训练生命：1 个已拥有单位 HP+6
+  cost_type: free
+  cost_value: 0
+  integration_level: bridge_now
+  immediate_reward: 1 个已拥有单位 HP+6
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 站场补强
+  target_problem: 前期承击不足
+  mechanic_ids: []
+  params:
+    target_scope: owned_unit
+    buff_stat: hp
+    amount: 6
+    selection_mode: choose_one
+  remarks: 旧 buff_pal 可桥接，但当前旧逻辑默认随机目标；若要点选需后续 adapter。
+- event_id: evt_training_yard
+  option_id: opt_atk_drill
+  option_text: 训练攻击：1 个已拥有单位 ATK+2
+  cost_type: free
+  cost_value: 0
+  integration_level: bridge_now
+  immediate_reward: 1 个已拥有单位 ATK+2
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 输出补强
+  target_problem: 前期击杀线不足
+  mechanic_ids: []
+  params:
+    target_scope: owned_unit
+    buff_stat: atk
+    amount: 2
+    selection_mode: choose_one
+  remarks: 旧 buff_pal 可桥接，但若要精确点选目标仍需 adapter。
+- event_id: evt_targeted_recruit
+  option_id: opt_choose_lane
+  option_text: 从【召唤/友召增益】与【坦克/破盾】两组里选 1 组，生成 1 个正常价候选位
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: 同店额外出现 1 个定向正常价候选位
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 召唤或前排解题补位
+  target_problem: 召唤滚雪球 / 厚盾守门
+  mechanic_ids:
+  - mech_summon
+  - mech_opening_shield
+  - mech_shielded_fragile
+  params:
+    selection_mode: choose_group_then_spawn
+    candidate_groups:
+    - group_key: summon_aura_offer
+      tag_filter:
+      - 召唤
+      - 友召增益
+    - group_key: tank_break_shield_offer
+      tag_filter:
+      - 坦克
+      - 破盾
+      - 穿盾
+    candidate_count: 1
+    price_mode: normal
+  remarks: 旧 event_config 不能表达带分组选择的定向商店位。
+- event_id: evt_merge_broker
+  option_id: opt_copy_bronze
+  option_text: 花 3 金复制 1 个青铜已拥有单位
+  cost_type: gold
+  cost_value: 3
+  integration_level: bridge_now
+  immediate_reward: 复制 1 个青铜已拥有单位
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 复制成长
+  target_problem: 中期战力抬升
+  mechanic_ids: []
+  params:
+    target_scope: owned_unit
+    required_grade: 青铜
+    effect: copy_owned_unit
+    count: 1
+  remarks: 旧 gain_pal(copy_owned_pal) 可桥接，但默认随机已拥有单位；精确选中青铜仍需 adapter。
+- event_id: evt_merge_broker
+  option_id: opt_upgrade_bronze
+  option_text: 花 4 金把 1 个青铜升到白银
+  cost_type: gold
+  cost_value: 4
+  integration_level: bridge_now
+  immediate_reward: 1 个青铜单位升到白银
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 升阶成长
+  target_problem: 中期战力抬升
+  mechanic_ids: []
+  params:
+    target_scope: owned_unit
+    from_grade: 青铜
+    to_grade: 白银
+    effect: upgrade_owned_unit
+  remarks: 旧 upgrade_pal 可桥接，但旧逻辑默认随机已拥有单位。
+- event_id: evt_salvage_counter
+  option_id: opt_salvage_unit
+  option_text: 交出 1 个青铜/白银单位，拿 4 金并给下一夜店 1 个纠偏候选位
+  cost_type: owned_unit
+  cost_value: 1 个青铜/白银单位
+  integration_level: adapter_needed
+  immediate_reward: +4 金
+  delayed_reward: 下一夜店预留 1 个纠偏候选位
+  next_battle_modifier: —
+  build_direction: 换购 / 阵容纠偏
+  target_problem: 卡手修正
+  mechanic_ids: []
+  params:
+    sacrifice_scope: owned_unit
+    allowed_grades:
+    - 青铜
+    - 白银
+    gold: 4
+    reserve_offer:
+      pool_key: salvage_repair_offer
+      mirror_sold_unit_role: true
+      candidate_count: 1
+      target_node: next_night_shop
+  remarks: 旧事件系统没有“先交单位再生成镜像候选位”的组合。
+- event_id: evt_element_workbench
+  option_id: opt_fire_lane
+  option_text: 锁定 1 个火系构筑候选位（-1 金）
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: 同店额外出现 1 个火系构筑候选位（-1 金）
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 火系构筑
+  target_problem: 火伤害闭环
+  mechanic_ids: []
+  params:
+    pool_key: fire_build_offer
+    tag_filter:
+    - 火
+    - 输出
+    - 爆发
+    candidate_count: 1
+    price_delta: -1
+  remarks: 火系 build 当前没有对应旧事件 reward_type，保留未来 shop adapter。
+- event_id: evt_element_workbench
+  option_id: opt_summon_lane
+  option_text: 锁定 1 个召唤构筑候选位（-1 金）
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: 同店额外出现 1 个召唤构筑候选位（-1 金）
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 召唤构筑
+  target_problem: 召唤滚雪球
+  mechanic_ids:
+  - mech_summon
+  params:
+    pool_key: summon_build_offer
+    tag_filter:
+    - 召唤
+    - 友召增益
+    - 场地
+    candidate_count: 1
+    price_delta: -1
+  remarks: 定向折扣位需要扩展商店候选注入器。
+- event_id: evt_gold_caravan
+  option_id: opt_reserve_gold
+  option_text: 花 2 金预留 1 个黄金候选到下一夜店
+  cost_type: gold
+  cost_value: 2
+  integration_level: adapter_needed
+  immediate_reward: 解锁黄金预览
+  delayed_reward: 下一夜店预留 1 个黄金候选位
+  next_battle_modifier: —
+  build_direction: 黄金预览 / 中期成长
+  target_problem: Day4 首见黄金
+  mechanic_ids: []
+  params:
+    preview_pool_key: gold_preview_candidates
+    grade_filter:
+    - 黄金
+    unlock_pool_preview: 1
+    reserve_offer:
+      pool_key: gold_preview_candidates
+      candidate_count: 1
+      target_node: next_night_shop
+  remarks: Day4 首次见黄金的关键事件，旧事件系统无预留候选位能力。
+- event_id: evt_gold_caravan
+  option_id: opt_take_gold
+  option_text: 放弃预留，直接拿 +3 金
+  cost_type: free
+  cost_value: 0
+  integration_level: bridge_now
+  immediate_reward: +3 金
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 直接经济
+  target_problem: 黄金前夜现金补足
+  mechanic_ids: []
+  params:
+    gold: 3
+  remarks: 可直接桥接成旧 gain_gold 奖励。
+- event_id: evt_bounty_contract
+  option_id: opt_accept_contract
+  option_text: 签下悬赏合同：下一战加 1 个精英压力包，5 回合内清场 +3 金
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: —
+  delayed_reward: 5 回合内清场 +3 金
+  next_battle_modifier: 下一战追加 1 个精英压力包
+  build_direction: 爆发 / 穿盾 / 控制
+  target_problem: 先攻 / 坚固 / 连击精英守门
+  mechanic_ids:
+  - mech_first_strike
+  - mech_firm_threshold
+  - mech_multi_hit
+  params:
+    next_battle_modifier:
+      modifier_key: elite_pressure_pack_plus_one
+      package_mechanic_refs:
+      - mech_first_strike
+      - mech_firm_threshold
+      - mech_multi_hit
+    clear_bonus:
+      clear_by_turn: 5
+      reward_type: gold
+      amount: 3
+  remarks: 未来挂点分两段：战斗前插压力包，战斗结算时判 5 回合清场奖励。
+- event_id: evt_wave_scout
+  option_id: opt_scout_and_counter
+  option_text: 预览下一战 2 个主要题型，并给下一夜店塞 1 个对应对策位
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: 预览下一战 2 个主要题型标签
+  delayed_reward: 下一夜店追加 1 个对应对策位
+  next_battle_modifier: 只读预览，不改数值
+  build_direction: 按题备货
+  target_problem: 光环 / 偷奖 / 召唤 / 回盾等下一战前二题型
+  mechanic_ids:
+  - mech_aura
+  - mech_steal_reward
+  - mech_summon
+  - mech_shield_regen
+  - mech_multi_hit
+  - mech_break_castle
+  params:
+    preview_next_battle:
+      top_problem_count: 2
+      source: next_wave_problem_tags
+    spawn_counter_offer:
+      strategy: map_next_wave_top2_to_counter_tags
+      candidate_count: 1
+      target_node: next_night_shop
+  remarks: 明确只引用题型标签和量化参数，不绑定现有波次表行 ID。
+- event_id: evt_breaker_shop
+  option_id: opt_breaker_offer
+  option_text: 花 2 金，额外出现 1 个破甲/穿盾/高单发对策位
+  cost_type: gold
+  cost_value: 2
+  integration_level: adapter_needed
+  immediate_reward: 同店额外出现 1 个破坚对策位
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 破甲 / 穿盾 / 高单发
+  target_problem: 坚固 / 护盾家族
+  mechanic_ids:
+  - mech_firm_threshold
+  - mech_firm_glancing
+  - mech_opening_shield
+  - mech_shield_regen
+  - mech_shield_refresh
+  - mech_shielded_fragile
+  - mech_shield_to_attack
+  params:
+    pool_key: breaker_counter_offer
+    tag_filter:
+    - 破甲
+    - 穿盾
+    - 高单发
+    candidate_count: 1
+    price_delta: 0
+  remarks: 高单发 是本轮明确约定的新标签；需要在后续 shop adapter 里识别。
+- event_id: evt_summon_contract
+  option_id: opt_recruit_summon
+  option_text: 花 1 金招募 1 个召唤系候选
+  cost_type: gold
+  cost_value: 1
+  integration_level: adapter_needed
+  immediate_reward: 同店额外出现 1 个召唤系候选位
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 召唤构筑
+  target_problem: 召唤滚雪球
+  mechanic_ids:
+  - mech_summon
+  params:
+    pool_key: summon_contract_offer
+    tag_filter:
+    - 召唤
+    - 友召增益
+    candidate_count: 1
+    price_delta: 0
+  remarks: 与元素工坊不同，这里不做折扣，只做低成本直招。
+- event_id: evt_summon_contract
+  option_id: opt_temp_summon_buff
+  option_text: 改拿下一战召唤物临时强化（ATK+1 HP+6）
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: —
+  delayed_reward: 下一战我方召唤物 ATK+1 HP+6
+  next_battle_modifier: 下一战临时召唤 buff
+  build_direction: 召唤构筑
+  target_problem: 召唤滚雪球
+  mechanic_ids:
+  - mech_summon
+  params:
+    temp_summon_buff:
+      atk: 1
+      hp: 6
+      duration: next_battle_only
+  remarks: 未来挂 pre_battle_buff_to_summons；旧 event_config 无临时召唤 buff。
+- event_id: evt_pressure_loan
+  option_id: opt_take_loan
+  option_text: 立刻拿 +5 金；若下一战未在 5 回合内清场，战后额外失去 4 城堡血
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: +5 金
+  delayed_reward: 未在 5 回合内清场则战后 -4 城堡血
+  next_battle_modifier: 失败惩罚挂账
+  build_direction: 贪经济 / 赌清场
+  target_problem: 5 回合清场压力
+  mechanic_ids:
+  - mech_break_castle
+  params:
+    gold: 5
+    failure_penalty:
+      fail_if_not_cleared_by_turn: 5
+      penalty_type: castle_hp
+      amount: 4
+  remarks: 清场失败惩罚与金币收益必须在下一战后一起结算。
+- event_id: evt_diamond_outpost
+  option_id: opt_reserve_diamond
+  option_text: 花 4 金预留 1 个钻石候选到下一夜店
+  cost_type: gold
+  cost_value: 4
+  integration_level: adapter_needed
+  immediate_reward: 解锁钻石预览
+  delayed_reward: 下一夜店预留 1 个钻石候选位
+  next_battle_modifier: —
+  build_direction: 钻石预览 / 后期成长
+  target_problem: Day6 首见钻石
+  mechanic_ids: []
+  params:
+    preview_pool_key: diamond_preview_candidates
+    grade_filter:
+    - 钻石
+    unlock_pool_preview: 1
+    reserve_offer:
+      pool_key: diamond_preview_candidates
+      candidate_count: 1
+      target_node: next_night_shop
+  remarks: Day6 首见钻石的关键事件，旧事件系统无预留候选位能力。
+- event_id: evt_diamond_outpost
+  option_id: opt_take_gold
+  option_text: 放弃预留，直接拿 +4 金
+  cost_type: free
+  cost_value: 0
+  integration_level: bridge_now
+  immediate_reward: +4 金
+  delayed_reward: —
+  next_battle_modifier: —
+  build_direction: 后期经济
+  target_problem: 钻石前夜现金补足
+  mechanic_ids: []
+  params:
+    gold: 4
+  remarks: 可直接桥接成旧 gain_gold 奖励。
+- event_id: evt_final_supply
+  option_id: opt_counter_bundle
+  option_text: 开启 3 选 1 的 Boss 对策候选包（爆发 / 穿盾 / 控制）
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: 开启 3 选 1 Boss 对策候选包
+  delayed_reward: 所选候选加入下一夜店
+  next_battle_modifier: —
+  build_direction: Boss 对策
+  target_problem: Boss 护盾 / 坚固 / 压城
+  mechanic_ids:
+  - mech_firm_threshold
+  - mech_opening_shield
+  - mech_shield_regen
+  - mech_multi_hit
+  - mech_break_castle
+  params:
+    boss_counter_bundle:
+      bundle_key: boss_counter_bundle
+      roles:
+      - 爆发
+      - 穿盾
+      - 控制
+      candidate_count: 3
+      choose_count: 1
+      target_node: next_night_shop
+  remarks: 事件本身只开包，真正选择发生在候选包内部。
+- event_id: evt_final_supply
+  option_id: opt_preview_boss
+  option_text: 预览 Boss 题型，并立即拿 +2 金
+  cost_type: free
+  cost_value: 0
+  integration_level: adapter_needed
+  immediate_reward: 预览 Boss 题型并 +2 金
+  delayed_reward: —
+  next_battle_modifier: Boss 题型只读预览
+  build_direction: Boss 情报
+  target_problem: Boss 护盾 / 坚固 / 压城
+  mechanic_ids:
+  - mech_firm_threshold
+  - mech_opening_shield
+  - mech_shield_regen
+  - mech_multi_hit
+  - mech_break_castle
+  params:
+    preview_next_battle:
+      top_problem_count: 3
+      source: next_boss_problem_tags
+    gold: 2
+  remarks: 含预览效果，不能直接回填旧 gain_gold-only 事件。
+event_effects:
+- effect_id: evt_coupon_stall__opt_free_refresh__eff_01
+  event_id: evt_coupon_stall
+  option_id: opt_free_refresh
+  effect_type: free_refresh
+  timing: shop_phase
+  integration_level: adapter_needed
+  future_hook: shop_phase_refresh_credit
+  params:
+    free_refresh: 1
+    scope: current_shop
+- effect_id: evt_coupon_stall__opt_take_coin__eff_01
+  event_id: evt_coupon_stall
+  option_id: opt_take_coin
+  effect_type: grant_gold
+  timing: immediate
+  integration_level: bridge_now
+  future_hook: legacy_gain_gold
+  params:
+    amount: 1
+- effect_id: evt_training_yard__opt_hp_drill__eff_01
+  event_id: evt_training_yard
+  option_id: opt_hp_drill
+  effect_type: buff_owned_unit
+  timing: immediate
+  integration_level: bridge_now
+  future_hook: event_select_owned_unit_buff
+  params:
+    target_scope: owned_unit
+    buff_stat: hp
+    amount: 6
+    selection_mode: choose_one
+- effect_id: evt_training_yard__opt_atk_drill__eff_01
+  event_id: evt_training_yard
+  option_id: opt_atk_drill
+  effect_type: buff_owned_unit
+  timing: immediate
+  integration_level: bridge_now
+  future_hook: event_select_owned_unit_buff
+  params:
+    target_scope: owned_unit
+    buff_stat: atk
+    amount: 2
+    selection_mode: choose_one
+- effect_id: evt_targeted_recruit__opt_choose_lane__eff_01
+  event_id: evt_targeted_recruit
+  option_id: opt_choose_lane
+  effect_type: spawn_targeted_shop_offer
+  timing: shop_phase
+  integration_level: adapter_needed
+  future_hook: shop_phase_inject_offer
+  params:
+    selection_mode: choose_group_then_spawn
+    candidate_groups:
+    - group_key: summon_aura_offer
+      tag_filter:
+      - 召唤
+      - 友召增益
+    - group_key: tank_break_shield_offer
+      tag_filter:
+      - 坦克
+      - 破盾
+      - 穿盾
+    candidate_count: 1
+    price_mode: normal
+- effect_id: evt_merge_broker__opt_copy_bronze__eff_01
+  event_id: evt_merge_broker
+  option_id: opt_copy_bronze
+  effect_type: copy_owned_unit
+  timing: immediate
+  integration_level: bridge_now
+  future_hook: event_select_owned_unit_copy
+  params:
+    target_scope: owned_unit
+    required_grade: 青铜
+    effect: copy_owned_unit
+    count: 1
+- effect_id: evt_merge_broker__opt_upgrade_bronze__eff_01
+  event_id: evt_merge_broker
+  option_id: opt_upgrade_bronze
+  effect_type: upgrade_owned_unit
+  timing: immediate
+  integration_level: bridge_now
+  future_hook: event_select_owned_unit_upgrade
+  params:
+    target_scope: owned_unit
+    from_grade: 青铜
+    to_grade: 白银
+    effect: upgrade_owned_unit
+- effect_id: evt_salvage_counter__opt_salvage_unit__eff_01
+  event_id: evt_salvage_counter
+  option_id: opt_salvage_unit
+  effect_type: grant_gold
+  timing: immediate
+  integration_level: adapter_needed
+  future_hook: legacy_gain_gold
+  params:
+    amount: 4
+- effect_id: evt_salvage_counter__opt_salvage_unit__eff_02
+  event_id: evt_salvage_counter
+  option_id: opt_salvage_unit
+  effect_type: reserve_future_offer
+  timing: next_night_shop
+  integration_level: adapter_needed
+  future_hook: shop_phase_reserve_offer_after_salvage
+  params:
+    pool_key: salvage_repair_offer
+    mirror_sold_unit_role: true
+    candidate_count: 1
+    target_node: next_night_shop
+- effect_id: evt_element_workbench__opt_fire_lane__eff_01
+  event_id: evt_element_workbench
+  option_id: opt_fire_lane
+  effect_type: discount_targeted_offer
+  timing: shop_phase
+  integration_level: adapter_needed
+  future_hook: shop_phase_inject_discount_offer
+  params:
+    pool_key: fire_build_offer
+    tag_filter:
+    - 火
+    - 输出
+    - 爆发
+    candidate_count: 1
+    price_delta: -1
+- effect_id: evt_element_workbench__opt_summon_lane__eff_01
+  event_id: evt_element_workbench
+  option_id: opt_summon_lane
+  effect_type: discount_targeted_offer
+  timing: shop_phase
+  integration_level: adapter_needed
+  future_hook: shop_phase_inject_discount_offer
+  params:
+    pool_key: summon_build_offer
+    tag_filter:
+    - 召唤
+    - 友召增益
+    - 场地
+    candidate_count: 1
+    price_delta: -1
+- effect_id: evt_gold_caravan__opt_reserve_gold__eff_01
+  event_id: evt_gold_caravan
+  option_id: opt_reserve_gold
+  effect_type: unlock_pool_preview
+  timing: immediate
+  integration_level: adapter_needed
+  future_hook: shop_phase_unlock_preview_pool
+  params:
+    preview_pool_key: gold_preview_candidates
+    grade_filter:
+    - 黄金
+- effect_id: evt_gold_caravan__opt_reserve_gold__eff_02
+  event_id: evt_gold_caravan
+  option_id: opt_reserve_gold
+  effect_type: reserve_future_offer
+  timing: next_night_shop
+  integration_level: adapter_needed
+  future_hook: shop_phase_reserve_offer
+  params:
+    pool_key: gold_preview_candidates
+    candidate_count: 1
+    target_node: next_night_shop
+- effect_id: evt_gold_caravan__opt_take_gold__eff_01
+  event_id: evt_gold_caravan
+  option_id: opt_take_gold
+  effect_type: grant_gold
+  timing: immediate
+  integration_level: bridge_now
+  future_hook: legacy_gain_gold
+  params:
+    amount: 3
+- effect_id: evt_bounty_contract__opt_accept_contract__eff_01
+  event_id: evt_bounty_contract
+  option_id: opt_accept_contract
+  effect_type: add_next_battle_modifier
+  timing: before_next_battle
+  integration_level: adapter_needed
+  future_hook: pre_battle_apply_modifier
+  params:
+    modifier_key: elite_pressure_pack_plus_one
+    package_mechanic_refs:
+    - mech_first_strike
+    - mech_firm_threshold
+    - mech_multi_hit
+- effect_id: evt_bounty_contract__opt_accept_contract__eff_02
+  event_id: evt_bounty_contract
+  option_id: opt_accept_contract
+  effect_type: set_clear_bonus
+  timing: after_next_battle
+  integration_level: adapter_needed
+  future_hook: post_battle_clear_bonus_resolution
+  params:
+    clear_by_turn: 5
+    reward_type: gold
+    amount: 3
+- effect_id: evt_wave_scout__opt_scout_and_counter__eff_01
+  event_id: evt_wave_scout
+  option_id: opt_scout_and_counter
+  effect_type: preview_next_battle
+  timing: immediate
+  integration_level: adapter_needed
+  future_hook: shop_phase_preview_next_battle
+  params:
+    top_problem_count: 2
+    source: next_wave_problem_tags
+- effect_id: evt_wave_scout__opt_scout_and_counter__eff_02
+  event_id: evt_wave_scout
+  option_id: opt_scout_and_counter
+  effect_type: spawn_targeted_shop_offer
+  timing: next_night_shop
+  integration_level: adapter_needed
+  future_hook: shop_phase_spawn_counter_offer_from_preview
+  params:
+    strategy: map_next_wave_top2_to_counter_tags
+    candidate_count: 1
+    target_node: next_night_shop
+- effect_id: evt_breaker_shop__opt_breaker_offer__eff_01
+  event_id: evt_breaker_shop
+  option_id: opt_breaker_offer
+  effect_type: spawn_targeted_shop_offer
+  timing: shop_phase
+  integration_level: adapter_needed
+  future_hook: shop_phase_inject_offer
+  params:
+    pool_key: breaker_counter_offer
+    tag_filter:
+    - 破甲
+    - 穿盾
+    - 高单发
+    candidate_count: 1
+    price_delta: 0
+- effect_id: evt_summon_contract__opt_recruit_summon__eff_01
+  event_id: evt_summon_contract
+  option_id: opt_recruit_summon
+  effect_type: spawn_targeted_shop_offer
+  timing: shop_phase
+  integration_level: adapter_needed
+  future_hook: shop_phase_inject_offer
+  params:
+    pool_key: summon_contract_offer
+    tag_filter:
+    - 召唤
+    - 友召增益
+    candidate_count: 1
+    price_delta: 0
+- effect_id: evt_summon_contract__opt_temp_summon_buff__eff_01
+  event_id: evt_summon_contract
+  option_id: opt_temp_summon_buff
+  effect_type: grant_temp_summon_buff
+  timing: before_next_battle
+  integration_level: adapter_needed
+  future_hook: pre_battle_buff_to_summons
+  params:
+    atk: 1
+    hp: 6
+    duration: next_battle_only
+- effect_id: evt_pressure_loan__opt_take_loan__eff_01
+  event_id: evt_pressure_loan
+  option_id: opt_take_loan
+  effect_type: grant_gold
+  timing: immediate
+  integration_level: adapter_needed
+  future_hook: legacy_gain_gold
+  params:
+    amount: 5
+- effect_id: evt_pressure_loan__opt_take_loan__eff_02
+  event_id: evt_pressure_loan
+  option_id: opt_take_loan
+  effect_type: set_failure_penalty
+  timing: after_next_battle
+  integration_level: adapter_needed
+  future_hook: post_battle_failure_penalty_resolution
+  params:
+    fail_if_not_cleared_by_turn: 5
+    penalty_type: castle_hp
+    amount: 4
+- effect_id: evt_diamond_outpost__opt_reserve_diamond__eff_01
+  event_id: evt_diamond_outpost
+  option_id: opt_reserve_diamond
+  effect_type: unlock_pool_preview
+  timing: immediate
+  integration_level: adapter_needed
+  future_hook: shop_phase_unlock_preview_pool
+  params:
+    preview_pool_key: diamond_preview_candidates
+    grade_filter:
+    - 钻石
+- effect_id: evt_diamond_outpost__opt_reserve_diamond__eff_02
+  event_id: evt_diamond_outpost
+  option_id: opt_reserve_diamond
+  effect_type: reserve_future_offer
+  timing: next_night_shop
+  integration_level: adapter_needed
+  future_hook: shop_phase_reserve_offer
+  params:
+    pool_key: diamond_preview_candidates
+    candidate_count: 1
+    target_node: next_night_shop
+- effect_id: evt_diamond_outpost__opt_take_gold__eff_01
+  event_id: evt_diamond_outpost
+  option_id: opt_take_gold
+  effect_type: grant_gold
+  timing: immediate
+  integration_level: bridge_now
+  future_hook: legacy_gain_gold
+  params:
+    amount: 4
+- effect_id: evt_final_supply__opt_counter_bundle__eff_01
+  event_id: evt_final_supply
+  option_id: opt_counter_bundle
+  effect_type: spawn_targeted_shop_offer
+  timing: next_night_shop
+  integration_level: adapter_needed
+  future_hook: shop_phase_spawn_bundle_offer
+  params:
+    bundle_key: boss_counter_bundle
+    roles:
+    - 爆发
+    - 穿盾
+    - 控制
+    candidate_count: 3
+    choose_count: 1
+    target_node: next_night_shop
+- effect_id: evt_final_supply__opt_preview_boss__eff_01
+  event_id: evt_final_supply
+  option_id: opt_preview_boss
+  effect_type: preview_next_battle
+  timing: immediate
+  integration_level: adapter_needed
+  future_hook: shop_phase_preview_next_battle
+  params:
+    top_problem_count: 3
+    source: next_boss_problem_tags
+- effect_id: evt_final_supply__opt_preview_boss__eff_02
+  event_id: evt_final_supply
+  option_id: opt_preview_boss
+  effect_type: grant_gold
+  timing: immediate
+  integration_level: adapter_needed
+  future_hook: legacy_gain_gold
+  params:
+    amount: 2
+event_conditions:
+- condition_id: cond_has_owned_unit
+  condition_type: owned_unit_count_min
+  param_key: min_count
+  param_value: 1
+  note: 需要至少 1 个已拥有单位，才能做训练、复制、升级等事件。
+- condition_id: cond_has_owned_bronze_unit
+  condition_type: owned_unit_grade_any
+  param_key: grade
+  param_value: 青铜
+  note: 需要至少 1 个青铜单位，供复制或升阶。
+- condition_id: cond_has_owned_bronze_or_silver_unit
+  condition_type: owned_unit_grade_any
+  param_key: grade_list
+  param_value:
+  - 青铜
+  - 白银
+  note: 需要至少 1 个青铜或白银单位，供回收换购。
+- condition_id: cond_fire_or_summon_bias
+  condition_type: build_bias_any
+  param_key: bias_tags
+  param_value:
+  - 火
+  - 召唤
+  note: 工坊类事件优先给火系或召唤构筑路线。
+- condition_id: cond_next_battle_exists
+  condition_type: next_battle_exists
+  param_key: required
+  param_value: true
+  note: 预览、加压、失败惩罚等效果都必须绑定下一战。
+- condition_id: cond_gold_preview_window
+  condition_type: day_range
+  param_key: days
+  param_value:
+  - 4
+  - 5
+  note: 黄金预览事件只在 Day4-Day5 出现，确保 Day4 首次见金。
+- condition_id: cond_diamond_preview_window
+  condition_type: day_range
+  param_key: days
+  param_value:
+  - 6
+  - 7
+  note: 钻石预览事件只在 Day6-Day7 出现，确保 Day6 首次见钻。
+- condition_id: cond_boss_counter_window
+  condition_type: day_range
+  param_key: days
+  param_value:
+  - 8
+  - 9
+  - 10
+  note: 终局补给只在 Boss 压力明确的后 3 天出现。
+bridge_current_event_config:
+- event_id: evt_coupon_stall
+  option_id: opt_take_coin
+  bridge_mode: exact
+  bridge_note: 直接映射为旧 gain_gold。
+  event_master:
+    event_id: evt_coupon_stall
+    name: 优惠摊
+    event_kind: choice
+    min_day: 1
+    max_day: 3
+    tags: 经济,早期,商店
+    base_weight: 92
+    event_count_slot: shop_extra
+    refresh_with_shop: false
+    repeatable: true
+  event_option:
+    event_id: evt_coupon_stall
+    option_id: opt_take_coin
+    option_text: 放弃刷新，直接拿 +1 金
+    option_type: choice
+    cost_type: free
+    cost_value: 0
+    reward_group: reward_evt_coupon_stall_opt_take_coin
+  event_reward:
+  - reward_group: reward_evt_coupon_stall_opt_take_coin
+    reward_type: gain_gold
+    pool_id: direct_gold
+    amount: 1
+    quality_hint: +1金
+  event_condition: []
+- event_id: evt_training_yard
+  option_id: opt_hp_drill
+  bridge_mode: approx_random_owned_unit
+  bridge_note: 旧 buff_pal 能表达 HP+6，但默认随机 owned_pal；若要点选则升级为 adapter。
+  event_master:
+    event_id: evt_training_yard
+    name: 训练场
+    event_kind: choice
+    min_day: 1
+    max_day: 4
+    tags: 成长,训练,数值
+    base_weight: 84
+    event_count_slot: shop_extra
+    refresh_with_shop: false
+    repeatable: true
+  event_option:
+    event_id: evt_training_yard
+    option_id: opt_hp_drill
+    option_text: 训练生命：1 个已拥有单位 HP+6
+    option_type: choice
+    cost_type: free
+    cost_value: 0
+    reward_group: reward_evt_training_yard_opt_hp_drill
+  event_reward:
+  - reward_group: reward_evt_training_yard_opt_hp_drill
+    reward_type: buff_pal
+    pool_id: owned_pal
+    amount: 6
+    quality_hint: hp+6
+  event_condition:
+  - condition_id: cond_has_owned_unit
+    condition_type: owned_unit_count_min
+    param_key: min_count
+    param_value: 1
+    note: 至少有 1 个已拥有单位
+- event_id: evt_training_yard
+  option_id: opt_atk_drill
+  bridge_mode: approx_random_owned_unit
+  bridge_note: 旧 buff_pal 能表达 ATK+2，但默认随机 owned_pal；若要点选则升级为 adapter。
+  event_master:
+    event_id: evt_training_yard
+    name: 训练场
+    event_kind: choice
+    min_day: 1
+    max_day: 4
+    tags: 成长,训练,数值
+    base_weight: 84
+    event_count_slot: shop_extra
+    refresh_with_shop: false
+    repeatable: true
+  event_option:
+    event_id: evt_training_yard
+    option_id: opt_atk_drill
+    option_text: 训练攻击：1 个已拥有单位 ATK+2
+    option_type: choice
+    cost_type: free
+    cost_value: 0
+    reward_group: reward_evt_training_yard_opt_atk_drill
+  event_reward:
+  - reward_group: reward_evt_training_yard_opt_atk_drill
+    reward_type: buff_pal
+    pool_id: owned_pal
+    amount: 2
+    quality_hint: atk+2
+  event_condition:
+  - condition_id: cond_has_owned_unit
+    condition_type: owned_unit_count_min
+    param_key: min_count
+    param_value: 1
+    note: 至少有 1 个已拥有单位
+- event_id: evt_merge_broker
+  option_id: opt_copy_bronze
+  bridge_mode: approx_random_owned_unit
+  bridge_note: 旧 gain_pal(copy_owned_pal) 可表达复制，但默认随机 owned_pal，且不检查青铜限制。
+  event_master:
+    event_id: evt_merge_broker
+    name: 合成中介
+    event_kind: choice
+    min_day: 3
+    max_day: 6
+    tags: 成长,复制,宠物
+    base_weight: 64
+    event_count_slot: shop_extra
+    refresh_with_shop: false
+    repeatable: true
+  event_option:
+    event_id: evt_merge_broker
+    option_id: opt_copy_bronze
+    option_text: 花 3 金复制 1 个青铜已拥有单位
+    option_type: choice
+    cost_type: gold
+    cost_value: 3
+    reward_group: reward_evt_merge_broker_opt_copy_bronze
+  event_reward:
+  - reward_group: reward_evt_merge_broker_opt_copy_bronze
+    reward_type: gain_pal
+    pool_id: copy_owned_pal
+    amount: 1
+    quality_hint: 复制
+  event_condition:
+  - condition_id: cond_has_owned_bronze_unit
+    condition_type: owned_unit_grade_any
+    param_key: grade
+    param_value: 青铜
+    note: 至少有 1 个青铜单位
+- event_id: evt_merge_broker
+  option_id: opt_upgrade_bronze
+  bridge_mode: approx_random_owned_unit
+  bridge_note: 旧 upgrade_pal 可表达升阶，但默认随机 owned_pal，且不检查青铜限制。
+  event_master:
+    event_id: evt_merge_broker
+    name: 合成中介
+    event_kind: choice
+    min_day: 3
+    max_day: 6
+    tags: 成长,升级,宠物
+    base_weight: 64
+    event_count_slot: shop_extra
+    refresh_with_shop: false
+    repeatable: true
+  event_option:
+    event_id: evt_merge_broker
+    option_id: opt_upgrade_bronze
+    option_text: 花 4 金把 1 个青铜升到白银
+    option_type: choice
+    cost_type: gold
+    cost_value: 4
+    reward_group: reward_evt_merge_broker_opt_upgrade_bronze
+  event_reward:
+  - reward_group: reward_evt_merge_broker_opt_upgrade_bronze
+    reward_type: upgrade_pal
+    pool_id: owned_pal
+    amount: 1
+    quality_hint: 升到白银
+  event_condition:
+  - condition_id: cond_has_owned_bronze_unit
+    condition_type: owned_unit_grade_any
+    param_key: grade
+    param_value: 青铜
+    note: 至少有 1 个青铜单位
+- event_id: evt_gold_caravan
+  option_id: opt_take_gold
+  bridge_mode: exact
+  bridge_note: 直接映射为旧 gain_gold。
+  event_master:
+    event_id: evt_gold_caravan
+    name: 黄金商队
+    event_kind: choice
+    min_day: 4
+    max_day: 5
+    tags: 经济,精英奖励,黄金预览
+    base_weight: 44
+    event_count_slot: shop_extra
+    refresh_with_shop: false
+    repeatable: false
+  event_option:
+    event_id: evt_gold_caravan
+    option_id: opt_take_gold
+    option_text: 放弃预留，直接拿 +3 金
+    option_type: choice
+    cost_type: free
+    cost_value: 0
+    reward_group: reward_evt_gold_caravan_opt_take_gold
+  event_reward:
+  - reward_group: reward_evt_gold_caravan_opt_take_gold
+    reward_type: gain_gold
+    pool_id: direct_gold
+    amount: 3
+    quality_hint: +3金
+  event_condition: []
+- event_id: evt_diamond_outpost
+  option_id: opt_take_gold
+  bridge_mode: exact
+  bridge_note: 直接映射为旧 gain_gold。
+  event_master:
+    event_id: evt_diamond_outpost
+    name: 钻石前哨
+    event_kind: choice
+    min_day: 6
+    max_day: 7
+    tags: 经济,boss奖励,钻石预览
+    base_weight: 34
+    event_count_slot: shop_extra
+    refresh_with_shop: false
+    repeatable: false
+  event_option:
+    event_id: evt_diamond_outpost
+    option_id: opt_take_gold
+    option_text: 放弃预留，直接拿 +4 金
+    option_type: choice
+    cost_type: free
+    cost_value: 0
+    reward_group: reward_evt_diamond_outpost_opt_take_gold
+  event_reward:
+  - reward_group: reward_evt_diamond_outpost_opt_take_gold
+    reward_type: gain_gold
+    pool_id: direct_gold
+    amount: 4
+    quality_hint: +4金
+  event_condition: []

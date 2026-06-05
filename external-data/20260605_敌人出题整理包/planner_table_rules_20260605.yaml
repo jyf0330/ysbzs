@@ -1,0 +1,249 @@
+version: 2026-06-05
+scope: ysbzs planner-facing data tables
+
+pet_table:
+  source_count: 127
+  main_sheet_name: 宠物总表
+  main_sheet_fields:
+    - 编号
+    - 名称
+    - 元素
+    - 副属
+    - 品质
+    - 体型
+    - 定位
+    - 目标分
+    - 总强度
+    - 差值
+    - 面板分
+    - 机制分
+    - HP
+    - 攻
+    - 防
+    - 盾
+    - 行动
+    - 机制
+    - 形状
+    - 范围
+    - 动作
+    - 技能
+    - 标签
+    - 可召
+    - 备注
+    - 内部ID
+  stripped_from_main_sheet:
+    - 价格
+    - 解锁日
+    - 池档
+    - 商店规则
+    - cells
+    - trigger
+    - condition
+    - effect
+    - log
+    - legacy_fallback
+    - debug_only_fields
+    - 720成长明细
+  target_score:
+    base_bronze_small: 50
+    size_multiplier:
+      小型: 1.0
+      中型: 1.6
+      大型: 2.56
+    quality_multiplier:
+      青铜: 1.0
+      白银: 2.0
+      黄金: 3.2
+      钻石: 4.8
+    target_table:
+      青铜: { 小型: 50, 中型: 80, 大型: 128 }
+      白银: { 小型: 100, 中型: 160, 大型: 256 }
+      黄金: { 小型: 160, 中型: 256, 大型: 410 }
+      钻石: { 小型: 240, 中型: 384, 大型: 614 }
+  panel_formula:
+    expression: HP + 攻*3 + 防*3 + 盾*5 + 行动*5
+  total_strength_formula:
+    expression: 面板分 + 机制分
+  diff_formula:
+    expression: 总强度 - 目标分
+  diff_policy:
+    preferred_abs: 5
+    common_abs: 10
+    rare_abs: 20
+  mechanic_score:
+    granularity: 8
+    note: 主表仅保留聚合后的机制分，不展开 trigger/condition/effect/log
+  discrete_values:
+    hp: [6, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70]
+    shield: [0, 6, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70]
+  defense_rule:
+    default_non_diamond_defense: 0
+    diamond_only_defense: true
+  action_rule:
+    default: 3
+    allowed: [2, 3, 4, 5]
+    high_value_bindings:
+      2: 坦克/重装/特殊慢核
+      4: 机动/控制/清杂/特殊核心
+      5: 黄金或钻石的少量高机动核心
+  allowed_roles:
+    - 输出
+    - 清杂
+    - 爆发
+    - 破甲
+    - 穿盾
+    - 坦克
+    - 盾卫
+    - 控制
+    - 机动
+    - 召唤
+    - 治疗
+    - 经济
+  slot_rule:
+    default_slot_count: 3
+    slot_identity: 三槽默认完全一致
+    override_strategy: 特殊差异以后用 override 或备注处理
+
+enemy_wave_table:
+  main_sheet_name: 怪物波次表
+  day_range: [1, 2, 3, 4, 5]
+  active_spawn_rounds: [1, 2, 3, 4, 5]
+  clear_window:
+    excellent_clear: 5
+    normal_clear_min: 6
+    normal_clear_max: 9
+    fail_if_not_cleared_by: 10
+  main_sheet_fields:
+    - 日
+    - 回合
+    - 出怪组
+    - 敌人模板
+    - 数量
+    - HP
+    - 攻
+    - 防
+    - 盾
+    - 行动
+    - 机制
+    - 参数
+    - 目标回合
+    - 承击
+    - 解法
+    - 奖励
+    - 备注
+    - 内部ID
+  enemy_direction:
+    summary: 敌人是出题者，宠物是解题工具
+    round_focus:
+      1: 小怪/普通兵，给基准压力
+      2: 小怪群 + 光环/诅咒/偷奖，制造优先级
+      3: 厚盾/护甲/成长等解法题
+      4: 召唤/连击/反击/城堡破坏者
+      5: 精英守门 + 小怪
+  encounter_mix_ratio:
+    爽杀类: 35%-45%
+    基准类: 20%-25%
+    解法类: 25%-35%
+    惩罚类: 5%-10%
+    精英类: 少量
+  discrete_values:
+    hp: [6, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70]
+    shield: [0, 6, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70]
+  defense_rule:
+    default_non_diamond_defense: 0
+    elite_or_diamond_only_defense: true
+
+mechanic_library:
+  main_sheet_name: 机制词条库
+  planner_fields:
+    - 编号
+    - 机制
+    - 题型
+    - 适用对象
+    - 触发时机
+    - 关键参数
+    - 计算口径
+    - 常用取值
+    - 机制分
+    - 克制解法
+    - 被克制
+    - 联动
+    - 首版优先级
+    - 备注
+    - 内部ID
+  enums:
+    applicable_object: [敌人, 宠物, 双用]
+    trigger_window: [开场, 每回合, 受击时, 攻击时, 死亡时, 存活时, 进入范围时]
+    launch_priority: [必做, 可做, 后置]
+  parameter_keys:
+    - special
+    - value
+    - range
+    - zoneSquare
+    - n
+    - atkValue
+    - defValue
+    - notBomb
+  score_rule:
+    granularity: 8
+    light: [8, 16]
+    explicit_answer: [24, 32]
+    strong_gate: [40, 48]
+    elite_boss: [56, 64]
+    quality_cap:
+      青铜: 通常不超过24
+      白银: [16, 24, 32]
+      黄金: [24, 32, 40, 48]
+      钻石: [48, 56, 64]
+  split_policy:
+    damage_family:
+      - 无视防御
+      - 真实伤害
+      - 固定伤害
+    sturdy_family:
+      - 坚固（阈值）
+      - 坚固（刮痧）
+    shield_family:
+      - 初始盾
+      - 每回合盾
+      - 护盾刷新
+      - 厚盾低血
+      - 护盾转攻
+  first_release_required:
+    - 先攻
+    - 无视防御
+    - 坚固（阈值）
+    - 连击
+    - 反击
+    - 吸血
+    - 重生
+    - 自爆
+    - 毒
+    - 衰弱
+    - 诅咒
+    - 领域
+    - 限伤
+    - 首伤免疫
+    - 每回合盾
+    - 厚盾低血
+    - 破甲
+    - 穿盾
+    - 真实伤害
+    - 成长攻
+    - 成长盾
+    - 召唤
+    - 光环
+    - 城堡破坏
+    - 偷奖励
+  formulas:
+    限伤: 最低击杀回合 = ceil(HP / 每回合最大损失)
+    首伤免疫: 承击次数 + 1
+    连击: 每回合伤害 = 攻 * 连击数
+    领域: 格子压力 = 领域值 * 覆盖格数
+    每回合盾: 有效盾 = 盾 * 预计生效回合 * 利用率
+    厚盾低血: 一回合不破盾就打不到血
+    成长: 第t回合威胁 = 初始威胁 + 成长值 * t
+    反击: 反击伤害 = 受击次数 * 反击值
+    无视防御: 伤害不受防御值影响，但仍可被盾和减伤处理
+    真实伤害: 伤害直接扣生命，不经过盾、防、减伤
+    固定伤害: 造成固定值伤害，可被盾挡住

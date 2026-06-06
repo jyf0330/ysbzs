@@ -1,0 +1,162 @@
+{
+  "UNIT_PATCHES": {
+    "fire_starter": {
+      "name": "火苗灵",
+      "levels": {
+        "1": {
+          "hp": 20,
+          "slotTiers": [
+            1,
+            2,
+            3
+          ]
+        },
+        "2": {
+          "hp": 30,
+          "slotTiers": [
+            3,
+            4,
+            5
+          ]
+        },
+        "3": {
+          "hp": 40,
+          "slotTiers": [
+            6,
+            7,
+            8
+          ]
+        }
+      }
+    },
+    "water_droplet": {
+      "name": "滴滴灵",
+      "levels": {
+        "1": {
+          "hp": 20,
+          "slotTiers": [
+            1,
+            2,
+            3
+          ]
+        },
+        "2": {
+          "hp": 30,
+          "slotTiers": [
+            3,
+            4,
+            5
+          ]
+        },
+        "3": {
+          "hp": 40,
+          "slotTiers": [
+            6,
+            7,
+            8
+          ]
+        }
+      }
+    },
+    "bubble_sprite": {
+      "name": "泡泡灵",
+      "levels": {
+        "1": {
+          "hp": 20,
+          "slotTiers": [
+            1,
+            2,
+            3
+          ]
+        },
+        "2": {
+          "hp": 30,
+          "slotTiers": [
+            3,
+            4,
+            5
+          ]
+        },
+        "3": {
+          "hp": 40,
+          "slotTiers": [
+            6,
+            7,
+            8
+          ]
+        }
+      }
+    },
+    "sprout_summoner": {
+      "name": "召芽灵",
+      "levels": {
+        "1": {
+          "hp": 20
+        },
+        "2": {
+          "hp": 30
+        },
+        "3": {
+          "hp": 40
+        }
+      }
+    },
+    "fluff_speaker": {
+      "name": "绒语灵",
+      "levels": {
+        "1": {
+          "hp": 16
+        },
+        "2": {
+          "hp": 24
+        },
+        "3": {
+          "hp": 32
+        }
+      }
+    },
+    "boom_sprite": {
+      "name": "爆爆灵",
+      "levels": {
+        "1": {
+          "hp": 16,
+          "slotTiers": [
+            1,
+            2,
+            3
+          ]
+        },
+        "2": {
+          "hp": 24,
+          "slotTiers": [
+            3,
+            4,
+            5
+          ]
+        },
+        "3": {
+          "hp": 32,
+          "slotTiers": [
+            6,
+            7,
+            8
+          ]
+        }
+      }
+    },
+    "split_sprite": {
+      "name": "分分灵",
+      "levels": {
+        "1": {
+          "hp": 18
+        },
+        "2": {
+          "hp": 27
+        },
+        "3": {
+          "hp": 36
+        }
+      }
+    }
+  }
+}

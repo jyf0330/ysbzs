@@ -1,13 +1,13 @@
 // validate_yaml_data.js
 // 元素背包史 · YAML 源数据校验脚本
-// 校验 YAML 数据完整性：ID 唯一性、引用完整性、枚举合法性、数量检查
+// 校验 game-data-source/yaml/ 唯一真源数据的完整性
 // 用法: node scripts/validate_yaml_data.js
 
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 
-const SRC_DIR = path.resolve(__dirname, '..', 'external-data', 'source-yaml');
+const SRC_DIR = path.resolve(__dirname, '..', 'game-data-source', 'yaml');
 const EXTENSIONS = new Set(['.yml', '.yaml']);
 
 let errors = [];

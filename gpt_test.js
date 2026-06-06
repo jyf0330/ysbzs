@@ -761,7 +761,7 @@ function bazaarSchemaCheck() {
     'affix_rule','ai_shop_pick_rule','log_template','compatibility_rule','naming_rules'
   ];
   for (const name of required) {
-    check(exists(`external-data/source-yaml/bazaar-like-schema/${name}.yaml`), `BZ_SRC_${name}`, p, `source-yaml/bazaar-like-schema/${name}.yaml 存在`);
+    check(exists(`game-data-source/yaml/bazaar-like-schema/${name}.yaml`), `BZ_SRC_${name}`, p, `source-yaml/bazaar-like-schema/${name}.yaml 存在`);
     check(exists(`external-data/generated-json/bazaar-like-schema/${name}.json`), `BZ_JSON_${name}`, p, `generated-json/bazaar-like-schema/${name}.json 存在`);
   }
   function load(name) { return readJSON(`external-data/generated-json/bazaar-like-schema/${name}.json`); }
@@ -796,8 +796,8 @@ function bazaarSchemaCheck() {
     const rollIdx = shop.indexOf('rollBazaarLikeShopOffers');
     const fallbackIdx = shop.indexOf('fallback：旧外部纯 Pal 池');
     check(rollIdx >= 0 && fallbackIdx > rollIdx, 'BZ15', p, 'genShop 主流程先读 Bazaar-like schema，旧池仅 fallback');
-    check(/source_meta|copy_structure_only/.test(readText('external-data/source-yaml/bazaar-like-schema/source_meta.yaml')), 'BZ16', p, 'source_meta 写明只学结构不搬内容');
-    const allSchemaText = required.map(name => readText(`external-data/source-yaml/bazaar-like-schema/${name}.yaml`)).join('\n');
+    check(/source_meta|copy_structure_only/.test(readText('game-data-source/yaml/bazaar-like-schema/source_meta.yaml')), 'BZ16', p, 'source_meta 写明只学结构不搬内容');
+    const allSchemaText = required.map(name => readText(`game-data-source/yaml/bazaar-like-schema/${name}.yaml`)).join('\n');
     check(!/Vanessa|Pygmalien|Dooley|Stelle|Jules|Karnok/.test(allSchemaText), 'BZ17', p, 'YAML 未使用外部游戏原英雄名');
   } catch (e) {
     addResult('BZ_PARSE', p, 'Bazaar-like schema 可解析', 'FAIL', { type:'PARSE_ERROR', explanation:String(e.message||e) });

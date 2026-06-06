@@ -1,13 +1,13 @@
 // export_yaml_to_json.js
 // 元素背包史 · YAML 源数据 → JSON 导出脚本
-// 读取 external-data/source-yaml/ 下的 .yml/.yaml 文件
+// 读取 game-data-source/yaml/ 下的 .yml/.yaml 文件（唯一真源）
 // 按相同相对路径输出到 external-data/generated-json/
 
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 
-const SRC_DIR = path.resolve(__dirname, '..', 'external-data', 'source-yaml');
+const SRC_DIR = path.resolve(__dirname, '..', 'game-data-source', 'yaml');
 const OUT_DIR = path.resolve(__dirname, '..', 'external-data', 'generated-json');
 
 const EXTENSIONS = new Set(['.yml', '.yaml']);

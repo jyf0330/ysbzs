@@ -11,6 +11,7 @@
     "playtest": "node ai-eval/runners/run-playtest.mjs",
     "data:build": "node scripts/export_yaml_to_json.js",
     "data:validate": "node scripts/validate_yaml_data.js",
-    "data:check": "node scripts/export_yaml_to_json.js && node scripts/validate_yaml_data.js"
+    "data:rebuild": "node scripts/rebuild_data_pipeline.js",
+    "data:check": "npm run data:rebuild && npm run data:validate && node test.js && node gpt_test.js"
   }
 }

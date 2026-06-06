@@ -17,7 +17,7 @@ status: PASS
 
 新增 YAML 源数据目录：
 
-`external-data/source-yaml/bazaar-like-schema/`
+`game-data-source/yaml/bazaar-like-schema/`
 
 新增 generated JSON 目录：
 

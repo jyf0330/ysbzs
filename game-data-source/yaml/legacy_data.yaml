@@ -1,0 +1,2554 @@
+schema: ysbzs.legacy_data.v0.1
+updated_at: '2026-06-04'
+unit_defs:
+  fire_starter:
+    id: fire_starter
+    name: 火苗灵
+    element: fire
+    grade: 青铜
+    priceTier: 1
+    tags:
+    - 火
+    - 前排
+    - 单点
+    - 输出
+    tier: 1
+    cost: 2
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: fire
+          sn: 1
+          dir: right
+          tier: 1
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 1
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 1
+      '2':
+        hp: 25
+        slots:
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 2
+      '3':
+        hp: 30
+        slots:
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 3
+      '4':
+        hp: 36
+        slots:
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+  water_droplet:
+    id: water_droplet
+    name: 滴滴灵
+    element: water
+    grade: 青铜
+    priceTier: 1
+    tags:
+    - 水
+    - 后排
+    - 远程
+    - 输出
+    tier: 1
+    cost: 2
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 1
+        - el: water
+          sn: 4
+          dir: right
+          tier: 1
+        - el: water
+          sn: 12
+          dir: right
+          tier: 1
+      '2':
+        hp: 25
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 2
+        - el: water
+          sn: 12
+          dir: right
+          tier: 2
+      '3':
+        hp: 30
+        slots:
+        - el: water
+          sn: 3
+          dir: right
+          tier: 3
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 12
+          dir: right
+          tier: 3
+      '4':
+        hp: 36
+        slots:
+        - el: water
+          sn: 5
+          dir: right
+          tier: 4
+        - el: water
+          sn: 10
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+  wind_breeze:
+    id: wind_breeze
+    name: 十字使
+    element: wind
+    grade: 青铜
+    priceTier: 1
+    tags:
+    - 风
+    - 范围
+    - 十字
+    tier: 1
+    cost: 3
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 1
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 1
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 1
+      '2':
+        hp: 25
+        slots:
+        - el: wind
+          sn: 3
+          dir: right
+          tier: 2
+        - el: wind
+          sn: 7
+          dir: right
+          tier: 2
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 2
+      '3':
+        hp: 30
+        slots:
+        - el: wind
+          sn: 5
+          dir: right
+          tier: 3
+        - el: wind
+          sn: 7
+          dir: right
+          tier: 3
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 3
+      '4':
+        hp: 36
+        slots:
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 4
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 4
+        - el: wind
+          sn: 19
+          dir: right
+          tier: 4
+  earth_shield:
+    id: earth_shield
+    name: 岩岩灵
+    element: earth
+    grade: 青铜
+    priceTier: 3
+    tags:
+    - 土
+    - 前排
+    - 防御
+    tier: 1
+    cost: 3
+    levels:
+      '1':
+        hp: 25
+        slots:
+        - el: earth
+          sn: 4
+          dir: right
+          tier: 1
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 1
+        - el: earth
+          sn: 8
+          dir: right
+          tier: 1
+      '2':
+        hp: 30
+        slots:
+        - el: earth
+          sn: 4
+          dir: right
+          tier: 2
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 2
+        - el: earth
+          sn: 11
+          dir: right
+          tier: 2
+      '3':
+        hp: 35
+        slots:
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 3
+        - el: earth
+          sn: 11
+          dir: right
+          tier: 3
+        - el: earth
+          sn: 18
+          dir: right
+          tier: 3
+      '4':
+        hp: 42
+        slots:
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 4
+        - el: earth
+          sn: 18
+          dir: right
+          tier: 4
+        - el: earth
+          sn: 20
+          dir: right
+          tier: 4
+          layers: 2
+  balance:
+    id: balance
+    name: 均衡灵
+    element: fire
+    grade: 青铜
+    priceTier: 1
+    tags:
+    - 火
+    - 水
+    - 风
+    - 灵活
+    tier: 1
+    cost: 3
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: fire
+          sn: 1
+          dir: right
+          tier: 1
+        - el: water
+          sn: 1
+          dir: right
+          tier: 1
+        - el: wind
+          sn: 4
+          dir: right
+          tier: 1
+      '2':
+        hp: 25
+        slots:
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 2
+        - el: water
+          sn: 2
+          dir: right
+          tier: 2
+        - el: wind
+          sn: 4
+          dir: right
+          tier: 2
+      '3':
+        hp: 30
+        slots:
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 3
+        - el: water
+          sn: 3
+          dir: right
+          tier: 3
+        - el: wind
+          sn: 7
+          dir: right
+          tier: 3
+      '4':
+        hp: 36
+        slots:
+        - el: fire
+          sn: 7
+          dir: right
+          tier: 4
+        - el: water
+          sn: 7
+          dir: right
+          tier: 4
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 4
+  ember:
+    id: ember
+    name: 余烬灵
+    element: fire
+    grade: 青铜
+    priceTier: 1
+    tags:
+    - 火
+    - 输出
+    tier: 1
+    cost: 2
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 1
+        - el: fire
+          sn: 1
+          dir: right
+          tier: 1
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 1
+      '2':
+        hp: 23
+        slots:
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 2
+      '3':
+        hp: 28
+        slots:
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 3
+      '4':
+        hp: 34
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+  pebble_guard:
+    id: pebble_guard
+    name: 泡泡灵
+    element: water
+    grade: 青铜
+    priceTier: 1
+    tags:
+    - 水
+    - 前排
+    - 防御
+    tier: 1
+    cost: 2
+    passive:
+      type: castleReduce
+      reductionByLevel:
+      - 1
+      - 1
+      - 2
+      - 2
+    levels:
+      '1':
+        hp: 22
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 1
+        - el: water
+          sn: 6
+          dir: right
+          tier: 1
+        - el: water
+          sn: 8
+          dir: right
+          tier: 1
+      '2':
+        hp: 28
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 2
+        - el: water
+          sn: 11
+          dir: right
+          tier: 2
+      '3':
+        hp: 34
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 11
+          dir: right
+          tier: 3
+        - el: water
+          sn: 18
+          dir: right
+          tier: 3
+      '4':
+        hp: 40
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+        - el: water
+          sn: 18
+          dir: right
+          tier: 4
+          layers: 2
+  fire_blaze:
+    id: fire_blaze
+    name: 烈焰使
+    element: fire
+    tier: 2
+    cost: 3
+    levels:
+      '1':
+        hp: 22
+        slots:
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 2
+      '2':
+        hp: 28
+        slots:
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 3
+      '3':
+        hp: 35
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 4
+      '4':
+        hp: 42
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+  water_splash:
+    id: water_splash
+    name: 溅射灵
+    element: water
+    tier: 2
+    cost: 3
+    levels:
+      '1':
+        hp: 22
+        slots:
+        - el: water
+          sn: 7
+          dir: right
+          tier: 2
+        - el: water
+          sn: 12
+          dir: right
+          tier: 2
+        - el: water
+          sn: 13
+          dir: right
+          tier: 2
+      '2':
+        hp: 28
+        slots:
+        - el: water
+          sn: 7
+          dir: right
+          tier: 3
+        - el: water
+          sn: 12
+          dir: right
+          tier: 3
+        - el: water
+          sn: 13
+          dir: right
+          tier: 3
+      '3':
+        hp: 35
+        slots:
+        - el: water
+          sn: 10
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+        - el: water
+          sn: 13
+          dir: right
+          tier: 4
+      '4':
+        hp: 42
+        slots:
+        - el: water
+          sn: 10
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 20
+          dir: right
+          tier: 4
+  wind_gale:
+    id: wind_gale
+    name: 狂风使
+    element: wind
+    tier: 2
+    cost: 3
+    levels:
+      '1':
+        hp: 22
+        slots:
+        - el: wind
+          sn: 5
+          dir: right
+          tier: 2
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 2
+        - el: wind
+          sn: 17
+          dir: right
+          tier: 2
+      '2':
+        hp: 28
+        slots:
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 3
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 3
+        - el: wind
+          sn: 17
+          dir: right
+          tier: 3
+      '3':
+        hp: 35
+        slots:
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 4
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 4
+        - el: wind
+          sn: 19
+          dir: right
+          tier: 4
+      '4':
+        hp: 42
+        slots:
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 4
+          layers: 2
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 4
+        - el: wind
+          sn: 19
+          dir: right
+          tier: 4
+          layers: 2
+  earth_rock:
+    id: earth_rock
+    name: 磐石灵
+    element: earth
+    tier: 2
+    cost: 3
+    levels:
+      '1':
+        hp: 28
+        slots:
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 2
+        - el: earth
+          sn: 11
+          dir: right
+          tier: 2
+        - el: earth
+          sn: 18
+          dir: right
+          tier: 2
+      '2':
+        hp: 35
+        slots:
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 3
+        - el: earth
+          sn: 11
+          dir: right
+          tier: 3
+        - el: earth
+          sn: 18
+          dir: right
+          tier: 3
+      '3':
+        hp: 42
+        slots:
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 4
+        - el: earth
+          sn: 11
+          dir: right
+          tier: 4
+        - el: earth
+          sn: 18
+          dir: right
+          tier: 4
+      '4':
+        hp: 50
+        slots:
+        - el: earth
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: earth
+          sn: 18
+          dir: right
+          tier: 4
+        - el: earth
+          sn: 20
+          dir: right
+          tier: 4
+          layers: 2
+  sprout_summoner:
+    id: sprout_summoner
+    name: 召芽灵
+    element: water
+    grade: 白银
+    tier: 2
+    cost: 4
+    tags:
+    - 水
+    - 召唤
+    - 核心
+    passive:
+      type: splitSproutSummon
+      countByLevel:
+      - 2
+      - 2
+      - 3
+      - 4
+      hpMulByLevel:
+      - 0.5
+      - 0.75
+      - 0.6
+      - 0.55
+    levels:
+      '1':
+        hp: 18
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 2
+          skill: summonFromCell
+        - el: water
+          sn: 4
+          dir: right
+          tier: 2
+        - el: water
+          sn: 12
+          dir: right
+          tier: 2
+      '2':
+        hp: 22
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 3
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 12
+          dir: right
+          tier: 3
+      '3':
+        hp: 28
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+      '4':
+        hp: 34
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+  spring_sprite:
+    id: spring_sprite
+    name: 泉泉灵
+    element: water
+    grade: 白银
+    tier: 2
+    cost: 4
+    passive:
+      type: healAmpBonus
+      bonusByLevel:
+      - 1
+      - 1
+      - 2
+      - 3
+    tags:
+    - 水
+    - 治疗
+    - 引擎
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 2
+        - el: water
+          sn: 1
+          dir: right
+          tier: 2
+          skill: healSummons
+      '2':
+        hp: 25
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 11
+          dir: right
+          tier: 3
+        - el: water
+          sn: 1
+          dir: right
+          tier: 3
+          skill: healSummons
+      '3':
+        hp: 30
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: healSummons
+      '4':
+        hp: 36
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: healSummons
+          layers: 2
+  fluff_speaker:
+    id: fluff_speaker
+    name: 绒语灵
+    element: water
+    grade: 白银
+    tier: 2
+    cost: 4
+    tags:
+    - 水
+    - 被动
+    - 增益
+    passive:
+      type: buffAllSummons
+      hpByLevel:
+      - 2
+      - 4
+      - 6
+      - 8
+      atkByLevel:
+      - 1
+      - 1
+      - 2
+      - 3
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 2
+        - el: water
+          sn: 1
+          dir: right
+          tier: 2
+          skill: healSummons
+      '2':
+        hp: 25
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 11
+          dir: right
+          tier: 3
+        - el: water
+          sn: 1
+          dir: right
+          tier: 3
+          skill: healSummons
+      '3':
+        hp: 30
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: healSummons
+      '4':
+        hp: 36
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: healSummons
+          layers: 2
+  split_sprite:
+    id: split_sprite
+    name: 分分灵
+    element: water
+    grade: 白银
+    tier: 2
+    cost: 4
+    tags:
+    - 水
+    - 拆分
+    - 被动
+    passive:
+      type: splitSproutSummon
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 2
+        - el: water
+          sn: 8
+          dir: right
+          tier: 2
+      '2':
+        hp: 25
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 3
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 11
+          dir: right
+          tier: 3
+      '3':
+        hp: 30
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+        - el: water
+          sn: 18
+          dir: right
+          tier: 4
+      '4':
+        hp: 36
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+        - el: water
+          sn: 18
+          dir: right
+          tier: 4
+          layers: 2
+  boom_sprite:
+    id: boom_sprite
+    name: 爆爆灵
+    element: fire
+    grade: 白银
+    tier: 2
+    cost: 4
+    tags:
+    - 火
+    - 死亡
+    - 铺火
+    passive:
+      type: onSummonDeath
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 2
+      '2':
+        hp: 25
+        slots:
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 3
+      '3':
+        hp: 30
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 4
+      '4':
+        hp: 36
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 4
+          layers: 3
+  bubble_sprite:
+    id: bubble_sprite
+    name: 泡泡灵
+    element: water
+    grade: 青铜
+    tier: 1
+    cost: 2
+    tags:
+    - 水
+    - 前排
+    - 防御
+    levels:
+      '1':
+        hp: 22
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 1
+        - el: water
+          sn: 6
+          dir: right
+          tier: 1
+        - el: water
+          sn: 8
+          dir: right
+          tier: 1
+      '2':
+        hp: 28
+        slots:
+        - el: water
+          sn: 4
+          dir: right
+          tier: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 2
+        - el: water
+          sn: 11
+          dir: right
+          tier: 2
+      '3':
+        hp: 34
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 11
+          dir: right
+          tier: 3
+        - el: water
+          sn: 18
+          dir: right
+          tier: 3
+      '4':
+        hp: 40
+        slots:
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 11
+          dir: right
+          tier: 4
+        - el: water
+          sn: 20
+          dir: right
+          tier: 4
+  ember_seed:
+    id: ember_seed
+    name: 火种灵
+    element: fire
+    grade: 青铜
+    tier: 1
+    cost: 2
+    passive:
+      type: spaceExplosionBonus
+      bonusByLevel:
+      - 1
+      - 1
+      - 2
+      - 3
+    tags:
+    - 火
+    - 引信
+    - 被动
+    levels:
+      '1':
+        hp: 20
+        slots:
+        - el: fire
+          sn: 2
+          dir: right
+          tier: 1
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 1
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 1
+      '2':
+        hp: 25
+        slots:
+        - el: fire
+          sn: 3
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 2
+      '3':
+        hp: 30
+        slots:
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 3
+      '4':
+        hp: 36
+        slots:
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+  forge_fire:
+    id: forge_fire
+    name: 熔火灵
+    element: fire
+    tier: 3
+    cost: 6
+    levels:
+      '1':
+        hp: 28
+        slots:
+        - el: fire
+          sn: 5
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 3
+        - el: fire
+          sn: 17
+          dir: right
+          tier: 3
+      '2':
+        hp: 35
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+      '3':
+        hp: 42
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+      '4':
+        hp: 50
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+  command_sprout:
+    id: command_sprout
+    name: 指挥芽
+    element: water
+    tier: 3
+    cost: 6
+    tags:
+    - 水
+    - 召唤
+    - 指挥
+    levels:
+      '1':
+        hp: 24
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 3
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 3
+        - el: water
+          sn: 12
+          dir: right
+          tier: 3
+      '2':
+        hp: 30
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+      '3':
+        hp: 36
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+      '4':
+        hp: 44
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+          layers: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+  dragon_flame:
+    id: dragon_flame
+    name: 龙焰灵
+    element: fire
+    tier: 4
+    cost: 8
+    levels:
+      '1':
+        hp: 35
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+      '2':
+        hp: 42
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+      '3':
+        hp: 50
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+      '4':
+        hp: 60
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+          layers: 2
+  prime_sprout:
+    id: prime_sprout
+    name: 元芽灵
+    element: water
+    tier: 4
+    cost: 8
+    tags:
+    - 水
+    - 召唤
+    - 终极
+    levels:
+      '1':
+        hp: 30
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+      '2':
+        hp: 38
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+      '3':
+        hp: 46
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+      '4':
+        hp: 55
+        slots:
+        - el: water
+          sn: 1
+          dir: right
+          tier: 4
+          skill: summonFromCell
+          layers: 2
+        - el: water
+          sn: 6
+          dir: right
+          tier: 4
+          layers: 2
+        - el: water
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+  fire_demon:
+    id: fire_demon
+    name: 火魔
+    element: fire
+    grade: 钻石
+    tier: 4
+    cost: 8
+    passive:
+      type: crossExplosion
+      level: 1
+    levels:
+      '1':
+        hp: 45
+        slots:
+        - el: fire
+          sn: 10
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+      '2':
+        hp: 58
+        slots:
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+        - el: fire
+          sn: 20
+          dir: right
+          tier: 4
+      '3':
+        hp: 72
+        slots:
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 3
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+          layers: 2
+        - el: fire
+          sn: 20
+          dir: right
+          tier: 4
+      '4':
+        hp: 85
+        slots:
+        - el: fire
+          sn: 12
+          dir: right
+          tier: 4
+          layers: 4
+        - el: fire
+          sn: 19
+          dir: right
+          tier: 4
+          layers: 3
+        - el: fire
+          sn: 20
+          dir: right
+          tier: 4
+          layers: 2
+  breeze_sprite:
+    id: breeze_sprite
+    name: 风风灵
+    element: wind
+    grade: 白银
+    tier: 1
+    cost: 4
+    tags:
+    - 风
+    - 侧击
+    - 机动
+    - 清散怪
+    passive:
+      type: advHitBonus
+      bonusByLevel:
+      - 1
+      - 2
+      - 3
+      - 4
+    levels:
+      '1':
+        hp: 18
+        slots:
+        - el: wind
+          sn: 7
+          dir: right
+          tier: 1
+        - el: wind
+          sn: 7
+          dir: right
+          tier: 1
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 1
+      '2':
+        hp: 27
+        slots:
+        - el: wind
+          sn: 7
+          dir: right
+          tier: 2
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 2
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 2
+      '3':
+        hp: 36
+        slots:
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 3
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 3
+        - el: wind
+          sn: 18
+          dir: right
+          tier: 3
+      '4':
+        hp: 42
+        slots:
+        - el: wind
+          sn: 10
+          dir: right
+          tier: 4
+          layers: 2
+        - el: wind
+          sn: 12
+          dir: right
+          tier: 4
+        - el: wind
+          sn: 18
+          dir: right
+          tier: 4
+          layers: 2
+unit_tier_pool:
+  '1':
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - earth_shield
+  - balance
+  - ember
+  - pebble_guard
+  - bubble_sprite
+  - ember_seed
+  - breeze_sprite
+  '2':
+  - fire_blaze
+  - water_splash
+  - wind_gale
+  - earth_rock
+  - sprout_summoner
+  - spring_sprite
+  - fluff_speaker
+  - split_sprite
+  - boom_sprite
+  '3':
+  - forge_fire
+  - command_sprout
+  '4':
+  - dragon_flame
+  - prime_sprout
+  - fire_demon
+monster_types:
+  normal:
+    name: 普通怪
+    hp: 8
+    atk: 1
+    ap: 5
+    cost: 2
+    gold: 2
+  thick:
+    name: 厚皮怪
+    hp: 14
+    atk: 1
+    ap: 4
+    cost: 3
+    gold: 3
+  fast:
+    name: 快速怪
+    hp: 7
+    atk: 1
+    ap: 7
+    cost: 3
+    gold: 3
+  heavy:
+    name: 冲锋怪
+    hp: 14
+    atk: 2
+    ap: 3
+    cost: 4
+    gold: 4
+  swarm:
+    name: 小怪群
+    hp: 4
+    atk: 1
+    ap: 4
+    cost: 1
+    gold: 1
+  elite:
+    name: 精英怪
+    hp: 40
+    atk: 4
+    ap: 5
+    cost: 8
+    gold: 8
+  boss:
+    name: 小Boss
+    hp: 65
+    atk: 5
+    ap: 4
+    cost: 12
+    gold: 15
+  blocker:
+    name: 堵路怪
+    hp: 30
+    atk: 1
+    ap: 3
+    cost: 4
+    gold: 4
+    ability:
+      id: block_path
+      trigger: onMoveIntent
+      status: pending
+  siege:
+    name: 攻城怪
+    hp: 20
+    atk: 3
+    ap: 5
+    cost: 4
+    gold: 4
+    ability:
+      id: target_castle
+      trigger: onChooseTarget
+      status: pending
+  boss5:
+    name: 炎甲兽
+    hp: 80
+    atk: 6
+    ap: 4
+    cost: 12
+    gold: 15
+    ability:
+      id: iron_wall
+      trigger: onBeforeTakeDamage
+      status: pending
+      config:
+        threshold: 5
+        reduction: 2
+  minion:
+    name: Boss护卫
+    hp: 24
+    atk: 2
+    ap: 4
+    cost: 5
+    gold: 5
+    ability:
+      id: guard_aura
+      trigger: onChooseTarget
+      status: pending
+  boss8:
+    name: 熔岩核心
+    hp: 100
+    atk: 6
+    ap: 5
+    cost: 14
+    gold: 20
+    ability:
+      id: lava_surge
+      trigger: onRoundStart
+      status: pending
+      config:
+        el: fire
+        layers: 1
+  boss10:
+    name: 远古炎核
+    hp: 140
+    atk: 8
+    ap: 5
+    cost: 18
+    gold: 25
+    ability:
+      id: core_split
+      trigger: onEveryNthRound
+      status: pending
+      config:
+        n: 2
+        typeId: normal
+day_wave_config:
+  '1':
+    morning:
+      budget: 5
+      allowed:
+      - normal
+      spawnSize: 2
+      maxAlive: 5
+    afternoon:
+      budget: 6
+      allowed:
+      - normal
+      spawnSize: 2
+      maxAlive: 5
+  '2':
+    morning:
+      budget: 9
+      allowed:
+      - normal
+      - thick
+      spawnSize: 2
+      maxAlive: 6
+    afternoon:
+      budget: 10
+      allowed:
+      - normal
+      - thick
+      spawnSize: 2
+      maxAlive: 6
+  '3':
+    morning:
+      budget: 13
+      allowed:
+      - normal
+      - thick
+      - fast
+      - heavy
+      spawnSize: 3
+      maxAlive: 8
+    afternoon:
+      budget: 15
+      allowed:
+      - normal
+      - thick
+      - fast
+      - heavy
+      spawnSize: 3
+      maxAlive: 8
+  '4':
+    morning:
+      budget: 18
+      allowed:
+      - normal
+      - thick
+      - fast
+      - heavy
+      - elite
+      spawnSize: 3
+      maxAlive: 10
+    afternoon:
+      budget: 20
+      allowed:
+      - normal
+      - thick
+      - fast
+      - heavy
+      - elite
+      spawnSize: 3
+      maxAlive: 10
+  '5':
+    morning:
+      budget: 24
+      allowed:
+      - normal
+      - thick
+      - fast
+      - heavy
+      - elite
+      - boss
+      spawnSize: 3
+      maxAlive: 12
+    afternoon:
+      budget: 28
+      allowed:
+      - normal
+      - thick
+      - fast
+      - heavy
+      - elite
+      - boss5
+      - siege
+      spawnSize: 3
+      maxAlive: 12
+  '6':
+    morning:
+      budget: 30
+      allowed:
+      - elite
+      - swarm
+      - normal
+      - blocker
+      - thick
+      spawnSize: 3
+      maxAlive: 12
+    afternoon:
+      budget: 34
+      allowed:
+      - siege
+      - fast
+      - elite
+      - heavy
+      - blocker
+      spawnSize: 3
+      maxAlive: 12
+  '7':
+    morning:
+      budget: 38
+      allowed:
+      - elite
+      - siege
+      - blocker
+      - heavy
+      - swarm
+      spawnSize: 3
+      maxAlive: 14
+    afternoon:
+      budget: 42
+      allowed:
+      - boss8
+      - elite
+      - siege
+      - fast
+      spawnSize: 3
+      maxAlive: 14
+  '8':
+    morning:
+      budget: 46
+      allowed:
+      - elite
+      - blocker
+      - siege
+      - thick
+      spawnSize: 3
+      maxAlive: 14
+    afternoon:
+      budget: 50
+      allowed:
+      - boss8
+      - elite
+      - fast
+      - swarm
+      - heavy
+      - siege
+      spawnSize: 3
+      maxAlive: 14
+  '9':
+    morning:
+      budget: 54
+      allowed:
+      - elite
+      - siege
+      - fast
+      - boss8
+      - blocker
+      spawnSize: 3
+      maxAlive: 15
+    afternoon:
+      budget: 58
+      allowed:
+      - boss8
+      - elite
+      - siege
+      - heavy
+      - minion
+      spawnSize: 3
+      maxAlive: 15
+  '10':
+    morning:
+      budget: 52
+      allowed:
+      - minion
+      - elite
+      - siege
+      - swarm
+      spawnSize: 3
+      maxAlive: 15
+    afternoon:
+      budget: 65
+      allowed:
+      - boss10
+      - minion
+      - siege
+      - elite
+      spawnSize: 3
+      maxAlive: 15
+shop_price_config:
+  unitPrice:
+    tier1: 2
+    tier2: 4
+    tier3: 6
+    tier4: 8
+  consumableBase:
+    el_random: 3
+    el_specific: 5
+    slot_layers_up: 4
+    roll: 1
+    freeze: 0
+  shopSlots:
+    '1':
+      unitT1: 5
+      unitT2: 0
+      unitT3: 0
+      unitT4: 0
+      consumable: 0
+    '2':
+      unitT1: 5
+      unitT2: 0
+      unitT3: 0
+      unitT4: 0
+      consumable: 0
+    '3':
+      unitT1: 4
+      unitT2: 1
+      unitT3: 0
+      unitT4: 0
+      consumable: 0
+    '4':
+      unitT1: 3
+      unitT2: 2
+      unitT3: 0
+      unitT4: 0
+      consumable: 0
+    '5':
+      unitT1: 2
+      unitT2: 2
+      unitT3: 1
+      unitT4: 1
+      consumable: 0
+    '6':
+      unitT1: 1
+      unitT2: 2
+      unitT3: 1
+      unitT4: 1
+      consumable: 0
+    '7':
+      unitT1: 1
+      unitT2: 2
+      unitT3: 1
+      unitT4: 1
+      consumable: 0
+    '8':
+      unitT1: 0
+      unitT2: 2
+      unitT3: 2
+      unitT4: 1
+      consumable: 0
+    '9':
+      unitT1: 0
+      unitT2: 1
+      unitT3: 2
+      unitT4: 2
+      consumable: 0
+    '10':
+      unitT1: 0
+      unitT2: 1
+      unitT3: 2
+      unitT4: 2
+      consumable: 0
+  nightIncome:
+    '1': 3
+    '2': 4
+    '3': 5
+    '4': 6
+    '5': 7
+    '6': 7
+    '7': 8
+    '8': 8
+    '9': 9
+    '10': 0
+  interestStep: 8
+  interestMax: 2
+day_round_config:
+  '1':
+    morning: 2
+    afternoon: 2
+  '2':
+    morning: 2
+    afternoon: 3
+  '3':
+    morning: 3
+    afternoon: 3
+  '4':
+    morning: 3
+    afternoon: 4
+  '5':
+    morning: 3
+    afternoon: 4
+  '6':
+    morning: 4
+    afternoon: 4
+  '7':
+    morning: 4
+    afternoon: 4
+  '8':
+    morning: 4
+    afternoon: 5
+  '9':
+    morning: 5
+    afternoon: 5
+  '10':
+    morning: 5
+    afternoon: 5
+reward_node_config:
+  '3':
+    midday:
+      stalls: 1
+      tier: 2
+      guarantee:
+      - fluff_speaker
+      - spring_sprite
+  '4':
+    midday:
+      stalls: 1
+      tier: 3
+      guarantee:
+      - forge_fire
+    elite:
+      tier: 3
+      cost: 6
+  '5':
+    midday:
+      stalls: 2
+      tier: 3
+      guarantee:
+      - forge_fire
+      - command_sprout
+    boss:
+      tier: 3
+      cost: 3
+      guarantee:
+      - forge_fire
+  '6':
+    boss:
+      tier: 4
+      cost: 0
+      free: true
+      guarantee:
+      - dragon_flame
+      - prime_sprout
+  '7':
+    special:
+      id: legend_chest
+      tier: 4
+      cost: 8
+      guarantee:
+      - dragon_flame
+      - prime_sprout
+    boss:
+      tier: 4
+      cost: 4
+  '8':
+    special:
+      id: element_spring
+      freeRefresh: 1
+  '9':
+    midday:
+      stalls: 2
+      tier: 4
+      guarantee:
+      - dragon_flame
+      - prime_sprout
+    boss:
+      tier: 4
+      cost: 4
+  '10':
+    midday:
+      stalls: 5
+      tier: 4
+      guarantee:
+      - dragon_flame
+      - prime_sprout
+grade_base:
+  青铜: 2
+  白银: 4
+  黄金: 6
+  钻石: 8
+trap_config:
+  fire:
+    name: 火陷阱
+    damageType: fire
+    apDelta: 0
+    desc: 造成火元素伤害
+  water:
+    name: 水陷阱
+    damageType: water
+    apDelta: 0
+    desc: 造成水元素伤害
+  wind:
+    name: 风陷阱
+    damageType: wind
+    apDelta: -1
+    desc: 造成风元素伤害，AP-1
+  earth:
+    name: 土陷阱
+    damageType: earth
+    apDelta: -1
+    desc: 造成土元素伤害，AP-1
+tier_mult:
+- 0
+- 1
+- 2
+- 4
+- 8
+shop_pools:
+  day1_midday:
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - pebble_guard
+  day1_night:
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - pebble_guard
+  - bubble_sprite
+  day2_midday:
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - pebble_guard
+  - ember_seed
+  - ember
+  day2_night:
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - pebble_guard
+  - bubble_sprite
+  - ember
+  day3_midday:
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - pebble_guard
+  - ember_seed
+  - ember
+  day3_night:
+  - sprout_summoner
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - pebble_guard
+  - ember
+  - breeze_sprite
+  day4_midday:
+  - spring_sprite
+  - fire_starter
+  - water_droplet
+  - wind_breeze
+  - pebble_guard
+  - ember
+  - fire_blaze
+  day4_night:
+  - fluff_speaker
+  - sprout_summoner
+  - spring_sprite
+  - pebble_guard
+  - boom_sprite
+  - ember
+  - breeze_sprite
+  day5_midday:
+  - boom_sprite
+  - split_sprite
+  - fluff_speaker
+  - spring_sprite
+  - sprout_summoner
+  - ember
+  - fire_blaze
+  - breeze_sprite
+  day5_night:
+  - boom_sprite
+  - split_sprite
+  - fluff_speaker
+  - spring_sprite
+  - ember_seed
+  - forge_fire
+  - command_sprout
+  - fire_demon
+  day6_midday:
+  - fluff_speaker
+  - spring_sprite
+  - boom_sprite
+  - split_sprite
+  - forge_fire
+  - command_sprout
+  - fire_blaze
+  - breeze_sprite
+  - fire_demon
+  day6_night:
+  - fluff_speaker
+  - spring_sprite
+  - boom_sprite
+  - split_sprite
+  - forge_fire
+  - command_sprout
+  - breeze_sprite
+  - fire_demon
+  day7_midday:
+  - boom_sprite
+  - split_sprite
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - breeze_sprite
+  day7_night:
+  - boom_sprite
+  - split_sprite
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - fire_demon
+  day8_midday:
+  - fluff_speaker
+  - spring_sprite
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - breeze_sprite
+  day8_night:
+  - fluff_speaker
+  - spring_sprite
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - fire_demon
+  - breeze_sprite
+  day9_midday:
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - boom_sprite
+  - split_sprite
+  - breeze_sprite
+  day9_night:
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - boom_sprite
+  - split_sprite
+  - fire_demon
+  day10_midday:
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - fluff_speaker
+  - spring_sprite
+  - breeze_sprite
+  day10_night:
+  - forge_fire
+  - command_sprout
+  - dragon_flame
+  - prime_sprout
+  - fluff_speaker
+  - spring_sprite
+  - fire_demon

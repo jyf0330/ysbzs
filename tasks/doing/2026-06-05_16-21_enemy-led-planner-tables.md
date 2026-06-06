@@ -62,8 +62,8 @@ commits:
 - ui.js
 - externalDataAdapter.js
 - external-data/generated-json/
-- external-data/source-yaml/pal_units.yml
-- external-data/source-yaml/encounter_config.yml
+- game-data-source/yaml/pal_units.yml
+- game-data-source/yaml/encounter_config.yml
 - docs/archive/
 - tasks/paused/2026-06-02_08-20_shop-ui-doc.md
 
@@ -79,7 +79,7 @@ commits:
 1. 用户或下一位 AI 先审读事件主表、事件 YAML 和事件接入说明
 2. 若确认继续细调，优先从怪物波次与敌人题型反推宠物数值与事件对策位
 3. 若要接运行时，再单开任务把事件 adapter 和 monster_templates / monster_waves adapter 拆开推进
-4. 如继续做怪物正式接线，再单开任务把 monster_templates / monster_waves 并入 `external-data/source-yaml/`
+4. 如继续做怪物正式接线，再单开任务把 monster_templates / monster_waves 并入 `game-data-source/yaml/`
 
 ## 验收 validation_needed
 

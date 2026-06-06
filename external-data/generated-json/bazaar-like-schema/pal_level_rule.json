@@ -17,8 +17,8 @@
       "levels": [
         {
           "level": 1,
-          "hp_mult": 1,
-          "atk_mult": 1,
+          "hp_mult": 1.0,
+          "atk_mult": 1.0,
           "layer_bonus": 0,
           "slot_value_bonus": 0,
           "notes": "Base state."

@@ -10,7 +10,7 @@
 | `data.js` | 数据定义 | ✅ 最新 |
 | `sim.js` | 战斗模拟 | ✅ 最新 |
 | `test.js` | 自动化测试（TDD 基准） | ✅ 最新 |
-| `external-tables.js` | 外置配置加载 | ✅ 最新 |
+| `game-data-source/` | 唯一数据真源：表格/YAML/MD | ✅ 最新 |
 | `record_gameplay.mjs` | 游戏录制 | ✅ |
 | `replay.js` | 回放加载 | ✅ |
 | `playable_day1.js` | Day1 走查脚本 | ✅ |
@@ -21,8 +21,8 @@
 
 | 文件 | 用途 | 当前状态 |
 |---|---|---|
-| `external-data/unit_patches.json` | 单位补丁 | ✅ 最新 |
-| `external-data/shop_unlock_pools.json` | 商店解锁池 | ✅ 最新 |
+| `game-data-source/yaml/pal_units.yml` | 单位 YAML 真源 | ✅ 最新 |
+| `game-data-source/yaml/shop_config.yml` | 商店 YAML 真源 | ✅ 最新 |
 | `external-data/id_alias.json` | ID 别名 | ✅ 最新 |
 | `external-data/meta.json` | 元数据 | ✅ 最新 |
 | `external-data/generated-json/` | 策划表 Excel → JSON 导出产物（游戏用配置） | ✅ 最新（8 个 JSON 文件，见下方选单） |

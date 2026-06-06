@@ -207,15 +207,15 @@
 - `game.js`：新增外部表接入逻辑，支持在脚本加载前通过 `__YSBZS_TABLES__`（或 `__YSBZS_EXTERNAL_TABLES__`）注入 `UNIT_DEFS` 与 `SHOP_POOLS`。
 - `game.js`：新增 `UNIT_PATCHES` 覆盖能力，可只覆盖英雄属性（名称、各级 HP、各槽 tier）而不替换整表。
 - `game.js`：保留内置默认表作为兜底；未注入外部表时行为不变。
-- `scripts/gen_external_tables_from_xlsx.py`：新增 xlsx 解析脚本，将 `docs/01_游戏设计（策划主导）/关卡策划/ysbzs_英雄表_最新设定_20260531.xlsx` 转为运行时可加载的 `external-tables.js`。
-- `scripts/gen_external_tables_from_xlsx.py`：支持按领域拆分产物，生成 `external-data/unit_patches.json`、`external-data/shop_unlock_pools.json`、`external-data/id_alias.json`、`external-data/meta.json`，同时继续生成 `external-tables.js` 供页面直接加载。
-- `index.html`：改为 JSON 优先加载外部表（先读 `external-data/*.json`），读取失败时自动回退到 `external-tables.js`，避免本地环境差异导致启动失败。
-- `index.html`：在 `game.js` 前加载 `external-tables.js`，实现“外部表自动接入”。
+- `已删除的旧 gen_external_tables_from_xlsx.py`：新增 xlsx 解析脚本，将 `docs/01_游戏设计（策划主导）/关卡策划/ysbzs_英雄表_最新设定_20260531.xlsx` 转为运行时可加载的 `已删除的旧 external-tables.js`。
+- `已删除的旧 gen_external_tables_from_xlsx.py`：支持按领域拆分产物，生成 `game-data-source/yaml/pal_units.yml`、`game-data-source/yaml/shop_config.yml`、`external-data/id_alias.json`、`external-data/meta.json`，同时继续生成 `已删除的旧 external-tables.js` 供页面直接加载。
+- `index.html`：改为 JSON 优先加载外部表（先读 `external-data/*.json`），读取失败时自动回退到 `已删除的旧 external-tables.js`，避免本地环境差异导致启动失败。
+- `index.html`：在 `game.js` 前加载 `已删除的旧 external-tables.js`，实现“外部表自动接入”。
 - `package.json`：新增 `npm run sync:hero-table` 一键同步外部英雄表。
 
 ### 用法
 - 宿主可在加载 `game.js` 前设置：`globalThis.__YSBZS_TABLES__ = { UNIT_DEFS: {...}, SHOP_POOLS: {...} }`。
-- 当前仓库默认使用 `external-tables.js`（由 xlsx 自动生成）提供 `UNIT_PATCHES`。
+- 当前仓库默认使用 `已删除的旧 external-tables.js`（由 xlsx 自动生成）提供 `UNIT_PATCHES`。
 
 ## 2026-06-02 — 商店价格口径对齐文档
 

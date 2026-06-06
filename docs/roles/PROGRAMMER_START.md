@@ -31,10 +31,10 @@
 | `data.js` | 数据定义 |
 | `sim.js` | 战斗模拟 |
 | `test.js` | 自动化测试（TDD 基准） |
-| `external-data/source-yaml/*.yml` | ★ YAML 源数据（唯一人工维护，见 `docs/17_YAML_DATA_MIGRATION.md`） |
+| `game-data-source/yaml/*.yml` | ★ YAML 源数据（唯一人工维护，见 `docs/17_YAML_DATA_MIGRATION.md`） |
 | `external-data/generated-json/*.json` | 自动生成产物（从 YAML 导出，禁止手改） |
 | `external-data/*.json` | 外置配置文件（手写补丁/别名） |
-| `external-tables.js` | 外置配置加载（加载 generated-json 的桥梁） |
+| `game-data-source/` | 唯一数据真源；脚本生成 `external-data/generated-json` |
 | `scripts/export_yaml_to_json.js` | YAML 源数据 → JSON 导出 |
 | `scripts/validate_yaml_data.js` | YAML 数据完整性校验 |
 | `scripts/export_excel_to_json.py` | Excel → JSON 导出脚本（旧流程，逐步弃用） |

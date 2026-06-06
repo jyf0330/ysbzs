@@ -11,18 +11,18 @@
 
 | 层 | 角色 | 是否人工维护 |
 |---|---|---|
-| `external-data/source-yaml/` | **唯一人工维护源数据** | ✅ 是 |
+| `game-data-source/yaml/` | **唯一人工维护源数据** | ✅ 是 |
 | `external-data/generated-json/` | 自动生成产物，运行时读取 | ❌ 否（禁止手改） |
 | `external-data/id_alias.json` | ID 别名映射（手写补丁） | ✅ 是（非 generated-json） |
-| `external-data/shop_unlock_pools.json` | 商店解锁池（手写补丁） | ✅ 是（非 generated-json） |
-| `external-data/unit_patches.json` | 单位数值补丁（手写补丁） | ✅ 是（非 generated-json） |
+| `game-data-source/yaml/shop_config.yml` | 商店解锁池（手写补丁） | ✅ 是（非 generated-json） |
+| `game-data-source/yaml/pal_units.yml` | 单位数值补丁（手写补丁） | ✅ 是（非 generated-json） |
 | `external-data/meta.json` | 元数据标注 | ✅ 是（非 generated-json） |
 | `external-data/*.zip` | Excel 导出的原始压缩包 | ❌ 存档备份，不直接修改 |
 
 ## 修改数据的正确流程
 
 ```text
-1. 修改 external-data/source-yaml/ 下对应的 .yml 文件
+1. 修改 game-data-source/yaml/ 下对应的 .yml 文件
 2. 运行 npm run data:build    # YAML → JSON 导出
 3. 运行 npm run data:validate  # 数据完整性校验
 4. 运行 npm test               # 游戏逻辑测试
@@ -43,7 +43,7 @@ node test.js          # 游戏测试
 
 ```
 external-data/
-├── source-yaml/                    # ★ 人工维护源数据
+├── game-data-source/yaml/                    # ★ 人工维护源数据
 │   ├── pal_units.yml               # Pal 单位主表（60 个）
 │   ├── shop_config.yml             # 商店规则 + 来源 + 运行时配置
 │   ├── hero_config.yml             # 英雄定义
@@ -70,8 +70,8 @@ external-data/
 │   └── attack-shapes/...
 │
 ├── id_alias.json                   # 手写补丁：ID 别名映射
-├── shop_unlock_pools.json          # 手写补丁：商店解锁池
-├── unit_patches.json               # 手写补丁：单位数值
+├── shop_config.yml          # 手写补丁：商店解锁池
+├── pal_units.yml               # 手写补丁：单位数值
 ├── meta.json                       # 手写补丁：元数据标注
 └── generated-json-bak/             # 备份（迁移时创建）
 ```
@@ -134,7 +134,7 @@ external-data/
 
 ### `scripts/export_yaml_to_json.js`
 
-- 读取 `external-data/source-yaml/**/*.yml` / `.yaml`。
+- 读取 `game-data-source/yaml/**/*.yml` / `.yaml`。
 - 按相同相对路径输出到 `external-data/generated-json/`。
 - 输出格式：2 空格缩进、UTF-8、末尾换行。
 - 解析失败 → `process.exit(1)`。

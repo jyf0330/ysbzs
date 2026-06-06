@@ -1,0 +1,467 @@
+version: 20260605
+source_workbook: 1_机制词条库_魔塔尖塔可计算版_20260605.xlsx
+separator: 、
+pet_mechanism_mappings:
+- old_pet_mechanism: 友召增益
+  old_skill: buffAllSummons
+  mapped_mechanism_ids:
+  - mech_aura
+  mapped_numbers: M28
+  source: 机制词条库
+  review_status: REVIEW
+  review_reason: 现有 mech_aura 可近似表示友军增益，但机制库暂无“仅召唤物光环”专用词条。
+  gap_suggestion: mech_summon_aura
+  monster_references:
+  - mechanism_id: mech_aura
+    monster_id: mon_aura_heat_01
+    monster_name: 火光环催杀
+    params: &id001
+      aura_type: atk_up
+      value: 1
+      scope: same_wave
+    day: D5-D7
+  - mechanism_id: mech_aura
+    monster_id: mon_aura_hex_02
+    monster_name: 风光环诅咒
+    params: &id002
+      aura_type: shield_up
+      value: 6
+      scope: same_wave
+    day: D6-D10
+  - mechanism_id: mech_aura
+    monster_id: mon_boss_siege_02
+    monster_name: 火Boss裂界母体
+    params: &id003
+      aura_type: atk_up
+      value: 2
+      scope: same_wave
+    day: D9-D10
+- old_pet_mechanism: 前排减压
+  old_skill: castleReduce
+  mapped_mechanism_ids:
+  - REVIEW
+  mapped_numbers: REVIEW
+  source: REVIEW新增
+  review_status: REVIEW
+  review_reason: 机制库暂无精确的前排减压 / 城堡线减压词条，不能硬映射到城堡破坏或诅咒。
+  gap_suggestion: mech_guard_reduce_castle_pressure
+- old_pet_mechanism: 治疗续航
+  old_skill: healAmpBonus
+  mapped_mechanism_ids:
+  - REVIEW
+  mapped_numbers: REVIEW
+  source: 暂无匹配
+  review_status: REVIEW
+  review_reason: 机制库当前没有治疗 / 回复 / 续航类正式机制ID。
+  gap_suggestion: mech_heal_sustain
+- old_pet_mechanism: 补刀控场
+  old_skill: advHitBonus
+  mapped_mechanism_ids:
+  - REVIEW
+  mapped_numbers: REVIEW
+  source: 暂无匹配
+  review_status: REVIEW
+  review_reason: 机制库暂无“补刀后追加收益 / 斩杀控场”类词条，不能硬塞成长或连击。
+  gap_suggestion: mech_execute_control
+- old_pet_mechanism: 爆格增伤
+  old_skill: spaceExplosionBonus
+  mapped_mechanism_ids:
+  - REVIEW
+  mapped_numbers: REVIEW
+  source: REVIEW新增
+  review_status: REVIEW
+  review_reason: 机制库暂无格子爆炸增伤 / 格位联动类词条。
+  gap_suggestion: mech_explosion_bonus
+- old_pet_mechanism: 落子召唤
+  old_skill: summonFromCell
+  mapped_mechanism_ids:
+  - mech_summon
+  mapped_numbers: M27
+  source: 机制词条库
+  review_status: OK
+  review_reason: 直接对应召唤机制。
+  monster_references:
+  - mechanism_id: mech_summon
+    monster_id: mon_summon_light_01
+    monster_name: 土召唤拖场
+    params: &id004
+      summon_id: mon_swarm_plain_01
+      interval: 2
+      count: 1
+    day: D2-D4
+  - mechanism_id: mech_summon
+    monster_id: mon_summon_guard_02
+    monster_name: 水召唤护卵
+    params: &id005
+      summon_id: mon_swarm_plain_01
+      interval: 2
+      count: 1
+    day: D5-D7
+  - mechanism_id: mech_summon
+    monster_id: mon_summon_grave_03
+    monster_name: 土召唤回魂
+    params: &id006
+      summon_id: mon_swarm_plain_01
+      interval: 2
+      count: 1
+    day: D7-D10
+  - mechanism_id: mech_summon
+    monster_id: mon_boss_siege_02
+    monster_name: 火Boss裂界母体
+    params: &id007
+      summon_id: mon_swarm_plain_01
+      interval: 2
+      count: 1
+    day: D9-D10
+pet_overrides: []
+review_items:
+- old_pet_mechanism: 友召增益
+  old_skill: buffAllSummons
+  review_reason: 现有 mech_aura 可近似表示友军增益，但机制库暂无“仅召唤物光环”专用词条。
+  gap_suggestion: mech_summon_aura
+- old_pet_mechanism: 前排减压
+  old_skill: castleReduce
+  review_reason: 机制库暂无精确的前排减压 / 城堡线减压词条，不能硬映射到城堡破坏或诅咒。
+  gap_suggestion: mech_guard_reduce_castle_pressure
+- old_pet_mechanism: 治疗续航
+  old_skill: healAmpBonus
+  review_reason: 机制库当前没有治疗 / 回复 / 续航类正式机制ID。
+  gap_suggestion: mech_heal_sustain
+- old_pet_mechanism: 补刀控场
+  old_skill: advHitBonus
+  review_reason: 机制库暂无“补刀后追加收益 / 斩杀控场”类词条，不能硬塞成长或连击。
+  gap_suggestion: mech_execute_control
+- old_pet_mechanism: 爆格增伤
+  old_skill: spaceExplosionBonus
+  review_reason: 机制库暂无格子爆炸增伤 / 格位联动类词条。
+  gap_suggestion: mech_explosion_bonus
+mechanism_library_usage:
+  mech_armor_break:
+    monster_count: 1
+    used_by_monsters:
+    - monster_id: mon_elite_breaker_01
+      name: 火精英破甲
+      params:
+        armor_break: 3
+        duration: 2
+      day: D5-D8
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_aura:
+    monster_count: 3
+    used_by_monsters:
+    - monster_id: mon_aura_heat_01
+      name: 火光环催杀
+      params: *id001
+      day: D5-D7
+    - monster_id: mon_aura_hex_02
+      name: 风光环诅咒
+      params: *id002
+      day: D6-D10
+    - monster_id: mon_boss_siege_02
+      name: 火Boss裂界母体
+      params: *id003
+      day: D9-D10
+    status: monster_proven
+    pet_mapping_status: PARTIAL
+  mech_break_castle:
+    monster_count: 3
+    used_by_monsters:
+    - monster_id: mon_castle_sapper_01
+      name: 土城堡钻线
+      params:
+        castle_line_loss: 1
+      day: D5-D8
+    - monster_id: mon_castle_raider_02
+      name: 火城堡急袭
+      params:
+        castle_line_loss: 1
+      day: D5-D10
+    - monster_id: mon_boss_field_01
+      name: 土Boss领域心核
+      params:
+        castle_line_loss: 2
+      day: D8-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_counter:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_counter_spike_01
+      name: 火反击尖刺
+      params:
+        counter_damage: 6
+      day: D3-D6
+    - monster_id: mon_counter_guard_02
+      name: 土反击拒扫
+      params:
+        counter_damage: 8
+      day: D4-D8
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_curse:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_aura_hex_02
+      name: 风光环诅咒
+      params:
+        ap_down: 1
+        duration: 2
+      day: D6-D10
+    - monster_id: mon_elite_hexwall_03
+      name: 土精英咒壁
+      params:
+        ap_down: 1
+        duration: 2
+      day: D7-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_damage_cap:
+    monster_count: 3
+    used_by_monsters:
+    - monster_id: mon_cap_drag_01
+      name: 土限伤拖刀
+      params:
+        max_hp_loss_per_turn: 10
+      day: D3-D6
+    - monster_id: mon_cap_heavy_02
+      name: 水限伤厚皮
+      params:
+        max_hp_loss_per_turn: 15
+      day: D7-D10
+    - monster_id: mon_boss_siege_02
+      name: 火Boss裂界母体
+      params:
+        max_hp_loss_per_turn: 20
+      day: D9-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_firm_threshold:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_tank_wall_02
+      name: 土肉盾坚壁
+      params:
+        damage_threshold: 6
+      day: D7-D10
+    - monster_id: mon_elite_hexwall_03
+      name: 土精英咒壁
+      params:
+        damage_threshold: 8
+      day: D7-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_first_hit_block:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_firsthit_probe_01
+      name: 风首伤补刀
+      params:
+        blocked_hits: 1
+      day: D3-D5
+    - monster_id: mon_firsthit_guard_02
+      name: 火首伤守门
+      params:
+        blocked_hits: 1
+      day: D5-D8
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_grow_attack:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_grow_attack_01
+      name: 火成长逼杀
+      params:
+        atk_gain_per_turn: 1
+      day: D3-D5
+    - monster_id: mon_grow_attack_02
+      name: 火成长爆压
+      params:
+        atk_gain_per_turn: 2
+      day: D4-D7
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_grow_shield:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_grow_shield_03
+      name: 水成长护壳
+      params:
+        shield_gain_per_turn: 6
+      day: D3-D6
+    - monster_id: mon_grow_shield_04
+      name: 土成长壁垒
+      params:
+        shield_gain_per_turn: 10
+      day: D5-D8
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_multi_hit:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_castle_raider_02
+      name: 火城堡急袭
+      params:
+        hits: 2
+      day: D5-D10
+    - monster_id: mon_elite_breaker_01
+      name: 火精英破甲
+      params:
+        hits: 2
+      day: D5-D8
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_opening_shield:
+    monster_count: 1
+    used_by_monsters:
+    - monster_id: mon_shield_open_02
+      name: 水护盾开壳
+      params:
+        opening_shield: 6
+      day: D1-D4
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_pierce_shield:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_reward_thief_02
+      name: 风偷奖护跑
+      params:
+        shield_pierce: 6
+      day: D6-D10
+    - monster_id: mon_elite_pierce_02
+      name: 水精英穿盾
+      params:
+        shield_pierce: 10
+      day: D6-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_poison:
+    monster_count: 1
+    used_by_monsters:
+    - monster_id: mon_swarm_toxic_03
+      name: 水小怪毒刺
+      params:
+        damage_per_turn: 2
+        duration: 3
+      day: D5-D8
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_revive:
+    monster_count: 3
+    used_by_monsters:
+    - monster_id: mon_tank_revive_03
+      name: 水肉盾复壳
+      params:
+        revive_hp: 15
+        reuse: 1
+      day: D8-D10
+    - monster_id: mon_summon_grave_03
+      name: 土召唤回魂
+      params:
+        revive_hp: 15
+        reuse: 1
+      day: D7-D10
+    - monster_id: mon_boss_field_01
+      name: 土Boss领域心核
+      params:
+        revive_hp: 20
+        reuse: 1
+      day: D8-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_self_destruct:
+    monster_count: 1
+    used_by_monsters:
+    - monster_id: mon_swarm_blast_02
+      name: 火小怪残爆
+      params:
+        damage: 6
+        splash: 1
+      day: D5-D7
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_shield_regen:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_shield_regen_03
+      name: 土护盾回壳
+      params:
+        shield_regen: 6
+      day: D5-D8
+    - monster_id: mon_elite_pierce_02
+      name: 水精英穿盾
+      params:
+        shield_regen: 10
+      day: D6-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_shielded_fragile:
+    monster_count: 1
+    used_by_monsters:
+    - monster_id: mon_shield_fragile_01
+      name: 火护盾薄血
+      params:
+        opening_shield: 6
+        body_hp: 10
+      day: D2-D5
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_steal_reward:
+    monster_count: 2
+    used_by_monsters:
+    - monster_id: mon_reward_runner_01
+      name: 风偷奖快逃
+      params:
+        reward_loss_per_turn: 1
+      day: D3-D6
+    - monster_id: mon_reward_thief_02
+      name: 风偷奖护跑
+      params:
+        reward_loss_per_turn: 1
+      day: D6-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_summon:
+    monster_count: 4
+    used_by_monsters:
+    - monster_id: mon_summon_light_01
+      name: 土召唤拖场
+      params: *id004
+      day: D2-D4
+    - monster_id: mon_summon_guard_02
+      name: 水召唤护卵
+      params: *id005
+      day: D5-D7
+    - monster_id: mon_summon_grave_03
+      name: 土召唤回魂
+      params: *id006
+      day: D7-D10
+    - monster_id: mon_boss_siege_02
+      name: 火Boss裂界母体
+      params: *id007
+      day: D9-D10
+    status: monster_proven
+    pet_mapping_status: OK
+  mech_weaken:
+    monster_count: 1
+    used_by_monsters:
+    - monster_id: mon_swarm_frail_04
+      name: 风小怪削势
+      params:
+        atk_down: 1
+        duration: 2
+      day: D5-D9
+    status: monster_proven
+    pet_mapping_status: REVIEW
+  mech_zone_pressure:
+    monster_count: 1
+    used_by_monsters:
+    - monster_id: mon_boss_field_01
+      name: 土Boss领域心核
+      params:
+        zone: cross_5
+        pressure: 6
+      day: D8-D10
+    status: monster_proven
+    pet_mapping_status: REVIEW

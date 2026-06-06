@@ -534,12 +534,14 @@ function wiringCheck() {
   check(/function buyFromShop/.test(pr), 'W79', p, 'playable_run.js 有 buyFromShop 购买逻辑',
     { type: /function buyFromShop/.test(pr) ? '' : 'PROJECT_PARTIAL' });
 
-  // external-tables.js
-  const extTables = exists('external-tables.js') ? readText('external-tables.js') : '';
-  if (extTables) {
-    check(/__YSBZS_TABLES__/.test(extTables), 'W80', p, 'external-tables.js 导出 __YSBZS_TABLES__');
-  }
+  // 数据源边界检查：禁止旧数据源回流
+  check(!exists('external-tables.js'), 'W80', p, 'external-tables.js 已删除，数据源收敛到 game-data-source/');
+  check(!exists('external-data/source-yaml'), 'W81', p, 'external-data/source-yaml/ 不存在（已全部迁入 game-data-source/）');
+  check(!exists('planner-data'), 'W82', p, 'planner-data 不存在（已全部迁入 game-data-source/）');
+  check(exists('game-data-source/yaml'), 'W83', p, 'game-data-source/yaml/ 存在（唯一 YAML 真源）');
+  check(exists('external-data/generated-json/pal_units.json'), 'W84', p, 'external-data/generated-json/ 运行时 JSON 存在（由 data:rebuild 生成）');
 }
+
 
 // ════════════════════════════════════════════════════════════════
 // 游戏模块加载

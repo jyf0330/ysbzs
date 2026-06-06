@@ -31,14 +31,15 @@ references/SuperAutoTest/
 *.tmp
 
 
-# external data — track generated-json, ignore temp/backup
+# external data — 纯生成产物，从 game-data-source/ 重建
+external-data/
 external-data/_*
 external-data/generated-json_backup_*
 *.zip
 
 # 生成报告 / 录制 — 不提交
 reports/
-recordings/*.webm
+recordings/
 
 # 本地工具缓存
 .omx/

@@ -781,33 +781,42 @@ function damageUnit(state, source, target, amount, ctx = {}) {
   return shieldAbsorb + final;
 }
 function settleElements(state) {
-  // 新规则：火≥3层 → 引爆 Σ(1..N) → 清零；空格火≥3层保留为陷阱
-  // 水/风不在此处统一结算（由领域/催化/聚合触发）
+  // 系统默认：火/水/风/土≥3层 → Σ(1..N) 伤害 → 清零
+  // 空格火≥3层保留为爆火陷阱（不引爆不消失）
+  // 水/风/土特殊效果由英雄领域/机制开启（毒/回血/聚火/土障）
+  const EL_NAMES = { 火: '火爆', 水: '水击', 风: '风袭', 土: '土崩' };
+  // 1. 有单位的格子：结算元素伤害
   for (const target of [...combatTargets(state, 'enemy'), ...combatTargets(state, 'player')]) {
     if (!target.alive || !target.position) continue;
     const cell = getCell(state, target.position.r, target.position.c);
     if (!cell) continue;
-    const fireLayers = cell.elements.火 || 0;
-    if (fireLayers < 3) continue;
-
-    // 火引爆（敌方格/英雄格）
-    const result = explodeIfEnemyOnFire(state, cell, 'system_settle');
-    if (result) {
+    for (const el of ['火', '水', '风', '土']) {
+      const layers = cell.elements[el] || 0;
+      if (layers < 3) continue;
+      const dmg = fireDamage(layers); // Σ(1..N) 默认公式
       pushEvent(state, 'ELEMENT_SETTLE', {
-        targetId: target.id, element: '火', layers: result.layersBefore,
-        damage: result.damage,
-        text: `${target.displayName || target.name} 所在格火${result.layersBefore}层引爆，火爆伤害=${result.damage}。`
+        targetId: target.id, element: el, layers,
+        damage: dmg,
+        text: `${target.displayName || target.name} 所在格${el}${layers}层结算，${EL_NAMES[el] || el}伤害=${dmg}。`
       });
-      damageUnit(state, null, target, result.damage, { element: '火', sourceType: 'fire_explosion' });
-      cell.elements.火 = 0;
-    } else {
-      // 空格火≥3层，不引爆，保留为爆火陷阱
-      pushEvent(state, 'ELEMENT_SETTLE', {
-        r: cell.r, c: cell.c, layers: fireLayers,
-        text: `R${cell.r}C${cell.c} 火${fireLayers}层，形成空格爆火陷阱。`
-      });
+      damageUnit(state, null, target, dmg, { element: el, sourceType: 'element_settle' });
+      cell.elements[el] = 0;
+      break;
     }
     if (state.phase === 'battle_end') break;
+  }
+  // 2. 空格火≥3层：保留为爆火陷阱
+  if (state.phase !== 'battle_end') {
+    for (const cell of state.board.cells) {
+      if (cell.unitId) continue;
+      const fireL = cell.elements.火 || 0;
+      if (fireL >= 3) {
+        pushEvent(state, 'ELEMENT_SETTLE', {
+          r: cell.r, c: cell.c, layers: fireL,
+          text: `R${cell.r}C${cell.c} 火${fireL}层，形成空格爆火陷阱（不引爆不消失）。`
+        });
+      }
+    }
   }
   syncDerivedBoard(state);
 }

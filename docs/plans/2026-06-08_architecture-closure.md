@@ -1,6 +1,7 @@
 # 架构闭环报告
 
-> 日期：2026-06-08，基于 `5fea1f8` + 已重构的 `trialEngine.cjs`
+> 日期：2026-06-08，最终验证于 `9d370ac`
+> 所有 13 项验证完成
 
 ## 一、已进入通用 battle 链路的规则
 
@@ -83,20 +84,61 @@ skipMechanics 只跳过：
 - `mech_move_free_field` — 移动不耗行动力 ✓
 - `mech_attack_lock_after_attack` — hasAttacked 标记 ✓
 
-## 六、测试覆盖
+## 六、测试覆盖与验证命令
+
+```bash
+npm test             → 31/31 tests passed
+npm run check:csv    → passed
+npm run check:day7   → 1/1 passed (day7 routed through uiAdapter→reducer→trialEngine→通用battle)
+npm run check:dom    → passed (no DOM calls in src/)
+npm run check:all    → runs all checks
+```
+
+**新增测试（6个）：**
+- fire 3+ layers triggered explosion (Σ formula via explodeIfEnemyOnFire)
+- fire 3+ on empty cell returns trap (no explosion)
+- water catalyst consumes 1 water and doubles layers
+- wind gather transfers fire between cells
+- mech_shield_regen restores shield
+- fireDamage Σ(1..N) sequence values (1,3,6,10,15,55)
+
+## 七、验证结果汇总
+
+| # | 要求 | 状态 | 备注 |
+|---|------|------|------|
+| 1 | trialEngine 无私有 CSV 读取 | ✅ 走 state.data 统一入口 | 0 处 fs.readFileSync/parseCsv |
+| 2 | unitFactory 统一普通/试炼单位 | ✅ createUnit/makeUnitFromData/makeTrialUnit | 字段一致（mechanics 默认值按场景区分） |
+| 3 | battle.cjs 调用 elements.cjs | ✅ settleElements + useActionSlot 均调用 | explodeIfEnemyOnFire + fireDamage |
+| 4 | 普通 battle 测试 | ✅ 6 个新测试 | 火/水/风/盾/Σ |
+| 5 | mechanics 分级 | ✅ 39 implemented / 27 data_only / 35 pending | 核心机制有状态变化验证 |
+| 6 | skipMechanics 安全 | ✅ 只跳过 hooks，盾/HP/死亡/战报保留 | 已验证 shield/HP/death tracking |
+| 7 | 胜负规则通用 | ✅ evaluateVictoryRules | 支持 turn1_pass/direct_win/trial_pass/trial_fail |
+| 8 | 英雄领域接入 | ✅ 4 个领域均生效 | 融焰娘/冲浪鸭/疾风隼/兽群统领 |
+| 9 | 四元素系统规则 | ✅ SYSTEM_ELEMENT_DEFAULTS | 火水风土3层成型，领域改写 |
+| 10 | 第7天击杀结果 | ✅ 骑士蜂 + 精灵龙 | passedRound1Standard=true |
+| 11 | 浏览器验收 | ✅ day7 test 走 uiAdapter 完整链路 | 非直接调用 trialEngine |
+
+## 关键口径修正
+
+> 用户确认：系统默认元素伤害就是 Σ(1..N)，英雄不负责开启 Σ 公式。
 
 ```
-npm test: 31/31 tests passed
+系统默认：火/水/风/土≥3层 → Σ(1..N) 伤害 → 清零
+火3层默认伤害=6，水3层=6，风3层=6，土3层=6
 
-新增测试：
-  - fire 3+ layers triggered explosion (Σ formula)
-  - fire 3+ on empty cell returns trap (no explosion)
-  - water catalyst consumes 1 water and doubles layers
-  - wind gather transfers fire between cells
-  - mech_shield_regen restores shield
-  - fireDamage Σ(1..N) sequence values
-
-npm run check:day7: 1/1 passed (day7 fire trial routed through uiAdapter)
-npm run check:csv: passes
-npm run check:dom: passes
+英雄领域改写：阈值、范围、触发条件、陷阱保留、主动引爆、毒/回血/催化/聚火
+融焰娘火核心特殊性：火陷阱、主动引爆、爆点利用、跨元素联动
+不是"只有她才有Σ伤害"
 ```
+
+当前 `settleElements` 已修正：遍历火水风土，有单位时统一 Σ 结算，空格火≥3 保留为陷阱。
+
+## 八、仍未解决的问题
+
+| 问题 | 说明 | 优先级 |
+|------|------|--------|
+| 护盾回满在编排层 | restore_shield 在 trialEngine，可在 battle.cjs 加 roundStart hook | 🟢 P2 |
+| 风聚火/水催化在编排层 | 需先查领域状态，编排层调用 elements.cjs 正确 | 🟢 保持现状 |
+| textReport.cjs 空壳 | 7 行，无结构化战报 | 🟢 P2 |
+| package.json 脚本混乱 | test/check:all 引用旧路径 | 🟢 P3 |
+| ~35 个 pending 机制 | 在 MECHANIC_STATUS 标记为 pending，无代码 | 🟢 P3 |

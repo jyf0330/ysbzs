@@ -360,6 +360,23 @@ body{
 }
 #msg button{margin-top:10px;padding:6px 20px;background:var(--c-btn-primary);border:1.5px solid #6a4f3a;border-radius:4px;cursor:pointer;color:#faf6ef;font-size:16px;}
 
+/* ── 战斗战报面板 ── */
+#battle-replay-panel{position:fixed;right:12px;top:60px;width:480px;max-height:80vh;background:var(--c-panel-bg);border:2px solid var(--c-panel-border);border-radius:6px;padding:8px 10px;z-index:500;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,0.35);display:none;font-size:13px;line-height:1.5;color:var(--c-text);}
+#battle-replay-panel .brp-bar{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;}
+#battle-replay-panel .brp-bar button{background:var(--c-btn-primary);color:#f6ead0;border:1px solid #3d2f1e;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:12px;}
+#battle-replay-panel .brp-bar button:hover{opacity:0.85;}
+#battle-replay-panel .brp-bar .brp-title{font-weight:700;color:var(--c-title);font-size:14px;margin-right:auto;}
+#battle-replay-panel .brp-text{width:100%;height:180px;background:var(--paper-hi);border:1px solid var(--paper-line);border-radius:3px;padding:6px;font-family:monospace;font-size:12px;line-height:1.5;color:var(--ink);resize:vertical;}
+#battle-replay-panel .brp-events{max-height:180px;overflow-y:auto;background:var(--paper-hi);border:1px solid var(--paper-line);border-radius:3px;padding:4px 6px;font-family:monospace;font-size:11px;line-height:1.45;}
+#battle-replay-panel .brp-events .be{border-bottom:1px solid rgba(124,89,53,0.18);padding:1px 0;}
+#battle-replay-panel .brp-events .be .be-step{color:var(--c-hero-a);font-weight:700;}
+#battle-replay-panel .brp-events .be .be-type{color:var(--c-atk);}
+#battle-replay-panel .brp-events .be .be-hp{color:var(--c-dmg);}
+#battle-replay-panel .brp-events .be .be-layer{color:var(--c-earth);}
+#battle-replay-panel .brp-hint{color:var(--c-hint);font-style:italic;font-size:12px;margin-top:4px;}
+.brp-close{position:absolute;top:6px;right:8px;cursor:pointer;color:var(--c-text2);font-size:16px;line-height:1;}
+.brp-close:hover{color:var(--c-dmg);}
+
 /* ===== DEBUG PANEL ===== */
 .debug-panel-surface{
   overflow-y:auto;
@@ -710,8 +727,8 @@ body{
         <span id="e-castle-txt">80/80</span>
       </div>
     </div>
-    <button id="tb-fsb" onclick="toggleFullscreen()" title="全屏 (F11)">⛶ 全屏</button>
     <button id="tb-shopbtn" onclick="openShop()">🛍 商店</button>
+    <button id="tb-fsb" style="background:rgba(255,248,224,0.28);color:#2a1a08;border:1px solid #8b6a3a;padding:3px 7px;border-radius:3px;cursor:pointer;font-size:15px;white-space:nowrap;flex-shrink:0;" onclick="toggleFullscreen()" title="全屏 (F11)">⛶ 全屏</button>
   </div>
 
   <!-- Main area: left panel + board + right panel -->
@@ -746,7 +763,10 @@ body{
     <div id="rp">
       <div class="rp-header">
         <span class="rp-title">↠ 行动槽位 <span id="slot-count"></span></span>
-        <button class="rp-auto-btn" id="exa" onclick="runAiBattleTurn()" aria-label="AI 战斗">⚡ AI战斗</button>
+        <div style="display:flex;gap:4px;">
+          <button class="rp-auto-btn" style="font-size:13px;min-width:48px;" onclick="toggleBattleReplay()" title="查看战斗战报">📜 战报</button>
+          <button class="rp-auto-btn" id="exa" onclick="runAiBattleTurn()" aria-label="AI 战斗">⚡ AI战斗</button>
+        </div>
       </div>
       <div id="asl"></div>
       <div class="rp-bottom">
@@ -767,6 +787,29 @@ body{
       <button class="battle-start-btn" id="etb" onclick="endPlayerTurn()">⚔ 开始战斗</button>
     </div>
   </div>
+</div>
+
+<!-- 战斗战报面板 -->
+<div id="battle-replay-panel">
+  <div class="brp-bar">
+    <span class="brp-title">📜 战斗战报</span>
+    <button onclick="renderBattleReplay()">🔄 刷新</button>
+    <button onclick="copyBattleReport()">📋 复制</button>
+    <button onclick="copyReportJSON()">📋 复制JSON</button>
+    <span class="brp-close" onclick="toggleBattleReplay()" title="关闭">✕</span>
+  </div>
+  <div class="brp-bar" style="margin-bottom:4px;">
+    <span style="font-size:12px;">模式：</span>
+    <label style="font-size:12px;cursor:pointer;"><input type="radio" name="brp-mode" value="compact" checked onchange="renderBattleReplay()"> 简洁</label>
+    <label style="font-size:12px;cursor:pointer;"><input type="radio" name="brp-mode" value="detail" onchange="renderBattleReplay()"> 详细</label>
+    <label style="font-size:12px;cursor:pointer;"><input type="radio" name="brp-mode" value="debug" onchange="renderBattleReplay()"> 调试</label>
+  </div>
+  <textarea class="brp-text" id="brp-text" readonly placeholder="（无战报，请先执行战斗）"></textarea>
+  <div class="brp-bar">
+    <span style="font-weight:600;font-size:12px;">事件列表</span>
+    <span class="brp-hint">共 <span id="brp-count">0</span> 条</span>
+  </div>
+  <div class="brp-events" id="brp-events">（无事件）</div>
 </div>
 
 <!-- Shop -->
@@ -855,11 +898,90 @@ body{
     await loadScript('actions.js');
     await loadScript('elements.js');
     await loadScript('waves.js');
+    await loadScript('battleLog.js');
+    await loadScript('battleTrace.js');
     await loadScript('battle.js');
     await loadScript('shop.js');
     await loadScript('game.js');
     await loadScript('ui.js');
   })();
+
+  /* ── 战斗战报面板 ── */
+  function toggleBattleReplay() {
+    var el = document.getElementById('battle-replay-panel');
+    if (!el) return;
+    if (el.style.display === 'block') { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    renderBattleReplay();
+  }
+
+  function _getReportMode() {
+    var radios = document.querySelectorAll('input[name="brp-mode"]');
+    for (var ri = 0; ri < radios.length; ri++) {
+      if (radios[ri].checked) return radios[ri].value;
+    }
+    return 'compact';
+  }
+
+  function renderBattleReplay() {
+    var textEl = document.getElementById('brp-text');
+    var eventsEl = document.getElementById('brp-events');
+    var countEl = document.getElementById('brp-count');
+    if (!textEl || !eventsEl) return;
+    if (!G || !Array.isArray(G.battleTrace) || G.battleTrace.length === 0) {
+      textEl.value = '（无战斗事件，请先执行战斗）';
+      eventsEl.innerHTML = '（无事件）';
+      if (countEl) countEl.textContent = '0';
+      return;
+    }
+    var mode = _getReportMode();
+    if (typeof generateBattleTextReport === 'function') {
+      textEl.value = generateBattleTextReport(G.battleTrace, { mode: mode });
+    } else {
+      textEl.value = G.battleTrace.map(function(e){ return JSON.stringify(e,null,2); }).join('\n---\n');
+    }
+    if (countEl) countEl.textContent = String(G.battleTrace.length);
+    eventsEl.innerHTML = G.battleTrace.map(function(e) {
+      var s = '<div class="be">' +
+        '<span class="be-step">#' + e.step + '</span> ' +
+        '<span class="be-type">' + esc(e.actionType || '?') + '</span>';
+      if (e.actorName) s += ' <b>' + esc(e.actorName) + '</b>';
+      if (e.targetName) s += ' → ' + esc(e.targetName);
+      if (e.damage !== undefined) s += ' <span class="be-hp">-' + e.damage + '</span>';
+      if (e.hpBefore !== undefined && e.hpAfter !== undefined) s += ' <span class="be-hp">HP ' + e.hpBefore + '→' + e.hpAfter + '</span>';
+      if (e.layerBefore !== undefined && e.layerAfter !== undefined) s += ' <span class="be-layer">层 ' + e.layerBefore + '→' + e.layerAfter + '</span>';
+      if (e.element) s += ' <span class="be-layer">' + esc(e.element) + '</span>';
+      if (e.killed) s += ' 💀';
+      s += '</div>';
+      return s;
+    }).join('');
+  }
+
+  function copyBattleReport() {
+    var textEl = document.getElementById('brp-text');
+    if (!textEl || !textEl.value) return;
+    navigator.clipboard.writeText(textEl.value).then(function() {
+      if (typeof showMsg === 'function') showMsg('📋 战报已复制！');
+    }).catch(function() {
+      textEl.select();
+      document.execCommand('copy');
+      if (typeof showMsg === 'function') showMsg('📋 战报已复制！');
+    });
+  }
+
+  function copyReportJSON() {
+    if (!G || !Array.isArray(G.battleTrace)) { if (typeof showMsg === 'function') showMsg('⚠️ 无战报数据'); return; }
+    var json = typeof exportBattleTrace === 'function' ? exportBattleTrace() : JSON.stringify(G.battleTrace, null, 2);
+    navigator.clipboard.writeText(json).then(function() {
+      if (typeof showMsg === 'function') showMsg('📋 JSON已复制！');
+    }).catch(function() {
+      if (typeof showMsg === 'function') showMsg('⚠️ 复制失败');
+    });
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 })();
 </script>
 </body>

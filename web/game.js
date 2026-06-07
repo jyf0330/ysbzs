@@ -37,7 +37,10 @@ function initGame() {
     selHero: null, selSlot: null, selectedCell: null, prevCells: [], heroPrev: [],
     explPos: null, backpack: [], _bpCnt: 0, monWarn: [],
     coreSnapshot: null, coreVersion: 0, actionLog: [],
+    battleTrace: [],
+    battleTraceStep: 0,
   };
+  if (typeof initBattleTrace === 'function') initBattleTrace();
   addOwnedUnit('fire_starter', { r: 6, c: 0 });
   addOwnedUnit('water_droplet', { r: 7, c: 1 });
   addOwnedUnit('wind_breeze', { r: 6, c: 1 });

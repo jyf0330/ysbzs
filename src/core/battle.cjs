@@ -644,6 +644,20 @@ function moveHero(state, unitId, to) {
   syncDerivedBoard(state);
   return true;
 }
+
+/**
+ * 通用移动函数（无阵营限制），供 trialEngine 编排使用。
+ * 不检查 phase、infiniteMove、AP、occupancy——调用方负责。
+ */
+function moveUnitGeneral(state, unit, to) {
+  if (!unit || !to) return false;
+  const from = { r: unit.position?.r ?? 0, c: unit.position?.c ?? 0 };
+  unit.position = { r: to.r, c: to.c };
+  syncBoardUnits(state);
+  syncDerivedBoard(state);
+  return true;
+}
+
 function setActionDirection(state, unitId, slotId, dir) {
   const unit = getUnit(state, unitId || state.selected?.unitId) || living(state, 'hero')[0];
   const idx = parseSlotIndex(slotId ?? state.selected?.slotId ?? 0);
@@ -737,17 +751,25 @@ function runPlayerTurn(state) {
 function damageUnit(state, source, target, amount, ctx = {}) {
   if (!target || target.alive === false || target.hp <= 0 || amount <= 0) return 0;
   ensureElements(target);
-  const calc = mech.beforeDamage(state, target, source, amount, ctx);
-  let final = Math.max(0, calc.damage - (target.def || 0));
+  let raw = amount;
+  let logs = [];
+  if (!ctx.skipMechanics) {
+    const calc = mech.beforeDamage(state, target, source, amount, ctx);
+    raw = calc.damage;
+    logs = calc.logs || [];
+  }
+  let final = Math.max(0, raw - (target.def || 0));
   const shieldBefore = target.shield;
   const hpBefore = target.hp;
   const shieldAbsorb = Math.min(target.shield, final);
   target.shield -= shieldAbsorb;
   final -= shieldAbsorb;
   if (final > 0) { target.hp = Math.max(0, target.hp - final); target.roundDamageTaken = (target.roundDamageTaken || 0) + final; }
-  pushEvent(state, 'DAMAGE', { sourceId: source?.id, targetId: target.id, element: ctx.element, raw: amount, final: shieldAbsorb + final, shieldFrom: shieldBefore, shieldTo: target.shield, hpFrom: hpBefore, hpTo: target.hp, logs: calc.logs, text: `${source?.displayName || source?.name || '系统'} 对 ${target.displayName || target.name} 造成${ctx.element || ''}伤害：原始${amount}→有效${shieldAbsorb + final}，盾${shieldBefore}→${target.shield}，HP${hpBefore}→${target.hp}。` });
-  if (hpBefore !== target.hp) mech.afterDamage(state, target, source, final);
-  if (source && shieldAbsorb + final > 0) mech.afterHit(state, target, source, shieldAbsorb + final);
+  pushEvent(state, 'DAMAGE', { sourceId: source?.id, targetId: target.id, element: ctx.element, raw: amount, final: shieldAbsorb + final, shieldFrom: shieldBefore, shieldTo: target.shield, hpFrom: hpBefore, hpTo: target.hp, logs, text: `${source?.displayName || source?.name || '系统'} 对 ${target.displayName || target.name} 造成${ctx.element || ''}伤害：原始${amount}→有效${shieldAbsorb + final}，盾${shieldBefore}→${target.shield}，HP${hpBefore}→${target.hp}。` });
+  if (!ctx.skipMechanics) {
+    if (hpBefore !== target.hp) mech.afterDamage(state, target, source, final);
+    if (source && shieldAbsorb + final > 0) mech.afterHit(state, target, source, shieldAbsorb + final);
+  }
   if (target.hp <= 0 && target.alive) {
     target.alive = false;
     pushEvent(state, 'UNIT_DEAD', { unitId: target.id, name: target.name, text: `${target.displayName || target.name} HP${hpBefore}→0，死亡。` });
@@ -882,4 +904,4 @@ function runBattle(state) {
   }
   return finishBattle(state, cleared);
 }
-module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, runMonsterTurn, runBattle, damageUnit, settleElements, startBattle, startNextRound, endPlayerTurn, moveHero, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, getCellDetail, syncDerivedBoard, slotsForUnit, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, factionRules };
+module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, runMonsterTurn, runBattle, damageUnit, settleElements, startBattle, startNextRound, endPlayerTurn, moveHero, moveUnitGeneral, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, getCellDetail, syncDerivedBoard, slotsForUnit, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, factionRules };

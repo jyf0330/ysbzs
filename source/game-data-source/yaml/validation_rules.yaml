@@ -1,0 +1,14 @@
+validation_rules:
+  source_table: 09_跨表校验
+  must_pass:
+  - 02怪物模板.宠物ID -> 01宠物主表.宠物ID
+  - 03怪物波次.宠物ID -> 01宠物主表.宠物ID
+  - 05事件主表.宠物ID -> 01宠物主表.宠物ID
+  - 05事件主表.机制ID -> 04机制词条库.机制ID
+  - 06商店奖励池.宠物ID -> 01宠物主表.宠物ID
+  - 07遗物祝福.宠物ID -> 01宠物主表.宠物ID
+  - 07遗物祝福.机制ID -> 04机制词条库.机制ID
+  - 08形状行动槽.宠物ID -> 01宠物主表.宠物ID
+  - 08形状行动槽.机制ID -> 04机制词条库.机制ID
+  current_status: PASS
+  missing_reference_count: 0

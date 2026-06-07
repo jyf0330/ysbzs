@@ -1,0 +1,70 @@
+meta:
+  generated_at: 2026-06-06 17:39
+  purpose: 01-09数据管理表跨表连接规则；宠物ID/机制ID/池ID/形状ID为核心主键。
+  status: 策划管理包；用于进入game-data-source前审核。
+primary_keys:
+  pet_id:
+    source_sheet: 01_宠物主表_好读版
+    source_column: 宠物ID
+    used_by:
+    - 02_怪物模板
+    - 03_怪物波次
+    - 05_事件
+    - 06_商店奖励池
+    - 07_遗物祝福
+    - 08_形状行动槽
+  mechanism_id:
+    source_sheet: 04_机制词条库_60条
+    source_column: 机制ID
+    used_by:
+    - 02_怪物模板
+    - 05_事件
+    - 07_遗物祝福
+    - 08_形状行动槽
+  shop_pool_id:
+    source_sheet: 06_商店奖励池
+    source_column: 商店池(自动)
+    used_by:
+    - 05_事件
+    - 07_遗物祝福
+  reward_pool_id:
+    source_sheet: 06_商店奖励池
+    source_column: 奖励池(自动)
+    used_by:
+    - 05_事件
+    - 07_遗物祝福
+  shape_id:
+    source_sheet: 08_形状行动槽
+    source_column: 形状ID
+    used_by:
+    - 宠物行动槽生成
+    - 战斗预览
+    - 技能范围
+table_roles:
+  01_宠物主表: 宠物母表；名称、元素、品质、体型、定位、形状、标签等基础信息。
+  02_怪物模板: 怪物最终数值源；以宠物ID关联宠物，HP/攻/防/盾/行动以这里为准。
+  03_怪物波次: 出怪脚本；只排天数/回合/宠物ID/数量/位置。
+  04_机制词条库: 效果词条库；机制ID唯一。
+  05_事件主表: 事件选项和奖励/惩罚；引用宠物ID、机制ID、池ID。
+  06_商店奖励池: 商店和奖励池入口；一行一个宠物商品入口。
+  07_遗物祝福: 长期被动/祝福/装备/诅咒；引用机制ID，可关联宠物和池。
+  08_形状行动槽: 宠物行动槽/形状/技能显示源；127宠物全覆盖。
+  09_跨表校验: 人工审核表；所有缺失数应为0。
+manual_edit_rules:
+  only_edit_yellow_columns: true
+  grey_auto_columns: 公式/自动显示列，不作为第二真源。
+  pet_stats_final_source: 02_怪物模板_好读版
+  pet_basic_source: 01_宠物主表_好读版
+  mechanism_source: 04_机制词条库_60条
+  shop_reward_source: 06_商店奖励池_好读版
+validation_summary:
+  pet_count: 127
+  monster_template_refs: 34
+  wave_refs: 134
+  mechanism_count: 61
+  event_count: 32
+  shop_entries: 127
+  relic_blessing_count: 40
+  shape_action_count: 127
+  missing_reference_count: 0
+  status: PASS

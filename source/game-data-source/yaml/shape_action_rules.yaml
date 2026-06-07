@@ -1,0 +1,24 @@
+shape_action_rules:
+  source_table: 08_形状行动槽_好读版
+  id_columns:
+  - 宠物ID
+  - 形状ID
+  default_policy:
+    slot_count: 3
+    same_slots_by_default: true
+    default_direction: 默认向右
+    default_layers: 1
+  shape_categories:
+    单体:
+      default_cells: 1
+    横排:
+      default_cells: 3
+    竖列:
+      default_cells: 3
+    十字:
+      default_cells: 5
+    T形:
+      default_cells: 4
+    范围:
+      default_cells: 8
+  runtime_policy: 表中只放好读形状摘要；具体cells坐标后续可放shape_cells.yaml。

@@ -1,64 +1,38 @@
 node_modules/
-
-# 密钥与敏感配置
-.env
-.env.local
-.env.*.local
-
-# 系统 / 编辑器生成
 .DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
-.bak
-*.bak
-*.pyc
-__pycache__/
-
-# 本机 AI 工具 / IDE
-.codex/
-.omx/
-.claude/
-.vscode/
-.idea/
-.superpowers/
-.reasonix/
-references/SuperAutoTest/
-
-# 系统生成文件
 *.log
-*.tmp
 
+# 从 CSV 生成的 JSON 数据
+data/normalized_data.json
+data/source_tables.json
 
-# external data — 纯生成产物，从 game-data-source/ 重建
-external-data/
-external-data/_*
-external-data/generated-json_backup_*
-*.zip
+# 运行生成的检查输出
+CHECK_ALL_OUTPUT*.txt
+CHECK_RESULT*.txt
+CHECK_ALL_STATUS*.txt
+MD5_*.txt
+OPERATION_GAP_CLOSED_SUMMARY.txt
+UI_CONTRACT_SCAN.txt
+CHANGE_ATTACK_RULES_*.txt
 
-# 生成报告 / 录制 — 不提交
-reports/
-recordings/
+# 玩家测试说明（已有 tests/ 下正式版，根目录的生成版忽略）
+/玩家行为测试说明*.txt
 
-# 本地工具缓存
-.omx/
-.omx/*
-.reasonix/
-.reasonix/*
-.superpowers/
-.codex/
+# IDE/工具配置（非项目文件）
 .claude/
+.omx/
+.superpowers/
 
-# 精灵图 / 参考设计图 — 本地素材不提交
-assets/sprites/
-assets/references/
+# 运行痕迹
+*.log
+report_samples/
+benchmarks/
+recordings/
+reports/
+e2e/
+ai-eval/generated-runs/
 
-# 测试/构建副产品
-test-results/
-benchmarks/ysbzs/fixtures/
-11.png
-_apply_shapes.js
-test.js.bak
-test.js.bak2
-test.js.curr
+# 超大生成数据
+gpt_test.js
+original-style-battle-preview.html
+original-style-battle-preview.js

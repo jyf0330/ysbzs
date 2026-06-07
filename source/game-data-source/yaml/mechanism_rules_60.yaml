@@ -1,0 +1,1557 @@
+meta:
+  file: 04_机制词条库_60条规则_20260606.yaml
+  generated_at: 2026-06-06 10:40
+  source_table: 04_机制词条库_60条策划好读版_20260606.xlsx
+  row_count: 61
+  design_note: M00 为 none 占位；M01-M60 为正式机制词条。表格服务策划阅读，YAML服务程序接入。
+runtime_policy:
+  truth_source: game-data-source/tables/04_机制词条库_60条策划好读版.xlsx + game-data-source/yaml/mechanism_library.yaml
+  id_rule: 机制ID必须唯一；宠物/怪物/事件/波次只引用 mechanism.id，不复制完整规则。
+  review_rule: REVIEW/空字符串不得进入 runtime；未知 mechanism_id 必须报错或按 pending skip 显示警告。
+  none_rule: none 是正式无机制占位，脚本可安全跳过。
+  fire_cross_rule: mech_fire_cross_detonate_diamond 只允许钻石火魔在场或背包时启用，不得默认全局启用。
+  trap_stack_rule: 陷阱是地形层，可叠加；触发时同格所有元素陷阱可一起结算。
+  round_rule: 战斗目标5回合高奖、10回合失败；波次/奖励机制必须能读取 clear_round。
+trigger_order:
+- battle_start
+- round_start
+- target_select
+- before_damage
+- after_hit
+- after_damage
+- on_shield_break
+- after_element_apply
+- element_damage
+- element_settle
+- after_action
+- after_kill
+- ally_death
+- on_enter_cell
+- round_end
+- on_death
+- battle_end
+- battle_fail
+score_policy:
+  '0': 无机制/占位
+  1-3: 轻机制，适合早期小怪或低档宠物
+  4-6: 中机制，适合常规宠物/怪物
+  7-8: 强机制，适合精英、核心宠物或波次压力
+  9-10: 高风险机制，默认先做待接入或首领专属
+categories:
+  M01-M10: 防御/护盾
+  M11-M20: 反击/爆炸
+  M21-M30: 成长/狂暴
+  M31-M40: 召唤/分裂
+  M41-M50: 元素/陷阱
+  M51-M60: 诅咒/波次/奖励
+mechanisms:
+- 'no': M00
+  id: none
+  name: 无机制
+  category: 占位
+  targets:
+  - 宠物
+  - 怪物
+  - 事件
+  - 波次
+  trigger: 无
+  condition: 无
+  params: {}
+  effect_text: 不产生任何效果
+  log_template: '{unit} 没有特殊机制。'
+  score: 0
+  power: 无
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: true
+    wave: true
+  runtime_policy: skip
+  note: 正式空机制，占位用。
+- 'no': M01
+  id: mech_shield_flat
+  name: 开场护盾
+  category: 防御/护盾
+  targets:
+  - 宠物
+  - 怪物
+  trigger: battle_start
+  condition: 单位入场
+  params:
+    shield: 6
+  effect_text: 入场获得固定护盾。
+  log_template: '{unit} 获得 {shield} 点护盾。'
+  score: 2
+  power: 低
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: enabled_candidate
+  note: 最基础护盾词条。
+- 'no': M02
+  id: mech_armor_flat
+  name: 护甲减伤
+  category: 防御/护盾
+  targets:
+  - 宠物
+  - 怪物
+  trigger: before_damage
+  condition: 受到攻击伤害
+  params:
+    armor: 2
+  effect_text: 每次受攻击伤害前，先减少固定伤害。
+  log_template: '{unit} 的护甲抵消 {armor} 点伤害。'
+  score: 3
+  power: 低
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: enabled_candidate
+  note: 适合厚盾低血怪或坦克宠物。
+- 'no': M03
+  id: mech_damage_reduce_pct
+  name: 百分比免伤
+  category: 防御/护盾
+  targets:
+  - 宠物
+  - 怪物
+  trigger: before_damage
+  condition: 受到任意伤害
+  params:
+    rate: 0.3
+  effect_text: 按比例降低最终伤害，至少保留 min_damage。
+  log_template: '{unit} 免伤 {percent}%，伤害降为 {damage}。'
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需要明确四舍五入规则。
+- 'no': M04
+  id: mech_first_hit_immunity
+  name: 首次免疫
+  category: 防御/护盾
+  targets:
+  - 宠物
+  - 怪物
+  trigger: before_damage
+  condition: 本场第一次受到伤害
+  params:
+    times: 1
+  effect_text: 完全免疫前 N 次伤害。
+  log_template: '{unit} 触发首次免疫，抵消本次伤害。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 魔塔式可计算机制。
+- 'no': M05
+  id: mech_damage_cap_per_round
+  name: 每回合损血上限
+  category: 防御/护盾
+  targets:
+  - 怪物
+  - 首领
+  trigger: before_damage
+  condition: 本回合累计伤害超过上限
+  params:
+    cap: 8
+  effect_text: 单回合最多损失 cap 点 HP。
+  log_template: '{unit} 本回合伤害达到上限，额外伤害无效。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 适合防秒杀精英/首领。
+- 'no': M06
+  id: mech_shield_regen
+  name: 回合回盾
+  category: 防御/护盾
+  targets:
+  - 宠物
+  - 怪物
+  trigger: round_start
+  condition: 单位存活
+  params:
+    shield: 3
+  effect_text: 每回合开始获得固定护盾。
+  log_template: '{unit} 回合开始恢复 {shield} 点护盾。'
+  score: 4
+  power: 中
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: enabled_candidate
+  note: 与拖回合惩罚形成压力。
+- 'no': M07
+  id: mech_thorn_shield
+  name: 荆棘护盾
+  category: 防御/反击
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 有护盾时被攻击
+  params:
+    reflect: 2
+  effect_text: 有护盾时受到攻击，反弹固定伤害。
+  log_template: '{unit} 的荆棘反弹 {reflect} 点伤害。'
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 反伤类的低复杂版。
+- 'no': M08
+  id: mech_element_barrier
+  name: 元素屏障
+  category: 防御/元素
+  targets:
+  - 宠物
+  - 怪物
+  trigger: before_damage
+  condition: 受到非克制元素伤害
+  params:
+    element: earth
+    reduce: 3
+  effect_text: 特定元素屏障减少非克制伤害。
+  log_template: '{unit} 的 {element} 屏障抵消 {reduce} 点伤害。'
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需要元素克制表。
+- 'no': M09
+  id: mech_guard_taunt
+  name: 嘲讽守护
+  category: 防御/控制
+  targets:
+  - 宠物
+  - 怪物
+  trigger: target_select
+  condition: 敌方选择目标时
+  params:
+    range: 1
+  effect_text: 强制附近敌人优先攻击自己。
+  log_template: '{unit} 嘲讽附近敌人。'
+  score: 4
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需要目标选择钩子。
+- 'no': M10
+  id: mech_last_stand_shield
+  name: 濒死护盾
+  category: 防御/成长
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_damage
+  condition: HP低于阈值且未触发
+  params:
+    hp_pct: 0.3
+    shield: 10
+    once: true
+  effect_text: 低血时获得一次大量护盾。
+  log_template: '{unit} 濒死触发，获得 {shield} 点护盾。'
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 适合精英转阶段。
+- 'no': M11
+  id: mech_counter_damage
+  name: 受击反伤
+  category: 反击/爆炸
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 受到攻击伤害后
+  params:
+    damage: 3
+  effect_text: 对攻击者造成固定反伤。
+  log_template: '{unit} 反击，造成 {damage} 点伤害。'
+  score: 4
+  power: 中
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: enabled_candidate
+  note: 最直接反击。
+- 'no': M12
+  id: mech_death_explosion
+  name: 死亡爆炸
+  category: 反击/爆炸
+  targets:
+  - 怪物
+  trigger: on_death
+  condition: 单位死亡
+  params:
+    damage: 6
+    radius: cross1
+  effect_text: 死亡时对周围造成伤害。
+  log_template: '{unit} 死亡爆炸，造成 {damage} 点伤害。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: enabled_candidate
+  note: 已在怪物方向讨论过。
+- 'no': M13
+  id: mech_self_destruct
+  name: 自爆倒计时
+  category: 反击/爆炸
+  targets:
+  - 怪物
+  trigger: round_end
+  condition: 倒计时结束且存活
+  params:
+    rounds: 2
+    damage: 8
+    radius: cross1
+  effect_text: 存活到倒计时结束后自爆。
+  log_template: '{unit} 自爆，造成 {damage} 点伤害。'
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 促使玩家优先处理。
+- 'no': M14
+  id: mech_on_hit_blast
+  name: 受击溅射
+  category: 反击/爆炸
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 受到伤害后
+  params:
+    damage: 2
+    radius: adjacent
+  effect_text: 被打后对周围溅射。
+  log_template: '{unit} 受击溅射，周围受到 {damage} 点伤害。'
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需要区分敌我伤害。
+- 'no': M15
+  id: mech_reflect_first_hit
+  name: 首次反弹
+  category: 反击/防御
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 第一次被命中
+  params:
+    rate: 1.0
+  effect_text: 第一次被命中时反弹等量伤害。
+  log_template: '{unit} 首次反弹 {damage} 点伤害。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 首次免疫的进攻版。
+- 'no': M16
+  id: mech_shield_break_explosion
+  name: 破盾爆炸
+  category: 反击/爆炸
+  targets:
+  - 宠物
+  - 怪物
+  trigger: on_shield_break
+  condition: 护盾从正数降到0
+  params:
+    damage: 5
+    radius: cross1
+  effect_text: 破盾时爆炸。
+  log_template: '{unit} 破盾爆炸，造成 {damage} 点伤害。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 盾怪破盾反馈。
+- 'no': M17
+  id: mech_retaliate_summon
+  name: 受击召唤
+  category: 反击/召唤
+  targets:
+  - 怪物
+  - 首领
+  trigger: after_hit
+  condition: 每回合首次受击
+  params:
+    summon: mon_swarm_plain_01
+    count: 1
+  effect_text: 受击后召唤小怪。
+  log_template: '{unit} 受击召唤 {count} 个援军。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 精英/首领用。
+- 'no': M18
+  id: mech_revenge_buff
+  name: 复仇强化
+  category: 反击/成长
+  targets:
+  - 宠物
+  - 怪物
+  trigger: ally_death
+  condition: 同阵营单位死亡
+  params:
+    atk: 1
+    shield: 2
+  effect_text: 友方死亡时自身加攻/盾。
+  log_template: '{unit} 因同伴死亡获得复仇强化。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 群怪联动。
+- 'no': M19
+  id: mech_thorns_percent
+  name: 比例反伤
+  category: 反击/防御
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 受到攻击伤害后
+  params:
+    rate: 0.3
+  effect_text: 按受到伤害比例反弹。
+  log_template: '{unit} 反弹 {damage} 点伤害。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 比固定反伤更易失控。
+- 'no': M20
+  id: mech_counter_attack
+  name: 受击反击行动
+  category: 反击/行动
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: AP足够且未反击过
+  params:
+    ap_cost: 1
+    damage: atk
+  effect_text: 被攻击后立即进行一次反击行动。
+  log_template: '{unit} 立即反击。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需要行动队列钩子。
+- 'no': M21
+  id: mech_grow_atk_each_round
+  name: 每回合加攻
+  category: 成长/狂暴
+  targets:
+  - 宠物
+  - 怪物
+  trigger: round_start
+  condition: 单位存活
+  params:
+    atk: 1
+  effect_text: 每回合开始攻击增加。
+  log_template: '{unit} 攻击提升 {atk}。'
+  score: 4
+  power: 中
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: enabled_candidate
+  note: 杀戮尖塔式成长。
+- 'no': M22
+  id: mech_grow_shield_each_round
+  name: 每回合加盾
+  category: 成长/护盾
+  targets:
+  - 宠物
+  - 怪物
+  trigger: round_start
+  condition: 单位存活
+  params:
+    shield: 3
+  effect_text: 每回合开始获得更多护盾。
+  log_template: '{unit} 护盾提升 {shield}。'
+  score: 4
+  power: 中
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: enabled_candidate
+  note: 拖回合压力。
+- 'no': M23
+  id: mech_rage_low_hp
+  name: 低血狂暴
+  category: 成长/狂暴
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_damage
+  condition: HP低于阈值
+  params:
+    hp_pct: 0.5
+    atk: 3
+  effect_text: 低血后攻击增强。
+  log_template: '{unit} 进入狂暴，攻击+{atk}。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 二阶段简化版。
+- 'no': M24
+  id: mech_harden_when_hit
+  name: 越打越硬
+  category: 成长/护盾
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 受到伤害后
+  params:
+    def: 1
+    max: 5
+  effect_text: 每次受击增加防御。
+  log_template: '{unit} 变硬，防御+{def}。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 厚怪时间压力。
+- 'no': M25
+  id: mech_soften_when_hit
+  name: 破甲递减
+  category: 成长/破甲
+  targets:
+  - 怪物
+  trigger: after_hit
+  condition: 受到伤害后
+  params:
+    def: -1
+    min: 0
+  effect_text: 每次受击降低防御。
+  log_template: '{unit} 被削弱，防御下降。'
+  score: 4
+  power: 低
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 鼓励多段攻击。
+- 'no': M26
+  id: mech_delayed_powerup
+  name: 延迟强化
+  category: 成长/倒计时
+  targets:
+  - 怪物
+  - 首领
+  trigger: round_start
+  condition: 达到指定回合
+  params:
+    round: 3
+    atk: 5
+    shield: 10
+  effect_text: 指定回合后大幅强化。
+  log_template: '{unit} 完成蓄力，获得强化。'
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 与5回合奖励目标相容。
+- 'no': M27
+  id: mech_consume_layers_grow
+  name: 吸收元素成长
+  category: 成长/元素
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_element_apply
+  condition: 所在格有元素层
+  params:
+    element: any
+    atk_per_layer: 1
+  effect_text: 吸收格子元素层获得成长。
+  log_template: '{unit} 吸收元素，攻击提升。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需元素层钩子。
+- 'no': M28
+  id: mech_enrage_after_round
+  name: 回合狂暴
+  category: 成长/波次
+  targets:
+  - 怪物
+  - 首领
+  trigger: round_start
+  condition: 当前回合>=阈值
+  params:
+    round: 5
+    atk: 3
+  effect_text: 战斗拖到指定回合后强化。
+  log_template: '{unit} 因战斗拖延进入狂暴。'
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 压缩战斗节奏。
+- 'no': M29
+  id: mech_second_phase
+  name: 二阶段转化
+  category: 成长/首领
+  targets:
+  - 首领
+  - 精英
+  trigger: after_damage
+  condition: HP低于阈值
+  params:
+    hp_pct: 0.5
+    new_mech: mech_rage_low_hp
+  effect_text: 进入第二阶段并切换机制。
+  log_template: '{unit} 进入第二阶段。'
+  score: 10
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 首领核心机制。
+- 'no': M30
+  id: mech_scale_with_allies
+  name: 随同伴成长
+  category: 成长/群怪
+  targets:
+  - 怪物
+  trigger: round_start
+  condition: 同阵营存活数量>1
+  params:
+    atk_per_ally: 1
+    shield_per_ally: 1
+  effect_text: 同伴越多越强。
+  log_template: '{unit} 因同伴获得强化。'
+  score: 7
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 鼓励先清小怪。
+- 'no': M31
+  id: mech_summon_each_round
+  name: 每回合召唤
+  category: 召唤/分裂
+  targets:
+  - 怪物
+  - 首领
+  trigger: round_start
+  condition: 召唤位可用
+  params:
+    summon: mon_swarm_plain_01
+    count: 1
+  effect_text: 每回合召唤小怪。
+  log_template: '{unit} 召唤 {count} 个单位。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 核心召唤压力。
+- 'no': M32
+  id: mech_death_summon
+  name: 死亡召唤
+  category: 召唤/分裂
+  targets:
+  - 宠物
+  - 怪物
+  trigger: on_death
+  condition: 死亡时
+  params:
+    summon: mon_swarm_plain_01
+    count: 2
+  effect_text: 死亡后召唤单位。
+  log_template: '{unit} 死亡后留下 {count} 个单位。'
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 适合分裂怪。
+- 'no': M33
+  id: mech_split_into_minions
+  name: 分裂小怪
+  category: 召唤/分裂
+  targets:
+  - 怪物
+  trigger: on_death
+  condition: 体型>=中型
+  params:
+    count: 2
+    hp_pct: 0.4
+  effect_text: 死亡分裂成多只小怪。
+  log_template: '{unit} 分裂成 {count} 只小怪。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 杀戮尖塔史莱姆方向。
+- 'no': M34
+  id: mech_summon_on_empty_cell
+  name: 空格召唤
+  category: 召唤/元素
+  targets:
+  - 宠物
+  trigger: after_element_apply
+  condition: 目标格为空且有元素
+  params:
+    summon: ally_sprite
+    hp: 6
+  effect_text: 在元素格生成召唤物。
+  log_template: '{unit} 在元素格召唤小灵。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: false
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 对应召芽灵方向。
+- 'no': M35
+  id: mech_copy_weak_self
+  name: 复制弱化体
+  category: 召唤/复制
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_action
+  condition: 满足冷却
+  params:
+    count: 1
+    hp_pct: 0.5
+    atk_pct: 0.5
+  effect_text: 复制一个弱化自身。
+  log_template: '{unit} 复制出一个弱化体。'
+  score: 9
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 高风险强反馈。
+- 'no': M36
+  id: mech_summon_wall
+  name: 召唤障碍
+  category: 召唤/地形
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_action
+  condition: 指定格可放置
+  params:
+    hp: 8
+    duration: 2
+  effect_text: 召唤可阻挡单位的障碍。
+  log_template: '{unit} 召唤障碍。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需要单位/地形层区分。
+- 'no': M37
+  id: mech_summon_trap
+  name: 生成陷阱
+  category: 召唤/陷阱
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_action
+  condition: 目标格可放陷阱
+  params:
+    element: fire
+    layers: 2
+  effect_text: 在格子生成元素陷阱。
+  log_template: '{unit} 生成 {element} 陷阱。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 和陷阱层规则联动。
+- 'no': M38
+  id: mech_summon_when_hit
+  name: 受击分裂
+  category: 召唤/反击
+  targets:
+  - 怪物
+  trigger: after_hit
+  condition: 每回合一次
+  params:
+    summon: mon_swarm_plain_01
+    count: 1
+  effect_text: 受击后分裂出小怪。
+  log_template: '{unit} 受击分裂出小怪。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 比受击召唤更偏群压。
+- 'no': M39
+  id: mech_summon_after_kill
+  name: 击杀召唤
+  category: 召唤/成长
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_kill
+  condition: 击杀目标
+  params:
+    summon: ally_sprite
+    count: 1
+  effect_text: 击杀后召唤单位。
+  log_template: '{unit} 击杀后召唤援军。'
+  score: 7
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 适合爽感滚雪球。
+- 'no': M40
+  id: mech_hatch_after_rounds
+  name: 孵化倒计时
+  category: 召唤/倒计时
+  targets:
+  - 怪物
+  - 事件
+  trigger: round_end
+  condition: 倒计时归零
+  params:
+    rounds: 3
+    summon: mon_elite_egg
+  effect_text: 若未提前击破，孵化成更强单位。
+  log_template: '{unit} 孵化完成。'
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 非常适合事件怪/蛋。
+- 'no': M41
+  id: mech_fire_ignite_bonus
+  name: 火层增伤
+  category: 元素/火
+  targets:
+  - 宠物
+  - 怪物
+  trigger: element_damage
+  condition: 火层结算
+  params:
+    per_layer: 1
+  effect_text: 火元素层结算额外增伤。
+  log_template: 火焰增强，额外造成 {bonus} 伤害。
+  score: 5
+  power: 中
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: enabled_candidate
+  note: 火系基础词条。
+- 'no': M42
+  id: mech_water_heal_on_layer
+  name: 水层治疗
+  category: 元素/水
+  targets:
+  - 宠物
+  trigger: after_element_apply
+  condition: 施加水层
+  params:
+    heal_per_layer: 1
+  effect_text: 施加水层时治疗友方。
+  log_template: 水流治疗 {heal} 点。
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: false
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 水系基础词条。
+- 'no': M43
+  id: mech_wind_push_on_hit
+  name: 风系推拉
+  category: 元素/风
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 风元素命中
+  params:
+    distance: 1
+  effect_text: 命中后推开/拉动目标。
+  log_template: 风力推动目标 {distance} 格。
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需移动规则。
+- 'no': M44
+  id: mech_earth_shield_on_layer
+  name: 土层护盾
+  category: 元素/土
+  targets:
+  - 宠物
+  trigger: after_element_apply
+  condition: 施加土层
+  params:
+    shield_per_layer: 2
+  effect_text: 施加土层获得护盾。
+  log_template: 土元素提供 {shield} 点护盾。
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: false
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 土系基础词条。
+- 'no': M45
+  id: mech_multi_element_bonus
+  name: 多元素共鸣
+  category: 元素/多元素
+  targets:
+  - 宠物
+  - 怪物
+  trigger: element_settle
+  condition: 同格多元素>=2
+  params:
+    bonus: 3
+  effect_text: 同格多元素结算额外效果。
+  log_template: 多元素共鸣，额外造成 {bonus}。
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 别过早削弱。
+- 'no': M46
+  id: mech_trap_stack_trigger
+  name: 陷阱叠加触发
+  category: 元素/陷阱
+  targets:
+  - 宠物
+  - 怪物
+  trigger: on_enter_cell
+  condition: 进入陷阱格
+  params:
+    trigger_all: true
+  effect_text: 踩入格子时触发该格所有元素陷阱。
+  log_template: '{unit} 踩中陷阱，触发全部元素。'
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: true
+  runtime_policy: pending_adapter
+  note: 对应已定陷阱叠加规则。
+- 'no': M47
+  id: mech_fire_cross_detonate_diamond
+  name: 火魔十字引爆
+  category: 元素/火
+  targets:
+  - 钻石火魔
+  trigger: element_explode
+  condition: 火魔钻石且在场/背包
+  params:
+    shape: cross5
+  effect_text: 火引爆改为十字五格。
+  log_template: 火魔引爆十字区域。
+  score: 10
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: false
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 仅钻石火魔，不得默认全局启用。
+- 'no': M48
+  id: mech_water_cleanse_debuff
+  name: 水系净化
+  category: 元素/水
+  targets:
+  - 宠物
+  trigger: round_start
+  condition: 友方有负面状态
+  params:
+    cleanse: 1
+  effect_text: 移除负面状态。
+  log_template: 水流净化了 {count} 个负面状态。
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: false
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 状态系统后接。
+- 'no': M49
+  id: mech_wind_slow_ap
+  name: 风系减行动
+  category: 元素/风
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_hit
+  condition: 风元素命中
+  params:
+    ap_delta: -1
+  effect_text: 降低目标行动力或本回合AP。
+  log_template: 风压降低目标行动力。
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 牵制机制。
+- 'no': M50
+  id: mech_earth_block_cell
+  name: 土系阻挡
+  category: 元素/土
+  targets:
+  - 宠物
+  - 怪物
+  trigger: after_element_apply
+  condition: 目标格可阻挡
+  params:
+    duration: 1
+    hp: 6
+  effect_text: 土元素形成阻挡地块。
+  log_template: 土墙阻挡路径。
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: true
+    monster: true
+    event: false
+    wave: false
+  runtime_policy: pending_adapter
+  note: 需地形/单位层分离。
+- 'no': M51
+  id: mech_curse_gold_loss
+  name: 金币诅咒
+  category: 诅咒/经济
+  targets:
+  - 事件
+  - 怪物
+  trigger: battle_end
+  condition: 单位存活或事件选择
+  params:
+    gold: -2
+  effect_text: 减少金币。
+  log_template: 诅咒生效，金币 {gold}。
+  score: 4
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 事件和失败惩罚可复用。
+- 'no': M52
+  id: mech_reduce_reward_if_alive
+  name: 存活减奖
+  category: 诅咒/奖励
+  targets:
+  - 波次
+  - 怪物
+  trigger: battle_end
+  condition: 特定怪物未击杀
+  params:
+    reward_pct: -0.2
+  effect_text: 降低奖励倍率。
+  log_template: 敌人未清，奖励降低。
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 波次用。
+- 'no': M53
+  id: mech_castle_line_damage
+  name: 城堡扣线
+  category: 波次/失败
+  targets:
+  - 波次
+  - 怪物
+  trigger: battle_fail
+  condition: 战斗失败或怪物越线
+  params:
+    castle_hp: -1
+  effect_text: 扣城堡线。
+  log_template: 城堡受到 {damage} 点损害。
+  score: 5
+  power: 中
+  status: 正式
+  integration: 可接入
+  usage:
+    pet: false
+    monster: true
+    event: true
+    wave: true
+  runtime_policy: enabled_candidate
+  note: 10回合失败核心。
+- 'no': M54
+  id: mech_economy_decay_on_fail
+  name: 失败经济折损
+  category: 波次/失败
+  targets:
+  - 波次
+  - 事件
+  trigger: battle_fail
+  condition: 战斗失败
+  params:
+    income_pct: 0.8
+  effect_text: 后续经济收益降低。
+  log_template: 失败导致经济收益降低。
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: false
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 和大巴扎节奏相关。
+- 'no': M55
+  id: mech_dirty_cell
+  name: 污染格子
+  category: 诅咒/地形
+  targets:
+  - 怪物
+  - 事件
+  trigger: after_action
+  condition: 目标格可污染
+  params:
+    duration: 2
+    penalty: 1
+  effect_text: 生成污染地块，影响站位/路径。
+  log_template: '{unit} 污染了格子。'
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 地形层实现。
+- 'no': M56
+  id: mech_countdown_pressure
+  name: 倒计时压力
+  category: 波次/倒计时
+  targets:
+  - 波次
+  - 事件
+  trigger: round_start
+  condition: 指定回合后
+  params:
+    round: 5
+    effect: spawn_extra
+  effect_text: 达到回合后追加惩罚。
+  log_template: 倒计时触发，战场压力上升。
+  score: 7
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: false
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 压缩战斗节奏。
+- 'no': M57
+  id: mech_shop_discount_after_clear
+  name: 快速清场折扣
+  category: 奖励/商店
+  targets:
+  - 波次
+  - 事件
+  trigger: battle_end
+  condition: 5回合内清场
+  params:
+    discount: 1
+    slots: 1
+  effect_text: 下一商店获得折扣位。
+  log_template: 快速清场，获得折扣商店位。
+  score: 5
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: false
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 大巴扎式奖励。
+- 'no': M58
+  id: mech_bonus_reward_under_round5
+  name: 5回合高奖
+  category: 奖励/波次
+  targets:
+  - 波次
+  trigger: battle_end
+  condition: 回合<=5且胜利
+  params:
+    reward_pct: 1.3
+  effect_text: 5回合内胜利提高奖励。
+  log_template: 5回合清场，奖励提升。
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: false
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 用户已定目标。
+- 'no': M59
+  id: mech_penalty_after_round10
+  name: 10回合失败
+  category: 失败/波次
+  targets:
+  - 波次
+  trigger: round_end
+  condition: 回合>10且未清场
+  params:
+    fail: true
+  effect_text: 超过10回合判失败并结算惩罚。
+  log_template: 超过10回合，战斗失败。
+  score: 8
+  power: 高
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: false
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 用户已定硬规则。
+- 'no': M60
+  id: mech_elite_reward_bonus
+  name: 精英额外奖励
+  category: 奖励/精英
+  targets:
+  - 怪物
+  - 波次
+  trigger: battle_end
+  condition: 精英死亡且胜利
+  params:
+    reward: elite_chest
+  effect_text: 击杀精英提供额外奖励。
+  log_template: 击败精英，获得额外奖励。
+  score: 6
+  power: 中
+  status: 正式
+  integration: 待接入
+  usage:
+    pet: false
+    monster: true
+    event: true
+    wave: true
+  runtime_policy: pending_adapter
+  note: 精英/事件用。
+validation:
+  required_fields:
+  - id
+  - name
+  - category
+  - trigger
+  - params
+  - effect_text
+  - score
+  - integration
+  unique_fields:
+  - id
+  - 'no'
+  allowed_integrations:
+  - 可接入
+  - 待接入
+  - 禁止接入
+  must_exist_ids:
+  - none
+  - mech_castle_line_damage
+  - mech_bonus_reward_under_round5
+  - mech_penalty_after_round10
+  pending_runtime_behavior: pending_adapter 机制在运行时必须显示为 pending，不得静默生效。

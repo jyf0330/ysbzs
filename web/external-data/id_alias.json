@@ -1,0 +1,20 @@
+{
+  "ID_ALIAS": {
+    "flame_sprite": "fire_starter",
+    "drop_sprite": "water_droplet",
+    "bubble_sprite": "bubble_sprite",
+    "sprout_summoner": "sprout_summoner",
+    "fluff_speaker": "fluff_speaker",
+    "boom_sprite": "boom_sprite",
+    "split_sprite": "split_sprite"
+  },
+  "NAME_ALIAS": {
+    "火苗灵": "fire_starter",
+    "滴滴灵": "water_droplet",
+    "泡泡灵": "bubble_sprite",
+    "召芽灵": "sprout_summoner",
+    "绒语灵": "fluff_speaker",
+    "爆爆灵": "boom_sprite",
+    "分分灵": "split_sprite"
+  }
+}

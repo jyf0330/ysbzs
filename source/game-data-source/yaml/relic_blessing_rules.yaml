@@ -1,0 +1,20 @@
+relic_blessing_rules:
+  source_table: 07_遗物祝福_好读版
+  id_column: 遗物ID
+  reference_columns:
+  - 机制ID
+  - 关联宠物ID
+  - 关联商店池
+  - 关联奖励池
+  types:
+  - 遗物
+  - 祝福
+  - 装备
+  - 诅咒
+  - 商店券
+  quality_order:
+  - 青铜
+  - 白银
+  - 黄金
+  - 钻石
+  runtime_policy: 遗物/祝福用机制ID执行，不另写一套效果系统。

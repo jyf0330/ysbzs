@@ -1,0 +1,12 @@
+const { createGameState } = require('../src/core/state.cjs');
+const { dispatch } = require('../src/core/reducer.cjs');
+const { renderShopReport } = require('../src/render/textReport.cjs');
+const state=createGameState({day:3, period:'夜晚', gold:10});
+dispatch(state,{type:'ENTER_SHOP',poolId:'night_base',slots:6});
+const a=state.shop.offers[0]; if(a) dispatch(state,{type:'FREEZE_OFFER',offerId:a.offerId});
+dispatch(state,{type:'ROLL_SHOP',slots:6});
+const b=state.shop.offers.find(o=>o.price<=state.gold); if(b) dispatch(state,{type:'BUY_OFFER',offerId:b.offerId});
+dispatch(state,{type:'APPLY_SHOP_EVENT',eventId:'evt_free_roll'});
+dispatch(state,{type:'ROLL_SHOP',slots:6});
+const txt=renderShopReport(state);
+if(process.argv.includes('--check')){ if(!txt.includes('进入')||!txt.includes('冻结')||!txt.includes('购买')||!txt.includes('免费刷新')) throw new Error('shop report incomplete'); console.log('PASS shop report check'); } else console.log(txt);

@@ -1,10 +1,19 @@
 #!/bin/sh
 # Pre-commit hook: 提交前自动跑测试，失败则阻止提交
 echo "🧪 运行测试..."
-node test.js > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-  echo "❌ 测试未通过，提交已阻止。请先修复测试。"
-  node test.js | tail -5
-  exit 1
+if [ -f tests/run_all_tests.cjs ]; then
+  node tests/run_all_tests.cjs > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "❌ 测试未通过，提交已阻止。请先修复测试。"
+    node tests/run_all_tests.cjs | tail -10
+    exit 1
+  fi
+else
+  node test.js > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "❌ 测试未通过，提交已阻止。请先修复测试。"
+    node test.js | tail -5
+    exit 1
+  fi
 fi
 echo "✅ 测试通过"

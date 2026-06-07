@@ -1,0 +1,151 @@
+meta:
+  generated_at: '2026-06-06'
+  source_table: 06_商店奖励池表_策划好读版_20260606.xlsx
+  principle: 表格一行一个宠物商品入口；宠物基础字段以宠物表为准；商店价格/权重/解锁规则由本 YAML 解释。
+primary_key:
+  item_key: 宠物ID
+  foreign_key: 01_宠物主表_好读版.宠物ID
+  do_not_edit_display_fields:
+  - 名称(自动)
+  - 元素(自动)
+  - 品质(自动)
+  - 定位(自动)
+  - 标签(自动)
+  - 默认价
+  - 商店池(自动)
+  - 奖励池(自动)
+  manual_fields:
+  - 商品类型
+  - 商店状态
+  - 解锁日
+  - 池档
+  - 价格覆盖
+  - 夜市权重
+  - 元素店权重
+  - 定位店权重
+  - 品质店权重
+  - 奖励权重
+  - 出现条件
+  - 备注
+shop_types:
+  night_base:
+    name: 基础夜市
+    timing: 每天夜晚/商店阶段
+    source: 商店状态=启用 且 夜市权重>0
+    filter: 无；所有可购买宠物进入基础池
+    weight_column: 夜市权重
+    price: 价格覆盖优先；为空时使用 default_price_by_pool_tier
+  element_focus:
+    name: 元素定向商店
+    timing: 事件、商人、刷新标签
+    source: 商店状态=启用 且 元素店权重>0
+    filter: 按宠物表元素筛选：火/水/风/土
+    weight_column: 元素店权重
+    pool_key_rule: elem_{元素}
+  role_focus:
+    name: 定位定向商店
+    timing: 事件、商人、刷新标签
+    source: 商店状态=启用 且 定位店权重>0
+    filter: 按宠物表定位筛选：输出/坦克/治疗/召唤/控制/经济等
+    weight_column: 定位店权重
+    pool_key_rule: role_{定位}
+  quality_focus:
+    name: 品质商店
+    timing: 中后期/特殊商人
+    source: 商店状态=启用 且 品质店权重>0
+    filter: 按池档筛选：pT1/pT2/pT3/pT4
+    weight_column: 品质店权重
+    pool_key_rule: tier_{池档}
+  discount_shop:
+    name: 折扣商店
+    timing: 事件/特殊商人
+    source: 引用同一张表的宠物ID；价格使用折扣系数
+    filter: 可按元素、定位、品质、标签组合筛选
+    discount_policy: 默认 70%；特殊事件可覆盖
+  copy_merge_shop:
+    name: 复制/合成商店
+    timing: 合成/复制事件
+    source: 玩家已有宠物ID优先；也可从本表按权重抽
+    rule: 用于同名2合1、复制、补齐流派核心
+  event_shop:
+    name: 事件商店
+    timing: 事件后临时出现
+    source: 事件表给出筛选条件，再从本表抽宠物ID
+    filter: 元素/定位/品质/标签/机制ID
+  battle_reward:
+    name: 战斗奖励池
+    timing: 战斗结束
+    source: 商店状态=启用 且 奖励权重>0
+    weight_column: 奖励权重
+    pool_key_rule: reward_{池档}
+  elite_reward:
+    name: 精英/高奖池
+    timing: 5回合内清场、精英战、事件高奖
+    source: 优先 pT2+，第5天起允许 pT3，第7天起允许 pT4
+    rule: 向大巴扎结构对齐，但节奏压缩
+  special_merchant:
+    name: 特殊商人
+    timing: 特殊节点/高档核心
+    source: 按标签、机制ID、元素、定位组合抽取
+    rule: 用于高档核心提前入池、构筑定向补强
+pool_tier_rules:
+  pT1:
+    quality: 青铜
+    unlock_day: 1
+    default_price: 2
+    base_weight: 100
+  pT2:
+    quality: 白银
+    unlock_day: 3
+    default_price: 4
+    base_weight: 65
+  pT3:
+    quality: 黄金
+    unlock_day: 5
+    default_price: 6
+    base_weight: 28
+    note: 黄金核心第5天入池，属于有意压缩节奏。
+  pT4:
+    quality: 钻石
+    unlock_day: 7
+    default_price: 8
+    base_weight: 10
+    note: 钻石核心第7天入池，属于有意压缩节奏。
+price_rule:
+  final_price: 价格覆盖 if not empty else default_price_by_pool_tier[池档]
+  refund: floor(final_price / 2)，最低1
+  freeze_cost: 0
+  roll_cost: 1
+  discount_default: 0.7
+weight_rule:
+  night_base: 夜市权重
+  element_focus: 元素店权重
+  role_focus: 定位店权重
+  quality_focus: 品质店权重
+  battle_reward: 奖励权重
+  disabled: 商店状态=禁用 或 对应权重<=0
+validation:
+  must_exist_in_pet_table:
+  - 宠物ID
+  no_duplicate_pet_id: true
+  allowed_status:
+  - 启用
+  - 禁用
+  - 测试
+  allowed_pool_tier:
+  - pT1
+  - pT2
+  - pT3
+  - pT4
+  display_fields_regenerate_from_pet_table: true
+  do_not_treat_table_display_name_as_source:
+  - 名称(自动)
+  - 元素(自动)
+  - 品质(自动)
+  - 定位(自动)
+  - 标签(自动)
+not_in_table_yet:
+  complex_event_conditions: 放事件表/YAML；不要塞进商店主表。
+  exact_refresh_algorithm: 由脚本按商店类型、权重、解锁日、玩家状态计算。
+  player_owned_copy_logic: 复制/合成商店读取玩家状态，不由本表静态表达。
+  offer_slot_count: 放 shop_runtime YAML，如普通商店6格、特殊商人3格等。

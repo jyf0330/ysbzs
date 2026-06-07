@@ -1,0 +1,19 @@
+event_rules:
+  source_table: 05_事件主表_好读版
+  id_column: 事件ID
+  reference_columns:
+  - 宠物ID
+  - 机制ID
+  - 商店池ID
+  - 奖励池ID
+  nodes:
+  - 夜晚商店
+  - 战斗前
+  - 战斗结算
+  - 事件
+  integration_layers:
+    shop_phase: 改商店候选、折扣、免费刷新、复制/升阶候选
+    pre_battle: 改下一战的初始状态、陷阱、护盾等
+    post_battle: 改奖励、失败惩罚、清场奖励
+    event: 立即结算代价/收益或挂下一战状态
+  runtime_policy: 事件表不直接写复杂效果；复杂 trigger/condition/effect 由 mechanism_rules_60.yaml 解析。

@@ -1,0 +1,62 @@
+﻿机制编号,机制ID,机制名,分类,适用对象,触发,条件,参数默认,效果,日志模板,机制分,强度,状态,接入状态,宠物用,怪物用,事件用,波次用,备注
+M00,none,无机制,占位,宠物/怪物/事件/波次,无,无,{},不产生任何效果,{unit} 没有特殊机制。,0,无,正式,可接入,1,1,1,1,正式空机制，占位用。
+M01,mech_shield_flat,开场护盾,防御/护盾,宠物/怪物,battle_start,单位入场,shield=6,入场获得固定护盾。,{unit} 获得 {shield} 点护盾。,2,低,正式,可接入,1,1,0,0,最基础护盾词条。
+M02,mech_armor_flat,护甲减伤,防御/护盾,宠物/怪物,before_damage,受到攻击伤害,armor=2,每次受攻击伤害前，先减少固定伤害。,{unit} 的护甲抵消 {armor} 点伤害。,3,低,正式,可接入,1,1,0,0,适合厚盾低血怪或坦克宠物。
+M03,mech_damage_reduce_pct,百分比免伤,防御/护盾,宠物/怪物,before_damage,受到任意伤害,rate=0.3,按比例降低最终伤害，至少保留 min_damage。,{unit} 免伤 {percent}%，伤害降为 {damage}。,5,中,正式,待接入,1,1,0,0,需要明确四舍五入规则。
+M04,mech_first_hit_immunity,首次免疫,防御/护盾,宠物/怪物,before_damage,本场第一次受到伤害,times=1,完全免疫前 N 次伤害。,{unit} 触发首次免疫，抵消本次伤害。,6,中,正式,待接入,1,1,0,0,魔塔式可计算机制。
+M05,mech_damage_cap_per_round,每回合损血上限,防御/护盾,怪物/首领,before_damage,本回合累计伤害超过上限,cap=8,单回合最多损失 cap 点 HP。,{unit} 本回合伤害达到上限，额外伤害无效。,8,高,正式,待接入,0,1,0,1,适合防秒杀精英/首领。
+M06,mech_shield_regen,回合回盾,防御/护盾,宠物/怪物,round_start,单位存活,shield=3,每回合开始获得固定护盾。,{unit} 回合开始恢复 {shield} 点护盾。,4,中,正式,可接入,1,1,0,0,与拖回合惩罚形成压力。
+M07,mech_thorn_shield,荆棘护盾,防御/反击,宠物/怪物,after_hit,有护盾时被攻击,reflect=2,有护盾时受到攻击，反弹固定伤害。,{unit} 的荆棘反弹 {reflect} 点伤害。,5,中,正式,待接入,1,1,0,0,反伤类的低复杂版。
+M08,mech_element_barrier,元素屏障,防御/元素,宠物/怪物,before_damage,受到非克制元素伤害,element=earth; reduce=3,特定元素屏障减少非克制伤害。,{unit} 的 {element} 屏障抵消 {reduce} 点伤害。,5,中,正式,待接入,1,1,0,0,需要元素克制表。
+M09,mech_guard_taunt,嘲讽守护,防御/控制,宠物/怪物,target_select,敌方选择目标时,range=1,强制附近敌人优先攻击自己。,{unit} 嘲讽附近敌人。,4,中,正式,待接入,1,1,0,0,需要目标选择钩子。
+M10,mech_last_stand_shield,濒死护盾,防御/成长,宠物/怪物,after_damage,HP低于阈值且未触发,hp_pct=0.3; shield=10; once=true,低血时获得一次大量护盾。,{unit} 濒死触发，获得 {shield} 点护盾。,7,高,正式,待接入,1,1,0,0,适合精英转阶段。
+M11,mech_counter_damage,受击反伤,反击/爆炸,宠物/怪物,after_hit,受到攻击伤害后,damage=3,对攻击者造成固定反伤。,{unit} 反击，造成 {damage} 点伤害。,4,中,正式,可接入,1,1,0,0,最直接反击。
+M12,mech_death_explosion,死亡爆炸,反击/爆炸,怪物,on_death,单位死亡,damage=6; radius=cross1,死亡时对周围造成伤害。,{unit} 死亡爆炸，造成 {damage} 点伤害。,6,中,正式,可接入,0,1,0,1,已在怪物方向讨论过。
+M13,mech_self_destruct,自爆倒计时,反击/爆炸,怪物,round_end,倒计时结束且存活,rounds=2; damage=8; radius=cross1,存活到倒计时结束后自爆。,{unit} 自爆，造成 {damage} 点伤害。,7,高,正式,待接入,0,1,0,1,促使玩家优先处理。
+M14,mech_on_hit_blast,受击溅射,反击/爆炸,宠物/怪物,after_hit,受到伤害后,damage=2; radius=adjacent,被打后对周围溅射。,{unit} 受击溅射，周围受到 {damage} 点伤害。,5,中,正式,待接入,1,1,0,0,需要区分敌我伤害。
+M15,mech_reflect_first_hit,首次反弹,反击/防御,宠物/怪物,after_hit,第一次被命中,rate=1.0,第一次被命中时反弹等量伤害。,{unit} 首次反弹 {damage} 点伤害。,6,中,正式,待接入,1,1,0,0,首次免疫的进攻版。
+M16,mech_shield_break_explosion,破盾爆炸,反击/爆炸,宠物/怪物,on_shield_break,护盾从正数降到0,damage=5; radius=cross1,破盾时爆炸。,{unit} 破盾爆炸，造成 {damage} 点伤害。,6,中,正式,待接入,1,1,0,0,盾怪破盾反馈。
+M17,mech_retaliate_summon,受击召唤,反击/召唤,怪物/首领,after_hit,每回合首次受击,summon=mon_swarm_plain_01; count=1,受击后召唤小怪。,{unit} 受击召唤 {count} 个援军。,8,高,正式,待接入,0,1,0,1,精英/首领用。
+M18,mech_revenge_buff,复仇强化,反击/成长,宠物/怪物,ally_death,同阵营单位死亡,atk=1; shield=2,友方死亡时自身加攻/盾。,{unit} 因同伴死亡获得复仇强化。,6,中,正式,待接入,1,1,0,1,群怪联动。
+M19,mech_thorns_percent,比例反伤,反击/防御,宠物/怪物,after_hit,受到攻击伤害后,rate=0.3,按受到伤害比例反弹。,{unit} 反弹 {damage} 点伤害。,6,中,正式,待接入,1,1,0,0,比固定反伤更易失控。
+M20,mech_counter_attack,受击反击行动,反击/行动,宠物/怪物,after_hit,AP足够且未反击过,ap_cost=1; damage=atk,被攻击后立即进行一次反击行动。,{unit} 立即反击。,8,高,正式,待接入,1,1,0,0,需要行动队列钩子。
+M21,mech_grow_atk_each_round,每回合加攻,成长/狂暴,宠物/怪物,round_start,单位存活,atk=1,每回合开始攻击增加。,{unit} 攻击提升 {atk}。,4,中,正式,可接入,1,1,0,1,杀戮尖塔式成长。
+M22,mech_grow_shield_each_round,每回合加盾,成长/护盾,宠物/怪物,round_start,单位存活,shield=3,每回合开始获得更多护盾。,{unit} 护盾提升 {shield}。,4,中,正式,可接入,1,1,0,1,拖回合压力。
+M23,mech_rage_low_hp,低血狂暴,成长/狂暴,宠物/怪物,after_damage,HP低于阈值,hp_pct=0.5; atk=3,低血后攻击增强。,{unit} 进入狂暴，攻击+{atk}。,6,中,正式,待接入,1,1,0,0,二阶段简化版。
+M24,mech_harden_when_hit,越打越硬,成长/护盾,宠物/怪物,after_hit,受到伤害后,def=1; max=5,每次受击增加防御。,{unit} 变硬，防御+{def}。,6,中,正式,待接入,1,1,0,0,厚怪时间压力。
+M25,mech_soften_when_hit,破甲递减,成长/破甲,怪物,after_hit,受到伤害后,def=-1; min=0,每次受击降低防御。,{unit} 被削弱，防御下降。,4,低,正式,待接入,0,1,0,0,鼓励多段攻击。
+M26,mech_delayed_powerup,延迟强化,成长/倒计时,怪物/首领,round_start,达到指定回合,round=3; atk=5; shield=10,指定回合后大幅强化。,{unit} 完成蓄力，获得强化。,7,高,正式,待接入,0,1,0,1,与5回合奖励目标相容。
+M27,mech_consume_layers_grow,吸收元素成长,成长/元素,宠物/怪物,after_element_apply,所在格有元素层,element=any; atk_per_layer=1,吸收格子元素层获得成长。,{unit} 吸收元素，攻击提升。,8,高,正式,待接入,1,1,0,0,需元素层钩子。
+M28,mech_enrage_after_round,回合狂暴,成长/波次,怪物/首领,round_start,当前回合>=阈值,round=5; atk=3,战斗拖到指定回合后强化。,{unit} 因战斗拖延进入狂暴。,7,高,正式,待接入,0,1,0,1,压缩战斗节奏。
+M29,mech_second_phase,二阶段转化,成长/首领,首领/精英,after_damage,HP低于阈值,hp_pct=0.5; new_mech=mech_rage_low_hp,进入第二阶段并切换机制。,{unit} 进入第二阶段。,10,高,正式,待接入,0,1,0,1,首领核心机制。
+M30,mech_scale_with_allies,随同伴成长,成长/群怪,怪物,round_start,同阵营存活数量>1,atk_per_ally=1; shield_per_ally=1,同伴越多越强。,{unit} 因同伴获得强化。,7,中,正式,待接入,0,1,0,1,鼓励先清小怪。
+M31,mech_summon_each_round,每回合召唤,召唤/分裂,怪物/首领,round_start,召唤位可用,summon=mon_swarm_plain_01; count=1,每回合召唤小怪。,{unit} 召唤 {count} 个单位。,8,高,正式,待接入,0,1,0,1,核心召唤压力。
+M32,mech_death_summon,死亡召唤,召唤/分裂,宠物/怪物,on_death,死亡时,summon=mon_swarm_plain_01; count=2,死亡后召唤单位。,{unit} 死亡后留下 {count} 个单位。,7,高,正式,待接入,1,1,0,1,适合分裂怪。
+M33,mech_split_into_minions,分裂小怪,召唤/分裂,怪物,on_death,体型>=中型,count=2; hp_pct=0.4,死亡分裂成多只小怪。,{unit} 分裂成 {count} 只小怪。,8,高,正式,待接入,0,1,0,1,杀戮尖塔史莱姆方向。
+M34,mech_summon_on_empty_cell,空格召唤,召唤/元素,宠物,after_element_apply,目标格为空且有元素,summon=ally_sprite; hp=6,在元素格生成召唤物。,{unit} 在元素格召唤小灵。,6,中,正式,待接入,1,0,0,0,对应召芽灵方向。
+M35,mech_copy_weak_self,复制弱化体,召唤/复制,宠物/怪物,after_action,满足冷却,count=1; hp_pct=0.5; atk_pct=0.5,复制一个弱化自身。,{unit} 复制出一个弱化体。,9,高,正式,待接入,1,1,0,0,高风险强反馈。
+M36,mech_summon_wall,召唤障碍,召唤/地形,宠物/怪物,after_action,指定格可放置,hp=8; duration=2,召唤可阻挡单位的障碍。,{unit} 召唤障碍。,6,中,正式,待接入,1,1,0,0,需要单位/地形层区分。
+M37,mech_summon_trap,生成陷阱,召唤/陷阱,宠物/怪物,after_action,目标格可放陷阱,element=fire; layers=2,在格子生成元素陷阱。,{unit} 生成 {element} 陷阱。,6,中,正式,待接入,1,1,0,0,和陷阱层规则联动。
+M38,mech_summon_when_hit,受击分裂,召唤/反击,怪物,after_hit,每回合一次,summon=mon_swarm_plain_01; count=1,受击后分裂出小怪。,{unit} 受击分裂出小怪。,8,高,正式,待接入,0,1,0,1,比受击召唤更偏群压。
+M39,mech_summon_after_kill,击杀召唤,召唤/成长,宠物/怪物,after_kill,击杀目标,summon=ally_sprite; count=1,击杀后召唤单位。,{unit} 击杀后召唤援军。,7,中,正式,待接入,1,1,0,0,适合爽感滚雪球。
+M40,mech_hatch_after_rounds,孵化倒计时,召唤/倒计时,怪物/事件,round_end,倒计时归零,rounds=3; summon=mon_elite_egg,若未提前击破，孵化成更强单位。,{unit} 孵化完成。,8,高,正式,待接入,0,1,1,1,非常适合事件怪/蛋。
+M41,mech_fire_ignite_bonus,火层增伤,元素/火,宠物/怪物,element_damage,火层结算,per_layer=1,火元素层结算额外增伤。,火焰增强，额外造成 {bonus} 伤害。,5,中,正式,可接入,1,1,0,0,火系基础词条。
+M42,mech_water_heal_on_layer,水层治疗,元素/水,宠物,after_element_apply,施加水层,heal_per_layer=1,施加水层时治疗友方。,水流治疗 {heal} 点。,5,中,正式,待接入,1,0,0,0,水系基础词条。
+M43,mech_wind_push_on_hit,风系推拉,元素/风,宠物/怪物,after_hit,风元素命中,distance=1,命中后推开/拉动目标。,风力推动目标 {distance} 格。,6,中,正式,待接入,1,1,0,0,需移动规则。
+M44,mech_earth_shield_on_layer,土层护盾,元素/土,宠物,after_element_apply,施加土层,shield_per_layer=2,施加土层获得护盾。,土元素提供 {shield} 点护盾。,5,中,正式,待接入,1,0,0,0,土系基础词条。
+M45,mech_multi_element_bonus,多元素共鸣,元素/多元素,宠物/怪物,element_settle,同格多元素>=2,bonus=3,同格多元素结算额外效果。,多元素共鸣，额外造成 {bonus}。,7,高,正式,待接入,1,1,0,0,别过早削弱。
+M46,mech_trap_stack_trigger,陷阱叠加触发,元素/陷阱,宠物/怪物,on_enter_cell,进入陷阱格,trigger_all=true,踩入格子时触发该格所有元素陷阱。,{unit} 踩中陷阱，触发全部元素。,7,高,正式,待接入,1,1,0,1,对应已定陷阱叠加规则。
+M47,mech_fire_cross_detonate_diamond,火魔十字引爆,元素/火,钻石火魔,element_explode,火魔钻石且在场/背包,shape=cross5,火引爆改为十字五格。,火魔引爆十字区域。,10,高,正式,待接入,1,0,0,0,仅钻石火魔，不得默认全局启用。
+M48,mech_water_cleanse_debuff,水系净化,元素/水,宠物,round_start,友方有负面状态,cleanse=1,移除负面状态。,水流净化了 {count} 个负面状态。,6,中,正式,待接入,1,0,0,0,状态系统后接。
+M49,mech_wind_slow_ap,风系减行动,元素/风,宠物/怪物,after_hit,风元素命中,ap_delta=-1,降低目标行动力或本回合AP。,风压降低目标行动力。,6,中,正式,待接入,1,1,0,0,牵制机制。
+M50,mech_earth_block_cell,土系阻挡,元素/土,宠物/怪物,after_element_apply,目标格可阻挡,duration=1; hp=6,土元素形成阻挡地块。,土墙阻挡路径。,7,高,正式,待接入,1,1,0,0,需地形/单位层分离。
+M51,mech_curse_gold_loss,金币诅咒,诅咒/经济,事件/怪物,battle_end,单位存活或事件选择,gold=-2,减少金币。,诅咒生效，金币 {gold}。,4,中,正式,待接入,0,1,1,1,事件和失败惩罚可复用。
+M52,mech_reduce_reward_if_alive,存活减奖,诅咒/奖励,波次/怪物,battle_end,特定怪物未击杀,reward_pct=-0.2,降低奖励倍率。,敌人未清，奖励降低。,5,中,正式,待接入,0,1,1,1,波次用。
+M53,mech_castle_line_damage,城堡扣线,波次/失败,波次/怪物,battle_fail,战斗失败或怪物越线,castle_hp=-1,扣城堡线。,城堡受到 {damage} 点损害。,5,中,正式,可接入,0,1,1,1,10回合失败核心。
+M54,mech_economy_decay_on_fail,失败经济折损,波次/失败,波次/事件,battle_fail,战斗失败,income_pct=0.8,后续经济收益降低。,失败导致经济收益降低。,6,中,正式,待接入,0,0,1,1,和大巴扎节奏相关。
+M55,mech_dirty_cell,污染格子,诅咒/地形,怪物/事件,after_action,目标格可污染,duration=2; penalty=1,生成污染地块，影响站位/路径。,{unit} 污染了格子。,6,中,正式,待接入,0,1,1,1,地形层实现。
+M56,mech_countdown_pressure,倒计时压力,波次/倒计时,波次/事件,round_start,指定回合后,round=5; effect=spawn_extra,达到回合后追加惩罚。,倒计时触发，战场压力上升。,7,高,正式,待接入,0,0,1,1,压缩战斗节奏。
+M57,mech_shop_discount_after_clear,快速清场折扣,奖励/商店,波次/事件,battle_end,5回合内清场,discount=1; slots=1,下一商店获得折扣位。,快速清场，获得折扣商店位。,5,中,正式,待接入,0,0,1,1,大巴扎式奖励。
+M58,mech_bonus_reward_under_round5,5回合高奖,奖励/波次,波次,battle_end,回合<=5且胜利,reward_pct=1.3,5回合内胜利提高奖励。,5回合清场，奖励提升。,6,中,正式,待接入,0,0,1,1,用户已定目标。
+M59,mech_penalty_after_round10,10回合失败,失败/波次,波次,round_end,回合>10且未清场,fail=true,超过10回合判失败并结算惩罚。,超过10回合，战斗失败。,8,高,正式,待接入,0,0,1,1,用户已定硬规则。
+M60,mech_elite_reward_bonus,精英额外奖励,奖励/精英,怪物/波次,battle_end,精英死亡且胜利,reward=elite_chest,击杀精英提供额外奖励。,击败精英，获得额外奖励。,6,中,正式,待接入,0,1,1,1,精英/事件用。

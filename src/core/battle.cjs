@@ -1,6 +1,7 @@
 const { pushEvent } = require('./events.cjs');
-const { makeUnit, ensureBoard, getCell, syncBoardUnits, normalizePosition, positionFromWaveRule, BOARD_ROWS, BOARD_COLS, ELEMENTS, makeEmptyElements, makeEmptyElementCamps, makeEmptyTerrain } = require('./state.cjs');
+const { ensureBoard, getCell, syncBoardUnits, normalizePosition, makeUnit, positionFromWaveRule, BOARD_ROWS, BOARD_COLS, ELEMENTS, makeEmptyElements, makeEmptyElementCamps, makeEmptyTerrain } = require('./state.cjs');
 const mech = require('./mechanics.cjs');
+const { ACTIVE_ELEMENTS, fireDamage, explodeIfEnemyOnFire } = require('./elements.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function living(state, side) { return state.units.filter(u => u.side === side && u.alive && u.hp > 0); }
@@ -629,6 +630,11 @@ function moveHero(state, unitId, to) {
   const cell = getCell(state, target.r, target.c);
   if (cell && cell.unitId && cell.unitId !== unit.id) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：R${target.r}C${target.c} 已被占用。` }); return false; }
   const from = clone(unit.position || { r: 0, c: 0 });
+  // 攻击后锁定位置：如果 hasAttacked 为 true，禁止再次移动
+  if (unit.hasAttacked) {
+    pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：${unit.displayName} 本回合已攻击，位置锁定。` });
+    return false;
+  }
   const d = dist(from, target);
   if (!hasInfiniteMove(state, unit) && d > Number(unit.ap || 3)) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, from, to: target, text: `移动失败：${unit.name} AP${unit.ap}，距离${d}。` }); return false; }
   unit.position = target;
@@ -667,8 +673,31 @@ function useActionSlot(state, unitId, slotId, targetCell = null) {
   pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, text: `玩家施放 ${actor.displayName} 第${idx + 1}槽：${slot.shapeName}/${slot.element}/${slot.layers}层，命中 ${targets.length ? targets.map(t => t.displayName).join('、') : cells.map(p => `R${p.r}C${p.c}`).join('、')}。` });
   if (targets.length) for (const t of targets) applyElement(state, actor, t, slot.element, slot.layers, { slot });
   else for (const p of cells) { const cell = getCell(state, p.r, p.c); if (cell) applyElementToCell(state, actor, cell, slot.element, slot.layers); }
+  // 添加元素后检查火引爆
+  for (const p of cells) {
+    const cell = getCell(state, p.r, p.c);
+    if (!cell) continue;
+    if (slot.element === '火') {
+      const result = explodeIfEnemyOnFire(state, cell, actor.id);
+      if (result) {
+        pushEvent(state, 'FIRE_EXPLODE_AFTER_ATTACK', {
+          r: cell.r, c: cell.c, layers: result.layersBefore, damage: result.damage,
+          targetId: result.target.id,
+          text: `R${cell.r}C${cell.c} 火${result.layersBefore}层引爆，对 ${result.target.displayName || result.target.name} 造成${result.damage}点火爆伤害。`
+        });
+        damageUnit(state, actor, result.target, result.damage, { element: '火', sourceType: 'fire_explosion' });
+        cell.elements.火 = 0;
+      } else if ((cell.elements.火 || 0) >= 3) {
+        pushEvent(state, 'FIRE_TRAP_READY', {
+          r: cell.r, c: cell.c, layers: cell.elements.火,
+          text: `R${cell.r}C${cell.c} 火${cell.elements.火}层，形成空格爆火陷阱。`
+        });
+      }
+    }
+  }
   actor.actionSlotsUsed = actor.actionSlotsUsed || {};
   actor.actionSlotsUsed[idx] = true;
+  actor.hasAttacked = true;  // 攻击后锁定位置
   state.selected.unitId = actor.id;
   state.selected.slotId = idx;
   syncDerivedBoard(state);
@@ -701,6 +730,7 @@ function runPlayerTurn(state) {
     else for (const p of cells) { const cell = getCell(state, p.r, p.c); if (cell) applyElementToCell(state, actor, cell, slot.element, slot.layers); }
     actor.actionSlotsUsed = actor.actionSlotsUsed || {};
     actor.actionSlotsUsed[slot.index] = true;
+    actor.hasAttacked = true;
   }
   return endPlayerTurn(state, { auto: true, skipMonster: true });
 }
@@ -729,21 +759,31 @@ function damageUnit(state, source, target, amount, ctx = {}) {
   return shieldAbsorb + final;
 }
 function settleElements(state) {
-  const order = ELEMENTS;
+  // 新规则：火≥3层 → 引爆 Σ(1..N) → 清零；空格火≥3层保留为陷阱
+  // 水/风不在此处统一结算（由领域/催化/聚合触发）
   for (const target of [...combatTargets(state, 'enemy'), ...combatTargets(state, 'player')]) {
-    for (const element of order) {
-      ensureElements(target);
-      const layers = target.elements[element] || 0;
-      if (layers <= 0 || !target.alive) continue;
-      let dmg = layers;
-      for (const u of living(state, 'hero')) if ((u.mechanics || []).includes('mech_fire_ignite_bonus') && element === '火') dmg += 1;
-      pushEvent(state, 'ELEMENT_SETTLE', { targetId: target.id, element, layers, damage: dmg, text: `${target.displayName || target.name} 身上的${element}${layers}层统一结算，线性伤害=${dmg}。` });
-      const sourceCamp = unitCamp(target) === 'enemy' ? 'player' : 'enemy';
-      const source = combatTargets(state, sourceCamp).find(h => h.element === element) || combatTargets(state, sourceCamp)[0];
-      damageUnit(state, source, target, dmg, { element });
-      target.elements[element] = 0;
-      if (target.position) { const cell = getCell(state, target.position.r, target.position.c); if (cell) cell.elements[element] = 0; }
-      if (state.phase === 'battle_end') break;
+    if (!target.alive || !target.position) continue;
+    const cell = getCell(state, target.position.r, target.position.c);
+    if (!cell) continue;
+    const fireLayers = cell.elements.火 || 0;
+    if (fireLayers < 3) continue;
+
+    // 火引爆（敌方格/英雄格）
+    const result = explodeIfEnemyOnFire(state, cell, 'system_settle');
+    if (result) {
+      pushEvent(state, 'ELEMENT_SETTLE', {
+        targetId: target.id, element: '火', layers: result.layersBefore,
+        damage: result.damage,
+        text: `${target.displayName || target.name} 所在格火${result.layersBefore}层引爆，火爆伤害=${result.damage}。`
+      });
+      damageUnit(state, null, target, result.damage, { element: '火', sourceType: 'fire_explosion' });
+      cell.elements.火 = 0;
+    } else {
+      // 空格火≥3层，不引爆，保留为爆火陷阱
+      pushEvent(state, 'ELEMENT_SETTLE', {
+        r: cell.r, c: cell.c, layers: fireLayers,
+        text: `R${cell.r}C${cell.c} 火${fireLayers}层，形成空格爆火陷阱。`
+      });
     }
     if (state.phase === 'battle_end') break;
   }

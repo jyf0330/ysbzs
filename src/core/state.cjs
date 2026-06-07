@@ -1,9 +1,11 @@
 const { loadGameData, buildIndexes } = require('./data.cjs');
 const { applyBattleStart } = require('./mechanics.cjs');
+const { ACTIVE_ELEMENTS, COMPAT_ELEMENTS, makeEmptyElements, makeEmptyElementCamps } = require('./elements.cjs');
+const { makeUnitFromData } = require('./unitFactory.cjs');
 
 const BOARD_ROWS = 8;
 const BOARD_COLS = 8;
-const ELEMENTS = ['火', '水', '风', '土'];
+const ELEMENTS = COMPAT_ELEMENTS;  // 保留土兼容，但主流程走 ACTIVE_ELEMENTS
 
 function cellKey(r, c) { return `${Number(r)},${Number(c)}`; }
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -14,8 +16,6 @@ function normalizePosition(position, fallback = { r: 0, c: 0 }) {
   if (typeof position.x !== 'undefined' || typeof position.y !== 'undefined') return { r: Number(position.y ?? fallback.r), c: Number(position.x ?? fallback.c) };
   return clone(fallback);
 }
-function makeEmptyElements() { return { 火: 0, 水: 0, 风: 0, 土: 0 }; }
-function makeEmptyElementCamps() { return { 火: null, 水: null, 风: null, 土: null }; }
 function makeEmptyTerrain() { return { modules: [] }; }
 function createBoard(rows = BOARD_ROWS, cols = BOARD_COLS) {
   const cells = [];
@@ -136,40 +136,16 @@ function makeLeader(side, overrides = {}) {
   };
 }
 function makeUnit(state, side, petId, override = {}) {
-  const ix = state.indexes || buildIndexes(state.data || loadGameData());
-  const pet = ix.petsById.get(petId);
-  if (!pet) throw new Error(`unknown petId: ${petId}`);
-  const shape = ix.shapesByPetId.get(petId);
-  const monster = side === 'enemy' ? ix.monstersByPetId.get(petId) : null;
-  const base = side === 'enemy' && monster ? monster : pet;
-  const seq = state.nextUnit++;
-  const id = override.id || `${side}_${petId}_${seq}`;
-  const position = override.position && override.position.rule ? positionFromWaveRule(state, override.position.rule, override.position.index || 0) : (override.position || (side === 'enemy' ? { r: 5, c: 3 } : null));
-  const unit = {
-    id,
-    side,
-    camp: side === 'hero' ? 'player' : 'enemy',
-    petId,
-    name: base.name || pet.name,
-    displayName: `${side === 'hero' ? '我方' : '敌方'}${base.name || pet.name}`,
-    element: base.element || pet.element,
-    role: base.enemyRole || base.role || pet.role,
-    maxHp: override.hp || base.hp || pet.hp || 1,
-    hp: override.hp || base.hp || pet.hp || 1,
-    atk: override.atk || base.atk || pet.atk || 1,
-    def: override.def ?? base.def ?? pet.def ?? 0,
-    shield: override.shield ?? base.shield ?? pet.shield ?? 0,
-    ap: override.ap || base.ap || pet.ap || 3,
-    mechanics: normalizeMechanics(override.mechanics || base.mechanics || pet.mechanics || ['none']),
-    mechanicParams: override.mechanicParams || base.mechanicParams || {},
-    shape: shape || null,
-    elements: makeEmptyElements(),
-    alive: true,
-    flags: {},
-    roundDamageTaken: 0,
-    position: position ? normalizePosition(position) : null,
-    actionSlotsUsed: {}
-  };
+  const pos = override.position && override.position.rule
+    ? positionFromWaveRule(state, override.position.rule, override.position.index || 0)
+    : override.position || (side === 'enemy' ? { r: 5, c: 3 } : null);
+
+  // 通过 unitFactory 创建，确保字段统一
+  const unit = makeUnitFromData(state, side, petId, Object.assign({}, override, {
+    position: pos,
+    mechanics: normalizeMechanics(override.mechanics || []),
+    flags: { ...(override.flags || {}), legacyMakeUnit: true }
+  }));
   return unit;
 }
 function initialPartyFromData(d) {

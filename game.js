@@ -43,10 +43,14 @@ function initGame() {
     explPos: null, backpack: [], _bpCnt: 0, monWarn: [],
     coreSnapshot: null, coreVersion: 0, actionLog: [],
     shopEvents: [],
+    battleTrace: [],
+    battleTraceStep: 0,
     // 英雄系统
     heroInfo: { id: '', name: '', level: 1, xp: 0 },
     relics: [],
   };
+
+  if (typeof initBattleTrace === 'function') initBattleTrace();
 
   // 读取英雄配置作为开局来源
   var hc = (typeof getExternalHeroConfig === 'function') ? getExternalHeroConfig() : null;

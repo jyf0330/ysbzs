@@ -33,6 +33,44 @@ test('script extraction preserves declarations and supports script attributes', 
   assert.doesNotMatch(script, /\bvar b\b/);
 });
 
+test('loader exports battle trace functions from VM sandbox', () => {
+  const { loadYsbzsGame } = require('../core/game-script-loader');
+  const game = loadYsbzsGame();
+  // VM 沙箱必须能访问 battleTrace.js 导出的核心函数
+  assert.strictEqual(typeof game.context.initBattleTrace, 'function', 'initBattleTrace should be exported');
+  assert.strictEqual(typeof game.context.recordTrace, 'function', 'recordTrace should be exported');
+  assert.strictEqual(typeof game.context.generateBattleTextReport, 'function', 'generateBattleTextReport should be exported');
+  assert.strictEqual(typeof game.context.exportBattleTrace, 'function', 'exportBattleTrace should be exported');
+});
+
+test('battleTrace survives initGame and battle produces events', () => {
+  const { loadYsbzsGame } = require('../core/game-script-loader');
+  const game = loadYsbzsGame();
+  game.context.initGame();
+  const G = game.context.G;
+  // initGame 后 battleTrace 数组存在
+  assert.ok(Array.isArray(G.battleTrace), 'G.battleTrace should be an array');
+  assert.strictEqual(G.battleTrace.length, 0, 'battleTrace should be empty after init');
+  // 触发一次真实战斗入口
+  if (typeof game.context.runAiBattleTurn_sync === 'function') {
+    game.context.runAiBattleTurn_sync({ endTurn: true });
+  } else if (typeof game.context.execAllHeroSlots === 'function') {
+    game.context.execAllHeroSlots();
+    if (typeof game.context.endPlayerTurn === 'function') game.context.endPlayerTurn();
+  }
+  // 战斗后应产生 trace 事件
+  assert.ok(G.battleTrace.length > 0, 'battle after initGame should produce trace events (got ' + G.battleTrace.length + ')');
+  // exportBattleTrace 输出合法 JSON
+  const json = game.context.exportBattleTrace();
+  const parsed = JSON.parse(json);
+  assert.ok(Array.isArray(parsed));
+  assert.strictEqual(parsed.length, G.battleTrace.length);
+  // generateBattleTextReport 返回非空字符串
+  const report = game.context.generateBattleTextReport(G.battleTrace);
+  assert.strictEqual(typeof report, 'string');
+  assert.ok(report.length > 0, 'text report should not be empty');
+});
+
 test('loader starts a fresh game and computes a replay result', () => {
   const { loadYsbzsGame } = require('../core/game-script-loader');
   const game = loadYsbzsGame();

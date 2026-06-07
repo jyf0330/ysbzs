@@ -51,7 +51,7 @@ function loadMultiFileScripts(rootDir) {
   const files = [
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
-    'damage.js', 'waves.js', 'battle.js', 'terrain.js', 'battleLog.js',
+    'damage.js', 'waves.js', 'battleLog.js', 'battleTrace.js', 'battle.js', 'dispatch.js', 'terrain.js',
     'shop.js', 'game.js', 'preview.js', 'ui.js'
   ];
   const scripts = [];
@@ -107,6 +107,10 @@ function createExportFooter() {
   try { if (typeof castleAt !== 'undefined') globalThis.castleAt = castleAt; } catch (e) {}
   try { if (typeof hasElementAt !== 'undefined') globalThis.hasElementAt = hasElementAt; } catch (e) {}
   try { if (typeof calcElementLayerDamage !== 'undefined') globalThis.calcElementLayerDamage = calcElementLayerDamage; } catch (e) {}
+  try { if (typeof initBattleTrace !== 'undefined') globalThis.initBattleTrace = initBattleTrace; } catch (e) {}
+  try { if (typeof recordTrace !== 'undefined') globalThis.recordTrace = recordTrace; } catch (e) {}
+  try { if (typeof generateBattleTextReport !== 'undefined') globalThis.generateBattleTextReport = generateBattleTextReport; } catch (e) {}
+  try { if (typeof exportBattleTrace !== 'undefined') globalThis.exportBattleTrace = exportBattleTrace; } catch (e) {}
   try { if (typeof commitPlayerActionsToElementField !== 'undefined') globalThis.commitPlayerActionsToElementField = commitPlayerActionsToElementField; } catch (e) {}
   try { if (typeof buildPreviewGrid !== 'undefined') globalThis.buildPreviewGrid = buildPreviewGrid; } catch (e) {}
   try { if (typeof buildBattleReport !== 'undefined') globalThis.buildBattleReport = buildBattleReport; } catch (e) {}

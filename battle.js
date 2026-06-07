@@ -41,6 +41,7 @@ function writeBattleStructuredLog(logKey, data, fallbackText) {
 // ========== 伤害处理 ==========
 
 function dealDmg(monster, dmg, src) {
+  var _bt_hpBefore = monster.hp;
   monster.hp = Math.max(0, monster.hp - dmg);
   glog(`⚔️ ${src} → ${monster.name} -${dmg}（${monster.hp}/${monster.maxHp}）`);
   if (monster.hp <= 0) {
@@ -51,6 +52,20 @@ function dealDmg(monster, dmg, src) {
       G.gold += monster.gold;
       glog(`💰 获得 ${monster.gold} 金币！`);
     }
+  }
+  if (typeof recordTrace === 'function') {
+    recordTrace({
+      actionType: '攻击',
+      actorName: src || '战斗结算',
+      actorSide: 'system',
+      targetCell: monster.pos ? { r: monster.pos.r, c: monster.pos.c } : undefined,
+      targetName: monster.name,
+      damage: dmg,
+      hpBefore: _bt_hpBefore,
+      hpAfter: monster.hp,
+      killed: monster.dead || monster.hp <= 0,
+      reason: src || ''
+    });
   }
 }
 
@@ -101,6 +116,18 @@ function settleExplosions() {
         report.totalDamage += td;
         if (r.isAdv) glog(`⚡ 元素克制 ×2！`);
         glog(`⚔️ ${EL[el]}${slot.layers}层→${monHere.name} 单体 -${td}`);
+        if (typeof recordTrace === 'function') {
+          recordTrace({
+            actionType: '元素伤害',
+            element: el,
+            actorName: EL[el] + '元素',
+            actorSide: 'system',
+            targetCell: { r: pos.r, c: pos.c },
+            targetName: monHere.name,
+            layerBefore: slot.layers,
+            reason: '元素结算'
+          });
+        }
         const wasAlive = !monHere.dead;
         dealDmg(monHere, td, `${EL[el]}元素结算`);
         if (wasAlive && monHere.dead) report.killedCount++;
@@ -114,6 +141,16 @@ function settleExplosions() {
         const targets = crossActive ? explCells(pos) : [pos];
         const expDmg = calcElementDamage(slot.layers, null, el, { spaceBonus }).damage;
         glog(`💥 ${EL[el]}${slot.layers}层引爆！${crossActive ? '范围伤害 ' : '单体伤害 '}${expDmg}${spaceBonus > 0 ? ' (引信+' + spaceBonus + ')' : ''}`);
+        if (typeof recordTrace === 'function') {
+          recordTrace({
+            actionType: '引爆',
+            element: el,
+            actorSide: 'system',
+            targetCell: { r: pos.r, c: pos.c },
+            layerBefore: slot.layers,
+            reason: crossActive ? '十字范围引爆' : '单体引爆'
+          });
+        }
         if (crossActive && el === 'fire' && typeof writeStructuredLog === 'function') writeStructuredLog('fire_archon_cross_explode', { center_cell: pos, damage: expDmg, layers: slot.layers }, '钻石火魔触发十字火引爆：中心(' + pos.r + ',' + pos.c + ')，伤害' + expDmg);
         if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger(el === 'fire' ? 'on_fire_explode' : 'on_element_explode', { pos: pos, center_cell: pos, element: el, el: el, damage: expDmg, layers: slot.layers });
         targets.forEach(tp => {
@@ -147,6 +184,13 @@ function settleExplosions() {
     G.gold += 3;
     G.engineStats.perfectCount = (G.engineStats.perfectCount || 0) + 1;
     glog('🌟 完美回合！连锁清场 +3 金');
+    if (typeof recordTrace === 'function') {
+      recordTrace({
+        actionType: '奖励',
+        actorSide: 'system',
+        message: '完美回合！连锁清场 +3 金'
+      });
+    }
   }
   if (report.chainSegments > 0) {
     G.engineStats.chainCount = (G.engineStats.chainCount || 0) + report.chainSegments;
@@ -212,12 +256,31 @@ function _coreUseSlot(idx) {
     var layersToAdd = baseLayers;
     if (ap.r === center.r && ap.c === center.c) layersToAdd += centerBonus;
     if (condEl && elSlot.layers > 0) layersToAdd += condBonus;
+    var _bt_layerBefore = elSlot.layers;
     elSlot.layers = Math.min(elSlot.layers + layersToAdd, MAX_STK);
     elSlot.willExplode = elSlot.layers >= G.explosionThreshold;
     var cell = G.board[ap.r][ap.c];
     if (!cell.el || cell.stk === 0) { cell.el = slot.el; cell.stk = Math.min(layersToAdd, MAX_STK); }
     else if (cell.el === slot.el) { cell.stk = Math.min(cell.stk + layersToAdd, MAX_STK); }
     if (typeof syncBoardElementFromElementCells === 'function') syncBoardElementFromElementCells(ap);
+    if (typeof recordTrace === 'function') {
+      var _bt_mon = monAt(ap);
+      recordTrace({
+        actionType: '施加元素',
+        actorId: slot.hid,
+        actorName: hero.name,
+        actorSide: 'player',
+        sourceSlot: idx,
+        targetCell: { r: ap.r, c: ap.c },
+        targetName: _bt_mon ? _bt_mon.name : undefined,
+        element: slot.el,
+        layerBefore: _bt_layerBefore,
+        layerAfter: elSlot.layers,
+        hpBefore: _bt_mon ? _bt_mon.hp : undefined,
+        hpAfter: _bt_mon ? _bt_mon.hp : undefined,
+        reason: '行动槽'
+      });
+    }
   });
   slot.used = true;
   slot._committed = true;
@@ -292,6 +355,9 @@ function _coreEndPlayerTurn() {
   // 只改 G，不调 UI（refreshUI/glog/document）
   G.aiBattleStatus = null;
   if (typeof pushReplayStep === 'function') pushReplayStep({ type: 'END_PLAYER_TURN' });
+  if (typeof recordTrace === 'function') {
+    recordTrace({ actionType: '我方回合结束' });
+  }
   if (typeof commitPlayerActionsToElementField === 'function') commitPlayerActionsToElementField(G);
   if (typeof settleExplosions === 'function') settleExplosions();
   if (typeof runSummonActions === 'function') runSummonActions();
@@ -339,6 +405,19 @@ function endPlayerTurnSync() {
 
 function finishMonsters() {
   if (G.phase === 'OVER') return;
+  // 战报：记录回合结束快照（在 G.round++ 之前，确保 round 值正确）
+  if (typeof recordTrace === 'function') {
+    recordTrace({
+      actionType: '回合结束',
+      heroes: Object.keys(G.heroes || {}).filter(function(k) { return !G.heroes[k].dead; }).map(function(k) {
+        var h = G.heroes[k];
+        return { id: h.id, name: h.name, hp: h.hp, maxHp: h.maxHp, pos: { r: h.pos.r, c: h.pos.c } };
+      }),
+      monsters: (G.monsters || []).filter(function(m) { return !m.dead; }).map(function(m) {
+        return { name: m.name, hp: m.hp, maxHp: m.maxHp, pos: { r: m.pos.r, c: m.pos.c } };
+      })
+    });
+  }
   G.round++;
   const allDead = G.monsters.every(m => m.dead);
   const castleDead = !G.enemyCastle || G.enemyCastle.hp <= 0;
@@ -402,6 +481,7 @@ function monsterActRanged(m, behavior) {
   var target = null, dist = 99;
   targets.forEach(function(h){ var d = Math.abs(h.pos.r - m.pos.r) + Math.abs(h.pos.c - m.pos.c); if (d < dist) { dist = d; target = h; } });
   if (target && dist <= range) {
+    var _bt_ranged_before = target.hp;
     target.hp = Math.max(0, target.hp - m.atk);
     var unit = getUnitByHeroId(target.id); if (unit) unit.hp = target.hp;
     writeBattleStructuredLog('monster_attack', {
@@ -414,6 +494,21 @@ function monsterActRanged(m, behavior) {
       damage: m.atk,
       after_hp: target.hp
     }, '🏹 ' + m.name + '远程攻击' + target.name + '！-' + m.atk + '（' + target.hp + '/' + target.maxHp + '）');
+    if (typeof recordTrace === 'function') {
+      recordTrace({
+        actionType: '攻击',
+        actorId: m.id,
+        actorName: m.name,
+        actorSide: 'monster',
+        targetCell: { r: target.pos.r, c: target.pos.c },
+        targetName: target.name,
+        damage: m.atk,
+        hpBefore: _bt_ranged_before,
+        hpAfter: target.hp,
+        killed: target.hp <= 0,
+        reason: '远程攻击'
+      });
+    }
     if (target.hp <= 0) { glog('💔 ' + target.name + '倒下了！'); checkGameOver(); }
     return;
   }
@@ -429,6 +524,7 @@ function monsterActDefault(m, behavior) {
     if (lp.c >= 0) {
       const lh = heroAt(lp);
       if (lh) {
+        var _bt_ml_hpBefore = lh.hp;
         lh.hp = Math.max(0, lh.hp - m.atk);
         const lu = getUnitByHeroId(lh.id); if (lu) lu.hp = lh.hp;
         writeBattleStructuredLog('monster_attack', {
@@ -441,6 +537,21 @@ function monsterActDefault(m, behavior) {
           damage: m.atk,
           after_hp: lh.hp
         }, `👾 ${m.name}攻击${lh.name}！-${m.atk}（${lh.hp}/${lh.maxHp}）`);
+        if (typeof recordTrace === 'function') {
+          recordTrace({
+            actionType: '攻击',
+            actorId: m.id,
+            actorName: m.name,
+            actorSide: 'monster',
+            targetCell: { r: lp.r, c: lp.c },
+            targetName: lh.name,
+            damage: m.atk,
+            hpBefore: _bt_ml_hpBefore,
+            hpAfter: lh.hp,
+            killed: lh.hp <= 0,
+            reason: '近战攻击'
+          });
+        }
         if (lh.hp <= 0) { glog(`💔 ${lh.name}倒下了！`); checkGameOver(); }
         ap -= 1; break;
       }
@@ -476,6 +587,7 @@ function monsterActDefault(m, behavior) {
     if (inBoard(dp)) {
       const dh = heroAt(dp);
       if (dh) {
+        var _bt_md_hpBefore = dh.hp;
         dh.hp = Math.max(0, dh.hp - m.atk);
         const du = getUnitByHeroId(dh.id); if (du) du.hp = dh.hp;
         writeBattleStructuredLog('monster_attack', {
@@ -488,6 +600,21 @@ function monsterActDefault(m, behavior) {
           damage: m.atk,
           after_hp: dh.hp
         }, `👾 ${m.name}攻击${dh.name}！-${m.atk}（${dh.hp}/${dh.maxHp}）`);
+        if (typeof recordTrace === 'function') {
+          recordTrace({
+            actionType: '攻击',
+            actorId: m.id,
+            actorName: m.name,
+            actorSide: 'monster',
+            targetCell: { r: dp.r, c: dp.c },
+            targetName: dh.name,
+            damage: m.atk,
+            hpBefore: _bt_md_hpBefore,
+            hpAfter: dh.hp,
+            killed: dh.hp <= 0,
+            reason: '近战攻击'
+          });
+        }
         if (dh.hp <= 0) { glog(`💔 ${dh.name}倒下了！`); checkGameOver(); }
         ap -= 1; break;
       }
@@ -529,6 +656,17 @@ function monsterActDefault(m, behavior) {
       m.pos = np;
       if (typeof moveBoardStateUnit === 'function') moveBoardStateUnit(fromPos, np, occupant);
       writeBattleStructuredLog('monster_move_step', { monster_id: m.id || m.typeId, monster_name: m.name, from_cell: fromPos, to_cell: np, ap_before: ap, ap_after: ap - 1 }, `👾 ${m.name}→(${np.r},${np.c})`);
+      if (typeof recordTrace === 'function') {
+        recordTrace({
+          actionType: '移动',
+          actorId: m.id,
+          actorName: m.name,
+          actorSide: 'monster',
+          fromCell: { r: fromPos.r, c: fromPos.c },
+          targetCell: { r: np.r, c: np.c },
+          message: m.name + '→(' + np.r + ',' + np.c + ')'
+        });
+      }
       if (typeof bazaarRunTrigger === 'function') bazaarRunTrigger('on_monster_move_step', { actor: m, monster: m, from: fromPos, to: np });
       ap -= 1;
       resolveTerrainOnEnter(m, np);
@@ -949,10 +1087,36 @@ function executeAiBattlePlan_sync(plan) {
   if (!plan.canRun) { glog('⚠️ ' + (plan.reason || 'AI 没有可执行动作')); return plan; }
   G.aiBattleStatus = { phase: 'executing', summary: plan.summary, moves: plan.moves.length, actions: plan.actions.length };
   G.actionLog.push({ type: 'AI_BATTLE', desc: plan.summary, moves: plan.moves.length, actions: plan.actions.length });
+  // 战报快照：记录战斗初始状态（只在第1回合记录）
+  if (typeof recordTrace === 'function' && G.battleTrace && G.battleTrace.length === 0) {
+    recordTrace({
+      actionType: 'battle_start',
+      heroes: Object.keys(G.heroes || {}).map(function(k) {
+        var h = G.heroes[k];
+        return { id: h.id, name: h.name, hp: h.hp, maxHp: h.maxHp, pos: { r: h.pos.r, c: h.pos.c } };
+      }),
+      monsters: (G.monsters || []).filter(function(m) { return !m.dead; }).map(function(m) {
+        return { name: m.name, hp: m.hp, maxHp: m.maxHp, pos: { r: m.pos.r, c: m.pos.c } };
+      }),
+      explosionThreshold: G.explosionThreshold
+    });
+  }
   plan.moves.forEach(m => {
     if (!G.heroes[m.heroId]) return;
+    var fromPos = { r: G.heroes[m.heroId].pos.r, c: G.heroes[m.heroId].pos.c };
     G.heroes[m.heroId].pos = { r: m.to.r, c: m.to.c };
     glog(`🤖 ${G.heroes[m.heroId].name}→(${m.to.r},${m.to.c})`);
+    if (typeof recordTrace === 'function') {
+      recordTrace({
+        actionType: '英雄移动',
+        actorId: m.heroId,
+        actorName: G.heroes[m.heroId].name,
+        actorSide: 'player',
+        fromCell: { r: fromPos.r, c: fromPos.c },
+        targetCell: { r: m.to.r, c: m.to.c },
+        reason: m.reason || '推进'
+      });
+    }
   });
   var usedCount = 0;
   plan.actions.forEach(a => {

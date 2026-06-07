@@ -32,7 +32,7 @@ if (useMultiFile) {
     'data.js', 'externalDataAdapter.js',
     'rng.js', 'board.js', 'actions.js', 'elements.js',
     'damage.js', 'waves.js',
-    'battleLog.js', 'battle.js', 'dispatch.js', 'terrain.js', 'shop.js', 'game.js', 'preview.js',
+    'battleLog.js', 'battleTrace.js', 'battle.js', 'dispatch.js', 'terrain.js', 'shop.js', 'game.js', 'preview.js',
     'ui.js',
   ];
   for (const f of moduleFiles) {
@@ -4833,7 +4833,397 @@ group('架构统一：boardState / sync entry / seed RNG', ()=>{
   });
 });
 
-Promise.all(_asyncTests).then(() => {
+// ═══════════════════════════════════════════════════════════════
+group('BT组：战斗战报（Battle Trace）', ()=>{
+
+  test('case_bt_001: 完整战斗产生 battleTrace', ()=>{
+    fresh();
+    assert.ok(Array.isArray(G.battleTrace), 'initGame 后应存在 G.battleTrace');
+    const traceBefore = G.battleTrace.length;
+    runAiBattleTurn_sync({endTurn:true});
+    assert.ok(G.battleTrace.length > traceBefore, 'AI 战斗后 battleTrace 应有新事件');
+    assert.ok(G.battleTrace.length >= 1, '至少应有一条 trace');
+  });
+
+  test('case_bt_002: trace 每步 step 字段顺序递增', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const steps = G.battleTrace.map(function(e) { return e.step; });
+    for (var i = 1; i < steps.length; i++) {
+      assert.ok(steps[i] > steps[i-1], 'step ' + i + ' 应大于 step ' + (i-1) + '（实际 ' + steps[i] + ' ≤ ' + steps[i-1] + '）');
+    }
+    if (steps.length > 0) {
+      assert.strictEqual(G.battleTraceStep, steps[steps.length-1], 'G.battleTraceStep 应与最后一步一致');
+    }
+  });
+
+  test('case_bt_003: trace 包含 actionType 非空', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    G.battleTrace.forEach(function(e, i) {
+      assert.ok(e.actionType, '第' + (i+1) + '条 trace 应有 actionType');
+    });
+  });
+
+  test('case_bt_004: trace 包含元素层变化事件', ()=>{
+    fresh();
+    G.heroes.ha.pos = { r: 5, c: 0 };
+    G.slots.forEach(function(s) { s.hid = 'ha'; s.el = 'fire'; s.sn = 1; s.dir = 'right'; s.used = false; s._committed = false; });
+    runAiBattleTurn_sync({endTurn:false});
+    const elEvents = G.battleTrace.filter(function(e) { return e.actionType === '施加元素' || e.actionType === '元素伤害' || e.actionType === '引爆'; });
+    assert.ok(elEvents.length > 0, '应存在元素相关事件（施加元素/元素伤害/引爆）');
+    // 验证 layerBefore/layerAfter
+    var hasLayer = elEvents.some(function(e) { return e.layerBefore !== undefined || e.layerAfter !== undefined; });
+    assert.ok(hasLayer, '元素事件应包含层数变化');
+  });
+
+  test('case_bt_005: trace 包含 HP 变化事件', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const hpEvents = G.battleTrace.filter(function(e) { return e.hpBefore !== undefined && e.hpAfter !== undefined; });
+    assert.ok(hpEvents.length > 0, '应存在包含 HP 变化的事件（dealDmg 或怪物攻击路径）');
+    var hasChange = hpEvents.some(function(e) { return e.hpBefore !== e.hpAfter; });
+    assert.ok(hasChange, '至少有一个事件的 HP 发生了变化');
+  });
+
+  test('case_bt_006: 死亡事件记录 killed=true', ()=>{
+    fresh();
+    // 构造一个必死怪：放在英雄可攻击的相邻格，HP极低
+    const monster = G.monsters[0];
+    monster.hp = 1;
+    monster.maxHp = 1;
+    // 把英雄放在怪物左边1格，使用sn=1（单格右刺）
+    G.heroes.ha.pos = { r: monster.pos.r, c: monster.pos.c - 1 };
+    // 确保所有行动槽都是火元素单格向右且未使用
+    G.slots.forEach(function(s, i) {
+      s.hid = 'ha';
+      s.el = 'fire';
+      s.sn = 1;
+      s.dir = 'right';
+      s.used = false;
+      s._committed = false;
+      s.layers = 3; // 高层数确保一次到位
+      s.centerBonus = 0;
+    });
+    // 降低爆炸阈值让第一层就引爆
+    G.explosionThreshold = 1;
+    if (typeof rebuildBoardState === 'function') rebuildBoardState();
+    // 执行AI战斗
+    runAiBattleTurn_sync({endTurn:true});
+    const deathEvents = G.battleTrace.filter(function(e) { return e.killed === true; });
+    assert.ok(deathEvents.length > 0, '构造必死怪后应产生 killed=true 事件，当前 ' + G.battleTrace.length + ' 条 trace');
+    var hasZeroHp = deathEvents.some(function(e) { return e.hpAfter !== undefined && e.hpAfter <= 0; });
+    assert.ok(hasZeroHp, '死亡事件应记录 hpAfter=0');
+  });
+
+  test('case_bt_007: generateBattleTextReport 输出包含关键数字', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace);
+    assert.ok(report.length > 0, '报告不应为空');
+    assert.ok(report.indexOf('第') >= 0 || report.indexOf('回合') >= 0, '报告应包含天/回合信息');
+    assert.ok(report.indexOf('→') >= 0, '报告应包含 → 连接符号');
+    assert.ok(/HP|伤害|层/.test(report), '报告应包含 HP/伤害/层 等数字');
+  });
+
+  test('case_bt_008: battleTrace.js 不含 DOM 调用', ()=>{
+    const src = fs.readFileSync(path.join(__dirname, 'battleTrace.js'), 'utf8');
+    const forbidden = ['document.', 'querySelector', 'innerHTML', 'classList', 'refreshUI', 'renderBoard', 'setTimeout'];
+    forbidden.forEach(function(p) {
+      assert.ok(!src.includes(p), 'battleTrace.js 不应含 ' + p);
+    });
+  });
+
+  test('case_bt_009: 同一天/同回合的 trace 不重复产生 header', ()=>{
+    fresh();
+    // 增加足够多的事件以验证去重
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace);
+    const lines = report.split('\n').filter(function(l) { return l.length > 0; });
+    assert.ok(lines.length >= 1, '报告应有至少 1 行');
+    // 验证不是纯 JSON
+    assert.ok(!report.startsWith('[') || report.length > 100, '报告应为文本格式');
+  });
+
+  test('case_bt_010: exportBattleTrace 输出合法 JSON', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const json = exportBattleTrace();
+    var parsed = null;
+    try { parsed = JSON.parse(json); } catch(e) { assert.fail('exportBattleTrace 输出非法 JSON: ' + e.message); }
+    assert.ok(Array.isArray(parsed), '输出应为数组');
+    assert.ok(parsed.length > 0, '数组不应为空');
+  });
+
+  test('case_bt_011: trace 与 actionLog 独立存储', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    assert.ok(Array.isArray(G.battleTrace), 'battleTrace 存在');
+    assert.ok(Array.isArray(G.actionLog), 'actionLog 存在');
+    // 两者长度可不等，但都应该非空
+    assert.ok(G.battleTrace.length > 0, 'battleTrace 非空');
+    assert.ok(G.actionLog.length > 0, 'actionLog 非空');
+    // 至少一条 trace 的 step 字段不在 actionLog 中
+    var traceHasStep = G.battleTrace.some(function(e) { return e.step > 0; });
+    assert.ok(traceHasStep, 'trace 事件包含 step 字段');
+  });
+
+  test('case_bt_012: 同一笔伤害不在两条不同 actionType 中重复记录 HP', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    // 检查：所有 actionType='攻击' 的事件都有 hpBefore/hpAfter（来自 dealDmg）
+    // 而 actionType='元素伤害' 的事件不应该有 hpBefore/hpAfter（由 settleExplosions 记录，不含 HP）
+    var attackEvents = G.battleTrace.filter(function(e) { return e.actionType === '攻击'; });
+    var elementEvents = G.battleTrace.filter(function(e) { return e.actionType === '元素伤害'; });
+    attackEvents.forEach(function(e, i) {
+      assert.ok(e.hpBefore !== undefined, '攻击事件 #' + (i+1) + ' 应有 hpBefore');
+      assert.ok(e.hpAfter !== undefined, '攻击事件 #' + (i+1) + ' 应有 hpAfter');
+    });
+    elementEvents.forEach(function(e, i) {
+      if (e.damage !== undefined) {
+        assert.fail('元素伤害事件 #' + (i+1) + ' 不应有 damage 字段（由 dealDmg 统一记录）');
+      }
+    });
+  });
+
+  test('case_bt_013: 文字战报 generator 不重新计算', ()=>{
+    const src = fs.readFileSync(path.join(__dirname, 'battleTrace.js'), 'utf8');
+    const calcFuncs = ['calcElementDamage', 'calcElementLayerDamage', 'explDmg', 'calcTrapDamage'];
+    calcFuncs.forEach(function(fn) {
+      assert.ok(!src.includes(fn), 'generateBattleTextReport 不应包含 ' + fn);
+    });
+  });
+
+  // ═══ 多模式测试 ═══
+
+  test('case_bt_014: compact 模式为默认且包含关键信息', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace); // 默认 compact
+    assert.ok(report.indexOf('第') >= 0, 'compact 应包含天');
+    assert.ok(report.indexOf('回合') >= 0, 'compact 应包含回合');
+    assert.ok(report.indexOf('→') >= 0 || report.indexOf('层') >= 0, 'compact 应包含关键符号');
+    assert.ok(/HP|伤害/.test(report), 'compact 应包含 HP 或伤害');
+  });
+
+  test('case_bt_015: detail 模式包含章节标题', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'detail' });
+    assert.ok(report.indexOf('第') >= 0, 'detail 应包含天');
+    assert.ok(report.indexOf('回合') >= 0, 'detail 应包含回合');
+    // 至少应包含一个行动相关标记
+    assert.ok(/我方行动|统一结算|奖励/.test(report) || report.indexOf('槽') >= 0, 'detail 应包含章节或行动槽信息');
+  });
+
+  test('case_bt_016: debug 模式包含 step', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'debug' });
+    assert.ok(report.indexOf('step=') >= 0, 'debug 模式每行应包含 step=');
+    assert.ok(report.indexOf('|') >= 0, 'debug 模式应包含分隔符');
+    assert.ok(report.indexOf('施加元素') >= 0 || report.indexOf('攻击') >= 0, 'debug 应包含 actionType');
+  });
+
+  test('case_bt_017: debug 模式显示 killed=true', ()=>{
+    fresh();
+    // 构造必死怪
+    const monster = G.monsters[0];
+    monster.hp = 1; monster.maxHp = 1;
+    G.heroes.ha.pos = { r: monster.pos.r, c: monster.pos.c - 1 };
+    G.slots.forEach(function(s) {
+      s.hid = 'ha'; s.el = 'fire'; s.sn = 1; s.dir = 'right';
+      s.used = false; s._committed = false;
+      s.layers = 5;
+    });
+    G.explosionThreshold = 1;
+    if (typeof rebuildBoardState === 'function') rebuildBoardState();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'debug' });
+    assert.ok(report.indexOf('killed=true') >= 0, 'debug 模式应显示 killed=true');
+  });
+
+  test('case_bt_018: generateBattleTextReport 不修改 events 原数组', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const before = JSON.stringify(G.battleTrace);
+    // 调用所有三种模式
+    generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    generateBattleTextReport(G.battleTrace, { mode: 'detail' });
+    generateBattleTextReport(G.battleTrace, { mode: 'debug' });
+    const after = JSON.stringify(G.battleTrace);
+    assert.strictEqual(after, before, 'generateBattleTextReport 不应修改 events 数组');
+  });
+
+  test('case_bt_019: compact 模式 showCoords=true 显示坐标', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact', showCoords: true });
+    // 如果有 targetCell 的事件很多，至少应出现括号坐标
+    if (G.battleTrace.some(function(e) { return e.targetCell && (e.actionType === '施加元素' || e.actionType === '攻击'); })) {
+      assert.ok(/第\d+行第\d+列/.test(report) || /\d+,\d+/.test(report), 'compact+showCoords 应包含行/列坐标，实际：' + report);
+    }
+  });
+
+  test('case_bt_020: detail 模式 showCoords=true 显示坐标', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'detail', showCoords: true });
+    if (G.battleTrace.some(function(e) { return e.targetCell && (e.actionType === '施加元素' || e.actionType === '攻击'); })) {
+      assert.ok(/\d+,\d+/.test(report), 'detail+showCoords 应包含坐标数字');
+    }
+  test('case_bt_021: compact 不出现 死亡！。', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    assert.ok(report.indexOf('死亡！。') < 0, 'compact 不应出现 "死亡！。"');
+  });
+
+  test('case_bt_022: compact 槽位升序不出现倒序', ()=>{
+    fresh();
+    // 多英雄多槽验证
+    G.slots.forEach(function(s) { s.hid = 'ha'; s.el = 'fire'; s.sn = 1; s.dir = 'right'; s.used = false; s._committed = false; });
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    // 匹配槽位行，检查是否含 "第3/2/1" 这类倒序
+    const slotLines = report.split('\n').filter(function(l) { return l.indexOf('槽') >= 0; });
+    slotLines.forEach(function(l) {
+      assert.ok(l.indexOf('第') >= 0, '槽位行应含 "第"');
+      assert.ok(!/第[\d]+[\s]?\/[\s]?[\d]/.test(l) || /第\d+~\d+槽/.test(l), '槽位应为范围或递增序列：' + l);
+    });
+  });
+
+  test('case_bt_023: compact HP 显示始终含 before→after', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    // HP 命中句应包含 "HP 数字→数字"
+    const hpLines = report.split('\n').filter(function(l) { return l.indexOf('HP ') >= 0 && l.indexOf('→') >= 0; });
+    assert.ok(hpLines.length > 0, 'compact 应至少包含一行 HP before→after');
+  });
+
+  test('case_bt_024: compact 合并伤害句含 火元素伤害', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    if (report.indexOf('元素伤害') >= 0 || report.indexOf('统一结算') >= 0) {
+      assert.ok(/火元素伤害|水元素伤害|风元素伤害|土元素伤害/.test(report), 'compact 合并伤害句应含元素伤害');
+    }
+  });
+
+  test('case_bt_025: debug 对 reason=元素结算 显示 伤害', ()=>{
+    fresh();
+    // 构造触发元素结算的场景
+    G.heroes.ha.pos = { r: 5, c: 0 };
+    G.slots.forEach(function(s) { s.hid = 'ha'; s.el = 'fire'; s.sn = 1; s.dir = 'right'; s.used = false; s._committed = false; });
+    G.explosionThreshold = 1;
+    if (typeof rebuildBoardState === 'function') rebuildBoardState();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'debug' });
+    const hasDamageLabel = report.split('\n').some(function(l) {
+      return l.indexOf('伤害 |') >= 0;
+    });
+    assert.ok(hasDamageLabel, 'debug 模式应至少有一行以 "伤害 |" 开头（代表元素结算伤害）');
+  });
+
+  test('case_bt_026: exportBattleTrace 导出 JSON 格式不变', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const json = exportBattleTrace();
+    var parsed = null;
+    try { parsed = JSON.parse(json); } catch(e) { assert.fail('exportBattleTrace 输出非法 JSON: ' + e.message); }
+    assert.ok(Array.isArray(parsed), '输出应为数组');
+    assert.ok(parsed.length > 0, '数组不应为空');
+    // 验证原始 actionType 不受展示层影响
+    var attackReason = parsed.filter(function(e) { return e.actionType === '攻击' && e.reason && e.reason.indexOf('元素结算') >= 0; });
+    attackReason.forEach(function(e) {
+      assert.strictEqual(e.actionType, '攻击', '原始 actionType 仍应为 "攻击"，不受展示层影响');
+    });
+  });
+
+  test('case_bt_027: compact 我方行出现在敌方面前', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    if (report.indexOf('我方：') >= 0 && report.indexOf('敌方：') >= 0) {
+      assert.ok(report.indexOf('我方：') < report.indexOf('敌方：'), 'compact 中 "我方：" 必须在 "敌方：" 前面');
+    }
+  });
+
+  test('case_bt_028: compact 敌方行含 HP', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    const enemyLine = report.split('\n').filter(function(l) { return l.indexOf('敌方：') >= 0; })[0];
+    if (enemyLine) {
+      assert.ok(/HP \d/.test(enemyLine), 'compact 敌方行应包含 HP 数值，实际：' + enemyLine);
+    }
+  });
+
+  test('case_bt_029: compact 奖励句包含逗号间隔', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    const resultLine = report.split('\n').filter(function(l) { return l.indexOf('战斗结果') >= 0; })[0];
+    if (resultLine) {
+      assert.ok(resultLine.indexOf('，') >= 0, '奖励句应包含逗号');
+      assert.ok(/金币 \+/.test(resultLine), '奖励句应包含 "金币 +"');
+    }
+  });
+
+  test('case_bt_030: compact 含【开场布局】双章节', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    if (report.indexOf('battle_start') >= 0 || report.indexOf('开场布局') >= 0) {
+      assert.ok(report.indexOf('【开场布局 · 我方】') >= 0, '应包含 【开场布局 · 我方】');
+      assert.ok(report.indexOf('【开场布局 · 敌方】') >= 0, '应包含 【开场布局 · 敌方】');
+    }
+  });
+
+  test('case_bt_031: compact 含【我方结束回合】和【统一结算】', ()=>{
+    fresh();
+    G.slots.forEach(function(s) { s.hid = 'ha'; s.el = 'fire'; s.sn = 1; s.dir = 'right'; s.used = false; s._committed = false; });
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    assert.ok(report.indexOf('【我方结束回合】') >= 0, 'compact 应包含 【我方结束回合】');
+    assert.ok(report.indexOf('【统一结算】') >= 0, 'compact 应包含 【统一结算】');
+  });
+
+  test('case_bt_032: compact 坐标显示为第X行第Y列', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    assert.ok(/第\d+行第\d+列/.test(report), 'compact 坐标应使用 第X行第Y列 格式');
+  });
+
+  test('case_bt_033: compact 含【敌方行动】', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    if (report.indexOf('移动') >= 0 || report.indexOf('monster') >= 0) {
+      assert.ok(report.indexOf('【敌方行动】') >= 0, 'compact 应包含 【敌方行动】');
+    }
+  });
+
+  test('case_bt_034: compact 含【第N回合结束】', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    assert.ok(/【第\d+回合结束】/.test(report), 'compact 应包含 【第N回合结束】');
+  });
+
+  test('case_bt_035: 开场布局含 HP 和位置', ()=>{
+    fresh();
+    runAiBattleTurn_sync({endTurn:true});
+    const report = generateBattleTextReport(G.battleTrace, { mode: 'compact' });
+    if (report.indexOf('开场布局') >= 0) {
+      assert.ok(/HP \d+/.test(report), '开场布局应含 HP');
+      assert.ok(/第\d+行第\d+列/.test(report), '开场布局应含 第X行第Y列');
+    }
+  });
+
+});
 console.log('\n' + '═'.repeat(55));
 console.log(`测试结果：${pass} 通过，${fail} 失败，共 ${pass+fail} 项`);
 if(failures.length>0){

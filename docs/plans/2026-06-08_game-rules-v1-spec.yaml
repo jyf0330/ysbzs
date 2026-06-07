@@ -1,0 +1,200 @@
+# 《元素背包史》第一版·核心规则 YAML（按 day7-fire-trial.zip 校准）
+# 版本: v1 (2026-06-08)
+# 校准源: day7FireTrial.cjs + uiAdapter.cjs + day7_fire_trial.test.cjs
+
+meta:
+  game: 元素背包史
+  version: v1
+  date: 2026-06-08
+  elements: [火, 水, 风]          # 第一版只做三元素，土保留字段兼容
+  board: { rows: 8, cols: 8 }
+  max_rounds: 10
+
+# ============================================================
+# 一、火结算规则（来自 day7FireTrial.cjs: fireDamage / explodeIfEnemyOnFire）
+# ============================================================
+fire:
+  explosion:
+    threshold: 3                     # ≥3 层触发引爆
+    formula: sum_1_to_N              # damage = N + (N-1) + ... + 1 = N*(N+1)/2
+    target: unit_on_cell             # 伤害作用于该格上的单位
+    no_unit_behavior: trap           # 无单位 → 保持火层，成为「空格爆火陷阱」
+    after_explosion: clear           # 引爆后该格火层清零
+    examples:
+      - { layers: 3, damage: 6 }
+      - { layers: 4, damage: 10 }
+      - { layers: 10, damage: 55 }
+
+# ============================================================
+# 二、水结算规则（来自 day7FireTrial.cjs: consumeWaterCatalystForFire）
+# ============================================================
+water:
+  primary_role: catalyst_for_fire    # 水作为火催化剂
+  catalyst:
+    condition: cell_has_water         # 同格水层 > 0
+    cost: consume_1                   # 消耗 1 层水
+    effect: double_fire_layers        # 本次施加火层翻倍
+    example:                          # 融焰娘2层火+水催化→4层火
+      base_fire: 2
+      water_consumed: 1
+      resulting_fire: 4
+  poison: { enabled_by: domain, default: false }    # 水毒由领域开启
+  heal: { enabled_by: domain, default: false }      # 回血由领域开启
+
+# ============================================================
+# 三、风结算规则（来自 day7FireTrial.cjs: transferFire）
+# ============================================================
+wind:
+  primary_role: element_displacement  # 元素位移
+  convergence:
+    effect: transfer_fire_between_cells   # 从格子A搬运火层到格子B
+    cost: none                             # 不额外消耗
+    amount: variable                       # 按指定数量搬运
+    example:
+      from: { r: 0, c: 6 }                # 第1行第7列
+      to: { r: 1, c: 6 }                  # 第2行第7列
+      moved: 2
+  displacement: { enabled_by: domain, default: false }
+  summon_bonus: { enabled_by: domain, default: false }
+  economy_bonus: { enabled_by: domain, default: false }
+
+# ============================================================
+# 四、英雄领域规则（来自 day7FireTrial.cjs: mechanics on leaders）
+# ============================================================
+hero_domain:
+  player:
+    type: fire_core
+    mechanics:                          # 通过 leader.mechanics 字段实现
+      - move_free_field                 # 己方宠物移动不消耗行动力
+      - fire_core_field                 # 火引爆规则激活
+    pets_in_team:                       # 4 只预设宠物
+      - { name: 融焰娘, quality: 黄金, element: 火, bodySize: 中型, role: 火爆核心 }
+      - { name: 火绒狐, quality: 白银, element: 火, bodySize: 中型, role: 点火启动 }
+      - { name: 冲浪鸭, quality: 白银, element: 水, bodySize: 小型, role: 水汽催化 }
+      - { name: 旋风狸, quality: 白银, element: 风, bodySize: 中型, role: 风聚合 }
+  enemy:
+    type: trial_boss
+    name: 兽群统领
+    position: { r: 0, c: 7 }           # 固定第1行第8列
+    mechanics:
+      - beast_trial_examiner
+
+# ============================================================
+# 五、行动槽（来自 day7 宠物 shape 定义）
+# ============================================================
+action_slots:
+  slot_count: 3                         # 默认 3 槽（骑士蜂 4 槽）
+  shape_mapping:
+    小型: { hitCells: 1, example_id: A2 }
+    中型: { hitCells: 2, example_id: B2 }
+    大型: { hitCells: 3, example_id: B1 }
+  shape_examples:
+    - id: B2_core_burst
+      name: B2 爆心二连
+      hitCells: 2
+      baseLayers: 2                      # 黄金品质 = 2 层
+      shapeClass: B2
+    - id: B2_gap_fire
+      name: B2 隔点二刺
+      hitCells: 2
+      baseLayers: 1                      # 白银品质 = 1 层
+      shapeClass: B2
+    - id: A2_water_single
+      name: A2 单点水冲
+      hitCells: 1
+      baseLayers: 1
+      shapeClass: A2
+    - id: B2_wind_converge
+      name: B2 旋风收束
+      hitCells: 2
+      baseLayers: 1
+      shapeClass: B2
+
+# ============================================================
+# 六、敌方试炼（来自 day7FireTrial.cjs: ENEMY_DEFS）
+# ============================================================
+trial:
+  boss: 兽群统领
+  copies_in_round_1:                     # 第7天场景
+    - { name: 精灵龙黄金复制体, role: 支援题, hp: 42, atk: 8, shield: 6, ap: 3, pos: { r: 0, c: 5 } }
+    - { name: 皮皮鸡黄金复制体, role: 护盾题, hp: 40, atk: 18, shield: 20, ap: 3, pos: { r: 1, c: 6 }, special: 回合末护盾重生 }
+    - { name: 骑士蜂黄金复制体, role: 突击题, hp: 36, atk: 18, shield: 0, ap: 4, pos: { r: 2, c: 5 } }
+    - { name: 棉悠悠黄金复制体, role: 站场题, hp: 60, atk: 16, shield: 0, ap: 3, pos: { r: 3, c: 4 }, special: 会移动 }
+  copy_rules:
+    has_element: false
+    lays_elements: false
+    triggers_enchantment: false
+    can_summon_copies: false
+  round_1_verification:                  # 第7天测试验收标准
+    min_kills: 2
+    must_kill: [骑士蜂黄金复制体, 精灵龙黄金复制体]
+    remaining_shield_max: 20             # 皮皮鸡回满盾
+
+# ============================================================
+# 七、战斗流程（来自 day7FireTrial.cjs: runDay7FireTurn1）
+# ============================================================
+battle_sequence:
+  round_1_scripted:                      # 第1回合固定脚本
+    - phase: move
+      actions:
+        - { unit: 火绒狐, from: { r:3,c:1 }, to: { r:2,c:4 }, reason: 进入第3行第5列点火位 }
+        - { unit: 冲浪鸭, from: { r:4,c:1 }, to: { r:0,c:4 }, reason: 进入第1行第5列水汽位 }
+        - { unit: 融焰娘, from: { r:4,c:0 }, to: { r:1,c:5 }, reason: 进入第2行第6列爆心位 }
+        - { unit: 旋风狸, from: { r:5,c:1 }, to: { r:2,c:6 }, reason: 站上第3行第7列火陷阱 }
+    - phase: attack
+      order: [火绒狐(3击), 冲浪鸭(2击), 融焰娘(2击), 旋风狸(3击), 冲浪鸭(第3击铺水)]
+    - phase: element_settle
+      - fire_explode: [骑士蜂格(火3层), 精灵龙格(火4层), 皮皮鸡格(火4层)]
+      - water_catalyst: 精灵龙格消耗1水→火翻倍
+      - wind_converge: 第1行第7列+第3行第7列→收束到皮皮鸡格
+    - phase: enemy_end
+      - 皮皮鸡: 护盾重生回满
+      - 棉悠悠: 移动到第4行第4列
+
+# ============================================================
+# 八、文字战报格式（来自 day7FireTrial.cjs: pushEvent + battleTrace）
+# ============================================================
+battle_report:
+  format: 结构化事件流 → 中文日志
+  event_types:
+    - DAY7_TRIAL_SETUP              # 场景初始化
+    - DAY7_TRIAL_POSITIONS          # 站位信息
+    - DAY7_TRIAL_RULE               # 领域规则说明
+    - ROUND_START                   # 回合开始
+    - MOVE_HERO                     # 移动
+    - DAY7_ACTION                   # 行动描述
+    - DAMAGE                        # 伤害
+    - APPLY_ELEMENT_CELL            # 铺元素层
+    - DAY7_CATALYST                 # 水催化
+    - DAY7_FIRE_EXPLODE             # 火引爆
+    - DAY7_FIRE_CLEAR               # 火清零
+    - DAY7_WIND_CONVERGE            # 风聚火
+    - DAY7_ENEMY_END                # 敌方回合末
+    - DAY7_TRIAL_RESULT             # 回合验收
+    - UNIT_DEAD                     # 单位死亡
+  display_rules:
+    - 每次伤害写清: "HP X→Y"
+    - 每次元素变化写清: "火 A→B"
+    - 引爆写清: "火N层爆发，伤害=1+2+...+N"
+    - 催化写清: "水X→X-1，本次火层翻倍"
+
+# ============================================================
+# 九、ZIP 增量合并清单
+# ============================================================
+zip_delta:
+  new_files:
+    - src/core/day7FireTrial.cjs       # 场景引擎 (274行)
+    - tests/day7_fire_trial.test.cjs   # 测试 (35行)
+    - tools/check_day7_fire_trial_browser.cjs  # 浏览器验收 (58行)
+    - web/day7-fire-trial.html         # 独立页面 (含CSS+HTML+JS)
+  modified_files:
+    - src/core/reducer.cjs             # +2行 (require + 2 case)
+    - src/uiAdapter.cjs                # +10行 (命令/VM/methods)
+    - web/index.html                   # +1行 (试炼链接按钮)
+  unchanged:
+    - data/csv/*.csv                   # 与当前完全一致
+    - source/game-data-source/yaml/*   # 与当前完全一致
+    - src/core/battle.cjs              # 未修改
+    - src/core/state.cjs               # 未修改
+    - src/core/mechanics.cjs           # 未修改
+    - web/*.js                         # 未修改

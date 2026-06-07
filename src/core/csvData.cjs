@@ -17,7 +17,13 @@ const TABLE_FILES = Object.freeze({
   relics: '07_遗物祝福_好读版.csv',
   shapes: '08_形状行动槽_好读版.csv',
   validation: '09_跨表校验.csv',
-  initialSetup: '10_初始阵容.csv'
+  initialSetup: '10_初始阵容.csv',
+  heroDomains: '11_英雄领域_联动版.csv',
+  elementReactions: '12_元素反应_联动版.csv',
+  day7Trial: '13_第7天兽群试炼_联动版.csv',
+  qualityMultipliers: '14_品质进阶倍率.csv',
+  trialQuestions: '15_召唤试炼题库.csv',
+  trialActions: '16_试炼回合行动计划.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
@@ -346,6 +352,12 @@ function normalizeSourceTables(sourceTables, options = {}) {
   }).filter(x => x.petId);
 
   const initialSetup = normalizeInitialSetup(sourceTables.initialSetup || []);
+  const heroDomains = sourceTables.heroDomains || [];
+  const elementReactions = sourceTables.elementReactions || [];
+  const day7Trial = sourceTables.day7Trial || [];
+  const qualityMultipliers = sourceTables.qualityMultipliers || [];
+  const trialQuestions = sourceTables.trialQuestions || [];
+  const trialActions = sourceTables.trialActions || [];
 
   return {
     meta: {
@@ -366,7 +378,13 @@ function normalizeSourceTables(sourceTables, options = {}) {
     relics,
     shapes,
     validation: sourceTables.validation || [],
-    initialSetup
+    initialSetup,
+    heroDomains,
+    elementReactions,
+    day7Trial,
+    qualityMultipliers,
+    trialQuestions,
+    trialActions
   };
 }
 
@@ -400,7 +418,13 @@ function loadSourceTablesFromCsv(csvDir = DEFAULT_CSV_DIR) {
     relics: readCsvRows(path.join(csvDir, TABLE_FILES.relics)),
     shapes: readCsvRows(path.join(csvDir, TABLE_FILES.shapes)),
     validation: readCsvRows(path.join(csvDir, TABLE_FILES.validation)),
-    initialSetup: readCsvRows(path.join(csvDir, TABLE_FILES.initialSetup))
+    initialSetup: readCsvRows(path.join(csvDir, TABLE_FILES.initialSetup)),
+    heroDomains: readCsvRows(path.join(csvDir, TABLE_FILES.heroDomains)),
+    elementReactions: readCsvRows(path.join(csvDir, TABLE_FILES.elementReactions)),
+    day7Trial: readCsvRows(path.join(csvDir, TABLE_FILES.day7Trial)),
+    qualityMultipliers: readCsvRows(path.join(csvDir, TABLE_FILES.qualityMultipliers)),
+    trialQuestions: readCsvRows(path.join(csvDir, TABLE_FILES.trialQuestions)),
+    trialActions: readCsvRows(path.join(csvDir, TABLE_FILES.trialActions))
   };
 }
 

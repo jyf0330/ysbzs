@@ -10,7 +10,7 @@
     "report": "node tools/run_full_day.cjs",
     "test": "node tests/run_all_tests.cjs",
     "check:dom": "node tools/check_no_dom.cjs",
-    "check:all": "node tests/run_all_tests.cjs && node --test tests/full_coverage.test.cjs && node --test tests/ui_adapter.test.cjs && node --test tests/leader_boss_rules.test.cjs && node --test tests/planning_ai_rules.test.cjs && node --test tests/csv_source.test.cjs && node --test tests/full_player_operations.test.cjs && node tools/check_csv_data.cjs && node tools/check_no_dom.cjs && node tools/check_visible_text.cjs && node tools/run_full_day.cjs --check && node tools/run_shop_demo.cjs --check && node tools/run_ui_adapter_demo.cjs --check && node tools/check_ui_connected.cjs && node tools/check_browser_player_flow.cjs && npm run test:coverage",
+    "check:all": "npm test && npm run check:csv && npm run check:day7 && npm run check:dom",
     "test:full": "node --test tests/full_coverage.test.cjs",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include='src/**/*.cjs' --test-coverage-lines=95 --test-coverage-functions=95 --test-coverage-branches=70 tests/full_coverage.test.cjs tests/ui_adapter.test.cjs tests/leader_boss_rules.test.cjs tests/planning_ai_rules.test.cjs tests/csv_source.test.cjs tests/full_player_operations.test.cjs",
     "ui:demo": "node tools/run_ui_adapter_demo.cjs",
@@ -21,6 +21,9 @@
     "check:csv": "node --test tests/csv_source.test.cjs && node tools/check_csv_data.cjs",
     "data:check": "node tools/check_csv_data.cjs",
     "data:dump": "node tools/dump_normalized_from_csv.cjs",
-    "test:ops": "node --test tests/full_player_operations.test.cjs"
+    "test:ops": "node --test tests/full_player_operations.test.cjs",
+    "check:day7": "node --test tests/day7_fire_trial.test.cjs && node tools/check_day7_fire_trial_browser.cjs",
+    "check:v1": "npm test && npm run check:csv && npm run check:day7 && npm run check:dom",
+    "test:coverage:legacy": "node --test --experimental-test-coverage --test-coverage-include='src/**/*.cjs' --test-coverage-lines=95 --test-coverage-functions=95 --test-coverage-branches=70 tests/full_coverage.test.cjs tests/ui_adapter.test.cjs tests/leader_boss_rules.test.cjs tests/planning_ai_rules.test.cjs tests/csv_source.test.cjs tests/full_player_operations.test.cjs"
   }
 }

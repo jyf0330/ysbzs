@@ -1,128 +1,31 @@
 ﻿宠物ID,名称(自动),元素(自动),品质(自动),定位(自动),标签(自动),商品类型,商店状态,解锁日,池档,默认价,价格覆盖,夜市权重,元素店权重,定位店权重,品质店权重,奖励权重,商店池(自动),奖励池(自动),出现条件,备注
-pal_001,棉悠悠,风,青铜,经济,风、经济、召唤、发育,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_经济, tier_pT1",reward_pT1,,
-pal_002,捣蛋猫,风,青铜,坦克,风、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_003,皮皮鸡,风,青铜,经济,风、经济、召唤、发育,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_经济, tier_pT1",reward_pT1,,
-pal_004,翠叶鼠,风,青铜,治疗,风、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_治疗, tier_pT1",reward_pT1,,
-pal_005,火绒狐,火,青铜,输出,火、输出、爆发、前排,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, role_输出, tier_pT1",reward_pT1,,
-pal_006,冲浪鸭,水,青铜,治疗,水、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, role_治疗, tier_pT1",reward_pT1,,
-pal_007,伏特喵,风,青铜,坦克,风、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_008,新叶猿,风,青铜,坦克,风、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_009,燎火鹿,火,青铜,输出,火、输出、爆发、前排,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, role_输出, tier_pT1",reward_pT1,,
-pal_010,企丸丸,水,青铜,治疗,水、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, role_治疗, tier_pT1",reward_pT1,,
-pal_011,企丸王,水,青铜,治疗,水、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, role_治疗, tier_pT1",reward_pT1,,
-pal_012,电棘鼠,风,青铜,控制,风、牵制、范围、机动,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_控制, tier_pT1",reward_pT1,,旧定位=牵制
-pal_013,叶泥泥,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_014,玉藻狐,风,青铜,经济,风、经济、召唤、发育,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_经济, tier_pT1",reward_pT1,,
-pal_015,啼卡尔,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_016,壶小象,水,青铜,治疗,水、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, role_治疗, tier_pT1",reward_pT1,,
-pal_017,瞅什魔,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_018,米露菲,风,青铜,经济,风、经济、召唤、发育,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_经济, tier_pT1",reward_pT1,,
-pal_019,寐魔,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_020,草莽猪,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_021,露娜蒂,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_022,遁地鼠,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_023,勾魂鱿,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_024,喵丝特,土,青铜,经济,土、经济、召唤、发育,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_经济, tier_pT1",reward_pT1,,
-pal_025,鲁米儿,水,青铜,治疗,水、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, role_治疗, tier_pT1",reward_pT1,,
-pal_026,猎狼,风,青铜,机动,风、机动、灵活、泛用,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_机动, tier_pT1",reward_pT1,,
-pal_027,炸蛋鸟,风,青铜,机动,风、机动、灵活、泛用,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_机动, tier_pT1",reward_pT1,,
-pal_028,波娜兔,风,青铜,治疗,风、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_治疗, tier_pT1",reward_pT1,,
-pal_029,波霸牛,风,青铜,经济,风、经济、召唤、发育,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_经济, tier_pT1",reward_pT1,,经济补预算
-pal_030,荆棘魔仙,风,青铜,治疗,风、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_治疗, tier_pT1",reward_pT1,,
-pal_031,鲨小子,水,青铜,治疗,水、治疗、后排、增益,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, role_治疗, tier_pT1",reward_pT1,,
-pal_032,吊缚灵,土,青铜,坦克,土、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_土, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_033,叶胖达,风,青铜,坦克,风、防御、前排、阻挡,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_坦克, tier_pT1",reward_pT1,,旧定位=防御
-pal_034,棉花糖,风,青铜,经济,风、经济、召唤、发育,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_经济, tier_pT1",reward_pT1,,
-pal_035,灌木羊,风,青铜,召唤,风、召唤、成长、核心,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, role_召唤, tier_pT1",reward_pT1,,
-pal_036,美露帕,风,白银,经济,风、经济、召唤、发育,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_经济, tier_pT2",reward_pT2,,经济补预算
-pal_037,紫霞鹿,风,白银,机动,风、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_机动, tier_pT2",reward_pT2,,
-pal_038,疾风隼,风,白银,机动,风、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_机动, tier_pT2",reward_pT2,,
-pal_039,姬小兔,风,白银,坦克,风、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_040,炎魔羊,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_041,幻悦蝶,风,白银,治疗,风、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_042,炽焰牛,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_043,趴趴鲶,土,白银,治疗,土、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_044,黑鸦隐士,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_045,朋克蜥,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_046,月镰魔,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_047,天擒鸟,风,白银,机动,风、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_机动, tier_pT2",reward_pT2,,
-pal_048,羽箭射手,风,白银,治疗,风、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_049,铁拳猿,风,白银,坦克,风、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_050,骑士蜂,风,白银,召唤,风、召唤、成长、核心,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_召唤, tier_pT2",reward_pT2,,召唤补预算
-pal_051,女皇蜂,风,白银,治疗,风、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_052,笑魇猫,风,白银,机动,风、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_机动, tier_pT2",reward_pT2,,
-pal_053,毛掸儿,水,白银,控制,水、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_054,毛老爹,水,白银,控制,水、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_055,疾旋鼬,水,白银,控制,水、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_056,雷角马,风,白银,控制,风、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_057,吹雪狐,水,白银,控制,水、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_058,火麒麟,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_059,严冬鹿,水,白银,控制,水、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_060,霹雳犬,风,白银,控制,风、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_061,苍焰狼,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_062,雷鸣童子,风,白银,控制,风、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_063,秘斯媞雅,风,白银,召唤,风、召唤、成长、核心,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_召唤, tier_pT2",reward_pT2,,召唤补预算
-pal_064,花冠龙,风,白银,召唤,风、召唤、成长、核心,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_召唤, tier_pT2",reward_pT2,,召唤补预算
-pal_065,雷冠龙,风,白银,控制,风、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_066,滑水蛇,水,白银,治疗,水、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_067,流沙蛇,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_068,噬魂兽,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_069,碎岩龟,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_070,猫蝠怪,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_071,博爱蜥,风,白银,治疗,风、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_072,融焰娘,火,白银,召唤,火、召唤、成长、核心,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_召唤, tier_pT2",reward_pT2,,召唤补预算
-pal_073,烽歌龙,火,白银,机动,火、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_机动, tier_pT2",reward_pT2,,
-pal_074,霜歌龙,水,白银,控制,水、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_075,浪刃武士,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_076,迅雷鸟,风,白银,控制,风、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_077,燧火鸟,火,白银,机动,火、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_机动, tier_pT2",reward_pT2,,
-pal_078,暗巫猫,土,白银,治疗,土、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_079,焰巫狐,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_080,踏春兔,风,白银,治疗,风、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_081,薇莉塔,风,白银,治疗,风、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_082,绸笠蛾,水,白银,治疗,水、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_083,精灵龙,风,白银,召唤,风、召唤、成长、核心,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_召唤, tier_pT2",reward_pT2,,召唤补预算
-pal_084,水灵龙,水,白银,治疗,水、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_085,水灵儿,水,白银,治疗,水、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_086,火灵儿,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_087,碧海龙,水,白银,治疗,水、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_088,冰棘兽,水,白银,坦克,水、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_089,狱焰王,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_090,狱阎王,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_091,佩克龙,水,白银,坦克,水、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_092,派克龙,风,白银,控制,风、牵制、范围、机动,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_控制, tier_pT2",reward_pT2,,旧定位=牵制；控制补预算
-pal_093,连理龙,风,白银,召唤,风、召唤、成长、核心,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_召唤, tier_pT2",reward_pT2,,召唤补预算
-pal_094,海誓龙,水,白银,治疗,水、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_095,花丽娜,风,白银,治疗,风、治疗、后排、增益,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_治疗, tier_pT2",reward_pT2,,治疗补预算
-pal_096,熔岩兽,火,白银,坦克,火、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_097,寒霜兽,水,白银,坦克,水、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_098,君王美露帕,风,白银,经济,风、经济、召唤、发育,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_经济, tier_pT2",reward_pT2,,经济补预算
-pal_099,冰帝美露帕,水,白银,坦克,水、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_100,森猛犸,风,白银,坦克,风、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_101,雪猛犸,水,白银,坦克,水、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_102,白绒雪怪,水,白银,坦克,水、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_水, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_103,绿苔绒怪,风,白银,坦克,风、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_104,铠格力斯,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_105,云海鹿,风,白银,机动,风、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_机动, tier_pT2",reward_pT2,,
-pal_106,夜幕魔蝠,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_107,天羽龙,风,白银,机动,风、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_风, role_机动, tier_pT2",reward_pT2,,
-pal_108,焰煌,火,白银,输出,火、输出、爆发、前排,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_火, role_输出, tier_pT2",reward_pT2,,
-pal_109,雷冥鸟,土,白银,机动,土、机动、灵活、泛用,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_机动, tier_pT2",reward_pT2,,
-pal_110,魔渊龙,土,白银,坦克,土、防御、前排、阻挡,宠物,启用,3,pT2,4,,65,70,65,80,45,"night_base, elem_土, role_坦克, tier_pT2",reward_pT2,,旧定位=防御
-pal_111,冥铠蝎,土,黄金,坦克,土、防御、前排、阻挡,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_土, role_坦克, tier_pT3",reward_pT3,,旧定位=防御
-pal_112,阿努比斯,土,黄金,输出,土、输出、爆发、前排,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_土, role_输出, tier_pT3",reward_pT3,,
-pal_113,覆海龙,水,黄金,治疗,水、治疗、后排、增益,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_水, role_治疗, tier_pT3",reward_pT3,,治疗补预算
-pal_114,腾炎龙,火,黄金,输出,火、输出、爆发、前排,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_火, role_输出, tier_pT3",reward_pT3,,
-pal_115,朱雀,火,黄金,机动,火、机动、灵活、泛用,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_火, role_机动, tier_pT3",reward_pT3,,
-pal_116,清雀,水,黄金,治疗,水、治疗、后排、增益,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_水, role_治疗, tier_pT3",reward_pT3,,治疗补预算
-pal_117,暴电熊,风,黄金,控制,风、牵制、范围、机动,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_风, role_控制, tier_pT3",reward_pT3,,旧定位=牵制；控制补预算
-pal_118,百合女王,风,黄金,治疗,风、治疗、后排、增益,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_风, role_治疗, tier_pT3",reward_pT3,,治疗补预算
-pal_119,黑月女王,土,黄金,治疗,土、治疗、后排、增益,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_土, role_治疗, tier_pT3",reward_pT3,,治疗补预算
-pal_120,荷鲁斯,火,黄金,机动,火、机动、灵活、泛用,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_火, role_机动, tier_pT3",reward_pT3,,
-pal_121,波鲁杰克斯,风,黄金,控制,风、牵制、范围、机动,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_风, role_控制, tier_pT3",reward_pT3,,旧定位=牵制；控制补预算
-pal_122,异构格里芬,土,黄金,机动,土、机动、灵活、泛用,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_土, role_机动, tier_pT3",reward_pT3,,
-pal_123,圣光骑士,风,黄金,坦克,风、防御、前排、阻挡,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_风, role_坦克, tier_pT3",reward_pT3,,旧定位=防御
-pal_124,混沌骑士,土,黄金,坦克,土、防御、前排、阻挡,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_土, role_坦克, tier_pT3",reward_pT3,,旧定位=防御
-pal_125,唤冬兽,水,黄金,控制,水、牵制、范围、机动,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_水, role_控制, tier_pT3",reward_pT3,,旧定位=牵制；控制补预算
-pal_126,唤夜兽,土,黄金,控制,土、牵制、范围、机动,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_土, role_控制, tier_pT3",reward_pT3,,旧定位=牵制；控制补预算
-pal_127,空涡龙,风,黄金,机动,风、机动、灵活、泛用,宠物,启用,5,pT3,6,,28,32,30,45,28,"night_base, elem_风, role_机动, tier_pT3",reward_pT3,,
+pal_001,棉悠悠,火,青铜,数量题,火、数量题、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, tier_pT1, role_数量题","reward_pT1, reward_火",,30宠池联动新版
+pal_002,捣蛋猫,火,青铜,通用,火、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, tier_pT1, role_通用","reward_pT1, reward_火",,30宠池联动新版
+pal_003,皮皮鸡,火,青铜,护盾题,火、护盾题、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, tier_pT1, role_护盾题","reward_pT1, reward_火",,30宠池联动新版
+pal_004,翠叶鼠,火,青铜,通用,火、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, tier_pT1, role_通用","reward_pT1, reward_火",,30宠池联动新版
+pal_005,火绒狐,火,青铜,点火启动,火、点火启动、青铜、第7联动,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, tier_pT1, role_点火启动","reward_pT1, reward_火",,30宠池联动新版
+pal_009,燎火鹿,火,青铜,通用,火、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_火, tier_pT1, role_通用","reward_pT1, reward_火",,30宠池联动新版
+pal_040,炎魔羊,火,白银,通用,火、通用、白银,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_火, tier_pT2, role_通用","reward_pT2, reward_火",,30宠池联动新版
+pal_058,火麒麟,火,白银,通用,火、通用、白银、第7联动,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_火, tier_pT2, role_通用","reward_pT2, reward_火",,30宠池联动新版
+pal_079,焰巫狐,火,白银,通用,火、通用、白银、第7联动,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_火, tier_pT2, role_通用","reward_pT2, reward_火",,30宠池联动新版
+pal_072,融焰娘,火,黄金,火核心,火、火核心、黄金、核心,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_火, tier_pT3, role_火核心","reward_pT3, reward_火",,30宠池联动新版
+pal_115,朱雀,火,黄金,通用,火、通用、黄金,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_火, tier_pT3, role_通用","reward_pT3, reward_火",,30宠池联动新版
+pal_114,腾炎龙,火,黄金,通用,火、通用、黄金,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_火, tier_pT3, role_通用","reward_pT3, reward_火",,30宠池联动新版
+pal_006,冲浪鸭,水,青铜,水催化,水、水催化、青铜、第7联动,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, tier_pT1, role_水催化","reward_pT1, reward_水",,30宠池联动新版
+pal_010,企丸丸,水,青铜,通用,水、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, tier_pT1, role_通用","reward_pT1, reward_水",,30宠池联动新版
+pal_025,鲁米儿,水,青铜,通用,水、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, tier_pT1, role_通用","reward_pT1, reward_水",,30宠池联动新版
+pal_031,鲨小子,水,青铜,通用,水、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_水, tier_pT1, role_通用","reward_pT1, reward_水",,30宠池联动新版
+pal_053,毛掸儿,水,白银,通用,水、通用、白银,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_水, tier_pT2, role_通用","reward_pT2, reward_水",,30宠池联动新版
+pal_055,疾旋鼬,水,白银,通用,水、通用、白银,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_水, tier_pT2, role_通用","reward_pT2, reward_水",,30宠池联动新版
+pal_066,滑水蛇,水,白银,通用,水、通用、白银,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_水, tier_pT2, role_通用","reward_pT2, reward_水",,30宠池联动新版
+pal_085,水灵儿,水,黄金,水毒核心,水、水毒核心、黄金、核心,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_水, tier_pT3, role_水毒核心","reward_pT3, reward_水",,30宠池联动新版
+pal_101,雪猛犸,水,黄金,通用,水、通用、黄金,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_水, tier_pT3, role_通用","reward_pT3, reward_水",,30宠池联动新版
+pal_113,覆海龙,水,黄金,通用,水、通用、黄金,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_水, tier_pT3, role_通用","reward_pT3, reward_水",,30宠池联动新版
+pal_007,伏特喵,风,青铜,通用,风、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, tier_pT1, role_通用","reward_pT1, reward_风",,30宠池联动新版
+pal_008,新叶猿,风,青铜,通用,风、通用、青铜,宠物,启用,1,pT1,2,,100,100,90,100,60,"night_base, elem_风, tier_pT1, role_通用","reward_pT1, reward_风",,30宠池联动新版
+pal_038,疾风隼,风,白银,风聚火,风、风聚火、白银、第7联动,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_风, tier_pT2, role_风聚火","reward_pT2, reward_风",,30宠池联动新版
+pal_050,骑士蜂,风,白银,突击题,风、突击题、白银,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_风, tier_pT2, role_突击题","reward_pT2, reward_风",,30宠池联动新版
+pal_083,精灵龙,风,白银,支援题,风、支援题、白银,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_风, tier_pT2, role_支援题","reward_pT2, reward_风",,30宠池联动新版
+pal_117,暴电熊,风,白银,通用,风、通用、白银,宠物,启用,3,pT2,4,,100,100,90,100,60,"night_base, elem_风, tier_pT2, role_通用","reward_pT2, reward_风",,30宠池联动新版
+pal_063,秘斯媞雅,风,黄金,宠物流核心,风、宠物流核心、黄金、核心,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_风, tier_pT3, role_宠物流核心","reward_pT3, reward_风",,30宠池联动新版
+pal_127,空涡龙,风,黄金,通用,风、通用、黄金,宠物,启用,7,pT3,8,,100,100,90,100,60,"night_base, elem_风, tier_pT3, role_通用","reward_pT3, reward_风",,30宠池联动新版

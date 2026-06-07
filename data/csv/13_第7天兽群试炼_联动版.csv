@@ -1,0 +1,10 @@
+﻿配置ID,类型,阵营,宠物ID,名称,品质覆盖,行(1-8),列(1-8),HP,攻,防,盾,行动,机制ID,形状ID,关键规则,备注
+day7_fire_trial_v1,player_unit,player,pal_072,融焰娘,黄金,7,2,60,10,0,0,3,mech_fire_core_domain,B2_fire_core_double,火脉爆心；主格+2火；主动高火爆,第7天刚拿火核心
+day7_fire_trial_v1,player_unit,player,pal_005,火绒狐,白银,6,2,9,8,0,9,3,mech_first_secondary_double,B2_fire_gap_double,主格+1火，副格+1火；首击副格翻倍,由青铜pal_005升级
+day7_fire_trial_v1,player_unit,player,pal_006,冲浪鸭,白银,7,3,27,9,0,6,3,mech_water_catalyst_seed,A2_water_single,水汽催化；不毒不回血,由青铜pal_006升级；盾按倍率保留
+day7_fire_trial_v1,player_unit,player,pal_038,疾风隼,白银,6,3,42,8,0,0,3,mech_wind_gather_fire,B2_wind_gather,风聚火；承接原讨论旋风狸功能,使用旧名，避免新增旋风狸
+day7_fire_trial_v1,enemy_hero,enemy,enemy_beast_master,兽群统领,钻石,1,8,80,0,0,0,0,mech_beast_trial,NONE,右上4x4试炼考官；可被斩首,固定第1行第8列
+day7_fire_trial_v1,enemy_clone,enemy,pal_083,精灵龙黄金复制体,黄金,1,6,42,8,0,6,3,mech_support_shield,A2_support_double,支援题；回合末给相邻复制体+6盾,右上4x4随机；测试固定
+day7_fire_trial_v1,enemy_clone,enemy,pal_003,皮皮鸡黄金复制体,黄金,2,7,40,18,0,20,3,mech_shield_max,B1_sweep_three,护盾题；盾每回合重生到20,右上4x4随机；测试固定
+day7_fire_trial_v1,enemy_clone,enemy,pal_050,骑士蜂黄金复制体,黄金,3,6,36,18,0,0,4,mech_charge_attack,A2_single_stab,突击题；高攻高行动，首回合优先击杀,右上4x4随机；测试固定
+day7_fire_trial_v1,enemy_clone,enemy,pal_001,棉悠悠黄金复制体,黄金,4,5,60,16,0,0,3,mech_hp_regen_5,A2_double_stab,站场题；HP高，第二回合处理,右上4x4随机；测试固定

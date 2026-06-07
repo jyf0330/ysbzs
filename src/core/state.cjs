@@ -178,7 +178,7 @@ function initialPartyFromData(d) {
     { petId: 'pal_005', position: { r: 6, c: 1 } },
     { petId: 'pal_006', position: { r: 5, c: 1 } },
     { petId: 'pal_001', position: { r: 6, c: 2 } },
-    { petId: 'pal_022', position: { r: 5, c: 2 } }
+    { petId: 'pal_038', position: { r: 5, c: 2 } }
   ];
 }
 function createGameState(opts = {}) {

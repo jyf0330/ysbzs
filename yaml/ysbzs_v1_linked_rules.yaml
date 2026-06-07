@@ -1,0 +1,51 @@
+meta:
+  generated_at: "2026-06-08 07:10"
+  version: ysbzs_v1_linked_data
+  source: csv.7z based format + conversation memory
+  note: 表驱动，不再用独立 day7 脚本作为主逻辑
+global_rules:
+  board: 8x8
+  elements:
+    - 火
+    - 水
+    - 风
+  removed_from_v1:
+    - 雷
+    - 土
+    - 暗蚀
+  score_formula: HP + 3*(atk+def) + 5*(shield+action) + mechanism_score
+  shield: round_end_restore_to_max
+  movement: "player_pet_move_cost_zero; enemy_move_costs_action; attack_locks_position"
+  attack_block: physical_damage_first_then_add_element_layers_then_reactions
+pool_rules:
+  total_pets: 30
+  element_count:
+    火: 12
+    水: 10
+    风: 8
+  quality_count:
+    青铜: 12
+    白银: 10
+    黄金: 8
+  diamond: progression/trial prototype only
+core_domains:
+  fire_core: 融焰娘上场挂火脉爆心：火3+爆火/陷阱；Σ(1..N)伤害；引爆后清零
+  water_catalyst: 冲浪鸭水层：消耗1水，使下一次我方添加元素层翻倍；无水核心时不毒不回血
+  wind_gather: 疾风隼承接旋风狸功能：风聚火，搬运周围火层到目标格
+  water_core_future: 水灵儿开启水毒/回血
+  summon_core_future: 秘斯媞雅开启无元素召唤物；召唤物不铺场
+day7_fire_trial:
+  player_team:
+    - 融焰娘(黄金)
+    - 火绒狐(白银)
+    - 冲浪鸭(白银)
+    - 疾风隼(白银/风聚火)
+  enemy_hero: 兽群统领 fixed R1C8
+  enemy_area: "rows1-4 cols5-8 random legal; tests use fixed positions"
+  first_wave:
+    - 棉悠悠黄金复制体
+    - 皮皮鸡黄金复制体
+    - 骑士蜂黄金复制体
+    - 精灵龙黄金复制体
+  turn1_standard: "1黄金+3白银 first turn kill 骑士蜂 + 精灵龙; 4黄金 first turn should kill 3 enemies"
+  victory: "clear clones by round<=10 pass; kill beast master by round<=10 direct win; fail if clones alive after round10; day12 final if passed without killing leader"

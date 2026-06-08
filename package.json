@@ -23,6 +23,7 @@
     "data:dump": "node tools/dump_normalized_from_csv.cjs",
     "test:ops": "node --test tests/full_player_operations.test.cjs",
     "check:day7": "node --test tests/day7_fire_trial.test.cjs && node tools/check_day7_fire_trial_browser.cjs",
+    "check:refs": "node tools/check_open_source_references.cjs",
     "check:v1": "npm test && npm run check:csv && npm run check:day7 && npm run check:dom",
     "test:coverage:legacy": "node --test --experimental-test-coverage --test-coverage-include='src/**/*.cjs' --test-coverage-lines=95 --test-coverage-functions=95 --test-coverage-branches=70 tests/full_coverage.test.cjs tests/ui_adapter.test.cjs tests/leader_boss_rules.test.cjs tests/planning_ai_rules.test.cjs tests/csv_source.test.cjs tests/full_player_operations.test.cjs"
   }

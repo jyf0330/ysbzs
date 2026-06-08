@@ -1,6 +1,7 @@
 const battle = require('./battle.cjs');
 const shop = require('./shop.cjs');
 const day7 = require('./day7FireTrial.cjs');
+const { buildReplay } = require('./changeLog.cjs');
 
 function dispatch(state, command) {
   switch (command.type) {
@@ -30,8 +31,10 @@ function dispatch(state, command) {
     case 'EXIT_SHOP': return shop.exitShop(state);
     case 'EXPORT_BATTLE_TRACE': return { events: state.battleTrace && state.battleTrace.length ? state.battleTrace : state.events.slice() };
     case 'REPLAY_BATTLE_TRACE': return { replayed: true, events: command.events || state.battleTrace || [] };
+    case 'EXPORT_REPLAY': return buildReplay(state, command || {});
     case 'SETUP_DAY7_FIRE_TRIAL': return day7.setupDay7FireTrial(state, command);
     case 'RUN_DAY7_FIRE_TURN_1': return day7.runDay7FireTurn1(state, command);
+    case 'RUN_DAY7_FIRE_TRIAL_ALL': return day7.runDay7FireTrialAll(state, command);
     default: throw new Error(`Unknown command: ${command.type}`);
   }
 }

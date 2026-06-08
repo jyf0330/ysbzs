@@ -23,7 +23,14 @@ const TABLE_FILES = Object.freeze({
   day7Trial: '13_第7天兽群试炼_联动版.csv',
   qualityMultipliers: '14_品质进阶倍率.csv',
   trialQuestions: '15_召唤试炼题库.csv',
-  trialActions: '16_试炼回合行动计划.csv'
+  trialActions: '16_试炼回合行动计划.csv',
+  victoryRules: '17_试炼胜负规则_联动版.csv',
+  effectObjects: '18_效果物体表.csv',
+  triggers: '19_触发器表.csv',
+  modifiers: '20_修饰器表.csv',
+  elementPacketRules: '21_元素包规则表.csv',
+  elementConversions: '22_元素转换规则表.csv',
+  triggerOrderRules: '23_触发排序规则表.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
@@ -90,9 +97,30 @@ function cleanCell(v) {
   return s === '' ? null : s;
 }
 
+
+function decodeEscapedUnicodeName(name) {
+  return String(name || '').replace(/#U([0-9A-Fa-f]{4})/g, (_, hex) => {
+    try { return String.fromCodePoint(parseInt(hex, 16)); } catch (_) { return _; }
+  });
+}
+
+function resolveCsvFile(csvDir, tableName) {
+  const direct = path.join(csvDir, tableName);
+  if (fs.existsSync(direct)) return direct;
+  if (!fs.existsSync(csvDir)) return direct;
+  const target = decodeEscapedUnicodeName(tableName);
+  const files = fs.readdirSync(csvDir);
+  const found = files.find(fn => decodeEscapedUnicodeName(fn) === target) || files.find(fn => decodeEscapedUnicodeName(fn).startsWith(target.replace(/\.csv$/i, '')));
+  return found ? path.join(csvDir, found) : direct;
+}
+
 function readCsvRows(filePath) {
   if (!fs.existsSync(filePath)) return [];
   return parseCsv(fs.readFileSync(filePath, 'utf8'));
+}
+
+function readTableRows(csvDir, tableName) {
+  return readCsvRows(resolveCsvFile(csvDir, tableName));
 }
 
 function toNum(v, fallback = null) {
@@ -358,6 +386,13 @@ function normalizeSourceTables(sourceTables, options = {}) {
   const qualityMultipliers = sourceTables.qualityMultipliers || [];
   const trialQuestions = sourceTables.trialQuestions || [];
   const trialActions = sourceTables.trialActions || [];
+  const victoryRules = sourceTables.victoryRules || [];
+  const effectObjects = sourceTables.effectObjects || [];
+  const triggers = sourceTables.triggers || [];
+  const modifiers = sourceTables.modifiers || [];
+  const elementPacketRules = sourceTables.elementPacketRules || [];
+  const elementConversions = sourceTables.elementConversions || [];
+  const triggerOrderRules = sourceTables.triggerOrderRules || [];
 
   return {
     meta: {
@@ -384,7 +419,14 @@ function normalizeSourceTables(sourceTables, options = {}) {
     day7Trial,
     qualityMultipliers,
     trialQuestions,
-    trialActions
+    trialActions,
+    victoryRules,
+    effectObjects,
+    triggers,
+    modifiers,
+    elementPacketRules,
+    elementConversions,
+    triggerOrderRules
   };
 }
 
@@ -407,37 +449,45 @@ function normalizeInitialSetup(rows) {
 }
 
 function loadSourceTablesFromCsv(csvDir = DEFAULT_CSV_DIR) {
+  const rows = name => readTableRows(csvDir, name);
   return {
-    readme: readCsvRows(path.join(csvDir, TABLE_FILES.readme)),
-    pets: readCsvRows(path.join(csvDir, TABLE_FILES.pets)),
-    monsters: readCsvRows(path.join(csvDir, TABLE_FILES.monsters)),
-    waves: readCsvRows(path.join(csvDir, TABLE_FILES.waves)),
-    mechanisms: readCsvRows(path.join(csvDir, TABLE_FILES.mechanisms)),
-    events: readCsvRows(path.join(csvDir, TABLE_FILES.events)),
-    shop: readCsvRows(path.join(csvDir, TABLE_FILES.shop)),
-    relics: readCsvRows(path.join(csvDir, TABLE_FILES.relics)),
-    shapes: readCsvRows(path.join(csvDir, TABLE_FILES.shapes)),
-    validation: readCsvRows(path.join(csvDir, TABLE_FILES.validation)),
-    initialSetup: readCsvRows(path.join(csvDir, TABLE_FILES.initialSetup)),
-    heroDomains: readCsvRows(path.join(csvDir, TABLE_FILES.heroDomains)),
-    elementReactions: readCsvRows(path.join(csvDir, TABLE_FILES.elementReactions)),
-    day7Trial: readCsvRows(path.join(csvDir, TABLE_FILES.day7Trial)),
-    qualityMultipliers: readCsvRows(path.join(csvDir, TABLE_FILES.qualityMultipliers)),
-    trialQuestions: readCsvRows(path.join(csvDir, TABLE_FILES.trialQuestions)),
-    trialActions: readCsvRows(path.join(csvDir, TABLE_FILES.trialActions))
+    readme: rows(TABLE_FILES.readme),
+    pets: rows(TABLE_FILES.pets),
+    monsters: rows(TABLE_FILES.monsters),
+    waves: rows(TABLE_FILES.waves),
+    mechanisms: rows(TABLE_FILES.mechanisms),
+    events: rows(TABLE_FILES.events),
+    shop: rows(TABLE_FILES.shop),
+    relics: rows(TABLE_FILES.relics),
+    shapes: rows(TABLE_FILES.shapes),
+    validation: rows(TABLE_FILES.validation),
+    initialSetup: rows(TABLE_FILES.initialSetup),
+    heroDomains: rows(TABLE_FILES.heroDomains),
+    elementReactions: rows(TABLE_FILES.elementReactions),
+    day7Trial: rows(TABLE_FILES.day7Trial),
+    qualityMultipliers: rows(TABLE_FILES.qualityMultipliers),
+    trialQuestions: rows(TABLE_FILES.trialQuestions),
+    trialActions: rows(TABLE_FILES.trialActions),
+    victoryRules: rows(TABLE_FILES.victoryRules),
+    effectObjects: rows(TABLE_FILES.effectObjects),
+    triggers: rows(TABLE_FILES.triggers),
+    modifiers: rows(TABLE_FILES.modifiers),
+    elementPacketRules: rows(TABLE_FILES.elementPacketRules),
+    elementConversions: rows(TABLE_FILES.elementConversions),
+    triggerOrderRules: rows(TABLE_FILES.triggerOrderRules)
   };
 }
 
 function csvSourceAvailable(csvDir = DEFAULT_CSV_DIR) {
-  return fs.existsSync(path.join(csvDir, TABLE_FILES.pets))
-    && fs.existsSync(path.join(csvDir, TABLE_FILES.monsters))
-    && fs.existsSync(path.join(csvDir, TABLE_FILES.waves))
-    && fs.existsSync(path.join(csvDir, TABLE_FILES.shop));
+  return fs.existsSync(resolveCsvFile(csvDir, TABLE_FILES.pets))
+    && fs.existsSync(resolveCsvFile(csvDir, TABLE_FILES.monsters))
+    && fs.existsSync(resolveCsvFile(csvDir, TABLE_FILES.waves))
+    && fs.existsSync(resolveCsvFile(csvDir, TABLE_FILES.shop));
 }
 
 function csvSignature(csvDir = DEFAULT_CSV_DIR) {
   return Object.values(TABLE_FILES).map(name => {
-    const file = path.join(csvDir, name);
+    const file = resolveCsvFile(csvDir, name);
     if (!fs.existsSync(file)) return `${name}:missing`;
     const st = fs.statSync(file);
     return `${name}:${st.size}:${Math.round(st.mtimeMs)}`;
@@ -467,6 +517,9 @@ module.exports = {
   TABLE_FILES,
   LEGACY_MECHANIC_ALIAS,
   parseCsv,
+  decodeEscapedUnicodeName,
+  resolveCsvFile,
+  readTableRows,
   splitList,
   splitMechanics,
   parseParams,

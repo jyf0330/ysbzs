@@ -1,0 +1,28 @@
+{
+  "package": "ysbzs_on_boardgameio_main_real_game_wrapper_2026-06-08",
+  "upstream": "uploaded boardgame.io-main.zip extracted to upstream/boardgame.io-main without modifications",
+  "rules": [
+    "do not edit upstream/boardgame.io-main",
+    "put ysbzs in apps/ysbzs",
+    "put integration in boardgameio-adapter"
+  ],
+  "file_count": 3283,
+  "key_paths": [
+    "upstream/boardgame.io-main",
+    "upstream/BOARDGAME_IO_MAIN_FILE_MANIFEST.sha256",
+    "apps/ysbzs",
+    "boardgameio-adapter",
+    "scripts/verify_no_upstream_edits.sh",
+    "scripts/run_all_checks.sh",
+    "docs/BOARDGAME_IO_UNMODIFIED_BASE_RULES.md",
+    "docs/INTEGRATION_REPORT.md"
+  ],
+  "checks": [
+    "bash scripts/verify_no_upstream_edits.sh",
+    "cd apps/ysbzs-boardgameio && npm run check:all",
+    "bash scripts/run_all_checks.sh"
+  ],
+  "real_boardgameio_app": "apps/ysbzs-boardgameio",
+  "upstream_rule": "upstream/boardgame.io-main remains unmodified; integration lives outside upstream",
+  "core_entry": "apps/ysbzs-boardgameio/src/YSBZSGame.cjs"
+}

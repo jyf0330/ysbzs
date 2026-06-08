@@ -20,7 +20,7 @@
  *       water:  threshold=3 → 水域状态
  *       wind:   threshold=3 → 风场状态
  *       earth:  threshold=3 → 土障状态
- *     系统默认不决定伤害公式/触发方式——那由英雄领域覆盖。
+ *     系统默认3层成型并使用Σ(1..N)元素伤害；英雄领域改写范围、陷阱、主动引爆、催化、聚火等附加规则。
  *
  *   heroDomainOverrides:
  *     融焰娘: 火3+ → Σ(1..N)伤害、空格保留为陷阱、敌方进入/推入触发
@@ -31,7 +31,7 @@
 const { getCell, syncBoardUnits, makeEmptyElements, createBoard } = require('./state.cjs');
 const { loadGameData, buildIndexes } = require('./data.cjs');
 const { makeTrialUnit } = require('./unitFactory.cjs');
-const { fireDamage, explodeIfEnemyOnFire, waterCatalyst, transferFire } = require('./elements.cjs');
+const { fireDamage, explodeIfEnemyOnFire, waterCatalyst, transferFire, addElementToCell: addElementToCellPacket } = require('./elements.cjs');
 const mech = require('./mechanics.cjs');
 const battle = require('./battle.cjs');
 const { pushEvent } = require('./events.cjs');
@@ -110,7 +110,8 @@ function loadTrialConfig(trialId = 'day7_fire_trial_v1', state) {
   const trialUnits = data.day7Trial || [];
   const rows = trialUnits.filter(r => r['配置ID'] === trialId);
   const petMap = ix.petsById;
-  const shapeMap = ix.shapesByPetId;
+  const shapeByPetId = ix.shapesByPetId;
+  const shapeByShapeId = ix.shapesByShapeId || new Map();
   const domains = data.heroDomains || [];
   const reactions = data.elementReactions || [];
   const trialActions = data.trialActions || [];
@@ -122,7 +123,7 @@ function loadTrialConfig(trialId = 'day7_fire_trial_v1', state) {
     const pet = petMap.get(row['宠物ID']) || { 名称: row['宠物ID'] };
     const isPlayer = row['阵营'] === 'player';
     const shapeId = row['形状ID'];
-    const shape = shapeMap.get(shapeId);
+    const shape = shapeByShapeId.get(shapeId) || shapeByPetId.get(row['宠物ID']);
     return {
       id: stableScenarioUnitId(row), petId: row['宠物ID'],
       type: row['类型'], side: isPlayer ? 'hero' : 'enemy',
@@ -139,7 +140,14 @@ function loadTrialConfig(trialId = 'day7_fire_trial_v1', state) {
       ap: toNum(row['行动'], toNum(pet['行动'], 0)),
       mechanics: [row['机制ID'] || 'none', 'table_driven_trial'].filter(Boolean),
       shape: shape
-        ? { shapeId, shapeName: shape['形状名'] || shapeId, hitCells: toNum(shape['命中格数'], 1), slotCount: toNum(shape['槽数'], 3), baseLayers: toNum(shape['基础层数'], 1) }
+        ? {
+            shapeId: shapeId || shape.shapeId,
+            shapeName: shape.shapeName || shape['形状名'] || shapeId,
+            hitCells: toNum(shape.hitCells ?? shape['命中格数'], 1),
+            slotCount: toNum(shape.slotCount ?? shape['槽数'], 3),
+            baseLayers: toNum(shape.baseLayers ?? shape['基础层数'], 1),
+            slotElements: shape.slotElements || [shape['槽1元素'], shape['槽2元素'], shape['槽3元素']].filter(Boolean)
+          }
         : { shapeId: shapeId || 'NONE', shapeName: shapeId || 'NONE', hitCells: 1, slotCount: 3, baseLayers: 1 },
       position: { r: Math.max(0, toNum(row['行(1-8)'], 1) - 1), c: Math.max(0, toNum(row['列(1-8)'], 1) - 1) },
       tags: (row['标签'] || '').split(/[,，、]/).map(x => x.trim()).filter(Boolean),
@@ -176,15 +184,13 @@ function fireExplosionDamage(layers) {
  * 添加元素层到棋盘格，触发系统默认3层成型检查。
  * 英雄领域改写（如火爆结算、水催化）由外部主动调用。
  */
-function addElement(state, posObj, element, layers) {
+function addElement(state, actor, posObj, element, layers, reason = 'trial_add_element') {
   if (!element || layers <= 0 || !posObj) return 0;
   const cell = cellAt(state, posObj);
   if (!cell) return 0;
   ensureCellElements(cell);
-  const before = cell.elements[element] || 0;
-  cell.elements[element] = before + layers;
-  cell.elementCamps[element] = 'player';
-  return cell.elements[element];
+  const result = addElementToCellPacket(state, actor || { id: 'trial_system', name: '试炼系统', camp: 'player' }, cell, element, layers, reason, { tags: ['trial_action'] });
+  return cell.elements[element] || result.to || 0;
 }
 
 // ========== 回合行动执行（读取16表CSV，编排通用战斗入口）==========
@@ -212,7 +218,7 @@ function executeActionRow(state, row) {
 
   // ── 独立添加元素 ──
   if (type === 'add_element') {
-    addElement(state, pos(row, '目标'), row['元素'], toNum(row['层数'], 0));
+    addElement(state, unit, pos(row, '目标'), row['元素'], toNum(row['层数'], 0), note);
     return;
   }
 
@@ -243,9 +249,9 @@ function executeActionRow(state, row) {
   }
 
   // 主格铺元素
-  if (mainPos) addElement(state, mainPos, element, layers);
+  if (mainPos) addElement(state, unit, mainPos, element, layers, note);
   // 副格铺元素
-  if (secondaryPos) addElement(state, secondaryPos, row['副元素'], toNum(row['副层数'], 0));
+  if (secondaryPos) addElement(state, unit, secondaryPos, row['副元素'], toNum(row['副层数'], 0), note);
 
   // 风聚火（非全局默认，由旋风狸/疾风隼领域驱动）
   const hasWindGather = hasDomainEffect(state, 'mech_wind_gather_fire');
@@ -260,7 +266,7 @@ function executeActionRow(state, row) {
         if (fromCell && toCell) {
           const fromBefore = fromCell.elements.火 || 0;
           const toBefore = toCell.elements.火 || 0;
-          const moved = transferFire(state, fromCell, toCell, moveAmt);
+          const moved = transferFire(state, fromCell, toCell, moveAmt, { unitId: unit.id, sourceName: unit.displayName || unit.name, ownerSide: unit.camp });
           if (moved > 0) pushEvent(state, 'TRIAL_WIND_CONVERGE', { text: `风聚火/旋风收束：${posText({r:fr-1,c:fc-1})} 火${fromBefore}→${fromCell.elements.火}，${posText(mainPos)} 火${toBefore}→${toCell.elements.火}。` });
         }
       }
@@ -280,9 +286,9 @@ function executeActionRow(state, row) {
         || (state.units || []).find(u => u.side === 'enemy' && u.alive && u.position &&
              u.position.r === pair[1].r && u.position.c === pair[1].c);
       if (!target) continue; // 空格爆火陷阱，不引爆
-      const dmg = hasFireExplosion ? fireDamage(fire) : fire; // 有领域→Σ(1..N)，无→线性
+      const dmg = fireDamage(fire); // 系统默认元素伤害=Σ(1..N)，领域改写范围/陷阱/主动触发
       pushEvent(state, 'TRIAL_FIRE_EXPLODE', { r: pair[1].r, c: pair[1].c, layers: fire, damage: dmg, text: `火脉爆心：火${fire}层，伤害=${dmg}，引爆后火${fire}→火0。` });
-      battle.damageUnit(state, unit, target, dmg, { element: '火', sourceType: hasFireExplosion ? 'fire_explosion_domain' : 'fire_default', skipMechanics: true });
+      battle.damageUnit(state, unit, target, dmg, { element: '火', sourceType: hasFireExplosion ? 'fire_explosion_domain' : 'fire_default_sum', skipMechanics: true });
       cell.elements.火 = 0;
     }
   }
@@ -291,22 +297,30 @@ function executeActionRow(state, row) {
 // ========== 胜负规则 ==========
 
 function evaluateVictoryRules(state, cfg) {
-  const kills = (state.day7Trial?.scenario?.round1Kills) || [];
-  const killCount = kills.length;
-  const enemies = (state.units || []).filter(u => u.side === 'enemy' && u.alive && u.hp > 0);
-  const bossDead = !enemies.some(e => e.id === (cfg.enemyHeroDef?.id || 'day7_beast_examiner'));
-  const allDead = enemies.length === 0;
+  const scenarioKills = (state.day7Trial?.scenario?.round1Kills) || [];
+  const clones = cfg.enemyDefs.map(d => getUnit(state, d.id)).filter(Boolean);
+  const killedCloneNames = clones.filter(u => !u.alive || u.hp <= 0).map(u => u.name);
+  const aliveClones = clones.filter(u => u.alive && u.hp > 0);
+  const enemyLeader = state.leaders?.enemy;
+  const bossDead = !!enemyLeader && (enemyLeader.alive === false || enemyLeader.hp <= 0);
   const round = state.round || 1;
   const maxRounds = state.maxRounds || 10;
-
-  const result = { trialPass: false, directWin: false, trialFail: false, turn1Pass: false, round1KillCount: killCount, remainingEnemies: enemies.length };
-
-  // 第7天标准
-  if (round === 1) result.turn1Pass = killCount >= 2;
-  if (bossDead) { result.directWin = true; result.trialPass = true; }
-  else if (allDead && !bossDead) { result.trialPass = true; } // 复制体清完，统领撤退
-  else if (round > maxRounds) { result.trialFail = true; }
-
+  const result = {
+    trialPass: false,
+    directWin: false,
+    trialFail: false,
+    turn1Pass: false,
+    status: 'running',
+    round1KillCount: scenarioKills.length,
+    killedCloneCount: killedCloneNames.length,
+    killedCloneNames,
+    remainingClones: aliveClones.length,
+    rulesSource: cfg.victoryRules && cfg.victoryRules.length ? '17_试炼胜负规则_联动版.csv' : 'builtin_fallback'
+  };
+  result.turn1Pass = scenarioKills.includes('骑士蜂黄金复制体') && scenarioKills.includes('精灵龙黄金复制体') && scenarioKills.length >= 2;
+  if (bossDead) { result.directWin = true; result.trialPass = true; result.status = 'direct_win'; }
+  else if (aliveClones.length === 0) { result.trialPass = true; result.status = 'trial_pass'; }
+  else if (round > maxRounds) { result.trialFail = true; result.status = 'trial_fail'; }
   return result;
 }
 
@@ -314,15 +328,20 @@ function trialSummary(state, trialId = 'day7_fire_trial_v1') {
   const cfg = loadTrialConfig(trialId, state);
   const enemies = cfg.enemyDefs.map(d => getUnit(state, d.id)).filter(Boolean);
   const killed = enemies.filter(u => !u.alive || u.hp <= 0).map(u => u.name);
+  const storedRound1 = state.day7Trial?.round1Kills || null;
+  const round1Kills = storedRound1 || killed;
   return {
     id: 'day7_fire_trial', trialId, title: '第7天火核心试炼',
     dataDriven: true, generalized: true,
     playerTeam: cfg.playerDefs.map(d => d.name),
     enemyArea: '右上4×4：第1-4行、第5-8列',
     enemyHeroPosition: '第1行第8列',
-    round1Kills: killed, round1KillCount: killed.length,
-    passedRound1Standard: killed.includes('骑士蜂黄金复制体') && killed.includes('精灵龙黄金复制体') && killed.length >= 2,
-    remainingEnemies: enemies.filter(u => u.alive && u.hp > 0).map(u => ({ name: u.name, hp: u.hp, shield: u.shield, position: posText(u.position) }))
+    round1Kills, round1KillCount: round1Kills.length,
+    passedRound1Standard: round1Kills.includes('骑士蜂黄金复制体') && round1Kills.includes('精灵龙黄金复制体') && round1Kills.length >= 2,
+    remainingEnemies: enemies.filter(u => u.alive && u.hp > 0).map(u => ({ name: u.name, hp: u.hp, shield: u.shield, position: posText(u.position) })),
+    killedCloneCount: killed.length,
+    killedCloneNames: killed,
+    status: state.day7Trial?.victory?.status || 'running'
   };
 }
 
@@ -378,7 +397,7 @@ function setupTrial(state, trialId = 'day7_fire_trial_v1') {
   // 战报事件（测试依赖这些 event type）
   pushEvent(state, 'TRIAL_SETUP', { text: `第7天火核心试炼已按表驱动初始化：8×8棋盘，右上4×4敌方区域，兽群统领固定第1行第8列。系统默认四元素3层成型，融焰娘领域改写火爆结算。` });
   pushEvent(state, 'TRIAL_POSITIONS', { text: `敌方站位：${cfg.enemyDefs.map(d => `${d.name}${posText(d.position)}`).join('，')}。` });
-  pushEvent(state, 'TRIAL_RULE', { text: '系统默认：火/水/风/土达到3层形成成型状态。融焰娘领域：火爆按Σ(1..N)结算，空格保留为爆火陷阱。冲浪鸭领域：水层可作为催化资源被消耗翻倍。旋风狸领域：风系可搬运火层。' });
+  pushEvent(state, 'TRIAL_RULE', { text: '系统默认：火/水/风/土达到3层形成成型状态，并默认按Σ(1..N)计算元素伤害。融焰娘领域：强化火陷阱、主动引爆和爆点利用。冲浪鸭领域：水层可作为催化资源被消耗翻倍。旋风狸领域：风系可搬运火层。' });
 
   return state.day7Trial.scenario;
 }
@@ -394,11 +413,30 @@ function runTrialRound(state, trialId = 'day7_fire_trial_v1', round = 1) {
   syncBoardUnits(state);
   state.day7Trial.roundExecuted = state.day7Trial.roundExecuted || {};
   state.day7Trial.roundExecuted[round] = true;
-  if (round === 1) state.day7Trial.round1Executed = true;
+  if (round === 1) { state.day7Trial.round1Executed = true; state.day7Trial.round1Kills = trialSummary(state, trialId).round1Kills; }
   state.day7Trial.scenario = trialSummary(state, trialId);
   state.day7Trial.victory = evaluateVictoryRules(state, cfg);
   pushEvent(state, 'TRIAL_RESULT', { text: `第${round}回合验收：击杀${state.day7Trial.scenario.round1KillCount}个黄金复制体（${state.day7Trial.scenario.round1Kills.join('、')}），${state.day7Trial.scenario.passedRound1Standard ? '达成1金3银首回合解决2怪标准' : '未达标'}。${state.day7Trial.victory?.trialPass ? ' 完整试炼达到 trial_pass。' : ''}` });
   return state.day7Trial.scenario;
 }
 
-module.exports = { loadTrialConfig, setupTrial, runTrialRound, trialSummary, fireDamage, evaluateVictoryRules, SYSTEM_ELEMENT_DEFAULTS };
+
+function runTrialToEnd(state, trialId = 'day7_fire_trial_v1') {
+  if (!state.day7Trial || state.day7Trial.scenario?.trialId !== trialId) setupTrial(state, trialId);
+  const cfg = loadTrialConfig(trialId, state);
+  for (let r = 1; r <= (state.maxRounds || 10); r += 1) {
+    state.round = r;
+    runTrialRound(state, trialId, r);
+    const verdict = evaluateVictoryRules(state, cfg);
+    state.day7Trial.victory = verdict;
+    state.day7Trial.scenario = trialSummary(state, trialId);
+    state.day7Trial.status = verdict.status;
+    if (verdict.trialPass || verdict.directWin || verdict.trialFail) break;
+  }
+  const final = state.day7Trial.victory || evaluateVictoryRules(state, cfg);
+  state.day7Trial.status = final.status;
+  pushEvent(state, 'TRIAL_FINAL_RESULT', { text: `试炼最终结果：${final.status}，击杀复制体${final.killedCloneCount || 0}/4。` });
+  return state.day7Trial.scenario;
+}
+
+module.exports = { loadTrialConfig, setupTrial, runTrialRound, runTrialToEnd, trialSummary, fireDamage, evaluateVictoryRules, SYSTEM_ELEMENT_DEFAULTS };

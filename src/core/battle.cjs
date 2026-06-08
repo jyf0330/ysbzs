@@ -1,7 +1,8 @@
 const { pushEvent } = require('./events.cjs');
 const { ensureBoard, getCell, syncBoardUnits, normalizePosition, makeUnit, positionFromWaveRule, BOARD_ROWS, BOARD_COLS, ELEMENTS, makeEmptyElements, makeEmptyElementCamps, makeEmptyTerrain } = require('./state.cjs');
 const mech = require('./mechanics.cjs');
-const { ACTIVE_ELEMENTS, fireDamage, explodeIfEnemyOnFire } = require('./elements.cjs');
+const elementRules = require('./elements.cjs');
+const { ACTIVE_ELEMENTS, fireDamage, explodeIfEnemyOnFire } = elementRules;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function living(state, side) { return state.units.filter(u => u.side === side && u.alive && u.hp > 0); }
@@ -96,6 +97,7 @@ function clearCellElements(cell) {
     cell.elements[el] = 0;
     camps[el] = null;
   }
+  cell.elementPackets = [];
 }
 function weakenUnformedElements(state, cell, amount = 1, source = 'attack') {
   if (!cell || hasTerrain(cell)) return false;
@@ -121,7 +123,7 @@ function addTerrainModule(state, cell, element, layers, actor, source = 'element
     source,
     damage: amount
   });
-  clearCellElements(cell);
+  // 兼容旧 terrain 模块，但不再清空元素包/聚合元素；元素包是事实来源，地形模块只是派生状态。
   pushEvent(state, 'TERRAIN_MODULE_ADD', { r: cell.r, c: cell.c, element, layers: amount, source, text: `R${cell.r}C${cell.c} 生成${element}地形模块 ${amount}层。` });
   return terrain;
 }
@@ -131,7 +133,17 @@ function maybeFormTerrain(state, cell, actor) {
   for (const el of ELEMENTS) {
     const layers = cell.elements?.[el] || 0;
     if (layers >= threshold) {
+      cell.elementStates = cell.elementStates || {};
+      cell.elementStates[el] = {
+        formed: true,
+        trap: el === '火',
+        threshold,
+        layers,
+        source: 'threshold_form',
+        updatedRound: state.round || 0
+      };
       addTerrainModule(state, cell, el, layers, actor, 'threshold_form');
+      pushEvent(state, 'ELEMENT_FORMED', { r: cell.r, c: cell.c, element: el, layers, threshold, text: `R${cell.r}C${cell.c} ${el}${layers}层达到${threshold}层，形成${el === '火' ? '爆火陷阱候选' : '元素成型状态'}；元素包与来源保留。` });
       return true;
     }
   }
@@ -140,16 +152,14 @@ function maybeFormTerrain(state, cell, actor) {
 function addElementToCell(state, actor, cell, element, layers, source = 'element_apply') {
   if (!cell) return { kind: 'blocked' };
   ensureTerrain(cell);
-  if (hasTerrain(cell)) {
-    addTerrainModule(state, cell, element, layers, actor, 'hit_formed_terrain');
-    return { kind: 'terrain_module' };
-  }
   const before = cell.elements[element] || 0;
-  cell.elements[element] = before + layers;
+  const wasTerrain = hasTerrain(cell);
+  const result = elementRules.addElementToCell(state, actor, cell, element, layers, source, { tags: [source] });
   ensureElementCamps(cell)[element] = unitCamp(actor);
-  pushEvent(state, 'APPLY_ELEMENT_CELL', { actorId: actor.id, r: cell.r, c: cell.c, element, layers, from: before, to: cell.elements[element], text: `${actor.displayName || actor.name} 向 R${cell.r}C${cell.c} 施加${element}${layers}层，${element}层 ${before}→${cell.elements[element]}。` });
-  if (maybeFormTerrain(state, cell, actor)) return { kind: 'formed_terrain' };
-  return { kind: 'element', from: before, to: cell.elements[element] };
+  if (wasTerrain) addTerrainModule(state, cell, element, result.layers || layers, actor, 'hit_formed_terrain');
+  pushEvent(state, 'APPLY_ELEMENT_CELL', { actorId: actor.id, r: cell.r, c: cell.c, element, layers: result.layers || layers, from: before, to: cell.elements[element], packetId: result.packet && result.packet.packetId, text: `${actor.displayName || actor.name} 向 R${cell.r}C${cell.c} 施加${element}${result.layers || layers}层，${element}层 ${before}→${cell.elements[element]}。` });
+  if (!wasTerrain && maybeFormTerrain(state, cell, actor)) return { kind: 'formed_terrain', from: before, to: cell.elements[element], packetId: result.packet && result.packet.packetId };
+  return { kind: wasTerrain ? 'terrain_module_and_packet' : 'element', from: before, to: cell.elements[element], packetId: result.packet && result.packet.packetId, layers: result.layers || layers };
 }
 function targetCellsForSlotFrom(state, actor, slot, fromPos, dir) {
   const savedPos = actor.position;
@@ -559,35 +569,52 @@ function chooseTargets(state, actor) {
 }
 function applyElement(state, actor, target, element, layers, ctx = {}) {
   ensureElements(target);
-  if (target.position) {
-    const cell = getCell(state, target.position.r, target.position.c);
-    if (cell) weakenUnformedElements(state, cell, 1, actor.displayName || actor.name);
-  }
-  const before = target.elements[element] || 0;
-  target.elements[element] = before + layers;
+  let appliedLayers = Number(layers || 0);
+  let cellResult = null;
   if (target.position) {
     const cell = getCell(state, target.position.r, target.position.c);
     if (cell) {
-      ensureTerrain(cell);
-      if (hasTerrain(cell)) {
-        addTerrainModule(state, cell, element, layers, actor, 'hit_formed_terrain');
-      } else {
-        cell.elements[element] = target.elements[element];
-        ensureElementCamps(cell)[element] = unitCamp(actor);
-        maybeFormTerrain(state, cell, actor);
-      }
+      weakenUnformedElements(state, cell, 1, actor.displayName || actor.name);
+      cellResult = addElementToCell(state, actor, cell, element, layers, ctx.source || 'unit_hit_element');
+      appliedLayers = Number(cellResult.layers || appliedLayers);
     }
   }
-  pushEvent(state, 'APPLY_ELEMENT', { actorId: actor.id, targetId: target.id, element, layers, from: before, to: target.elements[element], text: `${actor.displayName || actor.name} 给 ${target.displayName || target.name} 叠${element}${layers}层，${element}层 ${before}→${target.elements[element]}。` });
-  mech.afterElementApply(state, actor, target, element, layers);
+  const before = target.elements[element] || 0;
+  const holderResult = elementRules.addElementPacketToHolder(state, target, element, appliedLayers, {
+    unitId: actor?.id,
+    sourceUnitId: actor?.id,
+    sourceName: actor?.displayName || actor?.name || '系统',
+    sourceActionId: ctx.source || 'unit_status_element',
+    ownerSide: unitCamp(actor),
+    tags: ['unit_status', 'mirrored_from_cell']
+  }, {
+    reason: ctx.source || 'unit_status_element',
+    path: `unit.${target.id}.elements.${element}`,
+    skipModifiers: true,
+    tags: ['unit_status', 'mirrored_from_cell']
+  });
+  const to = target.elements[element] || 0;
+  pushEvent(state, 'APPLY_ELEMENT', { actorId: actor.id, targetId: target.id, element, layers: appliedLayers, from: before, to, packetId: holderResult.packet && holderResult.packet.packetId, cellPacketId: cellResult && cellResult.packetId, text: `${actor.displayName || actor.name} 给 ${target.displayName || target.name} 叠${element}${appliedLayers}层，${element}层 ${before}→${to}。` });
+  mech.afterElementApply(state, actor, target, element, appliedLayers);
 }
 function applyElementToCell(state, actor, cell, element, layers) {
   weakenUnformedElements(state, cell, 1, actor.displayName || actor.name);
   return addElementToCell(state, actor, cell, element, layers);
 }
 function triggerTerrainOnEnter(state, unit, cell) {
-  if (!unit || !cell || !hasTerrain(cell)) return false;
+  if (!unit || !cell) return false;
   let triggered = false;
+  if ((cell.elements?.火 || 0) >= 3 && cell.elementCamps?.火 && cell.elementCamps.火 !== unitCamp(unit)) {
+    const result = elementRules.explodeIfEnemyOnFire(state, cell, null, { source: 'fire_trap_enter' });
+    if (result) {
+      pushEvent(state, 'FIRE_TRAP_TRIGGER', { unitId: unit.id, r: cell.r, c: cell.c, layers: result.layersBefore, damage: result.damage, text: `${unit.displayName || unit.name} 踩入 R${cell.r}C${cell.c} 爆火陷阱：火${result.layersBefore}层，伤害=${result.damage}，火${result.layersBefore}→火0。` });
+      damageUnit(state, null, unit, result.damage, { element: '火', terrain: true, sourceType: 'fire_trap_enter' });
+      elementRules.clearElement(state, unit, '火', { reason: 'fire_trap_enter_clear_unit_status' });
+      triggered = true;
+      if (!unit.alive || unit.hp <= 0) return true;
+    }
+  }
+  if (!hasTerrain(cell)) return triggered;
   for (const mod of terrainModules(cell)) {
     if (!mod || mod.camp === unitCamp(unit)) continue;
     const damage = Math.max(0, Number(mod.damage ?? mod.layers ?? 0));
@@ -700,6 +727,7 @@ function useActionSlot(state, unitId, slotId, targetCell = null) {
           text: `R${cell.r}C${cell.c} 火${result.layersBefore}层引爆，对 ${result.target.displayName || result.target.name} 造成${result.damage}点火爆伤害。`
         });
         damageUnit(state, actor, result.target, result.damage, { element: '火', sourceType: 'fire_explosion' });
+        elementRules.clearElement(state, result.target, '火', { reason: 'fire_explosion_clear_unit_status' });
         cell.elements.火 = 0;
       } else if ((cell.elements.火 || 0) >= 3) {
         pushEvent(state, 'FIRE_TRAP_READY', {
@@ -800,6 +828,8 @@ function settleElements(state) {
         text: `${target.displayName || target.name} 所在格${el}${layers}层结算，${EL_NAMES[el] || el}伤害=${dmg}。`
       });
       damageUnit(state, null, target, dmg, { element: el, sourceType: 'element_settle' });
+      elementRules.clearElement(state, cell, el, { reason: 'element_settle_clear' });
+      elementRules.clearElement(state, target, el, { reason: 'element_settle_clear_unit_status' });
       cell.elements[el] = 0;
       break;
     }
@@ -890,7 +920,17 @@ function finishBattle(state, win) {
   state.result = result;
   state.phase = 'battle_end';
   pushEvent(state, 'BATTLE_END', { result: result.code, grade: result.grade, gold: result.gold, text: `战斗结束：${result.code}，评级${result.grade}，金币+${result.gold}。` });
-  state.battleTrace = state.events.filter(e => /BATTLE|ROUND|PLAYER|MONSTER|DAMAGE|ELEMENT|SPAWN|MOVE|DEAD/.test(e.type)).map(e => clone(e));
+  {
+    const existingTrace = Array.isArray(state.battleTrace) ? state.battleTrace.slice() : [];
+    const legacyTrace = state.events.filter(e => /BATTLE|ROUND|PLAYER|MONSTER|DAMAGE|ELEMENT|SPAWN|MOVE|DEAD/.test(e.type)).map(e => clone(e));
+    const seen = new Set(existingTrace.map(e => e.eventId || `legacy_${e.step}_${e.type}`));
+    state.battleTrace = existingTrace.concat(legacyTrace.filter(e => {
+      const key = e.eventId || `legacy_${e.step}_${e.type}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }));
+  }
   return result;
 }
 function runBattle(state) {

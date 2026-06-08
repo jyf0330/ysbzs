@@ -16,3 +16,10 @@ act033_wind_gather_chicken_2,day7_fire_trial_v1,1,43,attack,day7_wind_gather,day
 act040_duck_seed_next,day7_fire_trial_v1,1,50,add_element,day7_chonglangya,,4,6,,,水,1,,,,,,,,,,,,,,冲浪鸭第3击向第4行第6列铺水汽催化
 act050_chicken_shield_regen,day7_fire_trial_v1,1,60,restore_shield,day7_enemy_chicken,,,,,,,,,,,,,,,,,,,,,皮皮鸡回合末护盾重生
 act060_sheep_move,day7_fire_trial_v1,1,70,move,day7_enemy_sheep,,,,4,4,,,,,,,,,,,,,,,,棉悠悠黄金复制体移动到第4行第4列
+act201_move_core_chicken,day7_fire_trial_v1,2,10,move,day7_rongyan,,,,2,6,,,,,,,,,,,,,,,,融焰娘移动到第2行第6列，处理皮皮鸡护盾题
+act202_core_chicken_fire1,day7_fire_trial_v1,2,11,attack,day7_rongyan,day7_enemy_chicken,2,7,,,火,5,,,,,是,,主格,,,,,,,融焰娘第1击皮皮鸡，火5爆破盾
+act203_core_chicken_fire2,day7_fire_trial_v1,2,12,attack,day7_rongyan,day7_enemy_chicken,2,7,,,火,5,,,,,是,,主格,,,,,,,融焰娘第2击皮皮鸡，继续火5爆
+act204_fox_chicken_finish,day7_fire_trial_v1,2,13,attack,day7_huoronghu,day7_enemy_chicken,2,7,,,火,3,,,,,是,,主格,,,,,,,火绒狐补火3，击杀皮皮鸡
+act210_move_core_sheep,day7_fire_trial_v1,2,20,move,day7_rongyan,,,,4,3,,,,,,,,,,,,,,,,融焰娘移动到第4行第3列，处理棉悠悠站场题
+act211_core_sheep_fire,day7_fire_trial_v1,2,21,attack,day7_rongyan,day7_enemy_sheep,4,4,,,火,8,,,,,是,,主格,,,,,,,融焰娘给棉悠悠火8爆，造成高层火伤
+act212_fox_sheep_finish,day7_fire_trial_v1,2,22,attack,day7_huoronghu,day7_enemy_sheep,4,4,,,火,4,,,,,是,,主格,,,,,,,火绒狐补火4，击杀棉悠悠

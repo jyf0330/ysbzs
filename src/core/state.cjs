@@ -21,7 +21,7 @@ function createBoard(rows = BOARD_ROWS, cols = BOARD_COLS) {
   const cells = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      cells.push({ r, c, key: cellKey(r, c), unitId: null, unitSide: null, unitName: null, terrain: makeEmptyTerrain(), elements: makeEmptyElements(), elementCamps: makeEmptyElementCamps(), preview: null, threat: null, logs: [] });
+      cells.push({ r, c, key: cellKey(r, c), unitId: null, unitSide: null, unitName: null, terrain: makeEmptyTerrain(), elements: makeEmptyElements(), elementPackets: [], elementCamps: makeEmptyElementCamps(), preview: null, threat: null, logs: [] });
     }
   }
   return { rows, cols, cells };
@@ -183,6 +183,11 @@ function createGameState(opts = {}) {
     nextUnit: 1,
     events: [],
     changes: [],
+    changeLog: [],
+    inputLog: [],
+    triggerQueue: [],
+    nextChange: 1,
+    nextElementPacket: 1,
     units: [],
     inventory: [],
     relics: [],

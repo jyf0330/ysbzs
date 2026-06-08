@@ -1,0 +1,3 @@
+﻿conversion_id,名称,trigger,from_element,to_element,amount_rule,preserve_modifiers,preserve_source,consume_source,说明
+wind_to_fire_keep_boost,风转火保留增幅,on_skill_use,风,火,specified_or_all,true,true,true,把目标身上的风元素包转换为火，保留来源和下一个元素翻倍等modifier
+water_to_fire_consume,水转火消耗,on_skill_use,水,火,specified,false,true,true,示例：消耗水包转火，不保留水系modifier

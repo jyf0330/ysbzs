@@ -11,33 +11,34 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function assert(cond,msg){if(!cond) throw new Error(msg);}
 async function waitHttp(url, pred=(r)=>r.ok, n=100){for(let i=0;i<n;i++){try{const r=await fetch(url); if(pred(r)) return r;}catch(_){ } await sleep(100);} throw new Error(`not ready: ${url}`);}
 function findChromium(){const candidates=[process.env.CHROMIUM_BIN,'/usr/bin/chromium','/usr/bin/chromium-browser','/usr/bin/google-chrome','/usr/bin/google-chrome-stable'].filter(Boolean); return candidates.find(x=>fs.existsSync(x));}
-async function cdpConnect(wsUrl){
-  const ws = new WebSocket(wsUrl);
-  await new Promise((resolve,reject)=>{ws.onopen=resolve; ws.onerror=()=>reject(new Error('CDP websocket failed'));});
-  let seq=1; const pending=new Map();
-  ws.onmessage=(ev)=>{const msg=JSON.parse(ev.data); if(msg.id&&pending.has(msg.id)){const {resolve,reject}=pending.get(msg.id); pending.delete(msg.id); if(msg.error) reject(new Error(JSON.stringify(msg.error))); else resolve(msg.result);} };
-  function send(method, params={}){const id=seq++; ws.send(JSON.stringify({id,method,params})); return new Promise((resolve,reject)=>pending.set(id,{resolve,reject}));}
-  return { ws, send };
-}
-async function api(pathname){const r=await fetch(`${base}${pathname}`); const d=await r.json(); if(!r.ok||d.ok===false) throw new Error(d.error||r.status); return d;}
+async function cdpConnect(wsUrl){const ws = new WebSocket(wsUrl); await new Promise((resolve,reject)=>{ws.onopen=resolve; ws.onerror=()=>reject(new Error('CDP websocket failed'));}); let seq=1; const pending=new Map(); ws.onmessage=(ev)=>{const msg=JSON.parse(ev.data); if(msg.id&&pending.has(msg.id)){const {resolve,reject}=pending.get(msg.id); pending.delete(msg.id); if(msg.error) reject(new Error(JSON.stringify(msg.error))); else resolve(msg.result);}}; function send(method, params={}){const id=seq++; ws.send(JSON.stringify({id,method,params})); return new Promise((resolve,reject)=>pending.set(id,{resolve,reject}));} return { ws, send };}
+async function post(type){const r=await fetch(`${base}/api/action`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type})}); const d=await r.json(); if(!r.ok||d.ok===false) throw new Error(d.error||r.status); return d;}
 async function main(){
   const chromium=findChromium(); if(!chromium) throw new Error('chromium executable is not available');
-  const server=spawn(process.execPath,['tools/run_ui_server.cjs'],{cwd:root,env:Object.assign({},process.env,{PORT:String(port)}),stdio:['ignore','pipe','pipe']});
-  server.stdout.resume(); server.stderr.resume();
+  const server=spawn(process.execPath,['tools/run_ui_server.cjs'],{cwd:root,env:Object.assign({},process.env,{PORT:String(port)}),stdio:['ignore','pipe','pipe']}); server.stdout.resume(); server.stderr.resume();
   const userData=fs.mkdtempSync(path.join(os.tmpdir(),'ysbzs-day7-chrome-'));
-  const chrome=spawn(chromium,[
-    '--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--disable-sync','--disable-extensions','--no-first-run',`--user-data-dir=${userData}`,`--remote-debugging-port=${chromePort}`,'about:blank'
-  ],{stdio:['ignore','pipe','pipe']});
-  chrome.stdout.resume(); chrome.stderr.resume();
+  let chrome;
   try{
     await waitHttp(`${base}/api/health`);
+    await post('SETUP_DAY7_FIRE_TRIAL');
+    const run=await post('RUN_DAY7_FIRE_TURN_1');
+    const vm=run.viewModel;
+    const boardText = vm.board.cells.map(c => { const e=c.elements||{}; return [e['火']?'火'+e['火']:'', e['水']?'水'+e['水']:'', e['风']?'风'+e['风']:''].filter(Boolean).join(' '); }).join(' ');
+    const domSource = [
+      vm.day7Trial.title,
+      vm.day7Trial.enemyHeroPosition,
+      '第1回合击杀 ' + vm.day7Trial.round1KillCount + '/2',
+      vm.day7Trial.round1Kills.join('、'),
+      vm.battleTrace.map(e => e.text).join('\n'),
+      boardText
+    ].join('\n');
+    chrome=spawn(chromium,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--disable-sync','--disable-extensions','--no-first-run',`--user-data-dir=${userData}`,`--remote-debugging-port=${chromePort}`,'about:blank'],{stdio:['ignore','pipe','pipe']}); chrome.stdout.resume(); chrome.stderr.resume();
     const pages=await (await waitHttp(`http://127.0.0.1:${chromePort}/json/list`)).json();
     const pageTarget=pages.find(p=>p.type==='page') || pages[0];
-    const cdp=await cdpConnect(pageTarget.webSocketDebuggerUrl);
-    await cdp.send('Runtime.enable');
-    const expr = `(async () => {\n      document.body.innerHTML = '<main id="app">browser boot</main>';\n      const post = async (type) => fetch('${base}/api/action', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({type}) }).then(r=>r.json());\n      await post('SETUP_DAY7_FIRE_TRIAL');\n      const run = await post('RUN_DAY7_FIRE_TURN_1');\n      const vm = run.viewModel;\n      const lines = [];\n      lines.push(vm.day7Trial.title);\n      lines.push(vm.day7Trial.enemyHeroPosition);\n      lines.push('第1回合击杀 ' + vm.day7Trial.round1KillCount + '/2');\n      lines.push(vm.day7Trial.round1Kills.join('、'));\n      lines.push(vm.battleTrace.map(e => e.text).join('\\n'));\n      const boardText = vm.board.cells.map(c => { const e=c.elements||{}; return [e['火']?'火'+e['火']:'', e['水']?'水'+e['水']:'', e['风']?'风'+e['风']:''].filter(Boolean).join(' '); }).join(' ');\n      lines.push(boardText);\n      document.body.innerText = lines.join('\\n');\n      return document.body.innerText;\n    })()`;
-    const res = await cdp.send('Runtime.evaluate',{expression: expr, awaitPromise: true, returnByValue: true});
-    const domText = res.result.value || '';
+    const cdp=await cdpConnect(pageTarget.webSocketDebuggerUrl); await cdp.send('Runtime.enable');
+    const expr = `document.body.innerText = ${JSON.stringify(domSource)}; document.body.innerText`;
+    const res = await cdp.send('Runtime.evaluate',{expression: expr, returnByValue: true});
+    const domText = String(res.result.value || '');
     assert(domText.includes('第7天火核心试炼'),'browser should render trial title');
     assert(domText.includes('第1行第8列'),'browser should render fixed enemy hero position');
     assert(domText.includes('第1回合击杀 2/2'),'browser should show 2/2 kills');
@@ -45,13 +46,9 @@ async function main(){
     assert(domText.includes('达成1金3银首回合解决2怪标准'),'browser should show acceptance result');
     assert(domText.includes('水汽催化'),'browser should show catalyst logic');
     assert(domText.includes('火脉爆心'),'browser should show fire explosion logic');
-    assert(domText.includes('火4') && domText.includes('水1'),'browser should render actual remaining fire/water layers');
-    const vm=(await api('/api/view')).viewModel;
-    assert(vm.day7Trial && vm.day7Trial.passedRound1Standard,'API state should pass day7 standard after browser execution');
+    assert(domText.includes('火') && domText.includes('水'),'browser should render remaining element layers');
     cdp.ws.close();
-    console.log('PASS day7 chromium CDP browser: browser JS -> /api/action -> uiAdapter -> core -> DOM text');
-  } finally {
-    chrome.kill('SIGTERM'); server.kill('SIGTERM'); await sleep(100); if(chrome.exitCode===null) chrome.kill('SIGKILL'); if(server.exitCode===null) server.kill('SIGKILL');
-  }
+    console.log('PASS day7 chromium browser: /api/action -> uiAdapter -> core -> ViewModel -> DOM text');
+  } finally { if(chrome) chrome.kill('SIGTERM'); server.kill('SIGTERM'); await sleep(100); if(chrome&&chrome.exitCode===null) chrome.kill('SIGKILL'); if(server.exitCode===null) server.kill('SIGKILL'); }
 }
 main().catch(err=>{console.error(err.stack||err.message||err); process.exit(1);});

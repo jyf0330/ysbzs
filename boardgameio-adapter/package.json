@@ -1,0 +1,16 @@
+{
+  "name": "ysbzs-boardgameio-adapter",
+  "private": true,
+  "type": "commonjs",
+  "version": "0.1.0",
+  "description": "Adapter layer that maps ysbzs dispatchGameAction/state model onto boardgame.io-style moves while keeping uploaded upstream boardgame.io-main source unmodified.",
+  "dependencies": {
+    "boardgame.io": "file:../upstream/boardgame.io-0.50.2.tgz"
+  },
+  "scripts": {
+    "check:adapter": "node src/ysbzsBoardgameAdapter.cjs",
+    "check:ysbzs": "cd ../apps/ysbzs && npm test && npm run check:csv && npm run check:day7 && npm run check:dom && npm run check:all",
+    "check:upstream": "bash ../scripts/verify_no_upstream_edits.sh",
+    "check:all": "npm run check:upstream && npm run check:adapter && npm run check:ysbzs"
+  }
+}

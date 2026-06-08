@@ -8,7 +8,7 @@ const { SUPPORTED_MECHANICS } = require('../src/core/mechanics.cjs');
 let tests=[]; function test(name, fn){ tests.push({name, fn}); }
 function hasEvent(state,type){ return state.events.some(e=>e.type===type); }
 
-test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,30); assert.equal(data.monsters.length,30); assert.equal(data.waves.length,12); assert.ok(data.mechanisms.length>=41); assert.equal(data.events.length,7); assert.equal(data.shop.length,30); assert.equal(data.relics.length,10); assert.equal(data.shapes.length,30); assert.equal(data.validation.length,10); assert.equal(data.day7Trial.length,9); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,17); });
+test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,30); assert.equal(data.monsters.length,30); assert.equal(data.waves.length,12); assert.ok(data.mechanisms.length>=41); assert.equal(data.events.length,7); assert.equal(data.shop.length,30); assert.equal(data.relics.length,10); assert.equal(data.shapes.length,30); assert.equal(data.validation.length,10); assert.equal(data.day7Trial.length,9); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
 test('all cross-table references connected',()=>{ const v=validateData(); assert.deepEqual(v.issues,[]); assert.equal(v.ok,true); });
 test('all mechanism IDs have executable handler registration',()=>{ for(const m of data.mechanisms) assert.ok(SUPPORTED_MECHANICS.has(m.id), `unsupported ${m.id}`); });
 test('every pet has shape and shop row',()=>{ const ix=buildIndexes(); for(const p of data.pets){ assert.ok(ix.shapesByPetId.has(p.id), p.id); assert.ok(ix.shopByPetId.has(p.id), p.id); } });
@@ -106,6 +106,99 @@ test('fireDamage Σ(1..N) produces correct sequence values',()=>{
   assert.equal(fireDamage(1),1); assert.equal(fireDamage(2),3);
   assert.equal(fireDamage(3),6); assert.equal(fireDamage(4),10);
   assert.equal(fireDamage(5),15); assert.equal(fireDamage(10),55);
+});
+
+
+
+test('element packets preserve modifier through wind-to-fire conversion and next add doubles',()=>{
+  const { addElementPacket, convertElementPackets, addElementPacketToHolder, ensureElementPackets } = require('../src/core/elementPackets.cjs');
+  const s=createGameState(); const target={ elements:{火:0,水:0,风:0,土:0}, elementPackets:[] };
+  ensureElementPackets(target);
+  addElementPacket(s,target,'火',2,{sourceUnitId:'pet_a',sourceName:'宠物A',sourceActionId:'add_fire_2'});
+  addElementPacket(s,target,'风',2,{sourceUnitId:'pet_b',sourceName:'宠物B',sourceActionId:'add_wind_2'}, { modifiers:[{id:'next_element_x2',trigger:'before_next_add_element',effect:'multiply_added_element',value:2,consumeOnUse:true}], tags:['next_element_boost'] });
+  assert.equal(target.elements['火'],2); assert.equal(target.elements['风'],2);
+  const converted=convertElementPackets(s,target,'风','火',2,{sourceUnitId:'pet_c',sourceName:'宠物C'});
+  assert.equal(converted.converted,2); assert.equal(target.elements['风'],0); assert.equal(target.elements['火'],4);
+  assert.ok(target.elementPackets.some(p=>p.originalElement==='风' && p.element==='火' && p.modifiers.some(m=>m.id==='next_element_x2')));
+  const added=addElementPacketToHolder(s,target,'火',1,{sourceUnitId:'pet_d',sourceName:'宠物D',sourceActionId:'add_fire_1'});
+  assert.equal(added.amount,2); assert.equal(target.elements['火'],6);
+  assert.ok(s.changes.some(c=>c.type==='CONVERT_ELEMENT_PACKETS'));
+  assert.ok(s.changes.some(c=>c.type==='APPLY_ELEMENT_MODIFIERS'));
+});
+
+test('trigger queue order is deterministic and board-order aware',()=>{
+  const { sortTriggerQueue } = require('../src/core/triggerQueue.cjs');
+  const q=sortTriggerQueue([
+    {id:'right',priority:50,sourceKind:'board_order',position:{r:0,c:2}},
+    {id:'left',priority:50,sourceKind:'board_order',position:{r:0,c:1}},
+    {id:'system',priority:100,sourceKind:'system',position:{r:7,c:7}}
+  ]);
+  assert.deepEqual(q.map(x=>x.id), ['system','left','right']);
+});
+
+
+
+test('battleTrace protocol events are machine-readable with changes and protocol line',()=>{
+  const { addElementPacket } = require('../src/core/elementPackets.cjs');
+  const s=createGameState(); const holder={ elements:{火:0,水:0,风:0,土:0}, elementPackets:[] };
+  addElementPacket(s,holder,'火',2,{sourceUnitId:'pet_a',sourceName:'宠物A',sourceActionId:'add_fire_2'});
+  const evt=s.battleTrace.find(e=>e.type==='ADD_ELEMENT_PACKET');
+  assert.ok(evt, 'battleTrace should include protocol event');
+  assert.ok(evt.eventId && evt.protocol && evt.protocol.includes('|ADD_ELEMENT_PACKET'));
+  assert.ok(Array.isArray(evt.changes) && evt.changes[0].from===0 && evt.changes[0].to===2);
+  assert.equal(evt.actor.name,'宠物A');
+});
+
+test('replacementEffects modify incoming element event before execution',()=>{
+  const { addElementPacket } = require('../src/core/elementPackets.cjs');
+  const { applyReplacementEffects } = require('../src/core/replacementEffects.cjs');
+  const s=createGameState(); const holder={ elements:{火:0,水:0,风:0,土:0}, elementPackets:[] };
+  addElementPacket(s,holder,'风',2,{sourceUnitId:'pet_b',sourceName:'宠物B'}, { modifiers:[{id:'next_element_x2',trigger:'before_next_add_element',effect:'multiply_added_element',value:2,consumeOnUse:true}] });
+  const out=applyReplacementEffects(s,holder,{type:'ADD_ELEMENT_PACKET',trigger:'before_next_add_element',element:'火',amount:1,path:'incoming.火.amount'},{sourceName:'测试'});
+  assert.equal(out.event.amount,2);
+  assert.ok(out.applied.some(x=>x.id==='next_element_x2'));
+});
+
+test('continuousEffects calculate adjacent modifier base to final',()=>{
+  const { applyContinuousEffects } = require('../src/core/continuousEffects.cjs');
+  const s=createGameState();
+  s.units=[{id:'duck',name:'冲浪鸭',alive:true,position:{r:1,c:1},continuousEffects:[{id:'adjacent_fire_x2',relation:'adjacent',targetPath:'action.addElement.火',targetElement:'火',op:'multiply',value:2,priority:80}]}];
+  const result=applyContinuousEffects(s,1,{targetPath:'action.addElement.火',element:'火',targetPosition:{r:1,c:2}});
+  assert.equal(result.final,2);
+  assert.ok(result.applied.some(x=>x.id==='adjacent_fire_x2'));
+});
+
+
+test('battle add element goes through elementPackets and triggerQueue on ordinary battle path',()=>{
+  const { createGameState, makeUnit, getCell } = require('../src/core/state.cjs');
+  const battle = require('../src/core/battle.cjs');
+  const s=createGameState({activePets:['pal_005']});
+  s.phase='player_turn'; s.round=1; s.units=s.units.filter(u=>u.side==='hero');
+  const hero=s.units[0]; hero.position={r:1,c:1}; hero.shape=Object.assign({},hero.shape,{hitCells:1,baseLayers:1,slotCount:1,slotElements:['火']});
+  const enemy=makeUnit(s,'enemy','pal_001',{id:'packet_enemy',hp:30,position:{r:1,c:2}}); s.units.push(enemy);
+  battle.syncDerivedBoard(s); battle.setActionDirection(s,hero.id,0,'right');
+  assert.equal(battle.useActionSlot(s,hero.id,0,null), true);
+  const cell=getCell(s,1,2);
+  assert.ok(cell.elementPackets && cell.elementPackets.some(p=>p.element==='火' && p.amount>=1), 'cell should have fire element packet');
+  assert.ok(enemy.elementPackets && enemy.elementPackets.some(p=>p.element==='火' && p.amount>=1), 'unit should have mirrored fire packet');
+  assert.ok((s.changes||[]).some(c=>c.type==='TRIGGER_QUEUE_RESOLVE'), 'ordinary battle element add should enter triggerQueue');
+});
+
+test('trial shape lookup uses shapeId index, not petId-only map',()=>{
+  const { createGameState } = require('../src/core/state.cjs');
+  const { buildIndexes } = require('../src/core/data.cjs');
+  const { loadTrialConfig } = require('../src/core/trialEngine.cjs');
+  const ix=buildIndexes(); assert.ok(ix.shapesByShapeId.has('B2_fire_core_double'));
+  const cfg=loadTrialConfig('day7_fire_trial_v1', createGameState());
+  const core=cfg.playerDefs.find(x=>x.petId==='pal_072');
+  assert.equal(core.shape.shapeName,'爆心二连');
+  assert.equal(core.shape.hitCells,2);
+});
+
+test('replay data contains inputLog and changeLog',()=>{
+  const { recordInput, recordChange, buildReplay } = require('../src/core/changeLog.cjs');
+  const s=createGameState(); recordInput(s,{type:'USE_SLOT',payload:{unitId:'u1'}}); recordChange(s,{type:'TEST_CHANGE',path:'x',from:1,to:2,delta:1});
+  const r=buildReplay(s,{seed:'test_seed'}); assert.equal(r.seed,'test_seed'); assert.ok(r.inputLog.length>=1); assert.ok(r.changeLog.length>=1);
 });
 
 let pass=0; for(const t of tests){ try{ t.fn(); pass++; } catch(e){ console.error(`FAIL ${t.name}\n${e.stack}`); process.exitCode=1; break; } }

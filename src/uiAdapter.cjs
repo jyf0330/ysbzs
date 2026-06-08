@@ -36,8 +36,10 @@ const PUBLIC_COMMANDS = Object.freeze([
   'TOGGLE_UNIT_ACTIVE',
   'EXPORT_BATTLE_TRACE',
   'REPLAY_BATTLE_TRACE',
+  'EXPORT_REPLAY',
   'SETUP_DAY7_FIRE_TRIAL',
-  'RUN_DAY7_FIRE_TURN_1'
+  'RUN_DAY7_FIRE_TURN_1',
+  'RUN_DAY7_FIRE_TRIAL_ALL'
 ]);
 
 const ACTION_ALIASES = Object.freeze({
@@ -72,8 +74,10 @@ const ACTION_ALIASES = Object.freeze({
   getCellDetail: 'GET_CELL_DETAIL',
   exportBattleTrace: 'EXPORT_BATTLE_TRACE',
   replayBattleTrace: 'REPLAY_BATTLE_TRACE',
+  exportReplay: 'EXPORT_REPLAY',
   setupDay7FireTrial: 'SETUP_DAY7_FIRE_TRIAL',
-  runDay7FireTurn1: 'RUN_DAY7_FIRE_TURN_1'
+  runDay7FireTurn1: 'RUN_DAY7_FIRE_TURN_1',
+  runDay7FireTrialAll: 'RUN_DAY7_FIRE_TRIAL_ALL'
 });
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -252,6 +256,7 @@ function nextActions(state) {
   out.push({ type: 'RUN_FULL_DAY', label: '一键完整流程' });
   out.push({ type: 'SETUP_DAY7_FIRE_TRIAL', label: '第7天火核心试炼' });
   if (state.day7Trial && !state.day7Trial.round1Executed) out.push({ type: 'RUN_DAY7_FIRE_TURN_1', label: '执行第7天第1回合' });
+  if (state.day7Trial && state.day7Trial.status !== 'trial_pass') out.push({ type: 'RUN_DAY7_FIRE_TRIAL_ALL', label: '自动执行到试炼通过' });
   if (state.phase === 'shop') {
     out.push({ type: 'ROLL_SHOP', label: '刷新商店', defaultPayload: { slots: 6 } });
     for (const offer of state.shop.offers || []) {
@@ -304,7 +309,10 @@ function createViewModel(state) {
     threatGrid: battle.buildThreatGrid(state),
     events: recentEvents(state),
     logs: logGroups(state),
-    battleTrace: (state.battleTrace && state.battleTrace.length ? state.battleTrace : state.events).filter(e => /BATTLE|ROUND|PLAYER|MONSTER|DAMAGE|ELEMENT|SPAWN|MOVE|DEAD|DAY7|TRIAL/.test(e.type)).map(e => ({ step: e.step, type: e.type, text: e.text || e.type, round: e.round, phase: e.phase })),
+    battleTrace: [...(state.battleTrace || []), ...(state.events || [])]
+      .filter((e, i, arr) => arr.findIndex(x => (x.eventId || `legacy_${x.step}_${x.type}`) === (e.eventId || `legacy_${e.step}_${e.type}`)) === i)
+      .filter(e => /BATTLE|ROUND|PLAYER|MONSTER|DAMAGE|ELEMENT|SPAWN|MOVE|DEAD|DAY7|TRIAL|PACKET|MODIFIER|REPLACEMENT|CONVERT|CATALYST/.test(e.type))
+      .map(e => ({ ...clone(e), step: e.step, type: e.type, text: e.text || e.type, round: e.round, phase: e.phase })),
     day7Trial: state.day7Trial ? clone(state.day7Trial.scenario || state.day7Trial) : null,
     nextActions: nextActions(state)
   };
@@ -411,7 +419,8 @@ function createYSBZSUIAdapter(options = {}) {
     buildPreview(payload = {}) { return this.run('BUILD_PREVIEW', payload); },
     getCellDetail(r, c) { return this.run('GET_CELL_DETAIL', { r, c }); },
     exportBattleTrace() { return this.run('EXPORT_BATTLE_TRACE'); },
-    replayBattleTrace(events) { return this.run('REPLAY_BATTLE_TRACE', { events }); },
+    replayBattleTrace(events) { return this.run('REPLAY_BATTLE_TRACE',
+  'EXPORT_REPLAY', { events }); },
     runBattle() { return this.run('RUN_BATTLE'); },
     rewardOptions(poolId = 'reward_pT1', count = 3) { return this.run('REWARD_OPTIONS', { poolId, count }); },
     pickReward(index = 0) { return this.run('PICK_REWARD', { index }); },
@@ -449,6 +458,7 @@ function createYSBZSUIAdapter(options = {}) {
     getStateSnapshot() { return createSnapshot(state); },
     getEvents(filter = {}) { return state.events.filter(e => !filter.type || e.type === filter.type).filter(e => !filter.sinceStep || e.step >= filter.sinceStep).map(e => clone(e)); },
     getChanges() { return clone(state.changes); },
+    getReplay() { return this.run('EXPORT_REPLAY'); },
     getTextReport(mode = 'player') { if (mode === 'shop') return renderShopReport(state); if (mode === 'debug') return JSON.stringify(this.getStateSnapshot(), null, 2); return renderPlayerReport(state); },
     getDataSummary() { return dataSummary(state); },
     getShopPools() { return Array.from(state.indexes.shopPools.keys()).sort(); },
@@ -456,7 +466,8 @@ function createYSBZSUIAdapter(options = {}) {
     getAvailableShopEvents() { return shop.availableEvents(state).map(e => clone(e)); },
     getEnabledShopItems(poolId = 'night_base') { return shop.enabledShopItems(state, poolId).map(i => clone(i)); },
     setupDay7FireTrial() { return this.run('SETUP_DAY7_FIRE_TRIAL'); },
-    runDay7FireTurn1() { return this.run('RUN_DAY7_FIRE_TURN_1'); }
+    runDay7FireTurn1() { return this.run('RUN_DAY7_FIRE_TURN_1'); },
+    runDay7FireTrialAll() { return this.run('RUN_DAY7_FIRE_TRIAL_ALL'); }
   };
   return adapter;
 }

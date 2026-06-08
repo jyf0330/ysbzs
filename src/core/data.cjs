@@ -6,6 +6,7 @@ function buildIndexes(d = loadGameData()) {
   const monstersByPetId = byId(d.monsters, 'petId');
   const mechanicsById = byId(d.mechanisms, 'id');
   const shapesByPetId = byId(d.shapes, 'petId');
+  const shapesByShapeId = byId(d.shapes, 'shapeId');
   const shopByPetId = byId(d.shop, 'petId');
   const relicsById = byId(d.relics, 'id');
   const shopPools = new Map();
@@ -22,7 +23,7 @@ function buildIndexes(d = loadGameData()) {
     if (relic.shopPoolId) { if (!shopPools.has(relic.shopPoolId)) shopPools.set(relic.shopPoolId, []); shopPools.get(relic.shopPoolId).push(relic); }
     if (relic.rewardPoolId) { if (!rewardPools.has(relic.rewardPoolId)) rewardPools.set(relic.rewardPoolId, []); rewardPools.get(relic.rewardPoolId).push(relic); }
   }
-  return { petsById, monstersByPetId, mechanicsById, shapesByPetId, shopByPetId, relicsById, shopPools, rewardPools };
+  return { petsById, monstersByPetId, mechanicsById, shapesByPetId, shapesByShapeId, shopByPetId, relicsById, shopPools, rewardPools };
 }
 function listMechanics(ids) { return (ids || ['none']).filter(Boolean); }
 function validateData(d = loadGameData()) {

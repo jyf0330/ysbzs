@@ -25,7 +25,7 @@ test('DAY7 fire trial is routed through uiAdapter and core state, not a standalo
   assert.equal(vm.day7Trial.round1KillCount, 2);
   assert.ok(vm.day7Trial.round1Kills.includes('骑士蜂黄金复制体'));
   assert.ok(vm.day7Trial.round1Kills.includes('精灵龙黄金复制体'));
-  assert.ok(vm.enemies.some(e => e.name === '皮皮鸡黄金复制体' && e.hp === 34 && e.shield === 20));
+  assert.ok(vm.enemies.some(e => e.name === '皮皮鸡黄金复制体' && e.hp === 19 && e.shield === 20));
   assert.ok(vm.enemies.some(e => e.name === '棉悠悠黄金复制体' && e.hp === 60));
   assert.ok(vm.board.cells.some(c => c.elements && c.elements['火'] >= 4), 'should leave a real fire trap on board cells');
   assert.ok(vm.board.cells.some(c => c.elements && c.elements['水'] >= 1), 'should leave a real catalyst water cell on board cells');

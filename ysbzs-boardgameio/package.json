@@ -1,0 +1,16 @@
+{
+  "name": "ysbzs-boardgameio-real-app",
+  "private": true,
+  "type": "commonjs",
+  "version": "0.1.0",
+  "description": "Real boardgame.io Game wrapper for ysbzs. Upstream boardgame.io-main remains unmodified; ysbzs is mounted through Game setup/moves/phases.",
+  "dependencies": {
+    "boardgame.io": "file:../../upstream/boardgame.io-0.50.2.tgz"
+  },
+  "scripts": {
+    "check:game": "node tests/check_bgio_game_reducer.cjs",
+    "check:client": "node tests/check_bgio_client_moves.cjs",
+    "check:browser": "node tests/check_bgio_browser.cjs",
+    "check:all": "npm run check:game && npm run check:client && npm run check:browser"
+  }
+}

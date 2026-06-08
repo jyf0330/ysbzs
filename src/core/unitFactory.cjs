@@ -69,6 +69,7 @@ function createUnit(opts) {
     shape: opts.shape || null,
     position: normalizePosition(opts.position, { r: 0, c: 0 }),
     elements: makeEmptyElements(true),   // 兼容 4 元素
+    elementPackets: [],
     alive: opts.alive !== false,
     flags: Object.assign({}, opts.flags || {}),
     roundDamageTaken: 0,

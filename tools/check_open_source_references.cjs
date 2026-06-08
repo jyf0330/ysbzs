@@ -5,9 +5,9 @@
  * 验证：
  *   1. openSourceReferenceMap 包含 7/7 个来源
  *   2. 每个来源都有 urls 且不空
- *   3. 每个来源都有 integrationLevel
- *   4. 每个来源映射到至少一个 ysbzs module
- *   5. 6 个新模块可 require
+ *   3. 每个来源都有 mode
+ *   4. 每个来源映射到至少一个 local module
+ *   5. 4 个新模块可 require
  *   6. 模块 smoke test 能跑
  */
 
@@ -15,14 +15,14 @@ let pass = 0, fail = 0;
 function assert(cond, msg) { if (cond) { pass++; } else { fail++; console.error('FAIL', msg); } }
 
 // 1. 引用映射
-const { getReferenceMap, countReferences } = require('../src/core/openSourceReferenceMap.cjs');
-const refs = getReferenceMap();
-assert(countReferences() === 7, `openSourceReferenceMap: 7/7 sources (got ${countReferences()})`);
+const { listReferences, getReference } = require('../src/core/openSourceReferenceMap.cjs');
+const refs = listReferences();
+assert(refs.length === 7, `openSourceReferenceMap: 7/7 sources (got ${refs.length})`);
 for (const r of refs) {
   assert(r.urls && Array.isArray(r.urls) && r.urls.length > 0, `reference ${r.id} has urls`);
   assert(r.urls.every(u => u.startsWith('http')), `reference ${r.id} urls start with http`);
-  assert(r.integrationLevel && ['direct', 'design_reference'].includes(r.integrationLevel), `reference ${r.id} has valid integrationLevel`);
-  assert(r.ysbzsModules && r.ysbzsModules.length > 0, `reference ${r.id} maps to >=1 ysbzs module`);
+  assert(r.mode && typeof r.mode === 'string', `reference ${r.id} has mode`);
+  assert(r.local && r.local.length > 0, `reference ${r.id} maps to >=1 local module`);
 }
 
 // 2. 模块可 require
@@ -43,17 +43,17 @@ for (const m of modules) {
 
 // 3. 模块 smoke test
 try {
-  const { getLegalMoves, getAttackCells } = require('../src/core/tacticalTargeting.cjs');
-  const mockState = { units: [{ id: 'u1', side: 'hero', alive: true, hp: 10, position: { r: 3, c: 3 }, ap: 3 }] };
-  const moves = getLegalMoves(mockState, mockState.units[0]);
-  assert(Array.isArray(moves), 'tacticalTargeting.getLegalMoves returns array');
+  const { listLegalTargets, buildTargetingPreview } = require('../src/core/tacticalTargeting.cjs');
+  const mockState = { units: [{ id: 'u1', side: 'hero', alive: true, hp: 10, position: { r: 3, c: 3 } }] };
+  const targets = listLegalTargets(mockState, mockState.units[0], { maxRange: 1, target: 'empty_cell' });
+  assert(Array.isArray(targets), 'tacticalTargeting.listLegalTargets returns array');
 } catch (e) {
   assert(false, 'tacticalTargeting smoke: ' + e.message);
 }
 
 try {
-  const { analyzeActionSpace } = require('../src/core/actionSpaceAnalyzer.cjs');
-  const result = analyzeActionSpace({ units: [] }, 'hero');
+  const { actionSpaceReport } = require('../src/core/actionSpaceAnalyzer.cjs');
+  const result = actionSpaceReport({ units: [], phase: 'player_turn' }, { side: 'hero' });
   assert(result.side === 'hero', 'actionSpaceAnalyzer returns correct side');
 } catch (e) {
   assert(false, 'actionSpaceAnalyzer smoke: ' + e.message);
@@ -61,17 +61,18 @@ try {
 
 try {
   const { runScenario } = require('../src/core/scenarioRunner.cjs');
-  const result = runScenario({ scenarioId: 'nonexistent' });
-  assert(result.scenarioId === 'nonexistent', 'scenarioRunner returns scenarioId');
+  const def = { state: {}, phase: 'init', actions: [], assertions: [{ path: 'phase', equals: 'init' }] };
+  const out = runScenario(def);
+  assert(out.ok === true, 'scenarioRunner.runScenario returns ok');
 } catch (e) {
   assert(false, 'scenarioRunner smoke: ' + e.message);
 }
 
 try {
-  const { getManifest } = require('../src/core/moduleManifest.cjs');
-  const m = getManifest();
-  assert(m.activeElements.length === 3, 'moduleManifest has 3 active elements');
-  assert(m.coreModules.length >= 10, 'moduleManifest has >=10 core modules');
+  const { buildModuleManifest } = require('../src/core/moduleManifest.cjs');
+  const manifest = buildModuleManifest({ board: { rows: 8, cols: 8 }, units: [], leaders: {} });
+  assert(manifest.moduleId === 'ysbzs_v1', 'moduleManifest has default moduleId');
+  assert(manifest.board.rows === 8, 'moduleManifest has board dimensions');
 } catch (e) {
   assert(false, 'moduleManifest smoke: ' + e.message);
 }

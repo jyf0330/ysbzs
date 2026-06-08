@@ -201,5 +201,66 @@ test('replay data contains inputLog and changeLog',()=>{
   const r=buildReplay(s,{seed:'test_seed'}); assert.equal(r.seed,'test_seed'); assert.ok(r.inputLog.length>=1); assert.ok(r.changeLog.length>=1);
 });
 
+test('open source reference map covers all 7 adopted sources',()=>{
+  const { listReferences } = require('../src/core/openSourceReferenceMap.cjs');
+  const refs=listReferences();
+  assert.equal(refs.length,7);
+  for(const id of ['boardgameio','showdown','forge','xmage','openduelyst','tag','vassal']) assert.ok(refs.some(r=>r.id===id), id);
+});
+
+test('OpenDuelyst-style tactical targeting lists enemy and empty cell targets',()=>{
+  const { listLegalTargets, buildTargetingPreview } = require('../src/core/tacticalTargeting.cjs');
+  const { makeUnit, syncBoardUnits } = require('../src/core/state.cjs');
+  const s=createGameState({activePets:['pal_005']});
+  s.units=s.units.filter(u=>u.side==='hero');
+  const hero=s.units[0]; hero.position={r:2,c:2};
+  const enemy=makeUnit(s,'enemy','pal_001',{id:'target_enemy',position:{r:2,c:3},hp:30}); s.units.push(enemy); syncBoardUnits(s);
+  const enemies=listLegalTargets(s,hero,{pattern:'line',direction:'right',range:3,target:'enemy_unit'});
+  assert.ok(enemies.some(t=>t.unitId==='target_enemy'));
+  const empty=listLegalTargets(s,hero,{maxRange:1,target:'empty_cell'});
+  assert.ok(empty.length>=1);
+  const preview=buildTargetingPreview(s,hero,{pattern:'line',direction:'right',range:3,target:'any_cell'});
+  assert.ok(preview.some(x=>x.r===2&&x.c===3));
+});
+
+test('TAG-style action space analyzer reports deterministic branching factor',()=>{
+  const { actionSpaceReport, listLegalActions } = require('../src/core/actionSpaceAnalyzer.cjs');
+  const s=createGameState({activePets:['pal_005','pal_006']});
+  s.phase='player_turn'; s.round=1;
+  const actions=listLegalActions(s,{side:'hero'});
+  const report=actionSpaceReport(s,{side:'hero',sample:5});
+  assert.equal(report.actionCount, actions.length);
+  assert.ok(report.branchingFactor>0);
+  assert.ok(report.byType.USE_SLOT>0);
+  assert.ok(Array.isArray(report.sample) && report.sample.length<=5);
+});
+
+test('XMage-style scenario runner can execute fixed setup and assertions',()=>{
+  const { runScenario, assertScenario } = require('../src/core/scenarioRunner.cjs');
+  const def={
+    state:{day:7,activePets:['pal_005']},
+    phase:'init',
+    actions:[{type:'START_BATTLE'}],
+    assertions:[{kind:'event',type:'BATTLE_START',truthy:true},{path:'phase',equals:'player_turn'}]
+  };
+  const out=runScenario(def);
+  assert.equal(out.ok,true);
+  const state=assertScenario(def);
+  assert.equal(state.phase,'player_turn');
+});
+
+test('Vassal-style module manifest exports board pieces and async command envelope',()=>{
+  const { buildModuleManifest, createAsyncCommand, applyAsyncCommand } = require('../src/core/moduleManifest.cjs');
+  const s=createGameState({activePets:['pal_005']});
+  const manifest=buildModuleManifest(s,{moduleId:'test_mod'});
+  assert.equal(manifest.moduleId,'test_mod');
+  assert.equal(manifest.board.rows,8);
+  assert.ok(manifest.pieces.some(p=>p.petId==='pal_005'));
+  assert.ok(Array.isArray(manifest.effectObjects));
+  const cmd=createAsyncCommand(s,{type:'START_BATTLE'},{playerId:'0'});
+  applyAsyncCommand(s,cmd,dispatch);
+  assert.equal(s.phase,'player_turn');
+});
+
 let pass=0; for(const t of tests){ try{ t.fn(); pass++; } catch(e){ console.error(`FAIL ${t.name}\n${e.stack}`); process.exitCode=1; break; } }
 if(!process.exitCode) console.log(`${pass}/${tests.length} tests passed`);

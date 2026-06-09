@@ -18,6 +18,8 @@ First read `docs/02_CURRENT_WORKFLOW.md`: hard triggers are `Goal`, `策划`, `d
 
 如果指令以「策划」或 `diff` 结尾 → 只读/策划模式，不改代码。
 
+界面/交互/棋盘点击优化必须按 `docs/02_CURRENT_WORKFLOW.md` 的 UI/UX Skill Routing 执行，改文件前输出 Skill Receipt。
+
 <!-- ywh: web-game -->
 
 AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
@@ -45,6 +47,8 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 每次开始任务或修改文件前，先读 `tasks/index.md` 检查冲突。
 
 ## 自动提交规则
+
+凡涉及代码或功能行为的修改，完成验证后默认进入自动提交检查；满足下列条件时必须精确暂存当前任务文件并自行提交，不再另行询问用户。
 
 当任务满足以下**所有**条件时，AI 应自行提交，**不需要请示用户**：
 1. 任务卡已记录（有 `task_id` / `commit_plan`）

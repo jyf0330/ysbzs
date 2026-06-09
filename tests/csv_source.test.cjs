@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { parseCsv, loadSourceTablesFromCsv, loadGameData, csvSourceAvailable, resolveCsvFile } = require('../src/core/csvData.cjs');
 const { validateData } = require('../src/core/data.cjs');
 const { createGameState } = require('../src/core/state.cjs');
@@ -111,4 +112,27 @@ test('CSV07 activePets 字符串覆盖初始阵容', () => {
   const heroes = s.units.filter(u => u.side === 'hero');
   assert.equal(heroes.length, 1);
   assert.equal(heroes[0].petId, 'pal_001');
+});
+
+test('CSV08 精简策划总表可无损导出当前核心程序 CSV', () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ysbzs-master-export-'));
+  execFileSync('python3', [
+    path.join(root, 'tools', 'export_master_to_csv.py'),
+    '--master', path.join(root, 'xlsx', 'ysbzs_master.xlsx'),
+    '--baseline-dir', csvDir,
+    '--out-dir', outDir
+  ], { cwd: root, stdio: 'pipe' });
+  for (const name of [
+    '01_pets.csv',
+    '02_monster_templates.csv',
+    '03_monster_waves.csv',
+    '04_mechanisms.csv',
+    '06_shop_rewards.csv',
+    '08_action_shapes.csv',
+    '13_day7_beast_trial.csv'
+  ]) {
+    const expectedCsv = fs.readFileSync(path.join(csvDir, name), 'utf8');
+    const actualCsv = fs.readFileSync(path.join(outDir, name), 'utf8');
+    assert.equal(actualCsv, expectedCsv, name);
+  }
 });

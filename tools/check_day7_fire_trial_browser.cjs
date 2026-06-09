@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const port = Number(process.env.CHECK_DAY7_PORT || 4197);
 const chromePort = Number(process.env.CHECK_DAY7_CHROME_PORT || 9227);
 const headlessFlag = process.env.CHECK_DAY7_HEADLESS_FLAG || '--headless';
+const chromeWaitAttempts = Number(process.env.CHECK_DAY7_CHROME_WAIT_ATTEMPTS || 300);
 const base = `http://127.0.0.1:${port}`;
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function assert(cond,msg){if(!cond) throw new Error(msg);}
@@ -36,7 +37,7 @@ async function main(){
     chrome=spawn(chromium,[headlessFlag,'--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--disable-sync','--disable-extensions','--no-first-run',`--user-data-dir=${userData}`,`--remote-debugging-port=${chromePort}`,'about:blank'],{stdio:['ignore','pipe','pipe']}); chrome.stdout.resume(); chrome.stderr.resume();
     let pages=[];
     for(let i=0;i<30;i++){
-      pages=await (await waitHttp(`http://127.0.0.1:${chromePort}/json/list`)).json();
+      pages=await (await waitHttp(`http://127.0.0.1:${chromePort}/json/list`, r => r.ok, chromeWaitAttempts)).json();
       if(Array.isArray(pages)&&pages.length) break;
       await sleep(100);
     }

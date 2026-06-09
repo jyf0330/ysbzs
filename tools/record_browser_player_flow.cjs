@@ -254,6 +254,10 @@ async function main() {
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.phase === 'player_turn'`, 'start button did not enter player_turn');
     await screenshot(cdp, 'start_battle_player_turn', '进入玩家回合，按钮文字变为“结束回合”。', records);
 
+    await realClick(cdp, '#board .cell.hero-cell', '点击棋盘上的英雄棋子', records);
+    await waitForExpr(cdp, `!!window.__YSBZS__.lastViewModel.selected.unitId && !!document.querySelector('#board .cell.selected-unit') && document.querySelector('#operation-rail')?.textContent.includes('移动')`, 'board hero click did not select a movable hero with visible operation mode');
+    await screenshot(cdp, 'board_hero_selected', '点击棋盘英雄也能选中单位，允许随后点空格移动。', records);
+
     await realClick(cdp, '.hero-card', '点击左侧英雄卡片', records);
     await waitForExpr(cdp, `!!window.__YSBZS__.lastViewModel.selected.unitId && !!document.querySelector('.hero-card.sel')`, 'hero card click did not select a unit');
     await screenshot(cdp, 'hero_selected', '英雄卡片出现选中态，棋盘可移动格出现提示。', records);

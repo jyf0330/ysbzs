@@ -157,6 +157,8 @@ Always trigger matching skills when available:
 | Unclear goal, exploration, standalone `diff` | `brainstorming`, `writing-plans`, `ywh-game` |
 | Numbers, rules, levels, systems | `brainstorming`, `writing-plans`, `balance-check`, `ywh-game` |
 | Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
+| UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
+| UI behavior bug, 点不了, 移动不了, 选不中, 状态不对 | `systematic-debugging`, `test-driven-development`, `game-ui-frontend`, `ywh-web-game`, `playwright`, `verification-before-completion` |
 | Docs, CHANGELOG, workflow rules | `ywh-game`, `verification-before-completion` |
 | `git-c`, finish, pre-commit check | `verification-before-completion`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
@@ -165,6 +167,17 @@ Always trigger matching skills when available:
 
 When a row in the Skill Routing table matches the current task, the agent must
 invoke the matching Skill tool before answering, planning, or editing files.
+
+Before editing files for any matched task, write a short Skill Receipt:
+
+```text
+本轮命中 skill：<skill names>
+已读取：<project entry / role entry / SKILL.md names>
+```
+
+For UI/UX, HUD, board-click, or visible interaction work, this receipt is a hard
+gate. Do not edit UI files until `game-ui-frontend` or `frontend-skill` and
+`ywh-web-game` have been read or explicitly marked `UNAVAILABLE`.
 
 If the agent cannot invoke a listed skill because the current AI tool does not
 expose it, the skill is missing, the user explicitly excludes it, or the task

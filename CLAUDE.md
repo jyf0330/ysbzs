@@ -18,6 +18,8 @@ First read `docs/02_CURRENT_WORKFLOW.md`: hard triggers are `Goal`, `策划`, `d
 
 如果指令以「策划」或 `diff` 结尾 → 只读/策划模式，不改代码。
 
+界面/交互/棋盘点击优化必须按 `docs/02_CURRENT_WORKFLOW.md` 的 UI/UX Skill Routing 执行，改文件前输出 Skill Receipt。
+
 Claude 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 
 ## 开始任务

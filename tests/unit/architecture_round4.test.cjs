@@ -62,7 +62,7 @@ test('R405 server authority still rejects stale mutation commands', () => {
 });
 
 test('R406 roster loop: newly bought pet starts on bench, can be blocked by full roster, and sell refunds gold', () => {
-  const adapter = createYSBZSUIAdapter({ gold: 30, battleId: 'round4_roster' });
+  const adapter = createYSBZSUIAdapter({ gold: 999, battleId: 'round4_roster' });
   adapter.enterShop('night_base', 6);
   const offer = adapter.getViewModel().shop.offers.find(o => o.price <= adapter.getViewModel().gold);
   assert.ok(offer);

@@ -9,7 +9,7 @@ const { createGameState } = require('../src/core/state.cjs');
 
 const root = path.resolve(__dirname, '..');
 const csvDir = path.join(root, 'data', 'csv');
-const expected = { pets:30, monsters:30, waves:12, mechanisms:41, events:7, shop:30, relics:10, shapes:30, validation:10 };
+const expected = { pets:127, monsters:34, waves:134, mechanisms:61, events:32, shop:127, relics:40, shapes:127, validation:10 };
 const expectedExtra = { day7Trial:9, heroDomains:7, elementReactions:8, trialQuestions:4, trialActions:24, victoryRules:4, effectObjects:3, modifiers:3, elementConversions:2 };
 
 function writeCsv(file, rows) {
@@ -54,7 +54,7 @@ test('CSV02 程序优先从 CSV 重建 normalized data 并通过跨表校验', (
 
 test('CSV03 改宠物 CSV 后，重新 loadGameData 会反映新数值', () => {
   const dir = tempCsvDir();
-  const file = resolveCsvFile(dir, '01_宠物主表_好读版.csv');
+  const file = resolveCsvFile(dir, '01_pets.csv');
   const rows = parseCsv(fs.readFileSync(file, 'utf8'));
   const target = rows.find(r => r['宠物ID'] === 'pal_005');
   assert.ok(target, 'pal_005 exists');
@@ -69,7 +69,7 @@ test('CSV03 改宠物 CSV 后，重新 loadGameData 会反映新数值', () => {
 
 test('CSV04 改初始阵容 CSV 后，新建状态会换我方开局宠物和站位', () => {
   const dir = tempCsvDir();
-  const file = resolveCsvFile(dir, '10_初始阵容.csv');
+  const file = resolveCsvFile(dir, '10_initial_roster.csv');
   const rows = parseCsv(fs.readFileSync(file, 'utf8'));
   rows[0]['宠物ID'] = 'pal_001';
   rows[0]['行(1-8)'] = '1';
@@ -84,7 +84,7 @@ test('CSV04 改初始阵容 CSV 后，新建状态会换我方开局宠物和站
 
 test('CSV05 多机制串和旧机制 ID 会自动归一化', () => {
   const dir = tempCsvDir();
-  const file = resolveCsvFile(dir, '02_怪物模板_好读版.csv');
+  const file = resolveCsvFile(dir, '02_monster_templates.csv');
   const rows = parseCsv(fs.readFileSync(file, 'utf8'));
   rows[0]['机制ID'] = 'mech_opening_shield,mech_counter,mech_aura';
   writeCsv(file, rows);
@@ -96,7 +96,7 @@ test('CSV05 多机制串和旧机制 ID 会自动归一化', () => {
 
 test('CSV06 fallback JSON 路径和无 initialSetup 的默认阵容可用', () => {
   const d = loadGameData({ csvDir, cache: false });
-  assert.equal(d.pets.length, 30);
+  assert.equal(d.pets.length, expected.pets);
   const stripped = JSON.parse(JSON.stringify(d));
   delete stripped.initialSetup;
   const s = createGameState({ data: stripped });

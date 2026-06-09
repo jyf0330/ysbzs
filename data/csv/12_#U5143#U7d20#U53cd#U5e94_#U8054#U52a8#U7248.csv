@@ -1,9 +1,0 @@
-﻿反应ID,触发,条件,效果,消耗,伤害公式,优先级,说明
-fire_explosion,on_fire_layers_changed,fire>=3 and enemy_on_cell,explode_fire,clear_fire,sum_1_to_fire_layers,100,有敌方单位站在火3+格，立即引爆
-fire_trap,on_fire_layers_changed,fire>=3 and empty_cell,mark_fire_trap,none,none,90,空格火3+保留为一次性爆火陷阱
-fire_trap_enter,on_unit_enter_cell,cell_has_fire_trap and unit_side=enemy,explode_fire,clear_fire,sum_1_to_fire_layers,100,敌方进入/被推入/被聚入爆火陷阱时引爆
-water_catalyst,on_add_element,cell_water>0 and added_element in 火水风 and source_side=player and domain_water_catalyst,double_added_layers,water-1,none,80,消耗1水，使本次添加元素层翻倍
-wind_gather_fire,on_wind_gather,source_fire_cell>0 and target_cell_valid and domain_wind_gather,transfer_fire,source_fire-amount,none,70,把来源格火层搬运到目标格
-shield_regen,on_round_end,unit_shield_max>0,restore_shield_to_max,none,none,50,盾每回合结束后重生到最大盾
-water_poison,on_unit_stay_or_enter_water,domain_water_poison and unit_side=enemy,apply_poison,none,poison_layers,60,水核心开启后才有毒
-water_heal,on_round_end,domain_water_poison and unit_side=player and on_water_cell,heal,none,"min(water_layers,3)",60,水核心开启后我方站水回血

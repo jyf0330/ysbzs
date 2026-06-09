@@ -2,9 +2,9 @@ version: 2026-06-09
 module: wave_rules
 source_workbook: 00_全数据联动总表_01-09_波次规则交付版_20260609.xlsx
 source_sheets:
-  pets: 01_宠物主表_好读版
-  monster_templates: 02_怪物模板_好读版
-  waves: 03_怪物波次_好读版
+  pets: 01_pets
+  monster_templates: 02_monster_templates
+  waves: 03_monster_waves
 
 id_rules:
   canonical_pet_id: pal_XXX
@@ -57,7 +57,7 @@ quality_multipliers:
 
 threat_score_rule:
   pet_score_source:
-    sheet: 01_宠物主表_好读版
+    sheet: 01_pets
     id_column: 宠物ID
     score_column: 效果分
   candidate_average_score: "候选池内所有宠物效果分求平均"

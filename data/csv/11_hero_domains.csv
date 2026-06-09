@@ -1,0 +1,8 @@
+﻿领域ID,提供者宠物ID,提供者名称,挂接到,触发,效果ID,参数,是否持续,说明
+domain_fire_core,pal_072,融焰娘,player_hero,battle_start,mech_fire_core_domain,"{""threshold"":3,""damage"":""sum_1_to_N"",""clear_after_explode"":true}",是,火脉爆心：火3+形成爆火/陷阱
+domain_player_free_move,pal_072,融焰娘,player_hero,battle_start,mech_move_free_field,"{""side"":""player""}",是,我方宠物移动不消耗行动力，但攻击后锁定
+domain_water_catalyst,pal_006,冲浪鸭,player_hero,battle_start,mech_water_catalyst_seed,"{""consume_water"":1,""multiplier"":2}",是,水汽催化：下次元素层翻倍
+domain_wind_gather,pal_038,疾风隼,player_hero,battle_start,mech_wind_gather_fire,"{""max_transfer"":2}",是,风聚火：搬运周围火层到目标格
+domain_beast_trial,enemy_beast_master,兽群统领,enemy_hero,battle_start,mech_beast_trial,"{""area"":""rows1-4_cols5-8"",""hero_pos"":""R1C8""}",是,兽群试炼考官领域
+domain_water_poison,pal_085,水灵儿,player_hero,battle_start,mech_water_poison_domain,{},是,水毒续航核心，后续开放
+domain_summon,pal_063,秘斯媞雅,player_hero,battle_start,mech_summon_domain,"{""summon_no_element"":true}",是,宠物流核心，召唤物不铺元素

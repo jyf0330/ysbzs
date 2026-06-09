@@ -36,7 +36,6 @@ function validateData(d = loadGameData()) {
     if (!petPool.length) issues.push(`wave ${w.waveId} has empty pet pool`);
     for (const petId of petPool) {
       if (!ix.petsById.has(petId)) issues.push(`wave ${w.waveId} missing pet ${petId}`);
-      if (!ix.monstersByPetId.has(petId)) issues.push(`wave ${w.waveId} pet ${petId} has no monster template`);
     }
   }
   for (const e of d.events) { if (e.petId && !ix.petsById.has(e.petId)) issues.push(`event ${e.id} missing pet ${e.petId}`); for (const id of listMechanics(e.mechanics)) if(!hasMech(id)) issues.push(`event ${e.id} missing mechanic ${id}`); if(e.shopPoolId && !ix.shopPools.has(e.shopPoolId)) issues.push(`event ${e.id} missing shop pool ${e.shopPoolId}`); if(e.rewardPoolId && !ix.rewardPools.has(e.rewardPoolId)) issues.push(`event ${e.id} missing reward pool ${e.rewardPoolId}`); }

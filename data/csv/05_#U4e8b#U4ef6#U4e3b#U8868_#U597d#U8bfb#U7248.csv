@@ -1,8 +1,0 @@
-﻿事件ID,事件组,事件名,节点,天数,选项ID,选项文案,宠物ID,名称(自动),元素(自动),定位(自动),机制ID,机制名(自动),商店池ID,奖励池ID,代价,收益,数值,接入层级,状态,备注
-evt_shop_fire,定向商店,火元素补货,夜晚商店,D1-D10,A,刷新后火系候选+2,pal_005,火绒狐,火,点火启动,none,无机制,elem_火,reward_fire,金币-1,火系商品位+2,2,shop_phase,正式,
-evt_shop_water,定向商店,水元素补货,夜晚商店,D1-D10,A,刷新后水系候选+2,pal_006,冲浪鸭,水,水催化,none,无机制,elem_水,reward_water,金币-1,水系商品位+2,2,shop_phase,正式,
-evt_shop_wind,定向商店,风元素补货,夜晚商店,D1-D10,A,刷新后风系候选+2,pal_038,疾风隼,风,风聚火,none,无机制,elem_风,reward_wind,金币-1,风系商品位+2,2,shop_phase,正式,
-evt_day7_fire_core,兽群试炼,第7天火核心试炼,上午战斗,D7,A,进入兽群统领火核心考题,pal_072,融焰娘,火,火核心,mech_fire_core_domain,火脉爆心,trial_day7_fire,reward_day7_fire,无,开启火脉爆心试炼,1,battle_phase,正式,
-evt_day7_direct_kill,兽群试炼,斩首胜利,战斗中,D7,A,10回合内击杀兽群统领直接胜利,pal_072,融焰娘,火,火核心,mech_beast_trial,兽群试炼,trial_day7_fire,reward_boss_direct,风险,额外奖励+1,1,battle_phase,正式,
-evt_role_summon,定位补强,宠物流补强,夜晚商店,D7-D10,A,宠物流候选+2,pal_063,秘斯媞雅,风,宠物流核心,mech_summon_domain,宠物流领域,role_召唤,reward_summon,金币-2,召唤商品位+2,2,shop_phase,正式,
-evt_water_core_unlock,核心解锁,水核心候选,夜晚商店,D7-D10,A,水毒核心候选提高,pal_085,水灵儿,水,水毒核心,mech_water_poison_domain,水毒续航领域,role_水毒,reward_water_core,金币-2,水核心候选+1,1,shop_phase,正式,

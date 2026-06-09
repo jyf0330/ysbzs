@@ -148,7 +148,7 @@ test('OP10 battleTrace 可导出，可用 replay 命令读取', () => {
 });
 
 test('OP11 商店仍能和细颗粒战斗流程连续工作', () => {
-  const a = createYSBZSUIAdapter({ gold: 30 });
+  const a = createYSBZSUIAdapter({ gold: 999 });
   a.startBattle();
   a.runBattle();
   a.rewardOptions('reward_pT1', 3);

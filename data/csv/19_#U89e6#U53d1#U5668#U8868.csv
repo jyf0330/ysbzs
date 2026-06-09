@@ -1,5 +1,0 @@
-﻿trigger_id,trigger,监听对象,入队条件,默认优先级,说明
-trg_before_add_element,before_add_element,元素包/领域/宠物,即将添加火水风土元素包,80,用于水催化、下一个元素翻倍等
-trg_on_element_convert,on_element_convert,元素包,元素包发生转换,60,用于保留/清除modifier与战报
-trg_on_fire_formed,on_fire_formed,系统/领域,火层>=3,100,形成爆火状态，融焰娘可改写陷阱/主动引爆
-trg_on_enemy_enter,on_enemy_enter,元素地块/陷阱,敌方进入或被推入格子,100,触发爆火陷阱

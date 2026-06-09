@@ -1,4 +1,0 @@
-﻿object_id,object_type,source_id,owner,position_rule,trigger,condition,effect_id,priority,order_policy,duration,说明
-obj_fire_core_domain,hero_domain,pal_072,player,leader_player,on_fire_formed,fire>=3,mech_fire_core_domain,100,system_then_board,battle,融焰娘火脉爆心领域，强化爆火陷阱/主动引爆/爆点利用
-obj_water_catalyst_adjacent,modifier_object,pal_006,player,adjacent,before_add_element,target_has_water,mech_water_catalyst_seed,80,board_order,battle,冲浪鸭水汽催化，消耗1水使本次元素层翻倍
-obj_wind_gather_fire,modifier_object,pal_038,player,skill_range,on_wind_action,source_fire>0,mech_wind_gather_fire,70,board_order,battle,风聚火/旋风收束，搬运来源格火层到目标格

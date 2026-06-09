@@ -3,6 +3,7 @@ const { applyBattleStart } = require('./mechanics.cjs');
 const { ACTIVE_ELEMENTS, COMPAT_ELEMENTS, makeEmptyElements, makeEmptyElementCamps } = require('./elements.cjs');
 const { makeUnitFromData } = require('./unitFactory.cjs');
 const { ensureMultiplayerState } = require('./multiplayerState.cjs');
+const { rng } = require('./rng.cjs');
 
 const BOARD_ROWS = 8;
 const BOARD_COLS = 8;
@@ -96,11 +97,27 @@ function defaultHeroPosition(index) {
 function defaultEnemyPosition(state, index = 0) {
   return { r: (Number(state.round || 1) + index * 2) % BOARD_ROWS, c: BOARD_COLS - 2 + (index % 2) };
 }
+function seededRightEntryPosition(state, index = 0) {
+  syncBoardUnits(state);
+  const seed = state.rngState?.seed || state.battleId || 'ysbzs-local';
+  const rngIndex = Number.isFinite(Number(state.rngState?.index)) ? Number(state.rngState.index) : 0;
+  const random = rng(`right_entry:${seed}:${state.day}:${state.period}:${state.round}:${index}:${rngIndex}`);
+  const candidates = [];
+  for (let r = 0; r < BOARD_ROWS; r += 1) {
+    for (const c of [BOARD_COLS - 3, BOARD_COLS - 2]) {
+      const cell = getCell(state, r, c);
+      if (cell && !cell.unitId) candidates.push({ r, c });
+    }
+  }
+  if (!candidates.length) return defaultEnemyPosition(state, index);
+  return candidates[Math.floor(random() * candidates.length) % candidates.length];
+}
 function positionFromWaveRule(state, rule, index = 0) {
   if (!rule) return defaultEnemyPosition(state, index);
   const text = String(rule);
   const m = text.match(/R\s*(\d+)\s*C\s*(\d+)/i);
   if (m) return { r: Math.max(0, Math.min(BOARD_ROWS - 1, Number(m[1]))), c: Math.max(0, Math.min(BOARD_COLS - 1, Number(m[2]))) };
+  if (/right_entry/.test(text)) return seededRightEntryPosition(state, index);
   if (/right|右|enemy|城堡|后排/.test(text)) return defaultEnemyPosition(state, index);
   if (/top|上/.test(text)) return { r: 0, c: BOARD_COLS - 2 - (index % 2) };
   if (/bottom|下/.test(text)) return { r: BOARD_ROWS - 1, c: BOARD_COLS - 2 - (index % 2) };

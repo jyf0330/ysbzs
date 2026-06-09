@@ -35,8 +35,9 @@ test('wave rule computes threat from pet average score, spawn count and expected
   const petsById = new Map(d.pets.map(p => [p.id, p]));
   const mults = buildQualityMultiplierMap(d.qualityMultipliers);
   const weights = parseQualityWeights('90,10,0,0');
-  const threat = computeWaveThreat(['pal_001', 'pal_002', 'pal_003', 'pal_004', 'pal_005'], 2, weights, petsById, mults);
-  const avg = (77 + 57 + 120 + 64 + 82) / 5;
+  const ids = ['pal_001', 'pal_002', 'pal_003', 'pal_004', 'pal_005'];
+  const threat = computeWaveThreat(ids, 2, weights, petsById, mults);
+  const avg = ids.reduce((sum, id) => sum + petsById.get(id).score, 0) / ids.length;
   assert.equal(threat, Math.round(avg * 2 * 1.05 * 10) / 10);
 });
 
@@ -55,7 +56,8 @@ test('new wave row can keep 宠物ID column as pool expression and spawn multipl
   }, { petsById, qualityMultiplierMap });
   assert.equal(wave.petId, 'pal_001');
   assert.equal(wave.count, 2);
-  assert.equal(wave.threat, 320);
+  const avg = ['pal_001', 'pal_002', 'pal_003', 'pal_004', 'pal_005'].reduce((sum, id) => sum + petsById.get(id).score, 0) / 5;
+  assert.equal(wave.threat, Math.round(avg * 2 * 2 * 10) / 10);
 
   const state = createGameState({ data: Object.assign({}, d, { waves: [wave] }), activePets: ['pal_005'], seed: 'wave-test' });
   battle.startBattle(state);
@@ -64,4 +66,29 @@ test('new wave row can keep 宠物ID column as pool expression and spawn multipl
   assert.equal(new Set(enemies.map(u => u.petId)).size, 2, 'default sampling is without replacement while the pool is not exhausted');
   assert.ok(enemies.every(u => u.quality === '黄金'));
   assert.ok(state.events.filter(e => e.type === 'SPAWN_ENEMY').every(e => e.quality === '黄金'));
+});
+
+test('right_entry wave position is driven by seeded RNG instead of a fixed row', () => {
+  const d = loadGameData({ cache: false });
+  const wave = normalizeWaveRow({
+    '波次ID': 'wave_test_right_entry',
+    '天数': '1',
+    '时段': '上午',
+    '回合': '1',
+    '宠物ID': 'pal_001',
+    '宠物池-数量': 'pal_001',
+    '位置': 'right_entry'
+  }, { petsById: new Map(d.pets.map(p => [p.id, p])), qualityMultiplierMap: buildQualityMultiplierMap(d.qualityMultipliers) });
+  const make = seed => {
+    const state = createGameState({ data: Object.assign({}, d, { waves: [wave] }), activePets: ['pal_005'], seed });
+    battle.startBattle(state);
+    return state.units.find(u => u.side === 'enemy').position;
+  };
+  const a = make('right-entry-a');
+  const b = make('right-entry-b');
+  assert.notDeepEqual(a, b);
+  for (const p of [a, b]) {
+    assert.ok(p.r >= 0 && p.r < 8);
+    assert.ok(p.c >= 5 && p.c <= 6);
+  }
 });

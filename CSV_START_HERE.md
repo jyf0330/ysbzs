@@ -4,17 +4,17 @@
 
 ## 你以后怎么改
 
-- 改宠物属性：`data/csv/01_宠物主表_好读版.csv`
-- 改怪物属性：`data/csv/02_怪物模板_好读版.csv`
-- 改敌方第几天第几回合出怪：`data/csv/03_怪物波次_好读版.csv`
+- 改宠物属性：`data/csv/01_pets.csv`
+- 改怪物属性：`data/csv/02_monster_templates.csv`
+- 改敌方第几天第几回合出怪：`data/csv/03_monster_waves.csv`
   - 旧写法：`宠物ID=pal_001`、`数量=1`。
   - 新写法：`宠物池-数量=1,2,3,4,5-2`、`品质权重=90,10,0,1`，程序会转成 `pal_XXX` 并按权重实时计算威胁分。
-- 改机制 ID / 机制说明：`data/csv/04_机制词条库_60条.csv`
-- 改商店事件：`data/csv/05_事件主表_好读版.csv`
-- 改商店商品、价格、权重、解锁日：`data/csv/06_商店奖励池_好读版.csv`
-- 改遗物/祝福：`data/csv/07_遗物祝福_好读版.csv`
-- 改行动槽/形状/元素槽：`data/csv/08_形状行动槽_好读版.csv`
-- 改我方初始阵容和站位：`data/csv/10_初始阵容.csv`
+- 改机制 ID / 机制说明：`data/csv/04_mechanisms.csv`
+- 改商店事件：`data/csv/05_events.csv`
+- 改商店商品、价格、权重、解锁日：`data/csv/06_shop_rewards.csv`
+- 改遗物/祝福：`data/csv/07_relic_blessings.csv`
+- 改行动槽/形状/元素槽：`data/csv/08_action_shapes.csv`
+- 改我方初始阵容和站位：`data/csv/10_initial_roster.csv`
 
 ## 生效方式
 

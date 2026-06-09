@@ -1,12 +1,12 @@
 # AI_START_HERE · 元素背包史当前包
 
-当前工程口径：30 宠 CSV 单源数据 + 重构版浏览器 UI + uiAdapter/API 单入口。
+当前工程口径：127 宠 CSV 单源数据 + 134 行波次随机池规则 + 重构版浏览器 UI + uiAdapter/API 单入口。
 
 ## 不要再做的事
 
 - 不要恢复旧 `web/ui.js / game.js / board.js / battle.js / shop.js`。
 - 不要把规则写进浏览器层。
-- 不要以 127 宠旧测试作为当前验收标准。
+- 不要以旧 30 宠 / 12 波次断言作为当前验收标准。
 - 不要让 UI 直接调用 `src/core/*`。
 
 ## 要遵守的事

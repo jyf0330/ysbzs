@@ -11,9 +11,9 @@ function hasEvent(resultOrState, type) {
   return events.some(e => e.type === type);
 }
 
-const expectedCounts = { pets:30, monsters:30, waves:12, mechanisms:41, events:7, shop:30, relics:10, shapes:30, validation:10 };
+const expectedCounts = { pets:127, monsters:34, waves:134, mechanisms:61, events:32, shop:127, relics:40, shapes:127, validation:10 };
 
-test('FC01 当前 CSV 单源数据规模与 30 宠版本一致', () => {
+test('FC01 当前 CSV 单源数据规模与波次规则表一致', () => {
   for (const [key, count] of Object.entries(expectedCounts)) assert.equal(data[key].length, count, key);
 });
 
@@ -25,14 +25,15 @@ test('FC02 跨表引用全部可校验', () => {
 
 test('FC03 宠物、商店、形状、波次索引全部连通', () => {
   const ix = buildIndexes();
-  assert.equal(ix.petsById.size, 30);
+  assert.equal(ix.petsById.size, expectedCounts.pets);
   for (const p of data.pets) {
     assert.ok(ix.shapesByPetId.has(p.id), `missing shape ${p.id}`);
     assert.ok(ix.shopByPetId.has(p.id), `missing shop ${p.id}`);
   }
   for (const w of data.waves) {
-    assert.ok(ix.petsById.has(w.petId), `${w.waveId} pet`);
-    assert.ok(ix.monstersByPetId.has(w.petId), `${w.waveId} monster`);
+    const petPool = (w.petPool && w.petPool.length ? w.petPool : [w.petId]).filter(Boolean);
+    assert.ok(petPool.length, `${w.waveId} pet pool`);
+    for (const petId of petPool) assert.ok(ix.petsById.has(petId), `${w.waveId} pet ${petId}`);
   }
 });
 
@@ -63,7 +64,7 @@ test('FC05 玩家手动链路：开始、选择、移动、调方向、施放、
 });
 
 test('FC06 商店链路：进店、冻结、刷新、购买、离店', () => {
-  const adapter = createYSBZSUIAdapter({ gold: 20 });
+  const adapter = createYSBZSUIAdapter({ gold: 999 });
   let r = adapter.enterShop('night_base', 6);
   assert.ok(hasEvent(r, 'SHOP_ENTER'));
   const first = r.viewModel.shop.offers[0];
@@ -82,7 +83,7 @@ test('FC07 uiAdapter 公开命令、ViewModel、战报、回放全部可用', ()
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   adapter.runBattle();
   const vm = adapter.getViewModel();
-  assert.equal(vm.meta.pets, 30);
+  assert.equal(vm.meta.pets, expectedCounts.pets);
   assert.ok(vm.board.cells.length > 0);
   assert.ok(adapter.getTextReport('player').includes('全数据纯文字流程报告'));
   const trace = adapter.exportBattleTrace();

@@ -4,7 +4,7 @@ meta:
   principle: 表格一行一个宠物商品入口；宠物基础字段以宠物表为准；商店价格/权重/解锁规则由本 YAML 解释。
 primary_key:
   item_key: 宠物ID
-  foreign_key: 01_宠物主表_好读版.宠物ID
+  foreign_key: 01_pets.宠物ID
   do_not_edit_display_fields:
   - 名称(自动)
   - 元素(自动)

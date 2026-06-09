@@ -1,4 +1,0 @@
-﻿modifier_id,名称,trigger,effect,op,value,consume_on_use,preserve_on_convert,说明
-next_element_x2,下一个元素翻倍,before_next_add_element,multiply_added_element,multiply,2,true,true,该目标下一次被添加元素时，层数翻倍，使用后消耗
-water_catalyst_x2,水汽催化翻倍,before_add_element,multiply_added_element,multiply,2,true,false,消耗目标格1层水，本次元素层数翻倍
-adjacent_fire_bonus,相邻火宠附火+1,before_add_element,modify_added_element,add,1,false,true,示例：相邻火系宠物附火增加

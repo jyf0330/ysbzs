@@ -1,5 +1,0 @@
-﻿规则ID,规则名,默认值,说明
-packet_preserve_source,转换保留来源,true,元素包转换时保留sourceUnitId/sourceActionId
-packet_preserve_modifiers,转换保留modifier,true,除非技能明确preserveModifiers=false，否则转换后modifier继续存在
-packet_split_allowed,元素包允许拆分,true,例如风2只转换1层，剩余1层仍保持原元素
-packet_aggregate_sync,同步聚合值,true,elementPackets变更后同步holder.elements聚合值

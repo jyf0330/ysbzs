@@ -1,3 +1,0 @@
-﻿排序ID,阶段,排序规则,说明
-default_same_timing,same_trigger,"priority desc -> sourceKind(system,hero_domain,board_order,pet,action_slot,element_packet,relic) -> board row/col -> createdAt -> id",同一触发时机稳定排序，保证可预测和可回放
-bag_board_order,board_order,left_to_right_then_top_to_bottom,用于大巴扎式摆放顺序影响结果

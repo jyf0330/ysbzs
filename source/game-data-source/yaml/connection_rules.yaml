@@ -4,7 +4,7 @@ meta:
   status: 策划管理包；用于进入game-data-source前审核。
 primary_keys:
   pet_id:
-    source_sheet: 01_宠物主表_好读版
+    source_sheet: 01_pets
     source_column: 宠物ID
     used_by:
     - 02_怪物模板
@@ -53,8 +53,8 @@ table_roles:
 manual_edit_rules:
   only_edit_yellow_columns: true
   grey_auto_columns: 公式/自动显示列，不作为第二真源。
-  pet_stats_final_source: 02_怪物模板_好读版
-  pet_basic_source: 01_宠物主表_好读版
+  pet_stats_final_source: 02_monster_templates
+  pet_basic_source: 01_pets
   mechanism_source: 04_机制词条库_60条
   shop_reward_source: 06_商店奖励池_好读版
 validation_summary:

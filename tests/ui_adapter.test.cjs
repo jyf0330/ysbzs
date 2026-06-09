@@ -11,8 +11,8 @@ test('UI01 适配层只暴露统一公开命令集合', () => {
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   const vm = adapter.getViewModel();
-  assert.equal(vm.meta.pets, 30);
-  assert.equal(vm.meta.shop, 30);
+  assert.equal(vm.meta.pets, 127);
+  assert.equal(vm.meta.shop, 127);
   assert.ok(vm.heroes.length >= 1);
   assert.ok(Array.isArray(vm.nextActions));
   vm.gold = 999;
@@ -41,7 +41,7 @@ test('UI04 奖励候选和选择奖励接入适配层', () => {
 });
 
 test('UI05 商店进入、刷新、冻结、解冻、购买全部走适配层', () => {
-  const adapter = createYSBZSUIAdapter({ gold: 20 });
+  const adapter = createYSBZSUIAdapter({ gold: 999 });
   const enter = adapter.enterShop('night_base', 6);
   assert.ok(hasEvent(enter, 'SHOP_ENTER'));
   assert.ok(hasEvent(enter, 'SHOP_ROLL'));

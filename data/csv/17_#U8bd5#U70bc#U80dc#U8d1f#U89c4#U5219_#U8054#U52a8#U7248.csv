@@ -1,5 +1,0 @@
-﻿规则ID,配置ID,触发,条件,结果,优先级,说明
-turn1_pass,day7_fire_trial_v1,round_end,"round=1 and killed_count>=2 and killed includes day7_enemy_bee,day7_enemy_dragon",turn1_pass,100,第1回合击杀骑士蜂+精灵龙达标
-direct_win,day7_fire_trial_v1,unit_dead,unit_id=day7_beast_examiner,direct_win,200,10回合内击杀兽群统领直接胜利
-trial_pass,day7_fire_trial_v1,round_end,all_clones_dead and round<=10,trial_pass,150,10回合内清掉复制体，统领撤退
-trial_fail,day7_fire_trial_v1,round_end,round>10 and clones_alive,trial_fail,10,10回合后仍有复制体则失败

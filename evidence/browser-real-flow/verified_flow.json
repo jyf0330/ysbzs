@@ -1,11 +1,11 @@
 {
-  "startedAt": "2026-06-09T15:39:47.185Z",
+  "startedAt": "2026-06-09T15:53:05.574Z",
   "base": "http://127.0.0.1:4196",
   "chromium": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "mode": "check",
   "actions": [
     {
-      "at": "2026-06-09T15:39:49.909Z",
+      "at": "2026-06-09T15:53:12.203Z",
       "action": "点击“备战”",
       "selector": "#prep-open-btn",
       "x": 276,
@@ -13,7 +13,7 @@
       "elementText": "备战"
     },
     {
-      "at": "2026-06-09T15:39:50.610Z",
+      "at": "2026-06-09T15:53:12.870Z",
       "action": "点击备战筛选框",
       "selector": "#prep-filter",
       "x": 598,
@@ -21,7 +21,7 @@
       "elementText": ""
     },
     {
-      "at": "2026-06-09T15:39:51.727Z",
+      "at": "2026-06-09T15:53:13.938Z",
       "action": "拖拽上阵宠物到备战席",
       "selector": ".prep-card[data-prep-active=\"1\"] -> [data-prep-drop-zone=\"bench\"]",
       "x": 788,
@@ -29,7 +29,7 @@
       "elementText": "火\n融焰娘\n◇白银\n召唤\nHP20/20\n攻2\n防0\n盾0\n火 · Lv1 · 待 scale_with_allies\n下阵"
     },
     {
-      "at": "2026-06-09T15:39:52.458Z",
+      "at": "2026-06-09T15:53:14.662Z",
       "action": "拖拽备战宠物回到上阵阵容",
       "selector": ".prep-card[data-prep-active=\"0\"] -> [data-prep-drop-zone=\"active\"]",
       "x": 492,
@@ -37,7 +37,7 @@
       "elementText": "火\n融焰娘\n◇白银\n召唤\nHP20/20\n攻2\n防0\n盾0\n火 · Lv1 · 待 scale_with_allies\n上阵"
     },
     {
-      "at": "2026-06-09T15:39:53.130Z",
+      "at": "2026-06-09T15:53:15.338Z",
       "action": "点击“准备开始”",
       "selector": "#prep-ready-btn",
       "x": 893,
@@ -45,7 +45,7 @@
       "elementText": "准备开始"
     },
     {
-      "at": "2026-06-09T15:39:53.836Z",
+      "at": "2026-06-09T15:53:16.023Z",
       "action": "点击棋盘上的英雄棋子",
       "selector": "#board .cell.hero-cell",
       "x": 524,
@@ -53,7 +53,7 @@
       "elementText": "火绒狐\n10"
     },
     {
-      "at": "2026-06-09T15:39:54.546Z",
+      "at": "2026-06-09T15:53:16.725Z",
       "action": "点击左侧英雄卡片",
       "selector": ".hero-card .hero-select",
       "x": 163,
@@ -61,7 +61,7 @@
       "elementText": "火\n融焰娘\n火\n◇白银\nHP\n20/20\n攻击\n2\n防御\n0\n护盾\n0\nAP\n3/3\n移动\n14"
     },
     {
-      "at": "2026-06-09T15:39:55.246Z",
+      "at": "2026-06-09T15:53:17.405Z",
       "action": "点击棋盘空格移动英雄",
       "selector": "#board .cell[data-r=\"6\"][data-c=\"3\"]",
       "x": 626,
@@ -69,7 +69,7 @@
       "elementText": "·"
     },
     {
-      "at": "2026-06-09T15:39:55.927Z",
+      "at": "2026-06-09T15:53:18.090Z",
       "action": "点击左下行动块",
       "selector": "#slot-list [data-slot=\"0\"]",
       "x": 69,
@@ -77,7 +77,7 @@
       "elementText": "火\n火刺\n融焰娘\n→"
     },
     {
-      "at": "2026-06-09T15:39:56.629Z",
+      "at": "2026-06-09T15:53:18.764Z",
       "action": "点击右侧行动槽 AP 分配 1 点",
       "selector": "#slot-action-panel [data-ap-choice=\"1\"]",
       "x": 1000,
@@ -85,7 +85,7 @@
       "elementText": "1"
     },
     {
-      "at": "2026-06-09T15:39:57.314Z",
+      "at": "2026-06-09T15:53:19.463Z",
       "action": "点击方向箭头：左",
       "selector": "#slot-action-panel [data-slot-dir=\"0\"][data-dir=\"left\"]",
       "x": 1001,
@@ -93,7 +93,7 @@
       "elementText": "←"
     },
     {
-      "at": "2026-06-09T15:39:58.003Z",
+      "at": "2026-06-09T15:53:20.137Z",
       "action": "点击方向箭头：右",
       "selector": "#slot-action-panel [data-slot-dir=\"0\"][data-dir=\"right\"]",
       "x": 1069,
@@ -101,7 +101,7 @@
       "elementText": "→"
     },
     {
-      "at": "2026-06-09T15:39:58.402Z",
+      "at": "2026-06-09T15:53:20.545Z",
       "action": "点击目标格",
       "selector": "#board .cell[data-r=\"6\"][data-c=\"4\"]",
       "x": 677,
@@ -109,7 +109,7 @@
       "elementText": "·"
     },
     {
-      "at": "2026-06-09T15:39:59.093Z",
+      "at": "2026-06-09T15:53:21.204Z",
       "action": "点击“释放”",
       "selector": "#slot-action-panel [data-use=\"0\"]",
       "x": 1184,
@@ -117,7 +117,7 @@
       "elementText": "释放"
     },
     {
-      "at": "2026-06-09T15:39:59.787Z",
+      "at": "2026-06-09T15:53:21.885Z",
       "action": "点击“保存”",
       "selector": "#save-game-btn",
       "x": 865,
@@ -125,7 +125,7 @@
       "elementText": "保存"
     },
     {
-      "at": "2026-06-09T15:40:00.474Z",
+      "at": "2026-06-09T15:53:22.565Z",
       "action": "点击“新开一天”验证读取前状态会重置",
       "selector": "#new-game-btn",
       "x": 726,
@@ -133,7 +133,7 @@
       "elementText": "新开一天"
     },
     {
-      "at": "2026-06-09T15:40:00.878Z",
+      "at": "2026-06-09T15:53:22.968Z",
       "action": "点击“读取”恢复刚才存档",
       "selector": "#load-game-btn",
       "x": 921,
@@ -141,7 +141,7 @@
       "elementText": "读取"
     },
     {
-      "at": "2026-06-09T15:40:01.577Z",
+      "at": "2026-06-09T15:53:23.632Z",
       "action": "点击“结束回合”",
       "selector": "#etb",
       "x": 1045,
@@ -149,7 +149,7 @@
       "elementText": "结束回合"
     },
     {
-      "at": "2026-06-09T15:40:02.258Z",
+      "at": "2026-06-09T15:53:24.289Z",
       "action": "点击“怪物行动”",
       "selector": "#monster-btn",
       "x": 1187,
@@ -157,23 +157,23 @@
       "elementText": "怪物行动"
     },
     {
-      "at": "2026-06-09T15:40:02.926Z",
+      "at": "2026-06-09T15:53:24.947Z",
       "action": "点击“战报”标签",
       "selector": "[data-log-tab=\"report\"]",
       "x": 376,
-      "y": 631,
+      "y": 627,
       "elementText": "战报"
     },
     {
-      "at": "2026-06-09T15:40:03.624Z",
+      "at": "2026-06-09T15:53:25.625Z",
       "action": "点击“回放”标签",
       "selector": "[data-log-tab=\"replay\"]",
       "x": 376,
-      "y": 657,
+      "y": 662,
       "elementText": "回放"
     },
     {
-      "at": "2026-06-09T15:40:04.032Z",
+      "at": "2026-06-09T15:53:26.032Z",
       "action": "回放下一步",
       "selector": "[data-replay-next]",
       "x": 657,
@@ -181,7 +181,7 @@
       "elementText": "下一步"
     },
     {
-      "at": "2026-06-09T15:40:04.328Z",
+      "at": "2026-06-09T15:53:26.332Z",
       "action": "按 Ctrl+` 打开调试面板",
       "selector": "keyboard:Ctrl+Backquote",
       "x": 0,
@@ -189,7 +189,7 @@
       "elementText": ""
     },
     {
-      "at": "2026-06-09T15:40:05.005Z",
+      "at": "2026-06-09T15:53:27.013Z",
       "action": "关闭调试面板",
       "selector": "[data-debug-close]",
       "x": 1247,
@@ -197,7 +197,7 @@
       "elementText": "✕"
     },
     {
-      "at": "2026-06-09T15:40:05.435Z",
+      "at": "2026-06-09T15:53:27.445Z",
       "action": "新开一天准备验证“我方全部出击”",
       "selector": "#new-game-btn",
       "x": 726,
@@ -205,7 +205,7 @@
       "elementText": "新开一天"
     },
     {
-      "at": "2026-06-09T15:40:05.849Z",
+      "at": "2026-06-09T15:53:27.855Z",
       "action": "开始战斗准备“我方全部出击”",
       "selector": "#etb",
       "x": 1045,
@@ -213,143 +213,151 @@
       "elementText": "开始战斗"
     },
     {
-      "at": "2026-06-09T15:40:06.514Z",
+      "at": "2026-06-09T15:53:28.510Z",
       "action": "点击“我方全部出击”",
       "selector": "#all-out-btn",
       "x": 1116,
       "y": 486,
       "elementText": "我方全部出击"
+    },
+    {
+      "at": "2026-06-09T15:53:28.911Z",
+      "action": "切回事件标签查看最新日志",
+      "selector": "[data-log-tab=\"events\"]",
+      "x": 376,
+      "y": 592,
+      "elementText": "事件"
     }
   ],
   "screenshots": [
     {
-      "at": "2026-06-09T15:39:49.447Z",
+      "at": "2026-06-09T15:53:11.771Z",
       "name": "loaded",
       "caption": "页面真实加载；全屏按钮、棋盘、英雄列表、行动槽都已由浏览器渲染。",
       "file": "screenshots/01_loaded.png"
     },
     {
-      "at": "2026-06-09T15:39:50.212Z",
+      "at": "2026-06-09T15:53:12.470Z",
       "name": "prep_overlay_opened",
       "caption": "备战台覆盖主战斗区，表达当前不是开战状态。",
       "file": "screenshots/02_prep_overlay_opened.png"
     },
     {
-      "at": "2026-06-09T15:39:50.953Z",
+      "at": "2026-06-09T15:53:13.206Z",
       "name": "prep_filter_fire",
       "caption": "备战台可以按元素、名称或职能筛选。",
       "file": "screenshots/03_prep_filter_fire.png"
     },
     {
-      "at": "2026-06-09T15:39:52.724Z",
+      "at": "2026-06-09T15:53:14.925Z",
       "name": "prep_drag_restored",
       "caption": "拖拽上阵/下阵走真实浏览器事件并通过 API 更新阵容。",
       "file": "screenshots/04_prep_drag_restored.png"
     },
     {
-      "at": "2026-06-09T15:39:53.411Z",
+      "at": "2026-06-09T15:53:15.616Z",
       "name": "start_battle_player_turn",
       "caption": "准备开始后进入玩家回合，备战入口锁定。",
       "file": "screenshots/05_start_battle_player_turn.png"
     },
     {
-      "at": "2026-06-09T15:39:54.139Z",
+      "at": "2026-06-09T15:53:16.303Z",
       "name": "board_hero_selected",
       "caption": "点击棋盘英雄也能选中单位，允许随后点空格移动。",
       "file": "screenshots/06_board_hero_selected.png"
     },
     {
-      "at": "2026-06-09T15:39:54.840Z",
+      "at": "2026-06-09T15:53:17.003Z",
       "name": "hero_selected",
       "caption": "英雄卡片出现选中态，棋盘可移动格出现提示。",
       "file": "screenshots/07_hero_selected.png"
     },
     {
-      "at": "2026-06-09T15:39:55.525Z",
+      "at": "2026-06-09T15:53:17.689Z",
       "name": "hero_moved_by_cell_click",
       "caption": "英雄通过点棋盘空格移动到新位置。",
       "file": "screenshots/08_hero_moved_by_cell_click.png"
     },
     {
-      "at": "2026-06-09T15:39:56.221Z",
+      "at": "2026-06-09T15:53:18.363Z",
       "name": "slot_selected_armed",
       "caption": "左侧行动块进入瞄准态，右侧详细信息显示方向与施放。",
       "file": "screenshots/09_slot_selected_armed.png"
     },
     {
-      "at": "2026-06-09T15:39:56.908Z",
+      "at": "2026-06-09T15:53:19.062Z",
       "name": "inline_ap_allocation",
       "caption": "行动槽 AP 分配位于右侧当前行动槽面板，不再压在棋盘上。",
       "file": "screenshots/10_inline_ap_allocation.png"
     },
     {
-      "at": "2026-06-09T15:39:57.594Z",
+      "at": "2026-06-09T15:53:19.738Z",
       "name": "slot_direction_left",
       "caption": "方向调整通过按钮进入核心状态。",
       "file": "screenshots/11_slot_direction_left.png"
     },
     {
-      "at": "2026-06-09T15:39:58.694Z",
+      "at": "2026-06-09T15:53:20.805Z",
       "name": "target_cell_selected",
       "caption": "选中目标格，右侧详细信息同步更新。",
       "file": "screenshots/12_target_cell_selected.png"
     },
     {
-      "at": "2026-06-09T15:39:59.373Z",
+      "at": "2026-06-09T15:53:21.481Z",
       "name": "slot_used_event_log",
       "caption": "施放后事件日志出现行动槽事件，棋盘出现元素/预览反馈。",
       "file": "screenshots/13_slot_used_event_log.png"
     },
     {
-      "at": "2026-06-09T15:40:00.073Z",
+      "at": "2026-06-09T15:53:22.166Z",
       "name": "save_game_written",
       "caption": "真实点击保存按钮后，本地存档写入 localStorage。",
       "file": "screenshots/14_save_game_written.png"
     },
     {
-      "at": "2026-06-09T15:40:01.142Z",
+      "at": "2026-06-09T15:53:23.228Z",
       "name": "load_game_restored",
       "caption": "读取按钮恢复保存后的战斗状态、事件流和棋盘反馈。",
       "file": "screenshots/15_load_game_restored.png"
     },
     {
-      "at": "2026-06-09T15:40:01.857Z",
+      "at": "2026-06-09T15:53:23.890Z",
       "name": "player_turn_ended",
       "caption": "结束玩家回合，事件日志记录 PLAYER_TURN_END。",
       "file": "screenshots/16_player_turn_ended.png"
     },
     {
-      "at": "2026-06-09T15:40:02.523Z",
+      "at": "2026-06-09T15:53:24.546Z",
       "name": "monster_action_clicked",
       "caption": "怪物行动通过按钮推进。",
       "file": "screenshots/17_monster_action_clicked.png"
     },
     {
-      "at": "2026-06-09T15:40:03.214Z",
+      "at": "2026-06-09T15:53:25.228Z",
       "name": "battle_report_tab",
       "caption": "战报标签通过前端读取 report 并显示文本。",
       "file": "screenshots/18_battle_report_tab.png"
     },
     {
-      "at": "2026-06-09T15:40:04.301Z",
+      "at": "2026-06-09T15:53:26.311Z",
       "name": "battle_replay_tab",
       "caption": "回放标签显示事件列表、步骤计数和 JSON 导出输入框。",
       "file": "screenshots/19_battle_replay_tab.png"
     },
     {
-      "at": "2026-06-09T15:40:04.606Z",
+      "at": "2026-06-09T15:53:26.615Z",
       "name": "debug_panel_opened",
       "caption": "Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。",
       "file": "screenshots/20_debug_panel_opened.png"
     },
     {
-      "at": "2026-06-09T15:40:06.792Z",
+      "at": "2026-06-09T15:53:29.197Z",
       "name": "all_out_flow",
       "caption": "我方全部出击按左侧行动块顺序走核心行动槽流程。",
       "file": "screenshots/21_all_out_flow.png"
     }
   ],
-  "finishedAt": "2026-06-09T15:40:06.796Z",
+  "finishedAt": "2026-06-09T15:53:29.201Z",
   "finalState": {
     "phase": "player_turn",
     "day": 1,
@@ -368,7 +376,7 @@
       "bench": 0,
       "maxActive": 4
     },
-    "replayEventsInPanel": 26,
+    "replayEventsInPanel": 0,
     "lastEvents": [
       {
         "step": 56,

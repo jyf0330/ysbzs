@@ -10,6 +10,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-09_ui-bottom-log-scroll.md`
 - `tasks/done/2026-06-09_ui-remove-hover-detail.md`
 - `tasks/done/2026-06-09_ui-left-action-zone-detail-panel.md`
 - `tasks/done/2026-06-09_ui-fullscreen-button.md`

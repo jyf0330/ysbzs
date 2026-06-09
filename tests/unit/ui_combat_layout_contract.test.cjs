@@ -39,6 +39,20 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   assert.match(css, /body\[data-phase="init"\]\s+\.shop-phase-panel/, 'shop panel should hide outside legal phases');
 });
 
+test('bottom event log is internally scrollable and follows newest content', () => {
+  const css = read('web/ux-app.css');
+  assert.match(css, /\.bottom-panel\{[^}]*grid-template-rows:minmax\(0,1fr\)/s, 'bottom panel must constrain the log row instead of clipping overflow');
+  assert.match(css, /\.log-view\{[^}]*min-height:0/s, 'log view must allow internal scrolling inside the fixed footer');
+  assert.match(css, /\.log-view\{[^}]*max-height:100%/s, 'log view must stay within the footer height');
+
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const js = read(file);
+    assert.match(js, /function autoScrollLog/, `${file} should centralize bottom-log auto-scroll behavior`);
+    assert.match(js, /log\.scrollTop\s*=\s*log\.scrollHeight/, `${file} should scroll the bottom log to newest content`);
+    assert.match(js, /requestAnimationFrame\(.*autoScrollLog/s, `${file} should scroll after the browser lays out freshly rendered log content`);
+  }
+});
+
 test('combat layout scripts keep info in right panel without hover detail popups', () => {
   const css = read('web/ux-app.css');
   const html = read('web/index.html');

@@ -833,6 +833,7 @@ import { createRenderCache } from './render-cache.js';
     if (!vm) return;
     if (ui.activeLogTab === 'report') {
       $('log').textContent = await report('player');
+      requestAnimationFrame(() => autoScrollLog());
       return;
     }
     if (ui.activeLogTab === 'replay') {
@@ -841,10 +842,19 @@ import { createRenderCache } from './render-cache.js';
     }
     if (ui.activeLogTab === 'debug') {
       $('log').textContent = JSON.stringify({ selected: vm.selected, playerViewState: vm.playerViewState, nextActions: vm.nextActions, meta: vm.meta, stateHash: vm.stateHash }, null, 2);
+      requestAnimationFrame(() => autoScrollLog());
       return;
     }
     const events = vm.events || [];
     $('log').textContent = events.slice(-22).map(e => `${String(e.step || '').padStart(3, '0')} [${e.type}] ${e.text || ''}`).join('\n') || '暂无事件。';
+    requestAnimationFrame(() => autoScrollLog());
+  }
+  function autoScrollLog() {
+    const log = $('log');
+    if (!log) return;
+    log.scrollTop = log.scrollHeight;
+    const replayEvents = $('brp-events');
+    if (replayEvents) replayEvents.scrollTop = replayEvents.scrollHeight;
   }
 
   async function loadReplayEvents() {
@@ -863,6 +873,7 @@ import { createRenderCache } from './render-cache.js';
       <textarea id="replay-json" class="replay-json">${esc(JSON.stringify(events, null, 2))}</textarea>
       <div id="brp-text">${events[step - 1] ? esc(events[step - 1].text || events[step - 1].type) : '选择步骤查看事件文本。'}</div>
     </div>`;
+    requestAnimationFrame(() => autoScrollLog());
   }
   async function copyReplayJson() {
     const text = $('replay-json')?.value || JSON.stringify(ui.replay.events || [], null, 2);

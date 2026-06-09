@@ -1,6 +1,6 @@
 # 真实浏览器玩家链路验证
 
-- 时间：2026-06-09T15:39:47.185Z
+- 时间：2026-06-09T15:53:05.574Z
 - URL：http://127.0.0.1:4196
 - 浏览器：/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 - 验证方式：CDP `Input.dispatchMouseEvent` 发送真实鼠标事件，页面按钮/格子自己触发 DOM click 监听。
@@ -26,14 +26,15 @@
 - 点击“读取”恢复刚才存档：#load-game-btn @ (921, 134)
 - 点击“结束回合”：#etb @ (1045, 445)
 - 点击“怪物行动”：#monster-btn @ (1187, 445)
-- 点击“战报”标签：[data-log-tab="report"] @ (376, 631)
-- 点击“回放”标签：[data-log-tab="replay"] @ (376, 657)
+- 点击“战报”标签：[data-log-tab="report"] @ (376, 627)
+- 点击“回放”标签：[data-log-tab="replay"] @ (376, 662)
 - 回放下一步：[data-replay-next] @ (657, 601)
 - 按 Ctrl+` 打开调试面板：keyboard:Ctrl+Backquote @ (0, 0)
 - 关闭调试面板：[data-debug-close] @ (1247, 400)
 - 新开一天准备验证“我方全部出击”：#new-game-btn @ (726, 137)
 - 开始战斗准备“我方全部出击”：#etb @ (1045, 445)
 - 点击“我方全部出击”：#all-out-btn @ (1116, 486)
+- 切回事件标签查看最新日志：[data-log-tab="events"] @ (376, 592)
 
 ## 截图
 - screenshots/01_loaded.png：页面真实加载；全屏按钮、棋盘、英雄列表、行动槽都已由浏览器渲染。
@@ -81,7 +82,7 @@
     "bench": 0,
     "maxActive": 4
   },
-  "replayEventsInPanel": 26,
+  "replayEventsInPanel": 0,
   "lastEvents": [
     {
       "step": 56,

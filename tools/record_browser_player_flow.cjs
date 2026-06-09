@@ -417,6 +417,8 @@ async function main() {
     const beforeAllOutEvents = await evaluate(cdp, `window.__YSBZS__.lastViewModel.events.length`);
     await realClick(cdp, '#all-out-btn', '点击“我方全部出击”', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.length > ${beforeAllOutEvents} && window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT' || e.type === 'USE_SLOT_BLOCKED')`, 'all-out button did not dispatch slot flow through UI');
+    await realClick(cdp, '[data-log-tab="events"]', '切回事件标签查看最新日志', records);
+    await waitForExpr(cdp, `(() => { const log=document.querySelector('#log'); return log && log.scrollHeight > log.clientHeight && Math.abs((log.scrollTop + log.clientHeight) - log.scrollHeight) <= 2; })()`, 'event log did not stay scrolled to the newest bottom content');
     await screenshot(cdp, 'all_out_flow', '我方全部出击按左侧行动块顺序走核心行动槽流程。', records);
 
     vm = await getVm(cdp);

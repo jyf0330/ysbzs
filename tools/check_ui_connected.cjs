@@ -35,20 +35,25 @@ async function main() {
   try {
     await waitServer(child);
     const html = await fetch(`${base}/`).then(r => r.text());
-    const js = await fetch(`${base}/ux-app.js`).then(r => r.text());
+    const mainScript = html.includes('src="js/main.js"') ? 'js/main.js' : 'ux-app.js';
+    const js = await fetch(`${base}/${mainScript}`).then(r => r.text());
     const css = await fetch(`${base}/ux-app.css`).then(r => r.text());
     assert(html.includes('棋盘战斗交互重构版'), 'new UI shell title missing');
-    assert(html.includes('ux-app.js') && html.includes('ux-app.css'), 'new UI assets not referenced');
+    assert(html.includes(mainScript) && html.includes('ux-app.css'), 'new UI assets not referenced');
     assert(html.includes('id="board"') && html.includes('id="slot-list"') && html.includes('id="hero-list"'), 'new UI stable DOM anchors missing');
     assert(html.includes('id="operation-rail"'), 'board operation context rail missing');
+    assert(html.includes('id="cell-popup"'), 'board cell popup anchor missing');
     assert(!html.includes('original-ui-compat-adapter.js') && !html.includes("loadScript('game.js')") && !html.includes('ui.js'), 'old UI bootstrap must be removed');
     assert(js.includes('/api/action') && js.includes('/api/view') && js.includes('/api/report'), 'new UI must use public API endpoints');
     assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(js), 'web UI must not import core or adapter directly');
     assert(css.includes('.board-grid') && css.includes('.hero-card') && css.includes('.slot-card'), 'new CSS must define rebuilt shell components');
-    assert(js.includes('hero-token') && js.includes('hero-ap'), 'board hero token must expose compact hero identity and AP status');
+    assert(js.includes('unit-token-name') && js.includes('unit-token-vitals') && js.includes('boardUnitVitals'), 'board unit token must use unified name-over-hp-atk layout for both sides');
+    assert(!js.includes('hero-ap'), 'board unit token must not reserve board-cell footer for hero-only AP');
     assert(js.includes('renderOperationRail') && js.includes('op-chip') && js.includes('瞄准'), 'UI must expose current board operation mode and context');
-    assert(css.includes('.unit-token.hero-token') && css.includes('.cell.hero-cell') && css.includes('.unit-token.is-active'), 'board hero token must have distinct hero and selected states');
+    assert(js.includes('statChips') && js.includes('slotPlanText') && js.includes('compactMechanics'), 'left unit cards must expose battle stats, skill shape, and mechanic summary');
+    assert(css.includes('.unit-token-name') && css.includes('.unit-token-vitals') && css.includes('.cell.hero-cell') && css.includes('.unit-token.is-active'), 'board unit token must style unified compact identity and selected states');
     assert(css.includes('.operation-rail') && css.includes('.op-chip.ready') && css.includes('.op-chip.armed'), 'operation rail must have readable mode states');
+    assert(css.includes('.stat-chip') && css.includes('.role-tag') && css.includes('.cell-popup'), 'left unit cards and board popup must have readable information styles');
     for (const old of ['original-ui-compat-adapter.js','ui.js','game.js','battle.js','board.js','shop.js','actions.js','battleTrace.js']) {
       assert(!fs.existsSync(path.join(root, 'web', old)), `old UI file still exists: web/${old}`);
     }

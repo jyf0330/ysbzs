@@ -6,13 +6,13 @@ const os = require('os');
 const root = path.resolve(__dirname, '..');
 const port = Number(process.env.CHECK_DAY7_PORT || 4197);
 const chromePort = Number(process.env.CHECK_DAY7_CHROME_PORT || 9227);
-const headlessFlag = process.env.CHECK_DAY7_HEADLESS_FLAG || '--headless';
+const headlessFlag = process.env.CHECK_DAY7_HEADLESS_FLAG || '--headless=new';
 const chromeWaitAttempts = Number(process.env.CHECK_DAY7_CHROME_WAIT_ATTEMPTS || 300);
 const base = `http://127.0.0.1:${port}`;
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function assert(cond,msg){if(!cond) throw new Error(msg);}
 async function waitHttp(url, pred=(r)=>r.ok, n=100){for(let i=0;i<n;i++){try{const r=await fetch(url); if(pred(r)) return r;}catch(_){ } await sleep(100);} throw new Error(`not ready: ${url}`);}
-function findChromium(){const candidates=[process.env.CHROMIUM_BIN,'/usr/bin/chromium','/usr/bin/chromium-browser','/usr/bin/google-chrome','/usr/bin/google-chrome-stable'].filter(Boolean); return candidates.find(x=>fs.existsSync(x));}
+function findChromium(){const candidates=[process.env.CHROMIUM_BIN,'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','/Applications/Chromium.app/Contents/MacOS/Chromium','/usr/bin/chromium','/usr/bin/chromium-browser','/usr/bin/google-chrome','/usr/bin/google-chrome-stable'].filter(Boolean); return candidates.find(x=>fs.existsSync(x));}
 async function cdpConnect(wsUrl){const ws = new WebSocket(wsUrl); await new Promise((resolve,reject)=>{ws.onopen=resolve; ws.onerror=()=>reject(new Error('CDP websocket failed'));}); let seq=1; const pending=new Map(); ws.onmessage=(ev)=>{const msg=JSON.parse(ev.data); if(msg.id&&pending.has(msg.id)){const {resolve,reject}=pending.get(msg.id); pending.delete(msg.id); if(msg.error) reject(new Error(JSON.stringify(msg.error))); else resolve(msg.result);}}; function send(method, params={}){const id=seq++; ws.send(JSON.stringify({id,method,params})); return new Promise((resolve,reject)=>pending.set(id,{resolve,reject}));} return { ws, send };}
 async function post(type){const r=await fetch(`${base}/api/action`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type})}); const d=await r.json(); if(!r.ok||d.ok===false) throw new Error(d.error||r.status); return d;}
 async function main(){

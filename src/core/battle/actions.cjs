@@ -1,8 +1,28 @@
+// @ts-check
+
+/**
+ * @typedef {{r:number,c:number}} Position
+ * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, ap?:number, actionApSpent?:number, actionSlotsUsed?:Record<string, boolean>, shape?:Record<string, any>, element?:string, position?:Position, displayName?:string}} BattleUnit
+ * @typedef {{phase?:string, selected?:Record<string, any>, actionDirs:Record<string, string>, units?:BattleUnit[]}} BattleState
+ * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean}} ActionSlot
+ */
+
+/**
+ * Build action-slot helpers from battle.cjs dependencies.
+ *
+ * @param {Record<string, any>} deps
+ * @returns {{slotsForUnit:(state:BattleState,unit:BattleUnit)=>ActionSlot[],parseSlotIndex:(slotId:any)=>number,targetCellsForSlot:(state:BattleState,actor:BattleUnit,slot:ActionSlot,selectedCell?:Position|null)=>Position[],targetsAtCells:(state:BattleState,cells:Position[],camp?:string)=>BattleUnit[],unitsAtCells:(state:BattleState,cells:Position[],side?:string)=>BattleUnit[],setActionDirection:(state:BattleState,unitId?:string,slotId?:any,dir?:string)=>boolean,useActionSlot:(state:BattleState,unitId?:string,slotId?:any,targetCell?:Position|null,options?:{ap?:number})=>boolean}}
+ */
 function createActionsModule(deps) {
   const { pushEvent, mech, elementRules, explodeIfEnemyOnFire, clone, getUnit, living, opposingCamp, unitCamp, sideForCamp, actionDirs, dirDelta, inBoard, normalizePosition, getCell, combatTargets, applyElement, applyElementToCell, damageUnit, syncDerivedBoard, startBattle } = deps;
 function unitApMax(unit) { return Math.max(1, Number(unit?.ap || 1)); }
 function unitApSpent(unit) { return Math.max(0, Number(unit?.actionApSpent || 0)); }
 function unitApAvailable(unit) { return Math.max(0, unitApMax(unit) - unitApSpent(unit)); }
+/**
+ * @param {BattleState} state
+ * @param {BattleUnit} unit
+ * @returns {ActionSlot[]}
+ */
 function slotsForUnit(state, unit) {
   const shape = unit.shape || {};
   const elements = (shape.slotElements && shape.slotElements.length ? shape.slotElements : [unit.element, unit.element, unit.element]).slice(0, shape.slotCount || 3);
@@ -55,6 +75,14 @@ function setActionDirection(state, unitId, slotId, dir) {
   return true;
 }
 
+/**
+ * @param {BattleState} state
+ * @param {string=} unitId
+ * @param {any=} slotId
+ * @param {Position|null=} targetCell
+ * @param {{ap?:number}=} options
+ * @returns {boolean}
+ */
 function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   if (state.phase === 'init') startBattle(state);
   if (state.phase !== 'player_turn') { pushEvent(state, 'USE_SLOT_BLOCKED', { text: `当前阶段 ${state.phase} 不能手动施放行动槽。` }); return false; }

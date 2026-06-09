@@ -163,10 +163,23 @@ function petScoreFromIndex(petsById, petId) {
   return toNum(pet.score ?? pet['效果分'], null);
 }
 
-function computeWaveThreat(petPool, spawnCount, qualityWeights, petsById, qualityMultipliers = null) {
+function monsterScoreFromIndex(monstersByPetId, petId) {
+  if (!monstersByPetId || !petId) return null;
+  const monster = typeof monstersByPetId.get === 'function' ? monstersByPetId.get(petId) : monstersByPetId[petId];
+  if (!monster) return null;
+  return toNum(monster.panelScore ?? monster.effectScore ?? monster['面板分'], null);
+}
+
+function scoreForWaveThreat(petsById, monstersByPetId, petId) {
+  const monsterScore = monsterScoreFromIndex(monstersByPetId, petId);
+  return monsterScore !== null ? monsterScore : petScoreFromIndex(petsById, petId);
+}
+
+function computeWaveThreat(petPool, spawnCount, qualityWeights, petsById, qualityMultipliers = null, opts = {}) {
   const ids = uniquePreserveOrder(petPool || []);
   if (!ids.length || !petsById) return null;
-  const scores = ids.map(id => petScoreFromIndex(petsById, id)).filter(n => n !== null);
+  const monstersByPetId = opts.monstersByPetId || null;
+  const scores = ids.map(id => scoreForWaveThreat(petsById, monstersByPetId, id)).filter(n => n !== null);
   if (!scores.length) return null;
   const avgScore = scores.reduce((s, n) => s + n, 0) / scores.length;
   const expectedQuality = qualityExpectedMultiplier(qualityWeights, qualityMultipliers);
@@ -181,7 +194,7 @@ function normalizeWaveRow(row, context = {}) {
   const hasQualityWeights = qualityRaw !== undefined && qualityRaw !== null && String(qualityRaw).trim() !== '';
   const qualityWeights = parseQualityWeights(qualityRaw, null);
   const qualityMultipliers = context.qualityMultiplierMap || context.qualityMultipliers || null;
-  const computedThreat = computeWaveThreat(poolInfo.petIds, poolInfo.count, qualityWeights, context.petsById, qualityMultipliers);
+  const computedThreat = computeWaveThreat(poolInfo.petIds, poolInfo.count, qualityWeights, context.petsById, qualityMultipliers, { monstersByPetId: context.monstersByPetId });
   const manualThreat = toNum(row['本行威胁(当前计算值)'], toNum(row['本行威胁(自动)'], 0));
   const useComputedThreat = row['宠物池-数量'] || hasQualityWeights || poolInfo.isPoolExpression;
 
@@ -211,6 +224,7 @@ function normalizeWaveRow(row, context = {}) {
     threat: useComputedThreat && computedThreat !== null ? computedThreat : manualThreat,
     threatManual: manualThreat,
     threatComputed: computedThreat,
+    threatScoreSource: context.monstersByPetId ? 'monster_panel_score_with_pet_fallback' : 'pet_score',
     designGoal: row['设计目的'],
     failPenalty: row['失败惩罚'],
     rewardImpact: row['奖励影响'],

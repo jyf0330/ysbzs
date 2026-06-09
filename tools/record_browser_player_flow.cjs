@@ -68,7 +68,7 @@ function restoreChromiumPolicy(patches) {
   }
 }
 function findChromium() {
-  return [process.env.CHROMIUM_BIN, '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable']
+  return [process.env.CHROMIUM_BIN, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable']
     .filter(Boolean).find(x => fs.existsSync(x));
 }
 async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
@@ -83,6 +83,26 @@ async function waitHttp(url, pred = r => r.ok, n = 80) {
     await sleep(100);
   }
   throw new Error(`not ready: ${url}`);
+}
+async function getChromeTargets() {
+  try {
+    return await (await fetchWithTimeout(`http://127.0.0.1:${chromePort}/json/list`, {}, 1200)).json();
+  } catch (_) {
+    return [];
+  }
+}
+function findPageTarget(targets) {
+  if (!Array.isArray(targets)) return null;
+  return targets.find(p => p.type === 'page' && p.webSocketDebuggerUrl)
+    || targets.find(p => p.webSocketDebuggerUrl && p.type !== 'background_page' && p.type !== 'service_worker')
+    || null;
+}
+async function createPageTarget() {
+  try {
+    const r = await fetchWithTimeout(`http://127.0.0.1:${chromePort}/json/new?${encodeURIComponent('about:blank')}`, { method: 'PUT' }, 1200);
+    if (r.ok) return await r.json();
+  } catch (_) {}
+  return null;
 }
 async function cdpConnect(wsUrl) {
   const ws = new WebSocket(wsUrl);
@@ -218,24 +238,30 @@ async function main() {
   server.stderr.on('data', d => { serverLog += d.toString(); });
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'ysbzs-ui-chrome-'));
   let chrome, cdp;
+  let chromeLog = '';
   const policyPatch = patchChromiumPolicyForLocalhost();
   if (policyPatch.length) records.chromiumPolicyPatch = `temporarily removed URLBlocklist from ${policyPatch.length} Chromium policy file(s) for strict localhost browser verification`;
   try {
     await waitHttp(`${base}/api/health`);
     chrome = spawn(chromium, [
-      '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-sync', '--disable-extensions', '--no-first-run',
+      '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-sync', '--disable-extensions', '--disable-component-extensions-with-background-pages', '--no-first-run',
       '--window-size=1280,720', `--user-data-dir=${userData}`, `--remote-debugging-port=${chromePort}`, 'about:blank'
     ], { stdio: ['ignore', 'pipe', 'pipe'] });
-    chrome.stdout.resume(); chrome.stderr.resume();
+    chrome.stdout.on('data', d => { chromeLog += d.toString(); });
+    chrome.stderr.on('data', d => { chromeLog += d.toString(); });
     let pageTarget = null;
     for (let i = 0; i < 80; i++) {
-      let pages = [];
-      try { pages = await (await fetchWithTimeout(`http://127.0.0.1:${chromePort}/json/list`, {}, 1200)).json(); } catch (_) {}
-      pageTarget = Array.isArray(pages) ? (pages.find(p => p.type === 'page' && p.webSocketDebuggerUrl) || pages.find(p => p.webSocketDebuggerUrl) || null) : null;
+      const pages = await getChromeTargets();
+      pageTarget = findPageTarget(pages);
       if (pageTarget) break;
+      if (i === 20 || i === 40) pageTarget = await createPageTarget();
+      if (pageTarget?.webSocketDebuggerUrl) break;
       await sleep(100);
     }
-    assert(pageTarget?.webSocketDebuggerUrl, 'chromium did not expose a page target');
+    if (!pageTarget?.webSocketDebuggerUrl) {
+      const pages = await getChromeTargets();
+      throw new Error(`chromium did not expose a page target; targets=${JSON.stringify(pages).slice(0, 1000)}; chromeLog=${chromeLog.slice(-1000)}`);
+    }
     cdp = await cdpConnect(pageTarget.webSocketDebuggerUrl);
     await cdp.send('Runtime.enable');
     await cdp.send('Page.enable');

@@ -1,5 +1,28 @@
+// @ts-check
+
+/**
+ * @typedef {{r:number,c:number}} Position
+ * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, ap?:number, element?:string, position?:Position, actionSlotsUsed?:Record<string, boolean>}} BattleUnit
+ * @typedef {{units?:BattleUnit[], leaders?:{player?:BattleUnit, enemy?:BattleUnit}, board?:{cells?:Array<Record<string, any>>}}} BattleState
+ * @typedef {{from:Position,to:Position,path:Position[],dir:string,attackCells:Position[],willAttack:boolean}} EnemyAttackPlan
+ */
+
+/**
+ * Build tactical planning, monster intent, threat-grid, and auto-plan helpers.
+ *
+ * @param {Record<string, any>} deps
+ * @returns {Record<string, Function>}
+ */
 function createPlanningModule(deps) {
   const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells } = deps;
+/**
+ * @param {BattleState} state
+ * @param {BattleUnit} actor
+ * @param {Record<string, any>} slot
+ * @param {Position} fromPos
+ * @param {string} dir
+ * @returns {Position[]}
+ */
 function targetCellsForSlotFrom(state, actor, slot, fromPos, dir) {
   const savedPos = actor.position;
   const savedDir = slot.direction;
@@ -41,6 +64,12 @@ function pathToward(state, actor, target, maxSteps) {
   return path;
 }
 
+/**
+ * @param {BattleState} state
+ * @param {BattleUnit} enemy
+ * @param {BattleUnit} target
+ * @returns {EnemyAttackPlan}
+ */
 function chooseEnemyAttackPlan(state, enemy, target) {
   const pos = normalizePosition(enemy.position || { r: 0, c: BOARD_COLS - 1 });
   const tp = normalizePosition(target.position || { r: 0, c: 0 });

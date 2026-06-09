@@ -10,7 +10,7 @@
     "report": "node tools/run_full_day.cjs",
     "test": "node tests/run_all_tests.cjs && npm run test:unit && npm run test:ui && npm run test:full && npm run test:ops && npm run test:prediction",
     "check:dom": "node tools/check_no_dom.cjs",
-    "check:all": "npm test && npm run check:architecture && npm run check:csv && npm run check:day7 && npm run check:dom && npm run check:ui-connected",
+    "check:all": "npm test && npm run check:architecture && npm run check:csv && npm run check:day7 && npm run check:dom && npm run check:ui-connected && npm run check:jsdoc",
     "test:full": "node --test tests/full_coverage.test.cjs",
     "test:coverage": "node --test --experimental-test-coverage tests/unit/*.test.cjs tests/full_coverage.test.cjs tests/ui_adapter.test.cjs tests/csv_source.test.cjs tests/day7_fire_trial.test.cjs tests/full_player_operations.test.cjs tests/prediction_authority.test.cjs",
     "ui:demo": "node tools/run_ui_adapter_demo.cjs",
@@ -35,6 +35,7 @@
     "tools:diff": "node tools/inspect_state_diff.cjs",
     "tools:compare-replays": "node tools/compare_replays.cjs",
     "check:all:browser": "npm run check:all && npm run check:browser",
-    "check:architecture": "node tools/audit_singleplayer_architecture.cjs"
+    "check:architecture": "node tools/audit_singleplayer_architecture.cjs",
+    "check:jsdoc": "npx --yes --package typescript tsc --allowJs --checkJs --noEmit --skipLibCheck --strict false --noImplicitAny false --module commonjs --target es2022 src/core/battle/position.cjs src/core/battle/actions.cjs src/core/battle/preview.cjs src/core/battle/planning.cjs"
   }
 }

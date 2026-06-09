@@ -1,6 +1,25 @@
+// @ts-check
+
+/**
+ * @typedef {{r:number,c:number}} Position
+ * @typedef {{id:string, side?:string, camp?:string, position?:Position}} BattleUnit
+ * @typedef {{selected?:Record<string, any>, board?:{cells:Array<Record<string, any>>}}} BattleState
+ */
+
+/**
+ * Build preview, threat projection sync, and cell-detail helpers.
+ *
+ * @param {Record<string, any>} deps
+ * @returns {{buildPreviewGrid:(state:BattleState,opts?:{unitId?:string,slotId?:any,cell?:Position})=>Array<Record<string, any>>,clearPreviewAndThreat:(state:BattleState)=>void,syncDerivedBoard:(state:BattleState)=>any,getCellDetail:(state:BattleState,r:number,c:number)=>Record<string, any>|null}}
+ */
 function createPreviewModule(deps) {
   const { clone, getUnit, living, getCell, ensureBoard, syncBoardUnits, unitCamp, ensureElements, ensureTerrain, parseSlotIndex, slotsForUnit, targetCellsForSlot, buildThreatGrid } = deps;
 
+/**
+ * @param {BattleState} state
+ * @param {{unitId?:string,slotId?:any,cell?:Position}=} opts
+ * @returns {Array<Record<string, any>>}
+ */
 function buildPreviewGrid(state, opts = {}) {
   const unitId = opts.unitId || state.selected?.unitId || living(state, 'hero')[0]?.id;
   const actor = getUnit(state, unitId) || living(state, 'hero')[0];

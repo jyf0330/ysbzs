@@ -1,31 +1,31 @@
 # 真实浏览器玩家链路验证
 
-- 时间：2026-06-09T05:10:54.379Z
+- 时间：2026-06-09T07:18:27.168Z
 - URL：http://127.0.0.1:4196
 - 浏览器：/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 - 验证方式：CDP `Input.dispatchMouseEvent` 发送真实鼠标事件，页面按钮/格子自己触发 DOM click 监听。
 - 禁止事项：本脚本不调用 `/api/action` 改状态，不使用 fallback，不把 API 调用当作玩家操作。
 
 ## 通过的玩家操作
-- 点击“开始战斗”：#etb @ (1037, 360)
-- 点击棋盘上的英雄棋子：#board .cell.hero-cell @ (491, 380)
-- 点击左侧英雄卡片：.hero-card @ (143, 172)
-- 点击棋盘空格移动英雄：#board .cell[data-r="6"][data-c="3"] @ (599, 434)
-- 点击行动槽卡片：[data-slot="0"] @ (1110, 180)
+- 点击“开始战斗”：#etb @ (1045, 360)
+- 点击棋盘上的英雄棋子：#board .cell.hero-cell @ (524, 388)
+- 点击左侧英雄卡片：.hero-card @ (163, 176)
+- 点击棋盘空格移动英雄：#board .cell[data-r="6"][data-c="3"] @ (626, 439)
+- 点击行动槽卡片：[data-slot="0"] @ (1115, 180)
 - 点击 AP 分配 1 点：#ap-modal [data-ap-choice="1"] @ (790, 241)
 - 关闭 AP 分配弹窗：#ap-modal [data-ap-close] @ (901, 241)
 - 点击方向箭头：右：[data-slot-dir="0"][data-dir="right"] @ (1199, 165)
-- 点击目标格：#board .cell[data-r="6"][data-c="4"] @ (653, 434)
+- 点击目标格：#board .cell[data-r="6"][data-c="4"] @ (677, 439)
 - 点击“施放”：[data-use="0"] @ (1184, 194)
-- 点击“保存”：#save-game-btn @ (855, 137)
-- 点击“新开一天”验证读取前状态会重置：#new-game-btn @ (706, 137)
-- 点击“读取”恢复刚才存档：#load-game-btn @ (911, 134)
-- 点击“结束回合”：#etb @ (1037, 360)
-- 点击“怪物行动”：#monster-btn @ (1185, 360)
+- 点击“保存”：#save-game-btn @ (865, 137)
+- 点击“新开一天”验证读取前状态会重置：#new-game-btn @ (726, 137)
+- 点击“读取”恢复刚才存档：#load-game-btn @ (921, 134)
+- 点击“结束回合”：#etb @ (1045, 360)
+- 点击“怪物行动”：#monster-btn @ (1187, 360)
 - 点击“战报”标签：[data-log-tab="report"] @ (68, 631)
 - 点击“回放”标签：[data-log-tab="replay"] @ (68, 657)
 - 回放下一步：[data-replay-next] @ (355, 601)
-- 鼠标悬停机制词条显示工具提示：[data-tip] @ (122, 347)
+- 鼠标悬停机制词条显示工具提示：[data-tip] @ (483, 320)
 - 按 Ctrl+` 打开调试面板：keyboard:Ctrl+Backquote @ (0, 0)
 - 关闭调试面板：[data-debug-close] @ (1247, 400)
 
@@ -50,7 +50,7 @@
 - screenshots/18_debug_panel_opened.png：Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。
 
 ## 视频
-- 未生成：--check mode
+- 未生成：ffmpeg failed
 
 ## 最终状态摘要
 ```json

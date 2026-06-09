@@ -237,8 +237,9 @@ function normalizeSourceTables(sourceTables, options = {}) {
 
   const qualityMultiplierMap = buildQualityMultiplierMap(sourceTables.qualityMultipliers || []);
   const petsByIdForWave = new Map(pets.map(p => [p.id, p]));
+  const monstersByPetIdForWave = new Map(monsters.map(m => [m.petId, m]));
   const waves = (sourceTables.waves || [])
-    .map(row => normalizeWaveRow(row, { petsById: petsByIdForWave, qualityMultiplierMap }))
+    .map(row => normalizeWaveRow(row, { petsById: petsByIdForWave, monstersByPetId: monstersByPetIdForWave, qualityMultiplierMap }))
     .filter(x => x.waveId && x.petId);
 
   const mechanisms = (sourceTables.mechanisms || []).map(row => ({

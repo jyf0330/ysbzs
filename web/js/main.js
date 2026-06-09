@@ -1,4 +1,9 @@
-(() => {
+import * as AppConstants from './constants.js';
+import * as Dom from './dom.js';
+import { ui as sharedUi } from './state.js';
+import * as ApiModule from './api.js';
+import { createRenderCache } from './render-cache.js';
+
   'use strict';
 
   const $ = (id) => document.getElementById(id);
@@ -35,6 +40,8 @@
     replay: { events: [], step: 0 },
     apBySlot: {}
   };
+  Object.assign(ui, sharedUi);
+  const renderCache = createRenderCache();
 
   function esc(v) {
     return String(v ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
@@ -233,9 +240,7 @@
   }
   function hideCellPopup() { const p = $('cell-popup'); if (p) p.classList.add('hidden'); }
 
-  function render() {
-    const vm = ui.vm;
-    if (!vm) return;
+  function renderStaticStatus(vm) {
     document.body.dataset.phase = vm.phase || 'init';
     $('game-shell').dataset.phase = vm.phase || 'init';
     $('phase-label').textContent = phaseText(vm.phase);
@@ -246,7 +251,32 @@
     const pl = vm.leaders?.player, en = vm.leaders?.enemy;
     $('p-castle-txt').textContent = pl ? `${pl.hp}/${pl.maxHp}` : '-/-';
     $('e-castle-txt').textContent = en ? `${en.hp}/${en.maxHp}` : '-/-';
-    renderHeroes(); renderRoster(); renderBoard(); renderCellDetail(); renderSlots(); renderControls(); renderOperationRail(); renderRewards(); renderShop(); renderTrial(); renderLog(); updateDebugPanel(); maybeBanner();
+  }
+
+  function render() {
+    const vm = ui.vm;
+    if (!vm) return;
+    renderStaticStatus(vm);
+    if (renderCache.shouldRender('heroes', { heroes: vm.heroes, selectedUnitId: ui.selectedUnitId })) renderHeroes();
+    if (renderCache.shouldRender('roster', vm.inventory)) renderRoster();
+    if (renderCache.shouldRender('board', {
+      board: vm.board,
+      previewGrid: vm.previewGrid,
+      threatGrid: vm.threatGrid,
+      selectedCell: ui.selectedCell || vm.selected?.cell,
+      selectedUnitId: ui.selectedUnitId,
+      slotArmed: ui.slotArmed
+    })) renderBoard();
+    if (renderCache.shouldRender('cellDetail', { selectedCell: ui.selectedCell || vm.selected?.cell, detail: ui.cellDetail, board: vm.board })) renderCellDetail();
+    if (renderCache.shouldRender('slots', { heroes: vm.heroes, phase: vm.phase, selectedSlotGlobal: ui.selectedSlotGlobal, selectedSlot: ui.selectedSlot, slotArmed: ui.slotArmed, busy: ui.busy, apBySlot: ui.apBySlot })) renderSlots();
+    renderControls();
+    renderOperationRail();
+    if (renderCache.shouldRender('rewards', { rewards: vm.rewards, busy: ui.busy })) renderRewards();
+    if (renderCache.shouldRender('shop', { shop: vm.shop, gold: vm.gold, phase: vm.phase, busy: ui.busy })) renderShop();
+    if (renderCache.shouldRender('trial', vm.day7Trial)) renderTrial();
+    if (renderCache.shouldRender('log', { tab: ui.activeLogTab, events: vm.events, selected: vm.selected, meta: vm.meta, replay: ui.replay })) renderLog();
+    updateDebugPanel();
+    maybeBanner();
   }
   function maybeBanner() {
     const phase = ui.vm?.phase;
@@ -785,4 +815,3 @@
 
   bind();
   loadView().catch(err => toast(err.message || String(err), true));
-})();

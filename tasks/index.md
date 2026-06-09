@@ -4,12 +4,15 @@
 
 - 无
 
+
+
 ## PAUSED
 
 - 无
 
 ## DONE
 
+- `tasks/done/2026-06-10_ui-hide-unit-native-title.md`
 - `tasks/done/2026-06-10_ui-hide-all-toasts.md`
 - `tasks/done/2026-06-09_ui-action-block-popover-detail-space.md`
 - `tasks/done/2026-06-09_ui-bottom-log-scroll.md`

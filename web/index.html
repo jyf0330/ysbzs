@@ -45,6 +45,7 @@
           <h2>备战</h2>
           <span id="roster-count">0/4</span>
         </div>
+        <button id="prep-open-btn" class="prep-open-btn ghost-btn" type="button">打开备战台</button>
         <div id="roster-list" class="roster-list" aria-label="阵容管理列表"></div>
       </aside>
 
@@ -68,6 +69,29 @@
         <div id="cell-popup" class="cell-popup hidden"></div>
         </div>
         <div id="operation-rail" class="operation-rail" aria-label="当前棋盘操作状态"></div>
+        <div id="prep-overlay" class="prep-overlay hidden" aria-hidden="true">
+          <div class="prep-head">
+            <div>
+              <h2>备战台</h2>
+              <span id="prep-status">调整阵容后准备开始。</span>
+            </div>
+            <button id="prep-close-btn" class="ghost-btn" type="button">返回棋盘</button>
+          </div>
+          <div class="prep-tools">
+            <input id="prep-filter" class="prep-filter" type="search" placeholder="筛选名称 / 元素 / 职能" autocomplete="off" />
+            <button id="prep-ready-btn" class="primary-btn" type="button">准备开始</button>
+          </div>
+          <div class="prep-columns">
+            <section class="prep-column" data-prep-drop-zone="active">
+              <h3>上阵阵容</h3>
+              <div id="prep-active-list" class="prep-card-list"></div>
+            </section>
+            <section class="prep-column" data-prep-drop-zone="bench">
+              <h3>背包 / 备战席</h3>
+              <div id="prep-bench-list" class="prep-card-list"></div>
+            </section>
+          </div>
+        </div>
         <div class="legend-row">
           <span><i class="dot selected"></i>选中</span>
           <span><i class="dot move"></i>可移动</span>
@@ -91,6 +115,7 @@
           <button id="monster-btn" class="secondary-btn" type="button">怪物行动</button>
           <button id="exa" class="secondary-btn" type="button">自动战斗</button>
           <button id="full-day-btn" class="secondary-btn" type="button">一键完整流程</button>
+          <button id="all-out-btn" class="secondary-btn" type="button">我方全部出击</button>
         </div>
 
         <div class="panel-head compact">
@@ -98,6 +123,7 @@
         </div>
         <div id="trial-card" class="trial-card empty">未进入特殊试炼。</div>
 
+        <div id="shop-phase-panel" class="shop-phase-panel">
         <div class="panel-head compact">
           <h2>商店 / 奖励</h2>
         </div>
@@ -109,6 +135,7 @@
         </div>
         <div id="reward-list" class="reward-list"></div>
         <div id="shop-list" class="shop-list"></div>
+        </div>
       </aside>
     </main>
 

@@ -1,4 +1,18 @@
 (() => {
+  const sharedUi = {};
+  function stableKey(value) {
+    if (value === null || value === undefined) return String(value);
+    if (typeof value !== 'object') return String(value);
+    try { return JSON.stringify(value); } catch (_) { return Object.prototype.toString.call(value); }
+  }
+  function createRenderCache() {
+    const keys = new Map();
+    return {
+      shouldRender(name, value) { const next = stableKey(value); if (keys.get(name) === next) return false; keys.set(name, next); return true; },
+      invalidate(name = null) { if (name) keys.delete(name); else keys.clear(); }
+    };
+  }
+
   'use strict';
 
   const $ = (id) => document.getElementById(id);
@@ -18,6 +32,8 @@
     preview: '行动预览：根据当前选中英雄、行动槽、方向和目标格计算。',
     threat: '敌方威胁：怪物下一步可能攻击或移动影响范围。'
   };
+  const TOOLTIP_DELAY_MS = 650;
+  const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT']);
 
   const ui = {
     vm: null,
@@ -33,8 +49,15 @@
     nextCommandNo: 1,
     cellDetail: null,
     replay: { events: [], step: 0 },
-    apBySlot: {}
+    apBySlot: {},
+    prepOpen: false,
+    prepFilter: '',
+    draggedRosterId: null,
+    manualAutoLock: false,
+    tooltipTimer: null
   };
+  Object.assign(ui, sharedUi);
+  const renderCache = createRenderCache();
 
   function esc(v) {
     return String(v ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
@@ -141,14 +164,21 @@
     }, payload);
   }
 
-  async function runCommand(type, payload = {}) {
+  async function runCommand(type, payload = {}, options = {}) {
     if (ui.busy) return;
+    if (!options.autoFlow && MANUAL_LOCK_TYPES.has(type)) ui.manualAutoLock = true;
+    if (type === 'NEW_GAME') {
+      ui.manualAutoLock = false;
+      ui.prepOpen = false;
+      ui.prepFilter = '';
+    }
     ui.busy = true;
     setBusy(true);
     try {
       const data = await api('/api/action', makeCommand(type, payload));
       ui.vm = data.viewModel || ui.vm;
-      if (data.events && data.events.length) toast(data.events[data.events.length - 1].text || data.events[data.events.length - 1].type);
+      if (type === 'START_BATTLE') ui.prepOpen = false;
+      if (!options.suppressToast && data.events && data.events.length) toast(data.events[data.events.length - 1].text || data.events[data.events.length - 1].type);
       normalizeSelection();
       render();
       return data;
@@ -159,7 +189,10 @@
     } finally {
       ui.busy = false;
       setBusy(false);
-      if (ui.vm) renderControls();
+      if (ui.vm) {
+        renderControls();
+        renderPrepOverlay();
+      }
     }
   }
   async function saveGame() {
@@ -233,9 +266,7 @@
   }
   function hideCellPopup() { const p = $('cell-popup'); if (p) p.classList.add('hidden'); }
 
-  function render() {
-    const vm = ui.vm;
-    if (!vm) return;
+  function renderStaticStatus(vm) {
     document.body.dataset.phase = vm.phase || 'init';
     $('game-shell').dataset.phase = vm.phase || 'init';
     $('phase-label').textContent = phaseText(vm.phase);
@@ -246,7 +277,48 @@
     const pl = vm.leaders?.player, en = vm.leaders?.enemy;
     $('p-castle-txt').textContent = pl ? `${pl.hp}/${pl.maxHp}` : '-/-';
     $('e-castle-txt').textContent = en ? `${en.hp}/${en.maxHp}` : '-/-';
-    renderHeroes(); renderRoster(); renderBoard(); renderCellDetail(); renderSlots(); renderControls(); renderOperationRail(); renderRewards(); renderShop(); renderTrial(); renderLog(); updateDebugPanel(); maybeBanner();
+  }
+
+  function render() {
+    const vm = ui.vm;
+    if (!vm) return;
+    renderStaticStatus(vm);
+    if (renderCache.shouldRender('heroes', {
+      heroes: vm.heroes,
+      selectedUnitId: ui.selectedUnitId,
+      selectedSlotGlobal: ui.selectedSlotGlobal,
+      slotArmed: ui.slotArmed,
+      busy: ui.busy
+    })) renderHeroes();
+    if (renderCache.shouldRender('roster', { inventory: vm.inventory, prepFilter: ui.prepFilter, prepOpen: ui.prepOpen, phase: vm.phase, busy: ui.busy })) renderRoster();
+    if (renderCache.shouldRender('board', {
+      board: vm.board,
+      previewGrid: vm.previewGrid,
+      threatGrid: vm.threatGrid,
+      selectedCell: ui.selectedCell || vm.selected?.cell,
+      selectedUnitId: ui.selectedUnitId,
+      slotArmed: ui.slotArmed
+    })) renderBoard();
+    if (renderCache.shouldRender('cellDetail', {
+      selectedCell: ui.selectedCell || vm.selected?.cell,
+      selectedUnitId: ui.selectedUnitId,
+      selectedSlotGlobal: ui.selectedSlotGlobal,
+      selectedSlot: ui.selectedSlot,
+      slotArmed: ui.slotArmed,
+      apBySlot: ui.apBySlot,
+      detail: ui.cellDetail,
+      board: vm.board
+    })) renderCellDetail();
+    if (renderCache.shouldRender('slots', { heroes: vm.heroes, phase: vm.phase, selectedSlotGlobal: ui.selectedSlotGlobal, selectedSlot: ui.selectedSlot, slotArmed: ui.slotArmed, busy: ui.busy, apBySlot: ui.apBySlot })) renderSlots();
+    renderControls();
+    renderPrepOverlay();
+    renderOperationRail();
+    if (renderCache.shouldRender('rewards', { rewards: vm.rewards, busy: ui.busy })) renderRewards();
+    if (renderCache.shouldRender('shop', { shop: vm.shop, gold: vm.gold, phase: vm.phase, busy: ui.busy })) renderShop();
+    if (renderCache.shouldRender('trial', vm.day7Trial)) renderTrial();
+    if (renderCache.shouldRender('log', { tab: ui.activeLogTab, events: vm.events, selected: vm.selected, meta: vm.meta, replay: ui.replay })) renderLog();
+    updateDebugPanel();
+    maybeBanner();
   }
   function maybeBanner() {
     const phase = ui.vm?.phase;
@@ -323,6 +395,71 @@
     const activeHtml = (inv.active || []).map(x => card(x, true)).join('') || '<div class="detail-card empty">上场位为空。</div>';
     const benchHtml = (inv.bench || []).map(x => card(x, false)).join('') || '<div class="detail-card empty">备战席为空。</div>';
     $('roster-list').innerHTML = `<div class="roster-section-title">上场</div>${activeHtml}<div class="roster-section-title">备战</div>${benchHtml}`;
+  }
+  function prepItemText(item = {}) {
+    return [
+      item.name,
+      item.petId,
+      item.element,
+      item.role,
+      item.quality,
+      item.level ? `lv${item.level}` : ''
+    ].filter(Boolean).join(' ').toLowerCase();
+  }
+  function prepMatchesFilter(item) {
+    const text = ui.prepFilter.trim().toLowerCase();
+    if (!text) return true;
+    return prepItemText(item).includes(text);
+  }
+  function renderPrepOverlay() {
+    const overlay = $('prep-overlay');
+    if (!overlay || !ui.vm) return;
+    const phase = ui.vm.phase || 'init';
+    if (phase !== 'init') ui.prepOpen = false;
+    overlay.classList.toggle('hidden', !ui.prepOpen);
+    overlay.setAttribute('aria-hidden', ui.prepOpen ? 'false' : 'true');
+    const openBtn = $('prep-open-btn');
+    if (openBtn) {
+      openBtn.disabled = ui.busy || phase !== 'init';
+      openBtn.textContent = phase === 'init' ? '打开备战台' : '备战已锁定';
+    }
+    const filter = $('prep-filter');
+    if (filter && filter.value !== ui.prepFilter) filter.value = ui.prepFilter;
+    const inv = ui.vm.inventory || { active: [], bench: [], activeCount: 0, maxActive: 4 };
+    const active = (inv.active || []).filter(prepMatchesFilter);
+    const bench = (inv.bench || []).filter(prepMatchesFilter);
+    const countText = `${inv.activeCount || inv.active?.length || 0}/${inv.maxActive || 4}`;
+    if ($('prep-status')) $('prep-status').textContent = `当前上阵 ${countText}。拖到另一列即可上阵或下阵。`;
+    if ($('prep-active-list')) $('prep-active-list').innerHTML = active.map(x => prepCard(x, true)).join('') || '<div class="prep-empty">没有匹配的上阵宠物。</div>';
+    if ($('prep-bench-list')) $('prep-bench-list').innerHTML = bench.map(x => prepCard(x, false)).join('') || '<div class="prep-empty">没有匹配的背包宠物。</div>';
+    if ($('prep-ready-btn')) $('prep-ready-btn').disabled = ui.busy || phase !== 'init';
+  }
+  function prepCard(item, active) {
+    const id = item.instanceId || item.petId;
+    const unsupported = (item.mechanicStatus || []).filter(x => x.id !== 'none' && x.status !== 'implemented');
+    const locked = !active && (item.canActivate === false || unsupported.length > 0);
+    return `<article class="prep-card${active ? ' active' : ' bench'}${locked ? ' locked' : ''}" draggable="${ui.busy ? 'false' : 'true'}" data-prep-roster-id="${esc(id)}" data-prep-active="${active ? '1' : '0'}">
+      <div class="avatar ${clsForEl(item.element)}">${esc(EL_ICON[item.element] || '灵')}</div>
+      <div class="prep-card-main">
+        <strong>${esc(item.name || item.petId)}${qualityTag(item.quality)}<span class="role-tag">${esc(item.role || item.element || '-')}</span></strong>
+        <div class="stat-row roster-stats">${statChips(item)}</div>
+        <span>${esc(item.element || '-')} · Lv${esc(item.level || 1)} · ${esc(compactMechanics(item.mechanicStatus || []))}</span>
+      </div>
+      <button class="mini-btn" data-prep-toggle="${esc(id)}" type="button"${ui.busy || locked ? ' disabled' : ''}>${active ? '下阵' : '上阵'}</button>
+    </article>`;
+  }
+  async function dropPrepRoster(instanceId, zone) {
+    if (!instanceId || !zone || !ui.vm) return;
+    const inv = ui.vm.inventory || {};
+    const item = [...(inv.active || []), ...(inv.bench || [])].find(x => (x.instanceId || x.petId) === instanceId);
+    if (!item) return;
+    const currentlyActive = item.active !== false;
+    const wantActive = zone === 'active';
+    if (currentlyActive === wantActive) {
+      toast(wantActive ? '已经在上阵阵容。' : '已经在备战席。');
+      return;
+    }
+    await runCommand('TOGGLE_UNIT_ACTIVE', { instanceId });
   }
 
   function renderBoard() {
@@ -494,10 +631,15 @@
     const h = info.hero;
     const locked = ui.vm.phase !== 'player_turn' || !s.canUse || ui.busy;
     const apKey = `${h.id}:${info.localIndex}`;
-    const ap = ui.apBySlot[apKey] || 1;
+    const maxAp = Math.max(1, Number(h.availableAp ?? s.availableAp ?? h.ap ?? 1));
+    const ap = Math.max(1, Math.min(maxAp, Number(ui.apBySlot[apKey] || 1)));
+    ui.apBySlot[apKey] = ap;
     return `<div class="detail-unit"><span class="${clsForEl(s.element)}">${esc(s.element || '-')}</span> <strong>${esc(s.label || `行动块${info.localIndex + 1}`)}</strong><small>${esc(h.name)}</small></div>
       <div class="detail-plan">类型：主动行动块 · 元素：${esc(s.element || '-')} · 层数：${esc(s.layers ?? '-')}</div>
       <div class="detail-plan">攻击形状：${esc(s.shapeName || s.shapeId || '-')} · 当前方向：${esc(DIR[s.direction] || s.direction || '→')} · AP ${esc(ap)}</div>
+      <div class="detail-ap-row" aria-label="AP 分配">
+        ${Array.from({ length: maxAp }, (_, i) => i + 1).map(n => `<button class="ap-choice${n === ap ? ' sel' : ''}" data-ap-choice="${n}" type="button"${locked ? ' disabled' : ''}>${n}</button>`).join('')}
+      </div>
       <div class="detail-actions" aria-label="行动块方向与释放">
         ${['up','left','right','down'].map(d => `<button class="as-dir-btn detail-dir" data-slot-dir="${info.globalIndex}" data-dir="${d}" type="button"${locked ? ' disabled' : ''}>${DIR[d]}</button>`).join('')}
         <button class="use-btn detail-use" data-use="${info.globalIndex}" type="button"${locked || s.used ? ' disabled' : ''}>施放</button>
@@ -515,11 +657,11 @@
     const info = slotsFlat()[globalIndex]; if (!info) return;
     document.body.dataset.lastSlotClick = String(globalIndex);
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = true;
+    renderCache.invalidate('heroes');
+    renderCache.invalidate('cellDetail');
     renderHeroes();
     renderCellDetail();
-    openApModal(info);
     await runCommand('SELECT_SLOT', { slotId: info.localIndex, unitId: info.hero.id });
-    openApModal(info);
   }
   async function setSlotDir(globalIndex, dir) {
     const info = slotsFlat()[globalIndex]; if (!info) return;
@@ -548,7 +690,9 @@
     if (!info) return;
     const key = `${info.hero.id}:${info.localIndex}`;
     ui.apBySlot[key] = Math.max(1, Number(n || 1));
-    openApModal(info);
+    renderCache.invalidate('cellDetail');
+    renderCellDetail();
+    renderOperationRail();
   }
 
   function renderControls() {
@@ -557,7 +701,14 @@
     $('etb').disabled = !(phase === 'init' || phase === 'player_turn') || ui.busy;
     $('monster-btn').disabled = !(phase === 'monster_turn' || phase === 'round_end') || ui.busy;
     $('exa').disabled = ui.busy || phase === 'shop' || phase === 'day_end';
-    $('full-day-btn').disabled = ui.busy || !['init','battle_end','day_end'].includes(phase);
+    const fullDayDisabled = ui.busy || ui.manualAutoLock || !['init','battle_end','day_end'].includes(phase);
+    $('full-day-btn').disabled = fullDayDisabled;
+    $('full-day-btn').title = ui.manualAutoLock ? '已手动移动或施放，本场完整自动流程已锁定。' : '';
+    if ($('all-out-btn')) {
+      const hasUsableSlot = slotsFlat().some(x => !x.slot.used && x.slot.canUse !== false);
+      $('all-out-btn').disabled = ui.busy || phase !== 'player_turn' || !hasUsableSlot;
+      $('all-out-btn').title = phase === 'player_turn' ? '按左侧行动块顺序释放，不移动、不重新摆位。' : '进入玩家回合后可用。';
+    }
     $('shop-btn').disabled = ui.busy || phase !== 'battle_end';
     $('day7-btn').disabled = ui.busy;
     $('new-game-btn').disabled = ui.busy;
@@ -608,6 +759,39 @@
     if (phase === 'battle_end') return '战斗结束，可以生成奖励或进入商店。';
     if (phase === 'shop') return '购买、冻结、刷新商品，然后离开商店。';
     return '可使用右侧按钮继续流程。';
+  }
+  async function runAllOut() {
+    if (ui.vm?.phase !== 'player_turn') {
+      toast('我方全部出击只能在玩家回合使用。', true);
+      return;
+    }
+    const order = slotsFlat()
+      .filter(x => !x.slot.used && x.slot.canUse !== false)
+      .map(x => ({ unitId: x.hero.id, slotId: x.localIndex }));
+    if (!order.length) {
+      toast('没有可释放的行动块。', true);
+      return;
+    }
+    for (const item of order) {
+      if (ui.vm?.phase !== 'player_turn') break;
+      const info = slotsFlat().find(x => x.hero.id === item.unitId && x.localIndex === item.slotId);
+      if (!info || info.slot.used || info.slot.canUse === false) continue;
+      ui.selectedUnitId = info.hero.id;
+      ui.selectedSlotGlobal = info.globalIndex;
+      ui.selectedSlot = info.localIndex;
+      ui.slotArmed = true;
+      await runCommand('SELECT_SLOT', { slotId: info.localIndex, unitId: info.hero.id }, { autoFlow: true, suppressToast: true });
+      await runCommand('USE_SLOT', {
+        unitId: info.hero.id,
+        slotId: info.localIndex,
+        cell: null,
+        ap: ui.apBySlot[`${info.hero.id}:${info.localIndex}`] || 1
+      }, { autoFlow: true, suppressToast: true });
+    }
+    ui.slotArmed = false;
+    renderCache.invalidate();
+    render();
+    toast(`我方全部出击：尝试释放 ${order.length} 个行动块。`);
   }
 
   function renderRewards() {
@@ -740,7 +924,15 @@
     tip.style.left = `${Math.min(window.innerWidth - 300, x + 12)}px`;
     tip.style.top = `${Math.min(window.innerHeight - 120, y + 12)}px`;
   }
-  function hideTooltip() { if ($('tooltip')) $('tooltip').classList.add('hidden'); }
+  function scheduleTooltip(text, x, y) {
+    clearTimeout(ui.tooltipTimer);
+    ui.tooltipTimer = setTimeout(() => showTooltip(text, x, y), TOOLTIP_DELAY_MS);
+  }
+  function hideTooltip() {
+    clearTimeout(ui.tooltipTimer);
+    ui.tooltipTimer = null;
+    if ($('tooltip')) $('tooltip').classList.add('hidden');
+  }
 
   function bind() {
     $('new-game-btn').addEventListener('click', () => runCommand('NEW_GAME', { day: 1, period: '上午', gold: 8 }));
@@ -749,8 +941,21 @@
     $('load-game-btn')?.addEventListener('click', () => loadGameFromStorage());
     $('etb').addEventListener('click', () => runCommand(ui.vm?.phase === 'init' ? 'START_BATTLE' : 'END_PLAYER_TURN'));
     $('monster-btn').addEventListener('click', () => runCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'));
-    $('exa').addEventListener('click', () => runCommand('RUN_BATTLE'));
-    $('full-day-btn').addEventListener('click', () => runCommand('RUN_FULL_DAY'));
+    $('exa').addEventListener('click', () => runCommand('RUN_BATTLE', {}, { autoFlow: true }));
+    $('full-day-btn').addEventListener('click', () => {
+      if (ui.manualAutoLock) { toast('已手动操作，本场完整自动流程已锁定。', true); return; }
+      runCommand('RUN_FULL_DAY', {}, { autoFlow: true });
+    });
+    $('all-out-btn')?.addEventListener('click', () => runAllOut());
+    $('prep-open-btn')?.addEventListener('click', () => { ui.prepOpen = true; renderPrepOverlay(); });
+    $('prep-close-btn')?.addEventListener('click', () => { ui.prepOpen = false; renderPrepOverlay(); });
+    $('prep-ready-btn')?.addEventListener('click', () => runCommand('START_BATTLE'));
+    $('prep-filter')?.addEventListener('input', ev => {
+      ui.prepFilter = ev.target.value || '';
+      renderCache.invalidate('roster');
+      renderRoster();
+      renderPrepOverlay();
+    });
     $('reward-btn').addEventListener('click', () => runCommand('REWARD_OPTIONS', { poolId: 'reward_pT1', count: 3 }));
     $('shop-btn').addEventListener('click', () => runCommand('ENTER_SHOP', { poolId: 'night_base', slots: 6 }));
     $('roll-shop-btn').addEventListener('click', () => runCommand('ROLL_SHOP', { slots: 6 }));
@@ -766,6 +971,41 @@
       if (toggle) { runCommand('TOGGLE_UNIT_ACTIVE', { instanceId: toggle.dataset.rosterToggle }); return; }
       const sell = ev.target.closest('[data-roster-sell]');
       if (sell) runCommand('SELL_UNIT', { instanceId: sell.dataset.rosterSell });
+    });
+    $('prep-overlay')?.addEventListener('click', ev => {
+      const toggle = ev.target.closest('[data-prep-toggle]');
+      if (toggle) { runCommand('TOGGLE_UNIT_ACTIVE', { instanceId: toggle.dataset.prepToggle }); return; }
+    });
+    $('prep-overlay')?.addEventListener('dragstart', ev => {
+      const card = ev.target.closest('[data-prep-roster-id]');
+      if (!card) return;
+      ui.draggedRosterId = card.dataset.prepRosterId;
+      ev.dataTransfer?.setData('text/plain', ui.draggedRosterId);
+      ev.dataTransfer?.setData('application/x-ysbzs-roster', ui.draggedRosterId);
+      card.classList.add('dragging');
+    });
+    $('prep-overlay')?.addEventListener('dragend', ev => {
+      ev.target.closest('[data-prep-roster-id]')?.classList.remove('dragging');
+      qsa('[data-prep-drop-zone]').forEach(x => x.classList.remove('drop-hover'));
+      ui.draggedRosterId = null;
+    });
+    $('prep-overlay')?.addEventListener('dragover', ev => {
+      const zone = ev.target.closest('[data-prep-drop-zone]');
+      if (!zone) return;
+      ev.preventDefault();
+      zone.classList.add('drop-hover');
+    });
+    $('prep-overlay')?.addEventListener('dragleave', ev => {
+      const zone = ev.target.closest('[data-prep-drop-zone]');
+      if (zone && !zone.contains(ev.relatedTarget)) zone.classList.remove('drop-hover');
+    });
+    $('prep-overlay')?.addEventListener('drop', ev => {
+      const zone = ev.target.closest('[data-prep-drop-zone]');
+      if (!zone) return;
+      ev.preventDefault();
+      zone.classList.remove('drop-hover');
+      const id = ev.dataTransfer?.getData('application/x-ysbzs-roster') || ev.dataTransfer?.getData('text/plain') || ui.draggedRosterId;
+      dropPrepRoster(id, zone.dataset.prepDropZone);
     });
     $('board').addEventListener('click', ev => {
       const btn = ev.target.closest('[data-r][data-c]');
@@ -784,6 +1024,8 @@
       if (slot) selectSlot(Number(slot.dataset.slot));
     });
     $('cell-detail').addEventListener('click', ev => {
+      const apChoice = ev.target.closest('[data-ap-choice]');
+      if (apChoice) { chooseAp(apChoice.dataset.apChoice); return; }
       const dirBtn = ev.target.closest('[data-slot-dir]');
       if (dirBtn) { setSlotDir(Number(dirBtn.dataset.slotDir), dirBtn.dataset.dir); return; }
       const useBtn = ev.target.closest('[data-use]');
@@ -823,7 +1065,7 @@
     document.addEventListener('mousemove', ev => {
       const el = ev.target.closest('[data-tip]');
       const key = el ? el.dataset.tip : '';
-      if (key && TIP_TEXT[key]) showTooltip(TIP_TEXT[key], ev.clientX, ev.clientY);
+      if (key && TIP_TEXT[key]) scheduleTooltip(TIP_TEXT[key], ev.clientX, ev.clientY);
       else hideTooltip();
     });
     document.addEventListener('mouseleave', hideTooltip);
@@ -841,4 +1083,5 @@
 
   bind();
   loadView().catch(err => toast(err.message || String(err), true));
+
 })();

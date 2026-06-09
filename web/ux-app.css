@@ -130,3 +130,34 @@ body[data-phase="round_end"] .reward-list,
 body[data-phase="player_turn"] .shop-list,
 body[data-phase="monster_turn"] .shop-list,
 body[data-phase="round_end"] .shop-list{display:none}
+
+/* combat-layout-full: prep overlay, inline AP, gated shop phase */
+.prep-open-btn{width:100%;min-height:30px;margin:0 0 6px}
+.prep-overlay{position:absolute;inset:66px 10px 38px 10px;z-index:70;display:grid;grid-template-rows:auto auto 1fr;gap:8px;padding:12px;background:rgba(251,241,217,.97);border:2px solid #8a6944;box-shadow:0 14px 34px rgba(75,47,29,.32),inset 0 0 0 2px rgba(255,248,224,.78)}
+.prep-overlay.hidden{display:none}
+.prep-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px dashed rgba(124,89,53,.4);padding-bottom:7px}
+.prep-head h2{margin:0;color:#4b2f1d;font-size:20px}
+.prep-head span{display:block;margin-top:2px;color:#705a40;font-size:12px}
+.prep-tools{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.prep-filter{min-height:34px;padding:7px 10px;border:1px solid rgba(124,89,53,.5);background:#fff8e6;color:#3f2e22;font:13px inherit}
+.prep-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0}
+.prep-column{min-width:0;display:flex;flex-direction:column;gap:7px;padding:9px;background:#f4e3bf;border:1px dashed rgba(124,89,53,.55)}
+.prep-column.drop-hover{background:#e5f0d8;border-color:#557d4b;box-shadow:inset 0 0 0 2px rgba(85,125,75,.25)}
+.prep-column h3{margin:0;color:#4b2f1d;font-size:14px}
+.prep-card-list{display:flex;flex-direction:column;gap:7px;min-height:0;overflow:auto}
+.prep-card{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:7px;align-items:center;padding:7px;background:#fff8e6;border:1px solid rgba(124,89,53,.38);cursor:grab}
+.prep-card.dragging{opacity:.5}
+.prep-card.locked{background:#f1ded4;color:#806050}
+.prep-card-main{min-width:0}
+.prep-card-main strong{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.prep-card-main span{display:block;font-size:11px;color:#70563c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prep-empty{padding:10px;border:1px dashed rgba(124,89,53,.34);background:#fff8e6;color:#8a745a;font-size:12px}
+.detail-ap-row{display:flex;gap:5px;margin:7px 0}
+.ap-choice{width:28px;height:26px;border:1px solid rgba(124,89,53,.55);background:#fbf1d9;color:#3f2e22;font-weight:900}
+.ap-choice.sel{background:#c8a050;color:#1d140c}
+.shop-phase-panel{display:block}
+body[data-phase="init"] .shop-phase-panel,
+body[data-phase="player_turn"] .shop-phase-panel,
+body[data-phase="monster_turn"] .shop-phase-panel,
+body[data-phase="round_end"] .shop-phase-panel,
+body[data-phase="day_end"] .shop-phase-panel{display:none}

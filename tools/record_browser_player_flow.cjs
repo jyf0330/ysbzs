@@ -184,6 +184,26 @@ async function realClick(cdp, selector, label, records) {
   await waitForExpr(cdp, `!window.__YSBZS__?.isBusy || !window.__YSBZS__.isBusy()`, `UI stayed busy after clicking ${selector}`);
   records.actions.push({ at: nowIso(), action: label, selector, x: Math.round(box.x), y: Math.round(box.y), elementText: box.text });
 }
+async function realDrag(cdp, sourceSelector, targetSelector, label, records) {
+  const source = await getBox(cdp, sourceSelector);
+  const target = await getBox(cdp, targetSelector);
+  const id = await evaluate(cdp, `document.querySelector(${JSON.stringify(sourceSelector)})?.dataset.prepRosterId || ''`);
+  assert(id, `drag source missing data-prep-roster-id: ${sourceSelector}`);
+  const data = { items: [{ mimeType: 'text/plain', data: id }, { mimeType: 'application/x-ysbzs-roster', data: id }], dragOperationsMask: 1 };
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: source.x, y: source.y, button: 'none' });
+  await sleep(80);
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: source.x, y: source.y, button: 'left', clickCount: 1 });
+  await sleep(120);
+  await cdp.send('Input.dispatchDragEvent', { type: 'dragEnter', x: target.x, y: target.y, data });
+  await sleep(80);
+  await cdp.send('Input.dispatchDragEvent', { type: 'dragOver', x: target.x, y: target.y, data });
+  await sleep(80);
+  await cdp.send('Input.dispatchDragEvent', { type: 'drop', x: target.x, y: target.y, data });
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: target.x, y: target.y, button: 'left', clickCount: 1 });
+  await sleep(320);
+  await waitForExpr(cdp, `!window.__YSBZS__?.isBusy || !window.__YSBZS__.isBusy()`, `UI stayed busy after dragging ${sourceSelector}`);
+  records.actions.push({ at: nowIso(), action: label, selector: `${sourceSelector} -> ${targetSelector}`, x: Math.round(target.x), y: Math.round(target.y), elementText: source.text });
+}
 async function screenshot(cdp, name, caption, records) {
   await sleep(180);
   const file = path.join(shotsDir, `${String(records.screenshots.length + 1).padStart(2, '0')}_${safeName(name)}.png`);
@@ -275,10 +295,29 @@ async function main() {
     assert(vm?.leaders?.player?.hp === 80 && vm?.leaders?.enemy?.hp === 80, 'leader HP did not render from ViewModel');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-card').length`)) >= 1, 'hero cards missing');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-action-row .action-block').length`)) >= 1, 'left action blocks missing');
+    assert((await evaluate(cdp, `getComputedStyle(document.querySelector('#shop-phase-panel')).display === 'none'`)), 'shop/reward panel should be hidden during init');
 
-    await realClick(cdp, '#etb', '点击“开始战斗”', records);
+    const activeBeforePrep = await evaluate(cdp, `window.__YSBZS__.lastViewModel.inventory.activeCount`);
+    await realClick(cdp, '#prep-open-btn', '点击“打开备战台”', records);
+    await waitForExpr(cdp, `document.querySelector('#prep-overlay') && !document.querySelector('#prep-overlay').classList.contains('hidden') && document.querySelector('#board')`, 'prep overlay did not open over board');
+    await screenshot(cdp, 'prep_overlay_opened', '备战台覆盖主战斗区，表达当前不是开战状态。', records);
+    await realClick(cdp, '#prep-filter', '点击备战筛选框', records);
+    await cdp.send('Input.insertText', { text: '火' });
+    await waitForExpr(cdp, `document.querySelector('#prep-filter').value === '火'`, 'prep filter did not accept text');
+    await screenshot(cdp, 'prep_filter_fire', '备战台可以按元素、名称或职能筛选。', records);
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8, nativeVirtualKeyCode: 8 });
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8, nativeVirtualKeyCode: 8 });
+    await waitForExpr(cdp, `document.querySelector('#prep-filter').value === ''`, 'prep filter did not clear');
+    await realDrag(cdp, '.prep-card[data-prep-active="1"]', '[data-prep-drop-zone="bench"]', '拖拽上阵宠物到备战席', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.inventory.activeCount === ${activeBeforePrep - 1}`, 'dragging active pet to bench did not toggle lineup');
+    await realDrag(cdp, '.prep-card[data-prep-active="0"]', '[data-prep-drop-zone="active"]', '拖拽备战宠物回到上阵阵容', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.inventory.activeCount === ${activeBeforePrep}`, 'dragging bench pet to active did not restore lineup');
+    await screenshot(cdp, 'prep_drag_restored', '拖拽上阵/下阵走真实浏览器事件并通过 API 更新阵容。', records);
+
+    await realClick(cdp, '#prep-ready-btn', '点击“准备开始”', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.phase === 'player_turn'`, 'start button did not enter player_turn');
-    await screenshot(cdp, 'start_battle_player_turn', '进入玩家回合，按钮文字变为“结束回合”。', records);
+    await waitForExpr(cdp, `document.querySelector('#prep-overlay').classList.contains('hidden') && document.querySelector('#prep-open-btn').disabled`, 'prep overlay did not close and lock after battle start');
+    await screenshot(cdp, 'start_battle_player_turn', '准备开始后进入玩家回合，备战入口锁定。', records);
 
     await realClick(cdp, '#board .cell.hero-cell', '点击棋盘上的英雄棋子', records);
     await waitForExpr(cdp, `!!window.__YSBZS__.lastViewModel.selected.unitId && !!document.querySelector('#board .cell.selected-unit') && document.querySelector('#operation-rail')?.textContent.includes('移动')`, 'board hero click did not select a movable hero with visible operation mode');
@@ -290,16 +329,16 @@ async function main() {
 
     await realClick(cdp, '#board .cell[data-r="6"][data-c="3"]', '点击棋盘空格移动英雄', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.heroes.some(h => h.position && h.position.r === 6 && h.position.c === 3)`, 'cell click did not move selected hero');
+    await waitForExpr(cdp, `document.querySelector('#full-day-btn')?.title.includes('手动')`, 'manual move did not lock full-day automation');
     await screenshot(cdp, 'hero_moved_by_cell_click', '英雄通过点棋盘空格移动到新位置。', records);
 
     await realClick(cdp, '#hero-list [data-slot="0"]', '点击左侧行动块', records);
-    await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' || document.querySelector('#hero-list [data-slot="0"]')?.classList.contains('sel') || document.querySelector('#cell-detail')?.innerText.includes('主动行动块') || !document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'left action block click did not show armed slot UI');
+    await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' || document.querySelector('#hero-list [data-slot="0"]')?.classList.contains('sel') || document.querySelector('#cell-detail')?.innerText.includes('主动行动块')`, 'left action block click did not show armed slot UI');
     await screenshot(cdp, 'slot_selected_armed', '左侧行动块进入瞄准态，右侧详细信息显示方向与施放。', records);
 
-    await waitForExpr(cdp, `document.querySelector('#ap-modal') && !document.querySelector('#ap-modal').classList.contains('hidden')`, 'AP allocation modal did not open after selecting a slot');
-    await realClick(cdp, '#ap-modal [data-ap-choice=\"1\"]', '点击 AP 分配 1 点', records);
-    await screenshot(cdp, 'ap_modal_allocation', '行动槽 AP 分配弹窗可通过真实点击选择 AP。', records);
-    await realClick(cdp, '#ap-modal [data-ap-close]', '关闭 AP 分配弹窗', records);
+    await waitForExpr(cdp, `document.querySelector('#cell-detail [data-ap-choice="1"]') && document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'inline AP allocation did not stay inside right detail panel');
+    await realClick(cdp, '#cell-detail [data-ap-choice="1"]', '点击右侧详情 AP 分配 1 点', records);
+    await screenshot(cdp, 'inline_ap_allocation', '行动槽 AP 分配位于右侧详细信息，不再压在棋盘上。', records);
 
 
     await realClick(cdp, '[data-slot-dir="0"][data-dir="right"]', '点击方向箭头：右', records);
@@ -347,7 +386,9 @@ async function main() {
 
     const tipBox = await getBox(cdp, '[data-tip]');
     await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: tipBox.x, y: tipBox.y, button: 'none' });
-    await waitForExpr(cdp, `document.querySelector('#tooltip') && !document.querySelector('#tooltip').classList.contains('hidden')`, 'tooltip did not open from real mouse hover');
+    await sleep(220);
+    assert((await evaluate(cdp, `document.querySelector('#tooltip')?.classList.contains('hidden') !== false`)), 'tooltip opened before hover delay');
+    await waitForExpr(cdp, `document.querySelector('#tooltip') && !document.querySelector('#tooltip').classList.contains('hidden')`, 'tooltip did not open from delayed real mouse hover', 2000);
     records.actions.push({ at: nowIso(), action: '鼠标悬停机制词条显示工具提示', selector: '[data-tip]', x: Math.round(tipBox.x), y: Math.round(tipBox.y), elementText: tipBox.text });
     await screenshot(cdp, 'tooltip_hover', '鼠标悬停元素/机制词条弹出说明浮窗。', records);
 
@@ -360,6 +401,14 @@ async function main() {
     await screenshot(cdp, 'debug_panel_opened', 'Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。', records);
     await realClick(cdp, '[data-debug-close]', '关闭调试面板', records);
 
+    await realClick(cdp, '#new-game-btn', '新开一天准备验证“我方全部出击”', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.phase === 'init'`, 'new game did not reset before all-out verification');
+    await realClick(cdp, '#etb', '开始战斗准备“我方全部出击”', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.phase === 'player_turn' && !document.querySelector('#all-out-btn').disabled`, 'all-out button was not available in player turn');
+    const beforeAllOutEvents = await evaluate(cdp, `window.__YSBZS__.lastViewModel.events.length`);
+    await realClick(cdp, '#all-out-btn', '点击“我方全部出击”', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.length > ${beforeAllOutEvents} && window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT' || e.type === 'USE_SLOT_BLOCKED')`, 'all-out button did not dispatch slot flow through UI');
+    await screenshot(cdp, 'all_out_flow', '我方全部出击按左侧行动块顺序走核心行动槽流程。', records);
 
     vm = await getVm(cdp);
     records.finishedAt = nowIso();

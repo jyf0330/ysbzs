@@ -12,6 +12,7 @@
 
 - `tasks/done/2026-06-09_ui-combat-layout-publication-split.md`
 - `tasks/done/2026-06-09_task-occupancy-skill.md`
+- `tasks/done/2026-06-09_ui-combat-layout-full-p0-p1-p2.md`
 
 ## 规则
 

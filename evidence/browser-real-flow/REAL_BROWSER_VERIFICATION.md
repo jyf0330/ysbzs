@@ -1,22 +1,25 @@
 # 真实浏览器玩家链路验证
 
-- 时间：2026-06-09T11:09:12.806Z
+- 时间：2026-06-09T11:40:27.802Z
 - URL：http://127.0.0.1:4196
 - 浏览器：/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 - 验证方式：CDP `Input.dispatchMouseEvent` 发送真实鼠标事件，页面按钮/格子自己触发 DOM click 监听。
 - 禁止事项：本脚本不调用 `/api/action` 改状态，不使用 fallback，不把 API 调用当作玩家操作。
 
 ## 通过的玩家操作
-- 点击“开始战斗”：#etb @ (1045, 343)
+- 点击“打开备战台”：#prep-open-btn @ (164, 434)
+- 点击备战筛选框：#prep-filter @ (598, 264)
+- 拖拽上阵宠物到备战席：.prep-card[data-prep-active="1"] -> [data-prep-drop-zone="bench"] @ (788, 347)
+- 拖拽备战宠物回到上阵阵容：.prep-card[data-prep-active="0"] -> [data-prep-drop-zone="active"] @ (492, 369)
+- 点击“准备开始”：#prep-ready-btn @ (893, 264)
 - 点击棋盘上的英雄棋子：#board .cell.hero-cell @ (524, 388)
 - 点击左侧英雄卡片：.hero-card @ (163, 182)
 - 点击棋盘空格移动英雄：#board .cell[data-r="6"][data-c="3"] @ (626, 439)
 - 点击左侧行动块：#hero-list [data-slot="0"] @ (74, 236)
-- 点击 AP 分配 1 点：#ap-modal [data-ap-choice="1"] @ (790, 241)
-- 关闭 AP 分配弹窗：#ap-modal [data-ap-close] @ (901, 241)
-- 点击方向箭头：右：[data-slot-dir="0"][data-dir="right"] @ (1077, 238)
+- 点击右侧详情 AP 分配 1 点：#cell-detail [data-ap-choice="1"] @ (1001, 230)
+- 点击方向箭头：右：[data-slot-dir="0"][data-dir="right"] @ (1077, 265)
 - 点击目标格：#board .cell[data-r="6"][data-c="4"] @ (677, 439)
-- 点击“施放”：[data-use="0"] @ (1190, 238)
+- 点击“施放”：[data-use="0"] @ (1190, 265)
 - 点击“保存”：#save-game-btn @ (865, 137)
 - 点击“新开一天”验证读取前状态会重置：#new-game-btn @ (726, 137)
 - 点击“读取”恢复刚才存档：#load-game-btn @ (921, 134)
@@ -28,26 +31,33 @@
 - 鼠标悬停机制词条显示工具提示：[data-tip] @ (483, 320)
 - 按 Ctrl+` 打开调试面板：keyboard:Ctrl+Backquote @ (0, 0)
 - 关闭调试面板：[data-debug-close] @ (1247, 400)
+- 新开一天准备验证“我方全部出击”：#new-game-btn @ (726, 137)
+- 开始战斗准备“我方全部出击”：#etb @ (1045, 360)
+- 点击“我方全部出击”：#all-out-btn @ (1045, 421)
 
 ## 截图
 - screenshots/01_loaded.png：页面真实加载；棋盘、英雄列表、行动槽都已由浏览器渲染。
-- screenshots/02_start_battle_player_turn.png：进入玩家回合，按钮文字变为“结束回合”。
-- screenshots/03_board_hero_selected.png：点击棋盘英雄也能选中单位，允许随后点空格移动。
-- screenshots/04_hero_selected.png：英雄卡片出现选中态，棋盘可移动格出现提示。
-- screenshots/05_hero_moved_by_cell_click.png：英雄通过点棋盘空格移动到新位置。
-- screenshots/06_slot_selected_armed.png：左侧行动块进入瞄准态，右侧详细信息显示方向与施放。
-- screenshots/07_ap_modal_allocation.png：行动槽 AP 分配弹窗可通过真实点击选择 AP。
-- screenshots/08_slot_direction_right.png：方向调整通过按钮进入核心状态。
-- screenshots/09_target_cell_selected.png：选中目标格，右侧详细信息同步更新。
-- screenshots/10_slot_used_event_log.png：施放后事件日志出现行动槽事件，棋盘出现元素/预览反馈。
-- screenshots/11_save_game_written.png：真实点击保存按钮后，本地存档写入 localStorage。
-- screenshots/12_load_game_restored.png：读取按钮恢复保存后的战斗状态、事件流和棋盘反馈。
-- screenshots/13_player_turn_ended.png：结束玩家回合，事件日志记录 PLAYER_TURN_END。
-- screenshots/14_monster_action_clicked.png：怪物行动通过按钮推进。
-- screenshots/15_battle_report_tab.png：战报标签通过前端读取 report 并显示文本。
-- screenshots/16_battle_replay_tab.png：回放标签显示事件列表、步骤计数和 JSON 导出输入框。
-- screenshots/17_tooltip_hover.png：鼠标悬停元素/机制词条弹出说明浮窗。
-- screenshots/18_debug_panel_opened.png：Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。
+- screenshots/02_prep_overlay_opened.png：备战台覆盖主战斗区，表达当前不是开战状态。
+- screenshots/03_prep_filter_fire.png：备战台可以按元素、名称或职能筛选。
+- screenshots/04_prep_drag_restored.png：拖拽上阵/下阵走真实浏览器事件并通过 API 更新阵容。
+- screenshots/05_start_battle_player_turn.png：准备开始后进入玩家回合，备战入口锁定。
+- screenshots/06_board_hero_selected.png：点击棋盘英雄也能选中单位，允许随后点空格移动。
+- screenshots/07_hero_selected.png：英雄卡片出现选中态，棋盘可移动格出现提示。
+- screenshots/08_hero_moved_by_cell_click.png：英雄通过点棋盘空格移动到新位置。
+- screenshots/09_slot_selected_armed.png：左侧行动块进入瞄准态，右侧详细信息显示方向与施放。
+- screenshots/10_inline_ap_allocation.png：行动槽 AP 分配位于右侧详细信息，不再压在棋盘上。
+- screenshots/11_slot_direction_right.png：方向调整通过按钮进入核心状态。
+- screenshots/12_target_cell_selected.png：选中目标格，右侧详细信息同步更新。
+- screenshots/13_slot_used_event_log.png：施放后事件日志出现行动槽事件，棋盘出现元素/预览反馈。
+- screenshots/14_save_game_written.png：真实点击保存按钮后，本地存档写入 localStorage。
+- screenshots/15_load_game_restored.png：读取按钮恢复保存后的战斗状态、事件流和棋盘反馈。
+- screenshots/16_player_turn_ended.png：结束玩家回合，事件日志记录 PLAYER_TURN_END。
+- screenshots/17_monster_action_clicked.png：怪物行动通过按钮推进。
+- screenshots/18_battle_report_tab.png：战报标签通过前端读取 report 并显示文本。
+- screenshots/19_battle_replay_tab.png：回放标签显示事件列表、步骤计数和 JSON 导出输入框。
+- screenshots/20_tooltip_hover.png：鼠标悬停元素/机制词条弹出说明浮窗。
+- screenshots/21_debug_panel_opened.png：Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。
+- screenshots/22_all_out_flow.png：我方全部出击按左侧行动块顺序走核心行动槽流程。
 
 ## 视频
 - 未生成：--check mode
@@ -57,65 +67,62 @@
 {
   "phase": "player_turn",
   "day": 1,
-  "round": 2,
+  "round": 1,
   "selected": {
-    "unitId": "hero_pal_072_1",
-    "slotId": 0,
-    "cell": {
-      "r": 6,
-      "c": 4
-    },
+    "unitId": "hero_pal_038_4",
+    "slotId": 2,
+    "cell": null,
     "direction": "right"
   },
   "heroCount": 4,
-  "enemyCount": 5,
-  "eventCount": 21,
+  "enemyCount": 2,
+  "eventCount": 30,
   "roster": {
     "active": 4,
     "bench": 0,
     "maxActive": 4
   },
-  "replayEventsInPanel": 29,
+  "replayEventsInPanel": 25,
   "lastEvents": [
     {
-      "step": 14,
-      "type": "DAMAGE",
-      "text": "敌方翠叶鼠 对 我方融焰娘 造成风伤害：原始3→有效3，盾0→0，HP20→17。"
-    },
-    {
-      "step": 15,
+      "step": 56,
       "type": "APPLY_ELEMENT_CELL",
-      "text": "敌方翠叶鼠 向 R6C5 施加风1层，风层 0→1。"
+      "text": "我方疾风隼 向 R5C6 施加风1层，风层 0→2。"
     },
     {
-      "step": 16,
+      "step": 57,
+      "type": "APPLY_ELEMENT",
+      "text": "我方疾风隼 给 敌方翠叶鼠 叠风1层，风层 1→2。"
+    },
+    {
+      "step": 58,
+      "type": "PLAYER_SELECT_SLOT",
+      "text": "玩家施放 我方疾风隼 第3槽：长柄T/风/1层（AP1），命中 敌方翠叶鼠。"
+    },
+    {
+      "step": 59,
+      "type": "ELEMENT_WEAKEN",
+      "text": "我方疾风隼打散 R5C6 未成型元素：所有元素-1。"
+    },
+    {
+      "step": 60,
       "type": "APPLY_ELEMENT_CELL",
-      "text": "敌方翠叶鼠 向 R6C4 施加风1层，风层 0→1。"
+      "text": "我方疾风隼 向 R5C6 施加风1层，风层 1→3。"
     },
     {
-      "step": 17,
-      "type": "APPLY_ELEMENT_CELL",
-      "text": "敌方翠叶鼠 向 R6C3 施加风1层，风层 0→1。"
+      "step": 61,
+      "type": "TERRAIN_MODULE_ADD",
+      "text": "R5C6 生成风地形模块 3层。"
     },
     {
-      "step": 18,
-      "type": "ROUND_START",
-      "text": "第1天上午第2回合开始。"
+      "step": 62,
+      "type": "ELEMENT_FORMED",
+      "text": "R5C6 风3层达到3层，形成元素成型状态；元素包与来源保留。"
     },
     {
-      "step": 19,
-      "type": "SPAWN_ENEMY",
-      "text": "敌方Boss召唤 敌方捣蛋猫(青铜) HP20/攻3，位置 R2C6。"
-    },
-    {
-      "step": 20,
-      "type": "SPAWN_ENEMY",
-      "text": "敌方Boss召唤 敌方棉悠悠(青铜) HP6/攻1，位置 R6C6。"
-    },
-    {
-      "step": 21,
-      "type": "SPAWN_ENEMY",
-      "text": "敌方Boss召唤 敌方翠叶鼠(青铜) HP10/攻3，位置 R2C6。"
+      "step": 63,
+      "type": "APPLY_ELEMENT",
+      "text": "我方疾风隼 给 敌方翠叶鼠 叠风1层，风层 2→3。"
     }
   ]
 }

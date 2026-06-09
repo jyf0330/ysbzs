@@ -234,14 +234,8 @@ import { createRenderCache } from './render-cache.js';
     } catch (err) { toast(err.message || String(err), true); }
   }
   function setBusy(busy) { qsa('button').forEach(btn => btn.disabled = !!busy && !btn.classList.contains('log-tab')); }
-  function toast(text, danger = false) {
-    const el = document.createElement('div');
-    el.className = 'toast';
-    if (danger) el.style.borderLeftColor = '#a84f3e';
-    const raw = String(text ?? '');
-    el.textContent = raw.length > 72 ? `${raw.slice(0, 72)}...` : raw;
-    $('toast-stack').appendChild(el);
-    setTimeout(() => el.remove(), 2600);
+  function toast() {
+    return;
   }
   function normalizeSelection() {
     const vm = ui.vm;

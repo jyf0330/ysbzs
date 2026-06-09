@@ -53,6 +53,16 @@ test('bottom event log is internally scrollable and follows newest content', () 
   }
 });
 
+test('game UI keeps toast notifications fully hidden', () => {
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const js = read(file);
+    const toastBody = js.match(/function toast\([^)]*\) \{([\s\S]*?)\n  \}/);
+    assert.ok(toastBody, `${file} should keep a central toast function`);
+    assert.match(toastBody[1], /^\s*return;/m, `${file} toast function should no-op before creating DOM`);
+    assert.doesNotMatch(toastBody[1], /appendChild\(el\)/, `${file} toast function must not append hidden notifications`);
+  }
+});
+
 test('action blocks sit lower and edit through a local popover instead of the right detail column', () => {
   const html = read('web/index.html');
   const css = read('web/ux-app.css');

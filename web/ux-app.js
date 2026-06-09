@@ -205,7 +205,7 @@
       const data = await api('/api/action', makeCommand(type, payload));
       ui.vm = data.viewModel || ui.vm;
       if (type === 'START_BATTLE') ui.prepOpen = false;
-      if (!options.suppressToast && data.events && data.events.length && /^SELECT_/.test(data.events[data.events.length - 1].type)) toast(data.events[data.events.length - 1].text || data.events[data.events.length - 1].type);
+      // toast 已关闭
       normalizeSelection();
       render();
       return data;
@@ -243,14 +243,8 @@
     } catch (err) { toast(err.message || String(err), true); }
   }
   function setBusy(busy) { qsa('button').forEach(btn => btn.disabled = !!busy && !btn.classList.contains('log-tab')); }
-  function toast(text, danger = false) {
-    const el = document.createElement('div');
-    el.className = 'toast';
-    if (danger) el.style.borderLeftColor = '#a84f3e';
-    const raw = String(text ?? '');
-    el.textContent = raw.length > 72 ? `${raw.slice(0, 72)}...` : raw;
-    $('toast-stack').appendChild(el);
-    setTimeout(() => el.remove(), 2600);
+  function toast() {
+    return;
   }
   function normalizeSelection() {
     const vm = ui.vm;

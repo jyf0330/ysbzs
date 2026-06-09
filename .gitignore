@@ -36,3 +36,11 @@ ai-eval/generated-runs/
 gpt_test.js
 original-style-battle-preview.html
 original-style-battle-preview.js
+
+# 自动备份/临时输出
+backups/
+output/
+player_edit_csv_guide_*.txt
+tests/player_operation_test_notes.txt
+tools/build_human_master.py
+tools/export_master_to_csv.py

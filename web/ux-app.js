@@ -167,6 +167,38 @@
     window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, makeCommand, saveGame, loadGameFromStorage, isBusy: () => ui.busy };
   }
 
+  function showCellPopup(r, c, detail) {
+    const popup = $('cell-popup');
+    if (!popup) return;
+    const cell = cellAt(r, c);
+    const unit = detail?.unit || unitById(cell?.unitId);
+    const elHTML = Object.entries(detail?.elements || cell?.elements || {})
+      .filter(([, n]) => Number(n) > 0)
+      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${EL_ICON[el] || el}${n}</span>`).join(' ');
+    const unitLine = unit
+      ? `<div class="popup-row"><span class="${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><strong>${esc(unit.displayName || unit.name)}</strong> · HP ${unit.hp}/${unit.maxHp}${unit.atk ? ' · 攻' + unit.atk : ''}</div>`
+      : '<div class="popup-row dim">空格</div>';
+    const preview = detail?.preview || cell?.preview;
+    const threat = detail?.threat || cell?.threat;
+    popup.innerHTML = `<div class="popup-header">第${r + 1}行第${c + 1}列</div>${unitLine}${elHTML ? `<div class="popup-row">${elHTML}</div>` : ''}${preview ? `<div class="popup-preview">⚡ ${esc(preview.damage ?? preview.layers ?? '')}</div>` : ''}${threat ? `<div class="popup-threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>` : ''}`;
+    const boardWrap = popup.parentElement;
+    const bw = boardWrap.offsetWidth, bh = boardWrap.offsetHeight;
+    const pw = 220, ph = popup.scrollHeight || 130;
+    const cellEl = boardWrap.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+    let left = 0, top = 0;
+    if (cellEl) {
+      const cr = cellEl.offsetLeft, ct = cellEl.offsetTop, cw = cellEl.offsetWidth, ch = cellEl.offsetHeight;
+      if (c > 4) { left = cr + cw + 3; if (left + pw > bw) left = cr - pw - 3; }
+      else { left = cr - pw - 3; if (left < 0) left = cr + cw + 3; }
+      if (r > 3) { top = ct + ch + 3; if (top + ph > bh) top = bh - ph - 3; }
+      else { top = ct - ph - 3; if (top < 0) top = ct + ch + 3; }
+    }
+    popup.style.left = `${Math.max(2, Math.min(left, bw - pw - 2))}px`;
+    popup.style.top = `${Math.max(2, Math.min(top, bh - ph - 2))}px`;
+    popup.classList.remove('hidden');
+  }
+  function hideCellPopup() { const p = $('cell-popup'); if (p) p.classList.add('hidden'); }
+
   function render() {
     const vm = ui.vm;
     if (!vm) return;
@@ -180,7 +212,7 @@
     const pl = vm.leaders?.player, en = vm.leaders?.enemy;
     $('p-castle-txt').textContent = pl ? `${pl.hp}/${pl.maxHp}` : '-/-';
     $('e-castle-txt').textContent = en ? `${en.hp}/${en.maxHp}` : '-/-';
-    renderHeroes(); renderRoster(); renderBoard(); renderCellDetail(); renderSlots(); renderControls(); renderRewards(); renderShop(); renderTrial(); renderLog(); updateDebugPanel(); maybeBanner();
+    renderHeroes(); renderRoster(); renderBoard(); renderCellDetail(); renderSlots(); renderControls(); renderOperationRail(); renderRewards(); renderShop(); renderTrial(); renderLog(); updateDebugPanel(); maybeBanner();
   }
   function maybeBanner() {
     const phase = ui.vm?.phase;
@@ -199,11 +231,20 @@
     $('hero-list').innerHTML = heroes.map(h => {
       const sel = h.id === ui.selectedUnitId;
       const dead = h.alive === false || h.hp <= 0;
+      const qualityLabel = { '黄金': '★', '白银': '◆', '青铜': '●' }[h.quality] || '';
+      const slotCount = (h.slots || []).length;
+      const usedSlots = (h.slots || []).filter(s => s.used).length;
+      const subParts = [];
+      if (h.atk) subParts.push(`攻${h.atk}`);
+      if (h.shape?.shapeName) subParts.push(h.shape.shapeName);
+      subParts.push(`槽${usedSlots}/${slotCount}`);
+      const subText = subParts.join(' · ');
       return `<button class="hero-card${sel ? ' sel' : ''}" data-hero-id="${esc(h.id)}" type="button">
         <div class="avatar ${clsForEl(h.element)}">${esc(unitIcon(h))}</div>
         <div class="hero-main">
-          <strong>${esc(h.name)}</strong>
-          <span>${esc(h.element || '-')} · HP ${esc(h.hp)}/${esc(h.maxHp)} · AP ${esc(h.ap ?? 0)}${dead ? ' · 已退场' : ''}</span>
+          <strong>${esc(h.name)}${h.quality ? `<span class="quality-tag quality-${esc(h.quality)}">${qualityLabel}${esc(h.quality)}</span>` : ''}</strong>
+          <span>${esc(h.element || '-')} · HP ${esc(h.hp)}/${esc(h.maxHp)} · AP ${esc(h.availableAp ?? h.ap ?? 0)}/${esc(h.ap)}${dead ? ' · 已退场' : ''}</span>
+          <span class="hero-sub">${esc(subText)}</span>
           <div class="hpbar"><i style="width:${pct(h.hp, h.maxHp)}%"></i></div>
         </div>
         <span class="element-tag ${clsForEl(h.element)}">${esc(h.element || '-')}</span>
@@ -224,10 +265,16 @@
     const card = (item, active) => {
       const id = item.instanceId || item.petId;
       const unsupported = (item.mechanicStatus || []).filter(x => x.id !== 'none' && x.status !== 'implemented');
+      const supported = (item.mechanicStatus || []).filter(x => x.id !== 'none' && x.status === 'implemented');
       const canUp = active || (item.canActivate !== false && unsupported.length === 0);
-      const mechText = unsupported.length ? ` · 未实装:${unsupported.map(x => x.id).join(',')}` : '';
+      const qualityLabel = { '黄金': '★', '白银': '◆', '青铜': '●' }[item.quality] || '';
       return `<div class="roster-card${active ? '' : ' bench'}${unsupported.length ? ' locked' : ''}" data-roster-id="${esc(id)}">
-        <div><strong>${esc(item.name || item.petId)}</strong><span class="${clsForEl(item.element)}" data-tip="${esc(item.element || '')}">${esc(item.element || '-')} · Lv${esc(item.level || 1)} · HP ${esc(item.hp ?? '-')}/${esc(item.maxHp ?? '-')} · 售${esc(item.sellValue || 1)}金${esc(mechText)}</span></div>
+        <div class="roster-info">
+          <strong>${esc(item.name || item.petId)}${item.quality ? `<span class="quality-tag quality-${esc(item.quality)}">${qualityLabel}${esc(item.quality)}</span>` : ''}</strong>
+          <span class="inline">${esc(item.element || '-')} · Lv${esc(item.level || 1)} · HP ${esc(item.hp ?? '-')}/${esc(item.maxHp ?? '-')}${item.atk ? ` · 攻${item.atk}` : ''} · 售${esc(item.sellValue || 1)}金</span>
+          ${supported.length ? `<span class="mech-ready">✓ ${supported.map(x => x.id.replace('mech_','')).join(' ')}</span>` : ''}
+          ${unsupported.length ? `<span class="mech-pending">⏳ ${unsupported.map(x => x.id.replace('mech_','')).join(' ')}</span>` : ''}
+        </div>
         <div class="roster-actions">
           <button class="mini-btn" data-roster-toggle="${esc(id)}" type="button"${ui.busy || (!active && !canUp) ? ' disabled' : ''}>${active ? '备战' : '上阵'}</button>
           <button class="mini-btn sell" data-roster-sell="${esc(id)}" type="button"${ui.busy ? ' disabled' : ''}>出售</button>
@@ -241,7 +288,7 @@
 
   function renderBoard() {
     const board = ui.vm.board || { rows: 0, cols: 0, cells: [] };
-    const cellSize = board.cols > 8 || board.rows > 8 ? 48 : 52;
+    const cellSize = board.cols > 8 || board.rows > 8 ? 48 : 49;
     $('board').style.gridTemplateColumns = `repeat(${board.cols}, ${cellSize}px)`;
     $('board').style.gridTemplateRows = `repeat(${board.rows}, ${cellSize}px)`;
     $('board-axis-x').style.gridTemplateColumns = `repeat(${board.cols}, ${cellSize}px)`;
@@ -266,10 +313,13 @@
       if (previewKeys.has(key)) classes.push('preview-hit');
       if (threatKeys.has(key)) classes.push('threat-hit');
       if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
+      if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
+      if (unit && unit.id === ui.selectedUnitId) classes.push('selected-unit');
       const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
         .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}" data-tip="${esc(el)}">${esc(el)}${esc(n)}</span>`).join('');
       const p = previewMap.get(key); const t = threatMap.get(key);
-      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="R${cell.r + 1}C${cell.c + 1}">
+      const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || unit.name} HP ${unit.hp}/${unit.maxHp} AP ${unit.availableAp ?? unit.ap ?? 0}` : `R${cell.r + 1}C${cell.c + 1}`;
+      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
         ${elements ? `<div class="element-stack">${elements}</div>` : ''}
         ${unit ? unitToken(unit) : '<span class="empty-dot">·</span>'}
         ${p ? `<span class="preview-num" data-tip="preview">预${esc(p.damage ?? p.layers ?? '+')}</span>` : ''}
@@ -280,6 +330,22 @@
   function unitToken(unit) {
     const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
     const name = unit.name || unit.displayName || unit.id;
+    const isHero = unit.side === 'hero' || unit.side === 'hero_leader';
+    if (isHero) {
+      const ap = unit.availableAp ?? unit.ap ?? 0;
+      const shortName = Array.from(String(name)).slice(0, 2).join('');
+      const active = unit.id === ui.selectedUnitId ? ' is-active' : '';
+      return `<div class="unit-token ${side} hero-token${active}" title="${esc(name)}">
+        <div class="hero-token-top">
+          <span class="hero-sigil ${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span>
+          <span class="hero-name">${esc(shortName)}</span>
+        </div>
+        <div class="hero-token-stats">
+          <span class="hero-hp">HP ${esc(Math.max(0, unit.hp ?? 0))}</span>
+          <span class="hero-ap">AP ${esc(ap)}</span>
+        </div>
+      </div>`;
+    }
     return `<div class="unit-token ${side}" title="${esc(name)}"><span>${esc(unitIcon(unit))}</span><small>${esc(Math.max(0, unit.hp ?? 0))}</small></div>`;
   }
   function legalMoveTargets(hero) {
@@ -308,10 +374,32 @@
   async function onCellClick(r, c) {
     ui.selectedCell = { r, c };
     const cell = cellAt(r, c);
+    const unit = unitById(cell?.unitId);
+    const isHeroUnit = unit?.side === 'hero';
+    hideCellPopup();
+    if (isHeroUnit) {
+      ui.selectedUnitId = unit.id;
+      ui.selectedSlotGlobal = null;
+      ui.selectedSlot = null;
+      ui.slotArmed = false;
+      closeApModal();
+      await runCommand('SELECT_UNIT', { unitId: unit.id });
+      const detail = await fetchCellDetail(r, c);
+      if (detail) showCellPopup(r, c, { unit, ...detail });
+      return;
+    }
     const hero = selectedHero();
     await runCommand('SELECT_CELL', { r, c });
-    await fetchCellDetail(r, c);
+    const detail = await fetchCellDetail(r, c);
+    if (detail) {
+      if (cell) showCellPopup(r, c, { ...detail, elements: detail.elements || cell.elements });
+      else showCellPopup(r, c, detail);
+    }
     if (ui.slotArmed) return;
+    if (ui.vm?.phase === 'player_turn' && !hero && cell && !cell.unitId) {
+      toast('先点棋盘上的英雄或左侧英雄卡，再点空格移动。');
+      return;
+    }
     if (ui.vm?.phase === 'player_turn' && hero && cell && !cell.unitId) {
       await runCommand('MOVE_HERO', { unitId: hero.id, to: { r, c } });
     }
@@ -319,23 +407,27 @@
 
   function renderCellDetail() {
     const c = ui.selectedCell || ui.vm.selected?.cell;
-    if (!c) { $('cell-detail').className = 'detail-card empty'; $('cell-detail').textContent = '选择棋盘格后显示单位、元素与预览。'; return; }
+    if (!c) { $('cell-detail').className = 'detail-card empty'; $('cell-detail').innerHTML = '选择棋盘格后显示单位、元素与预览。'; return; }
     const detail = ui.cellDetail && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
     const cell = cellAt(c.r, c.c);
     const unit = detail?.unit || unitById(cell?.unitId);
-    const lines = [`位置：第${Number(c.r) + 1}行第${Number(c.c) + 1}列`];
-    if (unit) lines.push(`单位：${unit.displayName || unit.name} · HP ${unit.hp}/${unit.maxHp} · 攻 ${unit.atk || 0}`);
-    else lines.push('单位：无单位');
+    const parts = [`<div class="detail-pos">第${Number(c.r) + 1}行第${Number(c.c) + 1}列</div>`];
+    if (unit) {
+      parts.push(`<div class="detail-unit"><span class="${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span> <strong>${esc(unit.displayName || unit.name)}</strong> · HP ${unit.hp}/${unit.maxHp}${unit.atk ? ` · 攻${unit.atk}` : ''}</div>`);
+    } else {
+      parts.push(`<div class="detail-unit dim">空格</div>`);
+    }
     const elsObj = detail?.elements || cell?.elements || {};
-    const els = Object.entries(elsObj).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join(' ');
-    lines.push(`元素：${els || '无'}`);
+    const elHTML = Object.entries(elsObj).filter(([, n]) => Number(n) > 0)
+      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${EL_ICON[el] || el}${n}</span>`).join(' ');
+    parts.push(`<div class="detail-els">${elHTML || '元素：<span class="dim">无</span>'}</div>`);
     const terrain = detail?.terrain || cell?.terrain;
-    if (terrain?.modules?.length) lines.push(`地形：${terrain.modules.join('、')}`);
+    if (terrain?.modules?.length) parts.push(`<div class="detail-terrain">地形：${terrain.modules.join('、')}</div>`);
     const preview = detail?.preview || cell?.preview;
     const threat = detail?.threat || cell?.threat;
-    if (preview) lines.push(`预览：${JSON.stringify(preview)}`);
-    if (threat) lines.push(`威胁：${JSON.stringify(threat)}`);
-    $('cell-detail').className = 'detail-card'; $('cell-detail').textContent = lines.join('\n');
+    if (preview) parts.push(`<div class="detail-extra">⚡ ${esc(preview.damage ?? preview.layers ?? '')}</div>`);
+    if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>`);
+    $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
   }
 
   function renderSlots() {
@@ -410,10 +502,44 @@
     $('reward-btn').disabled = !(phase === 'battle_end' || isNext('REWARD_OPTIONS')) || ui.busy;
     $('operation-hint').textContent = hintText();
   }
+  function renderOperationRail() {
+    const rail = $('operation-rail');
+    if (!rail || !ui.vm) return;
+    const hero = selectedHero();
+    const cell = ui.selectedCell || ui.vm.selected?.cell || null;
+    const targetUnit = cell ? unitById(cellAt(cell.r, cell.c)?.unitId) : null;
+    const slot = ui.slotArmed ? selectedSlotInfo() : null;
+    const mode = operationMode(hero, slot);
+    const targetText = cell ? `R${Number(cell.r) + 1} C${Number(cell.c) + 1}${targetUnit ? ` · ${targetUnit.displayName || targetUnit.name}` : ''}` : '未选择';
+    const actionText = slot ? `${slot.slot.label} · ${slot.slot.element}${slot.slot.layers} · ${DIR[slot.slot.direction] || slot.slot.direction || '→'} · AP ${ui.apBySlot[`${slot.hero.id}:${slot.localIndex}`] || 1}` : '未选行动槽';
+    rail.innerHTML = [
+      opChip('模式', mode.label, mode.cls),
+      opChip('英雄', hero ? `${hero.name} · AP ${hero.availableAp ?? hero.ap ?? 0}` : '未选英雄', hero ? 'ready' : 'idle'),
+      opChip('目标', targetText, cell ? 'target' : 'idle'),
+      opChip('行动', actionText, slot ? 'armed' : 'idle')
+    ].join('');
+  }
+  function operationMode(hero, slot) {
+    const phase = ui.vm?.phase;
+    if (phase === 'init') return { label: '准备', cls: 'idle' };
+    if (phase === 'player_turn' && slot) return { label: '瞄准', cls: 'armed' };
+    if (phase === 'player_turn' && hero) return { label: '移动', cls: 'ready' };
+    if (phase === 'player_turn') return { label: '选英雄', cls: 'idle' };
+    if (phase === 'monster_turn' || phase === 'round_end') return { label: '观察', cls: 'target' };
+    return { label: phaseText(phase), cls: 'idle' };
+  }
+  function opChip(label, value, cls = 'idle') {
+    return `<span class="op-chip ${cls}"><span>${esc(label)}</span><strong>${esc(value)}</strong></span>`;
+  }
   function hintText() {
     const phase = ui.vm.phase;
     if (phase === 'init') return '点击“开始战斗”，进入玩家回合。';
-    if (phase === 'player_turn') return '选择英雄 → 点空格移动/点目标查看 → 选择行动槽 → 调方向 → 施放。';
+    if (phase === 'player_turn' && ui.slotArmed) return '瞄准中：点棋盘只选择目标格；点我方英雄可退出瞄准并回到移动。';
+    if (phase === 'player_turn') {
+      const hero = selectedHero();
+      if (hero) return `${hero.name} 已选中：点空格移动；点敌人或Boss查看详情；点行动槽进入瞄准。`;
+      return '点棋盘上的我方英雄或左侧英雄卡选中，再点空格移动。';
+    }
     if (phase === 'monster_turn' || phase === 'round_end') return '点击“怪物行动”或“自动战斗”继续推进。';
     if (phase === 'battle_end') return '战斗结束，可以生成奖励或进入商店。';
     if (phase === 'shop') return '购买、冻结、刷新商品，然后离开商店。';
@@ -578,6 +704,10 @@
     $('board').addEventListener('click', ev => {
       const btn = ev.target.closest('[data-r][data-c]');
       if (btn) onCellClick(Number(btn.dataset.r), Number(btn.dataset.c));
+    });
+    // 点棋盘空白处隐藏浮动框
+    $('board').addEventListener('click', ev => {
+      if (!ev.target.closest('[data-r][data-c]')) hideCellPopup();
     });
     $('slot-list').addEventListener('click', ev => {
       const dirBtn = ev.target.closest('[data-slot-dir]');

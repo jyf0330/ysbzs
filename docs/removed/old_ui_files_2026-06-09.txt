@@ -1,0 +1,19 @@
+旧界面层已删除文件清单（2026-06-09 UI layer rebuild）
+
+- web/actions.js
+- web/battle.js
+- web/battleLog.js
+- web/battleTrace.js
+- web/board.js
+- web/data.js
+- web/day7-fire-trial.html
+- web/elements.js
+- web/external-tables.js
+- web/game.js
+- web/original-ui-compat-adapter.js
+- web/rng.js
+- web/shop.js
+- web/styles-patch.css
+- web/ui.js
+- web/waves.js
+ORIGINAL_UI_ADAPTER_START_HERE.md

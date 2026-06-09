@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const { spawn } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 const port = Number(process.env.CHECK_UI_PORT || 4184);
 const base = `http://127.0.0.1:${port}`;
@@ -12,8 +13,8 @@ async function waitServer(child) {
   }
   throw new Error('ui server did not start');
 }
-async function api(path, body) {
-  const res = await fetch(`${base}${path}`, {
+async function api(pathname, body) {
+  const res = await fetch(`${base}${pathname}`, {
     method: body ? 'POST' : 'GET',
     headers: body ? { 'content-type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined
@@ -24,8 +25,9 @@ async function api(path, body) {
 }
 function assert(cond, msg) { if (!cond) throw new Error(msg); }
 async function main() {
+  const root = path.resolve(__dirname, '..');
   const child = spawn(process.execPath, ['tools/run_ui_server.cjs'], {
-    cwd: path.resolve(__dirname, '..'),
+    cwd: root,
     env: Object.assign({}, process.env, { PORT: String(port) }),
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -33,14 +35,18 @@ async function main() {
   try {
     await waitServer(child);
     const html = await fetch(`${base}/`).then(r => r.text());
-    const bridge = await fetch(`${base}/original-ui-compat-adapter.js`).then(r => r.text());
-    assert(html.includes('元素背包史'), 'index.html not served');
-    assert(html.includes('id="board"') && html.includes('id="asl"') && html.includes('id="scat"'), 'original project UI shell ids missing');
-    assert(html.includes('original-ui-compat-adapter.js'), 'compat adapter must be injected at runtime');
-    assert(html.includes("loadScript('game.js')") || html.includes('loadScript("game.js")'), 'original game.js bootstrap should remain in original HTML');
-    assert(bridge.includes('/api/action'), 'compat adapter must call API action endpoint');
-    assert(bridge.includes('/api/view') && bridge.includes('/api/report'), 'compat adapter must read ViewModel and report endpoints');
-    assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(bridge), 'web UI must not import core or adapter directly');
+    const js = await fetch(`${base}/ux-app.js`).then(r => r.text());
+    const css = await fetch(`${base}/ux-app.css`).then(r => r.text());
+    assert(html.includes('棋盘战斗交互重构版'), 'new UI shell title missing');
+    assert(html.includes('ux-app.js') && html.includes('ux-app.css'), 'new UI assets not referenced');
+    assert(html.includes('id="board"') && html.includes('id="slot-list"') && html.includes('id="hero-list"'), 'new UI stable DOM anchors missing');
+    assert(!html.includes('original-ui-compat-adapter.js') && !html.includes("loadScript('game.js')") && !html.includes('ui.js'), 'old UI bootstrap must be removed');
+    assert(js.includes('/api/action') && js.includes('/api/view') && js.includes('/api/report'), 'new UI must use public API endpoints');
+    assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(js), 'web UI must not import core or adapter directly');
+    assert(css.includes('.board-grid') && css.includes('.hero-card') && css.includes('.slot-card'), 'new CSS must define rebuilt shell components');
+    for (const old of ['original-ui-compat-adapter.js','ui.js','game.js','battle.js','board.js','shop.js','actions.js','battleTrace.js']) {
+      assert(!fs.existsSync(path.join(root, 'web', old)), `old UI file still exists: web/${old}`);
+    }
 
     let view = await api('/api/session/new', { day: 1, period: '上午', gold: 12 });
     assert(view.viewModel.phase === 'init', 'new session should start at init');
@@ -74,9 +80,9 @@ async function main() {
     const playerReport = await api('/api/report?mode=player');
     assert(playerReport.report.includes('玩家操作行为'), 'player report should include player behavior section');
     const data = await api('/api/data/summary');
-    assert(data.summary.pets === 127 && data.summary.shop === 127, 'summary should expose full data counts');
+    assert(data.summary.pets === 30 && data.summary.shop === 30, 'summary should expose current single-source data counts');
 
-    console.log('PASS original project UI shell unchanged + runtime compat adapter -> API -> uiAdapter -> core -> ViewModel/TextReport');
+    console.log('PASS rebuilt UI shell -> /api -> uiAdapter -> core -> ViewModel/TextReport');
   } finally {
     child.kill('SIGTERM');
     await sleep(100);

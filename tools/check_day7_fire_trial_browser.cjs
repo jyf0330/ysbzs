@@ -33,7 +33,13 @@ async function main(){
       boardText
     ].join('\n');
     chrome=spawn(chromium,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--disable-sync','--disable-extensions','--no-first-run',`--user-data-dir=${userData}`,`--remote-debugging-port=${chromePort}`,'about:blank'],{stdio:['ignore','pipe','pipe']}); chrome.stdout.resume(); chrome.stderr.resume();
-    const pages=await (await waitHttp(`http://127.0.0.1:${chromePort}/json/list`)).json();
+    let pages=[];
+    for(let i=0;i<30;i++){
+      pages=await (await waitHttp(`http://127.0.0.1:${chromePort}/json/list`)).json();
+      if(Array.isArray(pages)&&pages.length) break;
+      await sleep(100);
+    }
+    if(!Array.isArray(pages)||!pages.length) throw new Error('chromium did not expose a page target');
     const pageTarget=pages.find(p=>p.type==='page') || pages[0];
     const cdp=await cdpConnect(pageTarget.webSocketDebuggerUrl); await cdp.send('Runtime.enable');
     const expr = `document.body.innerText = ${JSON.stringify(domSource)}; document.body.innerText`;

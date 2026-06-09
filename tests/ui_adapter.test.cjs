@@ -11,8 +11,8 @@ test('UI01 适配层只暴露统一公开命令集合', () => {
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   const vm = adapter.getViewModel();
-  assert.equal(vm.meta.pets, 127);
-  assert.equal(vm.meta.shop, 127);
+  assert.equal(vm.meta.pets, 30);
+  assert.equal(vm.meta.shop, 30);
   assert.ok(vm.heroes.length >= 1);
   assert.ok(Array.isArray(vm.nextActions));
   vm.gold = 999;
@@ -151,4 +151,19 @@ test('UI14 原包兼容门面方法 sellUnit/toggle/use/select/setDir 覆盖', (
   assert.ok(hasEvent(adapter.toggleUnitActive('unit_pal_006'), 'TOGGLE_UNIT_ACTIVE'));
   assert.ok(hasEvent(adapter.sellUnit('unit_pal_006'), 'SELL_UNIT'));
   assert.ok(hasEvent(adapter.run('SELL_UNIT', {}), 'SELL_UNIT_BLOCKED'));
+});
+
+
+test('UI15 战斗追踪导出与回放门面不串命令', () => {
+  const adapter = createYSBZSUIAdapter({ gold: 8 });
+  adapter.runBattle();
+  const exported = adapter.exportBattleTrace();
+  assert.equal(exported.command, 'EXPORT_BATTLE_TRACE');
+  assert.ok(Array.isArray(exported.result.events));
+  const replay = adapter.replayBattleTrace(exported.result.events);
+  assert.equal(replay.command, 'REPLAY_BATTLE_TRACE');
+  assert.ok(replay.result.events.length >= exported.result.events.length);
+  const pack = adapter.exportReplay();
+  assert.equal(pack.command, 'EXPORT_REPLAY');
+  assert.ok(pack.result.battleTrace.length >= exported.result.events.length);
 });

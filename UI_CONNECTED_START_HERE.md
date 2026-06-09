@@ -1,37 +1,27 @@
-# 元素背包史 · 参考项目 UI 已接入版
+# UI_CONNECTED_START_HERE
 
-本包使用 `ysbzs-ai-context-20260603.tar.gz` 里的原项目 `index.html` 作为 UI 外壳，保留原来的羊皮纸/棋盘/左右栏/底部日志/商店弹层结构。
+当前 UI 已完全重构，不再使用旧 `web/ui.js` 兼容层。
 
-运行：
+## 新入口
 
-```bash
-npm run ui
-```
+- 页面：`web/index.html`
+- 样式：`web/ux-app.css`
+- 交互：`web/ux-app.js`
+- 服务：`tools/run_ui_server.cjs`
+- 适配器：`src/uiAdapter.cjs`
 
-打开：
+## UI 调用规则
 
-```text
-http://127.0.0.1:4173
-```
+浏览器只做三件事：
 
-接入边界：
+1. `GET /api/view` 读取 ViewModel。
+2. `POST /api/action` 提交公开命令。
+3. `GET /api/report?mode=player|shop|debug` 展示文本战报。
 
-```text
-原项目 web/index.html + web/orig-ui-bridge.js
-  ↓ 只调用 /api/*
-tools/run_ui_server.cjs
-  ↓ 只调用 src/uiAdapter.cjs
-src/uiAdapter.cjs
-  ↓ core reducer / battle / shop / report
-src/core/**
-```
+UI 不允许直接调用核心战斗函数，不允许在浏览器层重算规则。
 
-规则：
+## 玩家链路
 
-- UI 不直接 import `src/core`。
-- UI 不直接 import `src/uiAdapter.cjs`。
-- UI 只读 `/api/view`、`/api/report`，只写 `/api/action`。
-- 原项目旧 `game.js/ui.js/battle.js/shop.js` 不再由浏览器加载，避免旧规则污染。
-- 原 UI 结构和样式作为展示壳，数据完全来自新架构 ViewModel。
+选英雄 → 点空格移动 / 点目标格选中 → 选行动槽 → 调方向 → 施放 → 结束回合。
 
-已接功能：新建局、开始战斗、奖励候选、选奖励、进入商店、刷新、冻结/解冻、购买、商店事件、离店、普通战报、商店战报、棋盘展示、英雄栏、行动槽栏、底部事件日志。
+行动槽选中后进入 `slotArmed` 状态，此时点击棋盘只更新目标格，不会误触发移动。

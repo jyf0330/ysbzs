@@ -1,28 +1,50 @@
 {
-  "package": "ysbzs_on_boardgameio_main_real_game_wrapper_2026-06-08",
-  "upstream": "uploaded boardgame.io-main.zip extracted to upstream/boardgame.io-main without modifications",
-  "rules": [
-    "do not edit upstream/boardgame.io-main",
-    "put ysbzs in apps/ysbzs",
-    "put integration in boardgameio-adapter"
+  "name": "ysbzs-master-ui-rebuild-gapfixed-20260609",
+  "baseline": "30宠CSV单源 + 重构版浏览器UI + uiAdapter/API单入口",
+  "currentDataCounts": {
+    "pets": 30,
+    "monsters": 30,
+    "waves": 12,
+    "mechanisms": 41,
+    "events": 7,
+    "shop": 30,
+    "relics": 10,
+    "shapes": 30,
+    "validation": 10
+  },
+  "uiEntries": [
+    "web/index.html",
+    "web/ux-app.css",
+    "web/ux-app.js"
   ],
-  "file_count": 3283,
-  "key_paths": [
-    "upstream/boardgame.io-main",
-    "upstream/BOARDGAME_IO_MAIN_FILE_MANIFEST.sha256",
-    "apps/ysbzs",
-    "boardgameio-adapter",
-    "scripts/verify_no_upstream_edits.sh",
-    "scripts/run_all_checks.sh",
-    "docs/BOARDGAME_IO_UNMODIFIED_BASE_RULES.md",
-    "docs/INTEGRATION_REPORT.md"
+  "apiEntries": [
+    "tools/run_ui_server.cjs",
+    "src/uiAdapter.cjs"
+  ],
+  "removedOldUiFiles": [
+    "web/ui.js",
+    "web/game.js",
+    "web/board.js",
+    "web/battle.js",
+    "web/shop.js",
+    "web/original-ui-compat-adapter.js",
+    "ORIGINAL_UI_ADAPTER_START_HERE.md"
+  ],
+  "importantDocs": [
+    "README_RUN.md",
+    "UI_CONNECTED_START_HERE.md",
+    "UI_ADAPTER_START_HERE.md",
+    "docs/00_AI_START_HERE.md",
+    "docs/UX_INTERACTION_DESIGN_OPTIMIZED.md",
+    "docs/audit/2026-06-09_ui-rebuild-gap-fix.md"
   ],
   "checks": [
-    "bash scripts/verify_no_upstream_edits.sh",
-    "cd apps/ysbzs-boardgameio && npm run check:all",
-    "bash scripts/run_all_checks.sh"
+    "npm run check:all",
+    "npm run test:coverage"
   ],
-  "real_boardgameio_app": "apps/ysbzs-boardgameio",
-  "upstream_rule": "upstream/boardgame.io-main remains unmodified; integration lives outside upstream",
-  "core_entry": "apps/ysbzs-boardgameio/src/YSBZSGame.cjs"
+  "notes": [
+    "UI 不保存核心战斗状态，只读 ViewModel。",
+    "行动槽瞄准使用 slotArmed 防止误移动。",
+    "旧 127 覆盖测试已改名为 .disabled 归档。"
+  ]
 }

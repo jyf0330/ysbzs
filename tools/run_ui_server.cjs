@@ -32,15 +32,12 @@ function staticFile(req, res) {
   if (!fs.existsSync(full) || !fs.statSync(full).isFile()) return send(res, 404, 'Not found', 'text/plain; charset=utf-8');
   const ext = path.extname(full);
   const type = ext === '.html' ? 'text/html; charset=utf-8' : ext === '.css' ? 'text/css; charset=utf-8' : ext === '.js' ? 'application/javascript; charset=utf-8' : ext === '.json' ? 'application/json; charset=utf-8' : 'text/plain; charset=utf-8';
-  if (file === '/index.html') {
-    // index.html 文件本身保持参考项目原样；运行时注入兼容适配层，避免改 HTML / ui.js。
-    const html = fs.readFileSync(full, 'utf8');
-    const injected = html.includes('original-ui-compat-adapter.js')
-      ? html
-      : html.replace('</body>', '<script src="original-ui-compat-adapter.js"></script>\n</body>');
-    return send(res, 200, injected, type);
-  }
   send(res, 200, fs.readFileSync(full), type);
+}
+function logReq(req, body) {
+  const ts = new Date().toISOString().slice(11, 19);
+  const short = body?.type || req.method + ' ' + req.url;
+  process.stderr.write(`[${ts}] ${short}\n`);
 }
 async function handleApi(req, res) {
   const url = new URL(req.url, 'http://localhost');
@@ -57,6 +54,7 @@ async function handleApi(req, res) {
     }
     if (req.method === 'POST' && url.pathname === '/api/action') {
       const body = await readBody(req);
+      logReq(req, body);
       if (body.type === 'NEW_GAME') {
         adapter = createYSBZSUIAdapter({ day: Number(body.day || 1), period: body.period || '上午', gold: Number(body.gold ?? 8) });
         return json(res, 200, { ok: true, command: 'NEW_GAME', viewModel: adapter.getViewModel() });
@@ -76,6 +74,6 @@ const server = http.createServer((req, res) => {
 const port = Number(process.env.PORT || process.argv[2] || 4173);
 server.listen(port, '127.0.0.1', () => {
   console.log(`YSBZS UI connected: http://127.0.0.1:${port}`);
-  console.log('UI -> /api/* -> src/uiAdapter.cjs -> core reducer/event log');
+  console.log('New UI shell -> /api/* -> src/uiAdapter.cjs -> core reducer/event log');
 });
 module.exports = { server };

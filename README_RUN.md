@@ -1,47 +1,53 @@
-# ysbzs 全数据核心 + 原 UI 单轨接入包（01-09 全接入）
+# 元素背包史 · 运行与验收说明（UI 重构补完版）
 
-## 目标
-`src/core` 是唯一战斗真源；浏览器原 UI 只通过 `src/uiAdapter.cjs` / ViewModel 展示和下发命令。数据读取 01-09 全数据联动包整理出的 `data/normalized_data.json` / CSV 真源，跑：
+当前包是 **30 宠 CSV 单源数据 + 重构版浏览器 UI + uiAdapter/API 单入口**。
 
-`SourceTables → NormalizedData → Command → Reducer → EventLog → ViewModel/TextReport → Browser UI`
+## 运行
 
-## 已接入数据
-- 01 宠物主表：127
-- 02 怪物模板：34
-- 03 怪物波次：134
-- 04 机制词条：61
-- 05 事件主表：32
-- 06 商店奖励池：127
-- 07 遗物祝福：40
-- 08 形状行动槽：127
-- 09 跨表校验：10
-
-## 一次运行
 ```bash
-npm run check:all
-npm run report
-npm run shop
+npm install
 npm run ui
 ```
 
-## 当前战斗闭环
-- 我方英雄 Leader vs 敌方Boss Leader 已进入核心状态、棋盘、血条和胜负判断。
-- 我方宠物使用统一移动/攻击形状/元素/地形逻辑击败敌方Boss。
-- 玩家阵营读取 `factionRules.player`：无限移动、3层成型/引爆、显示元素生成。
-- 敌方阵营读取 `factionRules.enemy`：表格 AP 移动、99层成型/引爆、默认隐藏元素生成。
-- 全队自动规划使用沙盒 beam 评分，避免低血目标过量溢出，能转向其他怪、Boss 或地形收益。
-- 敌方 AI 枚举目标、可站位和方向，移动逐格触发地形，攻击后在核心生成敌方元素。
-- 元素伤害为线性层数伤害：3层 = 3伤害。
-- `web/battle.js`、`web/elements.js` 只保留旧函数名兼容，不再执行真实结算。
+浏览器打开：`http://127.0.0.1:4195`
 
-## 商店已接入什么
-- 夜市基础池 `night_base`
-- 元素池 `elem_火/水/风/土`
-- 定位池 `role_*`
-- 品质池 `tier_pT*`
-- 奖励池 `reward_pT*`
-- 解锁日、默认价、价格覆盖、权重
-- 刷新、免费刷新、冻结、购买、金币变化、同名合成、奖励候选、遗物候选、商店事件
+## 当前前端入口
 
-## 注意
-机制 61 条都已注册进统一钩子；其中复杂机制先走通用事件/数值实现，后续可以按策划细化每条机制的特殊表现。`castleLine/playerCastle/enemyCastle` 仍可能作为兼容字段或旧 DOM id 存在，但玩家可见口径统一为“我方英雄 / 敌方Boss / 英雄防线”。
+只保留新 UI 层：
+
+- `web/index.html`
+- `web/ux-app.css`
+- `web/ux-app.js`
+
+旧 `web/ui.js / game.js / board.js / battle.js / shop.js / original-ui-compat-adapter.js` 已移除。浏览器层不再保存独立战斗状态，只从 `/api/view` 读取 ViewModel，只向 `/api/action` 发送命令。
+
+## 核心验收
+
+```bash
+npm run check:all
+npm run test:coverage
+```
+
+`check:all` 覆盖：核心旧测试、UI adapter、当前 30 宠全覆盖、玩家细颗粒操作、CSV 校验、第7天试炼、DOM 隔离、新 UI 接口连通、浏览器玩家链路。
+
+## Chromium 说明
+
+当前容器环境可能存在 Chromium 托管策略 `URLBlocklist: ["*"]`，会拦截 `127.0.0.1` 页面导航。`tools/check_browser_player_flow.cjs` 已做保护：普通本地环境会走真实页面点击链路；被策略拦截时降级为“新 UI 源码 + API 状态事件 + 合成 DOM”smoke 验收。
+
+## 数据口径
+
+当前版本以 `data/csv` 为真源，标准规模：
+
+- pets: 30
+- monsters: 30
+- waves: 12
+- mechanisms: 41
+- events: 7
+- shop: 30
+- relics: 10
+- shapes: 30
+- validation: 10
+
+旧 127 宠覆盖测试已归档为：
+
+- `tests/legacy_full_coverage_127_20260608.test.cjs.disabled`

@@ -292,12 +292,13 @@ async function main() {
     await cdp.send('Page.navigate', { url: base });
     await waitForExpr(cdp, `document.readyState === 'complete' || document.readyState === 'interactive'`, 'browser did not navigate to UI', 10000);
     await waitForExpr(cdp, `window.__YSBZS__ && window.__YSBZS__.lastViewModel && document.querySelector('#board .cell')`, 'new UI did not render; strict browser verification refuses API fallback', 12000);
-    await screenshot(cdp, 'loaded', '页面真实加载；棋盘、英雄列表、行动槽都已由浏览器渲染。', records);
+    await screenshot(cdp, 'loaded', '页面真实加载；全屏按钮、棋盘、英雄列表、行动槽都已由浏览器渲染。', records);
 
     let vm = await getVm(cdp);
     assert(vm?.leaders?.player?.hp === 80 && vm?.leaders?.enemy?.hp === 80, 'leader HP did not render from ViewModel');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-card').length`)) >= 1, 'hero cards missing');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-action-row .action-block').length`)) >= 1, 'left action blocks missing');
+    assert((await evaluate(cdp, `(() => { const btn=document.querySelector('#fullscreen-btn'); return !!btn && btn.innerText.trim() === '全屏' && !btn.disabled; })()`)), 'fullscreen button should be visible and enabled');
     assert((await evaluate(cdp, `document.querySelector('#prep-open-btn')?.innerText.trim() === '备战'`)), 'prep button should be named 备战');
     assert((await evaluate(cdp, `!document.querySelector('#roster-list')`)), 'left rail should not keep a permanent roster list');
     assert((await evaluate(cdp, `!document.querySelector('#exa') && !document.body.innerText.includes('自动战斗')`)), '自动战斗 should not compete as a player-facing button');

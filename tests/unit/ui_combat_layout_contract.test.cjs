@@ -11,6 +11,7 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   const css = read('web/ux-app.css');
 
   assert.match(html, /id="prep-open-btn"/, 'left panel needs a clear prep entry');
+  assert.match(html, /id="fullscreen-btn"[\s\S]*>全屏</, 'top shell needs a visible game fullscreen button');
   assert.match(html, /<h2>上阵宠物<\/h2>[\s\S]*id="hero-count"[\s\S]*id="prep-open-btn"[\s\S]*>备战</, 'prep button belongs beside the active-pet title');
   assert.doesNotMatch(html, /打开备战台/, 'prep button copy should be direct');
   assert.doesNotMatch(html, /id="roster-list"/, 'bench roster must not live permanently in the left rail');
@@ -29,6 +30,7 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
 });
 
 test('combat layout scripts implement delayed tooltip, inline AP, manual lock and drag prep', () => {
+  const css = read('web/ux-app.css');
   for (const file of ['web/js/main.js', 'web/ux-app.js']) {
     const js = read(file);
     assert.match(js, /TOOLTIP_DELAY_MS/, `${file} should delay tooltip display`);
@@ -41,9 +43,12 @@ test('combat layout scripts implement delayed tooltip, inline AP, manual lock an
     assert.match(js, /drop/, `${file} should support drag/drop prep targets`);
     assert.match(js, /prepFilter/, `${file} should filter prep backpack roster`);
     assert.match(js, /slotShortName/, `${file} should render compact action-block names`);
+    assert.match(js, /requestFullscreen/, `${file} should enter fullscreen through the browser Fullscreen API`);
+    assert.match(js, /fullscreenchange/, `${file} should keep fullscreen button state in sync`);
     assert.doesNotMatch(js, /opChip\('目标'/, `${file} should not keep target details in the board-side rail`);
     assert.doesNotMatch(js, /boardUnitVitals\(unit\)/, `${file} board tokens should not render full unit stats`);
   }
+  assert.match(css, /\.fullscreen-btn/, 'fullscreen button needs a dedicated compact tool style');
 });
 
 test('publication docs include P2 in the current delivery scope', () => {

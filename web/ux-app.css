@@ -71,7 +71,9 @@
 .op-chip.armed{border-color:#c8a050;background:#fff0bd}
 .op-chip.target{border-color:#8a6944;background:#efe1bf}
 .cell{width:49px;height:49px}
-.status-strip{grid-template-columns:repeat(5,1fr)}
+.status-strip{grid-template-columns:repeat(6,1fr)}
+.fullscreen-btn{min-height:auto;padding:6px 8px;border:1px solid rgba(106,79,58,.78);background:#fbf1d9;color:#4b2f1d;font-size:13px;font-weight:900;box-shadow:inset 0 0 0 1px rgba(255,248,224,.62)}
+.fullscreen-btn[aria-pressed="true"]{background:#6a4f3a;color:#fff6df;border-color:#4b2f1d}
 .board-wrap{margin:-20px auto 0}
 
 /* visual-verdict pass: left unit information density */

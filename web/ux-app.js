@@ -958,8 +958,35 @@
     ui.tooltipTimer = null;
     if ($('tooltip')) $('tooltip').classList.add('hidden');
   }
+  function updateFullscreenButton() {
+    const btn = $('fullscreen-btn');
+    if (!btn) return;
+    const supported = !!document.documentElement.requestFullscreen && !!document.exitFullscreen;
+    const active = !!document.fullscreenElement;
+    btn.disabled = !supported;
+    btn.textContent = active ? '退出' : '全屏';
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.title = supported ? (active ? '退出全屏' : '全屏显示游戏') : '当前浏览器不支持全屏';
+  }
+  async function toggleFullscreen() {
+    if (!document.documentElement.requestFullscreen || !document.exitFullscreen) {
+      toast('当前浏览器不支持全屏。', true);
+      updateFullscreenButton();
+      return;
+    }
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+      updateFullscreenButton();
+      scaleApp();
+    } catch (err) {
+      toast(`全屏切换失败：${err.message || err}`, true);
+      updateFullscreenButton();
+    }
+  }
 
   function bind() {
+    $('fullscreen-btn')?.addEventListener('click', () => toggleFullscreen());
     $('new-game-btn').addEventListener('click', () => runCommand('NEW_GAME', { day: 1, period: '上午', gold: 8 }));
     $('day7-btn').addEventListener('click', () => runCommand('SETUP_DAY7_FIRE_TRIAL'));
     $('save-game-btn')?.addEventListener('click', () => saveGame());
@@ -1096,7 +1123,9 @@
     });
     document.addEventListener('mouseleave', hideTooltip);
     document.addEventListener('click', ev => { if (!ev.target.closest('[data-tip]')) hideTooltip(); });
+    document.addEventListener('fullscreenchange', () => { updateFullscreenButton(); scaleApp(); });
     window.addEventListener('resize', scaleApp);
+    updateFullscreenButton();
     scaleApp();
   }
   function scaleApp() {

@@ -1,6 +1,6 @@
 # 真实浏览器玩家链路验证
 
-- 时间：2026-06-09T14:38:39.901Z
+- 时间：2026-06-09T14:56:52.587Z
 - URL：http://127.0.0.1:4196
 - 浏览器：/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 - 验证方式：CDP `Input.dispatchMouseEvent` 发送真实鼠标事件，页面按钮/格子自己触发 DOM click 监听。
@@ -37,7 +37,7 @@
 - 点击“我方全部出击”：#all-out-btn @ (1116, 486)
 
 ## 截图
-- screenshots/01_loaded.png：页面真实加载；棋盘、英雄列表、行动槽都已由浏览器渲染。
+- screenshots/01_loaded.png：页面真实加载；全屏按钮、棋盘、英雄列表、行动槽都已由浏览器渲染。
 - screenshots/02_prep_overlay_opened.png：备战台覆盖主战斗区，表达当前不是开战状态。
 - screenshots/03_prep_filter_fire.png：备战台可以按元素、名称或职能筛选。
 - screenshots/04_prep_drag_restored.png：拖拽上阵/下阵走真实浏览器事件并通过 API 更新阵容。

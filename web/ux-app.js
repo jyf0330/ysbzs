@@ -262,19 +262,34 @@
   function renderHeroes() {
     const heroes = ui.vm.heroes || [];
     $('hero-count').textContent = `${heroes.length}人`;
+    const flatSlots = slotsFlat();
     $('hero-list').innerHTML = heroes.map(h => {
       const sel = h.id === ui.selectedUnitId;
       const dead = h.alive === false || h.hp <= 0;
-      return `<button class="hero-card${sel ? ' sel' : ''}" data-hero-id="${esc(h.id)}" type="button">
-        <div class="avatar ${clsForEl(h.element)}">${esc(unitIcon(h))}</div>
-        <div class="hero-main">
-          <strong>${esc(h.name)}${qualityTag(h.quality)}<span class="role-tag">${esc(h.role || h.element || '-')}</span></strong>
-          <div class="stat-row">${statChips(h)}</div>
-          <span class="hero-sub">${esc(slotPlanText(h))}${dead ? ' · 已退场' : ''}</span>
-          <span class="hero-sub mech-line">${esc(compactMechanics(h.mechanicStatus || []))}</span>
-          <div class="hpbar"><i style="width:${pct(h.hp, h.maxHp)}%"></i></div>
-        </div>
-      </button>`;
+      const heroSlots = flatSlots.filter(x => x.hero.id === h.id);
+      const slotButtons = heroSlots.map(x => {
+        const s = x.slot;
+        const selected = ui.selectedSlotGlobal === x.globalIndex;
+        const locked = ui.vm.phase !== 'player_turn' || !s.canUse || ui.busy;
+        return `<button class="action-block${selected ? ' sel' : ''}${s.used ? ' used' : ''}${locked ? ' locked' : ''}" data-slot="${x.globalIndex}" type="button"${ui.busy ? ' disabled' : ''}>
+          <b class="${clsForEl(s.element)}">${esc(s.element || '-')}</b>
+          <span>${esc(s.label || `槽${x.localIndex + 1}`)}</span>
+          <i>${esc(DIR[s.direction] || s.direction || '→')}</i>
+        </button>`;
+      }).join('');
+      return `<article class="hero-card${sel ? ' sel' : ''}">
+        <button class="hero-select" data-hero-id="${esc(h.id)}" type="button">
+          <div class="avatar ${clsForEl(h.element)}">${esc(unitIcon(h))}</div>
+          <div class="hero-main">
+            <strong>${esc(h.name)}${qualityTag(h.quality)}<span class="role-tag">${esc(h.role || h.element || '-')}</span></strong>
+            <div class="stat-row">${statChips(h)}</div>
+            <span class="hero-sub">${esc(slotPlanText(h))}${dead ? ' · 已退场' : ''}</span>
+            <span class="hero-sub mech-line">${esc(compactMechanics(h.mechanicStatus || []))}</span>
+            <div class="hpbar"><i style="width:${pct(h.hp, h.maxHp)}%"></i></div>
+          </div>
+        </button>
+        <div class="hero-action-row">${slotButtons || '<span class="empty">无行动块</span>'}</div>
+      </article>`;
     }).join('') || '<div class="detail-card empty">没有可操作英雄。</div>';
   }
   async function selectHero(unitId) {
@@ -396,17 +411,12 @@
       ui.slotArmed = false;
       closeApModal();
       await runCommand('SELECT_UNIT', { unitId: unit.id });
-      const detail = await fetchCellDetail(r, c);
-      if (detail) showCellPopup(r, c, { unit, ...detail });
+      await fetchCellDetail(r, c);
       return;
     }
     const hero = selectedHero();
     await runCommand('SELECT_CELL', { r, c });
-    const detail = await fetchCellDetail(r, c);
-    if (detail) {
-      if (cell) showCellPopup(r, c, { ...detail, elements: detail.elements || cell.elements });
-      else showCellPopup(r, c, detail);
-    }
+    await fetchCellDetail(r, c);
     if (ui.slotArmed) return;
     if (ui.vm?.phase === 'player_turn' && !hero && cell && !cell.unitId) {
       toast('先点棋盘上的英雄或左侧英雄卡，再点空格移动。');
@@ -418,8 +428,28 @@
   }
 
   function renderCellDetail() {
+    const slotInfo = ui.slotArmed ? selectedSlotInfo() : null;
+    if (slotInfo) {
+      $('detail-summary').textContent = `${slotInfo.hero.name} · ${slotInfo.slot.label}`;
+      $('cell-detail').className = 'detail-card selected-detail';
+      $('cell-detail').innerHTML = renderSlotDetail(slotInfo);
+      return;
+    }
+    const hero = selectedHero();
     const c = ui.selectedCell || ui.vm.selected?.cell;
-    if (!c) { $('cell-detail').className = 'detail-card empty'; $('cell-detail').innerHTML = '选择棋盘格后显示单位、元素与预览。'; return; }
+    if (hero && (!c || unitById(cellAt(c.r, c.c)?.unitId)?.id === hero.id)) {
+      $('detail-summary').textContent = hero.name;
+      $('cell-detail').className = 'detail-card selected-detail';
+      $('cell-detail').innerHTML = renderUnitDetail(hero);
+      return;
+    }
+    if (!c) {
+      $('detail-summary').textContent = '未选择';
+      $('cell-detail').className = 'detail-card empty';
+      $('cell-detail').innerHTML = '请选择宠物、行动块或棋盘格。';
+      return;
+    }
+    $('detail-summary').textContent = `R${Number(c.r) + 1} C${Number(c.c) + 1}`;
     const detail = ui.cellDetail && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
     const cell = cellAt(c.r, c.c);
     const unit = detail?.unit || unitById(cell?.unitId);
@@ -445,31 +475,49 @@
     if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>`);
     $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
   }
+  function renderUnitDetail(unit) {
+    const elementLayers = Object.entries(unit.elements || unit.elementLayers || {})
+      .filter(([, n]) => Number(n) > 0)
+      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join(' ');
+    const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(s.label || s.shapeName || '行动块')} · ${esc(s.element || '-')} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
+    return [
+      `<div class="detail-unit"><span class="${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span> <strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.role || unit.element || '')}</small></div>`,
+      `<div class="stat-row detail-stats">${statChips(unit)}</div>`,
+      `<div class="detail-plan">${esc(slotPlanText(unit))}</div>`,
+      `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
+      elementLayers ? `<div class="detail-els">${elementLayers}</div>` : '<div class="detail-els">元素层：<span class="dim">无</span></div>',
+      slotList ? `<div class="detail-slot-list">${slotList}</div>` : ''
+    ].join('\n');
+  }
+  function renderSlotDetail(info) {
+    const s = info.slot;
+    const h = info.hero;
+    const locked = ui.vm.phase !== 'player_turn' || !s.canUse || ui.busy;
+    const apKey = `${h.id}:${info.localIndex}`;
+    const ap = ui.apBySlot[apKey] || 1;
+    return `<div class="detail-unit"><span class="${clsForEl(s.element)}">${esc(s.element || '-')}</span> <strong>${esc(s.label || `行动块${info.localIndex + 1}`)}</strong><small>${esc(h.name)}</small></div>
+      <div class="detail-plan">类型：主动行动块 · 元素：${esc(s.element || '-')} · 层数：${esc(s.layers ?? '-')}</div>
+      <div class="detail-plan">攻击形状：${esc(s.shapeName || s.shapeId || '-')} · 当前方向：${esc(DIR[s.direction] || s.direction || '→')} · AP ${esc(ap)}</div>
+      <div class="detail-actions" aria-label="行动块方向与释放">
+        ${['up','left','right','down'].map(d => `<button class="as-dir-btn detail-dir" data-slot-dir="${info.globalIndex}" data-dir="${d}" type="button"${locked ? ' disabled' : ''}>${DIR[d]}</button>`).join('')}
+        <button class="use-btn detail-use" data-use="${info.globalIndex}" type="button"${locked || s.used ? ' disabled' : ''}>施放</button>
+      </div>
+      <div class="detail-plan">${s.used ? '状态：已释放' : locked ? '状态：当前不可用' : '状态：可用，点击棋盘选择目标格。'}</div>`;
+  }
 
   function renderSlots() {
     const flat = slotsFlat();
     const selected = selectedSlotInfo();
-    $('slot-summary').textContent = selected ? `${selected.hero.name} · ${selected.slot.label}` : '未选择';
-    $('slot-list').innerHTML = flat.map(x => {
-      const s = x.slot, h = x.hero;
-      const sel = selected && selected.globalIndex === x.globalIndex;
-      const used = s.used;
-      const locked = ui.vm.phase !== 'player_turn' || !s.canUse || ui.busy;
-      return `<div class="slot-card${sel ? ' sel' : ''}${used ? ' used' : ''}${locked ? ' locked' : ''}" data-slot="${x.globalIndex}">
-        <div class="slot-main">
-          <strong>${esc(h.name)} · ${esc(s.label)}</strong>
-          <span class="${clsForEl(s.element)}" data-tip="${esc(s.element)}">${esc(s.element)}${esc(s.layers)} · ${esc(s.shapeName || s.shapeId || '-')} · ${esc(DIR[s.direction] || s.direction || '→')}</span>
-        </div>
-        <div class="slot-actions">
-          ${['up','left','right','down'].map(d => `<button class="as-dir-btn" data-slot-dir="${x.globalIndex}" data-dir="${d}" type="button"${locked ? ' disabled' : ''}>${DIR[d]}</button>`).join('')}
-          <button class="use-btn" data-use="${x.globalIndex}" type="button"${locked || used ? ' disabled' : ''}>施放</button>
-        </div>
-      </div>`;
-    }).join('') || '<div class="detail-card empty">没有行动槽。</div>';
+    if ($('slot-summary')) $('slot-summary').textContent = selected ? `${selected.hero.name} · ${selected.slot.label}` : '未选择';
+    if ($('slot-list')) $('slot-list').innerHTML = flat.map(x => `<span data-slot-index="${x.globalIndex}">${esc(x.hero.name)}:${esc(x.slot.label)}</span>`).join('');
   }
   async function selectSlot(globalIndex) {
     const info = slotsFlat()[globalIndex]; if (!info) return;
+    document.body.dataset.lastSlotClick = String(globalIndex);
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = true;
+    renderHeroes();
+    renderCellDetail();
+    openApModal(info);
     await runCommand('SELECT_SLOT', { slotId: info.localIndex, unitId: info.hero.id });
     openApModal(info);
   }
@@ -708,6 +756,8 @@
     $('roll-shop-btn').addEventListener('click', () => runCommand('ROLL_SHOP', { slots: 6 }));
     $('exit-shop-btn').addEventListener('click', () => runCommand('EXIT_SHOP'));
     $('hero-list').addEventListener('click', ev => {
+      const slot = ev.target.closest('[data-slot]');
+      if (slot) { selectSlot(Number(slot.dataset.slot)); return; }
       const btn = ev.target.closest('[data-hero-id]');
       if (btn) selectHero(btn.dataset.heroId);
     });
@@ -732,6 +782,12 @@
       if (useBtn) { useSlot(Number(useBtn.dataset.use)); return; }
       const slot = ev.target.closest('[data-slot]');
       if (slot) selectSlot(Number(slot.dataset.slot));
+    });
+    $('cell-detail').addEventListener('click', ev => {
+      const dirBtn = ev.target.closest('[data-slot-dir]');
+      if (dirBtn) { setSlotDir(Number(dirBtn.dataset.slotDir), dirBtn.dataset.dir); return; }
+      const useBtn = ev.target.closest('[data-use]');
+      if (useBtn) useSlot(Number(useBtn.dataset.use));
     });
     $('reward-list').addEventListener('click', ev => {
       const btn = ev.target.closest('[data-reward-index]');

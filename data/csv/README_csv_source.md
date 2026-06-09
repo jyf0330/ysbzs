@@ -1,12 +1,12 @@
 # CSV 数据真源说明
 
-这个目录是新核心默认读取的数据源。日常策划优先改 `xlsx/ysbzs_master.xlsx`，再运行 `npm run data:export` 生成这里的完整 CSV。
+这个目录是新核心默认读取的数据源。日常策划优先改 `xlsx/ysbzs_master.xlsx`，再运行 `npm run data:export` 生成这里的完整 CSV；需要看完整好读版时运行 `npm run data:workbook` 刷新 `xlsx/ysbzs_v1_linked_data_tables.xlsx`。
 
 ## 读取规则
 
 - 程序启动 / 新建局时优先读取 `data/csv/*.csv`。
 - 如果 `data/csv` 不存在，才回退到 `data/normalized_data.json`。
-- 改 `xlsx/ysbzs_master.xlsx` 后，先运行 `npm run data:export`，再运行 `npm run check:csv` / `npm run check:all` 验证；如果 UI 服务已经启动，点“新建局”或重启 `npm run ui` 让新数据重新载入。
+- 改 `xlsx/ysbzs_master.xlsx` 后，先运行 `npm run data:export`，需要同步好读版时运行 `npm run data:workbook`，再运行 `npm run check:csv` / `npm run check:all` 验证；如果 UI 服务已经启动，点“新建局”或重启 `npm run ui` 让新数据重新载入。
 
 ## 主要文件
 

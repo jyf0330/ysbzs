@@ -6,6 +6,7 @@
 
 - 日常改宠物、波次、商店商品、机制摘要、第7天试炼：`xlsx/ysbzs_master.xlsx`
 - 导出完整程序 CSV：`npm run data:export`
+- 刷新策划好读版 workbook：`npm run data:workbook`
 - 低频/高级程序表仍保留在 `data/csv/*.csv`，例如事件、遗物、品质倍率、16-23 规则展开表。
 
 ## 精简总表对应关系
@@ -37,6 +38,7 @@
 
 ```bash
 npm run data:export
+npm run data:workbook
 npm run check:csv
 npm run check:all
 ```

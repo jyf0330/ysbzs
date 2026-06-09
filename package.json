@@ -22,6 +22,7 @@
     "data:check": "node tools/check_csv_data.cjs",
     "data:export": "python3 tools/export_master_to_csv.py",
     "data:export:check": "python3 tools/export_master_to_csv.py --check",
+    "data:workbook": "python3 tools/build_readable_workbook.py",
     "data:dump": "node tools/dump_normalized_from_csv.cjs",
     "test:ops": "node --test tests/full_player_operations.test.cjs",
     "check:day7": "node --test tests/day7_fire_trial.test.cjs && node tools/check_day7_fire_trial_browser.cjs",

@@ -35,26 +35,17 @@
     <main class="main-layout">
       <aside class="left-panel panel">
         <div class="panel-head">
-          <h2>英雄选择</h2>
+          <h2>上阵宠物与行动块</h2>
           <span id="hero-count">0/0</span>
         </div>
         <div id="hero-list" class="hero-list" aria-label="我方英雄列表"></div>
+        <div id="slot-list" class="slot-list hidden-bridge" aria-hidden="true"></div>
 
         <div class="panel-head compact">
-          <h2>阵容</h2>
+          <h2>备战</h2>
           <span id="roster-count">0/4</span>
         </div>
         <div id="roster-list" class="roster-list" aria-label="阵容管理列表"></div>
-
-        <div class="panel-head compact">
-          <h2>目标信息</h2>
-        </div>
-        <div id="cell-detail" class="detail-card empty">选择棋盘格后显示单位、元素与预览。</div>
-
-        <div class="panel-head compact">
-          <h2>试炼</h2>
-        </div>
-        <div id="trial-card" class="trial-card empty">未进入特殊试炼。</div>
       </aside>
 
       <section class="board-panel panel">
@@ -87,10 +78,10 @@
 
       <aside class="right-panel panel">
         <div class="panel-head">
-          <h2>行动槽</h2>
-          <span id="slot-summary">未选择</span>
+          <h2>详细信息</h2>
+          <span id="detail-summary">未选择</span>
         </div>
-        <div id="slot-list" class="slot-list" aria-label="行动槽列表"></div>
+        <div id="cell-detail" class="detail-card empty">请选择宠物、行动块或棋盘格。</div>
 
         <div class="panel-head compact">
           <h2>回合控制</h2>
@@ -101,6 +92,11 @@
           <button id="exa" class="secondary-btn" type="button">自动战斗</button>
           <button id="full-day-btn" class="secondary-btn" type="button">一键完整流程</button>
         </div>
+
+        <div class="panel-head compact">
+          <h2>试炼</h2>
+        </div>
+        <div id="trial-card" class="trial-card empty">未进入特殊试炼。</div>
 
         <div class="panel-head compact">
           <h2>商店 / 奖励</h2>

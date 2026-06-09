@@ -14,7 +14,7 @@
 - 所有玩家操作走 `/api/action`。
 - 所有页面渲染读 `/api/view`。
 - 所有战报读 `/api/report`。
-- 日常策划数据优先改 `xlsx/ysbzs_master.xlsx`，再用 `npm run data:export` 生成完整 CSV。
+- 日常策划数据优先改 `xlsx/ysbzs_master.xlsx`，再用 `npm run data:export` 生成完整 CSV；需要好读版总览时用 `npm run data:workbook` 刷新 workbook。
 - 新规则写核心或规则内核，UI 只展示 ViewModel。
 - 新增交互必须补浏览器/adapter/玩家链路测试。
 

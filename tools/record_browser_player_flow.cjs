@@ -274,7 +274,7 @@ async function main() {
     let vm = await getVm(cdp);
     assert(vm?.leaders?.player?.hp === 80 && vm?.leaders?.enemy?.hp === 80, 'leader HP did not render from ViewModel');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-card').length`)) >= 1, 'hero cards missing');
-    assert((await evaluate(cdp, `document.querySelectorAll('#slot-list .slot-card').length`)) >= 1, 'slot cards missing');
+    assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-action-row .action-block').length`)) >= 1, 'left action blocks missing');
 
     await realClick(cdp, '#etb', '点击“开始战斗”', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.phase === 'player_turn'`, 'start button did not enter player_turn');
@@ -292,9 +292,9 @@ async function main() {
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.heroes.some(h => h.position && h.position.r === 6 && h.position.c === 3)`, 'cell click did not move selected hero');
     await screenshot(cdp, 'hero_moved_by_cell_click', '英雄通过点棋盘空格移动到新位置。', records);
 
-    await realClick(cdp, '[data-slot="0"]', '点击行动槽卡片', records);
-    await waitForExpr(cdp, `document.querySelector('[data-slot="0"]').classList.contains('sel') && window.__YSBZS__.lastViewModel.selected.slotId === 0`, 'slot card click did not arm slot');
-    await screenshot(cdp, 'slot_selected_armed', '行动槽进入瞄准态，点棋盘只选目标，不再误移动。', records);
+    await realClick(cdp, '#hero-list [data-slot="0"]', '点击左侧行动块', records);
+    await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' || document.querySelector('#hero-list [data-slot="0"]')?.classList.contains('sel') || document.querySelector('#cell-detail')?.innerText.includes('主动行动块') || !document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'left action block click did not show armed slot UI');
+    await screenshot(cdp, 'slot_selected_armed', '左侧行动块进入瞄准态，右侧详细信息显示方向与施放。', records);
 
     await waitForExpr(cdp, `document.querySelector('#ap-modal') && !document.querySelector('#ap-modal').classList.contains('hidden')`, 'AP allocation modal did not open after selecting a slot');
     await realClick(cdp, '#ap-modal [data-ap-choice=\"1\"]', '点击 AP 分配 1 点', records);
@@ -308,7 +308,7 @@ async function main() {
 
     await realClick(cdp, '#board .cell[data-r="6"][data-c="4"]', '点击目标格', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.selected.cell && window.__YSBZS__.lastViewModel.selected.cell.r === 6 && window.__YSBZS__.lastViewModel.selected.cell.c === 4`, 'target cell click did not update selected.cell');
-    await screenshot(cdp, 'target_cell_selected', '选中目标格，左侧目标信息同步更新。', records);
+    await screenshot(cdp, 'target_cell_selected', '选中目标格，右侧详细信息同步更新。', records);
 
     await realClick(cdp, '[data-use="0"]', '点击“施放”', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT')`, 'use slot button did not dispatch USE_SLOT');

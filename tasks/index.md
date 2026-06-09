@@ -1,0 +1,20 @@
+# 任务总览
+
+## ACTIVE
+
+- 无
+
+## PAUSED
+
+- 无
+
+## DONE
+
+- `tasks/done/2026-06-09_ui-combat-layout-publication-split.md`
+- `tasks/done/2026-06-09_task-occupancy-skill.md`
+
+## 规则
+
+- ACTIVE 任务最多 1 个。
+- 修改文件前必须先占用 ACTIVE 任务卡。
+- 任务完成后归档到 `tasks/done/` 并更新本文件。

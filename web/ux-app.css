@@ -88,3 +88,45 @@
 .roster-card{padding:6px;grid-template-columns:minmax(0,1fr) auto}
 .roster-card.locked strong:after{content:""}
 .cell-popup{width:230px}
+
+/* combat-layout-publication: left-side pet action blocks + right-side details */
+.hidden-bridge{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+.hero-list{min-height:326px;max-height:326px}
+.hero-card{display:grid;grid-template-columns:1fr;gap:4px;min-height:76px;padding:5px}
+.hero-select{position:relative;z-index:1;display:grid;grid-template-columns:34px minmax(0,1fr);gap:6px;align-items:center;width:100%;padding:0;border:0;background:transparent;text-align:left;color:inherit}
+.hero-select:hover{filter:none}
+.hero-card .avatar{width:34px;height:34px;border-radius:8px;font-size:18px}
+.hero-card .stat-row{margin:2px 0 1px}
+.hero-card .stat-chip{min-height:15px;font-size:9px}
+.hero-card .stat-chip b{font-size:8px}
+.hero-card .hero-sub{font-size:9px}
+.hero-action-row{position:relative;z-index:3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.action-block{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:3px;min-height:22px;padding:2px 4px;border:1px solid rgba(124,89,53,.38);background:#fff8e6;color:#3f2e22;font-size:10px;font-weight:800}
+.action-block span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.action-block i{font-style:normal;color:#7b6045}
+.action-block.sel{border-color:#c8a050;background:#fff0bd;box-shadow:0 0 0 2px rgba(200,160,80,.2)}
+.action-block.used{opacity:.52}
+.action-block.locked:not(.sel){background:#eee2c9;color:#8a745a}
+.right-panel .detail-card{min-height:142px;max-height:174px}
+.right-panel .trial-card{min-height:56px;max-height:74px}
+.selected-detail{white-space:normal}
+.detail-slot-list{display:grid;grid-template-columns:1fr;gap:4px;margin-top:6px}
+.detail-slot-pill{display:block;padding:4px 6px;border:1px solid rgba(124,89,53,.25);background:#fff8e6;font-size:11px;color:#4b2f1d}
+.detail-slot-pill.used{opacity:.55}
+.detail-actions{display:grid;grid-template-columns:repeat(4,32px) 1fr;gap:5px;align-items:center;margin:8px 0}
+.detail-dir{height:28px}
+.detail-use{grid-column:auto;height:28px}
+.bottom-panel{grid-template-columns:86px minmax(0,1fr);background:rgba(246,229,194,.92)}
+.log-view{background:#fbf1d9;color:#3f2e22;border:1px solid rgba(124,89,53,.42);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+.replay-panel{color:#3f2e22}
+.replay-events{background:#fff8e6;border-color:rgba(124,89,53,.32)}
+.replay-json{background:#fff8e6;color:#3f2e22;border-color:rgba(124,89,53,.32)}
+body[data-phase="player_turn"] .shop-actions,
+body[data-phase="monster_turn"] .shop-actions,
+body[data-phase="round_end"] .shop-actions,
+body[data-phase="player_turn"] .reward-list,
+body[data-phase="monster_turn"] .reward-list,
+body[data-phase="round_end"] .reward-list,
+body[data-phase="player_turn"] .shop-list,
+body[data-phase="monster_turn"] .shop-list,
+body[data-phase="round_end"] .shop-list{display:none}

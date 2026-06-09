@@ -150,8 +150,9 @@ Always trigger matching skills when available:
 
 | Intent | Skills |
 |---|---|
-| Any clear `Goal` | `using-superpowers`, `ywh-game`, `ywh-web-game` |
-| Implement code, UI, or rules | `executing-plans`, `test-driven-development`, `verification-before-completion`, `ywh-game` |
+| Any clear `Goal` that implies edits | `task-occupancy`, `using-superpowers`, `ywh-game`, `ywh-web-game` |
+| Before modifying code, UI, rules, tests, project workflow files, or delivery assets | `task-occupancy` |
+| Implement code, UI, or rules | `task-occupancy`, `executing-plans`, `test-driven-development`, `verification-before-completion`, `ywh-game` |
 | Bug, anomaly, failed test, failed acceptance | `systematic-debugging`, `test-driven-development`, `verification-before-completion` |
 | Existing plan, task card, executable GDD | `executing-plans`, `subagent-driven-development`, `verification-before-completion` |
 | Unclear goal, exploration, standalone `diff` | `brainstorming`, `writing-plans`, `ywh-game` |
@@ -159,8 +160,8 @@ Always trigger matching skills when available:
 | Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
 | UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
 | UI behavior bug, 点不了, 移动不了, 选不中, 状态不对 | `systematic-debugging`, `test-driven-development`, `game-ui-frontend`, `ywh-web-game`, `playwright`, `verification-before-completion` |
-| Docs, CHANGELOG, workflow rules | `ywh-game`, `verification-before-completion` |
-| `git-c`, finish, pre-commit check | `verification-before-completion`, `ywh-game` |
+| Docs, CHANGELOG, workflow rules that require edits | `task-occupancy`, `ywh-game`, `verification-before-completion` |
+| `git-c`, finish, pre-commit check | `task-occupancy`, `verification-before-completion`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
 
 ### Skill Invocation Requirement
@@ -178,6 +179,20 @@ Before editing files for any matched task, write a short Skill Receipt:
 For UI/UX, HUD, board-click, or visible interaction work, this receipt is a hard
 gate. Do not edit UI files until `game-ui-frontend` or `frontend-skill` and
 `ywh-web-game` have been read or explicitly marked `UNAVAILABLE`.
+
+For any task that will edit files, `task-occupancy` is the first gate:
+
+```text
+read workflow/task docs -> git status ->
+create/update ACTIVE task card -> reserve related_files ->
+check overlap / dirty files -> edit -> verify ->
+archive task card -> commit if conditions allow
+```
+
+If the task system is required but `tasks/` is missing, create the minimal
+`tasks/index.md`, `tasks/README.md`, `tasks/doing/`, `tasks/paused/`, and
+`tasks/done/` structure before editing. If another ACTIVE task owns the slot,
+stop with `FILE_CONFLICT_STOP` unless the user explicitly continues that task.
 
 If the agent cannot invoke a listed skill because the current AI tool does not
 expose it, the skill is missing, the user explicitly excludes it, or the task

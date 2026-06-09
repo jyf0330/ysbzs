@@ -136,3 +136,28 @@ test('CSV08 精简策划总表可无损导出当前核心程序 CSV', () => {
     assert.equal(actualCsv, expectedCsv, name);
   }
 });
+
+test('CSV09 策划好读版 workbook 可从当前 CSV 重建', () => {
+  const outFile = path.join(os.tmpdir(), `ysbzs-readable-${Date.now()}.xlsx`);
+  execFileSync('python3', [
+    path.join(root, 'tools', 'build_readable_workbook.py'),
+    '--target', outFile
+  ], { cwd: root, stdio: 'pipe' });
+  assert.ok(fs.existsSync(outFile), 'readable workbook generated');
+  assert.ok(fs.statSync(outFile).size > 10000, 'readable workbook has content');
+  execFileSync('python3', ['-c', `
+from openpyxl import load_workbook
+import sys
+wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
+checks = {
+  '01_宠物主表_好读版': 128,
+  '03_怪物波次_好读版': 135,
+  '06_商店奖励池_好读版': 128,
+  '13_第7天兽群试炼_联动版': 10,
+}
+for sheet, rows in checks.items():
+    assert sheet in wb.sheetnames, sheet
+    assert wb[sheet].max_row == rows, (sheet, wb[sheet].max_row)
+wb.close()
+`, outFile], { cwd: root, stdio: 'pipe' });
+});

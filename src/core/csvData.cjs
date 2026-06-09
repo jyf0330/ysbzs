@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { normalizeWaveRow, buildQualityMultiplierMap } = require('./waveRules.cjs');
 
 const ROOT = path.resolve(__dirname, '../..');
 const DEFAULT_CSV_DIR = path.join(ROOT, 'data', 'csv');
@@ -234,28 +235,11 @@ function normalizeSourceTables(sourceTables, options = {}) {
     };
   }).filter(x => x.petId);
 
-  const waves = (sourceTables.waves || []).map(row => ({
-    waveId: row['波次ID'],
-    day: toNum(row['天数'], 1),
-    period: row['时段'],
-    round: toNum(row['回合'], 1),
-    petId: row['宠物ID'],
-    name: row['名称(自动)'],
-    element: row['元素(自动)'],
-    enemyRole: row['怪物定位(自动)'],
-    hp: toNum(row['HP(自动)'], 1),
-    atk: toNum(row['攻(自动)'], 1),
-    def: toNum(row['防(自动)'], 0),
-    shield: toNum(row['盾(自动)'], 0),
-    ap: toNum(row['行动(自动)'], 3),
-    count: toNum(row['数量'], 1),
-    positionRule: row['位置'],
-    threat: toNum(row['本行威胁(自动)'], 0),
-    designGoal: row['设计目的'],
-    failPenalty: row['失败惩罚'],
-    rewardImpact: row['奖励影响'],
-    note: row['备注']
-  })).filter(x => x.waveId && x.petId);
+  const qualityMultiplierMap = buildQualityMultiplierMap(sourceTables.qualityMultipliers || []);
+  const petsByIdForWave = new Map(pets.map(p => [p.id, p]));
+  const waves = (sourceTables.waves || [])
+    .map(row => normalizeWaveRow(row, { petsById: petsByIdForWave, qualityMultiplierMap }))
+    .filter(x => x.waveId && x.petId);
 
   const mechanisms = (sourceTables.mechanisms || []).map(row => ({
     code: row['机制编号'],
@@ -426,7 +410,10 @@ function normalizeSourceTables(sourceTables, options = {}) {
     modifiers,
     elementPacketRules,
     elementConversions,
-    triggerOrderRules
+    triggerOrderRules,
+    waveRules: {
+      qualityMultiplierMap
+    }
   };
 }
 

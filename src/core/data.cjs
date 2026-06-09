@@ -31,7 +31,14 @@ function validateData(d = loadGameData()) {
   const hasMech = id => id === 'none' || ix.mechanicsById.has(id);
   for (const p of d.pets) { for (const id of listMechanics(p.mechanics)) if(!hasMech(id) && id !== 'REVIEW') issues.push(`pet ${p.id} missing mechanic ${id}`); }
   for (const m of d.monsters) { if (!ix.petsById.has(m.petId)) issues.push(`monster missing pet ${m.petId}`); for (const id of listMechanics(m.mechanics)) if(!hasMech(id)) issues.push(`monster ${m.petId} missing mechanic ${id}`); }
-  for (const w of d.waves) { if (!ix.petsById.has(w.petId)) issues.push(`wave ${w.waveId} missing pet ${w.petId}`); if (!ix.monstersByPetId.has(w.petId)) issues.push(`wave ${w.waveId} pet ${w.petId} has no monster template`); }
+  for (const w of d.waves) {
+    const petPool = (w.petPool && w.petPool.length ? w.petPool : [w.petId]).filter(Boolean);
+    if (!petPool.length) issues.push(`wave ${w.waveId} has empty pet pool`);
+    for (const petId of petPool) {
+      if (!ix.petsById.has(petId)) issues.push(`wave ${w.waveId} missing pet ${petId}`);
+      if (!ix.monstersByPetId.has(petId)) issues.push(`wave ${w.waveId} pet ${petId} has no monster template`);
+    }
+  }
   for (const e of d.events) { if (e.petId && !ix.petsById.has(e.petId)) issues.push(`event ${e.id} missing pet ${e.petId}`); for (const id of listMechanics(e.mechanics)) if(!hasMech(id)) issues.push(`event ${e.id} missing mechanic ${id}`); if(e.shopPoolId && !ix.shopPools.has(e.shopPoolId)) issues.push(`event ${e.id} missing shop pool ${e.shopPoolId}`); if(e.rewardPoolId && !ix.rewardPools.has(e.rewardPoolId)) issues.push(`event ${e.id} missing reward pool ${e.rewardPoolId}`); }
   for (const s of d.shop) { if (!ix.petsById.has(s.petId)) issues.push(`shop missing pet ${s.petId}`); if (!s.shopPools || s.shopPools.length === 0) issues.push(`shop ${s.petId} has no shop pools`); if (!s.rewardPools || s.rewardPools.length === 0) issues.push(`shop ${s.petId} has no reward pools`); }
   for (const r of d.relics) { if (r.petId && !ix.petsById.has(r.petId)) issues.push(`relic ${r.id} missing pet ${r.petId}`); for (const id of listMechanics(r.mechanics)) if(!hasMech(id)) issues.push(`relic ${r.id} missing mechanic ${id}`); if(r.shopPoolId && !ix.shopPools.has(r.shopPoolId)) issues.push(`relic ${r.id} missing shop pool ${r.shopPoolId}`); if(r.rewardPoolId && !ix.rewardPools.has(r.rewardPoolId)) issues.push(`relic ${r.id} missing reward pool ${r.rewardPoolId}`); }

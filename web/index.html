@@ -18,6 +18,7 @@
         <div class="status-pill"><span>天数</span><strong id="day-label">-</strong></div>
         <div class="status-pill"><span>回合</span><strong id="round-label">-</strong></div>
         <div class="status-pill gold"><span>金币</span><strong id="gold-label">0</strong></div>
+        <div class="status-pill"><span>版本</span><strong id="state-version-label">v0</strong></div>
       </section>
       <section class="leader-strip" aria-label="双方核心血量">
         <div class="leader-card player">
@@ -40,6 +41,12 @@
         <div id="hero-list" class="hero-list" aria-label="我方英雄列表"></div>
 
         <div class="panel-head compact">
+          <h2>阵容</h2>
+          <span id="roster-count">0/4</span>
+        </div>
+        <div id="roster-list" class="roster-list" aria-label="阵容管理列表"></div>
+
+        <div class="panel-head compact">
           <h2>目标信息</h2>
         </div>
         <div id="cell-detail" class="detail-card empty">选择棋盘格后显示单位、元素与预览。</div>
@@ -59,6 +66,8 @@
           <div class="board-actions">
             <button id="new-game-btn" class="ghost-btn" type="button">新开一天</button>
             <button id="day7-btn" class="ghost-btn danger" type="button">第7天火核心试炼</button>
+            <button id="save-game-btn" class="ghost-btn" type="button">保存</button>
+            <button id="load-game-btn" class="ghost-btn" type="button">读取</button>
           </div>
         </div>
         <div class="board-wrap">
@@ -109,11 +118,14 @@
       <div class="log-tabs" role="tablist">
         <button class="log-tab active" data-log-tab="events" type="button">事件</button>
         <button class="log-tab" data-log-tab="report" type="button">战报</button>
+        <button class="log-tab" data-log-tab="replay" type="button">回放</button>
         <button class="log-tab" data-log-tab="debug" type="button">调试</button>
       </div>
-      <pre id="log" class="log-view"></pre>
+      <div id="log" class="log-view"></div>
     </footer>
 
+    <div id="ap-modal" class="ap-modal hidden" aria-hidden="true"></div>
+    <div id="tooltip" class="tooltip hidden" role="tooltip"></div>
     <div id="phase-banner" class="phase-banner" aria-hidden="true"></div>
     <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
   </div>

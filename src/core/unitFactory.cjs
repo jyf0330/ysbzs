@@ -65,6 +65,7 @@ function createUnit(opts) {
     shield: opts.shield || 0,
     maxShield: opts.maxShield ?? opts.shield ?? 0,
     ap: opts.ap || 3,
+    moveRange: opts.moveRange ?? opts.moveAp ?? null,
     mechanics: (opts.mechanics && opts.mechanics.length ? opts.mechanics : ['none']).filter(Boolean),
     shape: opts.shape || null,
     position: normalizePosition(opts.position, { r: 0, c: 0 }),
@@ -98,6 +99,10 @@ function makeUnitFromData(state, side, petId, override = {}) {
   if (state.nextUnit !== undefined) state.nextUnit += 1;
   const id = override.id || `${side}_${petId}_${seq}`;
   const position = override.position || (side === 'enemy' ? { r: 5, c: 3 } : null);
+  const boardRows = Number(state.board?.rows || 8);
+  const boardCols = Number(state.board?.cols || 8);
+  const boardMaxMove = Math.max(0, boardRows - 1) + Math.max(0, boardCols - 1);
+  const configuredMoveRange = override.moveRange ?? override.moveAp ?? base.moveRange ?? pet.moveRange ?? base['移动范围'] ?? pet['移动范围'];
 
   return createUnit({
     id,
@@ -107,16 +112,17 @@ function makeUnitFromData(state, side, petId, override = {}) {
     name: base.name || pet.name,
     displayName: `${side === 'hero' ? '我方' : '敌方'}${base.name || pet.name}`,
     element: base.element || pet.element || null,
-    quality: base.quality || pet.quality,
-    bodySize: base.bodySize || pet.体型 || '中型',
-    role: base.enemyRole || base.role || pet.role || pet.定位,
-    effectScore: base.effectScore || 0,
+    quality: override.quality || base.quality || pet.quality,
+    bodySize: override.bodySize || base.bodySize || base.size || pet.bodySize || pet.size || pet.体型 || '中型',
+    role: override.role || base.enemyRole || base.role || pet.role || pet.定位,
+    effectScore: override.effectScore ?? base.effectScore ?? base.panelScore ?? pet.score ?? 0,
     maxHp: override.hp || base.hp || pet.hp || 1,
     hp: override.hp || base.hp || pet.hp || 1,
     atk: override.atk || base.atk || pet.atk || 1,
     def: override.def ?? base.def ?? pet.def ?? 0,
     shield: override.shield ?? base.shield ?? pet.shield ?? 0,
     ap: override.ap || base.ap || pet.ap || 3,
+    moveRange: configuredMoveRange ?? (side === 'hero' ? boardMaxMove : null),
     mechanics: override.mechanics || base.mechanics || pet.mechanics || ['none'],
     shape: shape || null,
     position: clone(position),
@@ -150,6 +156,7 @@ function makeTrialUnit(def) {
     shield: def.shield || 0,
     maxShield: def.maxShield ?? def.shield ?? 0,
     ap: def.ap,
+    moveRange: def.moveRange ?? def.moveAp ?? null,
     mechanics: def.mechanics || ['table_driven_trial'],
     shape: def.shape || null,
     position: clone(def.position),

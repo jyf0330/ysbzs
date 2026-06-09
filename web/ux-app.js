@@ -10,6 +10,14 @@
     init: '准备', player_turn: '玩家回合', monster_turn: '怪物行动', round_end: '回合结算',
     battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中'
   };
+  const TIP_TEXT = {
+    '火': '火：叠层达到阈值会引爆并造成爆发伤害。水可催化火，让本次火层提高。',
+    '水': '水：可作为催化层，参与火/风等元素反应。',
+    '风': '风：偏向扩散、转化和位移相关机制。',
+    '土': '土：兼容元素，偏向防御、地形和阻挡。',
+    preview: '行动预览：根据当前选中英雄、行动槽、方向和目标格计算。',
+    threat: '敌方威胁：怪物下一步可能攻击或移动影响范围。'
+  };
 
   const ui = {
     vm: null,
@@ -20,7 +28,12 @@
     activeLogTab: 'events',
     busy: false,
     slotArmed: false,
-    lastPhase: null
+    lastPhase: null,
+    playerId: 'p1',
+    nextCommandNo: 1,
+    cellDetail: null,
+    replay: { events: [], step: 0 },
+    apBySlot: {}
   };
 
   function esc(v) {
@@ -65,7 +78,7 @@
   async function api(path, body) {
     const res = await fetch(path, {
       method: body ? 'POST' : 'GET',
-      headers: body ? { 'content-type': 'application/json' } : undefined,
+      headers: body ? { 'content-type': 'application/json', 'x-player-id': ui.playerId } : { 'x-player-id': ui.playerId },
       body: body ? JSON.stringify(body) : undefined,
       cache: 'no-store'
     });
@@ -83,12 +96,23 @@
     const data = await api(`/api/report?mode=${encodeURIComponent(mode)}`);
     return data.report || '';
   }
+  function makeCommand(type, payload = {}) {
+    const commandNo = ui.nextCommandNo++;
+    return Object.assign({
+      type,
+      commandId: `client_${String(commandNo).padStart(6, '0')}`,
+      playerId: ui.playerId,
+      battleId: ui.vm?.battleId,
+      baseStateVersion: ui.vm?.stateVersion ?? 0
+    }, payload);
+  }
+
   async function runCommand(type, payload = {}) {
     if (ui.busy) return;
     ui.busy = true;
     setBusy(true);
     try {
-      const data = await api('/api/action', Object.assign({ type }, payload));
+      const data = await api('/api/action', makeCommand(type, payload));
       ui.vm = data.viewModel || ui.vm;
       if (data.events && data.events.length) toast(data.events[data.events.length - 1].text || data.events[data.events.length - 1].type);
       normalizeSelection();
@@ -100,8 +124,29 @@
       setTimeout(() => document.body.classList.remove('shake'), 300);
     } finally {
       ui.busy = false;
-      render();
+      setBusy(false);
+      if (ui.vm) renderControls();
     }
+  }
+  async function saveGame() {
+    try {
+      const data = await api('/api/save');
+      localStorage.setItem('ysbzs.save.slot1', JSON.stringify(data.save));
+      toast(`已保存：v${data.save?.state?.stateVersion ?? ui.vm?.stateVersion ?? 0}`);
+      return data.save;
+    } catch (err) { toast(err.message || String(err), true); }
+  }
+  async function loadGameFromStorage() {
+    try {
+      const raw = localStorage.getItem('ysbzs.save.slot1');
+      if (!raw) { toast('没有找到本地存档。', true); return null; }
+      const data = await api('/api/load', { save: JSON.parse(raw) });
+      ui.vm = data.viewModel || ui.vm;
+      normalizeSelection();
+      render();
+      toast(`已读取：v${ui.vm?.stateVersion ?? 0}`);
+      return data;
+    } catch (err) { toast(err.message || String(err), true); }
   }
   function setBusy(busy) { qsa('button').forEach(btn => btn.disabled = !!busy && !btn.classList.contains('log-tab')); }
   function toast(text, danger = false) {
@@ -119,7 +164,7 @@
     if (vm.selected?.cell) ui.selectedCell = vm.selected.cell;
     const info = selectedSlotInfo();
     if (info) { ui.selectedSlotGlobal = info.globalIndex; ui.selectedSlot = info.localIndex; }
-    window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, isBusy: () => ui.busy };
+    window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, makeCommand, saveGame, loadGameFromStorage, isBusy: () => ui.busy };
   }
 
   function render() {
@@ -131,10 +176,11 @@
     $('day-label').textContent = `第${vm.day || 1}天 ${vm.period || ''}`.trim();
     $('round-label').textContent = `${vm.round || 0}/${vm.maxRounds || '-'}`;
     $('gold-label').textContent = vm.gold ?? 0;
+    if ($('state-version-label')) $('state-version-label').textContent = `v${vm.stateVersion ?? 0}`;
     const pl = vm.leaders?.player, en = vm.leaders?.enemy;
     $('p-castle-txt').textContent = pl ? `${pl.hp}/${pl.maxHp}` : '-/-';
     $('e-castle-txt').textContent = en ? `${en.hp}/${en.maxHp}` : '-/-';
-    renderHeroes(); renderBoard(); renderCellDetail(); renderSlots(); renderControls(); renderRewards(); renderShop(); renderTrial(); renderLog(); maybeBanner();
+    renderHeroes(); renderRoster(); renderBoard(); renderCellDetail(); renderSlots(); renderControls(); renderRewards(); renderShop(); renderTrial(); renderLog(); updateDebugPanel(); maybeBanner();
   }
   function maybeBanner() {
     const phase = ui.vm?.phase;
@@ -163,16 +209,34 @@
         <span class="element-tag ${clsForEl(h.element)}">${esc(h.element || '-')}</span>
       </button>`;
     }).join('') || '<div class="detail-card empty">没有可操作英雄。</div>';
-    qsa('.hero-card', $('hero-list')).forEach(btn => btn.addEventListener('click', () => selectHero(btn.dataset.heroId)));
   }
   async function selectHero(unitId) {
-    const prev = ui.selectedUnitId;
     ui.selectedUnitId = unitId === ui.selectedUnitId ? null : unitId;
     ui.selectedSlotGlobal = null;
     ui.selectedSlot = null;
     ui.slotArmed = false;
-    console.log(`[selectHero] ${prev}→${ui.selectedUnitId}`);
     await runCommand('SELECT_UNIT', { unitId: ui.selectedUnitId });
+  }
+
+  function renderRoster() {
+    const inv = ui.vm.inventory || { active: [], bench: [], activeCount: 0, maxActive: 4 };
+    $('roster-count').textContent = `${inv.activeCount || inv.active?.length || 0}/${inv.maxActive || 4}`;
+    const card = (item, active) => {
+      const id = item.instanceId || item.petId;
+      const unsupported = (item.mechanicStatus || []).filter(x => x.id !== 'none' && x.status !== 'implemented');
+      const canUp = active || (item.canActivate !== false && unsupported.length === 0);
+      const mechText = unsupported.length ? ` · 未实装:${unsupported.map(x => x.id).join(',')}` : '';
+      return `<div class="roster-card${active ? '' : ' bench'}${unsupported.length ? ' locked' : ''}" data-roster-id="${esc(id)}">
+        <div><strong>${esc(item.name || item.petId)}</strong><span class="${clsForEl(item.element)}" data-tip="${esc(item.element || '')}">${esc(item.element || '-')} · Lv${esc(item.level || 1)} · HP ${esc(item.hp ?? '-')}/${esc(item.maxHp ?? '-')} · 售${esc(item.sellValue || 1)}金${esc(mechText)}</span></div>
+        <div class="roster-actions">
+          <button class="mini-btn" data-roster-toggle="${esc(id)}" type="button"${ui.busy || (!active && !canUp) ? ' disabled' : ''}>${active ? '备战' : '上阵'}</button>
+          <button class="mini-btn sell" data-roster-sell="${esc(id)}" type="button"${ui.busy ? ' disabled' : ''}>出售</button>
+        </div>
+      </div>`;
+    };
+    const activeHtml = (inv.active || []).map(x => card(x, true)).join('') || '<div class="detail-card empty">上场位为空。</div>';
+    const benchHtml = (inv.bench || []).map(x => card(x, false)).join('') || '<div class="detail-card empty">备战席为空。</div>';
+    $('roster-list').innerHTML = `<div class="roster-section-title">上场</div>${activeHtml}<div class="roster-section-title">备战</div>${benchHtml}`;
   }
 
   function renderBoard() {
@@ -203,16 +267,15 @@
       if (threatKeys.has(key)) classes.push('threat-hit');
       if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
       const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
-        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
+        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}" data-tip="${esc(el)}">${esc(el)}${esc(n)}</span>`).join('');
       const p = previewMap.get(key); const t = threatMap.get(key);
       return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="R${cell.r + 1}C${cell.c + 1}">
         ${elements ? `<div class="element-stack">${elements}</div>` : ''}
         ${unit ? unitToken(unit) : '<span class="empty-dot">·</span>'}
-        ${p ? `<span class="preview-num">预${esc(p.damage ?? p.layers ?? '+')}</span>` : ''}
-        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
+        ${p ? `<span class="preview-num" data-tip="preview">预${esc(p.damage ?? p.layers ?? '+')}</span>` : ''}
+        ${t ? `<span class="threat-num" data-tip="threat">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
       </button>`;
     }).join('');
-    qsa('.cell', $('board')).forEach(btn => btn.addEventListener('click', () => onCellClick(Number(btn.dataset.r), Number(btn.dataset.c))));
   }
   function unitToken(unit) {
     const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
@@ -221,40 +284,57 @@
   }
   function legalMoveTargets(hero) {
     const set = new Set();
-    if (!hero?.position || (ui.vm.phase !== 'init' && ui.vm.phase !== 'player_turn') || ui.slotArmed) return set;
-    const ap = Number(hero.ap || 1);
+    if (!hero?.position || ui.vm.phase !== 'player_turn' || ui.slotArmed) return set;
+    const range = Number(hero.moveRange ?? hero.ap ?? 1);
     for (const cell of ui.vm.board?.cells || []) {
       const d = Math.abs(cell.r - hero.position.r) + Math.abs(cell.c - hero.position.c);
-      if (d > 0 && d <= ap && !cell.unitId) set.add(`${cell.r},${cell.c}`);
+      if (d > 0 && d <= range && !cell.unitId) set.add(`${cell.r},${cell.c}`);
     }
     return set;
+  }
+  async function fetchCellDetail(r, c) {
+    try {
+      const data = await api('/api/action', makeCommand('GET_CELL_DETAIL', { r, c }));
+      ui.cellDetail = data.result || null;
+      if (data.viewModel) ui.vm = data.viewModel;
+      renderCellDetail();
+      return ui.cellDetail;
+    } catch (err) {
+      ui.cellDetail = null;
+      toast(err.message || String(err), true);
+      return null;
+    }
   }
   async function onCellClick(r, c) {
     ui.selectedCell = { r, c };
     const cell = cellAt(r, c);
     const hero = selectedHero();
-    console.log(`[onCellClick] r=${r} c=${c} phase=${ui.vm?.phase} slotArmed=${ui.slotArmed} hero=${hero?.id||'null'} cellEmpty=${!cell?.unitId}`);
     await runCommand('SELECT_CELL', { r, c });
-    if (ui.slotArmed) { console.log('→ 槽瞄准态，只选目标'); return; }
-    if ((ui.vm?.phase === 'init' || ui.vm?.phase === 'player_turn') && hero && cell && !cell.unitId) {
-      console.log('→ 条件满足，执行移动（后端自动开战）');
+    await fetchCellDetail(r, c);
+    if (ui.slotArmed) return;
+    if (ui.vm?.phase === 'player_turn' && hero && cell && !cell.unitId) {
       await runCommand('MOVE_HERO', { unitId: hero.id, to: { r, c } });
-    } else {
-      console.log(`→ 不满足移动条件: phase=${ui.vm?.phase} hero=${!!hero} cell=${!!cell} empty=${!cell?.unitId}`);
     }
   }
 
   function renderCellDetail() {
     const c = ui.selectedCell || ui.vm.selected?.cell;
     if (!c) { $('cell-detail').className = 'detail-card empty'; $('cell-detail').textContent = '选择棋盘格后显示单位、元素与预览。'; return; }
+    const detail = ui.cellDetail && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
     const cell = cellAt(c.r, c.c);
-    const unit = unitById(cell?.unitId);
+    const unit = detail?.unit || unitById(cell?.unitId);
     const lines = [`位置：第${Number(c.r) + 1}行第${Number(c.c) + 1}列`];
     if (unit) lines.push(`单位：${unit.displayName || unit.name} · HP ${unit.hp}/${unit.maxHp} · 攻 ${unit.atk || 0}`);
-    const els = Object.entries(cell?.elements || {}).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join(' ');
+    else lines.push('单位：无单位');
+    const elsObj = detail?.elements || cell?.elements || {};
+    const els = Object.entries(elsObj).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join(' ');
     lines.push(`元素：${els || '无'}`);
-    if (cell?.preview) lines.push(`预览：${JSON.stringify(cell.preview)}`);
-    if (cell?.threat) lines.push(`威胁：${JSON.stringify(cell.threat)}`);
+    const terrain = detail?.terrain || cell?.terrain;
+    if (terrain?.modules?.length) lines.push(`地形：${terrain.modules.join('、')}`);
+    const preview = detail?.preview || cell?.preview;
+    const threat = detail?.threat || cell?.threat;
+    if (preview) lines.push(`预览：${JSON.stringify(preview)}`);
+    if (threat) lines.push(`威胁：${JSON.stringify(threat)}`);
     $('cell-detail').className = 'detail-card'; $('cell-detail').textContent = lines.join('\n');
   }
 
@@ -270,7 +350,7 @@
       return `<div class="slot-card${sel ? ' sel' : ''}${used ? ' used' : ''}${locked ? ' locked' : ''}" data-slot="${x.globalIndex}">
         <div class="slot-main">
           <strong>${esc(h.name)} · ${esc(s.label)}</strong>
-          <span class="${clsForEl(s.element)}">${esc(s.element)}${esc(s.layers)} · ${esc(s.shapeName || s.shapeId || '-')} · ${esc(DIR[s.direction] || s.direction || '→')}</span>
+          <span class="${clsForEl(s.element)}" data-tip="${esc(s.element)}">${esc(s.element)}${esc(s.layers)} · ${esc(s.shapeName || s.shapeId || '-')} · ${esc(DIR[s.direction] || s.direction || '→')}</span>
         </div>
         <div class="slot-actions">
           ${['up','left','right','down'].map(d => `<button class="as-dir-btn" data-slot-dir="${x.globalIndex}" data-dir="${d}" type="button"${locked ? ' disabled' : ''}>${DIR[d]}</button>`).join('')}
@@ -278,14 +358,12 @@
         </div>
       </div>`;
     }).join('') || '<div class="detail-card empty">没有行动槽。</div>';
-    qsa('[data-slot]', $('slot-list')).forEach(el => el.addEventListener('click', ev => { if (ev.target.closest('button')) return; selectSlot(Number(el.dataset.slot)); }));
-    qsa('[data-slot-dir]', $('slot-list')).forEach(btn => btn.addEventListener('click', ev => { ev.stopPropagation(); setSlotDir(Number(btn.dataset.slotDir), btn.dataset.dir); }));
-    qsa('[data-use]', $('slot-list')).forEach(btn => btn.addEventListener('click', ev => { ev.stopPropagation(); useSlot(Number(btn.dataset.use)); }));
   }
   async function selectSlot(globalIndex) {
     const info = slotsFlat()[globalIndex]; if (!info) return;
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = true;
     await runCommand('SELECT_SLOT', { slotId: info.localIndex, unitId: info.hero.id });
+    openApModal(info);
   }
   async function setSlotDir(globalIndex, dir) {
     const info = slotsFlat()[globalIndex]; if (!info) return;
@@ -295,7 +373,26 @@
   async function useSlot(globalIndex) {
     const info = slotsFlat()[globalIndex] || selectedSlotInfo(); if (!info) return;
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = info.globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = false;
-    await runCommand('USE_SLOT', { unitId: info.hero.id, slotId: info.localIndex, cell: ui.selectedCell || ui.vm.selected?.cell || null });
+    await runCommand('USE_SLOT', { unitId: info.hero.id, slotId: info.localIndex, cell: ui.selectedCell || ui.vm.selected?.cell || null, ap: ui.apBySlot[`${info.hero.id}:${info.localIndex}`] || 1 });
+  }
+
+  function openApModal(info) {
+    if (!info || !$('ap-modal')) return;
+    const key = `${info.hero.id}:${info.localIndex}`;
+    const max = Math.max(1, Number(info.hero.availableAp ?? info.slot.availableAp ?? info.hero.ap ?? 1));
+    const current = Math.max(1, Math.min(max, Number(ui.apBySlot[key] || 1)));
+    ui.apBySlot[key] = current;
+    $('ap-modal').classList.remove('hidden');
+    $('ap-modal').setAttribute('aria-hidden', 'false');
+    $('ap-modal').innerHTML = `<h3>AP 分配</h3><div>${esc(info.hero.name)} · ${esc(info.slot.label)}</div><div>剩余 AP：${max}，本次使用：<strong>${current}</strong></div><div class="ap-buttons">${Array.from({ length: max }, (_, i) => i + 1).map(n => `<button data-ap-choice="${n}" class="${n === current ? 'sel' : ''}" type="button">${n}</button>`).join('')}<button data-ap-close="1" type="button">关闭</button></div>`;
+  }
+  function closeApModal() { if ($('ap-modal')) { $('ap-modal').classList.add('hidden'); $('ap-modal').setAttribute('aria-hidden', 'true'); } }
+  function chooseAp(n) {
+    const info = selectedSlotInfo();
+    if (!info) return;
+    const key = `${info.hero.id}:${info.localIndex}`;
+    ui.apBySlot[key] = Math.max(1, Number(n || 1));
+    openApModal(info);
   }
 
   function renderControls() {
@@ -328,16 +425,16 @@
     $('reward-list').innerHTML = rewards.map((r, i) => `<button class="reward-card" data-reward-index="${i}" type="button"${ui.busy ? ' disabled' : ''}>
       <strong>${esc(r.name || r.petName || r.relicName || r.type || `奖励${i + 1}`)}</strong><span>选择</span>
     </button>`).join('');
-    qsa('[data-reward-index]', $('reward-list')).forEach(btn => btn.addEventListener('click', () => runCommand('PICK_REWARD', { index: Number(btn.dataset.rewardIndex) })));
   }
   function renderShop() {
     const offers = ui.vm.shop?.offers || [];
-    $('shop-list').innerHTML = offers.map(o => `<div class="offer-card${o.frozen ? ' frozen' : ''}">
-      <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span></div>
+    const events = ui.vm.shop?.events || [];
+    const eventHtml = events.length ? `<div class="shop-event-list">${events.map(e => `<div class="shop-event-card"><div><strong>${esc(e.name)}</strong><span>${esc(e.optionText || '')} · ${esc(e.costText || '无成本')} → ${esc(e.gainText || '')}</span></div><button class="mini-btn" data-shop-event="${esc(e.id)}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>触发</button></div>`).join('')}</div>` : '';
+    const offerHtml = offers.map(o => `<div class="offer-card${o.frozen ? ' frozen' : ''}">
+      <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}" data-tip="${esc(o.element || '')}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span></div>
       <div class="offer-actions"><button class="mini-btn buy" data-buy-offer="${esc(o.offerId)}" type="button"${ui.busy || ui.vm.phase !== 'shop' || Number(o.price) > Number(ui.vm.gold || 0) ? ' disabled' : ''}>购买</button><button class="mini-btn freeze" data-freeze-offer="${esc(o.offerId)}" data-frozen="${o.frozen ? '1' : '0'}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>${o.frozen ? '解冻' : '冻结'}</button></div>
     </div>`).join('');
-    qsa('[data-buy-offer]', $('shop-list')).forEach(btn => btn.addEventListener('click', () => runCommand('BUY_OFFER', { offerId: btn.dataset.buyOffer })));
-    qsa('[data-freeze-offer]', $('shop-list')).forEach(btn => btn.addEventListener('click', () => runCommand(btn.dataset.frozen === '1' ? 'UNFREEZE_OFFER' : 'FREEZE_OFFER', { offerId: btn.dataset.freezeOffer })));
+    $('shop-list').innerHTML = eventHtml + offerHtml;
   }
   function renderTrial() {
     const t = ui.vm.day7Trial;
@@ -359,26 +456,176 @@
       $('log').textContent = await report('player');
       return;
     }
+    if (ui.activeLogTab === 'replay') {
+      await renderReplay();
+      return;
+    }
     if (ui.activeLogTab === 'debug') {
-      $('log').textContent = JSON.stringify({ selected: vm.selected, nextActions: vm.nextActions, meta: vm.meta }, null, 2);
+      $('log').textContent = JSON.stringify({ selected: vm.selected, playerViewState: vm.playerViewState, nextActions: vm.nextActions, meta: vm.meta, stateHash: vm.stateHash }, null, 2);
       return;
     }
     const events = vm.events || [];
     $('log').textContent = events.slice(-22).map(e => `${String(e.step || '').padStart(3, '0')} [${e.type}] ${e.text || ''}`).join('\n') || '暂无事件。';
   }
 
+  async function loadReplayEvents() {
+    const data = await api('/api/action', makeCommand('EXPORT_BATTLE_TRACE'));
+    ui.replay.events = data.result?.events || data.events || [];
+    ui.replay.step = Math.min(ui.replay.step || 0, ui.replay.events.length);
+    return ui.replay.events;
+  }
+  async function renderReplay() {
+    if (!ui.replay.events.length) await loadReplayEvents();
+    const events = ui.replay.events || [];
+    const step = Math.min(ui.replay.step || 0, events.length);
+    $('log').innerHTML = `<div class="replay-panel">
+      <div class="replay-toolbar"><span class="replay-counter" id="brp-count">步骤 ${step}/${events.length}</span><button data-replay-refresh="1" type="button">刷新事件</button><button data-replay-prev="1" type="button">上一步</button><button data-replay-next="1" type="button">下一步</button><button data-replay-copy="1" type="button">复制JSON</button><button data-replay-play="1" type="button">回放输入</button></div>
+      <div id="brp-events" class="replay-events">${events.map((e, i) => `<div class="replay-event${i + 1 === step ? ' active' : ''}">${String(i + 1).padStart(3, '0')} [${esc(e.type)}] ${esc(e.text || '')}</div>`).join('') || '暂无事件。'}</div>
+      <textarea id="replay-json" class="replay-json">${esc(JSON.stringify(events, null, 2))}</textarea>
+      <div id="brp-text">${events[step - 1] ? esc(events[step - 1].text || events[step - 1].type) : '选择步骤查看事件文本。'}</div>
+    </div>`;
+  }
+  async function copyReplayJson() {
+    const text = $('replay-json')?.value || JSON.stringify(ui.replay.events || [], null, 2);
+    try { await navigator.clipboard.writeText(text); toast('已复制回放 JSON。'); }
+    catch { const ta = $('replay-json'); if (ta) { ta.focus(); ta.select(); document.execCommand('copy'); toast('已复制回放 JSON。'); } }
+  }
+  async function replayFromInput() {
+    try {
+      const events = JSON.parse($('replay-json')?.value || '[]');
+      const data = await api('/api/action', makeCommand('REPLAY_BATTLE_TRACE', { events }));
+      ui.replay.events = data.result?.events || events;
+      ui.replay.step = 0;
+      await renderReplay();
+      toast(`回放载入 ${ui.replay.events.length} 步。`);
+    } catch (err) { toast(`回放 JSON 无效：${err.message || err}`, true); }
+  }
+
+  function updateDebugPanel() {
+    const el = document.getElementById('ysbzs-debug');
+    if (!el || !ui.vm) return;
+    const pre = el.querySelector('pre');
+    if (pre) pre.textContent = JSON.stringify({
+      phase: ui.vm.phase,
+      selected: ui.vm.selected,
+      heroCount: ui.vm.heroes?.length || 0,
+      gold: ui.vm.gold,
+      stateVersion: ui.vm.stateVersion,
+      stateHash: ui.vm.stateHash,
+      recentEvents: (ui.vm.events || []).slice(-5)
+    }, null, 2);
+  }
+  function toggleDebugPanel() {
+    const existing = document.getElementById('ysbzs-debug');
+    if (existing) { existing.remove(); return; }
+    const panel = document.createElement('div');
+    panel.id = 'ysbzs-debug';
+    panel.className = 'ysbzs-debug';
+    panel.innerHTML = '<div class="ysbzs-debug-head">🐛 调试面板 <button type="button" data-debug-close="1">✕</button></div><pre></pre>';
+    document.body.appendChild(panel);
+    makeDraggable(panel, panel.querySelector('.ysbzs-debug-head'));
+    updateDebugPanel();
+  }
+  function makeDraggable(panel, handle) {
+    if (!panel || !handle) return;
+    let drag = null;
+    handle.addEventListener('mousedown', ev => {
+      drag = { x: ev.clientX, y: ev.clientY, left: panel.offsetLeft, top: panel.offsetTop };
+      ev.preventDefault();
+    });
+    window.addEventListener('mousemove', ev => {
+      if (!drag) return;
+      panel.style.left = `${drag.left + ev.clientX - drag.x}px`;
+      panel.style.top = `${drag.top + ev.clientY - drag.y}px`;
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+    });
+    window.addEventListener('mouseup', () => { drag = null; });
+  }
+  function showTooltip(text, x, y) {
+    const tip = $('tooltip');
+    if (!tip || !text) return;
+    tip.textContent = text;
+    tip.classList.remove('hidden');
+    tip.style.left = `${Math.min(window.innerWidth - 300, x + 12)}px`;
+    tip.style.top = `${Math.min(window.innerHeight - 120, y + 12)}px`;
+  }
+  function hideTooltip() { if ($('tooltip')) $('tooltip').classList.add('hidden'); }
+
   function bind() {
-    $('new-game-btn').addEventListener('click', () => { console.log('[bind] 新开一天'); runCommand('NEW_GAME', { day: 1, period: '上午', gold: 8 }); });
-    $('day7-btn').addEventListener('click', () => { console.log('[bind] 第7天试炼'); runCommand('SETUP_DAY7_FIRE_TRIAL'); });
-    $('etb').addEventListener('click', () => { const cmd = ui.vm?.phase === 'init' ? 'START_BATTLE' : 'END_PLAYER_TURN'; console.log(`[bind] ${cmd}`); runCommand(cmd); });
-    $('monster-btn').addEventListener('click', () => { console.log('[bind] monster-btn'); runCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'); });
-    $('exa').addEventListener('click', () => { console.log('[bind] 自动战斗'); runCommand('RUN_BATTLE'); });
-    $('full-day-btn').addEventListener('click', () => { console.log('[bind] 一键完整流程'); runCommand('RUN_FULL_DAY'); });
-    $('reward-btn').addEventListener('click', () => { console.log('[bind] 生成奖励'); runCommand('REWARD_OPTIONS', { poolId: 'reward_pT1', count: 3 }); });
-    $('shop-btn').addEventListener('click', () => { console.log('[bind] 进入商店'); runCommand('ENTER_SHOP', { poolId: 'night_base', slots: 6 }); });
-    $('roll-shop-btn').addEventListener('click', () => { console.log('[bind] 刷新商店'); runCommand('ROLL_SHOP', { slots: 6 }); });
-    $('exit-shop-btn').addEventListener('click', () => { console.log('[bind] 离开商店'); runCommand('EXIT_SHOP'); });
+    $('new-game-btn').addEventListener('click', () => runCommand('NEW_GAME', { day: 1, period: '上午', gold: 8 }));
+    $('day7-btn').addEventListener('click', () => runCommand('SETUP_DAY7_FIRE_TRIAL'));
+    $('save-game-btn')?.addEventListener('click', () => saveGame());
+    $('load-game-btn')?.addEventListener('click', () => loadGameFromStorage());
+    $('etb').addEventListener('click', () => runCommand(ui.vm?.phase === 'init' ? 'START_BATTLE' : 'END_PLAYER_TURN'));
+    $('monster-btn').addEventListener('click', () => runCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'));
+    $('exa').addEventListener('click', () => runCommand('RUN_BATTLE'));
+    $('full-day-btn').addEventListener('click', () => runCommand('RUN_FULL_DAY'));
+    $('reward-btn').addEventListener('click', () => runCommand('REWARD_OPTIONS', { poolId: 'reward_pT1', count: 3 }));
+    $('shop-btn').addEventListener('click', () => runCommand('ENTER_SHOP', { poolId: 'night_base', slots: 6 }));
+    $('roll-shop-btn').addEventListener('click', () => runCommand('ROLL_SHOP', { slots: 6 }));
+    $('exit-shop-btn').addEventListener('click', () => runCommand('EXIT_SHOP'));
+    $('hero-list').addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-hero-id]');
+      if (btn) selectHero(btn.dataset.heroId);
+    });
+    $('roster-list').addEventListener('click', ev => {
+      const toggle = ev.target.closest('[data-roster-toggle]');
+      if (toggle) { runCommand('TOGGLE_UNIT_ACTIVE', { instanceId: toggle.dataset.rosterToggle }); return; }
+      const sell = ev.target.closest('[data-roster-sell]');
+      if (sell) runCommand('SELL_UNIT', { instanceId: sell.dataset.rosterSell });
+    });
+    $('board').addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-r][data-c]');
+      if (btn) onCellClick(Number(btn.dataset.r), Number(btn.dataset.c));
+    });
+    $('slot-list').addEventListener('click', ev => {
+      const dirBtn = ev.target.closest('[data-slot-dir]');
+      if (dirBtn) { setSlotDir(Number(dirBtn.dataset.slotDir), dirBtn.dataset.dir); return; }
+      const useBtn = ev.target.closest('[data-use]');
+      if (useBtn) { useSlot(Number(useBtn.dataset.use)); return; }
+      const slot = ev.target.closest('[data-slot]');
+      if (slot) selectSlot(Number(slot.dataset.slot));
+    });
+    $('reward-list').addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-reward-index]');
+      if (btn) runCommand('PICK_REWARD', { index: Number(btn.dataset.rewardIndex) });
+    });
+    $('shop-list').addEventListener('click', ev => {
+      const shopEvent = ev.target.closest('[data-shop-event]');
+      if (shopEvent) { runCommand('APPLY_SHOP_EVENT', { eventId: shopEvent.dataset.shopEvent }); return; }
+      const buy = ev.target.closest('[data-buy-offer]');
+      if (buy) { runCommand('BUY_OFFER', { offerId: buy.dataset.buyOffer }); return; }
+      const freeze = ev.target.closest('[data-freeze-offer]');
+      if (freeze) runCommand(freeze.dataset.frozen === '1' ? 'UNFREEZE_OFFER' : 'FREEZE_OFFER', { offerId: freeze.dataset.freezeOffer });
+    });
+    $('log').addEventListener('click', ev => {
+      if (ev.target.closest('[data-replay-refresh]')) { ui.replay.events = []; renderReplay(); return; }
+      if (ev.target.closest('[data-replay-prev]')) { ui.replay.step = Math.max(0, (ui.replay.step || 0) - 1); renderReplay(); return; }
+      if (ev.target.closest('[data-replay-next]')) { ui.replay.step = Math.min((ui.replay.events || []).length, (ui.replay.step || 0) + 1); renderReplay(); return; }
+      if (ev.target.closest('[data-replay-copy]')) { copyReplayJson(); return; }
+      if (ev.target.closest('[data-replay-play]')) { replayFromInput(); }
+    });
     qsa('.log-tab').forEach(btn => btn.addEventListener('click', () => { qsa('.log-tab').forEach(x => x.classList.remove('active')); btn.classList.add('active'); ui.activeLogTab = btn.dataset.logTab; renderLog(); }));
+    $('ap-modal').addEventListener('click', ev => {
+      const choice = ev.target.closest('[data-ap-choice]');
+      if (choice) { chooseAp(choice.dataset.apChoice); return; }
+      if (ev.target.closest('[data-ap-close]')) closeApModal();
+    });
+    document.addEventListener('keydown', ev => {
+      if (ev.ctrlKey && ev.key === '`') { toggleDebugPanel(); ev.preventDefault(); }
+    });
+    document.addEventListener('click', ev => {
+      if (ev.target.closest('[data-debug-close]')) document.getElementById('ysbzs-debug')?.remove();
+    });
+    document.addEventListener('mousemove', ev => {
+      const el = ev.target.closest('[data-tip]');
+      const key = el ? el.dataset.tip : '';
+      if (key && TIP_TEXT[key]) showTooltip(TIP_TEXT[key], ev.clientX, ev.clientY);
+      else hideTooltip();
+    });
+    document.addEventListener('mouseleave', hideTooltip);
+    document.addEventListener('click', ev => { if (!ev.target.closest('[data-tip]')) hideTooltip(); });
     window.addEventListener('resize', scaleApp);
     scaleApp();
   }

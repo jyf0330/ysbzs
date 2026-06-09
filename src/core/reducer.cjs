@@ -9,12 +9,12 @@ function dispatch(state, command) {
     case 'START_NEXT_ROUND': return battle.startNextRound(state);
     case 'MOVE_HERO': return battle.moveHero(state, command.unitId || command.heroId, command.to || command.cell || { r: command.r, c: command.c });
     case 'SELECT_HERO':
-    case 'SELECT_UNIT': state.selected.unitId = command.unitId || command.heroId || command.id || null; return true;
-    case 'SELECT_CELL': state.selected.cell = { r: Number(command.r ?? command.row ?? command.cell?.r ?? 0), c: Number(command.c ?? command.col ?? command.cell?.c ?? 0) }; return true;
-    case 'SELECT_SLOT': state.selected.slotId = Number(command.slotId ?? command.index ?? 0); return true;
+    case 'SELECT_UNIT':
+    case 'SELECT_CELL':
+    case 'SELECT_SLOT': return true;
     case 'SET_ACTION_DIRECTION': return battle.setActionDirection(state, command.unitId || command.heroId, command.slotId ?? command.index, command.dir || command.direction || 'right');
     case 'USE_SLOT':
-    case 'USE_ACTION_SLOT': return battle.useActionSlot(state, command.unitId || command.heroId, command.slotId ?? command.index, command.targetCell || command.cell || (typeof command.r !== 'undefined' ? { r: command.r, c: command.c } : null));
+    case 'USE_ACTION_SLOT': return battle.useActionSlot(state, command.unitId || command.heroId, command.slotId ?? command.index, command.targetCell || command.cell || (typeof command.r !== 'undefined' ? { r: command.r, c: command.c } : null), command);
     case 'END_PLAYER_TURN': return battle.endPlayerTurn(state);
     case 'RUN_MONSTER_TURN': return battle.runMonsterTurn(state);
     case 'BUILD_PREVIEW': return battle.buildPreviewGrid(state, command);

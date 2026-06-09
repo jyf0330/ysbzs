@@ -1,9 +1,16 @@
-const { createGameState } = require('./core/state.cjs');
+const { createGameState, makeUnit } = require('./core/state.cjs');
 const { dispatch: coreDispatch } = require('./core/reducer.cjs');
 const battle = require('./core/battle.cjs');
 const shop = require('./core/shop.cjs');
 const { renderPlayerReport, renderShopReport } = require('./render/textReport.cjs');
 const { pushEvent } = require('./core/events.cjs');
+const { applyBattleStart } = require('./core/mechanics.cjs');
+const { ensureMultiplayerState } = require('./core/multiplayerState.cjs');
+const { normalizeCommandEnvelope, validateCommandAuthority, annotateEvents, commitAcceptedCommand, rejectedCommandResult } = require('./core/commandEnvelope.cjs');
+const { stateHash } = require('./core/stateHash.cjs');
+const { buildSaveDocument, applySaveToState, assertSaveDocument } = require('./storage/saveCodec.cjs');
+const { statusOfMechanic, activationBlockReason } = require('./core/mechanicGate.cjs');
+const { canonicalEventLog } = require('./core/eventProjection.cjs');
 
 const PUBLIC_COMMANDS = Object.freeze([
   'START_BATTLE',
@@ -80,6 +87,10 @@ const ACTION_ALIASES = Object.freeze({
   runDay7FireTrialAll: 'RUN_DAY7_FIRE_TRIAL_ALL'
 });
 
+const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT']);
+const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
+const MAX_ACTIVE_UNITS = 4;
+
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function commandText(command) { return typeof command === 'string' ? command : command.type; }
 function normalizeCommand(typeOrCommand, payload = {}) {
@@ -138,10 +149,14 @@ function stripUnit(state, unit) {
     def: unit.def,
     shield: unit.shield,
     ap: unit.ap,
+    actionApSpent: unit.actionApSpent || 0,
+    availableAp: Math.max(0, Number(unit.ap || 0) - Number(unit.actionApSpent || 0)),
+    moveRange: unit.moveRange ?? null,
     alive: unit.alive,
     position: unit.position || null,
     elements: Object.assign({ 火: 0, 水: 0, 风: 0, 土: 0 }, unit.elements || {}),
     mechanics: unit.mechanics || [],
+    mechanicStatus: (unit.mechanics || []).map(id => ({ id, status: statusOfMechanic(id) })),
     shape: unit.shape ? {
       shapeId: unit.shape.shapeId,
       shapeName: unit.shape.shapeName,
@@ -169,6 +184,38 @@ function stripOffer(offer) {
   };
 }
 function stripReward(reward, index) { return Object.assign({ index }, reward); }
+function makePlayerViewState() {
+  return { selected: { unitId: null, slotId: null, cell: null, direction: 'right' }, recentUiEvents: [] };
+}
+function getPlayerViewState(viewStates, playerId = 'p1') {
+  const id = playerId || 'p1';
+  if (!viewStates.has(id)) viewStates.set(id, makePlayerViewState());
+  return viewStates.get(id);
+}
+function selectedFromViewState(viewState) {
+  return clone((viewState && viewState.selected) || { unitId: null, slotId: null, cell: null, direction: 'right' });
+}
+function makeUiEvent(state, command, type, payload = {}) {
+  const viewSeq = Number(state.nextUiEvent || 1);
+  state.nextUiEvent = viewSeq + 1;
+  return Object.assign({
+    eventId: `${state.battleId || 'battle'}:${command.commandId || 'ui'}:ui:${viewSeq}:${type}`,
+    seq: viewSeq,
+    step: `ui${viewSeq}`,
+    battleId: state.battleId,
+    commandId: command.commandId,
+    playerId: command.playerId,
+    teamId: state.players && state.players[command.playerId] ? state.players[command.playerId].teamId : null,
+    phase: state.phase,
+    round: state.round,
+    type
+  }, payload);
+}
+function rememberUiEvent(viewState, event) {
+  viewState.recentUiEvents = Array.isArray(viewState.recentUiEvents) ? viewState.recentUiEvents : [];
+  viewState.recentUiEvents.push(clone(event));
+  if (viewState.recentUiEvents.length > 30) viewState.recentUiEvents.splice(0, viewState.recentUiEvents.length - 30);
+}
 function boardElementsForVM(state, cell) {
   const out = clone(cell.elements || {});
   const camps = cell.elementCamps || {};
@@ -178,8 +225,16 @@ function boardElementsForVM(state, cell) {
   }
   return out;
 }
-function makeBoardVM(state) {
+function makeBoardVM(state, selected = {}) {
   battle.syncDerivedBoard(state);
+  const previewGrid = battle.buildPreviewGrid(state, {
+    unitId: selected.unitId || undefined,
+    slotId: selected.slotId,
+    cell: selected.cell || undefined
+  });
+  const threatGrid = battle.buildThreatGrid(state);
+  const previewMap = new Map(previewGrid.map(x => [`${x.r},${x.c}`, x]));
+  const threatMap = new Map(threatGrid.map(x => [`${x.r},${x.c}`, x]));
   return {
     rows: state.board.rows,
     cols: state.board.cols,
@@ -192,16 +247,43 @@ function makeBoardVM(state) {
       unitName: cell.unitName,
       terrain: clone(cell.terrain),
       elements: boardElementsForVM(state, cell),
-      preview: clone(cell.preview),
-      threat: clone(cell.threat)
+      preview: clone(previewMap.get(`${cell.r},${cell.c}`) || null),
+      threat: clone(threatMap.get(`${cell.r},${cell.c}`) || null)
     })),
-    previewGrid: battle.buildPreviewGrid(state),
-    threatGrid: battle.buildThreatGrid(state)
+    previewGrid,
+    threatGrid
   };
 }
+
 function inventoryVM(state) {
-  const items = (state.inventory || []).map(x => clone(x));
-  return { items, active: items.filter(x => x.active !== false), bench: items.filter(x => x.active === false) };
+  const activeCount = (state.inventory || []).filter(x => x.active !== false).length;
+  const items = (state.inventory || []).map((x, i) => {
+    const pet = state.indexes?.petsById?.get(x.petId) || {};
+    const unit = findUnitForInventoryEntry(state, x);
+    return Object.assign({}, clone(x), {
+      name: x.name || pet.name || x.petId,
+      element: x.element || pet.element || '-',
+      role: x.role || pet.role || pet.定位 || '-',
+      quality: x.quality || pet.quality || '普通',
+      hp: unit ? unit.hp : (pet.hp || null),
+      maxHp: unit ? unit.maxHp : (pet.hp || null),
+      atk: unit ? unit.atk : (pet.atk || null),
+      instanceId: x.instanceId || null,
+      active: x.active !== false,
+      sellValue: Math.max(1, Number(x.level || 1)),
+      mechanics: x.mechanics || pet.mechanics || [],
+      mechanicStatus: (x.mechanics || pet.mechanics || []).map(id => ({ id, status: statusOfMechanic(id) })),
+      canActivate: x.active !== false || activeCount < MAX_ACTIVE_UNITS,
+      index: i
+    });
+  });
+  return {
+    items,
+    active: items.filter(x => x.active !== false),
+    bench: items.filter(x => x.active === false),
+    activeCount: items.filter(x => x.active !== false).length,
+    maxActive: MAX_ACTIVE_UNITS
+  };
 }
 function inventoryEntryForUnit(state, unit) {
   return (state.inventory || []).find(x => x.instanceId === unit.id || x.petId === unit.petId) || null;
@@ -268,7 +350,8 @@ function nextActions(state) {
   }
   return out;
 }
-function createViewModel(state) {
+function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makePlayerViewState()) {
+  const selected = selectedFromViewState(playerViewState);
   const heroes = state.units.filter(u => u.side === 'hero' && isUnitVisibleInParty(state, u)).map(u => stripUnit(state, u));
   const enemies = state.units.filter(u => u.side === 'enemy' && u.alive !== false && u.hp > 0).map(u => stripUnit(state, u));
   const leaders = {
@@ -279,6 +362,15 @@ function createViewModel(state) {
   const rewards = (state.rewards || []).map(stripReward);
   return {
     meta: dataSummary(state),
+    battleId: state.battleId,
+    mode: state.mode || 'solo',
+    stateVersion: state.stateVersion || 0,
+    stateHash: stateHash(state),
+    players: clone(state.players || {}),
+    teams: clone(state.teams || {}),
+    turn: clone(state.turn || {}),
+    localPrediction: { ready: true, serverAuthoritative: true, commandEnvelope: true },
+    commandLog: clone((state.commandLog || []).slice(-20)),
     phase: state.phase,
     day: state.day,
     period: state.period,
@@ -288,11 +380,13 @@ function createViewModel(state) {
     castleLine: state.castleLine,
     economyMultiplier: state.economyMultiplier,
     result: state.result ? clone(state.result) : null,
-    selected: clone(state.selected || {}),
+    selected,
+    playerId,
+    playerViewState: { selected, recentUiEvents: clone((playerViewState.recentUiEvents || []).slice(-10)) },
     leaders,
     heroes,
     enemies,
-    board: makeBoardVM(state),
+    board: makeBoardVM(state, selected),
     inventory: inventoryVM(state),
     relics: clone(state.relics),
     rewards,
@@ -305,23 +399,25 @@ function createViewModel(state) {
       events: shop.availableEvents(state).map(e => ({ id: e.id, name: e.name, optionText: e.optionText, costText: e.costText, gainText: e.gainText }))
     },
     monsterIntents: state.units.filter(u => u.side === 'enemy' && u.alive).map(u => battle.computeMonsterIntent(state, u)).filter(Boolean),
-    previewGrid: battle.buildPreviewGrid(state),
+    previewGrid: battle.buildPreviewGrid(state, { unitId: selected.unitId || undefined, slotId: selected.slotId, cell: selected.cell || undefined }),
     threatGrid: battle.buildThreatGrid(state),
     events: recentEvents(state),
     logs: logGroups(state),
-    battleTrace: [...(state.battleTrace || []), ...(state.events || [])]
-      .filter((e, i, arr) => arr.findIndex(x => (x.eventId || `legacy_${x.step}_${x.type}`) === (e.eventId || `legacy_${e.step}_${e.type}`)) === i)
-      .filter(e => /BATTLE|ROUND|PLAYER|MONSTER|DAMAGE|ELEMENT|SPAWN|MOVE|DEAD|DAY7|TRIAL|PACKET|MODIFIER|REPLACEMENT|CONVERT|CATALYST/.test(e.type))
-      .map(e => ({ ...clone(e), step: e.step, type: e.type, text: e.text || e.type, round: e.round, phase: e.phase })),
+    battleTrace: canonicalEventLog(state).map(e => ({ ...clone(e), step: e.step, type: e.type, text: e.text || e.type, round: e.round, phase: e.phase })),
     day7Trial: state.day7Trial ? clone(state.day7Trial.scenario || state.day7Trial) : null,
     nextActions: nextActions(state)
   };
 }
+function createViewModel(state, playerId = 'p1', playerViewState = makePlayerViewState()) { return buildViewModelForPlayer(state, playerId, playerViewState); }
+
 function findInventoryEntry(state, petIdOrInstanceId) {
   if (!petIdOrInstanceId) return null;
-  return state.inventory.find(x => x.petId === petIdOrInstanceId || `unit_${x.petId}` === petIdOrInstanceId || x.instanceId === petIdOrInstanceId) || null;
+  return state.inventory.find(x => x.instanceId === petIdOrInstanceId)
+    || state.inventory.find(x => x.petId === petIdOrInstanceId && x.active === false)
+    || state.inventory.find(x => x.petId === petIdOrInstanceId || `unit_${x.petId}` === petIdOrInstanceId)
+    || null;
 }
-function runCompatibilityCommand(state, command) {
+function runCompatibilityCommand(state, command, viewState = makePlayerViewState()) {
   switch (command.type) {
     case 'SELL_UNIT': {
       const petId = command.petId || command.instanceId || command.unitId;
@@ -331,81 +427,247 @@ function runCompatibilityCommand(state, command) {
       const before = state.gold;
       state.gold += refund;
       inv.count = Math.max(0, Number(inv.count || 1) - 1);
+      const unit = findUnitForInventoryEntry(state, inv);
+      if (unit) { unit.alive = false; unit.active = false; unit.position = null; }
       if (inv.count <= 0) state.inventory = state.inventory.filter(x => x !== inv);
-      for (const u of state.units) if (u.id === inv.instanceId || u.petId === inv.petId) u.alive = false;
       battle.syncDerivedBoard(state);
-      pushEvent(state, 'SELL_UNIT', { petId: inv.petId, goldFrom: before, goldTo: state.gold, text: `出售 ${inv.petId}，金币${before}→${state.gold}。` });
+      pushEvent(state, 'SELL_UNIT', { petId: inv.petId, instanceId: inv.instanceId || null, refund, goldFrom: before, goldTo: state.gold, text: `出售 ${inv.petId}，金币${before}→${state.gold}。` });
       return true;
     }
     case 'TOGGLE_UNIT_ACTIVE': {
       const id = command.petId || command.instanceId || command.unitId;
       const inv = findInventoryEntry(state, id);
       if (!inv) { pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, text: `切换失败：找不到 ${id || '未知单位'}。` }); return false; }
-      inv.active = inv.active === false;
-      const unit = findUnitForInventoryEntry(state, inv);
-      if (unit) {
-        unit.active = inv.active;
-        unit.alive = inv.active;
-        if (inv.active && !unit.position) unit.position = firstEmptyHeroCell(state);
+      const currentlyActive = inv.active !== false;
+      if (!currentlyActive) {
+        const activeCount = (state.inventory || []).filter(x => x !== inv && x.active !== false).length;
+        if (activeCount >= MAX_ACTIVE_UNITS) {
+          pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, maxActive: MAX_ACTIVE_UNITS, text: `上阵失败：上场位已满 ${MAX_ACTIVE_UNITS}/${MAX_ACTIVE_UNITS}。` });
+          return false;
+        }
+        let unit = findUnitForInventoryEntry(state, inv);
+        if (!unit) unit = makeUnit(state, 'hero', inv.petId, { position: firstEmptyHeroCell(state) });
+        const blockReason = activationBlockReason(unit);
+        if (blockReason) {
+          pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, petId: inv.petId, reason: blockReason, text: `上阵失败：${unit.displayName || unit.name} ${blockReason}。` });
+          return false;
+        }
+        inv.active = true;
+        if (!state.units.includes(unit)) {
+          applyBattleStart(state, unit);
+          state.units.push(unit);
+          inv.instanceId = unit.id;
+        }
+        unit.active = true;
+        unit.alive = true;
+        if (!unit.position) unit.position = firstEmptyHeroCell(state);
+        inv.slot = inv.slot || activeCount + 1;
+      } else {
+        inv.active = false;
+        const unit = findUnitForInventoryEntry(state, inv);
+        if (unit) { unit.active = false; unit.alive = false; unit.position = null; }
+        if (viewState.selected && (viewState.selected.unitId === inv.instanceId || viewState.selected.unitId === id)) viewState.selected.unitId = null;
       }
       battle.syncDerivedBoard(state);
-      pushEvent(state, 'TOGGLE_UNIT_ACTIVE', { unitId: id, active: inv.active, text: `${inv.active ? '上阵' : '下阵'}：${id || inv.petId}。` });
+      pushEvent(state, 'TOGGLE_UNIT_ACTIVE', { unitId: id, active: inv.active !== false, text: `${inv.active !== false ? '上阵' : '下阵'}：${id || inv.petId}。` });
       return true;
     }
     case 'USE_ACTION_SLOT': {
-      pushEvent(state, 'USE_ACTION_SLOT', { slotId: command.slotId ?? command.index ?? 0, text: `UI兼容施放行动槽 ${Number(command.slotId ?? command.index ?? 0) + 1}。` });
-      return coreDispatch(state, Object.assign({}, command, { type: 'USE_SLOT' }));
+      const unitId = command.unitId || command.heroId || viewState.selected?.unitId || null;
+      pushEvent(state, 'USE_ACTION_SLOT', { slotId: command.slotId ?? command.index ?? 0, unitId, text: `UI兼容施放行动槽 ${Number(command.slotId ?? command.index ?? 0) + 1}。` });
+      return coreDispatch(state, Object.assign({}, command, { type: 'USE_SLOT', unitId }));
     }
     case 'SET_SLOT_DIR': {
-      pushEvent(state, 'SET_SLOT_DIR', { slotId: command.slotId ?? command.index ?? 0, dir: command.dir || command.direction || 'right', text: `UI兼容方向按钮：槽 ${Number(command.slotId ?? command.index ?? 0) + 1} → ${command.dir || command.direction || 'right'}。` });
-      return coreDispatch(state, Object.assign({}, command, { type: 'SET_ACTION_DIRECTION', dir: command.dir || command.direction }));
-    }
-    case 'SELECT_HERO':
-    case 'SELECT_UNIT': {
-      state.selected.unitId = command.unitId || command.heroId || command.id || null;
-      pushEvent(state, 'SELECT_UNIT', { unitId: state.selected.unitId, text: `选择单位：${state.selected.unitId || '无'}。` });
-      battle.syncDerivedBoard(state);
-      return true;
-    }
-    case 'SELECT_CELL': {
-      state.selected.cell = { r: Number(command.r ?? command.row ?? command.cell?.r ?? 0), c: Number(command.c ?? command.col ?? command.cell?.c ?? 0) };
-      pushEvent(state, 'SELECT_CELL', { cell: state.selected.cell, text: `选择格子：R${state.selected.cell.r}C${state.selected.cell.c}。` });
-      battle.syncDerivedBoard(state);
-      return true;
-    }
-    case 'SELECT_SLOT': {
-      state.selected.slotId = Number(command.slotId ?? command.index ?? 0);
-      pushEvent(state, 'SELECT_SLOT', { slotId: state.selected.slotId, text: `选择行动槽：${state.selected.slotId + 1}。` });
-      battle.syncDerivedBoard(state);
-      return true;
+      const unitId = command.unitId || command.heroId || viewState.selected?.unitId || null;
+      const dir = command.dir || command.direction || 'right';
+      pushEvent(state, 'SET_SLOT_DIR', { slotId: command.slotId ?? command.index ?? 0, unitId, dir, text: `UI兼容方向按钮：槽 ${Number(command.slotId ?? command.index ?? 0) + 1} → ${dir}。` });
+      return coreDispatch(state, Object.assign({}, command, { type: 'SET_ACTION_DIRECTION', unitId, dir }));
     }
     default:
       return undefined;
   }
 }
-function createSnapshot(state) {
+
+function createSnapshot(state, playerId = 'p1', viewState = makePlayerViewState()) {
   const raw = clone(state);
   raw.indexes = { petsById: state.indexes.petsById.size, monstersByPetId: state.indexes.monstersByPetId.size, shopPools: state.indexes.shopPools.size, rewardPools: state.indexes.rewardPools.size };
   raw.dataSummary = dataSummary(state);
-  raw.viewModel = createViewModel(state);
+  raw.viewModel = buildViewModelForPlayer(state, playerId, viewState);
   return raw;
 }
+function mapPublicEvents(events) {
+  return (events || []).map(e => ({
+    eventId: e.eventId,
+    seq: e.seq,
+    step: e.step,
+    type: e.type,
+    text: e.text || e.type,
+    round: e.round,
+    phase: e.phase,
+    commandId: e.commandId,
+    playerId: e.playerId,
+    teamId: e.teamId
+  }));
+}
+function runSelectionCommand(state, command, viewState) {
+  viewState.selected = viewState.selected || { unitId: null, slotId: null, cell: null, direction: 'right' };
+  let event;
+  if (command.type === 'SELECT_HERO' || command.type === 'SELECT_UNIT') {
+    viewState.selected.unitId = command.unitId || command.heroId || command.id || null;
+    viewState.selected.slotId = null;
+    event = makeUiEvent(state, command, 'SELECT_UNIT', { unitId: viewState.selected.unitId, text: `选择单位：${viewState.selected.unitId || '无'}。` });
+  } else if (command.type === 'SELECT_CELL') {
+    viewState.selected.cell = { r: Number(command.r ?? command.row ?? command.cell?.r ?? 0), c: Number(command.c ?? command.col ?? command.cell?.c ?? 0) };
+    event = makeUiEvent(state, command, 'SELECT_CELL', { cell: clone(viewState.selected.cell), text: `选择格子：R${viewState.selected.cell.r}C${viewState.selected.cell.c}。` });
+  } else if (command.type === 'SELECT_SLOT') {
+    if (command.unitId || command.heroId) viewState.selected.unitId = command.unitId || command.heroId;
+    viewState.selected.slotId = Number(command.slotId ?? command.index ?? 0);
+    event = makeUiEvent(state, command, 'SELECT_SLOT', { slotId: viewState.selected.slotId, unitId: viewState.selected.unitId, text: `选择行动槽：${viewState.selected.slotId + 1}。` });
+  }
+  if (event) rememberUiEvent(viewState, event);
+  return event ? [event] : [];
+}
+
+function viewStatesToObject(viewStates) {
+  const out = {};
+  for (const [playerId, viewState] of viewStates.entries()) out[playerId] = clone(viewState);
+  return out;
+}
+function restoreViewStates(viewStates, raw) {
+  viewStates.clear();
+  const obj = raw && typeof raw === 'object' ? raw : {};
+  for (const [playerId, viewState] of Object.entries(obj)) viewStates.set(playerId, Object.assign(makePlayerViewState(), clone(viewState)));
+}
+
 function createYSBZSUIAdapter(options = {}) {
-  const state = createGameState(options);
+  const state = ensureMultiplayerState(createGameState(options), options);
+  const viewStates = new Map();
+  const defaultPlayerId = options.playerId || 'p1';
+  function viewStateFor(commandOrPlayerId) {
+    const playerId = typeof commandOrPlayerId === 'string' ? commandOrPlayerId : (commandOrPlayerId && commandOrPlayerId.playerId) || defaultPlayerId;
+    return getPlayerViewState(viewStates, playerId);
+  }
+  function viewFor(commandOrPlayerId) {
+    const playerId = typeof commandOrPlayerId === 'string' ? commandOrPlayerId : (commandOrPlayerId && commandOrPlayerId.playerId) || defaultPlayerId;
+    return buildViewModelForPlayer(state, playerId, viewStateFor(playerId));
+  }
   const adapter = {
-    version: '2026-06-07-full-player-operation-adapter',
+    version: '2026-06-09-command-envelope-local-prediction-ready-round4',
     publicCommands: PUBLIC_COMMANDS.slice(),
     run(typeOrCommand, payload = {}) {
-      const command = normalizeCommand(typeOrCommand, payload);
-      assertKnownCommand(command);
-      const beforeStep = state.nextStep;
-      let result;
-      if (command.type === 'RUN_FULL_DAY') result = this.runFullPlayerDayFlow();
-      else {
-        const compatResult = runCompatibilityCommand(state, command);
-        result = compatResult === undefined ? coreDispatch(state, command) : compatResult;
+      const normalized = normalizeCommand(typeOrCommand, payload);
+      assertKnownCommand(normalized);
+      const command = normalizeCommandEnvelope(normalized, state, { playerId: options.playerId, strictVersion: false });
+      const viewState = viewStateFor(command);
+      try {
+        validateCommandAuthority(state, command, { strictVersion: !!options.strictVersion, allowDebugCommands: !!options.allowDebugCommands });
+      } catch (err) {
+        const rejected = rejectedCommandResult(state, command, err);
+        rejected.viewModel = viewFor(command);
+        return rejected;
       }
-      return { ok: true, command: commandText(command), result: result === undefined ? true : clone(result), events: state.events.filter(e => e.step >= beforeStep).map(e => ({ step: e.step, type: e.type, text: e.text || e.type, round: e.round, phase: e.phase })), viewModel: createViewModel(state) };
+
+      if (UI_SELECTION_COMMANDS.includes(command.type)) {
+        const events = mapPublicEvents(runSelectionCommand(state, command, viewState));
+        const hash = stateHash(state);
+        return {
+          ok: true,
+          accepted: true,
+          ephemeral: true,
+          command: commandText(command),
+          commandEnvelope: clone(command),
+          stateVersion: state.stateVersion || 0,
+          stateHash: hash,
+          result: true,
+          events,
+          trace: { id: `${state.battleId}:${command.commandId}:ui`, commandId: command.commandId, events },
+          authoritativeState: createSnapshot(state, command.playerId, viewState),
+          viewModel: viewFor(command)
+        };
+      }
+
+      if (READ_ONLY_COMMANDS.includes(command.type)) {
+        const beforeHash = stateHash(state);
+        const result = coreDispatch(state, command);
+        return {
+          ok: true,
+          accepted: true,
+          readOnly: true,
+          command: commandText(command),
+          commandEnvelope: clone(command),
+          stateVersion: state.stateVersion || 0,
+          stateHash: beforeHash,
+          result: result === undefined ? true : clone(result),
+          events: [],
+          trace: { id: `${state.battleId}:${command.commandId}:read`, commandId: command.commandId, events: [] },
+          authoritativeState: createSnapshot(state, command.playerId, viewState),
+          viewModel: viewFor(command)
+        };
+      }
+
+      if (command.type === 'RUN_FULL_DAY') {
+        const rollbackSave = buildSaveDocument(state, { playerId: command.playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) });
+        try {
+          const beforeIds = new Set((state.battleTrace || []).map(e => e.eventId || `${e.step}:${e.type}`));
+          const result = this.runFullPlayerDayFlow(command.playerId);
+          const events = mapPublicEvents((state.battleTrace || []).filter(e => !beforeIds.has(e.eventId || `${e.step}:${e.type}`)));
+          const hash = stateHash(state);
+          return {
+            ok: true,
+            accepted: true,
+            flowCommand: true,
+            command: commandText(command),
+            commandEnvelope: clone(command),
+            stateVersion: state.stateVersion || 0,
+            stateHash: hash,
+            result: clone(result),
+            events,
+            trace: { id: `${state.battleId}:${command.commandId}:flow`, commandId: command.commandId, events },
+            authoritativeState: createSnapshot(state, command.playerId, viewState),
+            viewModel: viewFor(command)
+          };
+        } catch (err) {
+          applySaveToState(state, ensureMultiplayerState(createGameState(options), options), rollbackSave);
+          restoreViewStates(viewStates, rollbackSave.viewStates || {});
+          const rejected = rejectedCommandResult(state, command, err);
+          rejected.rolledBack = true;
+          rejected.viewModel = viewFor(command);
+          return rejected;
+        }
+      }
+
+      const rollbackSave = buildSaveDocument(state, { playerId: command.playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) });
+      try {
+        const beforeStep = state.nextStep;
+        const beforeHash = stateHash(state);
+        let result;
+        const compatResult = runCompatibilityCommand(state, command, viewState);
+        result = compatResult === undefined ? coreDispatch(state, command) : compatResult;
+        const events = state.events.filter(e => e.step >= beforeStep);
+        annotateEvents(state, events, command);
+        const logEntry = commitAcceptedCommand(state, command, beforeHash, result, events);
+        const mappedEvents = mapPublicEvents(events);
+        return {
+          ok: true,
+          accepted: true,
+          command: commandText(command),
+          commandEnvelope: clone(command),
+          stateVersion: state.stateVersion,
+          stateHash: logEntry.afterHash,
+          result: result === undefined ? true : clone(result),
+          events: mappedEvents,
+          trace: { id: `${state.battleId}:${command.commandId}`, commandId: command.commandId, events: mappedEvents },
+          authoritativeState: createSnapshot(state, command.playerId, viewState),
+          viewModel: viewFor(command)
+        };
+      } catch (err) {
+        applySaveToState(state, ensureMultiplayerState(createGameState(options), options), rollbackSave);
+        restoreViewStates(viewStates, rollbackSave.viewStates || {});
+        const rejected = rejectedCommandResult(state, command, err);
+        rejected.rolledBack = true;
+        rejected.viewModel = viewFor(command);
+        return rejected;
+      }
     },
     startBattle() { return this.run('START_BATTLE'); },
     startNextRound() { return this.run('START_NEXT_ROUND'); },
@@ -437,24 +699,24 @@ function createYSBZSUIAdapter(options = {}) {
     selectHero(heroId) { return this.run('SELECT_HERO', { heroId }); },
     selectCell(r, c) { return this.run('SELECT_CELL', { r, c }); },
     selectSlot(slotId) { return this.run('SELECT_SLOT', { slotId }); },
-    runFullPlayerDayFlow() {
-      if (state.phase === 'init') this.run('START_BATTLE');
-      this.runBattle();
-      this.rewardOptions('reward_pT1', 3);
-      this.pickReward(0);
-      this.enterShop('night_base', 6);
+    runFullPlayerDayFlow(playerId = defaultPlayerId) {
+      if (state.phase === 'init') this.run({ type: 'START_BATTLE', playerId });
+      this.run({ type: 'RUN_BATTLE', playerId });
+      this.run({ type: 'REWARD_OPTIONS', playerId, poolId: 'reward_pT1', count: 3 });
+      this.run({ type: 'PICK_REWARD', playerId, index: 0 });
+      this.run({ type: 'ENTER_SHOP', playerId, poolId: 'night_base', slots: 6 });
       const first = state.shop.offers[0];
-      if (first) this.freezeOffer(first.offerId);
-      this.rollShop({ slots: 6 });
+      if (first) this.run({ type: 'FREEZE_OFFER', playerId, offerId: first.offerId });
+      this.run({ type: 'ROLL_SHOP', playerId, slots: 6 });
       const affordable = state.shop.offers.find(o => o.price <= state.gold);
-      if (affordable) this.buyOffer(affordable.offerId);
+      if (affordable) this.run({ type: 'BUY_OFFER', playerId, offerId: affordable.offerId });
       const evt = shop.availableEvents(state)[0];
-      if (evt) this.applyShopEvent(evt.id);
-      this.exitShop();
-      return this.getViewModel();
+      if (evt) this.run({ type: 'APPLY_SHOP_EVENT', playerId, eventId: evt.id });
+      this.run({ type: 'EXIT_SHOP', playerId });
+      return this.getViewModel(playerId);
     },
-    getViewModel() { return createViewModel(state); },
-    getStateSnapshot() { return createSnapshot(state); },
+    getViewModel(playerId = defaultPlayerId) { return viewFor(playerId); },
+    getStateSnapshot(playerId = defaultPlayerId) { return createSnapshot(state, playerId, viewStateFor(playerId)); },
     getEvents(filter = {}) { return state.events.filter(e => !filter.type || e.type === filter.type).filter(e => !filter.sinceStep || e.step >= filter.sinceStep).map(e => clone(e)); },
     getChanges() { return clone(state.changes); },
     getReplay() { return this.run('EXPORT_REPLAY'); },
@@ -465,10 +727,23 @@ function createYSBZSUIAdapter(options = {}) {
     getRewardPools() { return Array.from(state.indexes.rewardPools.keys()).sort(); },
     getAvailableShopEvents() { return shop.availableEvents(state).map(e => clone(e)); },
     getEnabledShopItems(poolId = 'night_base') { return shop.enabledShopItems(state, poolId).map(i => clone(i)); },
+    getPlayerViewState(playerId = defaultPlayerId) { return clone(viewStateFor(playerId)); },
+    exportSave(playerId = defaultPlayerId, meta = {}) {
+      return buildSaveDocument(state, Object.assign({}, meta, { playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) }));
+    },
+    importSave(saveDoc, playerId = defaultPlayerId) {
+      assertSaveDocument(saveDoc);
+      const fresh = ensureMultiplayerState(createGameState(options), options);
+      applySaveToState(state, fresh, saveDoc);
+      restoreViewStates(viewStates, saveDoc.viewStates || {});
+      viewStateFor(playerId);
+      return { ok: true, accepted: true, imported: true, stateVersion: state.stateVersion || 0, stateHash: stateHash(state), viewModel: viewFor(playerId) };
+    },
     setupDay7FireTrial() { return this.run('SETUP_DAY7_FIRE_TRIAL'); },
     runDay7FireTurn1() { return this.run('RUN_DAY7_FIRE_TURN_1'); },
     runDay7FireTrialAll() { return this.run('RUN_DAY7_FIRE_TRIAL_ALL'); }
   };
   return adapter;
 }
-module.exports = { createYSBZSUIAdapter, createViewModel, PUBLIC_COMMANDS };
+
+module.exports = { createYSBZSUIAdapter, createViewModel, buildViewModelForPlayer, PUBLIC_COMMANDS };

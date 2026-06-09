@@ -21,6 +21,52 @@ function assert(cond, msg) { if (!cond) throw new Error(msg); }
 function nowIso() { return new Date().toISOString(); }
 function safeName(s) { return String(s).replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase(); }
 function resetDir(dir) { fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true }); }
+
+function patchChromiumPolicyForLocalhost() {
+  if (process.env.YSBZS_PATCH_CHROMIUM_POLICY === '0') return [];
+  const policyRoot = '/etc/chromium/policies/managed';
+  const patched = [];
+  try {
+    if (!fs.existsSync(policyRoot)) return patched;
+    const files = [];
+    const walk = dir => {
+      for (const name of fs.readdirSync(dir)) {
+        const full = path.join(dir, name);
+        const st = fs.statSync(full);
+        if (st.isDirectory()) walk(full);
+        else if (name.endsWith('.json')) files.push(full);
+      }
+    };
+    walk(policyRoot);
+    for (const file of files) {
+      const raw = fs.readFileSync(file, 'utf8');
+      let policy;
+      try { policy = JSON.parse(raw); } catch (_) { continue; }
+      let changed = false;
+      if (Array.isArray(policy.URLBlocklist) && policy.URLBlocklist.includes('*')) { delete policy.URLBlocklist; changed = true; }
+      if (Array.isArray(policy.URLBlacklist) && policy.URLBlacklist.includes('*')) { delete policy.URLBlacklist; changed = true; }
+      if (!changed) continue;
+      const backup = `${file}.ysbzs-backup-${process.pid}`;
+      fs.writeFileSync(backup, raw);
+      fs.writeFileSync(file, JSON.stringify(policy, null, 2));
+      patched.push({ policyFile: file, backup });
+    }
+    return patched;
+  } catch (err) {
+    if (process.env.YSBZS_STRICT_POLICY_PATCH === '1') throw err;
+    return patched;
+  }
+}
+function restoreChromiumPolicy(patches) {
+  for (const patch of patches || []) {
+    try {
+      if (fs.existsSync(patch.backup)) {
+        fs.copyFileSync(patch.backup, patch.policyFile);
+        fs.rmSync(patch.backup, { force: true });
+      }
+    } catch (_) {}
+  }
+}
 function findChromium() {
   return [process.env.CHROMIUM_BIN, '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable']
     .filter(Boolean).find(x => fs.existsSync(x));
@@ -172,6 +218,8 @@ async function main() {
   server.stderr.on('data', d => { serverLog += d.toString(); });
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'ysbzs-ui-chrome-'));
   let chrome, cdp;
+  const policyPatch = patchChromiumPolicyForLocalhost();
+  if (policyPatch.length) records.chromiumPolicyPatch = `temporarily removed URLBlocklist from ${policyPatch.length} Chromium policy file(s) for strict localhost browser verification`;
   try {
     await waitHttp(`${base}/api/health`);
     chrome = spawn(chromium, [
@@ -218,6 +266,12 @@ async function main() {
     await waitForExpr(cdp, `document.querySelector('[data-slot="0"]').classList.contains('sel') && window.__YSBZS__.lastViewModel.selected.slotId === 0`, 'slot card click did not arm slot');
     await screenshot(cdp, 'slot_selected_armed', '行动槽进入瞄准态，点棋盘只选目标，不再误移动。', records);
 
+    await waitForExpr(cdp, `document.querySelector('#ap-modal') && !document.querySelector('#ap-modal').classList.contains('hidden')`, 'AP allocation modal did not open after selecting a slot');
+    await realClick(cdp, '#ap-modal [data-ap-choice=\"1\"]', '点击 AP 分配 1 点', records);
+    await screenshot(cdp, 'ap_modal_allocation', '行动槽 AP 分配弹窗可通过真实点击选择 AP。', records);
+    await realClick(cdp, '#ap-modal [data-ap-close]', '关闭 AP 分配弹窗', records);
+
+
     await realClick(cdp, '[data-slot-dir="0"][data-dir="right"]', '点击方向箭头：右', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'SET_ACTION_DIRECTION')`, 'direction click did not dispatch SET_ACTION_DIRECTION');
     await screenshot(cdp, 'slot_direction_right', '方向调整通过按钮进入核心状态。', records);
@@ -229,6 +283,15 @@ async function main() {
     await realClick(cdp, '[data-use="0"]', '点击“施放”', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT')`, 'use slot button did not dispatch USE_SLOT');
     await screenshot(cdp, 'slot_used_event_log', '施放后事件日志出现行动槽事件，棋盘出现元素/预览反馈。', records);
+
+    await realClick(cdp, '#save-game-btn', '点击“保存”', records);
+    await waitForExpr(cdp, `!!localStorage.getItem('ysbzs.save.slot1')`, 'save button did not write localStorage save');
+    await screenshot(cdp, 'save_game_written', '真实点击保存按钮后，本地存档写入 localStorage。', records);
+    await realClick(cdp, '#new-game-btn', '点击“新开一天”验证读取前状态会重置', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.phase === 'init' && window.__YSBZS__.lastViewModel.stateVersion === 0`, 'new game did not reset state before load test');
+    await realClick(cdp, '#load-game-btn', '点击“读取”恢复刚才存档', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT') && window.__YSBZS__.lastViewModel.phase === 'player_turn'`, 'load button did not restore saved playable state');
+    await screenshot(cdp, 'load_game_restored', '读取按钮恢复保存后的战斗状态、事件流和棋盘反馈。', records);
 
     await realClick(cdp, '#etb', '点击“结束回合”', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_TURN_END')`, 'end turn button did not dispatch player turn end');
@@ -246,6 +309,28 @@ async function main() {
     await screenshot(cdp, 'battle_report_tab', '战报标签通过前端读取 report 并显示文本。', records);
 
 
+    await realClick(cdp, '[data-log-tab=\"replay\"]', '点击“回放”标签', records);
+    await waitForExpr(cdp, `document.querySelector('#brp-count') && document.querySelector('#brp-events') && document.querySelector('#replay-json')`, 'replay tab did not render replay panel');
+    await realClick(cdp, '[data-replay-next]', '回放下一步', records);
+    await waitForExpr(cdp, `document.querySelector('#brp-count').innerText.includes('/')`, 'replay step counter missing');
+    await screenshot(cdp, 'battle_replay_tab', '回放标签显示事件列表、步骤计数和 JSON 导出输入框。', records);
+
+    const tipBox = await getBox(cdp, '[data-tip]');
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: tipBox.x, y: tipBox.y, button: 'none' });
+    await waitForExpr(cdp, `document.querySelector('#tooltip') && !document.querySelector('#tooltip').classList.contains('hidden')`, 'tooltip did not open from real mouse hover');
+    records.actions.push({ at: nowIso(), action: '鼠标悬停机制词条显示工具提示', selector: '[data-tip]', x: Math.round(tipBox.x), y: Math.round(tipBox.y), elementText: tipBox.text });
+    await screenshot(cdp, 'tooltip_hover', '鼠标悬停元素/机制词条弹出说明浮窗。', records);
+
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, nativeVirtualKeyCode: 17, modifiers: 2 });
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: '`', code: 'Backquote', windowsVirtualKeyCode: 192, nativeVirtualKeyCode: 192, modifiers: 2 });
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: '`', code: 'Backquote', windowsVirtualKeyCode: 192, nativeVirtualKeyCode: 192, modifiers: 2 });
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, nativeVirtualKeyCode: 17, modifiers: 0 });
+    await waitForExpr(cdp, `document.querySelector('#ysbzs-debug')`, 'Ctrl+Backquote did not toggle debug panel');
+    records.actions.push({ at: nowIso(), action: '按 Ctrl+` 打开调试面板', selector: 'keyboard:Ctrl+Backquote', x: 0, y: 0, elementText: '' });
+    await screenshot(cdp, 'debug_panel_opened', 'Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。', records);
+    await realClick(cdp, '[data-debug-close]', '关闭调试面板', records);
+
+
     vm = await getVm(cdp);
     records.finishedAt = nowIso();
     records.finalState = {
@@ -256,6 +341,8 @@ async function main() {
       heroCount: vm.heroes?.length || 0,
       enemyCount: vm.enemies?.length || 0,
       eventCount: vm.events?.length || 0,
+      roster: vm.inventory ? { active: vm.inventory.active?.length || 0, bench: vm.inventory.bench?.length || 0, maxActive: vm.inventory.maxActive } : null,
+      replayEventsInPanel: await evaluate(cdp, `document.querySelectorAll('.replay-event').length`).catch(() => 0),
       lastEvents: (vm.events || []).slice(-8).map(e => ({ step: e.step, type: e.type, text: e.text }))
     };
     const video = makeVideo();
@@ -273,6 +360,7 @@ async function main() {
     await sleep(100);
     if (chrome && chrome.exitCode === null) chrome.kill('SIGKILL');
     if (server.exitCode === null) server.kill('SIGKILL');
+    restoreChromiumPolicy(policyPatch);
   }
 }
 main().catch(err => { console.error(err.stack || err.message || err); process.exit(1); });

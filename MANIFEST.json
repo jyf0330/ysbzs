@@ -1,6 +1,6 @@
 {
-  "name": "ysbzs-master-ui-rebuild-gapfixed-20260609",
-  "baseline": "30宠CSV单源 + 重构版浏览器UI + uiAdapter/API单入口",
+  "name": "ysbzs-master-optimization-round5",
+  "baseline": "30宠CSV单源 + 重构版浏览器UI + 真实服务器权威入口 + per-player ViewState/ViewModel + UI功能缺口补齐 + battle核心职责拆分",
   "currentDataCounts": {
     "pets": 30,
     "monsters": 30,
@@ -19,7 +19,9 @@
   ],
   "apiEntries": [
     "tools/run_ui_server.cjs",
-    "src/uiAdapter.cjs"
+    "src/uiAdapter.cjs",
+    "src/adapters/localAdapter.cjs",
+    "src/adapters/serverAuthorityAdapter.cjs"
   ],
   "removedOldUiFiles": [
     "web/ui.js",
@@ -36,15 +38,88 @@
     "UI_ADAPTER_START_HERE.md",
     "docs/00_AI_START_HERE.md",
     "docs/UX_INTERACTION_DESIGN_OPTIMIZED.md",
-    "docs/audit/2026-06-09_ui-rebuild-gap-fix.md"
+    "docs/audit/2026-06-09_ui-rebuild-gap-fix.md",
+    "docs/architecture/2026-06-09_prediction-server-authority.md",
+    "docs/architecture/2026-06-09_optimization-round-2.md",
+    "CHECK_RESULTS_20260609_OPTIMIZATION_ROUND2.txt",
+    "docs/architecture/2026-06-09_battle-module-split.md",
+    "CHECK_RESULTS_20260609_OPTIMIZATION_ROUND3.txt",
+    "docs/architecture/2026-06-09_round4-authority-ui-gaps.md",
+    "CHECK_RESULTS_20260609_OPTIMIZATION_ROUND4.txt",
+    "docs/WAVE_RULES_20260609.md",
+    "yaml/wave_rules_20260609.yaml",
+    "CHECK_RESULTS_20260609_WAVE_RULES.txt"
   ],
   "checks": [
+    "npm test",
+    "npm run test:unit",
+    "npm run test:coverage",
     "npm run check:all",
-    "npm run test:coverage"
+    "npm run check:browser",
+    "npm run verify:browser:evidence"
   ],
   "notes": [
     "UI 不保存核心战斗状态，只读 ViewModel。",
-    "行动槽瞄准使用 slotArmed 防止误移动。",
-    "旧 127 覆盖测试已改名为 .disabled 归档。"
+    "浏览器发出的 /api/action 已带 commandId/playerId/battleId/baseStateVersion。",
+    "localAdapter 与 serverAuthorityAdapter 可用同一套 command 验证 stateHash 一致。",
+    "battleTrace 事件已补 commandId/playerId/teamId，方便回放、战报、合作统计和 PVP 归属。",
+    "当前没有实现 WebSocket 房间/广播，但 player/team/controller/stateVersion 字段已预留。",
+    "移动规则已从 moveMode/infinite 改为单位显式 moveRange。",
+    "UI 动态列表已改为事件委托，runCommand 不再二次全量 render。",
+    "事件系统支持 EVENT_LEVEL/filterEvents，且不写入 Date.now 以保持预测一致性。",
+    "UI Server 支持 x-session-id / sessionId 多 session 隔离。",
+    "check:all 是非视频快速总验收；真实浏览器截图/视频用 verify:browser:evidence 单独跑。",
+    "battle.cjs 已拆成 position/actions/planning/preview/resolution 五个职责模块，主文件从约970行降到约466行。",
+    "新增 battle_module_split 单元测试，防止 battle.cjs 重新膨胀成上帝文件。",
+    "run_ui_server.cjs 现在通过 serverAuthorityAdapter(strictVersion) 进入核心，浏览器实际入口不再绕过权威层。",
+    "SELECT_UNIT/SELECT_CELL/SELECT_SLOT 已拆为 per-player ViewState，不再污染 GameState/stateHash/stateVersion。",
+    "新增 buildViewModelForPlayer 口径，/api/view 按 x-player-id/playerId 返回玩家视图。",
+    "RUN_FULL_DAY 不再重复写入 battleTrace，新增 architecture_round4 测试防回退。",
+    "新 UI 已暴露阵容管理、战斗回放、GET_CELL_DETAIL 格详情、APPLY_SHOP_EVENT 商店事件、Ctrl+` 调试面板、AP 分配、tooltip。",
+    "真实浏览器验证覆盖 AP 弹窗、回放标签、tooltip hover、Ctrl+` 调试面板，仍禁止 API fallback。",
+    "波次表已支持宠物池-数量/品质权重：数字短写会归一为 pal_XXX，威胁分按候选池平均效果分×出怪数×品质期望倍率实时计算。",
+    "刷怪运行时默认同一行先不重复抽；候选池耗尽后放回继续抽；品质按每只怪独立随机。"
+  ],
+  "architectureEntries": [
+    "src/core/multiplayerState.cjs",
+    "src/core/commandEnvelope.cjs",
+    "src/core/stateHash.cjs",
+    "src/adapters/localAdapter.cjs",
+    "src/adapters/serverAuthorityAdapter.cjs",
+    "src/adapters/index.cjs",
+    "src/adapters/index.js",
+    "src/core/events.cjs",
+    "tools/inspect_state_diff.cjs",
+    "tools/compare_replays.cjs",
+    "tests/unit/architecture_optimization.test.cjs",
+    "src/core/battle/position.cjs",
+    "src/core/battle/actions.cjs",
+    "src/core/battle/planning.cjs",
+    "src/core/battle/preview.cjs",
+    "src/core/battle/resolution.cjs",
+    "tests/unit/battle_module_split.test.cjs",
+    "tests/unit/architecture_round4.test.cjs",
+    "src/core/waveRules.cjs",
+    "src/core/waveSpawn.cjs",
+    "tests/unit/wave_rules.test.cjs"
+  ],
+  "version": "2026.6.9-optimization-round5",
+  "summary": "Round5 adds save/load, real AP allocation, canonical event projection, mechanic gate, and single-player architecture audit.",
+  "addedRound5": [
+    "src/storage/saveCodec.cjs",
+    "src/storage/memoryStorage.cjs",
+    "src/storage/fileStorage.cjs",
+    "src/core/eventProjection.cjs",
+    "src/core/mechanicGate.cjs",
+    "tools/audit_singleplayer_architecture.cjs",
+    "tests/unit/singleplayer_round5.test.cjs",
+    "docs/architecture/2026-06-09_singleplayer-round5-hardening.md",
+    "CHECK_RESULTS_20260609_OPTIMIZATION_ROUND5.txt",
+    "src/core/waveRules.cjs",
+    "src/core/waveSpawn.cjs",
+    "tests/unit/wave_rules.test.cjs",
+    "docs/WAVE_RULES_20260609.md",
+    "yaml/wave_rules_20260609.yaml",
+    "CHECK_RESULTS_20260609_WAVE_RULES.txt"
   ]
 }

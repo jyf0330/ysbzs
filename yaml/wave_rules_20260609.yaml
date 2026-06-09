@@ -1,0 +1,96 @@
+version: 2026-06-09
+module: wave_rules
+source_workbook: 00_全数据联动总表_01-09_波次规则交付版_20260609.xlsx
+source_sheets:
+  pets: 01_宠物主表_好读版
+  monster_templates: 02_怪物模板_好读版
+  waves: 03_怪物波次_好读版
+
+id_rules:
+  canonical_pet_id: pal_XXX
+  short_id_enabled: true
+  short_id_map:
+    "1": pal_001
+    "2": pal_002
+    "5": pal_005
+  note: "短写数字只用于表格编辑方便；程序内部仍建议统一转成 pal_XXX。"
+
+wave_table_schema:
+  wave_id:
+    column: 波次ID
+    required: true
+    example: wave_d01_morning
+  day:
+    column: 天数
+    required: true
+    type: integer
+  period:
+    column: 时段
+    required: true
+    allowed_values: [上午, 下午, 晚上]
+  round:
+    column: 回合
+    required: true
+    type: integer
+  pet_pool_count:
+    column: 宠物池-数量
+    required: true
+    format: "id,id,id-count"
+    example: "1,2,3,4,5-2"
+    meaning: "从 pal_001~pal_005 候选池中随机出 2 只怪。"
+  quality_weights:
+    column: 品质权重
+    required: true
+    format: "bronze,silver,gold,diamond"
+    example: "90,10,0,1"
+    meaning: "青铜、白银、黄金、钻石的出现权重。按权重归一化，不强制合计100。"
+  threat_score:
+    column: 本行威胁(当前计算值)
+    generated: true
+    formula: "候选池平均效果分 * 出怪数 * 品质期望倍率"
+
+quality_multipliers:
+  青铜: 1.0
+  白银: 1.5
+  黄金: 2.0
+  钻石: 2.5
+
+threat_score_rule:
+  pet_score_source:
+    sheet: 01_宠物主表_好读版
+    id_column: 宠物ID
+    score_column: 效果分
+  candidate_average_score: "候选池内所有宠物效果分求平均"
+  spawn_count: "宠物池-数量 中最后一个 - 后面的数字"
+  quality_expected_multiplier: "sum(weight_i / sum(weights) * quality_multiplier_i)"
+  final: "round(candidate_average_score * spawn_count * quality_expected_multiplier, 1)"
+
+monster_template_role:
+  current_meaning: "怪物模板表不再决定波次出什么怪；波次表直接引用宠物ID/宠物池。"
+  suggested_usage:
+    - "补充宠物作为敌方时的默认AI"
+    - "补充敌方倍率、是否复制体、是否允许进随机池"
+    - "补充敌方标签，例如小怪、精英、试炼复制体"
+  not_suggested:
+    - "不要再创建独立 monster_id 作为波次主引用"
+
+assumptions_used_in_this_delivery:
+  - "品质权重按权重处理，不要求合计100。"
+  - "威胁分暂时不乘怪物模板表里的额外倍率。"
+  - "运行时代码默认：同一行先不重复抽；如果出怪数超过候选池数量，会重新放回候选池继续抽。"
+  - "代码已接入实时计算：读取 CSV 时会根据宠物池、出怪数、品质权重计算 threatComputed / 本行威胁。"
+  - "运行时代码默认：每只怪独立随机品质。"
+
+open_questions:
+  - id: Q1
+    question: "同一回合从候选池随机出怪时，是否允许重复抽到同一只宠物？"
+    options: [允许重复, 不允许重复]
+  - id: Q2
+    question: "品质是每只怪独立随机，还是本行所有怪共用同一个随机品质？"
+    options: [每只怪独立随机, 本行共用品质]
+  - id: Q3
+    question: "怪物模板表里的敌方倍率是否要参与威胁分？"
+    options: [参与, 不参与]
+  - id: Q4
+    question: "宠物池范围简写是否保留为正式表格格式？"
+    current_code: "已支持 1~5-2、1-5-2、pal_001~pal_005-2。"

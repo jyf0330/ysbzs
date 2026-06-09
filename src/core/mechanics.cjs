@@ -72,7 +72,7 @@ const MECHANIC_STATUS = Object.freeze({
   mech_fire_trap: 'implemented',            // elements.cjs: 空格火≥3层→陷阱
   mech_water_catalyst_seed: 'implemented',  // elements.cjs: waterCatalyst
   mech_wind_gather_fire: 'implemented',     // elements.cjs: transferFire
-  mech_move_free_field: 'implemented',      // factionRules: moveMode=infinite
+  mech_move_free_field: 'implemented',      // player units use explicit moveRange
   mech_attack_lock_after_attack: 'implemented', // hasAttacked 标记
   mech_clone_no_element: 'implemented',     // trialEngine: 复制体无元素
   mech_beast_trial: 'implemented',          // trialEngine: 试炼规则

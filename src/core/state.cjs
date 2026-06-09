@@ -2,6 +2,7 @@ const { loadGameData, buildIndexes } = require('./data.cjs');
 const { applyBattleStart } = require('./mechanics.cjs');
 const { ACTIVE_ELEMENTS, COMPAT_ELEMENTS, makeEmptyElements, makeEmptyElementCamps } = require('./elements.cjs');
 const { makeUnitFromData } = require('./unitFactory.cjs');
+const { ensureMultiplayerState } = require('./multiplayerState.cjs');
 
 const BOARD_ROWS = 8;
 const BOARD_COLS = 8;
@@ -163,6 +164,15 @@ function createGameState(opts = {}) {
   const state = {
     data: loadedData,
     indexes,
+    battleId: opts.battleId || null,
+    mode: opts.mode || 'solo',
+    stateVersion: 0,
+    players: opts.players || null,
+    teams: opts.teams || null,
+    turn: opts.turn || null,
+    rngState: { seed: opts.seed || opts.battleId || 'ysbzs-local', index: 0 },
+    commandLog: [],
+    nextCommand: 1,
     phase: 'init',
     day: opts.day || 1,
     period: opts.period || '上午',
@@ -176,8 +186,8 @@ function createGameState(opts = {}) {
       enemy: makeLeader('enemy', opts.enemyLeader || {})
     },
     factionRules: {
-      player: { leaderType: 'hero', moveMode: 'infinite', terrainFormThreshold: 3, explosionThreshold: 3, showElementGeneration: true },
-      enemy: { leaderType: 'boss', moveMode: 'stat_ap', terrainFormThreshold: 99, explosionThreshold: 99, showElementGeneration: false }
+      player: { leaderType: 'hero', terrainFormThreshold: 3, explosionThreshold: 3, showElementGeneration: true },
+      enemy: { leaderType: 'boss', terrainFormThreshold: 99, explosionThreshold: 99, showElementGeneration: false }
     },
     nextStep: 1,
     nextUnit: 1,
@@ -209,6 +219,7 @@ function createGameState(opts = {}) {
     state.inventory.push({ petId: pid, count: 1, level: 1, active: true, instanceId: u.id, slot: row.slot || i + 1 });
   }
   for (const u of state.units) applyBattleStart(state, u);
+  ensureMultiplayerState(state, { battleId: opts.battleId, mode: opts.mode, playerId: opts.playerId, playerName: opts.playerName, seed: opts.seed, day: state.day });
   syncBoardUnits(state);
   return state;
 }

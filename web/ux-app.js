@@ -205,7 +205,7 @@
       const data = await api('/api/action', makeCommand(type, payload));
       ui.vm = data.viewModel || ui.vm;
       if (type === 'START_BATTLE') ui.prepOpen = false;
-      if (!options.suppressToast && data.events && data.events.length) toast(data.events[data.events.length - 1].text || data.events[data.events.length - 1].type);
+      if (!options.suppressToast && data.events && data.events.length) toast((data.events[data.events.length - 1].text || data.events[data.events.length - 1].type).split('\n')[0]);
       normalizeSelection();
       render();
       return data;

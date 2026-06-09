@@ -297,6 +297,7 @@ import { createRenderCache } from './render-cache.js';
       board: vm.board
     })) renderCellDetail();
     if (renderCache.shouldRender('slots', { heroes: vm.heroes, phase: vm.phase, selectedSlotGlobal: ui.selectedSlotGlobal, selectedSlot: ui.selectedSlot, slotArmed: ui.slotArmed, busy: ui.busy, apBySlot: ui.apBySlot })) renderSlots();
+    renderActionPopover();
     renderControls();
     renderPrepOverlay();
     renderOperationRail();
@@ -544,10 +545,8 @@ import { createRenderCache } from './render-cache.js';
       $('detail-summary').textContent = `${slotInfo.hero.name} · ${slotInfo.slot.label}`;
       $('cell-detail').className = 'detail-card selected-detail';
       $('cell-detail').innerHTML = renderSlotInfo(slotInfo);
-      renderSlotAction(slotInfo);
       return;
     }
-    renderSlotAction(null);
     const hero = selectedHero();
     const c = ui.selectedCell || ui.vm.selected?.cell;
     if (hero && (!c || unitById(cellAt(c.r, c.c)?.unitId)?.id === hero.id)) {
@@ -588,13 +587,14 @@ import { createRenderCache } from './render-cache.js';
     if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>`);
     $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
   }
-  function renderSlotAction(info) {
-    const panel = $('slot-action-panel');
+  function renderActionPopover() {
+    const panel = $('action-popover');
+    const info = ui.slotArmed ? selectedSlotInfo() : null;
     if (!panel) return;
     if (!info) {
-      $('slot-action-summary').textContent = '未选择';
-      panel.className = 'slot-action-panel empty';
-      panel.textContent = '点击左侧行动块后调整方向与释放。';
+      panel.className = 'action-popover hidden';
+      panel.setAttribute('aria-hidden', 'true');
+      panel.innerHTML = '';
       return;
     }
     const s = info.slot;
@@ -604,10 +604,10 @@ import { createRenderCache } from './render-cache.js';
     const maxAp = Math.max(1, Number(h.availableAp ?? s.availableAp ?? h.ap ?? 1));
     const ap = Math.max(1, Math.min(maxAp, Number(ui.apBySlot[apKey] || 1)));
     ui.apBySlot[apKey] = ap;
-    $('slot-action-summary').textContent = `${slotShortName(s)} ${DIR[s.direction] || s.direction || '→'}`;
-    panel.className = 'slot-action-panel';
-    panel.innerHTML = `<div class="slot-action-title"><strong>${esc(slotShortName(s))}</strong><span>${esc(h.name)}</span></div>
-      <div class="detail-plan">方向：${esc(DIR[s.direction] || s.direction || '→')} · AP ${esc(ap)} / ${esc(maxAp)}</div>
+    panel.className = 'action-popover';
+    panel.setAttribute('aria-hidden', 'false');
+    panel.innerHTML = `<div class="action-popover-title"><strong id="action-popover-title">${esc(slotShortName(s))}</strong><span>${esc(h.name)}</span></div>
+      <div class="action-popover-meta">方向 ${esc(DIR[s.direction] || s.direction || '→')} · AP ${esc(ap)} / ${esc(maxAp)}</div>
       <div class="detail-ap-row" aria-label="AP 分配">
         ${Array.from({ length: maxAp }, (_, i) => i + 1).map(n => `<button class="ap-choice${n === ap ? ' sel' : ''}" data-ap-choice="${n}" type="button"${locked ? ' disabled' : ''}>${n}</button>`).join('')}
       </div>
@@ -615,7 +615,21 @@ import { createRenderCache } from './render-cache.js';
         ${['left','up','right','down'].map(d => `<button class="as-dir-btn detail-dir" data-slot-dir="${info.globalIndex}" data-dir="${d}" type="button"${locked ? ' disabled' : ''}>${DIR[d]}</button>`).join('')}
         <button class="use-btn detail-use" data-use="${info.globalIndex}" type="button"${locked || s.used ? ' disabled' : ''}>释放</button>
       </div>
-      <div class="detail-plan">${s.used ? '已释放' : locked ? '当前不可用' : '点击棋盘选目标，或直接按当前方向释放。'}</div>`;
+      <div class="action-popover-hint">${s.used ? '已释放' : locked ? '当前不可用' : '点棋盘选目标，或直接释放。'}</div>`;
+    positionActionPopover(info.globalIndex);
+  }
+  function positionActionPopover(globalIndex) {
+    const panel = $('action-popover');
+    const left = document.querySelector('.left-panel');
+    const btn = document.querySelector(`#slot-list [data-slot="${globalIndex}"]`);
+    if (!panel || !left || !btn) return;
+    const shell = $('game-shell');
+    const scale = shell ? (shell.getBoundingClientRect().width / shell.offsetWidth || 1) : 1;
+    const btnRect = btn.getBoundingClientRect();
+    const leftRect = left.getBoundingClientRect();
+    const top = (btnRect.top - leftRect.top) / scale;
+    const maxTop = Math.max(8, left.offsetHeight - panel.offsetHeight - 8);
+    panel.style.top = `${Math.max(8, Math.min(top, maxTop))}px`;
   }
   function renderUnitDetail(unit) {
     const elementLayers = Object.entries(unit.elements || unit.elementLayers || {})
@@ -702,6 +716,7 @@ import { createRenderCache } from './render-cache.js';
     ui.apBySlot[key] = Math.max(1, Number(n || 1));
     renderCache.invalidate('cellDetail');
     renderCellDetail();
+    renderActionPopover();
     renderOperationRail();
   }
 
@@ -1046,7 +1061,7 @@ import { createRenderCache } from './render-cache.js';
       const useBtn = ev.target.closest('[data-use]');
       if (useBtn) useSlot(Number(useBtn.dataset.use));
     });
-    $('slot-action-panel')?.addEventListener('click', ev => {
+    $('action-popover')?.addEventListener('click', ev => {
       const apChoice = ev.target.closest('[data-ap-choice]');
       if (apChoice) { chooseAp(apChoice.dataset.apChoice); return; }
       const dirBtn = ev.target.closest('[data-slot-dir]');

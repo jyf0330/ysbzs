@@ -343,25 +343,25 @@ async function main() {
     await screenshot(cdp, 'hero_moved_by_cell_click', '英雄通过点棋盘空格移动到新位置。', records);
 
     await realClick(cdp, '#slot-list [data-slot="0"]', '点击左下行动块', records);
-    await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' || document.querySelector('#slot-list [data-slot="0"]')?.classList.contains('sel') || document.querySelector('#cell-detail')?.innerText.includes('当前行动块')`, 'left action block click did not show armed slot UI');
-    await screenshot(cdp, 'slot_selected_armed', '左侧行动块进入瞄准态，右侧详细信息显示方向与施放。', records);
+    await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' && document.querySelector('#slot-list [data-slot="0"]')?.classList.contains('sel') && !document.querySelector('#action-popover')?.classList.contains('hidden') && document.querySelector('#cell-detail')?.innerText.includes('当前行动块')`, 'left action block click did not show armed slot popover');
+    await screenshot(cdp, 'slot_selected_armed', '左侧行动块进入瞄准态，右侧保留详情，行动块旁出现调整浮窗。', records);
 
-    await waitForExpr(cdp, `document.querySelector('#slot-action-panel [data-ap-choice="1"]') && document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'inline AP allocation did not stay inside right action panel');
-    await realClick(cdp, '#slot-action-panel [data-ap-choice="1"]', '点击右侧行动槽 AP 分配 1 点', records);
-    await screenshot(cdp, 'inline_ap_allocation', '行动槽 AP 分配位于右侧当前行动槽面板，不再压在棋盘上。', records);
+    await waitForExpr(cdp, `document.querySelector('#action-popover [data-ap-choice="1"]') && document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'inline AP allocation did not stay inside the local action popover');
+    await realClick(cdp, '#action-popover [data-ap-choice="1"]', '点击行动块浮窗 AP 分配 1 点', records);
+    await screenshot(cdp, 'inline_ap_allocation', '行动槽 AP 分配位于行动块旁浮窗，右侧详情不被压缩。', records);
 
 
-    await realClick(cdp, '#slot-action-panel [data-slot-dir="0"][data-dir="left"]', '点击方向箭头：左', records);
+    await realClick(cdp, '#action-popover [data-slot-dir="0"][data-dir="left"]', '点击方向箭头：左', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'SET_ACTION_DIRECTION') && window.__YSBZS__.lastViewModel.heroes[0].slots[0].direction === 'left'`, 'direction click did not dispatch SET_ACTION_DIRECTION');
     await screenshot(cdp, 'slot_direction_left', '方向调整通过按钮进入核心状态。', records);
-    await realClick(cdp, '#slot-action-panel [data-slot-dir="0"][data-dir="right"]', '点击方向箭头：右', records);
+    await realClick(cdp, '#action-popover [data-slot-dir="0"][data-dir="right"]', '点击方向箭头：右', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.heroes[0].slots[0].direction === 'right'`, 'direction did not return to right');
 
     await realClick(cdp, '#board .cell[data-r="6"][data-c="4"]', '点击目标格', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.selected.cell && window.__YSBZS__.lastViewModel.selected.cell.r === 6 && window.__YSBZS__.lastViewModel.selected.cell.c === 4`, 'target cell click did not update selected.cell');
     await screenshot(cdp, 'target_cell_selected', '选中目标格，右侧详细信息同步更新。', records);
 
-    await realClick(cdp, '#slot-action-panel [data-use="0"]', '点击“释放”', records);
+    await realClick(cdp, '#action-popover [data-use="0"]', '点击“释放”', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT' || e.type === 'USE_SLOT_BLOCKED')`, 'use slot button did not dispatch USE_SLOT');
     const useEvents = await evaluate(cdp, `window.__YSBZS__.lastViewModel.events.filter(e => e.type === 'PLAYER_SELECT_SLOT' || e.type === 'USE_SLOT_BLOCKED').slice(-3)`);
     assert(useEvents.some(e => e.type === 'PLAYER_SELECT_SLOT'), `manual use slot was blocked: ${JSON.stringify(useEvents)}`);

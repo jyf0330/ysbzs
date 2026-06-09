@@ -194,12 +194,6 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .right-panel{display:flex;flex-direction:column;gap:8px}
 .detail-zone{min-height:0}
 .right-panel .detail-card{min-height:190px;max-height:218px}
-.slot-action-zone{min-height:128px}
-.slot-action-panel{min-height:96px;padding:8px;background:#fbf1d9;border:1px solid rgba(124,89,53,.34);font-size:13px}
-.slot-action-panel.empty{color:#8a745a}
-.slot-action-title{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.slot-action-title strong{font-size:15px;color:#3f2e22}
-.slot-action-title span{font-size:12px;color:#705a40}
 .manual-flow-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .manual-flow-controls button{min-height:30px;font-size:12px;opacity:.82}
 .trial-zone{display:none}
@@ -270,8 +264,6 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .action-block{min-height:34px}
 .right-panel{gap:7px}
 .right-panel .detail-card{min-height:168px;max-height:168px;overflow:auto}
-.slot-action-zone{min-height:0}
-.slot-action-panel{min-height:124px;max-height:124px;overflow:auto}
 .detail-ap-row{margin:5px 0}
 .detail-actions{margin:5px 0;grid-template-columns:repeat(4,29px) 1fr}
 .detail-dir,.detail-use{height:26px}
@@ -279,3 +271,30 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .auto-controls button{min-height:32px}
 .toast-stack{max-height:96px;overflow:hidden}
 .toast{max-width:280px;max-height:48px;overflow:hidden}
+
+/* action-popover pass: keep right column for details, edit action blocks beside the left list */
+.left-panel{position:relative;overflow:visible}
+.active-pet-zone{flex:0 0 310px}
+.action-block-zone{flex:0 0 152px;min-height:0;margin-top:auto;overflow:visible}
+.hero-list{height:274px;gap:5px}
+.hero-card{min-height:60px;padding:6px}
+.hero-card .avatar{width:34px;height:34px;font-size:18px}
+.hero-stat-grid span{min-height:18px;font-size:10px}
+.slot-list{height:124px;gap:4px;overflow:hidden}
+.action-block{height:28px;min-height:28px;padding:2px 4px;grid-template-columns:16px minmax(0,1fr) 14px;overflow:hidden}
+.action-block b{width:16px;height:16px}
+.action-block span strong{font-size:10px}
+.action-block span small{font-size:8px}
+.action-block i{font-size:13px}
+.detail-zone{min-height:0;display:flex;flex-direction:column}
+.right-panel .detail-card{flex:1 1 auto;min-height:360px;max-height:390px;overflow:auto}
+.manual-flow-controls{margin-top:0}
+.auto-controls{margin-top:auto}
+.action-popover.hidden{display:none}
+.action-popover{position:absolute;left:calc(100% + 8px);top:300px;z-index:90;width:238px;padding:9px;background:#fff8e6;border:2px solid #426c88;box-shadow:0 12px 28px rgba(47,33,24,.28),inset 0 0 0 1px rgba(255,248,224,.8);color:#3f2e22}
+.action-popover:before{content:"";position:absolute;left:-8px;top:18px;width:12px;height:12px;background:#fff8e6;border-left:2px solid #426c88;border-bottom:2px solid #426c88;transform:rotate(45deg)}
+.action-popover-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:5px}
+.action-popover-title strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.action-popover-title span,.action-popover-meta,.action-popover-hint{font-size:12px;color:#705a40}
+.action-popover .detail-ap-row{margin:6px 0}
+.action-popover .detail-actions{margin:6px 0;grid-template-columns:repeat(4,29px) 1fr}

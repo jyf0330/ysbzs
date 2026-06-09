@@ -53,6 +53,29 @@ test('bottom event log is internally scrollable and follows newest content', () 
   }
 });
 
+test('action blocks sit lower and edit through a local popover instead of the right detail column', () => {
+  const html = read('web/index.html');
+  const css = read('web/ux-app.css');
+  assert.match(html, /id="action-popover"/, 'left action blocks need a local floating edit popover');
+  assert.doesNotMatch(html, /id="slot-action-panel"/, 'right column should not keep a permanent slot action adjustment panel');
+  assert.doesNotMatch(html, /slot-action-zone/, 'right column should reserve space for details instead of slot controls');
+  assert.doesNotMatch(css, /slot-action-panel|slot-action-zone/, 'old right-side slot action styles should be removed');
+  assert.match(css, /\.active-pet-zone\{[^}]*flex:0 0 310px/s, 'active pets should get more vertical room and stop feeling compressed');
+  assert.match(css, /\.slot-list\{[^}]*height:124px/s, '12 action blocks should move down into a readable left-bottom strip');
+  assert.match(css, /\.action-block-zone\{[^}]*margin-top:auto/s, 'action block zone should sit lower in the left panel');
+  assert.match(css, /\.right-panel \.detail-card\{[^}]*min-height:360px/s, 'right detail panel should stay large after removing slot controls');
+  assert.match(css, /\.action-popover/, 'action popover needs visible floating-panel styling');
+
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const js = read(file);
+    assert.match(js, /function renderActionPopover/, `${file} should render the local action edit popover`);
+    assert.match(js, /positionActionPopover/, `${file} should place the popover beside the selected action block`);
+    assert.match(js, /id="action-popover-title"/, `${file} popover should expose action identity`);
+    assert.doesNotMatch(js, /renderSlotAction/, `${file} should not render permanent right-side action controls`);
+    assert.doesNotMatch(js, /slot-action-panel/, `${file} should not keep right-side slot adjustment code`);
+  }
+});
+
 test('combat layout scripts keep info in right panel without hover detail popups', () => {
   const css = read('web/ux-app.css');
   const html = read('web/index.html');
@@ -72,7 +95,7 @@ test('combat layout scripts keep info in right panel without hover detail popups
     assert.match(js, /manualAutoLock/, `${file} should track manual operation lock`);
     assert.match(js, /RUN_FULL_DAY/, `${file} should keep full-day flow through the API`);
     assert.match(js, /runAllOut/, `${file} should expose 我方全部出击 flow`);
-    assert.match(js, /data-ap-choice/, `${file} should render AP choices in detail area`);
+    assert.match(js, /data-ap-choice/, `${file} should render AP choices in the action popover`);
     assert.match(js, /dragstart/, `${file} should support drag prep interactions`);
     assert.match(js, /drop/, `${file} should support drag/drop prep targets`);
     assert.match(js, /prepFilter/, `${file} should filter prep backpack roster`);

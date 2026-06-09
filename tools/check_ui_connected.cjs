@@ -42,7 +42,8 @@ async function main() {
     assert(html.includes(mainScript) && html.includes('ux-app.css'), 'new UI assets not referenced');
     assert(html.includes('id="board"') && html.includes('id="slot-list"') && html.includes('id="hero-list"'), 'new UI stable DOM anchors missing');
     assert(html.includes('id="operation-rail"'), 'board operation context rail missing');
-    assert(html.includes('id="cell-detail"') && html.includes('id="slot-action-panel"'), 'right-side detail/action panels missing');
+    assert(html.includes('id="cell-detail"') && html.includes('id="action-popover"'), 'right-side detail panel or left action popover missing');
+    assert(!html.includes('id="slot-action-panel"') && !html.includes('slot-action-zone'), 'right-side permanent slot action panel must be removed');
     assert(!html.includes('id="cell-popup"') && !html.includes('id="tooltip"'), 'hover detail surfaces must be removed');
     assert(!html.includes('original-ui-compat-adapter.js') && !html.includes("loadScript('game.js')") && !html.includes('ui.js'), 'old UI bootstrap must be removed');
     assert(js.includes('/api/action') && js.includes('/api/view') && js.includes('/api/report'), 'new UI must use public API endpoints');
@@ -52,7 +53,8 @@ async function main() {
     assert(!js.includes('boardUnitVitals(unit)'), 'board unit token must not render full board-cell hp/atk stats');
     assert(!js.includes('hero-ap'), 'board unit token must not reserve board-cell footer for hero-only AP');
     assert(js.includes('renderOperationRail') && js.includes('op-chip') && !js.includes("opChip('目标'"), 'UI must expose board operation context without target details in the rail');
-    assert(js.includes('slotShortName') && js.includes('compact-hero-main') && js.includes('slot-action-panel'), 'left unit cards must stay compact and move slot controls to the right panel');
+    assert(js.includes('slotShortName') && js.includes('compact-hero-main') && js.includes('renderActionPopover') && js.includes('positionActionPopover'), 'left unit cards must stay compact and move slot controls into the local popover');
+    assert(!js.includes('slot-action-panel') && !js.includes('renderSlotAction'), 'slot controls must not live in the right detail column');
     assert(css.includes('.unit-token-name') && css.includes('.unit-token-hp') && css.includes('.cell.hero-cell') && css.includes('.unit-token.is-active'), 'board unit token must style compact identity, hp bar, and selected states');
     assert(css.includes('.operation-rail') && css.includes('.op-chip.ready') && css.includes('.op-chip.armed'), 'operation rail must have readable mode states');
     assert(css.includes('.compact-hero-main') && css.includes('.action-block') && css.includes('.detail-card'), 'left action blocks and right detail panel must have readable information styles');

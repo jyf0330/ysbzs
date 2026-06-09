@@ -42,7 +42,8 @@ async function main() {
     assert(html.includes(mainScript) && html.includes('ux-app.css'), 'new UI assets not referenced');
     assert(html.includes('id="board"') && html.includes('id="slot-list"') && html.includes('id="hero-list"'), 'new UI stable DOM anchors missing');
     assert(html.includes('id="operation-rail"'), 'board operation context rail missing');
-    assert(html.includes('id="cell-popup"'), 'board cell popup anchor missing');
+    assert(html.includes('id="cell-detail"') && html.includes('id="slot-action-panel"'), 'right-side detail/action panels missing');
+    assert(!html.includes('id="cell-popup"') && !html.includes('id="tooltip"'), 'hover detail surfaces must be removed');
     assert(!html.includes('original-ui-compat-adapter.js') && !html.includes("loadScript('game.js')") && !html.includes('ui.js'), 'old UI bootstrap must be removed');
     assert(js.includes('/api/action') && js.includes('/api/view') && js.includes('/api/report'), 'new UI must use public API endpoints');
     assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(js), 'web UI must not import core or adapter directly');
@@ -54,7 +55,8 @@ async function main() {
     assert(js.includes('slotShortName') && js.includes('compact-hero-main') && js.includes('slot-action-panel'), 'left unit cards must stay compact and move slot controls to the right panel');
     assert(css.includes('.unit-token-name') && css.includes('.unit-token-hp') && css.includes('.cell.hero-cell') && css.includes('.unit-token.is-active'), 'board unit token must style compact identity, hp bar, and selected states');
     assert(css.includes('.operation-rail') && css.includes('.op-chip.ready') && css.includes('.op-chip.armed'), 'operation rail must have readable mode states');
-    assert(css.includes('.compact-hero-main') && css.includes('.action-block') && css.includes('.cell-popup'), 'left action blocks and board popup must have readable information styles');
+    assert(css.includes('.compact-hero-main') && css.includes('.action-block') && css.includes('.detail-card'), 'left action blocks and right detail panel must have readable information styles');
+    assert(!css.includes('.cell-popup') && !css.includes('.tooltip') && !js.includes('data-tip'), 'hover detail styling and attributes must stay removed');
     for (const old of ['original-ui-compat-adapter.js','ui.js','game.js','battle.js','board.js','shop.js','actions.js','battleTrace.js']) {
       assert(!fs.existsSync(path.join(root, 'web', old)), `old UI file still exists: web/${old}`);
     }

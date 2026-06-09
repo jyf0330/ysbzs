@@ -83,7 +83,7 @@ test('R406 roster loop: newly bought pet starts on bench, can be blocked by full
   assert.equal(vm.inventory.items.some(x => x.instanceId === bought.instanceId), false);
 });
 
-test('R407 UI exposes missing feature surfaces: prep overlay, replay, debug, tooltip, AP modal, shop event', () => {
+test('R407 UI exposes prep, replay, debug, AP modal and shop event without hover detail surfaces', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web/index.html'), 'utf8');
   const js = fs.readFileSync(path.join(__dirname, '..', '..', 'web/ux-app.js'), 'utf8');
   assert.match(html, /prep-overlay/);
@@ -91,7 +91,8 @@ test('R407 UI exposes missing feature surfaces: prep overlay, replay, debug, too
   assert.match(html, /prep-bench-list/);
   assert.match(html, /data-log-tab="replay"/);
   assert.match(html, /ap-modal/);
-  assert.match(html, /tooltip/);
+  assert.doesNotMatch(html, /tooltip/);
+  assert.doesNotMatch(html, /cell-popup/);
   assert.match(js, /TOGGLE_UNIT_ACTIVE/);
   assert.match(js, /EXPORT_BATTLE_TRACE/);
   assert.match(js, /REPLAY_BATTLE_TRACE/);
@@ -99,4 +100,6 @@ test('R407 UI exposes missing feature surfaces: prep overlay, replay, debug, too
   assert.match(js, /APPLY_SHOP_EVENT/);
   assert.match(js, /toggleDebugPanel/);
   assert.match(js, /data-ap-choice/);
+  assert.doesNotMatch(js, /data-tip/);
+  assert.doesNotMatch(js, /showTooltip|scheduleTooltip|hideTooltip|showCellPopup|hideCellPopup/);
 });

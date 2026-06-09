@@ -1,6 +1,6 @@
 # 真实浏览器玩家链路验证
 
-- 时间：2026-06-09T15:24:04.840Z
+- 时间：2026-06-09T15:39:47.185Z
 - URL：http://127.0.0.1:4196
 - 浏览器：/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 - 验证方式：CDP `Input.dispatchMouseEvent` 发送真实鼠标事件，页面按钮/格子自己触发 DOM click 监听。
@@ -29,7 +29,6 @@
 - 点击“战报”标签：[data-log-tab="report"] @ (376, 631)
 - 点击“回放”标签：[data-log-tab="replay"] @ (376, 657)
 - 回放下一步：[data-replay-next] @ (657, 601)
-- 鼠标悬停机制词条显示工具提示：[data-tip] @ (483, 320)
 - 按 Ctrl+` 打开调试面板：keyboard:Ctrl+Backquote @ (0, 0)
 - 关闭调试面板：[data-debug-close] @ (1247, 400)
 - 新开一天准备验证“我方全部出击”：#new-game-btn @ (726, 137)
@@ -56,9 +55,8 @@
 - screenshots/17_monster_action_clicked.png：怪物行动通过按钮推进。
 - screenshots/18_battle_report_tab.png：战报标签通过前端读取 report 并显示文本。
 - screenshots/19_battle_replay_tab.png：回放标签显示事件列表、步骤计数和 JSON 导出输入框。
-- screenshots/20_tooltip_hover.png：鼠标悬停元素/机制词条弹出说明浮窗。
-- screenshots/21_debug_panel_opened.png：Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。
-- screenshots/22_all_out_flow.png：我方全部出击按左侧行动块顺序走核心行动槽流程。
+- screenshots/20_debug_panel_opened.png：Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。
+- screenshots/21_all_out_flow.png：我方全部出击按左侧行动块顺序走核心行动槽流程。
 
 ## 视频
 - 未生成：--check mode

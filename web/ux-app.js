@@ -24,15 +24,6 @@
     init: '准备', player_turn: '玩家回合', monster_turn: '怪物行动', round_end: '回合结算',
     battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中'
   };
-  const TIP_TEXT = {
-    '火': '火：叠层达到阈值会引爆并造成爆发伤害。水可催化火，让本次火层提高。',
-    '水': '水：可作为催化层，参与火/风等元素反应。',
-    '风': '风：偏向扩散、转化和位移相关机制。',
-    '土': '土：兼容元素，偏向防御、地形和阻挡。',
-    preview: '行动预览：根据当前选中英雄、行动槽、方向和目标格计算。',
-    threat: '敌方威胁：怪物下一步可能攻击或移动影响范围。'
-  };
-  const TOOLTIP_DELAY_MS = 650;
   const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT']);
 
   const ui = {
@@ -53,8 +44,7 @@
     prepOpen: false,
     prepFilter: '',
     draggedRosterId: null,
-    manualAutoLock: false,
-    tooltipTimer: null
+    manualAutoLock: false
   };
   Object.assign(ui, sharedUi);
   const renderCache = createRenderCache();
@@ -272,38 +262,6 @@
     window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, makeCommand, saveGame, loadGameFromStorage, isBusy: () => ui.busy };
   }
 
-  function showCellPopup(r, c, detail) {
-    const popup = $('cell-popup');
-    if (!popup) return;
-    const cell = cellAt(r, c);
-    const unit = detail?.unit || unitById(cell?.unitId);
-    const elHTML = Object.entries(detail?.elements || cell?.elements || {})
-      .filter(([, n]) => Number(n) > 0)
-      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${EL_ICON[el] || el}${n}</span>`).join(' ');
-    const unitLine = unit
-      ? `<div class="popup-row unit"><span class="${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.role || unit.element || '')}</small></div><div class="popup-stats">${statChips(unit)}</div>${unit.shape ? `<div class="popup-row dim">${esc(slotPlanText(unit))}</div>` : ''}`
-      : '<div class="popup-row dim">空格</div>';
-    const preview = detail?.preview || cell?.preview;
-    const threat = detail?.threat || cell?.threat;
-    popup.innerHTML = `<div class="popup-header">第${r + 1}行第${c + 1}列</div>${unitLine}${elHTML ? `<div class="popup-row">${elHTML}</div>` : ''}${preview ? `<div class="popup-preview">⚡ ${esc(preview.damage ?? preview.layers ?? '')}</div>` : ''}${threat ? `<div class="popup-threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>` : ''}`;
-    const boardWrap = popup.parentElement;
-    const bw = boardWrap.offsetWidth, bh = boardWrap.offsetHeight;
-    const pw = 220, ph = popup.scrollHeight || 130;
-    const cellEl = boardWrap.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-    let left = 0, top = 0;
-    if (cellEl) {
-      const cr = cellEl.offsetLeft, ct = cellEl.offsetTop, cw = cellEl.offsetWidth, ch = cellEl.offsetHeight;
-      if (c > 4) { left = cr + cw + 3; if (left + pw > bw) left = cr - pw - 3; }
-      else { left = cr - pw - 3; if (left < 0) left = cr + cw + 3; }
-      if (r > 3) { top = ct + ch + 3; if (top + ph > bh) top = bh - ph - 3; }
-      else { top = ct - ph - 3; if (top < 0) top = ct + ch + 3; }
-    }
-    popup.style.left = `${Math.max(2, Math.min(left, bw - pw - 2))}px`;
-    popup.style.top = `${Math.max(2, Math.min(top, bh - ph - 2))}px`;
-    popup.classList.remove('hidden');
-  }
-  function hideCellPopup() { const p = $('cell-popup'); if (p) p.classList.add('hidden'); }
-
   function renderStaticStatus(vm) {
     document.body.dataset.phase = vm.phase || 'init';
     $('game-shell').dataset.phase = vm.phase || 'init';
@@ -517,14 +475,14 @@
       if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
       if (unit && unit.id === ui.selectedUnitId) classes.push('selected-unit');
       const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
-        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}" data-tip="${esc(el)}">${esc(el)}${esc(n)}</span>`).join('');
+        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
       const p = previewMap.get(key); const t = threatMap.get(key);
       const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || boardUnitName(unit)} 生命 ${unit.hp}/${unit.maxHp} 攻击 ${unit.atk ?? 0}` : `R${cell.r + 1}C${cell.c + 1}`;
       return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
         ${elements ? `<div class="element-stack">${elements}</div>` : ''}
         ${unit ? unitToken(unit) : '<span class="empty-dot">·</span>'}
-        ${p ? `<span class="preview-num" data-tip="preview">预${esc(p.damage ?? p.layers ?? '+')}</span>` : ''}
-        ${t ? `<span class="threat-num" data-tip="threat">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
+        ${p ? `<span class="preview-num">预${esc(p.damage ?? p.layers ?? '+')}</span>` : ''}
+        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
       </button>`;
     }).join('');
   }
@@ -566,7 +524,6 @@
     const cell = cellAt(r, c);
     const unit = unitById(cell?.unitId);
     const isHeroUnit = unit?.side === 'hero';
-    hideCellPopup();
     if (isHeroUnit) {
       ui.selectedUnitId = unit.id;
       ui.selectedSlotGlobal = null;
@@ -862,7 +819,7 @@
     const events = ui.vm.shop?.events || [];
     const eventHtml = events.length ? `<div class="shop-event-list">${events.map(e => `<div class="shop-event-card"><div><strong>${esc(e.name)}</strong><span>${esc(e.optionText || '')} · ${esc(e.costText || '无成本')} → ${esc(e.gainText || '')}</span></div><button class="mini-btn" data-shop-event="${esc(e.id)}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>触发</button></div>`).join('')}</div>` : '';
     const offerHtml = offers.map(o => `<div class="offer-card${o.frozen ? ' frozen' : ''}">
-      <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}" data-tip="${esc(o.element || '')}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span></div>
+      <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span></div>
       <div class="offer-actions"><button class="mini-btn buy" data-buy-offer="${esc(o.offerId)}" type="button"${ui.busy || ui.vm.phase !== 'shop' || Number(o.price) > Number(ui.vm.gold || 0) ? ' disabled' : ''}>购买</button><button class="mini-btn freeze" data-freeze-offer="${esc(o.offerId)}" data-frozen="${o.frozen ? '1' : '0'}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>${o.frozen ? '解冻' : '冻结'}</button></div>
     </div>`).join('');
     $('shop-list').innerHTML = eventHtml + offerHtml;
@@ -973,23 +930,6 @@
     });
     window.addEventListener('mouseup', () => { drag = null; });
   }
-  function showTooltip(text, x, y) {
-    const tip = $('tooltip');
-    if (!tip || !text) return;
-    tip.textContent = text;
-    tip.classList.remove('hidden');
-    tip.style.left = `${Math.min(window.innerWidth - 300, x + 12)}px`;
-    tip.style.top = `${Math.min(window.innerHeight - 120, y + 12)}px`;
-  }
-  function scheduleTooltip(text, x, y) {
-    clearTimeout(ui.tooltipTimer);
-    ui.tooltipTimer = setTimeout(() => showTooltip(text, x, y), TOOLTIP_DELAY_MS);
-  }
-  function hideTooltip() {
-    clearTimeout(ui.tooltipTimer);
-    ui.tooltipTimer = null;
-    if ($('tooltip')) $('tooltip').classList.add('hidden');
-  }
   function updateFullscreenButton() {
     const btn = $('fullscreen-btn');
     if (!btn) return;
@@ -1088,10 +1028,6 @@
       const btn = ev.target.closest('[data-r][data-c]');
       if (btn) onCellClick(Number(btn.dataset.r), Number(btn.dataset.c));
     });
-    // 点棋盘空白处隐藏浮动框
-    $('board').addEventListener('click', ev => {
-      if (!ev.target.closest('[data-r][data-c]')) hideCellPopup();
-    });
     $('slot-list').addEventListener('click', ev => {
       const dirBtn = ev.target.closest('[data-slot-dir]');
       if (dirBtn) { setSlotDir(Number(dirBtn.dataset.slotDir), dirBtn.dataset.dir); return; }
@@ -1147,14 +1083,6 @@
     document.addEventListener('click', ev => {
       if (ev.target.closest('[data-debug-close]')) document.getElementById('ysbzs-debug')?.remove();
     });
-    document.addEventListener('mousemove', ev => {
-      const el = ev.target.closest('[data-tip]');
-      const key = el ? el.dataset.tip : '';
-      if (key && TIP_TEXT[key]) scheduleTooltip(TIP_TEXT[key], ev.clientX, ev.clientY);
-      else hideTooltip();
-    });
-    document.addEventListener('mouseleave', hideTooltip);
-    document.addEventListener('click', ev => { if (!ev.target.closest('[data-tip]')) hideTooltip(); });
     document.addEventListener('fullscreenchange', () => { updateFullscreenButton(); scaleApp(); });
     window.addEventListener('resize', scaleApp);
     updateFullscreenButton();

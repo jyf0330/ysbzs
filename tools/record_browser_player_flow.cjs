@@ -399,13 +399,7 @@ async function main() {
     await waitForExpr(cdp, `document.querySelector('#brp-count').innerText.includes('/')`, 'replay step counter missing');
     await screenshot(cdp, 'battle_replay_tab', '回放标签显示事件列表、步骤计数和 JSON 导出输入框。', records);
 
-    const tipBox = await getBox(cdp, '[data-tip]');
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: tipBox.x, y: tipBox.y, button: 'none' });
-    await sleep(220);
-    assert((await evaluate(cdp, `document.querySelector('#tooltip')?.classList.contains('hidden') !== false`)), 'tooltip opened before hover delay');
-    await waitForExpr(cdp, `document.querySelector('#tooltip') && !document.querySelector('#tooltip').classList.contains('hidden')`, 'tooltip did not open from delayed real mouse hover', 2000);
-    records.actions.push({ at: nowIso(), action: '鼠标悬停机制词条显示工具提示', selector: '[data-tip]', x: Math.round(tipBox.x), y: Math.round(tipBox.y), elementText: tipBox.text });
-    await screenshot(cdp, 'tooltip_hover', '鼠标悬停元素/机制词条弹出说明浮窗。', records);
+    assert((await evaluate(cdp, `!document.querySelector('[data-tip]') && !document.querySelector('#tooltip') && !document.querySelector('#cell-popup')`)), 'hover detail surfaces should be removed; right panel owns details');
 
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, nativeVirtualKeyCode: 17, modifiers: 2 });
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: '`', code: 'Backquote', windowsVirtualKeyCode: 192, nativeVirtualKeyCode: 192, modifiers: 2 });

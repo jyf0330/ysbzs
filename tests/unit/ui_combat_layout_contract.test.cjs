@@ -39,12 +39,22 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   assert.match(css, /body\[data-phase="init"\]\s+\.shop-phase-panel/, 'shop panel should hide outside legal phases');
 });
 
-test('combat layout scripts implement delayed tooltip, inline AP, manual lock and drag prep', () => {
+test('combat layout scripts keep info in right panel without hover detail popups', () => {
   const css = read('web/ux-app.css');
+  const html = read('web/index.html');
+  assert.doesNotMatch(html, /id="cell-popup"/, 'board detail popup should be removed; right panel owns details');
+  assert.doesNotMatch(html, /id="tooltip"/, 'hover tooltip surface should be removed; right panel owns details');
+  assert.doesNotMatch(css, /\.cell-popup/, 'cell popup styling should not remain');
+  assert.doesNotMatch(css, /\.tooltip/, 'tooltip styling should not remain');
+  assert.doesNotMatch(css, /\[data-tip\]/, 'hover affordance styling should not remain');
   for (const file of ['web/js/main.js', 'web/ux-app.js']) {
     const js = read(file);
-    assert.match(js, /TOOLTIP_DELAY_MS/, `${file} should delay tooltip display`);
-    assert.match(js, /tooltipTimer/, `${file} should cancel pending tooltip timers`);
+    assert.doesNotMatch(js, /TOOLTIP_DELAY_MS/, `${file} should not keep delayed hover tooltip logic`);
+    assert.doesNotMatch(js, /tooltipTimer/, `${file} should not keep hover tooltip timer state`);
+    assert.doesNotMatch(js, /data-tip/, `${file} should not render hover tooltip attributes`);
+    assert.doesNotMatch(js, /showCellPopup|hideCellPopup/, `${file} should not keep board hover popup functions`);
+    assert.doesNotMatch(js, /showTooltip|scheduleTooltip|hideTooltip/, `${file} should not keep hover tooltip functions`);
+    assert.doesNotMatch(js, /document\.addEventListener\('mousemove'/, `${file} should not bind document mousemove hover details`);
     assert.match(js, /manualAutoLock/, `${file} should track manual operation lock`);
     assert.match(js, /RUN_FULL_DAY/, `${file} should keep full-day flow through the API`);
     assert.match(js, /runAllOut/, `${file} should expose 我方全部出击 flow`);

@@ -10,6 +10,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-09_ui-left-action-zone-detail-panel.md`
 - `tasks/done/2026-06-09_ui-fullscreen-button.md`
 - `tasks/done/2026-06-09_ui-combat-layout-density-pass.md`
 - `tasks/done/2026-06-09_ui-combat-layout-publication-split.md`

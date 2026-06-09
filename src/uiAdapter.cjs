@@ -142,6 +142,8 @@ function stripUnit(state, unit) {
     name: unit.name,
     displayName: unit.displayName || `${unit.side === 'hero' ? '我方' : '敌方'}${unit.name}`,
     element: unit.element,
+    quality: unit.quality,
+    bodySize: unit.bodySize,
     role: unit.role,
     hp: unit.hp,
     maxHp: unit.maxHp,
@@ -163,7 +165,10 @@ function stripUnit(state, unit) {
       shapeClass: unit.shape.shapeClass,
       hitCells: unit.shape.hitCells,
       slotCount: unit.shape.slotCount,
-      slotElements: unit.shape.slotElements
+      slotElements: unit.shape.slotElements,
+      actionType: unit.shape.actionType,
+      skill: unit.shape.skill,
+      note: unit.shape.note
     } : null,
     slots: unit.side === 'hero' ? slotsForVM(state, unit) : []
   };

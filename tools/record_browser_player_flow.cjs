@@ -297,7 +297,7 @@ async function main() {
     let vm = await getVm(cdp);
     assert(vm?.leaders?.player?.hp === 80 && vm?.leaders?.enemy?.hp === 80, 'leader HP did not render from ViewModel');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-card').length`)) >= 1, 'hero cards missing');
-    assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-action-row .action-block').length`)) >= 1, 'left action blocks missing');
+    assert((await evaluate(cdp, `document.querySelectorAll('#slot-list .action-block').length`)) >= 12, 'left-bottom 12 action blocks missing');
     assert((await evaluate(cdp, `(() => { const btn=document.querySelector('#fullscreen-btn'); return !!btn && btn.innerText.trim() === '全屏' && !btn.disabled; })()`)), 'fullscreen button should be visible and enabled');
     assert((await evaluate(cdp, `document.querySelector('#prep-open-btn')?.innerText.trim() === '备战'`)), 'prep button should be named 备战');
     assert((await evaluate(cdp, `!document.querySelector('#roster-list')`)), 'left rail should not keep a permanent roster list');
@@ -342,8 +342,8 @@ async function main() {
     await waitForExpr(cdp, `document.querySelector('#full-day-btn')?.title.includes('手动')`, 'manual move did not lock full-day automation');
     await screenshot(cdp, 'hero_moved_by_cell_click', '英雄通过点棋盘空格移动到新位置。', records);
 
-    await realClick(cdp, '#hero-list [data-slot="0"]', '点击左侧行动块', records);
-    await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' || document.querySelector('#hero-list [data-slot="0"]')?.classList.contains('sel') || document.querySelector('#cell-detail')?.innerText.includes('主动行动块')`, 'left action block click did not show armed slot UI');
+    await realClick(cdp, '#slot-list [data-slot="0"]', '点击左下行动块', records);
+    await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' || document.querySelector('#slot-list [data-slot="0"]')?.classList.contains('sel') || document.querySelector('#cell-detail')?.innerText.includes('当前行动块')`, 'left action block click did not show armed slot UI');
     await screenshot(cdp, 'slot_selected_armed', '左侧行动块进入瞄准态，右侧详细信息显示方向与施放。', records);
 
     await waitForExpr(cdp, `document.querySelector('#slot-action-panel [data-ap-choice="1"]') && document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'inline AP allocation did not stay inside right action panel');

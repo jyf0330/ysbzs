@@ -1,6 +1,6 @@
 # 真实浏览器玩家链路验证
 
-- 时间：2026-06-09T14:56:52.587Z
+- 时间：2026-06-09T15:24:04.840Z
 - URL：http://127.0.0.1:4196
 - 浏览器：/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 - 验证方式：CDP `Input.dispatchMouseEvent` 发送真实鼠标事件，页面按钮/格子自己触发 DOM click 监听。
@@ -13,19 +13,19 @@
 - 拖拽备战宠物回到上阵阵容：.prep-card[data-prep-active="0"] -> [data-prep-drop-zone="active"] @ (492, 369)
 - 点击“准备开始”：#prep-ready-btn @ (893, 264)
 - 点击棋盘上的英雄棋子：#board .cell.hero-cell @ (524, 388)
-- 点击左侧英雄卡片：.hero-card .hero-select @ (163, 172)
+- 点击左侧英雄卡片：.hero-card .hero-select @ (163, 186)
 - 点击棋盘空格移动英雄：#board .cell[data-r="6"][data-c="3"] @ (626, 439)
-- 点击左侧行动块：#hero-list [data-slot="0"] @ (75, 207)
-- 点击右侧行动槽 AP 分配 1 点：#slot-action-panel [data-ap-choice="1"] @ (1000, 373)
-- 点击方向箭头：左：#slot-action-panel [data-slot-dir="0"][data-dir="left"] @ (1002, 408)
-- 点击方向箭头：右：#slot-action-panel [data-slot-dir="0"][data-dir="right"] @ (1076, 408)
+- 点击左下行动块：#slot-list [data-slot="0"] @ (69, 405)
+- 点击右侧行动槽 AP 分配 1 点：#slot-action-panel [data-ap-choice="1"] @ (1000, 371)
+- 点击方向箭头：左：#slot-action-panel [data-slot-dir="0"][data-dir="left"] @ (1001, 386)
+- 点击方向箭头：右：#slot-action-panel [data-slot-dir="0"][data-dir="right"] @ (1069, 386)
 - 点击目标格：#board .cell[data-r="6"][data-c="4"] @ (677, 439)
-- 点击“释放”：#slot-action-panel [data-use="0"] @ (1190, 408)
+- 点击“释放”：#slot-action-panel [data-use="0"] @ (1184, 386)
 - 点击“保存”：#save-game-btn @ (865, 137)
 - 点击“新开一天”验证读取前状态会重置：#new-game-btn @ (726, 137)
 - 点击“读取”恢复刚才存档：#load-game-btn @ (921, 134)
-- 点击“结束回合”：#etb @ (1045, 444)
-- 点击“怪物行动”：#monster-btn @ (1187, 444)
+- 点击“结束回合”：#etb @ (1045, 445)
+- 点击“怪物行动”：#monster-btn @ (1187, 445)
 - 点击“战报”标签：[data-log-tab="report"] @ (376, 631)
 - 点击“回放”标签：[data-log-tab="replay"] @ (376, 657)
 - 回放下一步：[data-replay-next] @ (657, 601)
@@ -33,7 +33,7 @@
 - 按 Ctrl+` 打开调试面板：keyboard:Ctrl+Backquote @ (0, 0)
 - 关闭调试面板：[data-debug-close] @ (1247, 400)
 - 新开一天准备验证“我方全部出击”：#new-game-btn @ (726, 137)
-- 开始战斗准备“我方全部出击”：#etb @ (1045, 444)
+- 开始战斗准备“我方全部出击”：#etb @ (1045, 445)
 - 点击“我方全部出击”：#all-out-btn @ (1116, 486)
 
 ## 截图

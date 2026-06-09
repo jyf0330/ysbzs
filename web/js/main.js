@@ -91,6 +91,20 @@ import { createRenderCache } from './render-cache.js';
     ];
     return chips.map(([k, v]) => `<span class="stat-chip"><b>${esc(k)}</b>${esc(v)}</span>`).join('');
   }
+  function heroBattleStats(unit = {}) {
+    const ap = unit.availableAp != null ? `${unit.availableAp}/${unit.ap ?? unit.availableAp}` : (unit.ap ?? '-');
+    return [
+      ['HP', `${unit.hp ?? '-'}/${unit.maxHp ?? '-'}`],
+      ['攻击', unit.atk ?? 0],
+      ['防御', unit.def ?? 0],
+      ['护盾', unit.shield ?? 0],
+      ['AP', ap],
+      ['移动', unit.moveRange ?? unit.moveAp ?? '-']
+    ];
+  }
+  function renderStatGrid(stats, className = 'detail-stat-grid') {
+    return `<div class="${className}">${stats.map(([k, v]) => `<span><b>${esc(k)}</b>${esc(v)}</span>`).join('')}</div>`;
+  }
   function slotPlanText(unit = {}) {
     const shape = unit.shape?.shapeName || unit.shapeName || unit.shapeId || '-';
     const slots = unit.slots || [];
@@ -117,6 +131,16 @@ import { createRenderCache } from './render-cache.js';
     else if (shape.includes('风')) verb = '风';
     else if (shape.includes('治')) verb = '疗';
     return `${slot.element || ''}${verb}`.slice(0, 4);
+  }
+  function skillName(unit = {}, slot = null) {
+    return slot?.shapeName || unit.shape?.skill || unit.shape?.shapeName || unit.skill || '普通行动';
+  }
+  function skillDescription(unit = {}, slot = null) {
+    if (slot) return `${slot.shapeName || slot.shapeId || '行动'}，${slot.element || '-'}属性，基础${slot.layers ?? '-'}层，命中${slot.hitCells ?? '-'}格。`;
+    const shape = unit.shape || {};
+    if (shape.skill) return shape.skill;
+    const slotCount = shape.slotCount ?? ((unit.slots || []).length || '-');
+    return `${shape.shapeName || '普通行动'}，${shape.shapeClass || '单体/范围'}，${shape.hitCells ?? '-'}格，${slotCount}个行动槽。`;
   }
 
   function slotsFlat() {
@@ -224,7 +248,8 @@ import { createRenderCache } from './render-cache.js';
     const el = document.createElement('div');
     el.className = 'toast';
     if (danger) el.style.borderLeftColor = '#a84f3e';
-    el.textContent = text;
+    const raw = String(text ?? '');
+    el.textContent = raw.length > 72 ? `${raw.slice(0, 72)}...` : raw;
     $('toast-stack').appendChild(el);
     setTimeout(() => el.remove(), 2600);
   }
@@ -338,32 +363,22 @@ import { createRenderCache } from './render-cache.js';
   function renderHeroes() {
     const heroes = ui.vm.heroes || [];
     $('hero-count').textContent = `${heroes.length}人`;
-    const flatSlots = slotsFlat();
     $('hero-list').innerHTML = heroes.map(h => {
       const sel = h.id === ui.selectedUnitId;
       const dead = h.alive === false || h.hp <= 0;
-      const heroSlots = flatSlots.filter(x => x.hero.id === h.id);
-      const slotButtons = heroSlots.map(x => {
-        const s = x.slot;
-        const selected = ui.selectedSlotGlobal === x.globalIndex;
-        const locked = ui.vm.phase !== 'player_turn' || !s.canUse || ui.busy;
-        return `<button class="action-block${selected ? ' sel' : ''}${s.used ? ' used' : ''}${locked ? ' locked' : ''}" data-slot="${x.globalIndex}" type="button"${ui.busy ? ' disabled' : ''} aria-label="${esc(`${h.name} ${slotShortName(s)} ${DIR[s.direction] || s.direction || '→'}`)}">
-          <b class="${clsForEl(s.element)}">${esc(EL_ICON[s.element] || s.element || '·')}</b>
-          <span>${esc(slotShortName(s))}</span>
-          <i>${esc(DIR[s.direction] || s.direction || '→')}</i>
-        </button>`;
-      }).join('');
       return `<article class="hero-card${sel ? ' sel' : ''}">
         <button class="hero-select" data-hero-id="${esc(h.id)}" type="button">
+          <span class="avatar ${clsForEl(h.element)}">${esc(unitIcon(h))}</span>
           <div class="hero-main compact-hero-main">
-            <strong>${esc(h.name)}</strong>
-            <span class="${clsForEl(h.element)}">${esc(h.element || '-')}</span>
-            <small>HP${esc(h.hp ?? '-')}/${esc(h.maxHp ?? '-')}</small>
-            <small>AP${esc(h.availableAp ?? h.ap ?? '-')}</small>
+            <div class="hero-title-line">
+              <strong>${esc(h.name)}</strong>
+              <span class="${clsForEl(h.element)}">${esc(h.element || '-')}</span>
+              ${qualityTag(h.quality)}
+            </div>
+            ${renderStatGrid(heroBattleStats(h), 'hero-stat-grid')}
             ${dead ? '<em>退场</em>' : ''}
           </div>
         </button>
-        <div class="hero-action-row">${slotButtons || '<span class="empty">无行动块</span>'}</div>
       </article>`;
     }).join('') || '<div class="detail-card empty">没有可操作英雄。</div>';
   }
@@ -648,12 +663,15 @@ import { createRenderCache } from './render-cache.js';
   function renderUnitDetail(unit) {
     const elementLayers = Object.entries(unit.elements || unit.elementLayers || {})
       .filter(([, n]) => Number(n) > 0)
-      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join(' ');
+      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${esc(EL_ICON[el] || el)}${esc(n)}</span>`).join(' ');
     const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(s.label || s.shapeName || '行动块')} · ${esc(s.element || '-')} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
+    const activeSlot = selectedSlotInfo();
+    const facing = activeSlot?.hero?.id === unit.id ? activeSlot.slot.direction : (ui.vm?.selected?.direction || 'right');
     return [
-      `<div class="detail-unit"><span class="${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span> <strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.role || unit.element || '')}</small></div>`,
-      `<div class="stat-row detail-stats">${statChips(unit)}</div>`,
-      `<div class="detail-plan">${esc(slotPlanText(unit))}</div>`,
+      `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><div><strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.element || '-')} · ${esc(unit.quality || '普通')} · ${esc(unit.role || '-')}</small></div></div>`,
+      renderStatGrid(heroBattleStats(unit)),
+      `<div class="detail-skill-panel"><strong>技能 ${esc(skillName(unit))}</strong><span>${esc(skillDescription(unit))}</span></div>`,
+      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
       `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
       elementLayers ? `<div class="detail-els">${elementLayers}</div>` : '<div class="detail-els">元素层：<span class="dim">无</span></div>',
       slotList ? `<div class="detail-slot-list">${slotList}</div>` : ''
@@ -662,25 +680,39 @@ import { createRenderCache } from './render-cache.js';
   function renderSlotInfo(info) {
     const s = info.slot;
     const h = info.hero;
-    return `<div class="detail-unit"><span class="${clsForEl(s.element)}">${esc(s.element || '-')}</span> <strong>${esc(s.label || `行动块${info.localIndex + 1}`)}</strong><small>${esc(h.name)}</small></div>
-      <div class="detail-plan">类型：主动行动块 · 元素：${esc(s.element || '-')} · 层数：${esc(s.layers ?? '-')}</div>
-      <div class="detail-plan">攻击形状：${esc(s.shapeName || s.shapeId || '-')} · 当前方向：${esc(DIR[s.direction] || s.direction || '→')}</div>
-      <div class="detail-plan">释放条件：${s.used ? '本回合已使用' : s.canUse === false ? '当前不可用' : '可用'}</div>`;
+    return `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(h.element)}">${esc(unitIcon(h))}</span><div><strong>${esc(h.displayName || h.name)}</strong><small>${esc(h.element || '-')} · ${esc(h.quality || '普通')} · ${esc(h.role || '-')}</small></div></div>
+      ${renderStatGrid(heroBattleStats(h))}
+      <div class="detail-skill-panel"><strong>当前行动块：${esc(slotShortName(s))}</strong><span>${esc(skillDescription(h, s))}</span></div>
+      <div class="detail-state-panel"><span><b>槽位</b>${esc(info.localIndex + 1)}/3</span><span><b>方向</b>${esc(DIR[s.direction] || s.direction || '→')}</span><span><b>状态</b>${s.used ? '已释放' : s.canUse === false ? '不可用' : '可用'}</span></div>`;
   }
 
+  function renderActionBlockCard(info) {
+    const s = info.slot;
+    const h = info.hero;
+    const selected = ui.selectedSlotGlobal === info.globalIndex;
+    const locked = ui.vm.phase !== 'player_turn' || !s.canUse || ui.busy;
+    return `<button class="action-block${selected ? ' sel' : ''}${s.used ? ' used' : ''}${locked ? ' locked' : ''}" data-slot="${info.globalIndex}" type="button"${ui.busy ? ' disabled' : ''} aria-label="${esc(`${h.name} ${slotShortName(s)} ${DIR[s.direction] || s.direction || '→'}`)}">
+      <b class="${clsForEl(s.element)}">${esc(EL_ICON[s.element] || s.element || '·')}</b>
+      <span><strong>${esc(slotShortName(s))}</strong><small>${esc(h.name)}</small></span>
+      <i>${esc(DIR[s.direction] || s.direction || '→')}</i>
+    </button>`;
+  }
   function renderSlots() {
     const flat = slotsFlat();
     const selected = selectedSlotInfo();
     if ($('slot-summary')) $('slot-summary').textContent = selected ? `${selected.hero.name} · ${selected.slot.label}` : '未选择';
-    if ($('slot-list')) $('slot-list').innerHTML = flat.map(x => `<span data-slot-index="${x.globalIndex}">${esc(x.hero.name)}:${esc(x.slot.label)}</span>`).join('');
+    if ($('action-block-count')) $('action-block-count').textContent = `${flat.length}/12`;
+    if ($('slot-list')) $('slot-list').innerHTML = flat.map(renderActionBlockCard).join('') || '<div class="detail-card empty">暂无行动块。</div>';
   }
   async function selectSlot(globalIndex) {
     const info = slotsFlat()[globalIndex]; if (!info) return;
     document.body.dataset.lastSlotClick = String(globalIndex);
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = true;
     renderCache.invalidate('heroes');
+    renderCache.invalidate('slots');
     renderCache.invalidate('cellDetail');
     renderHeroes();
+    renderSlots();
     renderCellDetail();
     await runCommand('SELECT_SLOT', { slotId: info.localIndex, unitId: info.hero.id });
   }

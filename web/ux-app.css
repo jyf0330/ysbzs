@@ -102,7 +102,6 @@
 .hero-card .stat-chip{min-height:15px;font-size:9px}
 .hero-card .stat-chip b{font-size:8px}
 .hero-card .hero-sub{font-size:9px}
-.hero-action-row{position:relative;z-index:3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
 .action-block{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:3px;min-height:22px;padding:2px 4px;border:1px solid rgba(124,89,53,.38);background:#fff8e6;color:#3f2e22;font-size:10px;font-weight:800}
 .action-block span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .action-block i{font-style:normal;color:#7b6045}
@@ -178,7 +177,6 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .compact-hero-main span{font-size:12px;font-weight:900}
 .compact-hero-main small{font-size:11px;color:#6f5232;font-weight:900}
 .compact-hero-main em{font-size:10px;color:#a84f3e;font-style:normal}
-.hero-action-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .action-block{min-height:30px;padding:4px 5px;border:2px solid rgba(124,89,53,.42);background:#fff8e6;box-shadow:0 2px 0 rgba(124,89,53,.15);font-size:12px}
 .action-block b{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:#f3dfbb}
 .action-block span{font-size:12px;font-weight:900}
@@ -215,3 +213,72 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .bottom-panel{margin-left:310px;margin-right:310px}
 .toast-stack{right:326px;bottom:166px;pointer-events:none}
 .toast{pointer-events:none}
+
+/* combat-layout-left-action-zone: active pets above, 12 action blocks below */
+.left-panel{gap:8px}
+.active-pet-zone,.action-block-zone{min-width:0;overflow:hidden}
+.active-pet-zone{flex:0 0 248px}
+.action-block-zone{flex:1 1 auto;min-height:0}
+.active-pet-zone .panel-head,.action-block-zone .panel-head{margin-bottom:6px}
+.hero-list{min-height:0;max-height:none;height:214px;gap:5px;overflow:auto;padding-right:2px}
+.hero-card{display:block;min-height:48px;padding:5px;border-width:1px}
+.hero-select{display:grid;grid-template-columns:32px minmax(0,1fr);gap:6px;align-items:center;width:100%;padding:0;border:0;background:transparent;text-align:left;color:inherit}
+.hero-select:hover{filter:none}
+.hero-card .avatar{width:32px;height:32px;border-radius:8px;font-size:17px}
+.compact-hero-main{display:grid;grid-template-columns:1fr;gap:3px;min-width:0}
+.hero-title-line{display:flex;align-items:center;gap:5px;min-width:0}
+.hero-title-line strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#3f2e22}
+.hero-title-line span{font-size:11px;font-weight:900}
+.hero-title-line .quality-tag{font-size:10px;margin-left:auto}
+.hero-stat-grid,.detail-stat-grid{display:grid;gap:3px}
+.hero-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.hero-stat-grid span,.detail-stat-grid span{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:2px;border:1px solid rgba(124,89,53,.22);background:rgba(255,248,224,.68);color:#3f2e22}
+.hero-stat-grid span{min-height:15px;padding:1px 3px;font-size:9px}
+.hero-stat-grid b,.detail-stat-grid b{color:#8a745a;font-weight:900}
+.hero-stat-grid b{font-size:8px}
+.slot-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;min-height:0;max-height:none;height:174px;overflow:auto;padding-right:2px}
+.action-block{min-width:0;grid-template-columns:18px minmax(0,1fr) 16px;min-height:40px;padding:4px 5px;border:2px solid rgba(124,89,53,.42);background:#fff8e6;box-shadow:0 2px 0 rgba(124,89,53,.14);font-size:11px}
+.action-block b{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:#f3dfbb}
+.action-block span{display:grid;gap:0;min-width:0}
+.action-block span strong,.action-block span small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.action-block span strong{font-size:11px;line-height:1.05;color:#3f2e22}
+.action-block span small{font-size:9px;line-height:1.05;color:#705a40}
+.action-block i{font-size:15px;font-weight:900;color:#4b2f1d}
+.action-block.sel{border-color:#426c88;background:#e4eef5;box-shadow:0 0 0 2px rgba(66,108,136,.22)}
+.action-block.used{opacity:.52}
+.action-block.locked:not(.sel){opacity:.58;background:#eee2c9;color:#8a745a}
+.right-panel .detail-card{min-height:214px;max-height:244px;white-space:normal}
+.detail-hero-head{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:center;margin-bottom:8px}
+.detail-avatar{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#f0dfb8;border:1px solid rgba(124,89,53,.4);font-size:27px}
+.detail-hero-head strong{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:#3f2e22}
+.detail-hero-head small{display:block;margin-top:2px;color:#705a40;font-size:11px}
+.detail-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin:6px 0}
+.detail-stat-grid span{min-height:27px;padding:4px 5px;font-size:12px}
+.detail-stat-grid b{font-size:10px}
+.detail-skill-panel{display:grid;gap:3px;margin:7px 0;padding:7px;border:1px solid rgba(124,89,53,.28);background:#fff8e6}
+.detail-skill-panel strong{font-size:13px;color:#3f2e22}
+.detail-skill-panel span{font-size:12px;color:#705a40;line-height:1.35}
+.detail-state-panel{display:grid;grid-template-columns:1fr;gap:4px;margin:6px 0}
+.detail-state-panel span{display:flex;justify-content:space-between;gap:8px;padding:4px 6px;border:1px dashed rgba(124,89,53,.3);background:rgba(255,248,224,.55);font-size:12px}
+.detail-state-panel b{color:#8a745a}
+
+/* combat-layout-left-action-zone visual fit */
+.active-pet-zone{flex-basis:262px}
+.hero-list{height:226px}
+.hero-card{min-height:51px}
+.hero-card .avatar{width:32px;height:32px;font-size:17px}
+.hero-stat-grid span{min-height:16px;font-size:10px}
+.action-block-zone{min-height:0}
+.slot-list{height:160px}
+.action-block{min-height:34px}
+.right-panel{gap:7px}
+.right-panel .detail-card{min-height:168px;max-height:168px;overflow:auto}
+.slot-action-zone{min-height:0}
+.slot-action-panel{min-height:124px;max-height:124px;overflow:auto}
+.detail-ap-row{margin:5px 0}
+.detail-actions{margin:5px 0;grid-template-columns:repeat(4,29px) 1fr}
+.detail-dir,.detail-use{height:26px}
+.manual-flow-controls button{min-height:28px}
+.auto-controls button{min-height:32px}
+.toast-stack{max-height:96px;overflow:hidden}
+.toast{max-width:280px;max-height:48px;overflow:hidden}

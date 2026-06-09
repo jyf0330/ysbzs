@@ -10,6 +10,12 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   const html = read('web/index.html');
   const css = read('web/ux-app.css');
 
+  assert.match(html, /id="active-pet-zone"/, 'left rail should split active pets into their own top zone');
+  assert.match(html, /id="action-block-zone"/, 'left rail needs an independent 12 action-block zone');
+  assert.match(html, /<h2>行动块<\/h2>/, 'left-bottom zone needs a visible action-block title');
+  assert.match(html, /id="action-block-count"/, 'action-block zone should show 12-slot occupancy');
+  assert.match(html, /id="slot-list" class="slot-list" aria-label="12 个行动块"/, 'slot list must be visible and dedicated to 12 action blocks');
+  assert.doesNotMatch(html, /slot-list hidden-bridge/, 'slot list must not be hidden after action blocks move left-bottom');
   assert.match(html, /id="prep-open-btn"/, 'left panel needs a clear prep entry');
   assert.match(html, /id="fullscreen-btn"[\s\S]*>全屏</, 'top shell needs a visible game fullscreen button');
   assert.match(html, /<h2>上阵宠物<\/h2>[\s\S]*id="hero-count"[\s\S]*id="prep-open-btn"[\s\S]*>备战</, 'prep button belongs beside the active-pet title');
@@ -25,6 +31,10 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   assert.doesNotMatch(html, />自动战斗</, '自动战斗 copy should not compete with the two core automation choices');
   assert.match(html, /id="shop-phase-panel"/, 'shop/reward actions need a phase-gated wrapper');
   assert.match(css, /\.prep-overlay/, 'prep overlay needs dedicated layout styling');
+  assert.match(css, /\.active-pet-zone/, 'left-top active pet zone needs dedicated styling');
+  assert.match(css, /\.action-block-zone/, 'left-bottom action block zone needs dedicated styling');
+  assert.match(css, /\.slot-list\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s, '12 action blocks should form a compact 3-column grid');
+  assert.match(css, /\.detail-stat-grid/, 'right detail should use a full stat grid');
   assert.match(css, /\.bottom-panel\{[^}]*margin-left:310px[^}]*margin-right:310px/s, 'event log should align to the center board column');
   assert.match(css, /body\[data-phase="init"\]\s+\.shop-phase-panel/, 'shop panel should hide outside legal phases');
 });
@@ -45,8 +55,14 @@ test('combat layout scripts implement delayed tooltip, inline AP, manual lock an
     assert.match(js, /slotShortName/, `${file} should render compact action-block names`);
     assert.match(js, /requestFullscreen/, `${file} should enter fullscreen through the browser Fullscreen API`);
     assert.match(js, /fullscreenchange/, `${file} should keep fullscreen button state in sync`);
+    assert.match(js, /heroBattleStats/, `${file} should render complete hero combat stats in the active-pet zone`);
+    assert.match(js, /renderActionBlockCard/, `${file} should render the independent left-bottom action blocks`);
+    assert.match(js, /detail-stat-grid/, `${file} should render full right-side stat details`);
+    assert.match(js, /detail-skill-panel/, `${file} should render skill name and description in the detail panel`);
+    assert.match(js, /action-block-count/, `${file} should count the 12 action blocks`);
     assert.doesNotMatch(js, /opChip\('目标'/, `${file} should not keep target details in the board-side rail`);
     assert.doesNotMatch(js, /boardUnitVitals\(unit\)/, `${file} board tokens should not render full unit stats`);
+    assert.doesNotMatch(js, /hero-action-row/, `${file} should not keep action blocks embedded in pet cards`);
   }
   assert.match(css, /\.fullscreen-btn/, 'fullscreen button needs a dedicated compact tool style');
 });

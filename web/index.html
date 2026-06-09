@@ -35,15 +35,23 @@
 
     <main class="main-layout">
       <aside class="left-panel panel">
-        <div class="panel-head active-head">
-          <h2>上阵宠物</h2>
-          <div class="active-head-actions">
-            <span id="hero-count">0人</span>
-            <button id="prep-open-btn" class="prep-open-btn primary-btn" type="button">备战</button>
+        <section id="active-pet-zone" class="active-pet-zone">
+          <div class="panel-head active-head">
+            <h2>上阵宠物</h2>
+            <div class="active-head-actions">
+              <span id="hero-count">0人</span>
+              <button id="prep-open-btn" class="prep-open-btn primary-btn" type="button">备战</button>
+            </div>
           </div>
-        </div>
-        <div id="hero-list" class="hero-list" aria-label="我方英雄列表"></div>
-        <div id="slot-list" class="slot-list hidden-bridge" aria-hidden="true"></div>
+          <div id="hero-list" class="hero-list" aria-label="上阵宠物列表"></div>
+        </section>
+        <section id="action-block-zone" class="action-block-zone">
+          <div class="panel-head compact">
+            <h2>行动块</h2>
+            <span id="action-block-count">0/12</span>
+          </div>
+          <div id="slot-list" class="slot-list" aria-label="12 个行动块"></div>
+        </section>
       </aside>
 
       <section class="board-panel panel">

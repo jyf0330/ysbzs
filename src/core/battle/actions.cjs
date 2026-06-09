@@ -3,7 +3,8 @@
 /**
  * @typedef {{r:number,c:number}} Position
  * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, ap?:number, actionApSpent?:number, actionSlotsUsed?:Record<string, boolean>, shape?:Record<string, any>, element?:string, position?:Position, displayName?:string}} BattleUnit
- * @typedef {{phase?:string, selected?:Record<string, any>, actionDirs:Record<string, string>, units?:BattleUnit[]}} BattleState
+ * @typedef {{r:number,c:number,unitId?:string|null,elements?:Record<string, number>,preview?:Record<string, any>|null,threat?:Record<string, any>|null}} BattleCell
+ * @typedef {{phase?:string, selected?:Record<string, any>, actionDirs:Record<string, string>, units?:BattleUnit[], board?:{cells?:BattleCell[]}}} BattleState
  * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean}} ActionSlot
  */
 
@@ -70,8 +71,29 @@ function setActionDirection(state, unitId, slotId, dir) {
   const idx = parseSlotIndex(slotId ?? state.selected?.slotId ?? 0);
   const key = unit ? `${unit.id}:slot${idx}` : String(idx);
   state.actionDirs[key] = dir || 'right';
-  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, slotId: idx, dir: dir || 'right', text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向设为 ${dir || 'right'}。` });
   syncDerivedBoard(state);
+  // 同步后收集受影响格子
+  const allCells = state.board?.cells || [];
+  const previewCells = allCells.filter(c => c.preview && c.preview.actorId === unit?.id);
+  const threatCells = allCells.filter(c => c.threat);
+  const uniqueKeys = new Set();
+  for (const c of previewCells) uniqueKeys.add(`${c.r},${c.c}`);
+  for (const c of threatCells) uniqueKeys.add(`${c.r},${c.c}`);
+  const affected = [...uniqueKeys].map(k => { const [r, c] = k.split(',').map(Number); return allCells.find(x => x.r === r && x.c === c); }).filter(Boolean);
+  const cellLines = []; let seq = 1;
+  for (const c of affected) {
+    const u = c.unitId ? (getUnit(state, c.unitId) || null) : null;
+    const unitStr = u ? `${u.displayName || u.name} HP${u.hp}/${u.maxHp}${u.shield ? `/盾${u.shield}` : ''}` : '空格';
+    const els = Object.entries(c.elements || {}).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join('/') || '火0/水0/风0';
+    const pr = c.preview ? (c.preview.predictedDamage > 0 ? `，预计受到${c.preview.predictedDamage}点${c.preview.element}伤害` : `，预计铺${c.preview.element}${c.preview.layers}层`) : '';
+    const th = c.threat ? `${c.threat.damage ? `，受到${c.threat.damage}点威胁` : '，有威胁'}` : '，无威胁';
+    cellLines.push(`${seq}）第${c.r + 1}行第${c.c + 1}列：${unitStr}，${els}${pr}${th}`);
+    seq++;
+  }
+  const cellDetail = cellLines.length ? `\n影响${affected.length}格：\n${cellLines.join('\n')}` : '';
+  const slots = unit ? slotsForUnit(state, unit) : [];
+  const slot = slots[idx];
+  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, displayName: unit?.displayName, element: unit?.element, slotId: idx, dir: dir || 'right', slotElement: slot?.element, slotLayers: slot?.layers, shapeId: slot?.shapeId, shapeName: slot?.shapeName, text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向改为${dir || 'right'}。${cellDetail}` });
   return true;
 }
 
@@ -102,8 +124,8 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   const apUsed = requestedAp;
   const effectiveLayers = Math.max(1, Number(slot.layers || 1)) * apUsed;
   const targets = targetsAtCells(state, cells, targetCamp);
-  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.layers, effectiveLayers, text: `玩家施放 ${actor.displayName} 第${idx + 1}槽：${slot.shapeName}/${slot.element}/${effectiveLayers}层（AP${apUsed}），命中 ${targets.length ? targets.map(t => t.displayName).join('、') : cells.map(p => `R${p.r}C${p.c}`).join('、')}。` });
   const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.layers });
+  // 先执行槽效果
   if (targets.length) for (const t of targets) applyElement(state, actor, t, slot.element, effectiveLayers, { slot: appliedSlot, apUsed });
   else for (const p of cells) { const cell = getCell(state, p.r, p.c); if (cell) applyElementToCell(state, actor, cell, slot.element, effectiveLayers); }
   // 添加元素后检查火引爆
@@ -134,6 +156,24 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   actor.actionApSpent = unitApSpent(actor) + apUsed;
   actor.hasAttacked = true;  // 攻击后锁定位置
   syncDerivedBoard(state);
+  // 执行后构建详细事件文本
+  const allCells = state.board?.cells || [];
+  const affected = allCells.filter(c => cells.some(p => p.r === c.r && p.c === c.c) || c.preview || c.threat);
+  const cellLines = [];
+  let seq = 1;
+  for (const targetPos of cells) {
+    const c = allCells.find(x => x.r === targetPos.r && x.c === targetPos.c);
+    if (!c) continue;
+    const u = c.unitId ? (getUnit(state, c.unitId) || null) : null;
+    const unitStr = u ? `${u.displayName || u.name} HP${u.hp}/${u.maxHp}${u.shield ? `/盾${u.shield}` : ''}` : '空格';
+    const els = Object.entries(c.elements || {}).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join('/') || '火0/水0/风0';
+    const pr = c.preview ? (c.preview.predictedDamage > 0 ? `，预计受到${c.preview.predictedDamage}点${c.preview.element}伤害` : `，预计铺${c.preview.element}${c.preview.layers}层`) : '';
+    const th = c.threat ? `${c.threat.damage ? `，受到${c.threat.damage}点威胁` : '，有威胁'}` : '，无威胁';
+    cellLines.push(`${seq}）第${c.r + 1}行第${c.c + 1}列：${unitStr}，${els}${pr}${th}`);
+    seq++;
+  }
+  const cellDetail = cellLines.length ? `\n本次影响${affected.length}格：\n${cellLines.join('\n')}` : '';
+  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.layers, effectiveLayers, text: `${actor.displayName} 施放第${idx + 1}槽：${slot.shapeName}/${slot.element}/${effectiveLayers}层（AP${apUsed}）。${cellDetail}` });
   return true;
 }
 

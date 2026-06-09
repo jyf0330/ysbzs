@@ -34,19 +34,15 @@
 
     <main class="main-layout">
       <aside class="left-panel panel">
-        <div class="panel-head">
-          <h2>上阵宠物与行动块</h2>
-          <span id="hero-count">0/0</span>
+        <div class="panel-head active-head">
+          <h2>上阵宠物</h2>
+          <div class="active-head-actions">
+            <span id="hero-count">0人</span>
+            <button id="prep-open-btn" class="prep-open-btn primary-btn" type="button">备战</button>
+          </div>
         </div>
         <div id="hero-list" class="hero-list" aria-label="我方英雄列表"></div>
         <div id="slot-list" class="slot-list hidden-bridge" aria-hidden="true"></div>
-
-        <div class="panel-head compact">
-          <h2>备战</h2>
-          <span id="roster-count">0/4</span>
-        </div>
-        <button id="prep-open-btn" class="prep-open-btn ghost-btn" type="button">打开备战台</button>
-        <div id="roster-list" class="roster-list" aria-label="阵容管理列表"></div>
       </aside>
 
       <section class="board-panel panel">
@@ -101,27 +97,30 @@
       </section>
 
       <aside class="right-panel panel">
-        <div class="panel-head">
-          <h2>详细信息</h2>
-          <span id="detail-summary">未选择</span>
+        <div class="detail-zone">
+          <div class="panel-head">
+            <h2>详细信息</h2>
+            <span id="detail-summary">未选择</span>
+          </div>
+          <div id="cell-detail" class="detail-card empty">请选择宠物、行动块或棋盘格。</div>
         </div>
-        <div id="cell-detail" class="detail-card empty">请选择宠物、行动块或棋盘格。</div>
 
-        <div class="panel-head compact">
-          <h2>回合控制</h2>
+        <div class="slot-action-zone">
+          <div class="panel-head compact">
+            <h2>当前行动槽</h2>
+            <span id="slot-action-summary">未选择</span>
+          </div>
+          <div id="slot-action-panel" class="slot-action-panel empty">点击左侧行动块后调整方向与释放。</div>
         </div>
-        <div class="control-grid">
+
+        <div class="manual-flow-controls">
           <button id="etb" class="primary-btn" type="button">开始战斗</button>
           <button id="monster-btn" class="secondary-btn" type="button">怪物行动</button>
-          <button id="exa" class="secondary-btn" type="button">自动战斗</button>
-          <button id="full-day-btn" class="secondary-btn" type="button">一键完整流程</button>
-          <button id="all-out-btn" class="secondary-btn" type="button">我方全部出击</button>
         </div>
 
-        <div class="panel-head compact">
-          <h2>试炼</h2>
+        <div class="trial-zone">
+          <div id="trial-card" class="trial-card empty">未进入特殊试炼。</div>
         </div>
-        <div id="trial-card" class="trial-card empty">未进入特殊试炼。</div>
 
         <div id="shop-phase-panel" class="shop-phase-panel">
         <div class="panel-head compact">
@@ -135,6 +134,11 @@
         </div>
         <div id="reward-list" class="reward-list"></div>
         <div id="shop-list" class="shop-list"></div>
+        </div>
+
+        <div id="auto-controls" class="auto-controls">
+          <button id="all-out-btn" class="secondary-btn" type="button">我方全部出击</button>
+          <button id="full-day-btn" class="secondary-btn" type="button">一键完整流程</button>
         </div>
       </aside>
     </main>

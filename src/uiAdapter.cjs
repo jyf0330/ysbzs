@@ -310,7 +310,24 @@ function firstEmptyHeroCell(state) {
   return { r: 7, c: 0 };
 }
 function recentEvents(state, n = 30) {
-  return state.events.slice(-n).map(e => ({ step: e.step, round: e.round, phase: e.phase, type: e.type, text: e.text || e.type }));
+  return state.events.slice(-n).map(e => {
+    const base = { step: e.step, round: e.round, phase: e.phase, type: e.type, text: e.text || e.type };
+    // 附加数据字段（供 UI 展示/调试）
+    if (e.displayName) base.displayName = e.displayName;
+    if (e.element) base.element = e.element;
+    if (e.side) base.side = e.side;
+    if (e.from) base.from = e.from;
+    if (e.to) base.to = e.to;
+    if (e.apRemaining != null) base.apRemaining = e.apRemaining;
+    if (e.moveRange != null) base.moveRange = e.moveRange;
+    if (e.slotId != null) base.slotId = e.slotId;
+    if (e.dir) base.dir = e.dir;
+    if (e.slotElement) base.slotElement = e.slotElement;
+    if (e.slotLayers != null) base.slotLayers = e.slotLayers;
+    if (e.shapeName) base.shapeName = e.shapeName;
+    if (e.actorId) base.actorId = e.actorId;
+    return base;
+  });
 }
 function logGroups(state) {
   return {

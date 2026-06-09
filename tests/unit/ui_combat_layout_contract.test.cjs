@@ -11,13 +11,20 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   const css = read('web/ux-app.css');
 
   assert.match(html, /id="prep-open-btn"/, 'left panel needs a clear prep entry');
+  assert.match(html, /<h2>上阵宠物<\/h2>[\s\S]*id="hero-count"[\s\S]*id="prep-open-btn"[\s\S]*>备战</, 'prep button belongs beside the active-pet title');
+  assert.doesNotMatch(html, /打开备战台/, 'prep button copy should be direct');
+  assert.doesNotMatch(html, /id="roster-list"/, 'bench roster must not live permanently in the left rail');
   assert.match(html, /id="prep-overlay"/, 'prep must be a large overlay, not a small list only');
   assert.match(html, /id="prep-filter"/, 'bench/backpack filter must be visible in prep');
   assert.match(html, /data-prep-drop-zone="active"/, 'active lineup needs a drag/drop target');
   assert.match(html, /data-prep-drop-zone="bench"/, 'bench backpack needs a drag/drop target');
   assert.match(html, /id="all-out-btn"/, 'right controls need 我方全部出击');
+  assert.match(html, /id="auto-controls"/, 'auto actions should sit in a dedicated right-bottom cluster');
+  assert.doesNotMatch(html, /id="exa"/, '自动战斗 should not be a player-facing primary button');
+  assert.doesNotMatch(html, />自动战斗</, '自动战斗 copy should not compete with the two core automation choices');
   assert.match(html, /id="shop-phase-panel"/, 'shop/reward actions need a phase-gated wrapper');
   assert.match(css, /\.prep-overlay/, 'prep overlay needs dedicated layout styling');
+  assert.match(css, /\.bottom-panel\{[^}]*margin-left:310px[^}]*margin-right:310px/s, 'event log should align to the center board column');
   assert.match(css, /body\[data-phase="init"\]\s+\.shop-phase-panel/, 'shop panel should hide outside legal phases');
 });
 
@@ -33,6 +40,9 @@ test('combat layout scripts implement delayed tooltip, inline AP, manual lock an
     assert.match(js, /dragstart/, `${file} should support drag prep interactions`);
     assert.match(js, /drop/, `${file} should support drag/drop prep targets`);
     assert.match(js, /prepFilter/, `${file} should filter prep backpack roster`);
+    assert.match(js, /slotShortName/, `${file} should render compact action-block names`);
+    assert.doesNotMatch(js, /opChip\('目标'/, `${file} should not keep target details in the board-side rail`);
+    assert.doesNotMatch(js, /boardUnitVitals\(unit\)/, `${file} board tokens should not render full unit stats`);
   }
 });
 

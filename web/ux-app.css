@@ -161,3 +161,55 @@ body[data-phase="player_turn"] .shop-phase-panel,
 body[data-phase="monster_turn"] .shop-phase-panel,
 body[data-phase="round_end"] .shop-phase-panel,
 body[data-phase="day_end"] .shop-phase-panel{display:none}
+
+/* combat-layout-density-pass: reduce rail clutter and put core actions in their places */
+.active-head{align-items:center}
+.active-head-actions{display:flex;align-items:center;gap:6px}
+.active-head-actions span{font-size:12px;color:#7c5935;font-weight:900}
+.prep-open-btn{width:auto;min-width:54px;min-height:28px;margin:0;padding:5px 10px;border-color:#4b2f1d;box-shadow:0 2px 0 rgba(75,47,29,.28)}
+.prep-open-btn:disabled{background:#d8c8aa;color:#7d6a52}
+.hero-list{min-height:420px;max-height:420px;gap:7px}
+.hero-card{min-height:82px;padding:7px;gap:6px}
+.hero-select{display:block}
+.compact-hero-main{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:5px;align-items:center}
+.compact-hero-main strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.compact-hero-main span{font-size:12px;font-weight:900}
+.compact-hero-main small{font-size:11px;color:#6f5232;font-weight:900}
+.compact-hero-main em{font-size:10px;color:#a84f3e;font-style:normal}
+.hero-action-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.action-block{min-height:30px;padding:4px 5px;border:2px solid rgba(124,89,53,.42);background:#fff8e6;box-shadow:0 2px 0 rgba(124,89,53,.15);font-size:12px}
+.action-block b{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:#f3dfbb}
+.action-block span{font-size:12px;font-weight:900}
+.action-block i{font-size:15px;font-weight:900;color:#4b2f1d}
+.action-block.sel{border-color:#426c88;background:#e4eef5;box-shadow:0 0 0 2px rgba(66,108,136,.22)}
+.action-block.locked:not(.sel){opacity:.58}
+.operation-rail{left:50%;top:60px;transform:translateX(-50%);width:auto;display:grid;grid-template-columns:repeat(3,86px);gap:4px}
+.op-chip{min-height:26px;padding:3px 5px}
+.op-chip span{font-size:9px}
+.op-chip strong{font-size:10px}
+.unit-token{width:38px;height:35px;padding:4px;border-width:2px;gap:2px}
+.unit-token-name{font-size:10px}
+.unit-token-hp{display:block;width:100%;height:4px;background:rgba(63,46,34,.25);border-radius:999px;overflow:hidden}
+.unit-token-hp i{display:block;height:100%;background:#557d4b}
+.unit-token-mini{font-size:8px;color:#3f2e22;font-weight:900}
+.unit-token.enemy .unit-token-mini,.unit-token.boss .unit-token-mini{color:#682b22}
+.unit-token-vitals{display:none}
+.right-panel{display:flex;flex-direction:column;gap:8px}
+.detail-zone{min-height:0}
+.right-panel .detail-card{min-height:190px;max-height:218px}
+.slot-action-zone{min-height:128px}
+.slot-action-panel{min-height:96px;padding:8px;background:#fbf1d9;border:1px solid rgba(124,89,53,.34);font-size:13px}
+.slot-action-panel.empty{color:#8a745a}
+.slot-action-title{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.slot-action-title strong{font-size:15px;color:#3f2e22}
+.slot-action-title span{font-size:12px;color:#705a40}
+.manual-flow-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.manual-flow-controls button{min-height:30px;font-size:12px;opacity:.82}
+.trial-zone{display:none}
+.auto-controls{margin-top:auto;display:grid;grid-template-columns:1fr;gap:7px}
+.auto-controls button{min-height:36px;font-size:14px}
+.auto-controls #all-out-btn{background:#6a4f3a;color:#fff6df}
+.auto-controls #full-day-btn{background:#b99a66;color:#2f2118}
+.bottom-panel{margin-left:310px;margin-right:310px}
+.toast-stack{right:326px;bottom:166px;pointer-events:none}
+.toast{pointer-events:none}

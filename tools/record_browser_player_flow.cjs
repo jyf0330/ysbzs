@@ -98,10 +98,13 @@ function findPageTarget(targets) {
     || null;
 }
 async function createPageTarget() {
-  try {
-    const r = await fetchWithTimeout(`http://127.0.0.1:${chromePort}/json/new?${encodeURIComponent('about:blank')}`, { method: 'PUT' }, 1200);
-    if (r.ok) return await r.json();
-  } catch (_) {}
+  const url = `http://127.0.0.1:${chromePort}/json/new?${encodeURIComponent('about:blank')}`;
+  for (const method of ['PUT', 'GET']) {
+    try {
+      const r = await fetchWithTimeout(url, { method }, 1200);
+      if (r.ok) return await r.json();
+    } catch (_) {}
+  }
   return null;
 }
 async function cdpConnect(wsUrl) {
@@ -265,7 +268,7 @@ async function main() {
     await waitHttp(`${base}/api/health`);
     chrome = spawn(chromium, [
       '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-sync', '--disable-extensions', '--disable-component-extensions-with-background-pages', '--no-first-run',
-      '--window-size=1280,720', `--user-data-dir=${userData}`, `--remote-debugging-port=${chromePort}`, 'about:blank'
+      '--window-size=1280,720', `--user-data-dir=${userData}`, '--remote-debugging-address=127.0.0.1', `--remote-debugging-port=${chromePort}`, 'about:blank'
     ], { stdio: ['ignore', 'pipe', 'pipe'] });
     chrome.stdout.on('data', d => { chromeLog += d.toString(); });
     chrome.stderr.on('data', d => { chromeLog += d.toString(); });
@@ -274,7 +277,7 @@ async function main() {
       const pages = await getChromeTargets();
       pageTarget = findPageTarget(pages);
       if (pageTarget) break;
-      if (i === 20 || i === 40) pageTarget = await createPageTarget();
+      if (i === 5 || i === 20 || i === 40 || i === 60) pageTarget = await createPageTarget();
       if (pageTarget?.webSocketDebuggerUrl) break;
       await sleep(100);
     }
@@ -295,10 +298,15 @@ async function main() {
     assert(vm?.leaders?.player?.hp === 80 && vm?.leaders?.enemy?.hp === 80, 'leader HP did not render from ViewModel');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-card').length`)) >= 1, 'hero cards missing');
     assert((await evaluate(cdp, `document.querySelectorAll('#hero-list .hero-action-row .action-block').length`)) >= 1, 'left action blocks missing');
+    assert((await evaluate(cdp, `document.querySelector('#prep-open-btn')?.innerText.trim() === '备战'`)), 'prep button should be named 备战');
+    assert((await evaluate(cdp, `!document.querySelector('#roster-list')`)), 'left rail should not keep a permanent roster list');
+    assert((await evaluate(cdp, `!document.querySelector('#exa') && !document.body.innerText.includes('自动战斗')`)), '自动战斗 should not compete as a player-facing button');
+    assert((await evaluate(cdp, `(() => { const h=document.querySelector('.active-head').getBoundingClientRect(); const b=document.querySelector('#prep-open-btn').getBoundingClientRect(); return b.top >= h.top - 2 && b.bottom <= h.bottom + 2; })()`)), 'prep button should sit in the active-pet title row');
+    assert((await evaluate(cdp, `(() => { const log=document.querySelector('.bottom-panel').getBoundingClientRect(); const board=document.querySelector('.board-panel').getBoundingClientRect(); return Math.abs(log.left - board.left) < 4 && Math.abs(log.width - board.width) < 8; })()`)), 'event panel should align to center board column');
     assert((await evaluate(cdp, `getComputedStyle(document.querySelector('#shop-phase-panel')).display === 'none'`)), 'shop/reward panel should be hidden during init');
 
     const activeBeforePrep = await evaluate(cdp, `window.__YSBZS__.lastViewModel.inventory.activeCount`);
-    await realClick(cdp, '#prep-open-btn', '点击“打开备战台”', records);
+    await realClick(cdp, '#prep-open-btn', '点击“备战”', records);
     await waitForExpr(cdp, `document.querySelector('#prep-overlay') && !document.querySelector('#prep-overlay').classList.contains('hidden') && document.querySelector('#board')`, 'prep overlay did not open over board');
     await screenshot(cdp, 'prep_overlay_opened', '备战台覆盖主战斗区，表达当前不是开战状态。', records);
     await realClick(cdp, '#prep-filter', '点击备战筛选框', records);
@@ -321,9 +329,10 @@ async function main() {
 
     await realClick(cdp, '#board .cell.hero-cell', '点击棋盘上的英雄棋子', records);
     await waitForExpr(cdp, `!!window.__YSBZS__.lastViewModel.selected.unitId && !!document.querySelector('#board .cell.selected-unit') && document.querySelector('#operation-rail')?.textContent.includes('移动')`, 'board hero click did not select a movable hero with visible operation mode');
+    await waitForExpr(cdp, `!document.querySelector('#operation-rail')?.innerText.includes('目标')`, 'board-side operation rail should not show target detail');
     await screenshot(cdp, 'board_hero_selected', '点击棋盘英雄也能选中单位，允许随后点空格移动。', records);
 
-    await realClick(cdp, '.hero-card', '点击左侧英雄卡片', records);
+    await realClick(cdp, '.hero-card .hero-select', '点击左侧英雄卡片', records);
     await waitForExpr(cdp, `!!window.__YSBZS__.lastViewModel.selected.unitId && !!document.querySelector('.hero-card.sel')`, 'hero card click did not select a unit');
     await screenshot(cdp, 'hero_selected', '英雄卡片出现选中态，棋盘可移动格出现提示。', records);
 
@@ -336,30 +345,35 @@ async function main() {
     await waitForExpr(cdp, `document.body.dataset.lastSlotClick === '0' || document.querySelector('#hero-list [data-slot="0"]')?.classList.contains('sel') || document.querySelector('#cell-detail')?.innerText.includes('主动行动块')`, 'left action block click did not show armed slot UI');
     await screenshot(cdp, 'slot_selected_armed', '左侧行动块进入瞄准态，右侧详细信息显示方向与施放。', records);
 
-    await waitForExpr(cdp, `document.querySelector('#cell-detail [data-ap-choice="1"]') && document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'inline AP allocation did not stay inside right detail panel');
-    await realClick(cdp, '#cell-detail [data-ap-choice="1"]', '点击右侧详情 AP 分配 1 点', records);
-    await screenshot(cdp, 'inline_ap_allocation', '行动槽 AP 分配位于右侧详细信息，不再压在棋盘上。', records);
+    await waitForExpr(cdp, `document.querySelector('#slot-action-panel [data-ap-choice="1"]') && document.querySelector('#ap-modal')?.classList.contains('hidden')`, 'inline AP allocation did not stay inside right action panel');
+    await realClick(cdp, '#slot-action-panel [data-ap-choice="1"]', '点击右侧行动槽 AP 分配 1 点', records);
+    await screenshot(cdp, 'inline_ap_allocation', '行动槽 AP 分配位于右侧当前行动槽面板，不再压在棋盘上。', records);
 
 
-    await realClick(cdp, '[data-slot-dir="0"][data-dir="right"]', '点击方向箭头：右', records);
-    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'SET_ACTION_DIRECTION')`, 'direction click did not dispatch SET_ACTION_DIRECTION');
-    await screenshot(cdp, 'slot_direction_right', '方向调整通过按钮进入核心状态。', records);
+    await realClick(cdp, '#slot-action-panel [data-slot-dir="0"][data-dir="left"]', '点击方向箭头：左', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'SET_ACTION_DIRECTION') && window.__YSBZS__.lastViewModel.heroes[0].slots[0].direction === 'left'`, 'direction click did not dispatch SET_ACTION_DIRECTION');
+    await screenshot(cdp, 'slot_direction_left', '方向调整通过按钮进入核心状态。', records);
+    await realClick(cdp, '#slot-action-panel [data-slot-dir="0"][data-dir="right"]', '点击方向箭头：右', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.heroes[0].slots[0].direction === 'right'`, 'direction did not return to right');
 
     await realClick(cdp, '#board .cell[data-r="6"][data-c="4"]', '点击目标格', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.selected.cell && window.__YSBZS__.lastViewModel.selected.cell.r === 6 && window.__YSBZS__.lastViewModel.selected.cell.c === 4`, 'target cell click did not update selected.cell');
     await screenshot(cdp, 'target_cell_selected', '选中目标格，右侧详细信息同步更新。', records);
 
-    await realClick(cdp, '[data-use="0"]', '点击“施放”', records);
-    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT')`, 'use slot button did not dispatch USE_SLOT');
+    await realClick(cdp, '#slot-action-panel [data-use="0"]', '点击“释放”', records);
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT' || e.type === 'USE_SLOT_BLOCKED')`, 'use slot button did not dispatch USE_SLOT');
+    const useEvents = await evaluate(cdp, `window.__YSBZS__.lastViewModel.events.filter(e => e.type === 'PLAYER_SELECT_SLOT' || e.type === 'USE_SLOT_BLOCKED').slice(-3)`);
+    assert(useEvents.some(e => e.type === 'PLAYER_SELECT_SLOT'), `manual use slot was blocked: ${JSON.stringify(useEvents)}`);
     await screenshot(cdp, 'slot_used_event_log', '施放后事件日志出现行动槽事件，棋盘出现元素/预览反馈。', records);
 
     await realClick(cdp, '#save-game-btn', '点击“保存”', records);
     await waitForExpr(cdp, `!!localStorage.getItem('ysbzs.save.slot1')`, 'save button did not write localStorage save');
+    const savedVersion = await evaluate(cdp, `JSON.parse(localStorage.getItem('ysbzs.save.slot1')).state.stateVersion`);
     await screenshot(cdp, 'save_game_written', '真实点击保存按钮后，本地存档写入 localStorage。', records);
     await realClick(cdp, '#new-game-btn', '点击“新开一天”验证读取前状态会重置', records);
     await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.phase === 'init' && window.__YSBZS__.lastViewModel.stateVersion === 0`, 'new game did not reset state before load test');
     await realClick(cdp, '#load-game-btn', '点击“读取”恢复刚才存档', records);
-    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.events.some(e => e.type === 'PLAYER_SELECT_SLOT') && window.__YSBZS__.lastViewModel.phase === 'player_turn'`, 'load button did not restore saved playable state');
+    await waitForExpr(cdp, `window.__YSBZS__.lastViewModel.stateVersion === ${savedVersion} && window.__YSBZS__.lastViewModel.phase === 'player_turn'`, 'load button did not restore saved playable state');
     await screenshot(cdp, 'load_game_restored', '读取按钮恢复保存后的战斗状态、事件流和棋盘反馈。', records);
 
     await realClick(cdp, '#etb', '点击“结束回合”', records);

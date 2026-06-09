@@ -46,14 +46,15 @@ async function main() {
     assert(!html.includes('original-ui-compat-adapter.js') && !html.includes("loadScript('game.js')") && !html.includes('ui.js'), 'old UI bootstrap must be removed');
     assert(js.includes('/api/action') && js.includes('/api/view') && js.includes('/api/report'), 'new UI must use public API endpoints');
     assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(js), 'web UI must not import core or adapter directly');
-    assert(css.includes('.board-grid') && css.includes('.hero-card') && css.includes('.slot-card'), 'new CSS must define rebuilt shell components');
-    assert(js.includes('unit-token-name') && js.includes('unit-token-vitals') && js.includes('boardUnitVitals'), 'board unit token must use unified name-over-hp-atk layout for both sides');
+    assert(css.includes('.board-grid') && css.includes('.hero-card') && css.includes('.action-block'), 'new CSS must define rebuilt shell components');
+    assert(js.includes('unit-token-name') && js.includes('unit-token-hp') && js.includes('boardUnitShortName'), 'board unit token must use short label plus hp bar/minor hp');
+    assert(!js.includes('boardUnitVitals(unit)'), 'board unit token must not render full board-cell hp/atk stats');
     assert(!js.includes('hero-ap'), 'board unit token must not reserve board-cell footer for hero-only AP');
-    assert(js.includes('renderOperationRail') && js.includes('op-chip') && js.includes('瞄准'), 'UI must expose current board operation mode and context');
-    assert(js.includes('statChips') && js.includes('slotPlanText') && js.includes('compactMechanics'), 'left unit cards must expose battle stats, skill shape, and mechanic summary');
-    assert(css.includes('.unit-token-name') && css.includes('.unit-token-vitals') && css.includes('.cell.hero-cell') && css.includes('.unit-token.is-active'), 'board unit token must style unified compact identity and selected states');
+    assert(js.includes('renderOperationRail') && js.includes('op-chip') && !js.includes("opChip('目标'"), 'UI must expose board operation context without target details in the rail');
+    assert(js.includes('slotShortName') && js.includes('compact-hero-main') && js.includes('slot-action-panel'), 'left unit cards must stay compact and move slot controls to the right panel');
+    assert(css.includes('.unit-token-name') && css.includes('.unit-token-hp') && css.includes('.cell.hero-cell') && css.includes('.unit-token.is-active'), 'board unit token must style compact identity, hp bar, and selected states');
     assert(css.includes('.operation-rail') && css.includes('.op-chip.ready') && css.includes('.op-chip.armed'), 'operation rail must have readable mode states');
-    assert(css.includes('.stat-chip') && css.includes('.role-tag') && css.includes('.cell-popup'), 'left unit cards and board popup must have readable information styles');
+    assert(css.includes('.compact-hero-main') && css.includes('.action-block') && css.includes('.cell-popup'), 'left action blocks and board popup must have readable information styles');
     for (const old of ['original-ui-compat-adapter.js','ui.js','game.js','battle.js','board.js','shop.js','actions.js','battleTrace.js']) {
       assert(!fs.existsSync(path.join(root, 'web', old)), `old UI file still exists: web/${old}`);
     }

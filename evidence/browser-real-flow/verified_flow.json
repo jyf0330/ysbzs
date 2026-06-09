@@ -1,19 +1,19 @@
 {
-  "startedAt": "2026-06-09T11:40:27.802Z",
+  "startedAt": "2026-06-09T14:38:39.901Z",
   "base": "http://127.0.0.1:4196",
   "chromium": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "mode": "check",
   "actions": [
     {
-      "at": "2026-06-09T11:40:31.536Z",
-      "action": "点击“打开备战台”",
+      "at": "2026-06-09T14:38:49.194Z",
+      "action": "点击“备战”",
       "selector": "#prep-open-btn",
-      "x": 164,
-      "y": 434,
-      "elementText": "打开备战台"
+      "x": 276,
+      "y": 129,
+      "elementText": "备战"
     },
     {
-      "at": "2026-06-09T11:40:32.211Z",
+      "at": "2026-06-09T14:38:49.870Z",
       "action": "点击备战筛选框",
       "selector": "#prep-filter",
       "x": 598,
@@ -21,7 +21,7 @@
       "elementText": ""
     },
     {
-      "at": "2026-06-09T11:40:33.240Z",
+      "at": "2026-06-09T14:38:50.948Z",
       "action": "拖拽上阵宠物到备战席",
       "selector": ".prep-card[data-prep-active=\"1\"] -> [data-prep-drop-zone=\"bench\"]",
       "x": 788,
@@ -29,7 +29,7 @@
       "elementText": "火\n融焰娘\n◇白银\n召唤\nHP20/20\n攻2\n防0\n盾0\n火 · Lv1 · 待 scale_with_allies\n下阵"
     },
     {
-      "at": "2026-06-09T11:40:33.978Z",
+      "at": "2026-06-09T14:38:51.685Z",
       "action": "拖拽备战宠物回到上阵阵容",
       "selector": ".prep-card[data-prep-active=\"0\"] -> [data-prep-drop-zone=\"active\"]",
       "x": 492,
@@ -37,7 +37,7 @@
       "elementText": "火\n融焰娘\n◇白银\n召唤\nHP20/20\n攻2\n防0\n盾0\n火 · Lv1 · 待 scale_with_allies\n上阵"
     },
     {
-      "at": "2026-06-09T11:40:34.648Z",
+      "at": "2026-06-09T14:38:52.352Z",
       "action": "点击“准备开始”",
       "selector": "#prep-ready-btn",
       "x": 893,
@@ -45,23 +45,23 @@
       "elementText": "准备开始"
     },
     {
-      "at": "2026-06-09T11:40:35.335Z",
+      "at": "2026-06-09T14:38:53.013Z",
       "action": "点击棋盘上的英雄棋子",
       "selector": "#board .cell.hero-cell",
       "x": 524,
       "y": 388,
-      "elementText": "火绒狐\n血10 攻2"
+      "elementText": "火绒狐\n10"
     },
     {
-      "at": "2026-06-09T11:40:36.017Z",
+      "at": "2026-06-09T14:38:53.706Z",
       "action": "点击左侧英雄卡片",
-      "selector": ".hero-card",
+      "selector": ".hero-card .hero-select",
       "x": 163,
-      "y": 182,
-      "elementText": "火\n融焰娘召唤\nHP\n20/20\n攻\n2\n防\n0\n盾\n0\nAP\n3/3\n单点刺 · 槽0/3 · 火1火1火1\n机制 无\n火\n第1槽\n→\n火\n第2槽\n→\n火\n第"
+      "y": 172,
+      "elementText": "融焰娘\n火\nHP20/20\nAP3"
     },
     {
-      "at": "2026-06-09T11:40:36.698Z",
+      "at": "2026-06-09T14:38:54.402Z",
       "action": "点击棋盘空格移动英雄",
       "selector": "#board .cell[data-r=\"6\"][data-c=\"3\"]",
       "x": 626,
@@ -69,31 +69,39 @@
       "elementText": "·"
     },
     {
-      "at": "2026-06-09T11:40:37.392Z",
+      "at": "2026-06-09T14:38:55.099Z",
       "action": "点击左侧行动块",
       "selector": "#hero-list [data-slot=\"0\"]",
-      "x": 74,
-      "y": 236,
-      "elementText": "火\n第1槽\n→"
+      "x": 75,
+      "y": 207,
+      "elementText": "火\n火刺\n→"
     },
     {
-      "at": "2026-06-09T11:40:38.073Z",
-      "action": "点击右侧详情 AP 分配 1 点",
-      "selector": "#cell-detail [data-ap-choice=\"1\"]",
-      "x": 1001,
-      "y": 230,
+      "at": "2026-06-09T14:38:55.793Z",
+      "action": "点击右侧行动槽 AP 分配 1 点",
+      "selector": "#slot-action-panel [data-ap-choice=\"1\"]",
+      "x": 1000,
+      "y": 373,
       "elementText": "1"
     },
     {
-      "at": "2026-06-09T11:40:38.757Z",
+      "at": "2026-06-09T14:38:56.477Z",
+      "action": "点击方向箭头：左",
+      "selector": "#slot-action-panel [data-slot-dir=\"0\"][data-dir=\"left\"]",
+      "x": 1002,
+      "y": 408,
+      "elementText": "←"
+    },
+    {
+      "at": "2026-06-09T14:38:57.170Z",
       "action": "点击方向箭头：右",
-      "selector": "[data-slot-dir=\"0\"][data-dir=\"right\"]",
-      "x": 1077,
-      "y": 265,
+      "selector": "#slot-action-panel [data-slot-dir=\"0\"][data-dir=\"right\"]",
+      "x": 1076,
+      "y": 408,
       "elementText": "→"
     },
     {
-      "at": "2026-06-09T11:40:39.455Z",
+      "at": "2026-06-09T14:38:57.577Z",
       "action": "点击目标格",
       "selector": "#board .cell[data-r=\"6\"][data-c=\"4\"]",
       "x": 677,
@@ -101,15 +109,15 @@
       "elementText": "·"
     },
     {
-      "at": "2026-06-09T11:40:40.139Z",
-      "action": "点击“施放”",
-      "selector": "[data-use=\"0\"]",
+      "at": "2026-06-09T14:38:58.263Z",
+      "action": "点击“释放”",
+      "selector": "#slot-action-panel [data-use=\"0\"]",
       "x": 1190,
-      "y": 265,
-      "elementText": "施放"
+      "y": 408,
+      "elementText": "释放"
     },
     {
-      "at": "2026-06-09T11:40:40.822Z",
+      "at": "2026-06-09T14:38:58.957Z",
       "action": "点击“保存”",
       "selector": "#save-game-btn",
       "x": 865,
@@ -117,7 +125,7 @@
       "elementText": "保存"
     },
     {
-      "at": "2026-06-09T11:40:41.492Z",
+      "at": "2026-06-09T14:38:59.644Z",
       "action": "点击“新开一天”验证读取前状态会重置",
       "selector": "#new-game-btn",
       "x": 726,
@@ -125,7 +133,7 @@
       "elementText": "新开一天"
     },
     {
-      "at": "2026-06-09T11:40:41.907Z",
+      "at": "2026-06-09T14:39:00.057Z",
       "action": "点击“读取”恢复刚才存档",
       "selector": "#load-game-btn",
       "x": 921,
@@ -133,47 +141,47 @@
       "elementText": "读取"
     },
     {
-      "at": "2026-06-09T11:40:42.572Z",
+      "at": "2026-06-09T14:39:00.755Z",
       "action": "点击“结束回合”",
       "selector": "#etb",
       "x": 1045,
-      "y": 360,
+      "y": 444,
       "elementText": "结束回合"
     },
     {
-      "at": "2026-06-09T11:40:43.225Z",
+      "at": "2026-06-09T14:39:01.440Z",
       "action": "点击“怪物行动”",
       "selector": "#monster-btn",
       "x": 1187,
-      "y": 360,
+      "y": 444,
       "elementText": "怪物行动"
     },
     {
-      "at": "2026-06-09T11:40:43.880Z",
+      "at": "2026-06-09T14:39:02.113Z",
       "action": "点击“战报”标签",
       "selector": "[data-log-tab=\"report\"]",
-      "x": 66,
+      "x": 376,
       "y": 631,
       "elementText": "战报"
     },
     {
-      "at": "2026-06-09T11:40:44.565Z",
+      "at": "2026-06-09T14:39:02.816Z",
       "action": "点击“回放”标签",
       "selector": "[data-log-tab=\"replay\"]",
-      "x": 66,
+      "x": 376,
       "y": 657,
       "elementText": "回放"
     },
     {
-      "at": "2026-06-09T11:40:44.976Z",
+      "at": "2026-06-09T14:39:03.221Z",
       "action": "回放下一步",
       "selector": "[data-replay-next]",
-      "x": 347,
+      "x": 657,
       "y": 601,
       "elementText": "下一步"
     },
     {
-      "at": "2026-06-09T11:40:45.969Z",
+      "at": "2026-06-09T14:39:04.218Z",
       "action": "鼠标悬停机制词条显示工具提示",
       "selector": "[data-tip]",
       "x": 483,
@@ -181,7 +189,7 @@
       "elementText": "危3"
     },
     {
-      "at": "2026-06-09T11:40:46.261Z",
+      "at": "2026-06-09T14:39:04.509Z",
       "action": "按 Ctrl+` 打开调试面板",
       "selector": "keyboard:Ctrl+Backquote",
       "x": 0,
@@ -189,7 +197,7 @@
       "elementText": ""
     },
     {
-      "at": "2026-06-09T11:40:46.924Z",
+      "at": "2026-06-09T14:39:05.157Z",
       "action": "关闭调试面板",
       "selector": "[data-debug-close]",
       "x": 1247,
@@ -197,7 +205,7 @@
       "elementText": "✕"
     },
     {
-      "at": "2026-06-09T11:40:47.325Z",
+      "at": "2026-06-09T14:39:05.567Z",
       "action": "新开一天准备验证“我方全部出击”",
       "selector": "#new-game-btn",
       "x": 726,
@@ -205,157 +213,157 @@
       "elementText": "新开一天"
     },
     {
-      "at": "2026-06-09T11:40:47.734Z",
+      "at": "2026-06-09T14:39:05.974Z",
       "action": "开始战斗准备“我方全部出击”",
       "selector": "#etb",
       "x": 1045,
-      "y": 360,
+      "y": 444,
       "elementText": "开始战斗"
     },
     {
-      "at": "2026-06-09T11:40:48.415Z",
+      "at": "2026-06-09T14:39:06.644Z",
       "action": "点击“我方全部出击”",
       "selector": "#all-out-btn",
-      "x": 1045,
-      "y": 421,
+      "x": 1116,
+      "y": 486,
       "elementText": "我方全部出击"
     }
   ],
   "screenshots": [
     {
-      "at": "2026-06-09T11:40:31.070Z",
+      "at": "2026-06-09T14:38:48.776Z",
       "name": "loaded",
       "caption": "页面真实加载；棋盘、英雄列表、行动槽都已由浏览器渲染。",
       "file": "screenshots/01_loaded.png"
     },
     {
-      "at": "2026-06-09T11:40:31.803Z",
+      "at": "2026-06-09T14:38:49.469Z",
       "name": "prep_overlay_opened",
       "caption": "备战台覆盖主战斗区，表达当前不是开战状态。",
       "file": "screenshots/02_prep_overlay_opened.png"
     },
     {
-      "at": "2026-06-09T11:40:32.461Z",
+      "at": "2026-06-09T14:38:50.201Z",
       "name": "prep_filter_fire",
       "caption": "备战台可以按元素、名称或职能筛选。",
       "file": "screenshots/03_prep_filter_fire.png"
     },
     {
-      "at": "2026-06-09T11:40:34.234Z",
+      "at": "2026-06-09T14:38:51.948Z",
       "name": "prep_drag_restored",
       "caption": "拖拽上阵/下阵走真实浏览器事件并通过 API 更新阵容。",
       "file": "screenshots/04_prep_drag_restored.png"
     },
     {
-      "at": "2026-06-09T11:40:34.928Z",
+      "at": "2026-06-09T14:38:52.608Z",
       "name": "start_battle_player_turn",
       "caption": "准备开始后进入玩家回合，备战入口锁定。",
       "file": "screenshots/05_start_battle_player_turn.png"
     },
     {
-      "at": "2026-06-09T11:40:35.601Z",
+      "at": "2026-06-09T14:38:53.298Z",
       "name": "board_hero_selected",
       "caption": "点击棋盘英雄也能选中单位，允许随后点空格移动。",
       "file": "screenshots/06_board_hero_selected.png"
     },
     {
-      "at": "2026-06-09T11:40:36.289Z",
+      "at": "2026-06-09T14:38:53.992Z",
       "name": "hero_selected",
       "caption": "英雄卡片出现选中态，棋盘可移动格出现提示。",
       "file": "screenshots/07_hero_selected.png"
     },
     {
-      "at": "2026-06-09T11:40:36.967Z",
+      "at": "2026-06-09T14:38:54.689Z",
       "name": "hero_moved_by_cell_click",
       "caption": "英雄通过点棋盘空格移动到新位置。",
       "file": "screenshots/08_hero_moved_by_cell_click.png"
     },
     {
-      "at": "2026-06-09T11:40:37.663Z",
+      "at": "2026-06-09T14:38:55.387Z",
       "name": "slot_selected_armed",
       "caption": "左侧行动块进入瞄准态，右侧详细信息显示方向与施放。",
       "file": "screenshots/09_slot_selected_armed.png"
     },
     {
-      "at": "2026-06-09T11:40:38.344Z",
+      "at": "2026-06-09T14:38:56.076Z",
       "name": "inline_ap_allocation",
-      "caption": "行动槽 AP 分配位于右侧详细信息，不再压在棋盘上。",
+      "caption": "行动槽 AP 分配位于右侧当前行动槽面板，不再压在棋盘上。",
       "file": "screenshots/10_inline_ap_allocation.png"
     },
     {
-      "at": "2026-06-09T11:40:39.025Z",
-      "name": "slot_direction_right",
+      "at": "2026-06-09T14:38:56.767Z",
+      "name": "slot_direction_left",
       "caption": "方向调整通过按钮进入核心状态。",
-      "file": "screenshots/11_slot_direction_right.png"
+      "file": "screenshots/11_slot_direction_left.png"
     },
     {
-      "at": "2026-06-09T11:40:39.723Z",
+      "at": "2026-06-09T14:38:57.862Z",
       "name": "target_cell_selected",
       "caption": "选中目标格，右侧详细信息同步更新。",
       "file": "screenshots/12_target_cell_selected.png"
     },
     {
-      "at": "2026-06-09T11:40:40.412Z",
+      "at": "2026-06-09T14:38:58.550Z",
       "name": "slot_used_event_log",
       "caption": "施放后事件日志出现行动槽事件，棋盘出现元素/预览反馈。",
       "file": "screenshots/13_slot_used_event_log.png"
     },
     {
-      "at": "2026-06-09T11:40:41.092Z",
+      "at": "2026-06-09T14:38:59.243Z",
       "name": "save_game_written",
       "caption": "真实点击保存按钮后，本地存档写入 localStorage。",
       "file": "screenshots/14_save_game_written.png"
     },
     {
-      "at": "2026-06-09T11:40:42.171Z",
+      "at": "2026-06-09T14:39:00.353Z",
       "name": "load_game_restored",
       "caption": "读取按钮恢复保存后的战斗状态、事件流和棋盘反馈。",
       "file": "screenshots/15_load_game_restored.png"
     },
     {
-      "at": "2026-06-09T11:40:42.817Z",
+      "at": "2026-06-09T14:39:01.025Z",
       "name": "player_turn_ended",
       "caption": "结束玩家回合，事件日志记录 PLAYER_TURN_END。",
       "file": "screenshots/16_player_turn_ended.png"
     },
     {
-      "at": "2026-06-09T11:40:43.481Z",
+      "at": "2026-06-09T14:39:01.710Z",
       "name": "monster_action_clicked",
       "caption": "怪物行动通过按钮推进。",
       "file": "screenshots/17_monster_action_clicked.png"
     },
     {
-      "at": "2026-06-09T11:40:44.153Z",
+      "at": "2026-06-09T14:39:02.413Z",
       "name": "battle_report_tab",
       "caption": "战报标签通过前端读取 report 并显示文本。",
       "file": "screenshots/18_battle_report_tab.png"
     },
     {
-      "at": "2026-06-09T11:40:45.247Z",
+      "at": "2026-06-09T14:39:03.494Z",
       "name": "battle_replay_tab",
       "caption": "回放标签显示事件列表、步骤计数和 JSON 导出输入框。",
       "file": "screenshots/19_battle_replay_tab.png"
     },
     {
-      "at": "2026-06-09T11:40:46.238Z",
+      "at": "2026-06-09T14:39:04.498Z",
       "name": "tooltip_hover",
       "caption": "鼠标悬停元素/机制词条弹出说明浮窗。",
       "file": "screenshots/20_tooltip_hover.png"
     },
     {
-      "at": "2026-06-09T11:40:46.523Z",
+      "at": "2026-06-09T14:39:04.758Z",
       "name": "debug_panel_opened",
       "caption": "Ctrl+` 打开可拖拽调试面板并显示当前 ViewModel 摘要。",
       "file": "screenshots/21_debug_panel_opened.png"
     },
     {
-      "at": "2026-06-09T11:40:48.699Z",
+      "at": "2026-06-09T14:39:06.918Z",
       "name": "all_out_flow",
       "caption": "我方全部出击按左侧行动块顺序走核心行动槽流程。",
       "file": "screenshots/22_all_out_flow.png"
     }
   ],
-  "finishedAt": "2026-06-09T11:40:48.704Z",
+  "finishedAt": "2026-06-09T14:39:06.922Z",
   "finalState": {
     "phase": "player_turn",
     "day": 1,
@@ -374,47 +382,47 @@
       "bench": 0,
       "maxActive": 4
     },
-    "replayEventsInPanel": 25,
+    "replayEventsInPanel": 26,
     "lastEvents": [
       {
         "step": 56,
-        "type": "APPLY_ELEMENT_CELL",
-        "text": "我方疾风隼 向 R5C6 施加风1层，风层 0→2。"
-      },
-      {
-        "step": 57,
         "type": "APPLY_ELEMENT",
         "text": "我方疾风隼 给 敌方翠叶鼠 叠风1层，风层 1→2。"
       },
       {
-        "step": 58,
+        "step": 57,
         "type": "PLAYER_SELECT_SLOT",
-        "text": "玩家施放 我方疾风隼 第3槽：长柄T/风/1层（AP1），命中 敌方翠叶鼠。"
+        "text": "我方疾风隼 施放第2槽：长柄T/风/1层（AP1）。\n本次影响10格：\n1）第6行第4列：空格，火0/水0/风0，受到3点威胁\n2）第6行第5列：空格，火0/水0/风0，受到3点威胁\n3）第6行第6列：空格，火0/水0/风0，有威胁\n4）第6行第7列：敌方翠叶鼠 HP10/10，风2，无威胁"
       },
       {
-        "step": 59,
+        "step": 58,
         "type": "ELEMENT_WEAKEN",
         "text": "我方疾风隼打散 R5C6 未成型元素：所有元素-1。"
       },
       {
-        "step": 60,
+        "step": 59,
         "type": "APPLY_ELEMENT_CELL",
         "text": "我方疾风隼 向 R5C6 施加风1层，风层 1→3。"
       },
       {
-        "step": 61,
+        "step": 60,
         "type": "TERRAIN_MODULE_ADD",
         "text": "R5C6 生成风地形模块 3层。"
       },
       {
-        "step": 62,
+        "step": 61,
         "type": "ELEMENT_FORMED",
         "text": "R5C6 风3层达到3层，形成元素成型状态；元素包与来源保留。"
       },
       {
-        "step": 63,
+        "step": 62,
         "type": "APPLY_ELEMENT",
         "text": "我方疾风隼 给 敌方翠叶鼠 叠风1层，风层 2→3。"
+      },
+      {
+        "step": 63,
+        "type": "PLAYER_SELECT_SLOT",
+        "text": "我方疾风隼 施放第3槽：长柄T/风/1层（AP1）。\n本次影响10格：\n1）第6行第4列：空格，火0/水0/风0，受到3点威胁\n2）第6行第5列：空格，火0/水0/风0，受到3点威胁\n3）第6行第6列：空格，火0/水0/风0，有威胁\n4）第6行第7列：敌方翠叶鼠 HP10/10，风3，无威胁"
       }
     ]
   }

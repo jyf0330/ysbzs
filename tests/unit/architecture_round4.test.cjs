@@ -83,14 +83,15 @@ test('R406 roster loop: newly bought pet starts on bench, can be blocked by full
   assert.equal(vm.inventory.items.some(x => x.instanceId === bought.instanceId), false);
 });
 
-test('R407 UI exposes missing feature surfaces: roster, replay, debug, tooltip, AP modal, shop event', () => {
+test('R407 UI exposes missing feature surfaces: prep overlay, replay, debug, tooltip, AP modal, shop event', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web/index.html'), 'utf8');
   const js = fs.readFileSync(path.join(__dirname, '..', '..', 'web/ux-app.js'), 'utf8');
-  assert.match(html, /roster-list/);
+  assert.match(html, /prep-overlay/);
+  assert.match(html, /prep-active-list/);
+  assert.match(html, /prep-bench-list/);
   assert.match(html, /data-log-tab="replay"/);
   assert.match(html, /ap-modal/);
   assert.match(html, /tooltip/);
-  assert.match(js, /SELL_UNIT/);
   assert.match(js, /TOGGLE_UNIT_ACTIVE/);
   assert.match(js, /EXPORT_BATTLE_TRACE/);
   assert.match(js, /REPLAY_BATTLE_TRACE/);

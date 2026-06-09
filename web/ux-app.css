@@ -298,3 +298,72 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .action-popover-title span,.action-popover-meta,.action-popover-hint{font-size:12px;color:#705a40}
 .action-popover .detail-ap-row{margin:6px 0}
 .action-popover .detail-actions{margin:6px 0;grid-template-columns:repeat(4,29px) 1fr}
+
+/* ── full-pass-optimization 2026-06-10 ─────────────────────────── */
+
+/* P0 - 顶部状态栏：主次分级 */
+/* 天数、回合是核心信息 → 放大数值；金币保留但降调；版本微缩为角标 */
+.status-strip{display:grid;grid-template-columns:1.6fr 1.3fr 1fr 0.9fr 0.55fr auto;gap:6px;padding:6px 8px;align-items:stretch}
+.status-pill{padding:6px 8px}
+.status-pill span{font-size:10px;color:#9a7d5a;letter-spacing:.5px}
+.status-pill strong{font-size:18px;color:#3f2e22;line-height:1.1}
+/* 天数 pill — 最大 */
+.status-pill:nth-child(2) strong{font-size:22px;color:#4b2f1d;font-weight:900}
+/* 回合 pill — 次大 */
+.status-pill:nth-child(3) strong{font-size:20px;color:#3f2e22;font-weight:900}
+/* 金币 pill — 中 */
+.status-pill.gold strong{font-size:18px;color:#7a4d0a}
+/* 版本 pill — 辅助，降调 */
+.status-pill:nth-child(5){opacity:.6}
+.status-pill:nth-child(5) strong{font-size:12px;font-weight:400;color:#8a745a}
+
+/* P0 - 右侧按钮层级：主操作突出，辅助操作降调 */
+/* etb (开始战斗/结束回合) → 明确主色；auto-controls 层级降低 */
+#etb{background:#4b6e3a;color:#fff8e6;border:none;box-shadow:0 3px 0 rgba(37,55,28,.45);font-size:15px;font-weight:900}
+#etb:not(:disabled):hover{filter:brightness(1.10)}
+#etb:disabled{background:#b5c6a8;color:#7a8a78;box-shadow:none}
+#monster-btn{background:#5a4a38;color:#ffe8b8;border:1px solid #3a2e20;font-size:13px;font-weight:900}
+#monster-btn:not(:disabled):hover{filter:brightness(1.08)}
+.auto-controls{gap:5px}
+#all-out-btn{background:#5a3e2a;color:#ffe8b0;font-size:13px;font-weight:900;min-height:30px;border:1px solid #3a2516}
+#full-day-btn{background:#b5a485;color:#2f2118;font-size:12px;font-weight:700;min-height:28px;opacity:.82;border:1px solid rgba(124,89,53,.4)}
+#full-day-btn:disabled{opacity:.42}
+
+/* P1 - 左侧宠物卡片紧凑化：stat行双列 */
+.hero-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:2px}
+.hero-stat-grid span{min-height:18px;padding:2px 4px;font-size:10px}
+.hero-stat-grid b{font-size:9px}
+/* title行字号略增 */
+.hero-title-line strong{font-size:13px}
+.hero-title-line span{font-size:12px}
+
+/* P1 - 行动块可读性提升：覆盖 height 硬值 */
+.action-block{height:auto!important;min-height:40px!important;padding:4px 6px!important}
+.action-block span strong{font-size:12px!important;line-height:1.2}
+.action-block span small{font-size:10px!important;line-height:1.2;color:#5a4830}
+.slot-list{height:auto!important;gap:5px}
+
+/* P1 - 棋盘单位 token 可读性 */
+.unit-token{width:42px;height:39px;padding:3px 4px;gap:2px}
+.unit-token-name{font-size:11px;font-weight:900;letter-spacing:-.2px}
+.unit-token-mini{font-size:9px;font-weight:900}
+/* HP bar 加厚一点 */
+.unit-token-hp{height:5px}
+
+/* P2 - 右侧详情区：空状态样式优化 */
+.detail-card.empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;color:#9a845e;font-size:13px;text-align:center;
+  padding:20px 14px;border:1px dashed rgba(124,89,53,.3);background:rgba(255,248,224,.45)
+}
+.detail-card.empty::before{
+  content:"☝";font-size:28px;display:block;opacity:.5
+}
+
+/* P2 - 底部日志：字号、行距优化；事件 tab 改为更易读的样式 */
+.log-view{font-size:13px;line-height:1.55;padding:8px 10px}
+.log-view:not(.replay-panel *){white-space:pre-wrap;word-break:break-all}
+/* log tabs 视觉强化 */
+.log-tabs{display:flex;flex-direction:column;gap:3px;padding:8px 6px;border-right:1px solid rgba(124,89,53,.25)}
+.log-tab{padding:7px 10px;font-size:12px;font-weight:700;border:1px solid transparent;background:transparent;color:#7a6448;text-align:left;border-radius:4px}
+.log-tab.active{background:#fff8e6;border-color:rgba(124,89,53,.35);color:#3f2e22;box-shadow:0 1px 0 rgba(124,89,53,.12)}

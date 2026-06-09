@@ -476,7 +476,7 @@ import { createRenderCache } from './render-cache.js';
     const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
     const name = boardUnitShortName(unit);
     const active = unit.id === ui.selectedUnitId ? ' is-active' : '';
-    return `<div class="unit-token ${side}${active}" title="${esc(unit.displayName || boardUnitName(unit))}">
+    return `<div class="unit-token ${side}${active}">
       <span class="unit-token-name">${esc(name)}</span>
       <span class="unit-token-hp"><i style="width:${pct(unit.hp, unit.maxHp)}%"></i></span>
       <span class="unit-token-mini">${esc(Math.max(0, unit.hp ?? 0))}</span>
@@ -855,7 +855,17 @@ import { createRenderCache } from './render-cache.js';
       return;
     }
     const events = vm.events || [];
-    $('log').textContent = events.slice(-22).map(e => `${String(e.step || '').padStart(3, '0')} [${e.type}] ${e.text || ''}`).join('\n') || '暂无事件。';
+    const EVENT_LABEL = {
+      BATTLE_START: '战斗开始', ROUND_START: '回合开始', ROUND_END: '回合结束',
+      BATTLE_END: '战斗结束', SPAWN_ENEMY: '敌方召唤', HERO_MOVE: '英雄移动',
+      HERO_ACTION: '英雄行动', ENEMY_ACTION: '敌方行动', DAMAGE: '伤害',
+      HEAL: '治疗', DEATH: '阵亡', STATUS: '状态', TRAP: '陷阱',
+      SKILL: '技能', BUFF: '增益', DEBUFF: '减益', PHASE: '阶段',
+    };
+    $('log').textContent = events.slice(-22).map(e => {
+      const label = EVENT_LABEL[e.type] || e.type;
+      return `${String(e.step || '').padStart(3, '0')} [${label}] ${e.text || ''}`;
+    }).join('\n') || '暂无事件。';
     requestAnimationFrame(() => autoScrollLog());
   }
   function autoScrollLog() {

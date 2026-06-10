@@ -59,5 +59,7 @@
 ## commit_plan
 
 - message: `feat(ui): accumulate team placement preview`
-- status: blocked_by_existing_dirty_worktree
-- 原因: 开工前已有 `web/ux-app.js` 和 `tests/unit/ui_combat_layout_contract.test.cjs` 的未归属 title-tooltip 改动；本轮又必须触及 `web/ux-app.js`，无法精确提交当前任务而不混入既有未提交内容。
+- status: committed_by_git-c
+- commit_id: `eceefce0014436b110cb94958bd733981f2550a1`
+- committed_at: `2026-06-11 00:11:20 +0800`
+- 说明: `git-c` 先拆出 title-tooltip 任务补丁，再精确暂存本任务相关核心、ViewModel、浏览器 UI、截图证据和任务索引后提交。

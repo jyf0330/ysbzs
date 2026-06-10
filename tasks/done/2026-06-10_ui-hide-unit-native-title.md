@@ -36,5 +36,7 @@
 ## commit_plan
 
 - message: `fix(ui): hide native board unit title tooltip`
-- status: blocked_by_existing_dirty_worktree
-- 原因: 工作区已有暂存和未暂存改动，且本轮触及的 `web/js/main.js`、`web/ux-app.js`、`tests/unit/ui_combat_layout_contract.test.cjs` 已含开工前改动；不自动提交以避免混入非本轮变更。
+- status: committed_by_git-c
+- commit_id: `d5a06f2f87f02ce7621b84bd10cfda6b7b43eca8`
+- committed_at: `2026-06-11 00:11:20 +0800`
+- 说明: `git-c` 已将可归属的合同断言和 `web/ux-app.js` 同步去 title 改动精确拆出提交；`web/js/main.js` 的同类改动此前已在 HEAD 中。

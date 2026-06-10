@@ -485,7 +485,7 @@
     const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
     const name = boardUnitShortName(unit);
     const active = unit.id === ui.selectedUnitId ? ' is-active' : '';
-    return `<div class="unit-token ${side}${active}" title="${esc(unit.displayName || boardUnitName(unit))}">
+    return `<div class="unit-token ${side}${active}">
       <span class="unit-token-name">${esc(name)}</span>
       <span class="unit-token-hp"><i style="width:${pct(unit.hp, unit.maxHp)}%"></i></span>
       <span class="unit-token-mini">${esc(Math.max(0, unit.hp ?? 0))}</span>

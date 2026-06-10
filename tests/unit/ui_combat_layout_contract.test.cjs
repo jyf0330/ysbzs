@@ -117,6 +117,7 @@ test('combat layout scripts keep info in right panel without hover detail popups
     assert.match(js, /detail-stat-grid/, `${file} should render full right-side stat details`);
     assert.match(js, /detail-skill-panel/, `${file} should render skill name and description in the detail panel`);
     assert.match(js, /action-block-count/, `${file} should count the 12 action blocks`);
+    assert.doesNotMatch(js, /class="unit-token[^`]*\btitle="/, `${file} board unit token must not trigger native title hover text`);
     assert.doesNotMatch(js, /opChip\('目标'/, `${file} should not keep target details in the board-side rail`);
     assert.doesNotMatch(js, /boardUnitVitals\(unit\)/, `${file} board tokens should not render full unit stats`);
     assert.doesNotMatch(js, /hero-action-row/, `${file} should not keep action blocks embedded in pet cards`);

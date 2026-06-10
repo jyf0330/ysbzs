@@ -221,8 +221,9 @@ function createGameState(opts = {}) {
     shop: { offers: [], frozen: {}, rollCount: 0, freeRolls: 0, nextDiscount: 0, activePool: 'night_base' },
     rewards: [],
     result: null,
-    selected: { unitId: null, slotId: null, cell: null, direction: 'right' },
-    actionDirs: {},
+	    selected: { unitId: null, slotId: null, cell: null, direction: 'right' },
+	    teamPlacementPreview: { activeUnitId: null, movedUnitIds: [] },
+	    actionDirs: {},
     battleTrace: [],
     board: createBoard()
   };

@@ -231,16 +231,23 @@ function boardElementsForVM(state, cell) {
   return out;
 }
 function makeBoardVM(state, selected = {}) {
-  battle.syncDerivedBoard(state);
-  const previewGrid = battle.buildPreviewGrid(state, {
-    unitId: selected.unitId || undefined,
-    slotId: selected.slotId,
-    cell: selected.cell || undefined
-  });
+	  battle.syncDerivedBoard(state);
+	  const aimingCell = selected.slotId !== null && selected.slotId !== undefined ? (selected.cell || undefined) : undefined;
+	  const previewGrid = battle.buildPreviewGrid(state, {
+	    unitId: selected.unitId || undefined,
+	    slotId: selected.slotId,
+	    cell: aimingCell
+	  });
   const threatGrid = battle.buildThreatGrid(state);
-  const previewMap = new Map(previewGrid.map(x => [`${x.r},${x.c}`, x]));
-  const threatMap = new Map(threatGrid.map(x => [`${x.r},${x.c}`, x]));
-  return {
+	  const previewMap = new Map(previewGrid.map(x => [`${x.r},${x.c}`, x]));
+	  const previewGroups = new Map();
+	  for (const p of previewGrid) {
+	    const key = `${p.r},${p.c}`;
+	    if (!previewGroups.has(key)) previewGroups.set(key, []);
+	    previewGroups.get(key).push(p);
+	  }
+	  const threatMap = new Map(threatGrid.map(x => [`${x.r},${x.c}`, x]));
+	  return {
     rows: state.board.rows,
     cols: state.board.cols,
     cells: state.board.cells.map(cell => ({
@@ -252,11 +259,20 @@ function makeBoardVM(state, selected = {}) {
       unitName: cell.unitName,
       terrain: clone(cell.terrain),
       elements: boardElementsForVM(state, cell),
-      preview: clone(previewMap.get(`${cell.r},${cell.c}`) || null),
-      threat: clone(threatMap.get(`${cell.r},${cell.c}`) || null)
-    })),
+	      preview: clone(previewMap.get(`${cell.r},${cell.c}`) || null),
+	      previews: clone(previewGroups.get(`${cell.r},${cell.c}`) || []),
+	      threat: clone(threatMap.get(`${cell.r},${cell.c}`) || null)
+	    })),
     previewGrid,
     threatGrid
+	  };
+	}
+function teamPlacementPreviewVM(state, previewGrid = []) {
+  const raw = state.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
+  const movedUnitIds = Array.isArray(raw.movedUnitIds) ? raw.movedUnitIds.slice() : [];
+  return {
+    activeUnitId: raw.activeUnitId || previewGrid[0]?.actorId || null,
+    movedUnitIds
   };
 }
 
@@ -374,6 +390,7 @@ function nextActions(state) {
 }
 function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makePlayerViewState()) {
   const selected = selectedFromViewState(playerViewState);
+  const board = makeBoardVM(state, selected);
   const heroes = state.units.filter(u => u.side === 'hero' && isUnitVisibleInParty(state, u)).map(u => stripUnit(state, u));
   const enemies = state.units.filter(u => u.side === 'enemy' && u.alive !== false && u.hp > 0).map(u => stripUnit(state, u));
   const leaders = {
@@ -402,13 +419,14 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     castleLine: state.castleLine,
     economyMultiplier: state.economyMultiplier,
     result: state.result ? clone(state.result) : null,
-    selected,
-    playerId,
+	    selected,
+	    teamPlacementPreview: teamPlacementPreviewVM(state, board.previewGrid),
+	    playerId,
     playerViewState: { selected, recentUiEvents: clone((playerViewState.recentUiEvents || []).slice(-10)) },
     leaders,
     heroes,
     enemies,
-    board: makeBoardVM(state, selected),
+	    board,
     inventory: inventoryVM(state),
     relics: clone(state.relics),
     rewards,
@@ -421,7 +439,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
       events: shop.availableEvents(state).map(e => ({ id: e.id, name: e.name, optionText: e.optionText, costText: e.costText, gainText: e.gainText }))
     },
     monsterIntents: state.units.filter(u => u.side === 'enemy' && u.alive).map(u => battle.computeMonsterIntent(state, u)).filter(Boolean),
-    previewGrid: battle.buildPreviewGrid(state, { unitId: selected.unitId || undefined, slotId: selected.slotId, cell: selected.cell || undefined }),
+	    previewGrid: board.previewGrid,
     threatGrid: battle.buildThreatGrid(state),
     events: recentEvents(state),
     logs: logGroups(state),

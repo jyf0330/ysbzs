@@ -40,12 +40,13 @@
     nextCommandNo: 1,
     cellDetail: null,
     replay: { events: [], step: 0 },
-    apBySlot: {},
-    prepOpen: false,
-    prepFilter: '',
-    draggedRosterId: null,
-    manualAutoLock: false
-  };
+	    apBySlot: {},
+	    prepOpen: false,
+	    prepFilter: '',
+	    draggedRosterId: null,
+	    manualAutoLock: false,
+	    hoveredCell: null
+	  };
   Object.assign(ui, sharedUi);
   const renderCache = createRenderCache();
 
@@ -285,10 +286,11 @@
       board: vm.board,
       previewGrid: vm.previewGrid,
       threatGrid: vm.threatGrid,
-      selectedCell: ui.selectedCell || vm.selected?.cell,
-      selectedUnitId: ui.selectedUnitId,
-      slotArmed: ui.slotArmed
-    })) renderBoard();
+	      selectedCell: ui.selectedCell || vm.selected?.cell,
+	      hoveredCell: ui.hoveredCell,
+	      selectedUnitId: ui.selectedUnitId,
+	      slotArmed: ui.slotArmed
+	    })) renderBoard();
     if (renderCache.shouldRender('cellDetail', {
       selectedCell: ui.selectedCell || vm.selected?.cell,
       selectedUnitId: ui.selectedUnitId,
@@ -450,43 +452,69 @@
     $('board-axis-x').innerHTML = Array.from({ length: board.cols }, (_, i) => `<span>${i + 1}</span>`).join('');
     $('board-axis-y').innerHTML = Array.from({ length: board.rows }, (_, i) => `<span>${i + 1}</span>`).join('');
 
-    const selected = ui.selectedCell || ui.vm.selected?.cell;
-    const selectedH = selectedHero();
-    const moveTargets = legalMoveTargets(selectedH);
-    const previewKeys = new Set((ui.vm.previewGrid || []).map(x => `${x.r},${x.c}`));
-    const threatKeys = new Set((ui.vm.threatGrid || []).map(x => `${x.r},${x.c}`));
-    const previewMap = new Map((ui.vm.previewGrid || []).map(x => [`${x.r},${x.c}`, x]));
-    const threatMap = new Map((ui.vm.threatGrid || []).map(x => [`${x.r},${x.c}`, x]));
+	    const selected = ui.selectedCell || ui.vm.selected?.cell;
+	    const selectedH = selectedHero();
+	    const moveTargets = legalMoveTargets(selectedH);
+	    const activePreviewUnitId = ui.vm.teamPlacementPreview?.activeUnitId || ui.vm.previewGrid?.[0]?.actorId || null;
+	    const previewKeys = new Set((ui.vm.previewGrid || []).map(x => `${x.r},${x.c}`));
+	    const threatKeys = new Set((ui.vm.threatGrid || []).map(x => `${x.r},${x.c}`));
+	    const previewMap = new Map((ui.vm.previewGrid || []).map(x => [`${x.r},${x.c}`, x]));
+	    const threatMap = new Map((ui.vm.threatGrid || []).map(x => [`${x.r},${x.c}`, x]));
+	    const actorPreviewMap = new Map();
+	    for (const p of ui.vm.previewGrid || []) if (!actorPreviewMap.has(p.actorId)) actorPreviewMap.set(p.actorId, p);
 
-    $('board').innerHTML = board.cells.map(cell => {
-      const key = `${cell.r},${cell.c}`;
-      const unit = unitById(cell.unitId);
-      const classes = ['cell'];
-      if (selected && selected.r === cell.r && selected.c === cell.c) classes.push('selected');
-      if (moveTargets.has(key)) classes.push('move-target');
-      if (previewKeys.has(key)) classes.push('preview-hit');
-      if (threatKeys.has(key)) classes.push('threat-hit');
-      if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
-      if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
-      if (unit && unit.id === ui.selectedUnitId) classes.push('selected-unit');
-      const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
-        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
-      const p = previewMap.get(key); const t = threatMap.get(key);
-      const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || boardUnitName(unit)} 生命 ${unit.hp}/${unit.maxHp} 攻击 ${unit.atk ?? 0}` : `R${cell.r + 1}C${cell.c + 1}`;
-      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
-        ${elements ? `<div class="element-stack">${elements}</div>` : ''}
-        ${unit ? unitToken(unit) : '<span class="empty-dot">·</span>'}
-        ${p ? `<span class="preview-num">预${esc(p.damage ?? p.layers ?? '+')}</span>` : ''}
-        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
-      </button>`;
-    }).join('');
-  }
-  function unitToken(unit) {
-    const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
-    const name = boardUnitShortName(unit);
-    const active = unit.id === ui.selectedUnitId ? ' is-active' : '';
-    return `<div class="unit-token ${side}${active}">
-      <span class="unit-token-name">${esc(name)}</span>
+	    $('board').innerHTML = board.cells.map(cell => {
+	      const key = `${cell.r},${cell.c}`;
+	      const unit = unitById(cell.unitId);
+	      const previews = Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : []);
+	      const currentPreviews = previews.filter(p => p.isActiveActor);
+	      const hasCurrentPreview = currentPreviews.length > 0;
+	      const hasFriendlyWarning = previews.some(p => p.friendlyFire);
+	      const hasEnemyHit = previews.some(p => p.hitEnemy);
+	      const arrow = unit ? actorPreviewMap.get(unit.id) : null;
+	      const classes = ['cell'];
+	      if (selected && selected.r === cell.r && selected.c === cell.c) classes.push('selected');
+	      if (ui.hoveredCell && ui.hoveredCell.r === cell.r && ui.hoveredCell.c === cell.c && moveTargets.has(key)) classes.push('hover-move-target');
+	      if (moveTargets.has(key)) classes.push('move-target');
+	      if (previewKeys.has(key)) classes.push('preview-hit');
+	      if (hasCurrentPreview) classes.push('preview-current');
+	      if (previews.length && !hasCurrentPreview) classes.push('preview-past');
+	      if (hasFriendlyWarning) classes.push('friendly-warning');
+	      if (hasEnemyHit) classes.push('enemy-hit');
+	      if (threatKeys.has(key)) classes.push('threat-hit');
+	      if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
+	      if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
+	      if (unit && unit.id === ui.selectedUnitId) classes.push('selected-unit');
+	      if (unit && unit.id === activePreviewUnitId) classes.push('current-preview-unit');
+	      const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
+	        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
+	      const p = previewMap.get(key); const t = threatMap.get(key);
+	      const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || boardUnitName(unit)} 生命 ${unit.hp}/${unit.maxHp} 攻击 ${unit.atk ?? 0}` : `R${cell.r + 1}C${cell.c + 1}`;
+	      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
+	        ${elements ? `<div class="element-stack">${elements}</div>` : ''}
+	        ${arrow ? `<span class="preview-arrow ${arrow.isActiveActor ? 'active' : 'past'}">${esc(DIR[arrow.direction] || arrow.direction || '→')}</span>` : ''}
+	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
+	        ${previews.length ? previewBadge(previews) : ''}
+	        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
+	      </button>`;
+	    }).join('');
+	  }
+	  function previewBadge(previews = []) {
+	    const primary = previews.find(p => p.isActiveActor) || previews[0];
+	    const damage = previews.reduce((sum, p) => sum + Number(p.predictedDamage || 0), 0);
+	    const layersByEl = {};
+	    previews.forEach(p => { if (p.element) layersByEl[p.element] = (layersByEl[p.element] || 0) + Number(p.layers || 0); });
+	    const layerText = Object.entries(layersByEl).map(([el, n]) => `${el}${n}`).join('/');
+	    const warning = previews.some(p => p.friendlyFire) ? '<b>误伤</b>' : '';
+	    const text = damage > 0 ? `伤${damage} ${layerText}` : layerText || `预${primary?.layers ?? '+'}`;
+	    return `<span class="preview-num ${primary?.isActiveActor ? 'active' : 'past'}">${warning}${esc(text)}</span>`;
+	  }
+	  function unitToken(unit, activePreviewUnitId = null) {
+	    const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
+	    const name = boardUnitShortName(unit);
+	    const active = unit.id === ui.selectedUnitId || unit.id === activePreviewUnitId ? ' is-active' : '';
+	    return `<div class="unit-token ${side}${active}">
+	      <span class="unit-token-name">${esc(name)}</span>
       <span class="unit-token-hp"><i style="width:${pct(unit.hp, unit.maxHp)}%"></i></span>
       <span class="unit-token-mini">${esc(Math.max(0, unit.hp ?? 0))}</span>
     </div>`;
@@ -584,10 +612,14 @@
     parts.push(`<div class="detail-els">${elHTML || '元素：<span class="dim">无</span>'}</div>`);
     const terrain = detail?.terrain || cell?.terrain;
     if (terrain?.modules?.length) parts.push(`<div class="detail-terrain">地形：${terrain.modules.join('、')}</div>`);
-    const preview = detail?.preview || cell?.preview;
-    const threat = detail?.threat || cell?.threat;
-    if (preview) parts.push(`<div class="detail-extra">⚡ ${esc(preview.damage ?? preview.layers ?? '')}</div>`);
-    if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>`);
+	    const previews = detail?.previews || cell?.previews || (detail?.preview || cell?.preview ? [detail?.preview || cell?.preview] : []);
+	    const preview = previews.find(p => p?.isActiveActor) || previews[0] || null;
+	    const threat = detail?.threat || cell?.threat;
+	    if (preview) {
+	      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`} ${p.friendlyFire ? '误伤警告' : ''}`).join('；');
+	      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);
+	    }
+	    if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>`);
     $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
   }
   function renderActionPopover() {
@@ -1044,10 +1076,24 @@
       const id = ev.dataTransfer?.getData('application/x-ysbzs-roster') || ev.dataTransfer?.getData('text/plain') || ui.draggedRosterId;
       dropPrepRoster(id, zone.dataset.prepDropZone);
     });
-    $('board').addEventListener('click', ev => {
-      const btn = ev.target.closest('[data-r][data-c]');
-      if (btn) onCellClick(Number(btn.dataset.r), Number(btn.dataset.c));
-    });
+	    $('board').addEventListener('click', ev => {
+	      const btn = ev.target.closest('[data-r][data-c]');
+	      if (btn) onCellClick(Number(btn.dataset.r), Number(btn.dataset.c));
+	    });
+	    $('board').addEventListener('mouseover', ev => {
+	      const btn = ev.target.closest('[data-r][data-c]');
+	      if (!btn) return;
+	      const next = { r: Number(btn.dataset.r), c: Number(btn.dataset.c) };
+	      if (ui.hoveredCell && ui.hoveredCell.r === next.r && ui.hoveredCell.c === next.c) return;
+	      ui.hoveredCell = next;
+	      renderCache.invalidate('board');
+	      renderBoard();
+	    });
+	    $('board').addEventListener('mouseleave', () => {
+	      ui.hoveredCell = null;
+	      renderCache.invalidate('board');
+	      renderBoard();
+	    });
     $('slot-list').addEventListener('click', ev => {
       const dirBtn = ev.target.closest('[data-slot-dir]');
       if (dirBtn) { setSlotDir(Number(dirBtn.dataset.slotDir), dirBtn.dataset.dir); return; }

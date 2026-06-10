@@ -4,7 +4,7 @@
  * @typedef {{r:number,c:number}} Position
  * @typedef {{id:string, side?:string, alive?:boolean, hp?:number, position?:Position, moveRange?:number, ap?:number, hasAttacked?:boolean, name?:string, displayName?:string}} BattleUnit
  * @typedef {{r:number,c:number,unitId?:string|null,elements?:Record<string, number>,preview?:Record<string, any>|null,threat?:Record<string, any>|null}} BattleCell
- * @typedef {{phase?:string, selected?:{unitId?:string, cell?:Position}, units?:BattleUnit[], leaders?:{player?:BattleUnit, enemy?:BattleUnit}, board?:{cells?:BattleCell[]}}} BattleState
+ * @typedef {{phase?:string, selected?:{unitId?:string, cell?:Position}, teamPlacementPreview?:{activeUnitId?:string|null,movedUnitIds?:string[]}, units?:BattleUnit[], leaders?:{player?:BattleUnit, enemy?:BattleUnit}, board?:{cells?:BattleCell[]}}} BattleState
  */
 
 /**
@@ -67,11 +67,16 @@ function moveHero(state, unitId, to) {
     pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：${unit.displayName} 本回合已攻击，位置锁定。` });
     return false;
   }
-  const d = dist(from, target);
-  const moveRange = effectiveMoveRange(state, unit);
-  if (d > moveRange) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, from, to: target, moveRange, text: `移动失败：${unit.name} 移动力${moveRange}，距离${d}。` }); return false; }
-  unit.position = target;
-  syncDerivedBoard(state);
+	  const d = dist(from, target);
+	  const moveRange = effectiveMoveRange(state, unit);
+	  if (d > moveRange) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, from, to: target, moveRange, text: `移动失败：${unit.name} 移动力${moveRange}，距离${d}。` }); return false; }
+	  unit.position = target;
+	  state.teamPlacementPreview = state.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
+	  state.teamPlacementPreview.movedUnitIds = Array.isArray(state.teamPlacementPreview.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
+	  state.teamPlacementPreview.movedUnitIds = state.teamPlacementPreview.movedUnitIds.filter(id => id !== unit.id);
+	  state.teamPlacementPreview.movedUnitIds.push(unit.id);
+	  state.teamPlacementPreview.activeUnitId = unit.id;
+	  syncDerivedBoard(state);
   // 同步后再收集受影响格子（syncDerivedBoard 更新了 preview/threat）
   const get = state.board?.cells || [];
   const affected = get.filter(c => {

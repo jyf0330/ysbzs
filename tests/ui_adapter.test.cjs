@@ -3,6 +3,14 @@ const assert = require('node:assert/strict');
 const { createYSBZSUIAdapter, PUBLIC_COMMANDS } = require('../src/uiAdapter.cjs');
 
 function hasEvent(result, type) { return result.events.some(e => e.type === type); }
+function firstLegalMoveCell(vm, hero) {
+  const range = Number(hero.moveRange ?? hero.ap ?? 1);
+  return vm.board.cells.find(cell => {
+    if (cell.unitId) return false;
+    const d = Math.abs(cell.r - hero.position.r) + Math.abs(cell.c - hero.position.c);
+    return d > 0 && d <= range;
+  });
+}
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
   for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
@@ -166,4 +174,40 @@ test('UI15 战斗追踪导出与回放门面不串命令', () => {
   const pack = adapter.exportReplay();
   assert.equal(pack.command, 'EXPORT_REPLAY');
   assert.ok(pack.result.battleTrace.length >= exported.result.events.length);
+});
+
+test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物', () => {
+  const adapter = createYSBZSUIAdapter({ gold: 8, battleId: 'team_preview_accumulate' });
+  adapter.startBattle();
+
+  const vm0 = adapter.getViewModel();
+  const [first, second] = vm0.heroes;
+  assert.ok(first && second, '需要至少两只上阵宠物验证累计预览');
+  assert.deepEqual(new Set(vm0.previewGrid.map(x => x.actorId)), new Set([first.id]));
+  assert.equal(vm0.teamPlacementPreview.activeUnitId, first.id);
+  assert.deepEqual(vm0.teamPlacementPreview.movedUnitIds, []);
+
+  const secondTarget = firstLegalMoveCell(vm0, second);
+  assert.ok(secondTarget, '第二只宠物需要有可移动空格');
+  adapter.selectCell(secondTarget.r, secondTarget.c);
+  adapter.moveHero(second.id, { r: secondTarget.r, c: secondTarget.c });
+  const vm1 = adapter.getViewModel();
+  assert.equal(vm1.teamPlacementPreview.activeUnitId, second.id);
+  assert.deepEqual(vm1.teamPlacementPreview.movedUnitIds, [second.id]);
+  assert.deepEqual(new Set(vm1.previewGrid.map(x => x.actorId)), new Set([second.id]));
+  assert.ok(vm1.previewGrid.every(x => x.isActiveActor === true));
+
+  const firstAfterSecond = vm1.heroes.find(x => x.id === first.id);
+  const firstTarget = firstLegalMoveCell(vm1, firstAfterSecond);
+  assert.ok(firstTarget, '第一只宠物需要有可移动空格');
+  adapter.selectCell(firstTarget.r, firstTarget.c);
+  adapter.moveHero(first.id, { r: firstTarget.r, c: firstTarget.c });
+  const vm2 = adapter.getViewModel();
+  assert.equal(vm2.teamPlacementPreview.activeUnitId, first.id);
+  assert.deepEqual(vm2.teamPlacementPreview.movedUnitIds, [second.id, first.id]);
+  assert.deepEqual(new Set(vm2.previewGrid.map(x => x.actorId)), new Set([second.id, first.id]));
+  assert.ok(vm2.previewGrid.some(x => x.actorId === first.id && x.isActiveActor === true));
+  assert.ok(vm2.previewGrid.some(x => x.actorId === second.id && x.isActiveActor === false));
+  assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === second.id)));
+  assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === first.id)));
 });

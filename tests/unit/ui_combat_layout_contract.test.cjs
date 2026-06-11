@@ -115,15 +115,22 @@ test('combat layout scripts keep info in right panel without hover detail popups
     assert.match(js, /heroBattleStats/, `${file} should render complete hero combat stats in the active-pet zone`);
     assert.match(js, /renderActionBlockCard/, `${file} should render the independent left-bottom action blocks`);
     assert.match(js, /detail-stat-grid/, `${file} should render full right-side stat details`);
-    assert.match(js, /detail-skill-panel/, `${file} should render skill name and description in the detail panel`);
-    assert.match(js, /action-block-count/, `${file} should count the 12 action blocks`);
-    assert.doesNotMatch(js, /class="unit-token[^`]*\btitle="/, `${file} board unit token must not trigger native title hover text`);
-    assert.doesNotMatch(js, /opChip\('目标'/, `${file} should not keep target details in the board-side rail`);
-    assert.doesNotMatch(js, /boardUnitVitals\(unit\)/, `${file} board tokens should not render full unit stats`);
-    assert.doesNotMatch(js, /hero-action-row/, `${file} should not keep action blocks embedded in pet cards`);
-  }
-  assert.match(css, /\.fullscreen-btn/, 'fullscreen button needs a dedicated compact tool style');
-});
+	    assert.match(js, /detail-skill-panel/, `${file} should render skill name and description in the detail panel`);
+	    assert.match(js, /action-block-count/, `${file} should count the 12 action blocks`);
+	    assert.match(js, /unit-stat-badge unit-stat-hp/, `${file} board tokens should render an in-cell HP numeric badge`);
+	    assert.match(js, /unit-stat-badge unit-stat-atk/, `${file} board tokens should render an in-cell attack numeric badge`);
+	    assert.doesNotMatch(js, /friendly-warning|误伤/, `${file} should not render friendly-fire UI because current rules do not support it`);
+	    assert.doesNotMatch(js, /class="unit-token[^`]*\btitle="/, `${file} board unit token must not trigger native title hover text`);
+	    assert.doesNotMatch(js, /opChip\('目标'/, `${file} should not keep target details in the board-side rail`);
+	    assert.doesNotMatch(js, /boardUnitVitals\(unit\)/, `${file} board tokens should not render full unit stats`);
+	    assert.doesNotMatch(js, /hero-action-row/, `${file} should not keep action blocks embedded in pet cards`);
+	  }
+	  assert.match(css, /\.fullscreen-btn/, 'fullscreen button needs a dedicated compact tool style');
+	  assert.match(css, /\.unit-stat-badge/, 'board unit stat badges need dedicated positioning');
+	  assert.match(css, /\.unit-stat-hp/, 'board unit HP badge needs dedicated styling');
+	  assert.match(css, /\.unit-stat-atk/, 'board unit attack badge needs dedicated styling');
+	  assert.doesNotMatch(css, /friendly-warning/, 'friendly-fire warning styles should not remain');
+	});
 
 test('publication docs include P2 in the current delivery scope', () => {
   const spec = read('docs/UI_COMBAT_LAYOUT_PUBLICATION_SPEC.md');

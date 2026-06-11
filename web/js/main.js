@@ -454,7 +454,6 @@ import { createGameRuntime } from './runtime-client.js';
 	      const previews = Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : []);
 	      const currentPreviews = previews.filter(p => p.isActiveActor);
 	      const hasCurrentPreview = currentPreviews.length > 0;
-	      const hasFriendlyWarning = previews.some(p => p.friendlyFire);
 	      const hasEnemyHit = previews.some(p => p.hitEnemy);
 	      const arrow = unit ? actorPreviewMap.get(unit.id) : null;
 	      const classes = ['cell'];
@@ -464,7 +463,6 @@ import { createGameRuntime } from './runtime-client.js';
 	      if (previewKeys.has(key)) classes.push('preview-hit');
 	      if (hasCurrentPreview) classes.push('preview-current');
 	      if (previews.length && !hasCurrentPreview) classes.push('preview-past');
-	      if (hasFriendlyWarning) classes.push('friendly-warning');
 	      if (hasEnemyHit) classes.push('enemy-hit');
 	      if (threatKeys.has(key)) classes.push('threat-hit');
 	      if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
@@ -490,20 +488,20 @@ import { createGameRuntime } from './runtime-client.js';
 	    const layersByEl = {};
 	    previews.forEach(p => { if (p.element) layersByEl[p.element] = (layersByEl[p.element] || 0) + Number(p.layers || 0); });
 	    const layerText = Object.entries(layersByEl).map(([el, n]) => `${el}${n}`).join('/');
-	    const warning = previews.some(p => p.friendlyFire) ? '<b>误伤</b>' : '';
 	    const text = damage > 0 ? `伤${damage} ${layerText}` : layerText || `预${primary?.layers ?? '+'}`;
-	    return `<span class="preview-num ${primary?.isActiveActor ? 'active' : 'past'}">${warning}${esc(text)}</span>`;
+	    return `<span class="preview-num ${primary?.isActiveActor ? 'active' : 'past'}">${esc(text)}</span>`;
 	  }
 	  function unitToken(unit, activePreviewUnitId = null) {
 	    const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
 	    const name = boardUnitShortName(unit);
 	    const active = unit.id === ui.selectedUnitId || unit.id === activePreviewUnitId ? ' is-active' : '';
 	    return `<div class="unit-token ${side}${active}">
+	      <span class="unit-stat-badge unit-stat-hp" aria-label="生命 ${esc(Math.max(0, unit.hp ?? 0))}">♥${esc(Math.max(0, unit.hp ?? 0))}</span>
+	      <span class="unit-stat-badge unit-stat-atk" aria-label="攻击 ${esc(unit.atk ?? 0)}">⚔${esc(unit.atk ?? 0)}</span>
 	      <span class="unit-token-name">${esc(name)}</span>
       <span class="unit-token-hp"><i style="width:${pct(unit.hp, unit.maxHp)}%"></i></span>
-      <span class="unit-token-mini">${esc(Math.max(0, unit.hp ?? 0))}</span>
     </div>`;
-  }
+	  }
   function legalMoveTargets(hero) {
     const set = new Set();
     if (!hero?.position || ui.vm.phase !== 'player_turn' || ui.slotArmed) return set;
@@ -601,7 +599,7 @@ import { createGameRuntime } from './runtime-client.js';
 	    const preview = previews.find(p => p?.isActiveActor) || previews[0] || null;
 	    const threat = detail?.threat || cell?.threat;
 	    if (preview) {
-	      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`} ${p.friendlyFire ? '误伤警告' : ''}`).join('；');
+	      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`}`).join('；');
 	      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);
 	    }
     if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>`);

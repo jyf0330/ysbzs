@@ -58,8 +58,8 @@
 .cell.preview-current:after{background:rgba(223,76,43,.13);border:2px dashed rgba(202,65,38,.92)}
 .cell.preview-past:after{background:rgba(194,98,45,.10);border:1px dashed rgba(194,98,45,.72)}
 .cell.enemy-hit{background:linear-gradient(160deg,rgba(255,238,220,.95),rgba(255,214,198,.90))}
-.cell.friendly-warning{background:linear-gradient(160deg,rgba(255,236,195,.96),rgba(238,122,89,.42))}
-.cell.friendly-warning:before{content:"!";position:absolute;left:3px;bottom:3px;z-index:6;display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#9d2f24;color:#fff8df;font-size:10px;font-weight:900;pointer-events:none}
+
+
 .unit-token{width:46px;height:42px;gap:2px;justify-content:space-between;padding:4px 3px;border-radius:6px;box-shadow:0 3px 7px rgba(75,47,29,.2),inset 0 0 0 1px rgba(255,255,255,.68);line-height:1}
 .unit-token.hero{border-color:#315f7b;background:linear-gradient(160deg,#f6fbff,#c9ddea)}
 .unit-token.enemy,.unit-token.boss{border-color:#a84f3e;background:linear-gradient(160deg,#fff8df,#f3d7ce)}
@@ -363,6 +363,15 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .unit-token-mini{font-size:9px;font-weight:900}
 /* HP bar 加厚一点 */
 .unit-token-hp{height:5px}
+
+/* P1 - 棋盘单位数字优先：生命/攻击固定在格内角标，密集站位不跨格 */
+.unit-token{position:relative;padding:13px 3px 4px;overflow:visible}
+.unit-stat-badge{position:absolute;top:1px;z-index:8;display:flex;align-items:center;justify-content:center;gap:1px;min-width:18px;max-width:21px;height:13px;padding:0 2px;border-radius:3px;border:1px solid rgba(63,46,34,.38);background:rgba(255,248,224,.96);box-shadow:0 1px 2px rgba(75,47,29,.18);color:#332216;font-size:8px;font-weight:900;line-height:1;white-space:nowrap;pointer-events:none}
+.unit-stat-hp{left:1px;color:#8f2e1f}
+.unit-stat-atk{right:1px;color:#31495f}
+.unit-token-name{margin-top:1px}
+.unit-token-hp{margin-top:auto}
+.preview-num{z-index:9}
 
 /* P2 - 右侧详情区：空状态样式优化 */
 .detail-card.empty{

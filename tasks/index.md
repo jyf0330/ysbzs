@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-11_board-unit-numeric-badges.md`
 - `tasks/done/2026-06-11_singleplayer-runtime-mode.md`
 - `tasks/done/2026-06-11_workflow-consult-skill-routing.md`
 - `tasks/done/2026-06-10_team-placement-preview.md`

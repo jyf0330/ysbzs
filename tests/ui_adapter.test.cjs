@@ -280,7 +280,7 @@ test('UI18 可落点风险预览按每个落点模拟敌方伤害', () => {
   hero.shield = 2;
   hero.hp = 30;
   enemy.position = { r: 5, c: 4 };
-  enemy.ap = 0;
+  enemy.ap = 1;
   enemy.atk = 7;
   enemy.shape = Object.assign({}, enemy.shape, { hitCells: 1, slotCount: 1, slotElements: [enemy.element || '火'], baseLayers: 1 });
   state.actionDirs[`${enemy.id}:slot0`] = 'left';
@@ -301,7 +301,7 @@ test('UI18 可落点风险预览按每个落点模拟敌方伤害', () => {
   assert.ok(vm.board.cells.every(cell => Object.prototype.hasOwnProperty.call(cell, 'moveRisk')), '棋盘格需要携带 moveRisk 字段');
 });
 
-test('UI19 累计风险会随后续宠物站位变化重算已移动宠物', () => {
+test('UI19 累计风险会随后续宠物站位变化重算形状内所有命中单位', () => {
   const state = createGameState({ activePets: ['pal_005', 'pal_006'], battleId: 'team_risk_recompute' });
   battle.startBattle(state);
   const [first, second] = state.units.filter(u => u.side === 'hero' && u.alive);
@@ -324,7 +324,7 @@ test('UI19 累计风险会随后续宠物站位变化重算已移动宠物', () 
   second.shield = 0;
   second.hp = 30;
   enemy.position = { r: 5, c: 4 };
-  enemy.ap = 0;
+  enemy.ap = 1;
   enemy.atk = 7;
   enemy.shape = Object.assign({}, enemy.shape, { hitCells: 4, slotCount: 1, slotElements: [enemy.element || '火'], baseLayers: 1 });
   state.actionDirs[`${enemy.id}:slot0`] = 'left';
@@ -341,7 +341,7 @@ test('UI19 累计风险会随后续宠物站位变化重算已移动宠物', () 
   syncBoardUnits(state);
   const after = battle.buildTeamRiskGrid(state, [first.id, second.id]);
   assert.ok(after.some(x => x.unitId === second.id), '第二只移动到更近命中线上后应成为受击目标');
-  assert.ok(!after.some(x => x.unitId === first.id), '第一只已移动宠物的旧受击风险必须被重算掉');
+  assert.ok(after.some(x => x.unitId === first.id), '敌方攻击形状覆盖到第一只时仍应保留受击风险');
 
   const moveRisks = battle.buildMoveRiskGrid(state, second.id);
   const candidate = moveRisks.find(x => x.r === 5 && x.c === 2);

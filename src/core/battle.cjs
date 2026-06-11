@@ -259,29 +259,53 @@ function runMonsterTurn(state) {
   for (const unit of living(state, 'enemy')) {
     mech.applyRoundStart(state, unit);
     const intent = computeMonsterIntent(state, unit);
-    if (!intent) break;
-    pushEvent(state, 'MONSTER_INTENT', { unitId: unit.id, targetId: intent.targetId, path: intent.path, text: `${unit.displayName || unit.name} 锁定 ${intent.targetName}，路径 ${intent.path.map(p => `R${p.r}C${p.c}`).join('→') || '原地'}${intent.willAttack ? '，准备攻击。' : '。'}` });
-    if (intent.path.length) {
-      const from = clone(unit.position);
-      const walked = [];
-      for (const step of intent.path) {
-        unit.position = normalizePosition(step);
-        walked.push(clone(unit.position));
+    if (!intent) continue;
+    pushEvent(state, 'MONSTER_INTENT', {
+      unitId: unit.id,
+      targetId: intent.targetId,
+      path: intent.path,
+      actions: clone(intent.actions || []),
+      totalDamage: intent.totalDamage || 0,
+      text: `${unit.displayName || unit.name} 计划：路径 ${intent.path.map(p => `R${p.r}C${p.c}`).join('→') || '原地'}，行动块${(intent.actions || []).length}次，预计伤害${intent.totalDamage || 0}${intent.expectedKill ? '，可KO。' : '。'}`
+    });
+    for (const step of intent.steps || []) {
+      if (!unit.alive || unit.hp <= 0) break;
+      if (step.type === 'move') {
+        const from = clone(unit.position || step.from);
+        unit.position = normalizePosition(step.to);
         const cell = getCell(state, unit.position.r, unit.position.c);
         triggerTerrainOnEnter(state, unit, cell);
+        const path = [clone(unit.position)];
+        pushEvent(state, 'MONSTER_MOVE', { unitId: unit.id, from, to: clone(unit.position), path, text: `${unit.displayName || unit.name} 移动：R${from.r}C${from.c}→R${unit.position.r}C${unit.position.c}。` });
+        pushEvent(state, 'ENEMY_PET_MOVE', { unitId: unit.id, from, to: clone(unit.position), apCost: 1, apAfter: step.apAfter, text: `${unit.displayName || unit.name} 消耗1 AP移动到 R${unit.position.r}C${unit.position.c}。` });
+        acted++;
         if (!unit.alive || unit.hp <= 0) break;
+        continue;
       }
-      pushEvent(state, 'MONSTER_MOVE', { unitId: unit.id, from, to: clone(unit.position), path: walked, text: `${unit.displayName || unit.name} 移动：R${from.r}C${from.c}→R${unit.position.r}C${unit.position.c}。` });
-    }
-    if (!unit.alive || unit.hp <= 0) continue;
-    const target = getUnit(state, intent.targetId);
-    if (target && intent.attackCells && intent.attackCells.some(p => p.r === target.position.r && p.c === target.position.c)) {
-      damageUnit(state, unit, target, unit.atk, { element: unit.element, attack: true, direction: intent.attackDirection });
-      for (const p of intent.attackCells) {
-        const cell = getCell(state, p.r, p.c);
-        if (cell) addElementToCell(state, unit, cell, unit.element, 1, 'enemy_attack');
+      if (step.type === 'attack') {
+        const cells = clone(step.attackCells || []);
+        const targets = targetsAtCells(state, cells, 'player').filter(target => target.alive !== false && Number(target.hp || 0) > 0);
+        if (!targets.length) continue;
+        unit.actionSlotsUsed = unit.actionSlotsUsed || {};
+        unit.actionSlotsUsed[step.slotIndex] = true;
+        unit.actionApSpent = Math.max(0, Number(unit.actionApSpent || 0)) + 1;
+        pushEvent(state, 'ENEMY_PET_ACTION', {
+          unitId: unit.id,
+          slotId: step.slotIndex,
+          slotLabel: step.slotLabel,
+          shapeId: step.shapeId,
+          shapeName: step.shapeName,
+          direction: step.direction,
+          cells,
+          targetIds: targets.map(target => target.id),
+          apCost: 1,
+          apAfter: step.apAfter,
+          text: `${unit.displayName || unit.name} 使用${step.slotLabel || `第${Number(step.slotIndex || 0) + 1}槽`}（${step.shapeName || '普通攻击'} / ${step.direction}），命中 ${targets.map(target => target.displayName || target.name).join('、')}。`
+        });
+        for (const target of targets) damageUnit(state, unit, target, unit.atk, { element: null, attack: true, direction: step.direction, sourceType: 'enemy_pet_action' });
+        acted++;
       }
-      acted++;
+      if (state.phase === 'battle_end') break;
     }
     if (state.phase === 'battle_end') break;
   }

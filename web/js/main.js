@@ -578,7 +578,7 @@ import { createGameRuntime } from './runtime-client.js';
     }
   }
 
-  function renderCellDetail() {
+	  function renderCellDetail() {
     const slotInfo = ui.slotArmed ? selectedSlotInfo() : null;
     if (slotInfo) {
       $('detail-summary').textContent = `${slotInfo.hero.name} · ${slotInfo.slot.label}`;
@@ -627,10 +627,20 @@ import { createGameRuntime } from './runtime-client.js';
 	      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`}`).join('；');
 	      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);
 	    }
-    if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threat.damage ?? threat.atk ?? '')}</div>`);
-    $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
-  }
-  function renderActionPopover() {
+	    if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threatDetailText(threat))}</div>`);
+	    $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
+	  }
+	  function threatDetailText(threat) {
+	    const hits = Array.isArray(threat?.hits) ? threat.hits : [];
+	    const actionCount = threat.actionCount || (Array.isArray(threat.actionIndexes) ? threat.actionIndexes.length : hits.length) || 1;
+	    const hitText = hits.map((hit, i) => {
+	      const label = hit.slotLabel || (Array.isArray(threat.actionIndexes) ? `第${Number(threat.actionIndexes[i] ?? i) + 1}槽` : `第${i + 1}次`);
+	      return `${label}${hit.targetName ? ` ${hit.targetName}` : ''} 伤${hit.damage ?? hit.raw ?? 0}${hit.lethal ? ' KO' : ''}`;
+	    }).join(' / ');
+	    const total = threat.totalDamage ?? threat.damage ?? threat.atk ?? 0;
+	    return `${threat.unitName || '敌方宠物'} ${actionCount}次行动块${hitText ? `：${hitText}` : ''}；合计${total}${threat.lethal ? ' KO' : ''}`;
+	  }
+	  function renderActionPopover() {
     const panel = $('action-popover');
     const info = ui.slotArmed ? selectedSlotInfo() : null;
     if (!panel) return;
@@ -674,23 +684,25 @@ import { createGameRuntime } from './runtime-client.js';
     const maxTop = Math.max(8, left.offsetHeight - panel.offsetHeight - 8);
     panel.style.top = `${Math.max(8, Math.min(top, maxTop))}px`;
   }
-  function renderUnitDetail(unit) {
-    const elementLayers = Object.entries(unit.elements || unit.elementLayers || {})
-      .filter(([, n]) => Number(n) > 0)
-      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${esc(EL_ICON[el] || el)}${esc(n)}</span>`).join(' ');
-    const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(s.label || s.shapeName || '行动块')} · ${esc(s.element || '-')} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
-    const activeSlot = selectedSlotInfo();
-    const facing = activeSlot?.hero?.id === unit.id ? activeSlot.slot.direction : (ui.vm?.selected?.direction || 'right');
-    return [
-      `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><div><strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.element || '-')} · ${esc(unit.quality || '普通')} · ${esc(unit.role || '-')}</small></div></div>`,
-      renderStatGrid(heroBattleStats(unit)),
-      `<div class="detail-skill-panel"><strong>技能 ${esc(skillName(unit))}</strong><span>${esc(skillDescription(unit))}</span></div>`,
-      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
-      `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
-      elementLayers ? `<div class="detail-els">${elementLayers}</div>` : '<div class="detail-els">元素层：<span class="dim">无</span></div>',
-      slotList ? `<div class="detail-slot-list">${slotList}</div>` : ''
-    ].join('\n');
-  }
+	  function renderUnitDetail(unit) {
+	    const elementLayers = Object.entries(unit.elements || unit.elementLayers || {})
+	      .filter(([, n]) => Number(n) > 0)
+	      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${esc(EL_ICON[el] || el)}${esc(n)}</span>`).join(' ');
+	    const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(s.label || s.shapeName || '行动块')} · ${esc(s.element || '-')} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
+	    const activeSlot = selectedSlotInfo();
+	    const facing = activeSlot?.hero?.id === unit.id ? activeSlot.slot.direction : (ui.vm?.selected?.direction || 'right');
+	    const unitThreat = unit.position ? ((ui.cellDetail && Number(ui.cellDetail.r) === Number(unit.position.r) && Number(ui.cellDetail.c) === Number(unit.position.c) ? ui.cellDetail.threat : null) || cellAt(unit.position.r, unit.position.c)?.threat) : null;
+	    return [
+	      `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><div><strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.element || '-')} · ${esc(unit.quality || '普通')} · ${esc(unit.role || '-')}</small></div></div>`,
+	      renderStatGrid(heroBattleStats(unit)),
+	      `<div class="detail-skill-panel"><strong>技能 ${esc(skillName(unit))}</strong><span>${esc(skillDescription(unit))}</span></div>`,
+	      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
+	      `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
+	      unitThreat ? `<div class="detail-extra threat">⚠ ${esc(threatDetailText(unitThreat))}</div>` : '',
+	      elementLayers ? `<div class="detail-els">${elementLayers}</div>` : '<div class="detail-els">元素层：<span class="dim">无</span></div>',
+	      slotList ? `<div class="detail-slot-list">${slotList}</div>` : ''
+	    ].join('\n');
+	  }
   function renderSlotInfo(info) {
     const s = info.slot;
     const h = info.hero;

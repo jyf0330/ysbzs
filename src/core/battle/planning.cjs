@@ -303,51 +303,250 @@ function buildPlayerAutoPlan(state) {
   return plan;
 }
 
-function computeMonsterIntent(state, unit) {
-  const targets = combatTargets(state, 'player');
-  if (!targets.length) return null;
-  let bestChoice = null;
-  for (const target of targets) {
-    const attackPlan = chooseEnemyAttackPlan(state, unit, target);
-    const raw = Math.max(0, Number(unit.atk || 0) - Number(target.def || 0));
-    const shieldAbsorb = Math.min(Number(target.shield || 0), raw);
-    const hpDamage = Math.max(0, raw - shieldAbsorb);
-    const effective = attackPlan.willAttack ? Math.min(Number(target.hp || 0), hpDamage) : 0;
-    const kill = attackPlan.willAttack && effective >= Number(target.hp || 0);
-    const leaderBonus = target.id === state.leaders?.player?.id ? 50 : 0;
-    const score = attackPlan.willAttack
-      ? effective * 10 + (kill ? 80 : 0) + leaderBonus - attackPlan.path.length * 0.2
-      : -dist(attackPlan.to, normalizePosition(target.position || { r: 0, c: 0 }));
-    if (!bestChoice || score > bestChoice.score) bestChoice = { target, attackPlan, score, expectedDamage: effective, kill };
-  }
-  if (!bestChoice) return null;
-  const { target, attackPlan } = bestChoice;
-  const pos = normalizePosition(unit.position || { r: 0, c: BOARD_COLS - 1 });
+function cellHasElementOrTerrain(state, pos) {
+  const cell = getCell(state, pos.r, pos.c);
+  if (!cell) return true;
+  if (hasTerrain(cell)) return true;
+  return ELEMENTS.some(el => Number(cell.elements?.[el] || 0) > 0);
+}
+
+function canEnemyEnterCell(state, enemy, pos) {
+  if (!pos || pos.r < 0 || pos.c < 0 || pos.r >= BOARD_ROWS || pos.c >= BOARD_COLS) return false;
+  if (!canStandAt(state, enemy, pos)) return false;
+  const cur = normalizePosition(enemy.position || { r: 0, c: 0 });
+  if (cur.r === pos.r && cur.c === pos.c) return true;
+  return !cellHasElementOrTerrain(state, pos);
+}
+
+function previewDirectDamage(attacker, target) {
+  const raw = Math.max(0, Number(attacker.atk || 0) - Number(target.def || 0));
+  const shieldDamage = Math.min(Number(target.shield || 0), raw);
+  const hpDamage = Math.min(Number(target.hp || 0), Math.max(0, raw - shieldDamage));
   return {
-    unitId: unit.id,
-    targetId: target.id,
-    targetName: target.name,
-    from: pos,
-    path: attackPlan.path,
-    attackCells: attackPlan.attackCells,
-    attackDirection: attackPlan.dir,
-    willAttack: attackPlan.willAttack,
-    score: bestChoice.score,
-    expectedDamage: bestChoice.expectedDamage,
-    expectedKill: bestChoice.kill,
-    damage: unit.atk
+    raw,
+    damage: raw,
+    shieldDamage,
+    hpDamage,
+    hpFrom: Math.max(0, Number(target.hp || 0)),
+    hpTo: Math.max(0, Number(target.hp || 0) - hpDamage),
+    lethal: hpDamage >= Number(target.hp || 0)
   };
 }
 
+function applyPreviewDamage(target, hit) {
+  if (!target || target.alive === false || Number(target.hp || 0) <= 0) return;
+  const shieldAbsorb = Math.min(Number(target.shield || 0), Number(hit.raw || 0));
+  target.shield = Math.max(0, Number(target.shield || 0) - shieldAbsorb);
+  const hpDamage = Math.min(Number(target.hp || 0), Math.max(0, Number(hit.raw || 0) - shieldAbsorb));
+  target.hp = Math.max(0, Number(target.hp || 0) - hpDamage);
+  if (target.hp <= 0) target.alive = false;
+}
+
+function actionTargetsForCells(state, cells) {
+  return targetsAtCells(state, cells, 'player')
+    .filter(target => target && target.alive !== false && Number(target.hp || 0) > 0);
+}
+
+function scoreEnemyHits(state, hits) {
+  return hits.reduce((sum, hit) => {
+    const target = getUnit(state, hit.targetId);
+    const leaderBonus = target && target.id === state.leaders?.player?.id ? 50 : 0;
+    return sum + hit.damage * 10 + (hit.lethal ? 80 : 0) + leaderBonus;
+  }, 0);
+}
+
+function chooseEnemyPetAction(state, enemy, usedSlots) {
+  const slots = slotsForUnit(state, enemy).filter(slot => !usedSlots.has(slot.index));
+  const pos = normalizePosition(enemy.position || { r: 0, c: 0 });
+  for (const slot of slots.sort((a, b) => a.index - b.index)) {
+    let best = null;
+    for (const dir of actionDirs()) {
+      const cells = targetCellsForSlotFrom(state, enemy, slot, pos, dir);
+      if (!cells.length) continue;
+      const targets = actionTargetsForCells(state, cells);
+      if (!targets.length) continue;
+      const hits = targets.map(target => {
+        const damage = previewDirectDamage(enemy, target);
+        return Object.assign({
+          targetId: target.id,
+          targetName: target.displayName || target.name,
+          r: target.position.r,
+          c: target.position.c
+        }, damage);
+      }).filter(hit => hit.damage > 0);
+      if (!hits.length) continue;
+      const score = scoreEnemyHits(state, hits);
+      const candidate = {
+        type: 'attack',
+        apCost: 1,
+        slotIndex: slot.index,
+        slotId: slot.slotId,
+        slotLabel: slot.label,
+        shapeId: slot.shapeId,
+        shapeName: slot.shapeName,
+        direction: dir,
+        attackCells: cells,
+        targetIds: hits.map(hit => hit.targetId),
+        hits,
+        damage: hits.reduce((sum, hit) => sum + hit.damage, 0),
+        hpDamage: hits.reduce((sum, hit) => sum + hit.hpDamage, 0),
+        lethal: hits.some(hit => hit.lethal),
+        score
+      };
+      if (!best || candidate.score > best.score) best = candidate;
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
+function canAttackAfterStep(state, enemy, step, usedSlots) {
+  const saved = enemy.position;
+  enemy.position = normalizePosition(step);
+  const action = chooseEnemyPetAction(state, enemy, usedSlots);
+  enemy.position = saved;
+  return !!action;
+}
+
+function chooseEnemyPetMove(state, enemy, usedSlots) {
+  const pos = normalizePosition(enemy.position || { r: 0, c: 0 });
+  const targets = combatTargets(state, 'player')
+    .filter(target => target && target.position && target.alive !== false && Number(target.hp || 0) > 0);
+  if (!targets.length) return null;
+  const steps = [
+    { r: pos.r, c: pos.c - 1 },
+    { r: pos.r, c: pos.c + 1 },
+    { r: pos.r - 1, c: pos.c },
+    { r: pos.r + 1, c: pos.c }
+  ];
+  let best = null;
+  for (const target of targets) {
+    const targetPos = normalizePosition(target.position);
+    const currentD = dist(pos, targetPos);
+    for (const step of steps) {
+      if (!canEnemyEnterCell(state, enemy, step)) continue;
+      const d = dist(step, targetPos);
+      if (d >= currentD) continue;
+      const afterAttack = canAttackAfterStep(state, enemy, step, usedSlots);
+      const leaderBonus = target.id === state.leaders?.player?.id ? 2 : 0;
+      const score = (afterAttack ? 100 : 0) + leaderBonus - d;
+      const candidate = { type: 'move', apCost: 1, from: pos, to: step, targetId: target.id, targetName: target.displayName || target.name, score };
+      if (!best || candidate.score > best.score) best = candidate;
+    }
+  }
+  return best;
+}
+
+function planEnemyPetTurn(state, unit) {
+  const sandbox = clone(state);
+  const enemy = getUnit(sandbox, unit.id);
+  if (!enemy || enemy.alive === false || Number(enemy.hp || 0) <= 0) return null;
+  const apMax = Math.max(0, Number(enemy.ap || 0));
+  const usedSlots = new Set(Object.entries(enemy.actionSlotsUsed || {}).filter(([, used]) => used).map(([idx]) => Number(idx)));
+  const actions = [];
+  const path = [];
+  const steps = [];
+  let apRemaining = apMax;
+  while (apRemaining > 0) {
+    const action = chooseEnemyPetAction(sandbox, enemy, usedSlots);
+    if (action) {
+      action.sequence = steps.length + 1;
+      action.apBefore = apRemaining;
+      action.apAfter = apRemaining - 1;
+      usedSlots.add(action.slotIndex);
+      for (const hit of action.hits) applyPreviewDamage(getUnit(sandbox, hit.targetId), hit);
+      actions.push(action);
+      steps.push(action);
+      apRemaining -= 1;
+      continue;
+    }
+    const move = chooseEnemyPetMove(sandbox, enemy, usedSlots);
+    if (!move) break;
+    move.sequence = steps.length + 1;
+    move.apBefore = apRemaining;
+    move.apAfter = apRemaining - 1;
+    enemy.position = normalizePosition(move.to);
+    path.push(clone(enemy.position));
+    if (syncBoardUnits) syncBoardUnits(sandbox);
+    steps.push(move);
+    apRemaining -= 1;
+  }
+  const firstHit = actions.flatMap(action => action.hits)[0] || null;
+  const fallbackTarget = combatTargets(sandbox, 'player')[0] || null;
+  const target = firstHit ? getUnit(state, firstHit.targetId) : fallbackTarget;
+  const totalDamage = actions.reduce((sum, action) => sum + action.damage, 0);
+  const totalHpDamage = actions.reduce((sum, action) => sum + action.hpDamage, 0);
+  return {
+    unitId: unit.id,
+    unitName: unit.displayName || unit.name,
+    petId: unit.petId || null,
+    targetId: firstHit?.targetId || target?.id || null,
+    targetName: firstHit?.targetName || target?.displayName || target?.name || null,
+    from: normalizePosition(unit.position || { r: 0, c: BOARD_COLS - 1 }),
+    path,
+    steps,
+    actions,
+    attackCells: actions.flatMap(action => action.attackCells),
+    attackDirection: actions[0]?.direction || null,
+    willAttack: actions.length > 0,
+    ap: apMax,
+    apSpent: steps.reduce((sum, step) => sum + Number(step.apCost || 0), 0),
+    apRemaining,
+    totalDamage,
+    expectedDamage: totalHpDamage,
+    expectedKill: actions.some(action => action.lethal),
+    damage: Number(unit.atk || 0)
+  };
+}
+
+function computeMonsterIntent(state, unit) {
+  return planEnemyPetTurn(state, unit);
+}
+
 function buildThreatGrid(state) {
-  const grid = [];
+  const byCell = new Map();
+  function addCell(pos, patch) {
+    const key = `${pos.r},${pos.c}`;
+    const cur = byCell.get(key) || { r: pos.r, c: pos.c, type: patch.type || 'attack', damage: 0, threat: 0, hits: [], actionIndexes: [] };
+    const beforeDamage = Number(cur.damage || 0);
+    const beforeThreat = Number(cur.threat || 0);
+    const beforeHits = Array.isArray(cur.hits) ? cur.hits.slice() : [];
+    const beforeActionIndexes = Array.isArray(cur.actionIndexes) ? cur.actionIndexes.slice() : [];
+    Object.assign(cur, patch);
+    cur.damage = beforeDamage + Number(patch.damage || 0);
+    cur.threat = beforeThreat + Number(patch.threat || patch.damage || 0);
+    cur.hits = beforeHits.concat(Array.isArray(patch.hits) ? patch.hits : []);
+    cur.actionIndexes = beforeActionIndexes;
+    if (patch.actionIndex != null && !cur.actionIndexes.includes(patch.actionIndex)) cur.actionIndexes.push(patch.actionIndex);
+    if (patch.lethal) cur.lethal = true;
+    byCell.set(key, cur);
+  }
   for (const enemy of living(state, 'enemy')) {
     const intent = computeMonsterIntent(state, enemy);
     if (!intent) continue;
-    for (const p of intent.path) grid.push({ r: p.r, c: p.c, type: 'move_path', unitId: enemy.id, threat: 1 });
-    for (const p of intent.attackCells) grid.push({ r: p.r, c: p.c, type: 'attack', unitId: enemy.id, targetId: intent.targetId, damage: intent.damage, threat: intent.damage });
+    for (const p of intent.path) addCell(p, { type: 'move_path', unitId: enemy.id, unitName: intent.unitName, threat: 1 });
+    for (const action of intent.actions || []) {
+      for (const p of action.attackCells || []) {
+        const hits = (action.hits || []).filter(hit => hit.r === p.r && hit.c === p.c);
+        const damage = hits.reduce((sum, hit) => sum + Number(hit.damage || 0), 0);
+        addCell(p, {
+          type: 'attack',
+          unitId: enemy.id,
+          unitName: intent.unitName,
+          targetId: hits[0]?.targetId || null,
+          damage,
+          threat: damage || Number(enemy.atk || 0),
+          lethal: hits.some(hit => hit.lethal),
+          hits,
+          actionIndex: action.slotIndex,
+          actionLabel: action.slotLabel,
+          actionCount: intent.actions.length,
+          totalDamage: intent.totalDamage
+        });
+      }
+    }
   }
-  return grid;
+  return Array.from(byCell.values()).sort((a, b) => a.r - b.r || a.c - b.c);
 }
 
 function buildTeamRiskGrid(state, unitIds = null) {
@@ -372,30 +571,35 @@ function buildTeamRiskGrid(state, unitIds = null) {
   }]));
   for (const enemy of living(state, 'enemy')) {
     const intent = computeMonsterIntent(state, enemy);
-    if (!intent || !intent.willAttack || !byId.has(intent.targetId)) continue;
-    const target = getUnit(state, intent.targetId);
-    const risk = byId.get(intent.targetId);
-    if (!target || !risk) continue;
-    const raw = Math.max(0, Number(enemy.atk || 0) - Number(target.def || 0));
-    const absorbed = Math.min(risk.shieldTo, raw);
-    const dealtToHp = Math.min(risk.hpTo, Math.max(0, raw - absorbed));
-    risk.shieldTo -= absorbed;
-    risk.hpTo -= dealtToHp;
-    risk.damage += raw;
-    risk.shieldDamage += absorbed;
-    risk.hpDamage += dealtToHp;
-    risk.lethal = risk.hpTo <= 0;
-    risk.enemyIds.push(enemy.id);
-    risk.threats.push({
-      enemyId: enemy.id,
-      enemyName: enemy.displayName || enemy.name,
-      damage: raw,
-      shieldDamage: absorbed,
-      hpDamage: dealtToHp,
-      attackDirection: intent.attackDirection,
-      attackCells: clone(intent.attackCells || []),
-      path: clone(intent.path || [])
-    });
+    if (!intent || !intent.willAttack) continue;
+    for (const action of intent.actions || []) {
+      for (const hit of action.hits || []) {
+        if (!byId.has(hit.targetId)) continue;
+        const risk = byId.get(hit.targetId);
+        if (!risk) continue;
+        const absorbed = Math.min(risk.shieldTo, Number(hit.raw || 0));
+        const dealtToHp = Math.min(risk.hpTo, Math.max(0, Number(hit.raw || 0) - absorbed));
+        risk.shieldTo -= absorbed;
+        risk.hpTo -= dealtToHp;
+        risk.damage += Number(hit.raw || 0);
+        risk.shieldDamage += absorbed;
+        risk.hpDamage += dealtToHp;
+        risk.lethal = risk.hpTo <= 0;
+        if (!risk.enemyIds.includes(enemy.id)) risk.enemyIds.push(enemy.id);
+        risk.threats.push({
+          enemyId: enemy.id,
+          enemyName: enemy.displayName || enemy.name,
+          slotIndex: action.slotIndex,
+          slotLabel: action.slotLabel,
+          damage: Number(hit.raw || 0),
+          shieldDamage: absorbed,
+          hpDamage: dealtToHp,
+          attackDirection: action.direction,
+          attackCells: clone(action.attackCells || []),
+          path: clone(intent.path || [])
+        });
+      }
+    }
   }
   return Array.from(byId.values())
     .filter(risk => risk.threats.length > 0)

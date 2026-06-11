@@ -170,9 +170,9 @@ function stripUnit(state, unit) {
       skill: unit.shape.skill,
       note: unit.shape.note
     } : null,
-    slots: unit.side === 'hero' ? slotsForVM(state, unit) : []
-  };
-}
+	    slots: ['hero', 'enemy'].includes(unit.side) ? slotsForVM(state, unit) : []
+	  };
+	}
 function stripOffer(offer) {
   return {
     offerId: offer.offerId,

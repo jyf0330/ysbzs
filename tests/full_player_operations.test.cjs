@@ -115,7 +115,7 @@ test('OP07 GET_CELL_DETAIL 返回单位层/元素层/预览层/威胁层', () =>
   assert.ok(Object.prototype.hasOwnProperty.call(r.result, 'threat'));
 });
 
-test('OP08 怪物威胁/攻击路线在 ViewModel 暴露', () => {
+test('OP08 敌方宠物威胁/行动块/攻击路线在 ViewModel 暴露', () => {
   const a = createYSBZSUIAdapter({ gold: 12 });
   a.startBattle();
   const vm = a.getViewModel();
@@ -123,6 +123,9 @@ test('OP08 怪物威胁/攻击路线在 ViewModel 暴露', () => {
   assert.ok(vm.monsterIntents.length >= 1);
   assert.ok(vm.monsterIntents[0].targetId);
   assert.ok(Array.isArray(vm.monsterIntents[0].path));
+  assert.ok(Array.isArray(vm.monsterIntents[0].steps));
+  assert.ok(Object.prototype.hasOwnProperty.call(vm.monsterIntents[0], 'totalDamage'));
+  assert.ok(vm.enemies[0].slots.length >= 1);
 });
 
 test('OP09 阵容上阵/下阵/出售影响 inventory active/bench/gold', () => {

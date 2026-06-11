@@ -10,6 +10,27 @@ function keepOnlyHeroes(state) {
   return state.units;
 }
 
+function makeEnemyPet(state, overrides = {}) {
+  const enemy = makeUnit(state, 'enemy', 'pal_001', Object.assign({
+    id: 'enemy_pet_actor',
+    hp: 30,
+    atk: 4,
+    ap: 3,
+    position: { r: 0, c: 1 }
+  }, overrides));
+  enemy.name = overrides.name || '棉悠悠';
+  enemy.displayName = `敌方${enemy.name}`;
+  enemy.element = overrides.element ?? '火';
+  enemy.shape = Object.assign({}, enemy.shape, {
+    hitCells: overrides.hitCells ?? 1,
+    baseLayers: 1,
+    slotCount: overrides.slotCount ?? 3,
+    slotElements: overrides.slotElements || [enemy.element, enemy.element, enemy.element],
+    tags: overrides.tags || ['近战']
+  });
+  return enemy;
+}
+
 test('PA01 player auto plan kills multiple low HP targets before sending spare damage to Boss', () => {
   const state = createGameState({ activePets: ['pal_005', 'pal_006', 'pal_001', 'pal_022'] });
   state.phase = 'player_turn';
@@ -35,7 +56,7 @@ test('PA01 player auto plan kills multiple low HP targets before sending spare d
   assert.equal(plan.overflow, 0);
 });
 
-test('PA02 enemy intent chooses a lethal player leader hit over the nearest pet', () => {
+test('PA02 enemy pet attacks an in-range player pet before moving toward the player core', () => {
   const state = createGameState({ activePets: ['pal_005'] });
   state.phase = 'monster_turn';
   state.round = 1;
@@ -53,11 +74,11 @@ test('PA02 enemy intent chooses a lethal player leader hit over the nearest pet'
   battle.syncDerivedBoard(state);
 
   const intent = battle.computeMonsterIntent(state, enemy);
-  assert.equal(intent.targetId, state.leaders.player.id);
+  assert.equal(intent.targetId, hero.id);
   assert.equal(intent.willAttack, true);
 });
 
-test('PA03 enemy movement triggers terrain modules step by step', () => {
+test('PA03 enemy pet movement does not enter terrain trap cells', () => {
   const state = createGameState({ activePets: [] });
   state.phase = 'monster_turn';
   state.round = 1;
@@ -72,11 +93,12 @@ test('PA03 enemy movement triggers terrain modules step by step', () => {
   battle.syncDerivedBoard(state);
 
   battle.runMonsterTurn(state);
-  assert.equal(enemy.hp, 3);
-  assert.ok(state.events.some(e => e.type === 'TERRAIN_TRIGGER' && e.unitId === enemy.id && e.r === 0 && e.c === 1));
+  assert.equal(enemy.hp, 5);
+  assert.deepEqual(enemy.position, { r: 0, c: 0 });
+  assert.ok(!state.events.some(e => e.type === 'TERRAIN_TRIGGER' && e.unitId === enemy.id && e.r === 0 && e.c === 1));
 });
 
-test('PA04 enemy attack keeps enemy element in core but hides it from default ViewModel board cells', () => {
+test('PA04 enemy pet normal attack does not create default enemy element layers', () => {
   const state = createGameState({ activePets: [] });
   state.phase = 'monster_turn';
   state.round = 1;
@@ -90,9 +112,127 @@ test('PA04 enemy attack keeps enemy element in core but hides it from default Vi
 
   battle.runMonsterTurn(state);
   const coreCell = getCell(state, 0, 0);
-  assert.equal(coreCell.elements[enemy.element], 1);
-  assert.equal(coreCell.elementCamps[enemy.element], 'enemy');
+  assert.equal(coreCell.elements[enemy.element], 0);
+  assert.equal(coreCell.elementCamps[enemy.element], null);
 
   const vmCell = createViewModel(state).board.cells.find(c => c.r === 0 && c.c === 0);
   assert.equal(vmCell.elements[enemy.element], 0);
+});
+
+test('PA05 enemy pet spends AP on consecutive action blocks when already in range', () => {
+  const state = createGameState({ activePets: ['pal_005'] });
+  state.phase = 'monster_turn';
+  state.round = 1;
+  const hero = state.units.find(u => u.side === 'hero');
+  hero.id = 'frontline_pet';
+  hero.hp = 20;
+  hero.maxHp = 20;
+  hero.def = 0;
+  hero.shield = 0;
+  hero.position = { r: 0, c: 0 };
+  state.leaders.player.position = { r: 7, c: 0 };
+  const enemy = makeEnemyPet(state, { position: { r: 0, c: 1 }, atk: 4, ap: 3 });
+  state.units.push(enemy);
+  battle.syncDerivedBoard(state);
+
+  const acted = battle.runMonsterTurn(state);
+
+  assert.equal(acted, 3, '3 AP in range should produce three action-block attacks');
+  assert.equal(hero.hp, 8, 'three ATK 4 action blocks should deal 12 total HP damage');
+  assert.equal(state.events.filter(e => e.type === 'ENEMY_PET_ACTION').length, 3);
+  assert.equal(state.events.filter(e => e.type === 'DAMAGE' && e.sourceId === enemy.id).length, 3);
+});
+
+test('PA06 enemy pet can move one step and keep attacking with remaining AP', () => {
+  const state = createGameState({ activePets: [] });
+  state.phase = 'monster_turn';
+  state.round = 1;
+  state.units = [];
+  state.leaders.player.hp = 20;
+  state.leaders.player.maxHp = 20;
+  state.leaders.player.def = 0;
+  state.leaders.player.shield = 0;
+  state.leaders.player.position = { r: 0, c: 2 };
+  const enemy = makeEnemyPet(state, { id: 'enemy_pet_runner', position: { r: 0, c: 0 }, atk: 4, ap: 3 });
+  state.units.push(enemy);
+  battle.syncDerivedBoard(state);
+
+  const acted = battle.runMonsterTurn(state);
+
+  assert.equal(acted, 3, 'one move plus two action blocks should consume 3 AP');
+  assert.deepEqual(enemy.position, { r: 0, c: 1 });
+  assert.equal(state.leaders.player.hp, 12);
+  assert.equal(state.events.filter(e => e.type === 'ENEMY_PET_MOVE').length, 1);
+  assert.equal(state.events.filter(e => e.type === 'ENEMY_PET_ACTION').length, 2);
+});
+
+test('PA07 enemy pet movement does not cross units, cores, element traps, or element cells', () => {
+  const state = createGameState({ activePets: [] });
+  state.phase = 'monster_turn';
+  state.round = 1;
+  state.units = [];
+  state.leaders.player.hp = 20;
+  state.leaders.player.position = { r: 0, c: 3 };
+  const enemy = makeEnemyPet(state, { id: 'enemy_pet_blocked', position: { r: 0, c: 0 }, atk: 4, ap: 3 });
+  state.units.push(enemy);
+  const blockedCell = getCell(state, 0, 1);
+  blockedCell.elements.火 = 1;
+  battle.syncDerivedBoard(state);
+
+  const acted = battle.runMonsterTurn(state);
+
+  assert.equal(acted, 0);
+  assert.deepEqual(enemy.position, { r: 0, c: 0 });
+  assert.equal(state.leaders.player.hp, 20);
+});
+
+test('PA08 enemy pet normal attacks do direct damage and do not add default element layers', () => {
+  const state = createGameState({ activePets: [] });
+  state.phase = 'monster_turn';
+  state.round = 1;
+  state.units = [];
+  state.leaders.player.hp = 20;
+  state.leaders.player.position = { r: 0, c: 0 };
+  const enemy = makeEnemyPet(state, { id: 'enemy_pet_no_element', position: { r: 0, c: 1 }, atk: 4, ap: 1, element: '火' });
+  state.units.push(enemy);
+  battle.syncDerivedBoard(state);
+
+  battle.runMonsterTurn(state);
+
+  const targetCell = getCell(state, 0, 0);
+  assert.equal(state.leaders.player.hp, 16);
+  assert.equal(targetCell.elements.火, 0);
+  assert.equal(targetCell.elementCamps.火, null);
+});
+
+test('PA09 ViewModel previews enemy pet path, action blocks, total damage, and KO', () => {
+  const state = createGameState({ activePets: ['pal_005'] });
+  state.phase = 'player_turn';
+  state.round = 1;
+  const hero = state.units.find(u => u.side === 'hero');
+  hero.id = 'preview_target_pet';
+  hero.hp = 10;
+  hero.maxHp = 10;
+  hero.def = 0;
+  hero.shield = 0;
+  hero.position = { r: 0, c: 0 };
+  state.leaders.player.position = { r: 7, c: 0 };
+  const enemy = makeEnemyPet(state, { id: 'enemy_pet_preview', position: { r: 0, c: 1 }, atk: 4, ap: 3 });
+  state.units.push(enemy);
+  battle.syncDerivedBoard(state);
+
+  const vm = createViewModel(state);
+  const intent = vm.monsterIntents.find(x => x.unitId === enemy.id);
+  const threat = vm.threatGrid.find(x => x.r === hero.position.r && x.c === hero.position.c && x.unitId === enemy.id);
+
+  assert.ok(intent, 'ViewModel should expose enemy pet intent');
+  assert.equal(intent.unitName, '敌方棉悠悠');
+  assert.equal(intent.totalDamage, 12);
+  assert.equal(intent.expectedKill, true);
+  assert.equal(intent.actions.length, 3);
+  assert.deepEqual(intent.actions.map(a => a.apCost), [1, 1, 1]);
+  assert.ok(threat, 'threatGrid should mark the target cell');
+  assert.equal(threat.damage, 12);
+  assert.equal(threat.lethal, true);
+  assert.equal(threat.hits.length, 3);
 });

@@ -287,6 +287,7 @@
       previewGrid: vm.previewGrid,
       threatGrid: vm.threatGrid,
       moveRiskGrid: vm.moveRiskGrid,
+      teamRiskGrid: vm.teamRiskGrid,
 	      selectedCell: ui.selectedCell || vm.selected?.cell,
 	      hoveredCell: ui.hoveredCell,
 	      selectedUnitId: ui.selectedUnitId,
@@ -462,12 +463,17 @@
 	    const previewMap = new Map((ui.vm.previewGrid || []).map(x => [`${x.r},${x.c}`, x]));
 	    const threatMap = new Map((ui.vm.threatGrid || []).map(x => [`${x.r},${x.c}`, x]));
     const riskMap = new Map((ui.vm.moveRiskGrid || ui.vm.board?.moveRiskGrid || []).map(x => [`${x.r},${x.c}`, x]));
+    const hoveredKey = ui.hoveredCell ? `${ui.hoveredCell.r},${ui.hoveredCell.c}` : null;
+    const hoverRisk = hoveredKey ? riskMap.get(hoveredKey) : null;
+    const useHoverTeamRisk = !!(hoverRisk && Array.isArray(hoverRisk.teamRiskGrid));
+    const teamRiskMap = new Map((useHoverTeamRisk ? hoverRisk.teamRiskGrid : (ui.vm.teamRiskGrid || ui.vm.board?.teamRiskGrid || [])).map(x => [`${x.r},${x.c}`, x]));
 	    const actorPreviewMap = new Map();
 	    for (const p of ui.vm.previewGrid || []) if (!actorPreviewMap.has(p.actorId)) actorPreviewMap.set(p.actorId, p);
 
 	    $('board').innerHTML = board.cells.map(cell => {
 	      const key = `${cell.r},${cell.c}`;
       const moveRisk = cell.moveRisk || riskMap.get(key) || null;
+      const teamRisk = (useHoverTeamRisk ? teamRiskMap.get(key) : (cell.teamRisk || teamRiskMap.get(key))) || null;
 	      const unit = unitById(cell.unitId);
 	      const previews = Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : []);
 	      const currentPreviews = previews.filter(p => p.isActiveActor);
@@ -485,6 +491,7 @@
 	      if (previews.length && !hasCurrentPreview) classes.push('preview-past');
 	      if (hasEnemyHit) classes.push('enemy-hit');
 	      if (threatKeys.has(key)) classes.push('threat-hit');
+      if (unit && teamRisk?.damage > 0) classes.push('team-risk');
 	      if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
 	      if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
 	      if (unit && unit.id === ui.selectedUnitId) classes.push('selected-unit');
@@ -499,6 +506,7 @@
 	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
 	        ${previews.length ? previewBadge(previews) : ''}
         ${moveTargets.has(key) && moveRisk?.damage > 0 ? `<span class="risk-num">受${esc(moveRisk.damage)}</span>` : ''}
+        ${unit && teamRisk?.damage > 0 ? `<span class="team-risk-num">受${esc(teamRisk.damage)}</span>` : ''}
 	        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
 	      </button>`;
 	    }).join('');

@@ -350,6 +350,58 @@ function buildThreatGrid(state) {
   return grid;
 }
 
+function buildTeamRiskGrid(state, unitIds = null) {
+  const requested = Array.isArray(unitIds) ? new Set(unitIds.filter(Boolean)) : null;
+  const units = living(state, 'hero').filter(unit => !requested || requested.has(unit.id) || requested.has(unit.petId));
+  if (!units.length) return [];
+  const byId = new Map(units.map(unit => [unit.id, {
+    r: normalizePosition(unit.position || { r: 0, c: 0 }).r,
+    c: normalizePosition(unit.position || { r: 0, c: 0 }).c,
+    unitId: unit.id,
+    unitName: unit.displayName || unit.name,
+    damage: 0,
+    shieldDamage: 0,
+    hpDamage: 0,
+    shieldFrom: Math.max(0, Number(unit.shield || 0)),
+    shieldTo: Math.max(0, Number(unit.shield || 0)),
+    hpFrom: Math.max(0, Number(unit.hp || 0)),
+    hpTo: Math.max(0, Number(unit.hp || 0)),
+    lethal: false,
+    enemyIds: [],
+    threats: []
+  }]));
+  for (const enemy of living(state, 'enemy')) {
+    const intent = computeMonsterIntent(state, enemy);
+    if (!intent || !intent.willAttack || !byId.has(intent.targetId)) continue;
+    const target = getUnit(state, intent.targetId);
+    const risk = byId.get(intent.targetId);
+    if (!target || !risk) continue;
+    const raw = Math.max(0, Number(enemy.atk || 0) - Number(target.def || 0));
+    const absorbed = Math.min(risk.shieldTo, raw);
+    const dealtToHp = Math.min(risk.hpTo, Math.max(0, raw - absorbed));
+    risk.shieldTo -= absorbed;
+    risk.hpTo -= dealtToHp;
+    risk.damage += raw;
+    risk.shieldDamage += absorbed;
+    risk.hpDamage += dealtToHp;
+    risk.lethal = risk.hpTo <= 0;
+    risk.enemyIds.push(enemy.id);
+    risk.threats.push({
+      enemyId: enemy.id,
+      enemyName: enemy.displayName || enemy.name,
+      damage: raw,
+      shieldDamage: absorbed,
+      hpDamage: dealtToHp,
+      attackDirection: intent.attackDirection,
+      attackCells: clone(intent.attackCells || []),
+      path: clone(intent.path || [])
+    });
+  }
+  return Array.from(byId.values())
+    .filter(risk => risk.threats.length > 0)
+    .sort((a, b) => a.r - b.r || a.c - b.c || String(a.unitId).localeCompare(String(b.unitId)));
+}
+
 function buildMoveRiskGrid(state, unitId) {
   const unit = getUnit(state, unitId) || living(state, 'hero')[0];
   if (!unit || unit.side !== 'hero' || unit.alive === false || Number(unit.hp || 0) <= 0) return [];
@@ -362,62 +414,38 @@ function buildMoveRiskGrid(state, unitId) {
     })
     .sort((a, b) => a.r - b.r || a.c - b.c);
   const out = [];
+  const movedUnitIds = Array.isArray(state.teamPlacementPreview?.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
+  const teamUnitIds = Array.from(new Set(movedUnitIds.concat(unit.id).filter(Boolean)));
   for (const target of targets) {
     const sandbox = clone(state);
     const sandboxUnit = getUnit(sandbox, unit.id);
     if (!sandboxUnit) continue;
     sandboxUnit.position = { r: target.r, c: target.c };
     if (syncBoardUnits) syncBoardUnits(sandbox);
-    let shield = Math.max(0, Number(sandboxUnit.shield || 0));
-    let hp = Math.max(0, Number(sandboxUnit.hp || 0));
-    let damage = 0;
-    let shieldDamage = 0;
-    let hpDamage = 0;
-    const threats = [];
-    for (const enemy of living(sandbox, 'enemy')) {
-      const intent = computeMonsterIntent(sandbox, enemy);
-      if (!intent || !intent.willAttack || intent.targetId !== sandboxUnit.id) continue;
-      const raw = Math.max(0, Number(enemy.atk || 0) - Number(sandboxUnit.def || 0));
-      const absorbed = Math.min(shield, raw);
-      const dealtToHp = Math.min(hp, Math.max(0, raw - absorbed));
-      shield -= absorbed;
-      hp -= dealtToHp;
-      damage += raw;
-      shieldDamage += absorbed;
-      hpDamage += dealtToHp;
-      threats.push({
-        enemyId: enemy.id,
-        enemyName: enemy.displayName || enemy.name,
-        damage: raw,
-        shieldDamage: absorbed,
-        hpDamage: dealtToHp,
-        attackDirection: intent.attackDirection,
-        attackCells: clone(intent.attackCells || []),
-        path: clone(intent.path || [])
-      });
-    }
-    if (!threats.length) continue;
+    const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
+    const currentRisk = teamRiskGrid.find(risk => risk.unitId === unit.id) || null;
     out.push({
       r: target.r,
       c: target.c,
       unitId: unit.id,
       unitName: unit.displayName || unit.name,
-      damage,
-      shieldDamage,
-      hpDamage,
+      damage: currentRisk?.damage || 0,
+      shieldDamage: currentRisk?.shieldDamage || 0,
+      hpDamage: currentRisk?.hpDamage || 0,
       shieldFrom: Math.max(0, Number(unit.shield || 0)),
-      shieldTo: shield,
+      shieldTo: currentRisk?.shieldTo ?? Math.max(0, Number(unit.shield || 0)),
       hpFrom: Math.max(0, Number(unit.hp || 0)),
-      hpTo: hp,
-      lethal: hp <= 0,
-      enemyIds: threats.map(t => t.enemyId),
-      threats
+      hpTo: currentRisk?.hpTo ?? Math.max(0, Number(unit.hp || 0)),
+      lethal: currentRisk?.lethal || false,
+      enemyIds: currentRisk?.enemyIds || [],
+      threats: currentRisk?.threats || [],
+      teamRiskGrid
     });
   }
   return out;
 }
 
-  return { targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildMoveRiskGrid };
+  return { targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid };
 }
 
 module.exports = { createPlanningModule };

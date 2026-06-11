@@ -241,6 +241,8 @@ function makeBoardVM(state, selected = {}) {
   const threatGrid = battle.buildThreatGrid(state);
   const riskUnitId = selected.unitId || state.teamPlacementPreview?.activeUnitId || state.units.find(u => u.side === 'hero' && u.alive !== false && u.hp > 0)?.id || null;
   const moveRiskGrid = riskUnitId ? battle.buildMoveRiskGrid(state, riskUnitId) : [];
+  const movedUnitIds = Array.isArray(state.teamPlacementPreview?.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
+  const teamRiskGrid = movedUnitIds.length ? battle.buildTeamRiskGrid(state, movedUnitIds) : [];
 	  const previewMap = new Map(previewGrid.map(x => [`${x.r},${x.c}`, x]));
 	  const previewGroups = new Map();
 	  for (const p of previewGrid) {
@@ -250,6 +252,7 @@ function makeBoardVM(state, selected = {}) {
 	  }
 	  const threatMap = new Map(threatGrid.map(x => [`${x.r},${x.c}`, x]));
   const moveRiskMap = new Map(moveRiskGrid.map(x => [`${x.r},${x.c}`, x]));
+  const teamRiskMap = new Map(teamRiskGrid.map(x => [`${x.r},${x.c}`, x]));
 	  return {
     rows: state.board.rows,
     cols: state.board.cols,
@@ -265,11 +268,13 @@ function makeBoardVM(state, selected = {}) {
 	      preview: clone(previewMap.get(`${cell.r},${cell.c}`) || null),
 	      previews: clone(previewGroups.get(`${cell.r},${cell.c}`) || []),
 	      threat: clone(threatMap.get(`${cell.r},${cell.c}`) || null),
-      moveRisk: clone(moveRiskMap.get(`${cell.r},${cell.c}`) || null)
+      moveRisk: clone(moveRiskMap.get(`${cell.r},${cell.c}`) || null),
+      teamRisk: clone(teamRiskMap.get(`${cell.r},${cell.c}`) || null)
 	    })),
     previewGrid,
     threatGrid,
-    moveRiskGrid
+    moveRiskGrid,
+    teamRiskGrid
 	  };
 	}
 function teamPlacementPreviewVM(state, previewGrid = []) {
@@ -447,6 +452,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
 	    previewGrid: board.previewGrid,
     threatGrid: board.threatGrid,
     moveRiskGrid: board.moveRiskGrid,
+    teamRiskGrid: board.teamRiskGrid,
     events: recentEvents(state),
     logs: logGroups(state),
     battleTrace: canonicalEventLog(state).map(e => ({ ...clone(e), step: e.step, type: e.type, text: e.text || e.type, round: e.round, phase: e.phase })),

@@ -300,3 +300,51 @@ test('UI18 可落点风险预览按每个落点模拟敌方伤害', () => {
   assert.ok(Array.isArray(vm.moveRiskGrid), 'ViewModel 需要暴露 moveRiskGrid');
   assert.ok(vm.board.cells.every(cell => Object.prototype.hasOwnProperty.call(cell, 'moveRisk')), '棋盘格需要携带 moveRisk 字段');
 });
+
+test('UI19 累计风险会随后续宠物站位变化重算已移动宠物', () => {
+  const state = createGameState({ activePets: ['pal_005', 'pal_006'], battleId: 'team_risk_recompute' });
+  battle.startBattle(state);
+  const [first, second] = state.units.filter(u => u.side === 'hero' && u.alive);
+  const enemy = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(first && second && enemy, '需要两只我方和一只敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== enemy.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  first.position = { r: 5, c: 1 };
+  first.moveRange = 4;
+  first.def = 0;
+  first.shield = 10;
+  first.hp = 30;
+  second.position = { r: 7, c: 1 };
+  second.moveRange = 4;
+  second.def = 0;
+  second.shield = 0;
+  second.hp = 30;
+  enemy.position = { r: 5, c: 4 };
+  enemy.ap = 0;
+  enemy.atk = 7;
+  enemy.shape = Object.assign({}, enemy.shape, { hitCells: 4, slotCount: 1, slotElements: [enemy.element || '火'], baseLayers: 1 });
+  state.actionDirs[`${enemy.id}:slot0`] = 'left';
+  state.teamPlacementPreview = { activeUnitId: first.id, movedUnitIds: [first.id] };
+  syncBoardUnits(state);
+
+  const before = battle.buildTeamRiskGrid(state, [first.id]);
+  assert.equal(before.length, 1);
+  assert.equal(before[0].unitId, first.id);
+  assert.equal(before[0].damage, 7);
+
+  second.position = { r: 5, c: 3 };
+  state.teamPlacementPreview = { activeUnitId: second.id, movedUnitIds: [first.id, second.id] };
+  syncBoardUnits(state);
+  const after = battle.buildTeamRiskGrid(state, [first.id, second.id]);
+  assert.ok(after.some(x => x.unitId === second.id), '第二只移动到更近命中线上后应成为受击目标');
+  assert.ok(!after.some(x => x.unitId === first.id), '第一只已移动宠物的旧受击风险必须被重算掉');
+
+  const moveRisks = battle.buildMoveRiskGrid(state, second.id);
+  const candidate = moveRisks.find(x => x.r === 5 && x.c === 2);
+  assert.ok(candidate, '候选落点需要携带整队风险预览');
+  assert.ok(Array.isArray(candidate.teamRiskGrid));
+});

@@ -15,6 +15,7 @@
         <h1>玩家谜题投稿器</h1>
       </div>
       <nav class="topbar-actions" aria-label="页面导航">
+        <button id="fullscreen-toggle" type="button" aria-pressed="false">全屏</button>
         <a href="./index.html">返回战斗界面</a>
         <a href="./external-data/puzzle-submission-tool/puzzle_submission_tool_design.md">查看规格</a>
       </nav>
@@ -63,11 +64,11 @@
           </div>
           <label>
             简短说明
-            <textarea id="description" rows="3">选择 4 只宠物，刚好击杀 90 血 Boss。</textarea>
+            <textarea id="description" rows="2">选择 4 只宠物，刚好击杀 90 血 Boss。</textarea>
           </label>
         </section>
 
-        <section class="editor-section">
+        <section class="editor-section pet-section">
           <div class="section-head">
             <h2>可用宠物</h2>
             <span id="pet-count-label">0 只</span>
@@ -75,12 +76,12 @@
           <div id="pet-list" class="pet-list" aria-label="可用宠物列表"></div>
         </section>
 
-        <section class="editor-section">
+        <section class="editor-section intent-section">
           <div class="section-head">
             <h2>随手写</h2>
             <button id="normalize-btn" type="button">整理</button>
           </div>
-          <textarea id="raw-intent" rows="7">我想做一个 1 回合火爆发题。Boss 90 血，在第5行第6列。可用宠物是棉悠悠、捣蛋猫、皮皮鸡、翠叶鼠、火绒狐。最多选 4 只。目标是 1 回合打死 Boss。</textarea>
+          <textarea id="raw-intent" rows="4">我想做一个 1 回合火爆发题。Boss 90 血，在第5行第6列。可用宠物是棉悠悠、捣蛋猫、皮皮鸡、翠叶鼠、火绒狐。最多选 4 只。目标是 1 回合打死 Boss。</textarea>
           <p id="normalization-note" class="inline-note">只在目标、坐标或宠物名无法确认时追问。</p>
         </section>
       </aside>
@@ -112,7 +113,31 @@
           </div>
 
           <aside class="cell-inspector" aria-label="格子设置">
-            <h3>格子内容</h3>
+            <section class="inline-unit-add" aria-label="添加单位">
+              <div class="section-head compact-head">
+                <h3>添加单位</h3>
+                <span>一级操作</span>
+              </div>
+              <div class="quick-add-tabs" role="tablist" aria-label="添加类型">
+                <button class="quick-add-tab active" type="button" data-quick-kind="ally_pet">我方</button>
+                <button class="quick-add-tab" type="button" data-quick-kind="enemy">敌人</button>
+                <button class="quick-add-tab" type="button" data-quick-kind="boss">Boss</button>
+              </div>
+              <div class="quick-add-controls">
+                <label>
+                  行
+                  <input id="quick-row" type="number" min="1" max="8" value="5" />
+                </label>
+                <label>
+                  列
+                  <input id="quick-col" type="number" min="1" max="8" value="6" />
+                </label>
+              </div>
+              <div id="quick-add-list" class="quick-add-list" aria-label="可添加单位"></div>
+            </section>
+
+            <section class="selected-cell-editor" aria-label="选中格编辑">
+            <h3>选中格</h3>
             <label>
               名称
               <input id="placement-name" type="text" value="棉悠悠" />
@@ -137,6 +162,7 @@
             </div>
             <button id="apply-cell-btn" type="button">放到选中格</button>
             <button id="clear-cell-btn" type="button">清空选中格</button>
+            </section>
           </aside>
         </div>
       </section>
@@ -170,7 +196,7 @@
           </label>
           <label>
             补充说明
-            <textarea id="win-note" rows="3">1 回合内击杀铁壳考官。</textarea>
+            <textarea id="win-note" rows="2">1 回合内击杀铁壳考官。</textarea>
           </label>
         </section>
 
@@ -179,7 +205,7 @@
             <h2>标准解法</h2>
             <span>可选</span>
           </div>
-          <textarea id="solution-text" rows="6">第1步：棉悠悠移动到第5行第4列，向右攻击。
+          <textarea id="solution-text" rows="4">第1步：棉悠悠移动到第5行第4列，向右攻击。
 第2步：翠叶鼠移动到第5行第3列，攻击 Boss。
 第3步：火绒狐攻击 Boss。
 结果：叠火后引爆，总计 90 点伤害，击杀。</textarea>
@@ -198,6 +224,6 @@
     </main>
   </div>
 
-  <script type="module" src="js/puzzle-submission.js"></script>
+  <script src="js/puzzle-submission.js"></script>
 </body>
 </html>

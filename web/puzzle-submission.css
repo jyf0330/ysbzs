@@ -21,6 +21,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  overflow: hidden;
   background: var(--bg);
   color: var(--ink);
   font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -38,14 +39,15 @@ button {
 }
 
 .submission-shell {
-  min-height: 100vh;
+  height: 100svh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .submission-topbar {
-  min-height: 76px;
-  padding: 14px 24px;
+  min-height: 58px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -74,7 +76,7 @@ p {
 
 h1 {
   margin-bottom: 0;
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1.1;
 }
 
@@ -101,7 +103,7 @@ button {
   color: var(--ink);
   text-decoration: none;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 7px 10px;
   font-weight: 750;
 }
 
@@ -112,10 +114,12 @@ button:hover {
 
 .submission-layout {
   flex: 1;
+  min-height: 0;
+  height: calc(100svh - 58px);
   display: grid;
-  grid-template-columns: minmax(280px, 340px) minmax(520px, 1fr) minmax(300px, 380px);
-  gap: 16px;
-  padding: 16px;
+  grid-template-columns: minmax(260px, 310px) minmax(560px, 1fr) minmax(300px, 350px);
+  gap: 10px;
+  padding: 10px;
 }
 
 .editor-panel,
@@ -130,10 +134,16 @@ button:hover {
 .editor-panel {
   min-height: 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.left-editor {
+  overflow: hidden;
 }
 
 .editor-section {
-  padding: 16px;
+  padding: 10px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -147,7 +157,7 @@ button:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .section-head span,
@@ -170,7 +180,7 @@ textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 9px 10px;
+  padding: 7px 9px;
   background: #fbfcfa;
   color: var(--ink);
   outline: none;
@@ -178,7 +188,7 @@ textarea {
 
 textarea {
   resize: vertical;
-  line-height: 1.55;
+  line-height: 1.4;
 }
 
 input:focus,
@@ -191,13 +201,13 @@ textarea:focus {
 .field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 10px 0;
+  gap: 8px;
+  margin: 8px 0;
 }
 
 .pet-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pet-option {
@@ -205,10 +215,14 @@ textarea:focus {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 8px;
-  padding: 10px;
+  padding: 7px 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfa;
+}
+
+.pet-option span {
+  min-width: 0;
 }
 
 .pet-option input {
@@ -216,19 +230,23 @@ textarea:focus {
 }
 
 .pet-option strong {
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .pet-option span,
 .enemy-row span,
 .cell-meta {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .board-editor {
-  padding: 16px;
+  padding: 10px;
   min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
 
 .board-editor-head p {
@@ -241,7 +259,7 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .mode-btn.active {
@@ -268,9 +286,11 @@ textarea:focus {
 
 .board-workspace {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) 240px;
-  gap: 14px;
+  grid-template-columns: minmax(420px, 1fr) 260px;
+  gap: 10px;
   align-items: start;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .board-frame {
@@ -279,6 +299,7 @@ textarea:focus {
   grid-template-rows: 28px 1fr;
   gap: 4px;
   min-width: 0;
+  align-self: start;
 }
 
 .axis-corner {
@@ -316,8 +337,8 @@ textarea:focus {
   grid-column: 2;
   grid-row: 2;
   display: grid;
-  grid-template-columns: repeat(8, minmax(48px, 1fr));
-  grid-template-rows: repeat(8, minmax(48px, 1fr));
+  grid-template-columns: repeat(8, minmax(42px, 1fr));
+  grid-template-rows: repeat(8, minmax(42px, 1fr));
   aspect-ratio: 1;
   border: 2px solid var(--green-dark);
   background: #dfe8df;
@@ -328,7 +349,7 @@ textarea:focus {
 .cell {
   border: 0;
   border-radius: 0;
-  padding: 4px;
+  padding: 3px;
   background: #f7faf5;
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -372,7 +393,7 @@ textarea:focus {
 }
 
 .cell-kind {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   color: var(--muted);
 }
@@ -380,7 +401,7 @@ textarea:focus {
 .cell-name {
   align-self: center;
   color: var(--ink);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   line-height: 1.2;
   overflow-wrap: anywhere;
@@ -393,13 +414,32 @@ textarea:focus {
 }
 
 .cell-inspector {
-  padding: 14px;
+  padding: 10px;
   box-shadow: none;
+  overflow: auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
 }
 
 .cell-inspector button {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 8px;
+}
+
+.pet-section {
+  flex: 0 1 286px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.intent-section {
+  flex: 0 0 auto;
+}
+
+.intent-section textarea {
+  min-height: 104px;
 }
 
 .cell-inspector #apply-cell-btn,
@@ -413,14 +453,14 @@ textarea:focus {
 
 .enemy-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .enemy-row {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfa;
@@ -432,7 +472,10 @@ textarea:focus {
 }
 
 .export-section {
-  padding: 16px;
+  padding: 10px;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
 }
 
 .export-tabs {
@@ -448,11 +491,11 @@ textarea:focus {
 }
 
 .export-output {
-  min-height: 340px;
-  max-height: 52vh;
+  min-height: 0;
+  max-height: none;
   overflow: auto;
-  margin: 0 0 10px;
-  padding: 12px;
+  margin: 0 0 8px;
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #101714;
@@ -462,14 +505,143 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+.right-editor {
+  overflow: hidden;
+}
+
+.right-editor .editor-section {
+  flex: 0 0 auto;
+}
+
+.right-editor .export-section {
+  flex: 1 1 auto;
+}
+
+.submission-shell.is-fullscreen .submission-topbar {
+  min-height: 44px;
+  padding: 5px 10px;
+}
+
+.submission-shell.is-fullscreen .eyebrow {
+  display: none;
+}
+
+.submission-shell.is-fullscreen h1 {
+  font-size: 18px;
+}
+
+.submission-shell.is-fullscreen .submission-layout {
+  height: calc(100svh - 44px);
+  padding: 6px;
+  gap: 6px;
+  grid-template-columns: minmax(250px, 290px) minmax(640px, 1fr) minmax(290px, 330px);
+}
+
+.submission-shell.is-fullscreen .editor-section,
+.submission-shell.is-fullscreen .export-section,
+.submission-shell.is-fullscreen .board-editor,
+.submission-shell.is-fullscreen .cell-inspector {
+  padding: 8px;
+}
+
+.inline-unit-add {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.selected-cell-editor {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.compact-head {
+  margin-bottom: 8px;
+}
+
+.compact-head h3 {
+  margin-bottom: 0;
+}
+
+.compact-head span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.quick-add-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 0;
+}
+
+.quick-add-tab.active {
+  background: var(--ink);
+  color: #fff;
+}
+
+.quick-add-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+  padding: 8px 0;
+}
+
+.quick-add-controls span {
+  color: var(--muted);
+  font-size: 12px;
+  padding-bottom: 8px;
+}
+
+.quick-add-list {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 7px;
+  padding: 0 2px 0 0;
+}
+
+.quick-add-card {
+  min-height: 54px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  text-align: left;
+  background: #fbfcfa;
+}
+
+.quick-add-card strong {
+  font-size: 13px;
+}
+
+.quick-add-card span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .problem-list {
   margin: 0;
   padding-left: 18px;
 }
 
 @media (max-width: 1180px) {
+  body {
+    overflow: auto;
+  }
+
+  .submission-shell {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+
   .submission-layout {
     grid-template-columns: 320px 1fr;
+    height: auto;
   }
 
   .right-editor {
@@ -487,8 +659,17 @@ textarea:focus {
   }
 
   .submission-layout,
-  .board-workspace {
+  .board-workspace,
+  .quick-add-list {
     grid-template-columns: 1fr;
+  }
+
+  .quick-add-controls {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .quick-add-controls span {
+    grid-column: 1 / -1;
   }
 
   .submission-layout {

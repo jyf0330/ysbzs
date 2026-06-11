@@ -51,9 +51,15 @@ async function main() {
     assert(html.includes('id="puzzle-board"'), 'board editor anchor missing');
     assert(html.includes('id="raw-intent"'), 'natural language input missing');
     assert(html.includes('id="export-output"'), 'export output missing');
+    assert(html.includes('id="fullscreen-toggle"'), 'fullscreen toggle missing');
+    assert(html.includes('class="inline-unit-add"') && html.includes('id="quick-add-list"'), 'first-level quick add unit panel missing');
+    assert(html.includes('src="js/puzzle-submission.js"') && !html.includes('type="module" src="js/puzzle-submission.js"'), 'submission page script should support file:// loading');
     assert(index.includes('puzzle-submission.html'), 'main page should link to puzzle submission page');
     assert(css.includes('.puzzle-board') && css.includes('.export-output'), 'page styles missing board/export surfaces');
+    assert(css.includes('100svh') && css.includes('is-fullscreen'), 'single-screen fullscreen layout rules missing');
     assert(js.includes('PET_POOL') && js.includes('buildPuzzle') && js.includes('validatePuzzle'), 'page logic missing data builder or validator');
+    assert(js.includes('requestFullscreen') && js.includes('fullscreenchange'), 'fullscreen behavior missing');
+    assert(js.includes('openQuickAdd') && js.includes('addQuickUnit') && js.includes('ENEMY_PRESETS'), 'first-level quick add unit behavior missing');
     assert(js.includes('readablePost') && js.includes('checkReport'), 'export renderers missing');
     assert(!js.includes("from '../src") && !js.includes("from './src") && !js.includes('/api/action') && !js.includes('/api/view'), 'submission page must not import core or mutate runtime state');
     assert(html.includes('data-kind="boss"') && html.includes('data-kind="fire_element"') && html.includes('data-kind="fire_trap"'), 'placement palette incomplete');

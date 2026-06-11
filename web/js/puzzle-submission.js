@@ -47,10 +47,18 @@ const WIN_TEMPLATE = {
   wind_shift_kill: { type: 'wind_shift_kill', text: '用风移动元素后击杀敌人' }
 };
 
+const ENEMY_PRESETS = [
+  { id: 'enemy_guard_001', name: '训练怪', kind: 'enemy', hp: 20, atk: 2 },
+  { id: 'enemy_shell_001', name: '铁壳考官', kind: 'boss', hp: 90, atk: 0 },
+  { id: 'enemy_flame_001', name: '火线考官', kind: 'enemy', hp: 35, atk: 3 },
+  { id: 'enemy_wall_001', name: '护盾怪', kind: 'enemy', hp: 25, atk: 2 }
+];
+
 const state = {
   selectedKind: 'ally_pet',
   selectedCell: { row: 5, col: 6 },
   exportMode: 'post',
+  quickAddKind: 'ally_pet',
   placements: new Map(),
   copied: false
 };
@@ -111,6 +119,30 @@ function renderPetList() {
       <span>${esc(pet.id)}</span>
     </label>
   `).join('');
+}
+
+function quickAddItems() {
+  if (state.quickAddKind === 'ally_pet') return PET_POOL;
+  if (state.quickAddKind === 'boss') return ENEMY_PRESETS.filter((item) => item.kind === 'boss');
+  return ENEMY_PRESETS.filter((item) => item.kind !== 'boss');
+}
+
+function renderQuickAddList() {
+  const list = $('quick-add-list');
+  if (!list) return;
+  list.innerHTML = quickAddItems().map((item) => {
+    const isPet = state.quickAddKind === 'ally_pet';
+    const kind = isPet ? 'ally_pet' : item.kind;
+    const detail = isPet
+      ? `${item.element} · ${item.role} · HP ${item.hp} / 攻 ${item.atk}`
+      : `${kind === 'boss' ? 'Boss' : '敌人'} · HP ${item.hp} / 攻 ${item.atk}`;
+    return `
+      <button class="quick-add-card" type="button" data-add-id="${esc(item.id)}" data-add-kind="${esc(kind)}">
+        <strong>${esc(item.name)}</strong>
+        <span>${esc(detail)}</span>
+      </button>
+    `;
+  }).join('');
 }
 
 function renderAxes() {
@@ -333,6 +365,55 @@ function renderExport() {
   $('export-output').textContent = output;
 }
 
+function setFullscreenState(active) {
+  document.querySelector('.submission-shell')?.classList.toggle('is-fullscreen', active);
+  const button = $('fullscreen-toggle');
+  if (button) {
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    button.textContent = active ? '退出全屏' : '全屏';
+  }
+}
+
+function clampCoordinate(value, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(1, Math.min(8, Math.round(n)));
+}
+
+function openQuickAdd(kind = state.quickAddKind) {
+  state.quickAddKind = kind;
+  qsa('.quick-add-tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.quickKind === state.quickAddKind));
+  $('quick-row').value = state.selectedCell.row;
+  $('quick-col').value = state.selectedCell.col;
+  renderQuickAddList();
+}
+
+function addQuickUnit(itemId, kind) {
+  const row = clampCoordinate($('quick-row').value, state.selectedCell.row);
+  const col = clampCoordinate($('quick-col').value, state.selectedCell.col);
+  const source = kind === 'ally_pet'
+    ? PET_POOL.find((pet) => pet.id === itemId)
+    : ENEMY_PRESETS.find((enemy) => enemy.id === itemId);
+  if (!source) return;
+  state.selectedCell = { row, col };
+  state.selectedKind = kind;
+  state.placements.set(key(row, col), {
+    row,
+    col,
+    kind,
+    refId: source.id,
+    displayName: source.name,
+    hp: source.hp,
+    atk: source.atk,
+    elementStacks: { fire: 0, water: 0 }
+  });
+  $('placement-name').value = source.name;
+  $('placement-hp').value = String(source.hp);
+  $('placement-atk').value = String(source.atk);
+  qsa('.mode-btn').forEach((item) => item.classList.toggle('active', item.dataset.kind === kind));
+  update();
+}
+
 function update() {
   renderStatus();
   renderBoard();
@@ -412,6 +493,7 @@ function seedDefaultPuzzle() {
 
 function bindEvents() {
   document.addEventListener('input', (event) => {
+    if (event.target.closest('.inline-unit-add')) return;
     if (event.target.matches('input, textarea, select')) update();
   });
   $('puzzle-board').addEventListener('click', (event) => {
@@ -450,12 +532,7 @@ function bindEvents() {
     update();
   });
   $('add-boss-btn').addEventListener('click', () => {
-    state.selectedKind = 'boss';
-    state.selectedCell = { row: 5, col: 6 };
-    $('placement-name').value = '铁壳考官';
-    $('placement-hp').value = '90';
-    $('placement-atk').value = '0';
-    placeSelectedCell();
+    openQuickAdd('boss');
   });
   $('enemy-list').addEventListener('click', (event) => {
     const button = event.target.closest('[data-focus-cell]');
@@ -477,9 +554,26 @@ function bindEvents() {
     $('copy-export-btn').textContent = '已复制';
     setTimeout(() => { $('copy-export-btn').textContent = '复制当前导出'; }, 1200);
   });
+  $('fullscreen-toggle').addEventListener('click', async () => {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+    else await document.exitFullscreen?.();
+    setFullscreenState(Boolean(document.fullscreenElement));
+  });
+  document.addEventListener('fullscreenchange', () => {
+    setFullscreenState(Boolean(document.fullscreenElement));
+  });
+  qsa('.quick-add-tab').forEach((tab) => {
+    tab.addEventListener('click', () => openQuickAdd(tab.dataset.quickKind));
+  });
+  $('quick-add-list').addEventListener('click', (event) => {
+    const card = event.target.closest('[data-add-id]');
+    if (!card) return;
+    addQuickUnit(card.dataset.addId, card.dataset.addKind);
+  });
 }
 
 renderPetList();
+renderQuickAddList();
 renderAxes();
 seedDefaultPuzzle();
 bindEvents();

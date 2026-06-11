@@ -1,0 +1,343 @@
+tool:
+  id: puzzle_submission_tool
+  name: 玩家谜题投稿工具
+  version: 0.1.0
+  status: design_spec
+  owner_role: planner_ui
+  purpose: 让玩家用自然语言、简单表单和 8x8 棋盘提交宠物战斗谜题，由 AI 整理成可读投稿文本和程序可读数据。
+  runtime_boundary:
+    current_scope: spec_only
+    imports_game_data_now: false
+    modifies_runtime_now: false
+    future_adapter_needed: true
+
+editor_layout:
+  - id: basic_info
+    name: 谜题基础信息
+    player_goal: 快速说明这是什么题。
+    primary_controls:
+      - text_input
+      - segmented_difficulty
+      - type_select
+      - turn_limit_stepper
+      - short_textarea
+  - id: available_pets
+    name: 可用宠物选择区
+    player_goal: 从现有宠物池勾选本题允许使用的宠物。
+    primary_controls:
+      - pet_search
+      - pet_checkbox_list
+      - max_deploy_stepper
+  - id: board_editor
+    name: 8x8 棋盘摆放区
+    player_goal: 点击棋盘格，放置我方、敌人、Boss、元素格、陷阱或空格。
+    primary_controls:
+      - coordinate_grid
+      - placement_palette
+      - cell_inspector
+  - id: enemy_settings
+    name: 敌人设置区
+    player_goal: 添加敌人和 Boss 的名称、生命、攻击、位置。
+    primary_controls:
+      - enemy_list
+      - enemy_form
+      - boss_toggle
+  - id: win_condition
+    name: 胜利条件设置区
+    player_goal: 从模板选择目标，不直接写复杂规则。
+    primary_controls:
+      - template_select
+      - target_picker
+      - optional_note
+  - id: optional_solution
+    name: 标准解法区
+    player_goal: 可选填写标准答案或核心思路。
+    primary_controls:
+      - step_list
+      - result_summary
+      - ai_hint
+
+puzzle_schema:
+  puzzle_id:
+    type: string
+    generated: true
+    format: puzzle_<type>_<serial>
+  name:
+    type: string
+    required: true
+    max_length: 24
+  difficulty:
+    type: enum
+    required: true
+    values:
+      easy: 简单
+      normal: 普通
+      hard: 困难
+      brain: 烧脑
+  type:
+    type: enum
+    required: true
+    values:
+      fire_burst: 火爆发
+      water_catalyst: 水催化
+      wind_shift: 风位移
+      rescue: 救援
+      endgame: 残局
+      custom: 自定义
+  board:
+    rows: 8
+    cols: 8
+    coordinate_base: 1
+    cells_source: board.cells
+  turn_limit:
+    type: integer
+    required: true
+    min: 1
+  description:
+    type: string
+    required: false
+    max_length: 120
+  available_pets:
+    type: array
+    required: true
+    item_type: pet_id
+    min_items: 1
+    source: existing_pet_pool
+  max_deploy_pets:
+    type: integer
+    required: true
+    min: 1
+    max: 4
+  placements:
+    type: array
+    required: false
+    item_schema:
+      row:
+        type: integer
+        min: 1
+        max: 8
+      col:
+        type: integer
+        min: 1
+        max: 8
+      kind:
+        type: enum
+        values:
+          - ally_pet
+          - enemy
+          - boss
+          - fire_element
+          - water_element
+          - wind_element
+          - fire_trap
+          - empty
+      ref_id:
+        type: string
+        required: false
+      display_name:
+        type: string
+        required: false
+      hp:
+        type: integer
+        required: false
+      atk:
+        type: integer
+        required: false
+      element_stacks:
+        type: object
+        required: false
+  enemies:
+    type: array
+    required_if:
+      - win_condition.type in [kill_target, kill_all, elemental_kill]
+    item_schema:
+      id:
+        type: string
+      name:
+        type: string
+      hp:
+        type: integer
+        min: 1
+      atk:
+        type: integer
+        min: 0
+        default: 0
+      position:
+        type: coordinate
+      is_boss:
+        type: boolean
+        default: false
+  win_condition:
+    type: object
+    required: true
+    template_source: win_condition_templates
+  solution:
+    type: object
+    required: false
+    fields:
+      is_provided:
+        type: boolean
+      steps:
+        type: array
+      result_summary:
+        type: string
+
+win_condition_templates:
+  - id: kill_boss_within_turns
+    label: "{turns} 回合内击杀 Boss"
+    type: kill_target
+    required_fields:
+      - target_id
+      - within_turns
+  - id: kill_all_within_turns
+    label: "{turns} 回合内全灭敌人"
+    type: kill_all
+    required_fields:
+      - within_turns
+  - id: protect_pet
+    label: 保护指定宠物不死亡
+    type: protect_target
+    required_fields:
+      - protect_target_id
+      - within_turns
+  - id: require_pet
+    label: 必须使用指定宠物通关
+    type: require_pet
+    required_fields:
+      - required_pet_id
+  - id: block_enemy_area
+    label: 不能让敌人进入指定区域
+    type: block_area
+    required_fields:
+      - area_cells
+      - within_turns
+  - id: fire_burst_kill
+    label: 用火元素引爆击杀敌人
+    type: elemental_kill
+    required_fields:
+      - target_id
+      - element
+      - within_turns
+    defaults:
+      element: fire
+  - id: water_fire_chain_kill
+    label: 用水火连锁击杀敌人
+    type: elemental_chain_kill
+    required_fields:
+      - target_id
+      - chain
+      - within_turns
+    defaults:
+      chain:
+        - water
+        - fire
+  - id: wind_shift_kill
+    label: 用风移动元素后击杀敌人
+    type: wind_shift_kill
+    required_fields:
+      - target_id
+      - moved_element
+      - within_turns
+
+validation_rules:
+  hard:
+    - id: board_position_in_range
+      message: 不能把单位放到棋盘外。
+    - id: no_duplicate_occupied_cell
+      message: 不能两个单位放在同一个格子。
+    - id: boss_hp_required
+      message: Boss 必须有生命值。
+    - id: win_condition_required
+      message: 胜利条件必须存在。
+    - id: available_pets_required
+      message: 可用宠物不能为空。
+    - id: turn_limit_positive
+      message: 限制回合数必须大于 0。
+    - id: kill_condition_requires_enemy
+      message: 如果谜题要求击杀敌人，必须有敌人。
+    - id: protect_condition_requires_target
+      message: 如果谜题要求保护宠物，必须指定保护对象。
+  advisory:
+    - id: solvability_unknown
+      message: 是否无解需要接入战斗模拟器验证。
+    - id: too_easy_check
+      message: 检查是否普通攻击就能过，导致元素机制没有意义。
+    - id: multi_solution_check
+      message: 检查是否存在多解，必要时提示投稿者接受或收窄条件。
+    - id: solution_recommended
+      message: 没写标准答案时，建议至少写一句核心思路。
+
+ai_normalization:
+  input_modes:
+    - natural_language
+    - simple_form
+    - board_clicks
+  pipeline:
+    - step: extract_intent
+      output: 谜题类型、目标、回合限制、候选宠物、敌人描述。
+    - step: map_names_to_ids
+      output: 宠物 ID、敌人临时 ID、胜利条件模板 ID。
+    - step: infer_missing_defaults
+      output: 默认难度、默认攻击力、默认 Boss 名、默认说明。
+    - step: ask_only_blocking_questions
+      output: 只追问无法安全推断的字段。
+    - step: build_standard_puzzle
+      output: 结构化 puzzle JSON。
+    - step: run_validation
+      output: AI 检查报告。
+    - step: render_exports
+      output: 小红书可读版、程序 JSON、检查报告。
+  blocking_question_policy:
+    ask_when:
+      - 缺少胜利条件
+      - 击杀目标不明确且有多个敌人
+      - 棋盘位置描述无法落到 1..8 坐标
+      - 可用宠物名无法匹配宠物库
+      - 保护目标或禁入区域缺失
+    do_not_ask_when:
+      - 谜题名缺失，可自动生成
+      - 难度缺失，可默认普通
+      - 敌人攻击力缺失，可默认 0
+      - 标准答案缺失，可标记可选
+
+export_targets:
+  readable_post:
+    name: 小红书可读版
+    format: markdown_text
+  game_json:
+    name: 程序可读 JSON
+    format: json
+  ai_check_report:
+    name: AI 检查报告
+    format: markdown_text
+
+example_puzzle:
+  puzzleId: puzzle_fire_001
+  name: 十层火线
+  difficulty: normal
+  type: fire_burst
+  boardSize:
+    - 8
+    - 8
+  turnLimit: 1
+  availablePets:
+    - pal_001
+    - pal_002
+    - pal_003
+    - pal_004
+    - pal_005
+  maxDeployPets: 4
+  enemies:
+    - id: enemy_boss_001
+      name: 铁壳考官
+      hp: 90
+      atk: 0
+      position:
+        row: 5
+        col: 6
+      isBoss: true
+  winCondition:
+    type: kill_target
+    targetId: enemy_boss_001
+    withinTurns: 1
+  solutionOptional: true

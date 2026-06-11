@@ -1,0 +1,44 @@
+﻿区域,字段ID,玩家看到的字段,数据类型,必填,默认值,选项/来源,校验规则,导出JSON路径,UI控件,备注
+谜题基础信息,name,谜题名称,string,yes,,玩家输入或 AI 生成,1-24 字，不能为空,$.name,文本输入,缺失时 AI 可按类型生成，如十层火线
+谜题基础信息,difficulty,难度,enum,yes,normal,easy/normal/hard/brain,必须为枚举值,$.difficulty,分段控件,显示为简单/普通/困难/烧脑
+谜题基础信息,type,谜题类型,enum,yes,custom,fire_burst/water_catalyst/wind_shift/rescue/endgame/custom,必须为枚举值,$.type,下拉选择,用于生成 puzzleId 前缀和默认检查项
+谜题基础信息,turnLimit,限制回合数,integer,yes,1,1/2/3/custom,必须大于 0,$.turnLimit,步进器,自定义时仍保存整数
+谜题基础信息,description,简短说明,string,no,,玩家输入或 AI 摘要,不超过 120 字,$.description,短文本域,用于投稿版规则说明
+谜题基础信息,puzzleId,谜题 ID,string,auto,puzzle_<type>_<serial>,系统生成,唯一,$.puzzleId,只读文本,玩家不需要编辑
+可用宠物选择区,availablePets,可用宠物,array<pet_id>,yes,,existing_pet_pool,至少 1 只，名称必须能映射宠物库 ID,$.availablePets,搜索+复选列表,玩家看中文名，导出保存 ID
+可用宠物选择区,maxDeployPets,最多上阵宠物数,integer,yes,4,1-4,"1 <= maxDeployPets <= min(4, 可用宠物数)",$.maxDeployPets,步进器,默认按本游戏最多 4 只
+可用宠物选择区,petDisplayNames,宠物显示名,array<string>,auto,,宠物库,必须与 availablePets 一一对应,$.meta.petDisplayNames,只读标签,仅用于投稿文本
+8x8 棋盘摆放区,boardSize,棋盘尺寸,"tuple<int,int>",auto,"[8,8]",固定,必须为 8x8,$.boardSize,只读,本期固定 8x8
+8x8 棋盘摆放区,placement.row,行,integer,conditional,,1-8,必须在 1..8,$.placements[].row,棋盘点击,坐标从玩家视角第 1 行开始
+8x8 棋盘摆放区,placement.col,列,integer,conditional,,1-8,必须在 1..8,$.placements[].col,棋盘点击,坐标从玩家视角第 1 列开始
+8x8 棋盘摆放区,placement.kind,格子内容,enum,conditional,empty,ally_pet/enemy/boss/fire_element/water_element/wind_element/fire_trap/empty,必须为枚举值,$.placements[].kind,放置调色板,空格不一定导出
+8x8 棋盘摆放区,placement.refId,引用对象,string,conditional,,宠物库/敌人列表/临时对象,单位类格子必须能引用对象,$.placements[].refId,对象选择器,元素格和陷阱可为空
+8x8 棋盘摆放区,placement.displayName,格子显示名,string,no,,玩家输入或对象名,建议不超过 8 字,$.placements[].displayName,格子标签,用于棋盘预览
+8x8 棋盘摆放区,placement.hp,生命值,integer,conditional,,玩家输入,Boss/敌人必须 > 0,$.placements[].hp,数字输入,宠物生命可从库读取
+8x8 棋盘摆放区,placement.atk,攻击力,integer,no,0,玩家输入或默认,必须 >= 0,$.placements[].atk,数字输入,简单模式可隐藏
+8x8 棋盘摆放区,placement.elementStacks,元素层数,object,no,{},fire/water/wind,层数必须 >= 0,$.placements[].elementStacks,小数字输入,高级题使用
+8x8 棋盘摆放区,occupiedCells,占用格,derived,auto,,placements,不能重复占用同一格,$.meta.occupiedCells,校验提示,静态校验生成
+敌人设置区,enemies[].id,敌人 ID,string,auto,enemy_<serial>,系统生成,唯一,$.enemies[].id,只读,玩家不编辑
+敌人设置区,enemies[].name,敌人名称,string,yes_if_enemy,铁壳考官,玩家输入或 AI 默认,不能为空,$.enemies[].name,文本输入,Boss 缺名时可默认
+敌人设置区,enemies[].hp,生命值,integer,yes_if_enemy,,玩家输入,必须 > 0,$.enemies[].hp,数字输入,Boss 必填
+敌人设置区,enemies[].atk,攻击力,integer,no,0,玩家输入,必须 >= 0,$.enemies[].atk,数字输入,简单模式隐藏
+敌人设置区,enemies[].position,位置,coordinate,yes_if_enemy,,棋盘点击或行列输入,行列必须在 1..8，且不与其他单位冲突,$.enemies[].position,棋盘定位,显示第 X 行第 Y 列
+敌人设置区,enemies[].isBoss,是否为 Boss,boolean,no,false,开关,至少一个 Boss 当胜利条件需要 Boss,$.enemies[].isBoss,开关,kill_boss 模板需要目标 Boss
+胜利条件设置区,winCondition.templateId,胜利条件模板,enum,yes,,win_condition_templates,必须选择一个模板,$.winCondition.templateId,模板选择,玩家不直接写规则表达式
+胜利条件设置区,winCondition.type,胜利条件类型,enum,auto,,模板映射,必须可由模板映射,$.winCondition.type,只读,导出给程序
+胜利条件设置区,winCondition.targetId,目标对象,string,conditional,,敌人/宠物/区域,击杀/保护/指定宠物类模板必须填写,$.winCondition.targetId,目标选择器,显示中文名，导出 ID
+胜利条件设置区,winCondition.withinTurns,要求回合,integer,conditional,turnLimit,1..turnLimit,必须 > 0 且 <= turnLimit,$.winCondition.withinTurns,步进器,默认跟限制回合一致
+胜利条件设置区,winCondition.element,元素要求,enum,conditional,,fire/water/wind/chain,元素类模板必须填写或从模板默认,$.winCondition.element,元素选择,火爆发默认 fire
+胜利条件设置区,winCondition.areaCells,限制区域,array<coordinate>,conditional,,棋盘框选,禁入区域必须至少 1 格,$.winCondition.areaCells,棋盘框选,区域题使用
+胜利条件设置区,winCondition.note,补充说明,string,no,,玩家输入,不超过 160 字,$.winCondition.note,短文本域,不作为硬规则，先作为审核备注
+标准解法区,solution.isProvided,是否填写答案,boolean,auto,false,由 steps 是否为空推断,布尔值,$.solution.isProvided,开关/自动,允许不写答案
+标准解法区,solution.steps[].order,步骤序号,integer,conditional,,自动编号,必须从 1 递增,$.solution.steps[].order,步骤列表,玩家看到第 1 步、第 2 步
+标准解法区,solution.steps[].actor,行动者,string,conditional,,宠物库/我方摆放,填写步骤时建议有行动者,$.solution.steps[].actor,对象选择或自然语言,AI 可从自然语言抽取
+标准解法区,solution.steps[].action,行动描述,string,conditional,,玩家输入,不为空,$.solution.steps[].action,文本输入,先保存文本，不强制结构化
+标准解法区,solution.resultSummary,结果说明,string,no,,玩家输入或 AI 摘要,建议不超过 240 字,$.solution.resultSummary,文本域,用于审核和隐藏答案
+导出区,readablePost,小红书可读版,markdown_text,auto,,模板渲染,必须包含名称/难度/类型/限制/宠物/目标,$.exports.readablePost,复制按钮,面向玩家投稿
+导出区,gameJson,程序可读 JSON,json,auto,,schema 渲染,必须通过 JSON parse 和硬校验,$.exports.gameJson,代码块+复制按钮,后续 adapter 接入游戏
+导出区,aiCheckReport,AI 检查报告,markdown_text,auto,,校验器生成,必须包含通过/需要验证/建议,$.exports.aiCheckReport,检查面板,面向审核和玩家自查
+AI 整理,rawIntentText,随手写的谜题,string,no,,玩家自然语言,空值允许，表单仍可提交,$.draft.rawIntentText,长文本输入,AI 整理入口
+AI 整理,normalizationStatus,AI 整理状态,enum,auto,draft,draft/needs_question/ready/blocked,必须为枚举值,$.meta.normalizationStatus,状态标签,只问阻塞问题
+AI 整理,blockingQuestions,需要追问的问题,array<string>,auto,[],AI 生成,最多 3 个,$.meta.blockingQuestions,提示列表,坐标/目标/宠物名不明才问

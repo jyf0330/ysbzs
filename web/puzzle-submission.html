@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>元素背包史 · 谜题投稿器</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="puzzle-submission.css" />
+</head>
+<body>
+  <div class="submission-shell">
+    <header class="submission-topbar">
+      <div>
+        <p class="eyebrow">元素背包史 / 谜题投稿</p>
+        <h1>玩家谜题投稿器</h1>
+      </div>
+      <nav class="topbar-actions" aria-label="页面导航">
+        <a href="./index.html">返回战斗界面</a>
+        <a href="./external-data/puzzle-submission-tool/puzzle_submission_tool_design.md">查看规格</a>
+      </nav>
+    </header>
+
+    <main class="submission-layout">
+      <aside class="editor-panel left-editor" aria-label="谜题表单">
+        <section class="editor-section">
+          <div class="section-head">
+            <h2>基础信息</h2>
+            <span id="draft-status">草稿</span>
+          </div>
+          <label>
+            谜题名称
+            <input id="puzzle-name" type="text" value="十层火线" maxlength="24" />
+          </label>
+          <div class="field-grid">
+            <label>
+              难度
+              <select id="difficulty">
+                <option value="easy">简单</option>
+                <option value="normal" selected>普通</option>
+                <option value="hard">困难</option>
+                <option value="brain">烧脑</option>
+              </select>
+            </label>
+            <label>
+              类型
+              <select id="puzzle-type">
+                <option value="fire_burst" selected>火爆发</option>
+                <option value="water_catalyst">水催化</option>
+                <option value="wind_shift">风位移</option>
+                <option value="rescue">救援</option>
+                <option value="endgame">残局</option>
+                <option value="custom">自定义</option>
+              </select>
+            </label>
+            <label>
+              限制回合
+              <input id="turn-limit" type="number" min="1" max="9" value="1" />
+            </label>
+            <label>
+              最多上阵
+              <input id="max-deploy" type="number" min="1" max="4" value="4" />
+            </label>
+          </div>
+          <label>
+            简短说明
+            <textarea id="description" rows="3">选择 4 只宠物，刚好击杀 90 血 Boss。</textarea>
+          </label>
+        </section>
+
+        <section class="editor-section">
+          <div class="section-head">
+            <h2>可用宠物</h2>
+            <span id="pet-count-label">0 只</span>
+          </div>
+          <div id="pet-list" class="pet-list" aria-label="可用宠物列表"></div>
+        </section>
+
+        <section class="editor-section">
+          <div class="section-head">
+            <h2>随手写</h2>
+            <button id="normalize-btn" type="button">整理</button>
+          </div>
+          <textarea id="raw-intent" rows="7">我想做一个 1 回合火爆发题。Boss 90 血，在第5行第6列。可用宠物是棉悠悠、捣蛋猫、皮皮鸡、翠叶鼠、火绒狐。最多选 4 只。目标是 1 回合打死 Boss。</textarea>
+          <p id="normalization-note" class="inline-note">只在目标、坐标或宠物名无法确认时追问。</p>
+        </section>
+      </aside>
+
+      <section class="board-editor" aria-label="棋盘编辑器">
+        <div class="board-editor-head">
+          <div>
+            <h2>8×8 棋盘</h2>
+            <p id="selected-cell-label">点击格子摆放内容。</p>
+          </div>
+          <div class="mode-palette" aria-label="摆放类型">
+            <button type="button" class="mode-btn active" data-kind="ally_pet">我方</button>
+            <button type="button" class="mode-btn" data-kind="boss">Boss</button>
+            <button type="button" class="mode-btn" data-kind="enemy">敌人</button>
+            <button type="button" class="mode-btn fire" data-kind="fire_element">火</button>
+            <button type="button" class="mode-btn water" data-kind="water_element">水</button>
+            <button type="button" class="mode-btn wind" data-kind="wind_element">风</button>
+            <button type="button" class="mode-btn trap" data-kind="fire_trap">陷阱</button>
+            <button type="button" class="mode-btn" data-kind="empty">清空</button>
+          </div>
+        </div>
+
+        <div class="board-workspace">
+          <div class="board-frame">
+            <div class="axis-corner"></div>
+            <div id="axis-cols" class="axis-cols"></div>
+            <div id="axis-rows" class="axis-rows"></div>
+            <div id="puzzle-board" class="puzzle-board" aria-label="8×8 谜题棋盘"></div>
+          </div>
+
+          <aside class="cell-inspector" aria-label="格子设置">
+            <h3>格子内容</h3>
+            <label>
+              名称
+              <input id="placement-name" type="text" value="棉悠悠" />
+            </label>
+            <div class="field-grid">
+              <label>
+                生命
+                <input id="placement-hp" type="number" min="0" value="90" />
+              </label>
+              <label>
+                攻击
+                <input id="placement-atk" type="number" min="0" value="0" />
+              </label>
+              <label>
+                火层
+                <input id="stack-fire" type="number" min="0" value="0" />
+              </label>
+              <label>
+                水层
+                <input id="stack-water" type="number" min="0" value="0" />
+              </label>
+            </div>
+            <button id="apply-cell-btn" type="button">放到选中格</button>
+            <button id="clear-cell-btn" type="button">清空选中格</button>
+          </aside>
+        </div>
+      </section>
+
+      <aside class="editor-panel right-editor" aria-label="条件和导出">
+        <section class="editor-section">
+          <div class="section-head">
+            <h2>敌人</h2>
+            <button id="add-boss-btn" type="button">添加 Boss</button>
+          </div>
+          <div id="enemy-list" class="enemy-list"></div>
+        </section>
+
+        <section class="editor-section">
+          <div class="section-head">
+            <h2>胜利条件</h2>
+            <span id="condition-status">待检查</span>
+          </div>
+          <label>
+            模板
+            <select id="win-template">
+              <option value="kill_boss_within_turns" selected>1 回合内击杀 Boss</option>
+              <option value="kill_all_within_turns">指定回合内全灭敌人</option>
+              <option value="protect_pet">保护指定宠物不死亡</option>
+              <option value="require_pet">必须使用指定宠物通关</option>
+              <option value="block_enemy_area">不能让敌人进入指定区域</option>
+              <option value="fire_burst_kill">用火元素引爆击杀敌人</option>
+              <option value="water_fire_chain_kill">用水火连锁击杀敌人</option>
+              <option value="wind_shift_kill">用风移动元素后击杀敌人</option>
+            </select>
+          </label>
+          <label>
+            补充说明
+            <textarea id="win-note" rows="3">1 回合内击杀铁壳考官。</textarea>
+          </label>
+        </section>
+
+        <section class="editor-section">
+          <div class="section-head">
+            <h2>标准解法</h2>
+            <span>可选</span>
+          </div>
+          <textarea id="solution-text" rows="6">第1步：棉悠悠移动到第5行第4列，向右攻击。
+第2步：翠叶鼠移动到第5行第3列，攻击 Boss。
+第3步：火绒狐攻击 Boss。
+结果：叠火后引爆，总计 90 点伤害，击杀。</textarea>
+        </section>
+
+        <section class="export-section">
+          <div class="export-tabs" role="tablist">
+            <button class="export-tab active" type="button" data-export="post">投稿版</button>
+            <button class="export-tab" type="button" data-export="json">JSON</button>
+            <button class="export-tab" type="button" data-export="report">检查</button>
+          </div>
+          <pre id="export-output" class="export-output"></pre>
+          <button id="copy-export-btn" type="button">复制当前导出</button>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script type="module" src="js/puzzle-submission.js"></script>
+</body>
+</html>

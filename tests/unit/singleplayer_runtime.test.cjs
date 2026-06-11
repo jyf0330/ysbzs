@@ -1,0 +1,48 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(__dirname, '..', '..');
+const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+
+test('RT01 browser entry talks to a runtime client instead of hard-coded fetch calls', () => {
+  const main = read('web/js/main.js');
+  assert.match(main, /from ['"]\.\/runtime-client\.js['"]/);
+  assert.match(main, /createGameRuntime\(/);
+  assert.match(main, /runtime\.view\(/);
+  assert.match(main, /runtime\.report\(/);
+  assert.match(main, /runtime\.action\(/);
+  assert.match(main, /runtime\.save\(/);
+  assert.match(main, /runtime\.load\(/);
+  assert.doesNotMatch(main, /async function api\([\s\S]*?fetch\(/);
+});
+
+test('RT02 runtime client exposes http and local-first modes behind one method set', () => {
+  const runtime = read('web/js/runtime-client.js');
+  for (const name of [
+    'createGameRuntime',
+    'createHttpRuntime',
+    'createLocalRuntime',
+    'resolveRuntimeMode',
+    'resolveApiBase'
+  ]) {
+    assert.match(runtime, new RegExp(`export function ${name}`), `${name} should be exported`);
+  }
+  for (const method of ['view', 'report', 'action', 'save', 'load', 'request']) {
+    assert.match(runtime, new RegExp(`${method}\\s*\\(`), `${method} runtime method should exist`);
+  }
+  assert.match(runtime, /runtime=local/);
+  assert.match(runtime, /__YSBZS_LOCAL_ENGINE__/);
+  assert.match(runtime, /\/ysbzs-api/);
+});
+
+test('RT03 UI connected check verifies runtime abstraction without allowing core imports', () => {
+  const check = read('tools/check_ui_connected.cjs');
+  assert.match(check, /runtime-client\.js/);
+  assert.match(check, /createGameRuntime/);
+  assert.match(check, /runtime\.action/);
+  assert.match(check, /runtime\.view/);
+  assert.match(check, /runtime\.save/);
+  assert.match(check, /runtime\.load/);
+});

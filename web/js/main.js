@@ -3,6 +3,7 @@ import * as Dom from './dom.js';
 import { ui as sharedUi } from './state.js';
 import * as ApiModule from './api.js';
 import { createRenderCache } from './render-cache.js';
+import { createGameRuntime } from './runtime-client.js';
 
   'use strict';
 
@@ -37,9 +38,10 @@ import { createRenderCache } from './render-cache.js';
 	    draggedRosterId: null,
 	    manualAutoLock: false,
 	    hoveredCell: null
-	  };
+  };
   Object.assign(ui, sharedUi);
   const renderCache = createRenderCache();
+  const runtime = createGameRuntime({ playerId: () => ui.playerId });
 
   function esc(v) {
     return String(v ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
@@ -152,24 +154,16 @@ import { createRenderCache } from './render-cache.js';
   }
 
   async function api(path, body) {
-    const res = await fetch(path, {
-      method: body ? 'POST' : 'GET',
-      headers: body ? { 'content-type': 'application/json', 'x-player-id': ui.playerId } : { 'x-player-id': ui.playerId },
-      body: body ? JSON.stringify(body) : undefined,
-      cache: 'no-store'
-    });
-    const data = await res.json();
-    if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
-    return data;
+    return runtime.request(path, body);
   }
   async function loadView() {
-    const data = await api('/api/view');
+    const data = await runtime.view();
     ui.vm = data.viewModel;
     normalizeSelection();
     render();
   }
   async function report(mode = 'player') {
-    const data = await api(`/api/report?mode=${encodeURIComponent(mode)}`);
+    const data = await runtime.report(mode);
     return data.report || '';
   }
   function makeCommand(type, payload = {}) {
@@ -194,7 +188,7 @@ import { createRenderCache } from './render-cache.js';
     ui.busy = true;
     setBusy(true);
     try {
-      const data = await api('/api/action', makeCommand(type, payload));
+      const data = await runtime.action(makeCommand(type, payload));
       ui.vm = data.viewModel || ui.vm;
       if (type === 'START_BATTLE') ui.prepOpen = false;
       if (!options.suppressToast && data.events && data.events.length) toast(data.events[data.events.length - 1].text || data.events[data.events.length - 1].type);
@@ -216,7 +210,7 @@ import { createRenderCache } from './render-cache.js';
   }
   async function saveGame() {
     try {
-      const data = await api('/api/save');
+      const data = await runtime.save();
       localStorage.setItem('ysbzs.save.slot1', JSON.stringify(data.save));
       toast(`已保存：v${data.save?.state?.stateVersion ?? ui.vm?.stateVersion ?? 0}`);
       return data.save;
@@ -226,7 +220,7 @@ import { createRenderCache } from './render-cache.js';
     try {
       const raw = localStorage.getItem('ysbzs.save.slot1');
       if (!raw) { toast('没有找到本地存档。', true); return null; }
-      const data = await api('/api/load', { save: JSON.parse(raw) });
+      const data = await runtime.load(JSON.parse(raw));
       ui.vm = data.viewModel || ui.vm;
       normalizeSelection();
       render();

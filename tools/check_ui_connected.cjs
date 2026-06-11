@@ -37,6 +37,8 @@ async function main() {
     const html = await fetch(`${base}/`).then(r => r.text());
     const mainScript = html.includes('src="js/main.js"') ? 'js/main.js' : 'ux-app.js';
     const js = await fetch(`${base}/${mainScript}`).then(r => r.text());
+    const runtimeJs = await fetch(`${base}/js/runtime-client.js`).then(r => r.text());
+    const browserJs = `${js}\n${runtimeJs}`;
     const css = await fetch(`${base}/ux-app.css`).then(r => r.text());
     assert(html.includes('棋盘战斗交互重构版'), 'new UI shell title missing');
     assert(html.includes(mainScript) && html.includes('ux-app.css'), 'new UI assets not referenced');
@@ -46,8 +48,10 @@ async function main() {
     assert(!html.includes('id="slot-action-panel"') && !html.includes('slot-action-zone'), 'right-side permanent slot action panel must be removed');
     assert(!html.includes('id="cell-popup"') && !html.includes('id="tooltip"'), 'hover detail surfaces must be removed');
     assert(!html.includes('original-ui-compat-adapter.js') && !html.includes("loadScript('game.js')") && !html.includes('ui.js'), 'old UI bootstrap must be removed');
-    assert(js.includes('/api/action') && js.includes('/api/view') && js.includes('/api/report'), 'new UI must use public API endpoints');
-    assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(js), 'web UI must not import core or adapter directly');
+    assert(js.includes('runtime-client.js') && runtimeJs.includes('createGameRuntime'), 'new UI must route through runtime-client.js');
+    assert(browserJs.includes('/api/action') && browserJs.includes('/api/view') && browserJs.includes('/api/report'), 'new UI must use public API endpoints');
+    assert(browserJs.includes('runtime.action') && browserJs.includes('runtime.view') && browserJs.includes('runtime.save') && browserJs.includes('runtime.load'), 'new UI must use runtime action/view/save/load methods');
+    assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(browserJs), 'web UI must not import core or adapter directly');
     assert(css.includes('.board-grid') && css.includes('.hero-card') && css.includes('.action-block'), 'new CSS must define rebuilt shell components');
     assert(js.includes('unit-token-name') && js.includes('unit-token-hp') && js.includes('boardUnitShortName'), 'board unit token must use short label plus hp bar/minor hp');
     assert(!js.includes('boardUnitVitals(unit)'), 'board unit token must not render full board-cell hp/atk stats');

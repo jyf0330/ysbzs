@@ -54,6 +54,8 @@
 .cell.selected-unit{box-shadow:0 0 0 3px #d8b85d,inset 0 0 0 2px rgba(255,255,255,.9),0 0 18px rgba(66,108,136,.48)}
 .cell.current-preview-unit{box-shadow:0 0 0 3px #2f86d8,inset 0 0 0 2px rgba(255,255,255,.92),0 0 18px rgba(47,134,216,.42)}
 .cell.move-target:after{background:rgba(47,134,216,.20);border:1px solid rgba(47,134,216,.62)}
+.cell.move-risk:after{background:rgba(47,134,216,.18);border-color:rgba(202,65,38,.82)}
+.cell.move-risk-lethal:after{background:rgba(202,65,38,.20);border-color:#a84f3e}
 .cell.hover-move-target:before{content:"";position:absolute;inset:3px;z-index:5;border:2px dashed rgba(47,134,216,.9);border-radius:5px;pointer-events:none}
 .cell.preview-current:after{background:rgba(223,76,43,.13);border:2px dashed rgba(202,65,38,.92)}
 .cell.preview-past:after{background:rgba(194,98,45,.10);border:1px dashed rgba(194,98,45,.72)}
@@ -67,6 +69,7 @@
 .unit-token-name{display:block;width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#20384a;font-size:9px;font-weight:900}
 .unit-token.enemy .unit-token-name,.unit-token.boss .unit-token-name{color:#682b22}
 .unit-token-vitals{display:block;width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:3px;padding:2px 1px;background:rgba(63,46,34,.82);color:#fff8df;font-size:8px;font-weight:900;letter-spacing:0}
+.risk-num{position:absolute;left:2px;bottom:2px;z-index:8;font-size:10px;font-weight:900;line-height:1;padding:3px 4px;border-radius:3px;background:#f7d1c5;color:#8b3329;border:1px solid rgba(168,79,62,.42);box-shadow:0 1px 3px rgba(75,47,29,.22);pointer-events:none}
 .preview-arrow{position:absolute;left:50%;top:1px;z-index:7;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;width:18px;height:16px;border-radius:999px;background:rgba(47,33,24,.88);color:#fff8df;font-size:12px;font-weight:900;pointer-events:none}
 .preview-arrow.past{background:rgba(124,89,53,.72);opacity:.72}
 .preview-num{right:auto;left:50%;bottom:1px;transform:translateX(-50%);max-width:45px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:4px;background:#ffefbe;color:#743f13}

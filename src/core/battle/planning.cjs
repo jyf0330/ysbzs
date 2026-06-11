@@ -14,7 +14,7 @@
  * @returns {Record<string, Function>}
  */
 function createPlanningModule(deps) {
-  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells } = deps;
+  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells, syncBoardUnits } = deps;
 /**
  * @param {BattleState} state
  * @param {BattleUnit} actor
@@ -350,7 +350,74 @@ function buildThreatGrid(state) {
   return grid;
 }
 
-  return { targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid };
+function buildMoveRiskGrid(state, unitId) {
+  const unit = getUnit(state, unitId) || living(state, 'hero')[0];
+  if (!unit || unit.side !== 'hero' || unit.alive === false || Number(unit.hp || 0) <= 0) return [];
+  const start = normalizePosition(unit.position || { r: 0, c: 0 });
+  const moveRange = effectiveMoveRange(state, unit);
+  const targets = allStandCells(state, unit)
+    .filter(pos => {
+      const d = dist(start, pos);
+      return d > 0 && d <= moveRange;
+    })
+    .sort((a, b) => a.r - b.r || a.c - b.c);
+  const out = [];
+  for (const target of targets) {
+    const sandbox = clone(state);
+    const sandboxUnit = getUnit(sandbox, unit.id);
+    if (!sandboxUnit) continue;
+    sandboxUnit.position = { r: target.r, c: target.c };
+    if (syncBoardUnits) syncBoardUnits(sandbox);
+    let shield = Math.max(0, Number(sandboxUnit.shield || 0));
+    let hp = Math.max(0, Number(sandboxUnit.hp || 0));
+    let damage = 0;
+    let shieldDamage = 0;
+    let hpDamage = 0;
+    const threats = [];
+    for (const enemy of living(sandbox, 'enemy')) {
+      const intent = computeMonsterIntent(sandbox, enemy);
+      if (!intent || !intent.willAttack || intent.targetId !== sandboxUnit.id) continue;
+      const raw = Math.max(0, Number(enemy.atk || 0) - Number(sandboxUnit.def || 0));
+      const absorbed = Math.min(shield, raw);
+      const dealtToHp = Math.min(hp, Math.max(0, raw - absorbed));
+      shield -= absorbed;
+      hp -= dealtToHp;
+      damage += raw;
+      shieldDamage += absorbed;
+      hpDamage += dealtToHp;
+      threats.push({
+        enemyId: enemy.id,
+        enemyName: enemy.displayName || enemy.name,
+        damage: raw,
+        shieldDamage: absorbed,
+        hpDamage: dealtToHp,
+        attackDirection: intent.attackDirection,
+        attackCells: clone(intent.attackCells || []),
+        path: clone(intent.path || [])
+      });
+    }
+    if (!threats.length) continue;
+    out.push({
+      r: target.r,
+      c: target.c,
+      unitId: unit.id,
+      unitName: unit.displayName || unit.name,
+      damage,
+      shieldDamage,
+      hpDamage,
+      shieldFrom: Math.max(0, Number(unit.shield || 0)),
+      shieldTo: shield,
+      hpFrom: Math.max(0, Number(unit.hp || 0)),
+      hpTo: hp,
+      lethal: hp <= 0,
+      enemyIds: threats.map(t => t.enemyId),
+      threats
+    });
+  }
+  return out;
+}
+
+  return { targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildMoveRiskGrid };
 }
 
 module.exports = { createPlanningModule };

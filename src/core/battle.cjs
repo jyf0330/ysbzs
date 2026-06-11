@@ -13,7 +13,7 @@ const { createResolutionModule } = require('./battle/resolution.cjs');
 
 let boardUnitAt, canStandAt, allStandCells, moveHero, moveUnitGeneral;
 let slotsForUnit, parseSlotIndex, targetCellsForSlot, targetsAtCells, unitsAtCells, setActionDirection, useActionSlot;
-let targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid;
+let targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildMoveRiskGrid;
 let buildPreviewGrid, clearPreviewAndThreat, syncDerivedBoard, getCellDetail;
 let applyElement, applyElementToCell, triggerTerrainOnEnter, damageUnit, settleElements;
 
@@ -420,7 +420,7 @@ function runBattle(state) {
   startBattle: (...args) => startBattle(...args)
 }));
 
-({ targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid } = createPlanningModule({
+({ targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildMoveRiskGrid } = createPlanningModule({
   ELEMENTS,
   makeEmptyElements,
   clone,
@@ -446,7 +446,8 @@ function runBattle(state) {
   allStandCells: (...args) => allStandCells(...args),
   slotsForUnit: (...args) => slotsForUnit(...args),
   targetCellsForSlot: (...args) => targetCellsForSlot(...args),
-  targetsAtCells: (...args) => targetsAtCells(...args)
+  targetsAtCells: (...args) => targetsAtCells(...args),
+  syncBoardUnits
 }));
 
 ({ buildPreviewGrid, clearPreviewAndThreat, syncDerivedBoard, getCellDetail } = createPreviewModule({
@@ -469,4 +470,4 @@ function runBattle(state) {
   buildThreatGrid: (...args) => buildThreatGrid(...args)
 }));
 
-module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, runMonsterTurn, runBattle, damageUnit, settleElements, startBattle, startNextRound, endPlayerTurn, moveHero, moveUnitGeneral, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, getCellDetail, syncDerivedBoard, slotsForUnit, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, factionRules, effectiveMoveRange, boardMaxDistance };
+module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, runMonsterTurn, runBattle, damageUnit, settleElements, startBattle, startNextRound, endPlayerTurn, moveHero, moveUnitGeneral, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, buildMoveRiskGrid, getCellDetail, syncDerivedBoard, slotsForUnit, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, factionRules, effectiveMoveRange, boardMaxDistance };

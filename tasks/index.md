@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-11_move-target-risk-preview.md`
 - `tasks/done/2026-06-11_preview-damage-sandbox.md`
 - `tasks/done/2026-06-11_puzzle_submission_page.md`
 - `tasks/done/2026-06-11_puzzle_submission_tool_spec.md`

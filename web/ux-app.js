@@ -286,6 +286,7 @@
       board: vm.board,
       previewGrid: vm.previewGrid,
       threatGrid: vm.threatGrid,
+      moveRiskGrid: vm.moveRiskGrid,
 	      selectedCell: ui.selectedCell || vm.selected?.cell,
 	      hoveredCell: ui.hoveredCell,
 	      selectedUnitId: ui.selectedUnitId,
@@ -460,11 +461,13 @@
 	    const threatKeys = new Set((ui.vm.threatGrid || []).map(x => `${x.r},${x.c}`));
 	    const previewMap = new Map((ui.vm.previewGrid || []).map(x => [`${x.r},${x.c}`, x]));
 	    const threatMap = new Map((ui.vm.threatGrid || []).map(x => [`${x.r},${x.c}`, x]));
+    const riskMap = new Map((ui.vm.moveRiskGrid || ui.vm.board?.moveRiskGrid || []).map(x => [`${x.r},${x.c}`, x]));
 	    const actorPreviewMap = new Map();
 	    for (const p of ui.vm.previewGrid || []) if (!actorPreviewMap.has(p.actorId)) actorPreviewMap.set(p.actorId, p);
 
 	    $('board').innerHTML = board.cells.map(cell => {
 	      const key = `${cell.r},${cell.c}`;
+      const moveRisk = cell.moveRisk || riskMap.get(key) || null;
 	      const unit = unitById(cell.unitId);
 	      const previews = Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : []);
 	      const currentPreviews = previews.filter(p => p.isActiveActor);
@@ -475,6 +478,8 @@
 	      if (selected && selected.r === cell.r && selected.c === cell.c) classes.push('selected');
 	      if (ui.hoveredCell && ui.hoveredCell.r === cell.r && ui.hoveredCell.c === cell.c && moveTargets.has(key)) classes.push('hover-move-target');
 	      if (moveTargets.has(key)) classes.push('move-target');
+      if (moveTargets.has(key) && moveRisk?.damage > 0) classes.push('move-risk');
+      if (moveTargets.has(key) && moveRisk?.lethal) classes.push('move-risk-lethal');
 	      if (previewKeys.has(key)) classes.push('preview-hit');
 	      if (hasCurrentPreview) classes.push('preview-current');
 	      if (previews.length && !hasCurrentPreview) classes.push('preview-past');
@@ -493,6 +498,7 @@
 	        ${arrow ? `<span class="preview-arrow ${arrow.isActiveActor ? 'active' : 'past'}">${esc(DIR[arrow.direction] || arrow.direction || '→')}</span>` : ''}
 	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
 	        ${previews.length ? previewBadge(previews) : ''}
+        ${moveTargets.has(key) && moveRisk?.damage > 0 ? `<span class="risk-num">受${esc(moveRisk.damage)}</span>` : ''}
 	        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
 	      </button>`;
 	    }).join('');

@@ -260,3 +260,43 @@ test('UI17 棋盘预览伤害按元素成型结算而不是本次层数', () => 
   assert.equal(hit.predictedShieldTo, 0);
   assert.equal(hit.predictedHpTo, target.hp - 4);
 });
+
+test('UI18 可落点风险预览按每个落点模拟敌方伤害', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'move_target_risk_preview' });
+  battle.startBattle(state);
+  const hero = state.units.find(u => u.side === 'hero' && u.alive);
+  const enemy = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(hero && enemy, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== enemy.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  hero.position = { r: 5, c: 1 };
+  hero.moveRange = 4;
+  hero.ap = 4;
+  hero.def = 0;
+  hero.shield = 2;
+  hero.hp = 30;
+  enemy.position = { r: 5, c: 4 };
+  enemy.ap = 0;
+  enemy.atk = 7;
+  enemy.shape = Object.assign({}, enemy.shape, { hitCells: 1, slotCount: 1, slotElements: [enemy.element || '火'], baseLayers: 1 });
+  state.actionDirs[`${enemy.id}:slot0`] = 'left';
+  syncBoardUnits(state);
+
+  const riskGrid = battle.buildMoveRiskGrid(state, hero.id);
+  const risky = riskGrid.find(x => x.r === 5 && x.c === 3);
+  assert.ok(risky, 'R5C3 应该被敌人从右向左命中');
+  assert.equal(risky.damage, 7);
+  assert.equal(risky.shieldDamage, 2);
+  assert.equal(risky.hpDamage, 5);
+  assert.deepEqual(risky.enemyIds, [enemy.id]);
+
+  const adapter = createYSBZSUIAdapter({ gold: 8, battleId: 'move_target_risk_vm' });
+  adapter.startBattle();
+  const vm = adapter.getViewModel();
+  assert.ok(Array.isArray(vm.moveRiskGrid), 'ViewModel 需要暴露 moveRiskGrid');
+  assert.ok(vm.board.cells.every(cell => Object.prototype.hasOwnProperty.call(cell, 'moveRisk')), '棋盘格需要携带 moveRisk 字段');
+});

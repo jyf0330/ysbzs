@@ -239,6 +239,8 @@ function makeBoardVM(state, selected = {}) {
 	    cell: aimingCell
 	  });
   const threatGrid = battle.buildThreatGrid(state);
+  const riskUnitId = selected.unitId || state.teamPlacementPreview?.activeUnitId || state.units.find(u => u.side === 'hero' && u.alive !== false && u.hp > 0)?.id || null;
+  const moveRiskGrid = riskUnitId ? battle.buildMoveRiskGrid(state, riskUnitId) : [];
 	  const previewMap = new Map(previewGrid.map(x => [`${x.r},${x.c}`, x]));
 	  const previewGroups = new Map();
 	  for (const p of previewGrid) {
@@ -247,6 +249,7 @@ function makeBoardVM(state, selected = {}) {
 	    previewGroups.get(key).push(p);
 	  }
 	  const threatMap = new Map(threatGrid.map(x => [`${x.r},${x.c}`, x]));
+  const moveRiskMap = new Map(moveRiskGrid.map(x => [`${x.r},${x.c}`, x]));
 	  return {
     rows: state.board.rows,
     cols: state.board.cols,
@@ -261,10 +264,12 @@ function makeBoardVM(state, selected = {}) {
       elements: boardElementsForVM(state, cell),
 	      preview: clone(previewMap.get(`${cell.r},${cell.c}`) || null),
 	      previews: clone(previewGroups.get(`${cell.r},${cell.c}`) || []),
-	      threat: clone(threatMap.get(`${cell.r},${cell.c}`) || null)
+	      threat: clone(threatMap.get(`${cell.r},${cell.c}`) || null),
+      moveRisk: clone(moveRiskMap.get(`${cell.r},${cell.c}`) || null)
 	    })),
     previewGrid,
-    threatGrid
+    threatGrid,
+    moveRiskGrid
 	  };
 	}
 function teamPlacementPreviewVM(state, previewGrid = []) {
@@ -440,7 +445,8 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     },
     monsterIntents: state.units.filter(u => u.side === 'enemy' && u.alive).map(u => battle.computeMonsterIntent(state, u)).filter(Boolean),
 	    previewGrid: board.previewGrid,
-    threatGrid: battle.buildThreatGrid(state),
+    threatGrid: board.threatGrid,
+    moveRiskGrid: board.moveRiskGrid,
     events: recentEvents(state),
     logs: logGroups(state),
     battleTrace: canonicalEventLog(state).map(e => ({ ...clone(e), step: e.step, type: e.type, text: e.text || e.type, round: e.round, phase: e.phase })),

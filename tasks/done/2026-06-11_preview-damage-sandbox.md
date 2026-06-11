@@ -5,7 +5,7 @@
 - task_id: `2026-06-11_preview-damage-sandbox`
 - 类型: Bugfix / 棋盘预览伤害
 - 目标: 修复棋盘预览把 `slot.layers` 当预计伤害的问题，让预览伤害至少按真实元素叠层、3层成型、Σ(1..N)、护盾/HP 前后值计算，并保留整队累计预览。
-- 状态: doing
+- 状态: done
 
 ## related_files
 
@@ -46,4 +46,5 @@
 ## commit_plan
 
 - message: `fix(core): align preview damage with element settlement`
-- status: ready
+- status: committed
+- commit_id: `6560542`

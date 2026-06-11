@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-11_workflow-consult-skill-routing.md`
 - `tasks/done/2026-06-10_team-placement-preview.md`
 - `tasks/done/2026-06-10_ui-hide-unit-native-title.md`
 - `tasks/done/2026-06-10_ui-hide-all-toasts.md`

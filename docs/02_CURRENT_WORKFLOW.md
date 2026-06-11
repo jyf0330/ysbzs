@@ -156,6 +156,7 @@ Always trigger matching skills when available:
 | Bug, anomaly, failed test, failed acceptance | `systematic-debugging`, `test-driven-development`, `verification-before-completion` |
 | Existing plan, task card, executable GDD | `executing-plans`, `subagent-driven-development`, `verification-before-completion` |
 | Unclear goal, exploration, standalone `diff` | `brainstorming`, `writing-plans`, `ywh-game` |
+| Consultation, architecture evaluation, engine/tool choice, “要不要做 / 值不值得做” | `ywh-game` + 1 个最相关领域 skill；先不要默认加载实现/验收 skill |
 | Numbers, rules, levels, systems | `brainstorming`, `writing-plans`, `balance-check`, `ywh-game` |
 | Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
 | UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
@@ -163,6 +164,21 @@ Always trigger matching skills when available:
 | Docs, CHANGELOG, workflow rules that require edits | `task-occupancy`, `ywh-game`, `verification-before-completion` |
 | `git-c`, finish, pre-commit check | `task-occupancy`, `verification-before-completion`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
+
+### Skill Load Discipline
+
+Do not load every matched skill at once by default.
+
+- `required now`: 当前阶段立刻决定方法或边界的 skill，先读这些。
+- `supporting`: 只有当主 skill 明显不够时再补读。
+- `deferred`: 只有任务进入实现、浏览器取证、测试修复或完成宣称阶段才加载。
+
+默认规则：
+
+- 咨询 / 评估 / 选型 / “是否值得做” → 先加载 `required now`，通常是 `ywh-game` + 1 个最相关领域 skill。
+- 不改文件、不开浏览器、不宣称完成时，不要默认加载 `playwright`、`game-playtest`、`verification-before-completion`、`test-driven-development`。
+- 一旦任务从咨询态切到实现态、验收态或完成态，再补齐对应 skill。
+- 若多个领域 skill 都可能适用，先选最窄的一组；需要时再增量追加。
 
 ### Skill Invocation Requirement
 
@@ -211,6 +227,10 @@ If a matching skill is unavailable, write `UNAVAILABLE`.
 Do not pretend the skill was used.
 Continue with this file's rules.
 Do not edit another tool's skill directory.
+
+Codex note:
+
+- Before writing `UNAVAILABLE` for a Superpowers skill, check both `~/.codex/skills/<skill-name>/SKILL.md` and `~/.codex/skills/superpowers/skills/<skill-name>/SKILL.md`.
 
 ## 任务系统入口
 

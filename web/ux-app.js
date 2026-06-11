@@ -457,25 +457,32 @@
 	    const selected = ui.selectedCell || ui.vm.selected?.cell;
 	    const selectedH = selectedHero();
 	    const moveTargets = legalMoveTargets(selectedH);
-	    const activePreviewUnitId = ui.vm.teamPlacementPreview?.activeUnitId || ui.vm.previewGrid?.[0]?.actorId || null;
-	    const previewKeys = new Set((ui.vm.previewGrid || []).map(x => `${x.r},${x.c}`));
 	    const threatKeys = new Set((ui.vm.threatGrid || []).map(x => `${x.r},${x.c}`));
-	    const previewMap = new Map((ui.vm.previewGrid || []).map(x => [`${x.r},${x.c}`, x]));
 	    const threatMap = new Map((ui.vm.threatGrid || []).map(x => [`${x.r},${x.c}`, x]));
     const riskMap = new Map((ui.vm.moveRiskGrid || ui.vm.board?.moveRiskGrid || []).map(x => [`${x.r},${x.c}`, x]));
     const hoveredKey = ui.hoveredCell ? `${ui.hoveredCell.r},${ui.hoveredCell.c}` : null;
     const hoverRisk = hoveredKey ? riskMap.get(hoveredKey) : null;
+    const previewSource = hoverRisk && Array.isArray(hoverRisk.previewGrid) ? hoverRisk.previewGrid : (ui.vm.previewGrid || []);
     const useHoverTeamRisk = !!(hoverRisk && Array.isArray(hoverRisk.teamRiskGrid));
     const teamRiskMap = new Map((useHoverTeamRisk ? hoverRisk.teamRiskGrid : (ui.vm.teamRiskGrid || ui.vm.board?.teamRiskGrid || [])).map(x => [`${x.r},${x.c}`, x]));
+    const activePreviewUnitId = ui.vm.teamPlacementPreview?.activeUnitId || previewSource[0]?.actorId || null;
+    const previewKeys = new Set(previewSource.map(x => `${x.r},${x.c}`));
+    const previewMap = new Map(previewSource.map(x => [`${x.r},${x.c}`, x]));
+    const previewGroups = new Map();
+    for (const p of previewSource) {
+      const pkey = `${p.r},${p.c}`;
+      if (!previewGroups.has(pkey)) previewGroups.set(pkey, []);
+      previewGroups.get(pkey).push(p);
+    }
 	    const actorPreviewMap = new Map();
-	    for (const p of ui.vm.previewGrid || []) if (!actorPreviewMap.has(p.actorId)) actorPreviewMap.set(p.actorId, p);
+	    for (const p of previewSource) if (!actorPreviewMap.has(p.actorId)) actorPreviewMap.set(p.actorId, p);
 
 	    $('board').innerHTML = board.cells.map(cell => {
 	      const key = `${cell.r},${cell.c}`;
       const moveRisk = cell.moveRisk || riskMap.get(key) || null;
       const teamRisk = (useHoverTeamRisk ? teamRiskMap.get(key) : (cell.teamRisk || teamRiskMap.get(key))) || null;
 	      const unit = unitById(cell.unitId);
-	      const previews = Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : []);
+	      const previews = previewGroups.get(key) || (!hoverRisk ? (Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : [])) : []);
 	      const currentPreviews = previews.filter(p => p.isActiveActor);
 	      const hasCurrentPreview = currentPreviews.length > 0;
 	      const hasEnemyHit = previews.some(p => p.hitEnemy);

@@ -14,7 +14,7 @@
  * @returns {Record<string, Function>}
  */
 function createPlanningModule(deps) {
-  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells, syncBoardUnits } = deps;
+  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells, syncBoardUnits, buildPreviewGrid } = deps;
 /**
  * @param {BattleState} state
  * @param {BattleUnit} actor
@@ -421,7 +421,11 @@ function buildMoveRiskGrid(state, unitId) {
     const sandboxUnit = getUnit(sandbox, unit.id);
     if (!sandboxUnit) continue;
     sandboxUnit.position = { r: target.r, c: target.c };
+    sandbox.teamPlacementPreview = sandbox.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
+    sandbox.teamPlacementPreview.activeUnitId = unit.id;
+    sandbox.teamPlacementPreview.movedUnitIds = teamUnitIds.slice();
     if (syncBoardUnits) syncBoardUnits(sandbox);
+    const previewGrid = buildPreviewGrid ? buildPreviewGrid(sandbox, { unitId: unit.id }) : [];
     const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
     const currentRisk = teamRiskGrid.find(risk => risk.unitId === unit.id) || null;
     out.push({
@@ -439,6 +443,7 @@ function buildMoveRiskGrid(state, unitId) {
       lethal: currentRisk?.lethal || false,
       enemyIds: currentRisk?.enemyIds || [],
       threats: currentRisk?.threats || [],
+      previewGrid,
       teamRiskGrid
     });
   }

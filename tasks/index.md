@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-11_sandbox-team-placement-preview.md`
 - `tasks/done/2026-06-11_team-risk-preview-recompute.md`
 - `tasks/done/2026-06-11_move-target-risk-preview.md`
 - `tasks/done/2026-06-11_preview-damage-sandbox.md`

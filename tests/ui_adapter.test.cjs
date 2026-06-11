@@ -348,3 +348,40 @@ test('UI19 累计风险会随后续宠物站位变化重算已移动宠物', () 
   assert.ok(candidate, '候选落点需要携带整队风险预览');
   assert.ok(Array.isArray(candidate.teamRiskGrid));
 });
+
+test('UI20 候选落点沙盒同时重算我方打敌方预览', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'sandbox_team_placement_preview' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero' && u.alive);
+  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(actor && target, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== target.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  actor.position = { r: 5, c: 1 };
+  actor.moveRange = 4;
+  actor.shape = Object.assign({}, actor.shape, { baseLayers: 1, hitCells: 1, slotCount: 1, slotElements: ['火'] });
+  target.position = { r: 5, c: 4 };
+  target.shield = 0;
+  target.def = 0;
+  state.actionDirs[`${actor.id}:slot0`] = 'right';
+  syncBoardUnits(state);
+  const targetCell = getCell(state, target.position.r, target.position.c);
+  targetCell.elements.火 = 2;
+  targetCell.elementCamps.火 = 'player';
+
+  const actual = battle.buildPreviewGrid(state, { unitId: actor.id, slotId: 0 });
+  assert.ok(!actual.some(p => p.targetId === target.id), '真实站位当前不应命中敌人');
+
+  const candidates = battle.buildMoveRiskGrid(state, actor.id);
+  const candidate = candidates.find(x => x.r === 5 && x.c === 3);
+  assert.ok(candidate, 'R5C3 应是合法候选落点');
+  assert.ok(Array.isArray(candidate.previewGrid), '候选落点需要携带沙盒 previewGrid');
+  const hit = candidate.previewGrid.find(p => p.targetId === target.id);
+  assert.ok(hit, '候选落点沙盒应命中敌人');
+  assert.equal(hit.predictedDamage, 6);
+  assert.equal(hit.direction, 'right');
+});

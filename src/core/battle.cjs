@@ -462,6 +462,7 @@ function runBattle(state) {
   makeEmptyElements,
   ensureElements,
   ensureTerrain,
+  fireDamage,
   parseSlotIndex: (...args) => parseSlotIndex(...args),
   slotsForUnit: (...args) => slotsForUnit(...args),
   targetCellsForSlot: (...args) => targetCellsForSlot(...args),

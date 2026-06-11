@@ -2,7 +2,7 @@
 
 /**
  * @typedef {{r:number,c:number}} Position
- * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, name?:string, displayName?:string, position?:Position}} BattleUnit
+ * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, shield?:number, def?:number, name?:string, displayName?:string, position?:Position}} BattleUnit
  * @typedef {{selected?:Record<string, any>, teamPlacementPreview?:{activeUnitId?:string|null,movedUnitIds?:string[]}, units?:BattleUnit[], leaders?:{enemy?:BattleUnit}, board?:{cells:Array<Record<string, any>>}}} BattleState
  */
 
@@ -13,7 +13,7 @@
  * @returns {{buildPreviewGrid:(state:BattleState,opts?:{unitId?:string,slotId?:any,cell?:Position})=>Array<Record<string, any>>,clearPreviewAndThreat:(state:BattleState)=>void,syncDerivedBoard:(state:BattleState)=>any,getCellDetail:(state:BattleState,r:number,c:number)=>Record<string, any>|null}}
  */
 function createPreviewModule(deps) {
-  const { clone, getUnit, living, getCell, ensureBoard, syncBoardUnits, unitCamp, ensureElements, ensureTerrain, parseSlotIndex, slotsForUnit, targetCellsForSlot, buildThreatGrid } = deps;
+  const { clone, getUnit, living, getCell, ensureBoard, syncBoardUnits, unitCamp, ensureElements, ensureTerrain, fireDamage, parseSlotIndex, slotsForUnit, targetCellsForSlot, buildThreatGrid } = deps;
 
 	function ensureTeamPlacementPreview(state) {
 	  state.teamPlacementPreview = state.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
@@ -53,6 +53,53 @@ function createPreviewModule(deps) {
 	  return out;
 	}
 
+	function cloneProjectedUnit(unit) {
+	  if (!unit) return null;
+	  return {
+	    hp: Math.max(0, Number(unit.hp || 0)),
+	    shield: Math.max(0, Number(unit.shield || 0)),
+	    def: Math.max(0, Number(unit.def || 0)),
+	    alive: unit.alive !== false && Number(unit.hp || 0) > 0
+	  };
+	}
+
+	function estimateDamageToProjectedUnit(unit, projectedUnits, rawDamage) {
+	  if (!unit || rawDamage <= 0) return null;
+	  const current = projectedUnits.get(unit.id) || cloneProjectedUnit(unit);
+	  if (!current || !current.alive) return null;
+	  const hpFrom = current.hp;
+	  const shieldFrom = current.shield;
+	  const rawAfterDef = Math.max(0, Number(rawDamage || 0) - current.def);
+	  const shieldDamage = Math.min(shieldFrom, rawAfterDef);
+	  const hpDamage = Math.max(0, rawAfterDef - shieldDamage);
+	  current.shield = Math.max(0, shieldFrom - shieldDamage);
+	  current.hp = Math.max(0, hpFrom - hpDamage);
+	  current.alive = current.hp > 0;
+	  projectedUnits.set(unit.id, current);
+	  return {
+	    raw: Number(rawDamage || 0),
+	    final: shieldDamage + hpDamage,
+	    shieldDamage,
+	    hpDamage,
+	    shieldFrom,
+	    shieldTo: current.shield,
+	    hpFrom,
+	    hpTo: current.hp,
+	    killed: hpFrom > 0 && current.hp <= 0
+	  };
+	}
+
+	function settlementPreviewForCell(afterElements, element) {
+	  const layers = Math.max(0, Number(afterElements?.[element] || 0));
+	  if (layers < 3) return null;
+	  return {
+	    element,
+	    layers,
+	    rawDamage: fireDamage ? fireDamage(layers) : (layers * (layers + 1)) / 2,
+	    formula: 'sum_1_to_n'
+	  };
+	}
+
 	function previewActors(state, opts = {}) {
 	  const heroes = living(state, 'hero');
 	  if (!heroes.length) return { actors: [], activeUnitId: null, movedUnitIds: [] };
@@ -86,6 +133,7 @@ function createPreviewModule(deps) {
 	function buildPreviewGrid(state, opts = {}) {
 	  const { actors, activeUnitId, movedUnitIds } = previewActors(state, opts);
 	  const projectedElements = new Map();
+	  const projectedUnits = new Map();
 	  const out = [];
 	  actors.forEach((actor, order) => {
 	    const isActiveActor = actor.id === activeUnitId;
@@ -98,14 +146,18 @@ function createPreviewModule(deps) {
 	      const key = `${p.r},${p.c}`;
 	      const beforeElements = projectedElements.get(key) || Object.assign({}, cell?.elements || {});
 	      const afterElements = addLayers(beforeElements, slot.element, slot.layers);
-	      projectedElements.set(key, afterElements);
 	      const targetCamp = target ? unitCamp(target) : null;
 	      const actorCamp = unitCamp(actor);
 	      const hitsEnemy = !!target && targetCamp !== actorCamp;
 	      const friendlyFire = !!target && targetCamp === actorCamp && target.id !== actor.id;
 	      const sameElementBefore = Number(beforeElements[slot.element] || 0);
 	      const linkElements = Object.entries(beforeElements).filter(([el, n]) => el !== slot.element && Number(n) > 0).map(([el]) => el);
-	      const triggersElementLink = sameElementBefore > 0 || linkElements.length > 0 || Number(afterElements[slot.element] || 0) >= 3;
+	      const settlement = target ? settlementPreviewForCell(afterElements, slot.element) : null;
+	      const damage = settlement && (hitsEnemy || friendlyFire) ? estimateDamageToProjectedUnit(target, projectedUnits, settlement.rawDamage) : null;
+	      const projectedAfterSettlement = Object.assign({}, afterElements);
+	      if (settlement && (hitsEnemy || friendlyFire)) projectedAfterSettlement[settlement.element] = 0;
+	      projectedElements.set(key, projectedAfterSettlement);
+	      const triggersElementLink = sameElementBefore > 0 || linkElements.length > 0 || !!settlement;
 	      out.push({
 	        r: p.r,
 	        c: p.c,
@@ -123,13 +175,23 @@ function createPreviewModule(deps) {
 	        element: slot.element,
 	        layers: slot.layers,
 	        generatedElements: { [slot.element]: slot.layers },
-	        projectedElements: afterElements,
+	        projectedElements: projectedAfterSettlement,
+	        projectedElementsBeforeSettle: afterElements,
 	        targetId: target?.id || null,
 	        targetName: target ? (target.displayName || target.name) : null,
 	        hitEnemy: hitsEnemy,
 	        hitAlly: friendlyFire,
 	        friendlyFire,
-	        predictedDamage: hitsEnemy ? slot.layers : 0,
+	        predictedDamage: damage ? damage.final : 0,
+	        predictedRawDamage: damage ? damage.raw : 0,
+	        predictedHpDamage: damage ? damage.hpDamage : 0,
+	        predictedShieldDamage: damage ? damage.shieldDamage : 0,
+	        predictedHpFrom: damage ? damage.hpFrom : null,
+	        predictedHpTo: damage ? damage.hpTo : null,
+	        predictedShieldFrom: damage ? damage.shieldFrom : null,
+	        predictedShieldTo: damage ? damage.shieldTo : null,
+	        predictedKill: !!damage?.killed,
+	        settlement,
 	        triggersElementLink,
 	        elementLinks: linkElements,
 	        text: `${actor.name}${slot.label}${slot.element}${slot.layers}层 ${slot.direction} → R${p.r}C${p.c}${target ? ` ${target.displayName || target.name}` : ''}`

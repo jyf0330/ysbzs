@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createYSBZSUIAdapter, PUBLIC_COMMANDS } = require('../src/uiAdapter.cjs');
+const battle = require('../src/core/battle.cjs');
+const { createGameState, getCell, syncBoardUnits } = require('../src/core/state.cjs');
 
 function hasEvent(result, type) { return result.events.some(e => e.type === type); }
 function firstLegalMoveCell(vm, hero) {
@@ -9,6 +11,19 @@ function firstLegalMoveCell(vm, hero) {
     if (cell.unitId) return false;
     const d = Math.abs(cell.r - hero.position.r) + Math.abs(cell.c - hero.position.c);
     return d > 0 && d <= range;
+  });
+}
+function adjacentStandForTarget(state, target) {
+  const candidates = [
+    { pos: { r: target.position.r, c: target.position.c - 1 }, dir: 'right' },
+    { pos: { r: target.position.r, c: target.position.c + 1 }, dir: 'left' },
+    { pos: { r: target.position.r - 1, c: target.position.c }, dir: 'down' },
+    { pos: { r: target.position.r + 1, c: target.position.c }, dir: 'up' }
+  ];
+  return candidates.find(x => {
+    if (x.pos.r < 0 || x.pos.c < 0 || x.pos.r >= state.board.rows || x.pos.c >= state.board.cols) return false;
+    const cell = getCell(state, x.pos.r, x.pos.c);
+    return cell && !cell.unitId;
   });
 }
 
@@ -210,4 +225,38 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
   assert.ok(vm2.previewGrid.some(x => x.actorId === second.id && x.isActiveActor === false));
   assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === second.id)));
   assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === first.id)));
+});
+
+test('UI17 棋盘预览伤害按元素成型结算而不是本次层数', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'preview_damage_sandbox' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero');
+  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(actor && target, '需要我方和敌方单位');
+  const stand = adjacentStandForTarget(state, target);
+  assert.ok(stand, '需要敌人旁边有可站位');
+
+  actor.position = stand.pos;
+  actor.element = '火';
+  actor.shape = Object.assign({}, actor.shape, { baseLayers: 1, hitCells: 1, slotCount: 1, slotElements: ['火'] });
+  target.shield = 2;
+  target.def = 0;
+  state.actionDirs[`${actor.id}:slot0`] = stand.dir;
+  syncBoardUnits(state);
+  const targetCell = getCell(state, target.position.r, target.position.c);
+  targetCell.elements.火 = 2;
+  targetCell.elementCamps.火 = 'player';
+
+  const previews = battle.buildPreviewGrid(state, { unitId: actor.id, slotId: 0 });
+  const hit = previews.find(p => p.targetId === target.id);
+  assert.ok(hit, '预览需要命中目标');
+  assert.equal(hit.projectedElementsBeforeSettle.火, 3);
+  assert.equal(hit.projectedElements.火, 0);
+  assert.equal(hit.settlement.layers, 3);
+  assert.equal(hit.predictedDamage, 6, '火2+本次火1达到3层时，应预估Σ(1..3)=6点伤害');
+  assert.equal(hit.predictedShieldDamage, 2);
+  assert.equal(hit.predictedHpDamage, 4);
+  assert.equal(hit.predictedShieldFrom, 2);
+  assert.equal(hit.predictedShieldTo, 0);
+  assert.equal(hit.predictedHpTo, target.hp - 4);
 });

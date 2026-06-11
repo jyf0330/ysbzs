@@ -1,0 +1,338 @@
+tool:
+  id: puzzle_map_editor_like_mota
+  name: mota式玩家谜题地图投稿编辑器
+  version: 0.1.0
+  status: design_spec
+  intent: 复刻mota-js地图编辑器的三栏工作流、素材板、画笔、拖刷、撤销和导出体验，用于8x8宠物战斗谜题投稿。
+  copyright_boundary:
+    copy_behavior: true
+    copy_layout_pattern: true
+    copy_source_code: false
+    copy_assets: false
+    note: 只照搬编辑器交互模型，不引用mota-js源码、素材图集或文字资源作为正式交付。
+
+editor:
+  viewport:
+    mode: fullscreen_workbench
+    desktop_layout:
+      columns:
+        - id: data_panel
+          width: 32%
+          role: 实时数据、矩阵、JSON、错误
+        - id: canvas_board
+          width: 36%
+          role: 8x8主棋盘画布
+        - id: palette_panel
+          width: 32%
+          role: 素材板、画笔、属性检查器
+    mobile_layout:
+      mode: staged_tabs
+      tabs:
+        - 棋盘
+        - 素材
+        - 规则
+        - 导出
+  board:
+    rows: 8
+    cols: 8
+    coordinate_base: 1
+    renderer: canvas_2d
+    cell_size:
+      desktop: 72
+      min: 44
+      max: 96
+    layers:
+      - id: ground
+        purpose: 元素格、陷阱、禁区底色
+      - id: units
+        purpose: 我方宠物、敌人、Boss
+      - id: badges
+        purpose: HP、攻击、元素层角标
+      - id: selection
+        purpose: 选中格、拖刷路径、校验错误框
+    coordinate_labels:
+      rows: 第{n}行
+      cols: 第{n}列
+
+palette:
+  current_brush:
+    fields:
+      - brush_id
+      - kind
+      - ref_id
+      - display_name
+      - default_hp
+      - default_atk
+      - element_stacks
+      - brush_code
+  groups:
+    - id: ally_pet
+      label: 我方
+      source: existing_pet_pool
+      placement_rule: one_unit_per_cell
+      drag_paint_default: false
+      default_items:
+        - ref_id: pal_001
+          display_name: 棉悠悠
+          brush_code: A001
+        - ref_id: pal_002
+          display_name: 捣蛋猫
+          brush_code: A002
+        - ref_id: pal_003
+          display_name: 皮皮鸡
+          brush_code: A003
+        - ref_id: pal_004
+          display_name: 翠叶鼠
+          brush_code: A004
+        - ref_id: pal_005
+          display_name: 火绒狐
+          brush_code: A005
+    - id: enemy
+      label: 敌人
+      source: enemy_presets
+      placement_rule: one_unit_per_cell
+      drag_paint_default: shift_only
+      default_items:
+        - ref_id: enemy_guard_001
+          display_name: 训练怪
+          default_hp: 20
+          default_atk: 2
+          brush_code: E001
+        - ref_id: enemy_flame_001
+          display_name: 火线考官
+          default_hp: 35
+          default_atk: 3
+          brush_code: E002
+        - ref_id: enemy_wall_001
+          display_name: 护盾怪
+          default_hp: 25
+          default_atk: 2
+          brush_code: E003
+    - id: boss
+      label: Boss
+      source: boss_presets
+      placement_rule: one_unit_per_cell
+      drag_paint_default: false
+      default_items:
+        - ref_id: enemy_boss_001
+          display_name: 铁壳考官
+          default_hp: 90
+          default_atk: 0
+          brush_code: B001
+    - id: element
+      label: 元素
+      placement_rule: ground_or_effect_layer
+      drag_paint_default: true
+      default_items:
+        - ref_id: fire_element
+          display_name: 火元素
+          element_stacks:
+            fire: 1
+          brush_code: F001
+        - ref_id: water_element
+          display_name: 水元素
+          element_stacks:
+            water: 1
+          brush_code: W001
+        - ref_id: wind_element
+          display_name: 风元素
+          element_stacks:
+            wind: 1
+          brush_code: N001
+    - id: trap
+      label: 陷阱
+      placement_rule: ground_or_effect_layer
+      drag_paint_default: true
+      default_items:
+        - ref_id: fire_trap
+          display_name: 火陷阱
+          brush_code: T001
+    - id: eraser
+      label: 清除
+      placement_rule: clear_cell
+      drag_paint_default: true
+      default_items:
+        - ref_id: empty
+          display_name: 清除块
+          brush_code: 0
+
+interaction:
+  pointer:
+    click:
+      behavior: 对选中格应用当前画笔
+    drag:
+      behavior: 连续刷格
+      enabled_for:
+        - element
+        - trap
+        - eraser
+      shift_enabled_for:
+        - enemy
+    hover:
+      behavior: 显示坐标和将要放置的预览
+  keyboard:
+    shortcuts:
+      undo: Ctrl+Z
+      redo: Ctrl+Y
+      eraser: E
+      brush_focus: B
+      validate: Space
+    input_focus_rule: 输入框聚焦时不拦截文字输入。
+  history:
+    max_steps: 50
+    operation_granularity: one_drag_path_is_one_step
+    stored_data:
+      - before_cells
+      - after_cells
+      - affected_coordinates
+      - brush_snapshot
+
+data_model:
+  board_cell:
+    row:
+      type: integer
+      min: 1
+      max: 8
+    col:
+      type: integer
+      min: 1
+      max: 8
+    brush_code:
+      type: string
+      default: "0"
+    ground:
+      type: object
+      nullable: true
+    unit:
+      type: object
+      nullable: true
+    badges:
+      type: object
+      nullable: true
+  placement:
+    fields:
+      kind: ally_pet | enemy | boss
+      ref_id: string
+      display_name: string
+      hp: integer
+      atk: integer
+      position:
+        row: integer
+        col: integer
+      element_stacks: object
+  puzzle:
+    fields:
+      puzzleId: string
+      name: string
+      difficulty: easy | normal | hard | brain
+      type: fire_burst | water_catalyst | wind_shift | rescue | endgame | custom
+      boardSize: [8, 8]
+      turnLimit: integer
+      availablePets: array
+      maxDeployPets: integer
+      boardCells: array
+      boardMatrix: array
+      placements: array
+      enemies: array
+      winCondition: object
+      solution: object
+      exports: object
+
+exports:
+  board_matrix:
+    label: 地图矩阵
+    format: array_8x8
+    empty_value: "0"
+    purpose: 像mota地图数组一样给编辑器、审核和差异查看使用。
+  readable_post:
+    label: 投稿版
+    format: markdown_text
+    includes:
+      - 谜题名
+      - 难度
+      - 类型
+      - 限制回合
+      - 可用宠物
+      - 棋盘描述
+      - 胜利条件
+      - 提问
+  game_json:
+    label: 程序JSON
+    format: json
+    purpose: 后续导入游戏或交给模拟器验证。
+  ai_check_report:
+    label: AI检查
+    format: markdown_text
+    includes:
+      - 硬校验
+      - 高级风险
+      - 投稿建议
+
+validation:
+  hard_rules:
+    - id: board_size_fixed
+      message: 棋盘必须是8x8。
+    - id: coordinate_in_range
+      message: 不能把内容放到棋盘外。
+    - id: one_unit_per_cell
+      message: 同一格不能放两个单位。
+    - id: boss_hp_required
+      message: Boss必须有生命值。
+    - id: win_condition_required
+      message: 胜利条件必须存在。
+    - id: available_pets_required
+      message: 可用宠物不能为空。
+    - id: turn_limit_positive
+      message: 限制回合数必须大于0。
+    - id: kill_requires_enemy
+      message: 击杀类谜题必须有敌人或Boss。
+    - id: protect_requires_target
+      message: 保护类谜题必须指定保护对象。
+  warnings:
+    - id: no_solution
+      message: 可以不写标准答案，但建议至少写核心思路。
+    - id: normal_attack_may_solve
+      message: 可能普通攻击即可通关，元素机制存在感不足。
+    - id: multiple_solutions_possible
+      message: 可能存在多解，需要后续行动搜索验证。
+
+implementation_plan:
+  phases:
+    - id: p0_canvas_editor
+      goal: 把当前DOM棋盘升级为canvas地图编辑器体验。
+      deliverables:
+        - 三栏全屏布局
+        - 右侧素材板
+        - 当前画笔
+        - 点击放置
+        - 拖刷元素/陷阱/清除
+        - boardMatrix导出
+    - id: p1_editor_power_tools
+      goal: 补齐专业编辑器基础能力。
+      deliverables:
+        - 撤销重做
+        - 清空棋盘
+        - 导入JSON/矩阵
+        - 错误定位
+        - 快捷键
+    - id: p2_ai_and_validation
+      goal: 把AI整理和高级校验接入地图编辑工作流。
+      deliverables:
+        - 自然语言转画布草稿
+        - 胜利条件模板联动
+        - 投稿文案生成
+        - 模拟器验证接口预留
+
+open_questions:
+  - id: asset_source
+    question: 正式素材先用文字/色块，还是接宠物头像和敌人头像？
+    default_decision: 先用文字图标和颜色，避免阻塞编辑器交互。
+  - id: unit_element_stack
+    question: 元素格能否和单位共存在同一格？
+    default_decision: 本期不共存；需要元素层数时写在单位badges里。
+  - id: matrix_stability
+    question: brush_code是否作为长期稳定导入ID？
+    default_decision: 暂时只作为编辑器矩阵码，真实导入以ref_id为准。
+  - id: exact_visual_copy
+    question: 是否要连旧式按钮、左侧数组样式、右侧素材图集密度也做成类似？
+    default_decision: 三栏和操作同款，视觉按元素背包史风格重画。

@@ -448,7 +448,8 @@ function runBattle(state) {
   targetCellsForSlot: (...args) => targetCellsForSlot(...args),
   targetsAtCells: (...args) => targetsAtCells(...args),
   syncBoardUnits,
-  buildPreviewGrid: (...args) => buildPreviewGrid(...args)
+  buildPreviewGrid: (...args) => buildPreviewGrid(...args),
+  useActionSlot: (...args) => useActionSlot(...args)
 }));
 
 ({ buildPreviewGrid, clearPreviewAndThreat, syncDerivedBoard, getCellDetail } = createPreviewModule({

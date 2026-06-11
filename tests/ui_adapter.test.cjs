@@ -385,3 +385,50 @@ test('UI20 候选落点沙盒同时重算我方打敌方预览', () => {
   assert.equal(hit.predictedDamage, 6);
   assert.equal(hit.direction, 'right');
 });
+
+test('UI21 候选落点返回真实行动后的沙盒棋盘与单位结果', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'full_board_sandbox_preview' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero' && u.alive);
+  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(actor && target, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== target.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  actor.position = { r: 5, c: 1 };
+  actor.moveRange = 4;
+  actor.shape = Object.assign({}, actor.shape, { baseLayers: 1, hitCells: 1, slotCount: 1, slotElements: ['火'] });
+  target.position = { r: 5, c: 4 };
+  target.hp = 20;
+  target.shield = 0;
+  target.def = 0;
+  state.actionDirs[`${actor.id}:slot0`] = 'right';
+  syncBoardUnits(state);
+  const targetCell = getCell(state, target.position.r, target.position.c);
+  targetCell.elements.火 = 3;
+  targetCell.elementCamps.火 = 'player';
+  const targetHpBefore = target.hp;
+
+  const candidates = battle.buildMoveRiskGrid(state, actor.id);
+  const candidate = candidates.find(x => x.r === 5 && x.c === 3);
+  assert.ok(candidate, 'R5C3 应是合法候选落点');
+  assert.equal(candidate.sandboxActionOk, true, '候选沙盒应真实执行第 1 行动槽');
+  assert.ok(Array.isArray(candidate.sandboxBoardCells), '候选落点需要携带沙盒后的棋盘格');
+  assert.ok(Array.isArray(candidate.sandboxUnits), '候选落点需要携带沙盒后的单位');
+  assert.ok(Array.isArray(candidate.sandboxEvents), '候选落点需要携带沙盒事件');
+  assert.ok(Array.isArray(candidate.cellDiffs), '候选落点需要携带棋盘差异');
+  assert.ok(Array.isArray(candidate.unitDiffs), '候选落点需要携带单位差异');
+
+  const sandboxTarget = candidate.sandboxUnits.find(u => u.id === target.id);
+  assert.ok(sandboxTarget, '沙盒单位结果需要包含目标敌人');
+  assert.ok(sandboxTarget.hp < targetHpBefore, '真实行动沙盒需要扣除敌方 HP');
+  const sandboxTargetCell = candidate.sandboxBoardCells.find(c => c.r === target.position.r && c.c === target.position.c);
+  assert.ok(sandboxTargetCell, '沙盒棋盘需要包含目标格');
+  assert.equal(sandboxTargetCell.elements.火, 0, '真实行动沙盒引爆后目标格火层应被清空');
+  assert.ok(candidate.unitDiffs.some(diff => diff.id === target.id && diff.after.hp < diff.before.hp), '单位 diff 需要记录目标 HP 变化');
+  assert.ok(candidate.cellDiffs.some(diff => diff.r === target.position.r && diff.c === target.position.c), '棋盘 diff 需要记录目标格变化');
+  assert.ok(candidate.sandboxEvents.some(evt => evt.type === 'FIRE_EXPLODE_AFTER_ATTACK'), '沙盒事件需要保留真实结算事件');
+});

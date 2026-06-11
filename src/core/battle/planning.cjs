@@ -14,7 +14,7 @@
  * @returns {Record<string, Function>}
  */
 function createPlanningModule(deps) {
-  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells, syncBoardUnits, buildPreviewGrid } = deps;
+  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells, syncBoardUnits, buildPreviewGrid, useActionSlot } = deps;
 /**
  * @param {BattleState} state
  * @param {BattleUnit} actor
@@ -402,6 +402,134 @@ function buildTeamRiskGrid(state, unitIds = null) {
     .sort((a, b) => a.r - b.r || a.c - b.c || String(a.unitId).localeCompare(String(b.unitId)));
 }
 
+function stableClone(value) {
+  return clone(value || {});
+}
+
+function snapshotSandboxUnit(unit) {
+  if (!unit) return null;
+  return {
+    id: unit.id,
+    petId: unit.petId || null,
+    side: unit.side || null,
+    camp: unit.camp || null,
+    type: unit.type || null,
+    name: unit.name || '',
+    displayName: unit.displayName || unit.name || '',
+    element: unit.element || null,
+    hp: Math.max(0, Number(unit.hp || 0)),
+    maxHp: Math.max(0, Number(unit.maxHp || unit.hp || 0)),
+    shield: Math.max(0, Number(unit.shield || 0)),
+    def: Math.max(0, Number(unit.def || 0)),
+    atk: Math.max(0, Number(unit.atk || 0)),
+    alive: unit.alive !== false && Number(unit.hp || 0) > 0,
+    position: unit.position ? normalizePosition(unit.position) : null,
+    actionSlotsUsed: stableClone(unit.actionSlotsUsed),
+    actionApSpent: Math.max(0, Number(unit.actionApSpent || 0)),
+    hasAttacked: !!unit.hasAttacked,
+    shape: stableClone(unit.shape),
+    elements: stableClone(unit.elements),
+    mechanicStatus: Array.isArray(unit.mechanicStatus) ? clone(unit.mechanicStatus) : []
+  };
+}
+
+function snapshotSandboxUnits(state) {
+  const units = [];
+  const seen = new Set();
+  const push = unit => {
+    const item = snapshotSandboxUnit(unit);
+    if (!item || seen.has(item.id)) return;
+    seen.add(item.id);
+    units.push(item);
+  };
+  for (const unit of state.units || []) push(unit);
+  push(state.leaders?.player);
+  push(state.leaders?.enemy);
+  return units;
+}
+
+function snapshotSandboxCell(cell) {
+  return {
+    r: Number(cell.r),
+    c: Number(cell.c),
+    key: cell.key || `${Number(cell.r)},${Number(cell.c)}`,
+    unitId: cell.unitId || null,
+    unitSide: cell.unitSide || null,
+    unitName: cell.unitName || null,
+    leaderId: cell.leaderId || null,
+    elements: stableClone(cell.elements),
+    elementCamps: stableClone(cell.elementCamps),
+    terrain: stableClone(cell.terrain),
+    preview: cell.preview ? clone(cell.preview) : null,
+    previews: Array.isArray(cell.previews) ? clone(cell.previews) : [],
+    threat: cell.threat ? clone(cell.threat) : null
+  };
+}
+
+function snapshotSandboxCells(state) {
+  return (state.board?.cells || []).map(snapshotSandboxCell);
+}
+
+function stableUnitSignature(unit) {
+  return JSON.stringify({
+    id: unit.id,
+    side: unit.side,
+    hp: unit.hp,
+    maxHp: unit.maxHp,
+    shield: unit.shield,
+    alive: unit.alive,
+    position: unit.position,
+    actionSlotsUsed: unit.actionSlotsUsed,
+    actionApSpent: unit.actionApSpent,
+    hasAttacked: unit.hasAttacked,
+    elements: unit.elements
+  });
+}
+
+function stableCellSignature(cell) {
+  return JSON.stringify({
+    r: cell.r,
+    c: cell.c,
+    unitId: cell.unitId,
+    unitSide: cell.unitSide,
+    unitName: cell.unitName,
+    leaderId: cell.leaderId,
+    elements: cell.elements,
+    elementCamps: cell.elementCamps,
+    terrain: cell.terrain
+  });
+}
+
+function buildUnitDiffs(beforeUnits, afterUnits) {
+  const beforeMap = new Map(beforeUnits.map(unit => [unit.id, unit]));
+  const afterMap = new Map(afterUnits.map(unit => [unit.id, unit]));
+  const ids = new Set([...beforeMap.keys(), ...afterMap.keys()]);
+  return [...ids].sort().map(id => {
+    const before = beforeMap.get(id) || null;
+    const after = afterMap.get(id) || null;
+    if (stableUnitSignature(before || {}) === stableUnitSignature(after || {})) return null;
+    return { id, before, after };
+  }).filter(Boolean);
+}
+
+function buildCellDiffs(beforeCells, afterCells) {
+  const keyFor = cell => cell.key || `${cell.r},${cell.c}`;
+  const beforeMap = new Map(beforeCells.map(cell => [keyFor(cell), cell]));
+  const afterMap = new Map(afterCells.map(cell => [keyFor(cell), cell]));
+  const keys = new Set([...beforeMap.keys(), ...afterMap.keys()]);
+  return [...keys].sort((a, b) => {
+    const [ar, ac] = a.split(',').map(Number);
+    const [br, bc] = b.split(',').map(Number);
+    return ar - br || ac - bc;
+  }).map(key => {
+    const before = beforeMap.get(key) || null;
+    const after = afterMap.get(key) || null;
+    if (stableCellSignature(before || {}) === stableCellSignature(after || {})) return null;
+    const source = after || before || {};
+    return { r: source.r, c: source.c, key, before, after };
+  }).filter(Boolean);
+}
+
 function buildMoveRiskGrid(state, unitId) {
   const unit = getUnit(state, unitId) || living(state, 'hero')[0];
   if (!unit || unit.side !== 'hero' || unit.alive === false || Number(unit.hp || 0) <= 0) return [];
@@ -425,6 +553,17 @@ function buildMoveRiskGrid(state, unitId) {
     sandbox.teamPlacementPreview.activeUnitId = unit.id;
     sandbox.teamPlacementPreview.movedUnitIds = teamUnitIds.slice();
     if (syncBoardUnits) syncBoardUnits(sandbox);
+    const beforeUnits = snapshotSandboxUnits(sandbox);
+    const beforeCells = snapshotSandboxCells(sandbox);
+    const eventStart = Array.isArray(sandbox.events) ? sandbox.events.length : 0;
+    const canSimulateAction = sandbox.phase === 'player_turn';
+    const sandboxActionOk = canSimulateAction && useActionSlot ? !!useActionSlot(sandbox, unit.id, 0, null, { ap: 1 }) : false;
+    if (syncBoardUnits) syncBoardUnits(sandbox);
+    const sandboxBoardCells = snapshotSandboxCells(sandbox);
+    const sandboxUnits = snapshotSandboxUnits(sandbox);
+    const sandboxEvents = Array.isArray(sandbox.events) ? clone(sandbox.events.slice(eventStart)) : [];
+    const cellDiffs = buildCellDiffs(beforeCells, sandboxBoardCells);
+    const unitDiffs = buildUnitDiffs(beforeUnits, sandboxUnits);
     const previewGrid = buildPreviewGrid ? buildPreviewGrid(sandbox, { unitId: unit.id }) : [];
     const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
     const currentRisk = teamRiskGrid.find(risk => risk.unitId === unit.id) || null;
@@ -444,7 +583,13 @@ function buildMoveRiskGrid(state, unitId) {
       enemyIds: currentRisk?.enemyIds || [],
       threats: currentRisk?.threats || [],
       previewGrid,
-      teamRiskGrid
+      teamRiskGrid,
+      sandboxActionOk,
+      sandboxBoardCells,
+      sandboxUnits,
+      sandboxEvents,
+      cellDiffs,
+      unitDiffs
     });
   }
   return out;

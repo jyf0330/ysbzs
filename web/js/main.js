@@ -454,7 +454,6 @@ import { createGameRuntime } from './runtime-client.js';
 	    const selected = ui.selectedCell || ui.vm.selected?.cell;
 	    const selectedH = selectedHero();
 	    const moveTargets = legalMoveTargets(selectedH);
-	    const threatKeys = new Set((ui.vm.threatGrid || []).map(x => `${x.r},${x.c}`));
 	    const threatMap = new Map((ui.vm.threatGrid || []).map(x => [`${x.r},${x.c}`, x]));
     const riskMap = new Map((ui.vm.moveRiskGrid || ui.vm.board?.moveRiskGrid || []).map(x => [`${x.r},${x.c}`, x]));
     const hoveredKey = ui.hoveredCell ? `${ui.hoveredCell.r},${ui.hoveredCell.c}` : null;
@@ -480,10 +479,10 @@ import { createGameRuntime } from './runtime-client.js';
 
 	    $('board').innerHTML = renderCells.map(cell => {
 	      const key = `${cell.r},${cell.c}`;
-      const moveRisk = cell.moveRisk || riskMap.get(key) || null;
       const teamRisk = (useHoverTeamRisk ? teamRiskMap.get(key) : (cell.teamRisk || teamRiskMap.get(key))) || null;
       const t = threatMap.get(key);
 	      const unit = unitForBoard(cell.unitId);
+      const hasIncomingHit = !!(unit && teamRisk?.damage > 0);
 	      const previews = previewGroups.get(key) || (!hoverRisk ? (Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : [])) : []);
 	      const currentPreviews = previews.filter(p => p.isActiveActor);
 	      const hasCurrentPreview = currentPreviews.length > 0;
@@ -493,16 +492,12 @@ import { createGameRuntime } from './runtime-client.js';
 	      if (selected && selected.r === cell.r && selected.c === cell.c) classes.push('selected');
 	      if (ui.hoveredCell && ui.hoveredCell.r === cell.r && ui.hoveredCell.c === cell.c && moveTargets.has(key)) classes.push('hover-move-target');
 	      if (moveTargets.has(key)) classes.push('move-target');
-      if (moveTargets.has(key) && moveRisk?.damage > 0) classes.push('move-risk');
-      if (moveTargets.has(key) && moveRisk?.lethal) classes.push('move-risk-lethal');
 	      if (previewKeys.has(key)) classes.push('preview-hit');
 	      if (hasCurrentPreview) classes.push('preview-current');
 	      if (previews.length && !hasCurrentPreview) classes.push('preview-past');
 	      if (hasEnemyHit) classes.push('enemy-hit');
-	      if (threatKeys.has(key)) classes.push('threat-hit');
-	      if (t?.type === 'move_path') classes.push('enemy-move-path');
 	      if (t?.finalMove) classes.push('enemy-final-cell');
-      if (unit && teamRisk?.damage > 0) classes.push('team-risk');
+      if (hasIncomingHit) classes.push('team-risk');
 	      if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
 	      if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
 	      if (unit && unit.id === ui.selectedUnitId) classes.push('selected-unit');
@@ -515,8 +510,7 @@ import { createGameRuntime } from './runtime-client.js';
 	        ${arrow ? `<span class="preview-arrow ${arrow.isActiveActor ? 'active' : 'past'}">${esc(DIR[arrow.direction] || arrow.direction || '→')}</span>` : ''}
 	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
 	        ${previews.length ? previewBadge(previews) : ''}
-        ${moveTargets.has(key) && moveRisk?.damage > 0 ? `<span class="risk-num">受${esc(moveRisk.damage)}</span>` : ''}
-        ${unit && teamRisk?.damage > 0 ? `<span class="team-risk-num">受${esc(teamRisk.damage)}${teamRisk.lethal ? ' KO' : ''}</span>` : ''}
+        ${hasIncomingHit ? `<span class="team-risk-num">受${esc(teamRisk.damage)}${teamRisk.lethal ? ' KO' : ''}</span>` : ''}
 	        ${t?.finalMove ? '<span class="enemy-final-num">终</span>' : ''}
 	      </button>`;
 	    }).join('');

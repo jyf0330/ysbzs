@@ -129,6 +129,10 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	    assert.match(js, /enemy-final-cell/, `${file} should mark enemy final move cells instead of damage-labeling empty cells`);
 	    assert.match(js, /enemy-final-num/, `${file} should render a compact final-position marker for enemy movement`);
 	    assert.doesNotMatch(js, /\$\{t \? `<span class="threat-num">危/, `${file} should not render threat damage numbers on every empty threat cell`);
+	    assert.doesNotMatch(js, /if \(threatKeys\.has\(key\)\) classes\.push\('threat-hit'\)/, `${file} should not draw enemy attack ranges on empty threat cells`);
+	    assert.doesNotMatch(js, /classes\.push\('move-risk'\)/, `${file} should not flag empty movement cells as incoming-damage cells`);
+	    assert.doesNotMatch(js, /classes\.push\('move-risk-lethal'\)/, `${file} should not flag empty movement cells as lethal incoming-damage cells`);
+	    assert.doesNotMatch(js, /class="risk-num">受/, `${file} should not render incoming damage numbers on empty movement cells`);
 	    assert.match(js, /KO/, `${file} should expose lethal incoming damage in visible copy`);
 	    assert.doesNotMatch(js, /friendly-warning|误伤/, `${file} should not render friendly-fire UI because current rules do not support it`);
 	    assert.doesNotMatch(js, /class="unit-token[^`]*\btitle="/, `${file} board unit token must not trigger native title hover text`);
@@ -142,6 +146,8 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	  assert.match(css, /\.unit-stat-atk/, 'board unit attack badge needs dedicated styling');
 	  assert.match(css, /\.cell\.enemy-final-cell/, 'enemy final move cells need dedicated visible styling');
 	  assert.match(css, /\.enemy-final-num/, 'enemy final move marker needs dedicated compact styling');
+	  assert.doesNotMatch(css, /\.cell\.move-risk/, 'empty movement cells should not use damage-risk styling');
+	  assert.doesNotMatch(css, /\.cell\.enemy-move-path:after/, 'enemy movement path should not draw every path cell when only the final cell is needed');
 	  assert.doesNotMatch(css, /friendly-warning/, 'friendly-fire warning styles should not remain');
 	});
 

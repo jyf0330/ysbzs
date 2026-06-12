@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-12_enemy-threat-preview-hit-only.md`
 - `tasks/done/2026-06-12_enemy-threat-preview-declutter.md`
 - `tasks/done/2026-06-12_enemy-pet-preview-still-wrong.md`
 - `tasks/done/2026-06-12_enemy-pet-visible-damage-preview.md`

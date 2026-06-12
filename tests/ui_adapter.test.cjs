@@ -28,7 +28,7 @@ function adjacentStandForTarget(state, target) {
 }
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
-  for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
 });
 
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
@@ -49,6 +49,20 @@ test('UI03 开始战斗只通过适配层命令，返回事件和 ViewModel', ()
   assert.equal(result.command, 'RUN_BATTLE');
   assert.ok(hasEvent(result, 'BATTLE_START'));
   assert.ok(result.viewModel.result);
+});
+
+test('UI03B 我方全部出击通过公开批量命令逐个走核心 USE_SLOT', () => {
+  const adapter = createYSBZSUIAdapter({ gold: 8 });
+  adapter.startBattle();
+  const result = adapter.runPlayerAllOut();
+  assert.equal(result.ok, true);
+  assert.equal(result.command, 'RUN_PLAYER_ALL_OUT');
+  assert.ok(result.result.count > 1);
+  assert.ok(result.events.filter(e => e.type === 'PLAYER_SELECT_SLOT').length > 1);
+  const leftovers = result.viewModel.heroes
+    .filter(h => h.alive !== false)
+    .filter(h => Number(h.availableAp ?? h.ap ?? 0) > 0 || (h.slots || []).some(s => !s.used && s.canUse !== false));
+  assert.deepEqual(leftovers, []);
 });
 
 test('UI04 奖励候选和选择奖励接入适配层', () => {

@@ -24,6 +24,7 @@ const PUBLIC_COMMANDS = Object.freeze([
   'MOVE_HERO',
   'USE_SLOT',
   'USE_ACTION_SLOT',
+  'RUN_PLAYER_ALL_OUT',
   'END_PLAYER_TURN',
   'RUN_MONSTER_TURN',
   'BUILD_PREVIEW',
@@ -67,6 +68,7 @@ const ACTION_ALIASES = Object.freeze({
   sellUnit: 'SELL_UNIT',
   toggleUnitActive: 'TOGGLE_UNIT_ACTIVE',
   useActionSlot: 'USE_ACTION_SLOT',
+  runPlayerAllOut: 'RUN_PLAYER_ALL_OUT',
   useSlot: 'USE_SLOT',
   selectUnit: 'SELECT_UNIT',
   selectHero: 'SELECT_HERO',
@@ -93,6 +95,16 @@ const MAX_ACTIVE_UNITS = 4;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function commandText(command) { return typeof command === 'string' ? command : command.type; }
+function nextAllOutSlot(vm, blocked = new Set()) {
+  for (const hero of vm?.heroes || []) {
+    for (let slotId = 0; slotId < (hero.slots || []).length; slotId++) {
+      const slot = hero.slots[slotId];
+      const key = `${hero.id}:${slotId}`;
+      if (!blocked.has(key) && !slot.used && slot.canUse !== false) return { hero, slotId, key };
+    }
+  }
+  return null;
+}
 function normalizeCommand(typeOrCommand, payload = {}) {
   if (typeof typeOrCommand === 'string') {
     const type = ACTION_ALIASES[typeOrCommand] || typeOrCommand;
@@ -657,6 +669,65 @@ function createYSBZSUIAdapter(options = {}) {
         };
       }
 
+      if (command.type === 'RUN_PLAYER_ALL_OUT') {
+        const rollbackSave = buildSaveDocument(state, { playerId: command.playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) });
+        try {
+          const beforeStep = state.nextStep;
+          const beforeHash = stateHash(state);
+          const blocked = new Set();
+          const attempts = [];
+          let count = 0;
+          let guard = 0;
+          while (state.phase === 'player_turn' && guard < 40) {
+            guard++;
+            const info = nextAllOutSlot(viewFor(command), blocked);
+            if (!info) break;
+            const requestedAp = Number(command.apBySlot?.[info.key] || 1);
+            const result = coreDispatch(state, {
+              type: 'USE_SLOT',
+              commandId: `${command.commandId || 'all_out'}_${String(guard).padStart(2, '0')}`,
+              playerId: command.playerId,
+              battleId: command.battleId,
+              unitId: info.hero.id,
+              slotId: info.slotId,
+              cell: null,
+              ap: Math.max(1, requestedAp)
+            });
+            attempts.push({ unitId: info.hero.id, unitName: info.hero.name, slotId: info.slotId, accepted: result !== false });
+            if (result === false) {
+              blocked.add(info.key);
+            } else {
+              count++;
+            }
+          }
+          const events = state.events.filter(e => e.step >= beforeStep);
+          annotateEvents(state, events, command);
+          const logEntry = commitAcceptedCommand(state, command, beforeHash, { count, attempts, guard }, events);
+          const mappedEvents = mapPublicEvents(events);
+          return {
+            ok: true,
+            accepted: true,
+            flowCommand: true,
+            command: commandText(command),
+            commandEnvelope: clone(command),
+            stateVersion: state.stateVersion,
+            stateHash: logEntry.afterHash,
+            result: { count, attempts, guard },
+            events: mappedEvents,
+            trace: { id: `${state.battleId}:${command.commandId}:all-out`, commandId: command.commandId, events: mappedEvents },
+            authoritativeState: createSnapshot(state, command.playerId, viewState),
+            viewModel: viewFor(command)
+          };
+        } catch (err) {
+          applySaveToState(state, ensureMultiplayerState(createGameState(options), options), rollbackSave);
+          restoreViewStates(viewStates, rollbackSave.viewStates || {});
+          const rejected = rejectedCommandResult(state, command, err);
+          rejected.rolledBack = true;
+          rejected.viewModel = viewFor(command);
+          return rejected;
+        }
+      }
+
       if (command.type === 'RUN_FULL_DAY') {
         const rollbackSave = buildSaveDocument(state, { playerId: command.playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) });
         try {
@@ -735,6 +806,7 @@ function createYSBZSUIAdapter(options = {}) {
     exportBattleTrace() { return this.run('EXPORT_BATTLE_TRACE'); },
     replayBattleTrace(events) { return this.run('REPLAY_BATTLE_TRACE', { events }); },
     runBattle() { return this.run('RUN_BATTLE'); },
+    runPlayerAllOut(apBySlot = {}) { return this.run('RUN_PLAYER_ALL_OUT', { apBySlot }); },
     rewardOptions(poolId = 'reward_pT1', count = 3) { return this.run('REWARD_OPTIONS', { poolId, count }); },
     pickReward(index = 0) { return this.run('PICK_REWARD', { index }); },
     enterShop(poolId = 'night_base', slots = 6) { return this.run('ENTER_SHOP', { poolId, slots }); },

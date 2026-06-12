@@ -38,3 +38,35 @@ test('UI03 render cache prevents unchanged sections from doing full DOM rebuild 
   assert.match(main, /renderCache\.shouldRender\('slots'/);
   assert.match(main, /renderStaticStatus\(vm\)/);
 });
+
+test('UI04 all-out flow rechecks the current ViewModel until no usable slots remain', () => {
+  const main = read('web/js/main.js');
+  assert.match(main, /function nextUsableSlotInfo\(/, 'all-out should use a helper that reads the latest slot state');
+  assert.match(main, /function runAllOutCommand\(/, 'all-out should batch browser-triggered dispatches without full re-rendering every intermediate selection');
+  assert.match(main, /function waitForUiIdle\(/, 'board movement should be able to wait out an in-flight selection command');
+  assert.match(main, /RUN_PLAYER_ALL_OUT/, 'all-out should dispatch a single public batch command from the browser button');
+  assert.match(main, /nextUsableSlotInfo\(\)/, 'all-out should find the next action block from the latest ViewModel each iteration');
+  const runAllOutBody = main.match(/async function runAllOut\(\) \{([\s\S]*?)\n  \}/);
+  assert.ok(runAllOutBody, 'runAllOut should exist');
+  assert.doesNotMatch(runAllOutBody[1], /const order = slotsFlat\(\)/, 'all-out must not rely on a one-time slot snapshot');
+  assert.doesNotMatch(runAllOutBody[1], /while \(ui\.vm\?\.phase === 'player_turn'/, 'all-out should not perform many browser network round trips in one click');
+  assert.doesNotMatch(runAllOutBody[1], /runCommand\('SELECT_SLOT'/, 'all-out should not spend a full render cycle on every intermediate slot selection');
+  assert.doesNotMatch(runAllOutBody[1], /attempted\.add/, 'all-out must not skip a slot before confirming the browser command succeeded');
+});
+
+test('UI05 board click moves selected hero before hover preview can turn the target into a sandbox unit', () => {
+  const main = read('web/js/main.js');
+  const clickBody = main.match(/async function onCellClick\(r, c\) \{([\s\S]*?)\n  \}\n\n\s*function renderCellDetail/);
+  assert.ok(clickBody, 'onCellClick should exist');
+  assert.match(clickBody[1], /const moveKey = `\$\{r\},\$\{c\}`/, 'click handler should key the clicked cell before async detail work');
+  assert.match(clickBody[1], /const canMoveSelectedHero = .*legalMoveTargets\(hero\)\.has\(moveKey\)/, 'click handler should trust legal move targets instead of hovered sandbox occupancy');
+  assert.match(clickBody[1], /await waitForUiIdle\(\)/, 'movement click should wait for an in-flight hero selection command instead of being swallowed by busy state');
+  assert.ok(
+    clickBody[1].indexOf('MOVE_HERO') < clickBody[1].indexOf("SELECT_CELL"),
+    'MOVE_HERO should run before SELECT_CELL/GET_CELL_DETAIL so hover preview cannot swallow the movement click'
+  );
+  assert.ok(
+    clickBody[1].indexOf('const canMoveSelectedHero') < clickBody[1].indexOf('const isHeroUnit'),
+    'legal movement should be checked before hero-unit detection because hover previews can render the target as a sandbox hero'
+  );
+});

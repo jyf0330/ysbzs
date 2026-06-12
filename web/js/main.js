@@ -558,9 +558,28 @@ import { createGameRuntime } from './runtime-client.js';
       return null;
     }
   }
+  function waitForUiIdle(timeoutMs = 5000) {
+    if (!ui.busy) return Promise.resolve();
+    const startedAt = Date.now();
+    return new Promise(resolve => {
+      const tick = () => {
+        if (!ui.busy || Date.now() - startedAt >= timeoutMs) resolve();
+        else setTimeout(tick, 20);
+      };
+      tick();
+    });
+  }
   async function onCellClick(r, c) {
     ui.selectedCell = { r, c };
+    const moveKey = `${r},${c}`;
     const cell = cellAt(r, c);
+    const hero = selectedHero();
+    const canMoveSelectedHero = ui.vm?.phase === 'player_turn' && hero && !ui.slotArmed && legalMoveTargets(hero).has(moveKey);
+    if (canMoveSelectedHero) {
+      await waitForUiIdle();
+      await runCommand('MOVE_HERO', { unitId: hero.id, to: { r, c } });
+      return;
+    }
     const unit = unitById(cell?.unitId);
     const isHeroUnit = unit?.side === 'hero';
     if (isHeroUnit) {
@@ -573,16 +592,12 @@ import { createGameRuntime } from './runtime-client.js';
       await fetchCellDetail(r, c);
       return;
     }
-    const hero = selectedHero();
     await runCommand('SELECT_CELL', { r, c });
     await fetchCellDetail(r, c);
     if (ui.slotArmed) return;
     if (ui.vm?.phase === 'player_turn' && !hero && cell && !cell.unitId) {
       toast('先点棋盘上的英雄或左侧英雄卡，再点空格移动。');
       return;
-    }
-    if (ui.vm?.phase === 'player_turn' && hero && cell && !cell.unitId) {
-      await runCommand('MOVE_HERO', { unitId: hero.id, to: { r, c } });
     }
   }
 
@@ -885,38 +900,47 @@ import { createGameRuntime } from './runtime-client.js';
     if (phase === 'shop') return '购买、冻结、刷新商品，然后离开商店。';
     return '可使用右侧按钮继续流程。';
   }
+  function slotKey(info) {
+    return `${info.hero.id}:${info.localIndex}`;
+  }
+  async function runAllOutCommand(type, payload = {}) {
+    const data = await runtime.action(makeCommand(type, payload));
+    ui.vm = data.viewModel || ui.vm;
+    normalizeSelection();
+    return data;
+  }
+  function nextUsableSlotInfo(blocked = new Set()) {
+    return slotsFlat().find(x => {
+      return !blocked.has(slotKey(x)) && !x.slot.used && x.slot.canUse !== false;
+    }) || null;
+  }
   async function runAllOut() {
     if (ui.vm?.phase !== 'player_turn') {
       toast('我方全部出击只能在玩家回合使用。', true);
       return;
     }
-    const order = slotsFlat()
-      .filter(x => !x.slot.used && x.slot.canUse !== false)
-      .map(x => ({ unitId: x.hero.id, slotId: x.localIndex }));
-    if (!order.length) {
+    if (!nextUsableSlotInfo()) {
       toast('没有可释放的行动块。', true);
       return;
     }
-    for (const item of order) {
-      if (ui.vm?.phase !== 'player_turn') break;
-      const info = slotsFlat().find(x => x.hero.id === item.unitId && x.localIndex === item.slotId);
-      if (!info || info.slot.used || info.slot.canUse === false) continue;
-      ui.selectedUnitId = info.hero.id;
-      ui.selectedSlotGlobal = info.globalIndex;
-      ui.selectedSlot = info.localIndex;
-      ui.slotArmed = true;
-      await runCommand('SELECT_SLOT', { slotId: info.localIndex, unitId: info.hero.id }, { autoFlow: true, suppressToast: true });
-      await runCommand('USE_SLOT', {
-        unitId: info.hero.id,
-        slotId: info.localIndex,
-        cell: null,
-        ap: ui.apBySlot[`${info.hero.id}:${info.localIndex}`] || 1
-      }, { autoFlow: true, suppressToast: true });
+    let count = 0;
+    ui.busy = true;
+    setBusy(true);
+    try {
+      const result = await runAllOutCommand('RUN_PLAYER_ALL_OUT', { apBySlot: ui.apBySlot });
+      count = Number(result?.result?.count || 0);
+    } catch (err) {
+      toast(err.message || String(err), true);
+      document.body.classList.add('shake');
+      setTimeout(() => document.body.classList.remove('shake'), 300);
+    } finally {
+      ui.busy = false;
+      setBusy(false);
     }
     ui.slotArmed = false;
     renderCache.invalidate();
     render();
-    toast(`我方全部出击：尝试释放 ${order.length} 个行动块。`);
+    toast(`我方全部出击：尝试释放 ${count} 个行动块。`);
   }
 
   function renderRewards() {

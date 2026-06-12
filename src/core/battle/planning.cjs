@@ -524,7 +524,10 @@ function buildThreatGrid(state) {
   for (const enemy of living(state, 'enemy')) {
     const intent = computeMonsterIntent(state, enemy);
     if (!intent) continue;
-    for (const p of intent.path) addCell(p, { type: 'move_path', unitId: enemy.id, unitName: intent.unitName, threat: 1 });
+    for (let i = 0; i < intent.path.length; i++) {
+      const p = intent.path[i];
+      addCell(p, { type: 'move_path', unitId: enemy.id, unitName: intent.unitName, threat: 1, finalMove: i === intent.path.length - 1 });
+    }
     for (const action of intent.actions || []) {
       for (const p of action.attackCells || []) {
         const hits = (action.hits || []).filter(hit => hit.r === p.r && hit.c === p.c);

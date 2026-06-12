@@ -470,3 +470,32 @@ test('UI22 未移动前伤害预览直接显示敌方宠物 AP 累计伤害', ()
   const cell = vm.board.cells.find(x => x.r === hero.position.r && x.c === hero.position.c);
   assert.equal(cell.teamRisk.damage, 21);
 });
+
+test('UI23 敌方移动路径预览标记最终落点且空格攻击范围不承载伤害对象', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'enemy_pet_final_move_preview' });
+  battle.startBattle(state);
+  const hero = state.units.find(u => u.side === 'hero' && u.alive);
+  const enemy = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(hero && enemy, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== enemy.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+  hero.position = { r: 5, c: 2 };
+  enemy.position = { r: 5, c: 6 };
+  enemy.ap = 3;
+  enemy.atk = 3;
+  enemy.shape = Object.assign({}, enemy.shape, { hitCells: 3, slotCount: 3, baseLayers: 1 });
+  for (let i = 0; i < 3; i++) state.actionDirs[`${enemy.id}:slot${i}`] = 'left';
+  syncBoardUnits(state);
+
+  const vm = createViewModel(state);
+  const movePath = vm.threatGrid.filter(x => x.type === 'move_path');
+  assert.ok(movePath.length > 0, '默认战斗应暴露敌方预计移动路径');
+  const finalMoves = movePath.filter(x => x.finalMove);
+  assert.ok(finalMoves.length > 0, '敌方移动路径需要标记最终落点');
+  const attackEmptyCells = vm.board.cells.filter(cell => !cell.unitId && cell.threat?.type === 'attack');
+  assert.ok(attackEmptyCells.length > 0, '测试需要覆盖空格攻击范围');
+  assert.ok(attackEmptyCells.every(cell => Number(cell.threat.damage || 0) === 0 && !(cell.teamRisk && cell.teamRisk.damage)), '空格攻击范围不应承载受伤单位伤害');
+});

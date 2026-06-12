@@ -482,6 +482,7 @@ import { createGameRuntime } from './runtime-client.js';
 	      const key = `${cell.r},${cell.c}`;
       const moveRisk = cell.moveRisk || riskMap.get(key) || null;
       const teamRisk = (useHoverTeamRisk ? teamRiskMap.get(key) : (cell.teamRisk || teamRiskMap.get(key))) || null;
+      const t = threatMap.get(key);
 	      const unit = unitForBoard(cell.unitId);
 	      const previews = previewGroups.get(key) || (!hoverRisk ? (Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : [])) : []);
 	      const currentPreviews = previews.filter(p => p.isActiveActor);
@@ -499,6 +500,8 @@ import { createGameRuntime } from './runtime-client.js';
 	      if (previews.length && !hasCurrentPreview) classes.push('preview-past');
 	      if (hasEnemyHit) classes.push('enemy-hit');
 	      if (threatKeys.has(key)) classes.push('threat-hit');
+	      if (t?.type === 'move_path') classes.push('enemy-move-path');
+	      if (t?.finalMove) classes.push('enemy-final-cell');
       if (unit && teamRisk?.damage > 0) classes.push('team-risk');
 	      if (cell.unitId && cell.unitId !== selectedH?.id) classes.push('blocked');
 	      if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
@@ -506,7 +509,6 @@ import { createGameRuntime } from './runtime-client.js';
 	      if (unit && unit.id === activePreviewUnitId) classes.push('current-preview-unit');
 	      const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
 	        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
-	      const p = previewMap.get(key); const t = threatMap.get(key);
 	      const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || boardUnitName(unit)} 生命 ${unit.hp}/${unit.maxHp} 攻击 ${unit.atk ?? 0}` : `R${cell.r + 1}C${cell.c + 1}`;
 	      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
 	        ${elements ? `<div class="element-stack">${elements}</div>` : ''}
@@ -515,7 +517,7 @@ import { createGameRuntime } from './runtime-client.js';
 	        ${previews.length ? previewBadge(previews) : ''}
         ${moveTargets.has(key) && moveRisk?.damage > 0 ? `<span class="risk-num">受${esc(moveRisk.damage)}</span>` : ''}
         ${unit && teamRisk?.damage > 0 ? `<span class="team-risk-num">受${esc(teamRisk.damage)}${teamRisk.lethal ? ' KO' : ''}</span>` : ''}
-	        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
+	        ${t?.finalMove ? '<span class="enemy-final-num">终</span>' : ''}
 	      </button>`;
 	    }).join('');
 	  }

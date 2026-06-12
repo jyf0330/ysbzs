@@ -126,6 +126,9 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	    assert.match(js, /合计/, `${file} threat detail should show total incoming damage`);
 	    assert.match(js, /受击预警/, `${file} should default the detail panel to incoming damage warnings`);
 	    assert.match(js, /if \(unit\?\.side === 'hero' && teamRisk\)/, `${file} should prioritize incoming warning when clicking a threatened hero cell`);
+	    assert.match(js, /enemy-final-cell/, `${file} should mark enemy final move cells instead of damage-labeling empty cells`);
+	    assert.match(js, /enemy-final-num/, `${file} should render a compact final-position marker for enemy movement`);
+	    assert.doesNotMatch(js, /\$\{t \? `<span class="threat-num">危/, `${file} should not render threat damage numbers on every empty threat cell`);
 	    assert.match(js, /KO/, `${file} should expose lethal incoming damage in visible copy`);
 	    assert.doesNotMatch(js, /friendly-warning|误伤/, `${file} should not render friendly-fire UI because current rules do not support it`);
 	    assert.doesNotMatch(js, /class="unit-token[^`]*\btitle="/, `${file} board unit token must not trigger native title hover text`);
@@ -137,6 +140,8 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	  assert.match(css, /\.unit-stat-badge/, 'board unit stat badges need dedicated positioning');
 	  assert.match(css, /\.unit-stat-hp/, 'board unit HP badge needs dedicated styling');
 	  assert.match(css, /\.unit-stat-atk/, 'board unit attack badge needs dedicated styling');
+	  assert.match(css, /\.cell\.enemy-final-cell/, 'enemy final move cells need dedicated visible styling');
+	  assert.match(css, /\.enemy-final-num/, 'enemy final move marker needs dedicated compact styling');
 	  assert.doesNotMatch(css, /friendly-warning/, 'friendly-fire warning styles should not remain');
 	});
 

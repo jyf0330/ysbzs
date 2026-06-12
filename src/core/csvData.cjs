@@ -31,7 +31,10 @@ const TABLE_FILES = Object.freeze({
   modifiers: '20_modifiers.csv',
   elementPacketRules: '21_element_packet_rules.csv',
   elementConversions: '22_element_conversion_rules.csv',
-  triggerOrderRules: '23_trigger_order_rules.csv'
+  triggerOrderRules: '23_trigger_order_rules.csv',
+  nodeSchedule: '24_node_schedule.csv',
+  nodePool: '25_node_pool.csv',
+  encounterPool: '26_encounter_pool.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
@@ -378,6 +381,47 @@ function normalizeSourceTables(sourceTables, options = {}) {
   const elementPacketRules = sourceTables.elementPacketRules || [];
   const elementConversions = sourceTables.elementConversions || [];
   const triggerOrderRules = sourceTables.triggerOrderRules || [];
+  const nodeSchedule = (sourceTables.nodeSchedule || []).map(row => ({
+    id: row.schedule_id || row['排程ID'],
+    day: toNum(row.day || row['天数'], 1),
+    step: toNum(row.step || row['步骤'], 1),
+    kind: row.kind || row['类型'],
+    label: row.label || row['显示名'],
+    poolId: row.pool_id || row['节点池ID'],
+    choiceCount: toNum(row.choice_count || row['候选数量'], 3),
+    encounterPoolId: row.encounter_pool_id || row['遭遇池ID'],
+    encounterId: row.encounter_id || row['遭遇ID'],
+    phaseLabel: row.phase_label || row['阶段文案'],
+    status: row.status || row['状态'],
+    note: row.note || row['备注']
+  })).filter(x => x.id);
+  const nodePool = (sourceTables.nodePool || []).map(row => ({
+    nodeId: row.node_id || row['节点ID'],
+    nodePoolId: row.node_pool_id || row['节点池ID'],
+    name: row.name || row['节点名'],
+    nodeType: row.node_type || row['节点类型'],
+    weight: toNum(row.weight || row['权重'], 1),
+    unlockDay: toNum(row.unlock_day || row['解锁日'], 1),
+    shopPoolId: row.shop_pool_id || row['商店池ID'],
+    rewardPoolId: row.reward_pool_id || row['奖励池ID'],
+    eventId: row.event_id || row['事件ID'],
+    slots: toNum(row.slots || row['格数'], null),
+    value: toNum(row.value || row['数值'], null),
+    status: row.status || row['状态'],
+    note: row.note || row['备注']
+  })).filter(x => x.nodeId);
+  const encounterPool = (sourceTables.encounterPool || []).map(row => ({
+    encounterId: row.encounter_id || row['遭遇ID'],
+    encounterPoolId: row.encounter_pool_id || row['遭遇池ID'],
+    name: row.name || row['遭遇名'],
+    weight: toNum(row.weight || row['权重'], 1),
+    unlockDay: toNum(row.unlock_day || row['解锁日'], 1),
+    wavePeriod: row.wave_period || row['波次时段'],
+    battleIndex: toNum(row.battle_index || row['战斗序号'], 1),
+    phaseLabel: row.phase_label || row['阶段文案'],
+    status: row.status || row['状态'],
+    note: row.note || row['备注']
+  })).filter(x => x.encounterId);
 
   return {
     meta: {
@@ -412,6 +456,9 @@ function normalizeSourceTables(sourceTables, options = {}) {
     elementPacketRules,
     elementConversions,
     triggerOrderRules,
+    nodeSchedule,
+    nodePool,
+    encounterPool,
     waveRules: {
       qualityMultiplierMap
     }
@@ -462,7 +509,10 @@ function loadSourceTablesFromCsv(csvDir = DEFAULT_CSV_DIR) {
     modifiers: rows(TABLE_FILES.modifiers),
     elementPacketRules: rows(TABLE_FILES.elementPacketRules),
     elementConversions: rows(TABLE_FILES.elementConversions),
-    triggerOrderRules: rows(TABLE_FILES.triggerOrderRules)
+    triggerOrderRules: rows(TABLE_FILES.triggerOrderRules),
+    nodeSchedule: rows(TABLE_FILES.nodeSchedule),
+    nodePool: rows(TABLE_FILES.nodePool),
+    encounterPool: rows(TABLE_FILES.encounterPool)
   };
 }
 

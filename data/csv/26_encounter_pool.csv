@@ -1,0 +1,5 @@
+encounter_id,encounter_pool_id,name,weight,unlock_day,wave_period,battle_index,phase_label,status,note
+enc_d01_midday_a,enc_pool_d01_midday,中午遭遇A,100,1,上午,1,中午战,正式,映射当前上午波次
+enc_d01_midday_b,enc_pool_d01_midday,中午遭遇B,90,1,上午,1,中午战,正式,第一版复用上午波次
+enc_d01_midday_c,enc_pool_d01_midday,中午遭遇C,80,1,上午,1,中午战,正式,第一版复用上午波次
+enc_d01_evening_fixed,enc_pool_d01_evening,晚上固定战,100,1,下午,2,晚上战,正式,映射当前下午波次

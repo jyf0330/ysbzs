@@ -303,7 +303,7 @@ import { createGameRuntime } from './runtime-client.js';
     renderControls();
     renderPrepOverlay();
     renderOperationRail();
-    if (renderCache.shouldRender('rewards', { rewards: vm.rewards, busy: ui.busy })) renderRewards();
+    if (renderCache.shouldRender('rewards', { rewards: vm.rewards, dayRoute: vm.dayRoute, busy: ui.busy })) renderRewards();
     if (renderCache.shouldRender('shop', { shop: vm.shop, gold: vm.gold, phase: vm.phase, busy: ui.busy })) renderShop();
     if (renderCache.shouldRender('trial', vm.day7Trial)) renderTrial();
     if (renderCache.shouldRender('log', { tab: ui.activeLogTab, events: vm.events, selected: vm.selected, meta: vm.meta, replay: ui.replay })) renderLog();
@@ -850,6 +850,8 @@ import { createGameRuntime } from './runtime-client.js';
     $('roll-shop-btn').disabled = phase !== 'shop' || ui.busy;
     $('exit-shop-btn').disabled = phase !== 'shop' || ui.busy;
     $('reward-btn').disabled = !(phase === 'battle_end' || isNext('REWARD_OPTIONS')) || ui.busy;
+    $('node-options-btn').disabled = ui.busy || !isNext('GENERATE_NODE_OPTIONS');
+    $('battle-options-btn').disabled = ui.busy || !isNext('GENERATE_BATTLE_OPTIONS');
     $('operation-hint').textContent = hintText();
   }
   function renderOperationRail() {
@@ -936,9 +938,17 @@ import { createGameRuntime } from './runtime-client.js';
 
   function renderRewards() {
     const rewards = ui.vm.rewards || [];
-    $('reward-list').innerHTML = rewards.map((r, i) => `<button class="reward-card" data-reward-index="${i}" type="button"${ui.busy ? ' disabled' : ''}>
+    const route = ui.vm.dayRoute || {};
+    const nodeHtml = (route.options || []).map(o => `<button class="reward-card" data-node-option="${esc(o.optionId)}" type="button"${ui.busy ? ' disabled' : ''}>
+      <strong>${esc(o.name || o.nodeId)}</strong><span>${esc(o.nodeType || '节点')}</span>
+    </button>`).join('');
+    const battleHtml = (route.battleOptions || []).map(o => `<button class="reward-card" data-battle-option="${esc(o.encounterId)}" type="button"${ui.busy ? ' disabled' : ''}>
+      <strong>${esc(o.name || o.encounterId)}</strong><span>${esc(o.phaseLabel || '遭遇')}</span>
+    </button>`).join('');
+    const rewardHtml = rewards.map((r, i) => `<button class="reward-card" data-reward-index="${i}" type="button"${ui.busy ? ' disabled' : ''}>
       <strong>${esc(r.name || r.petName || r.relicName || r.type || `奖励${i + 1}`)}</strong><span>选择</span>
     </button>`).join('');
+    $('reward-list').innerHTML = nodeHtml + battleHtml + rewardHtml;
   }
   function renderShop() {
     const offers = ui.vm.shop?.offers || [];
@@ -1127,6 +1137,8 @@ import { createGameRuntime } from './runtime-client.js';
       renderPrepOverlay();
     });
     $('reward-btn').addEventListener('click', () => runCommand('REWARD_OPTIONS', { poolId: 'reward_pT1', count: 3 }));
+    $('node-options-btn').addEventListener('click', () => runCommand('GENERATE_NODE_OPTIONS'));
+    $('battle-options-btn').addEventListener('click', () => runCommand('GENERATE_BATTLE_OPTIONS'));
     $('shop-btn').addEventListener('click', () => runCommand('ENTER_SHOP', { poolId: 'night_base', slots: 6 }));
     $('roll-shop-btn').addEventListener('click', () => runCommand('ROLL_SHOP', { slots: 6 }));
     $('exit-shop-btn').addEventListener('click', () => runCommand('EXIT_SHOP'));
@@ -1200,6 +1212,10 @@ import { createGameRuntime } from './runtime-client.js';
       if (useBtn) useSlot(Number(useBtn.dataset.use));
     });
     $('reward-list').addEventListener('click', ev => {
+      const node = ev.target.closest('[data-node-option]');
+      if (node) { runCommand('PICK_NODE', { optionId: node.dataset.nodeOption }); return; }
+      const battle = ev.target.closest('[data-battle-option]');
+      if (battle) { runCommand('PICK_BATTLE_ENCOUNTER', { encounterId: battle.dataset.battleOption }); return; }
       const btn = ev.target.closest('[data-reward-index]');
       if (btn) runCommand('PICK_REWARD', { index: Number(btn.dataset.rewardIndex) });
     });

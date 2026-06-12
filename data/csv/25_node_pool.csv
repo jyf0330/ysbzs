@@ -1,0 +1,7 @@
+node_id,node_pool_id,name,node_type,weight,unlock_day,shop_pool_id,reward_pool_id,event_id,slots,value,status,note
+node_event_free_roll,node_pool_d01_growth,免费刷新,event,100,1,,reward_pT1,evt_free_roll,,1,正式,获得一次免费刷新
+node_reward_pet,node_pool_d01_growth,宠物奖励,reward,90,1,,reward_pT1,,3,,正式,生成 3 个 pT1 奖励候选
+node_shop_basic,node_pool_d01_growth,夜市商人,shop,80,1,night_base,,,6,,正式,进入基础夜市商店
+node_event_discount,node_pool_d01_growth,折扣摊位,event,70,1,night_base,reward_pT1,evt_discount,,50,正式,下一件商品半价
+node_shop_fire,node_pool_d01_growth,火系补货商人,shop,60,1,elem_火,,,3,,正式,进入火元素定向摊位
+node_rest_gold,node_pool_d01_growth,休整补给,rest,50,1,,,,,2,正式,直接获得金币

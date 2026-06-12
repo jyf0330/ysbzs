@@ -1,0 +1,7 @@
+schedule_id,day,step,kind,label,pool_id,choice_count,encounter_pool_id,encounter_id,phase_label,status,note
+d01_node_1,1,1,node_choice,清晨节点1,node_pool_d01_growth,3,,,,正式,Day1 前置成长节点
+d01_node_2,1,2,node_choice,清晨节点2,node_pool_d01_growth,3,,,,正式,Day1 前置成长节点
+d01_midday_battle,1,3,battle_choice,中午遭遇选择,,3,enc_pool_d01_midday,,中午战,正式,中午怪物遭遇 3 选 1
+d01_node_4,1,4,node_choice,下午节点1,node_pool_d01_growth,3,,,,正式,中午战后成长节点
+d01_node_5,1,5,node_choice,下午节点2,node_pool_d01_growth,3,,,,正式,中午战后成长节点
+d01_evening_fixed,1,6,fixed_battle,晚上固定战,,,,enc_d01_evening_fixed,晚上战,正式,Day1 晚上固定战

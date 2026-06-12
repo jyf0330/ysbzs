@@ -1,6 +1,7 @@
 const battle = require('./battle.cjs');
 const shop = require('./shop.cjs');
 const day7 = require('./day7FireTrial.cjs');
+const dayRoute = require('./dayRoute.cjs');
 const { buildReplay } = require('./changeLog.cjs');
 
 function dispatch(state, command) {
@@ -20,6 +21,10 @@ function dispatch(state, command) {
     case 'BUILD_PREVIEW': return battle.buildPreviewGrid(state, command);
     case 'GET_CELL_DETAIL': return battle.getCellDetail(state, command.r ?? command.row, command.c ?? command.col);
     case 'RUN_BATTLE': return battle.runBattle(state);
+    case 'GENERATE_NODE_OPTIONS': return dayRoute.generateNodeOptions(state, command);
+    case 'PICK_NODE': return dayRoute.pickNode(state, command.optionId ?? command.nodeId ?? command.index);
+    case 'GENERATE_BATTLE_OPTIONS': return dayRoute.generateBattleOptions(state, command);
+    case 'PICK_BATTLE_ENCOUNTER': return dayRoute.pickBattleEncounter(state, command.encounterId ?? command.optionId ?? command.index);
     case 'ENTER_SHOP': return shop.enterShop(state, command.poolId, command.slots);
     case 'ROLL_SHOP': return shop.rollShop(state, command);
     case 'FREEZE_OFFER': return shop.freezeOffer(state, command.offerId, true);

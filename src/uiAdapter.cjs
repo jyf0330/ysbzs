@@ -2,6 +2,7 @@ const { createGameState, makeUnit } = require('./core/state.cjs');
 const { dispatch: coreDispatch } = require('./core/reducer.cjs');
 const battle = require('./core/battle.cjs');
 const shop = require('./core/shop.cjs');
+const dayRoute = require('./core/dayRoute.cjs');
 const { renderPlayerReport, renderShopReport } = require('./render/textReport.cjs');
 const { pushEvent } = require('./core/events.cjs');
 const { applyBattleStart } = require('./core/mechanics.cjs');
@@ -11,83 +12,7 @@ const { stateHash } = require('./core/stateHash.cjs');
 const { buildSaveDocument, applySaveToState, assertSaveDocument } = require('./storage/saveCodec.cjs');
 const { statusOfMechanic, activationBlockReason } = require('./core/mechanicGate.cjs');
 const { canonicalEventLog } = require('./core/eventProjection.cjs');
-
-const PUBLIC_COMMANDS = Object.freeze([
-  'START_BATTLE',
-  'START_NEXT_ROUND',
-  'SELECT_HERO',
-  'SELECT_UNIT',
-  'SELECT_CELL',
-  'SELECT_SLOT',
-  'SET_ACTION_DIRECTION',
-  'SET_SLOT_DIR',
-  'MOVE_HERO',
-  'USE_SLOT',
-  'USE_ACTION_SLOT',
-  'RUN_PLAYER_ALL_OUT',
-  'END_PLAYER_TURN',
-  'RUN_MONSTER_TURN',
-  'BUILD_PREVIEW',
-  'GET_CELL_DETAIL',
-  'RUN_BATTLE',
-  'REWARD_OPTIONS',
-  'PICK_REWARD',
-  'ENTER_SHOP',
-  'ROLL_SHOP',
-  'FREEZE_OFFER',
-  'UNFREEZE_OFFER',
-  'BUY_OFFER',
-  'APPLY_SHOP_EVENT',
-  'EXIT_SHOP',
-  'RUN_FULL_DAY',
-  'SELL_UNIT',
-  'TOGGLE_UNIT_ACTIVE',
-  'EXPORT_BATTLE_TRACE',
-  'REPLAY_BATTLE_TRACE',
-  'EXPORT_REPLAY',
-  'SETUP_DAY7_FIRE_TRIAL',
-  'RUN_DAY7_FIRE_TURN_1',
-  'RUN_DAY7_FIRE_TRIAL_ALL'
-]);
-
-const ACTION_ALIASES = Object.freeze({
-  runBattle: 'RUN_BATTLE',
-  startBattle: 'START_BATTLE',
-  startNextRound: 'START_NEXT_ROUND',
-  rewardOptions: 'REWARD_OPTIONS',
-  pickReward: 'PICK_REWARD',
-  enterShop: 'ENTER_SHOP',
-  rollShop: 'ROLL_SHOP',
-  freezeOffer: 'FREEZE_OFFER',
-  unfreezeOffer: 'UNFREEZE_OFFER',
-  buyOffer: 'BUY_OFFER',
-  applyShopEvent: 'APPLY_SHOP_EVENT',
-  exitShop: 'EXIT_SHOP',
-  runFullDay: 'RUN_FULL_DAY',
-  runFullPlayerDayFlow: 'RUN_FULL_DAY',
-  sellUnit: 'SELL_UNIT',
-  toggleUnitActive: 'TOGGLE_UNIT_ACTIVE',
-  useActionSlot: 'USE_ACTION_SLOT',
-  runPlayerAllOut: 'RUN_PLAYER_ALL_OUT',
-  useSlot: 'USE_SLOT',
-  selectUnit: 'SELECT_UNIT',
-  selectHero: 'SELECT_HERO',
-  selectCell: 'SELECT_CELL',
-  selectSlot: 'SELECT_SLOT',
-  setSlotDir: 'SET_SLOT_DIR',
-  setActionDirection: 'SET_ACTION_DIRECTION',
-  moveHero: 'MOVE_HERO',
-  endPlayerTurn: 'END_PLAYER_TURN',
-  runMonsterTurn: 'RUN_MONSTER_TURN',
-  buildPreview: 'BUILD_PREVIEW',
-  getCellDetail: 'GET_CELL_DETAIL',
-  exportBattleTrace: 'EXPORT_BATTLE_TRACE',
-  replayBattleTrace: 'REPLAY_BATTLE_TRACE',
-  exportReplay: 'EXPORT_REPLAY',
-  setupDay7FireTrial: 'SETUP_DAY7_FIRE_TRIAL',
-  runDay7FireTurn1: 'RUN_DAY7_FIRE_TURN_1',
-  runDay7FireTrialAll: 'RUN_DAY7_FIRE_TRIAL_ALL'
-});
+const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
 
 const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT']);
 const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
@@ -127,7 +52,10 @@ function dataSummary(state) {
     shop: state.data.shop.length,
     relics: state.data.relics.length,
     shapes: state.data.shapes.length,
-    validation: state.data.validation.length
+    validation: state.data.validation.length,
+    nodeSchedule: (state.data.nodeSchedule || []).length,
+    nodePool: (state.data.nodePool || []).length,
+    encounterPool: (state.data.encounterPool || []).length
   };
 }
 function slotsForVM(state, unit) {
@@ -374,13 +302,29 @@ function recentEvents(state, n = 30) {
 }
 function logGroups(state) {
   return {
-    player: state.events.filter(e => /PLAYER|SELECT|MOVE_HERO|USE_SLOT|ACTION_DIRECTION|ROUND|BATTLE/.test(e.type)).slice(-40).map(e => e.text || e.type),
+    player: state.events.filter(e => /PLAYER|SELECT|MOVE_HERO|USE_SLOT|ACTION_DIRECTION|ROUND|BATTLE|NODE/.test(e.type)).slice(-40).map(e => e.text || e.type),
     debug: state.events.slice(-80).map(e => `${e.step} ${e.type}: ${e.text || ''}`),
-    shop: state.events.filter(e => /SHOP|REWARD|SELL|TOGGLE/.test(e.type)).slice(-40).map(e => e.text || e.type)
+    shop: state.events.filter(e => /SHOP|REWARD|SELL|TOGGLE|NODE|BATTLE_OPTIONS|BATTLE_PICK/.test(e.type)).slice(-40).map(e => e.text || e.type)
   };
+}
+function nextDaySchedule(state) {
+  const route = state.dayRoute || { nodeIndex: 0 };
+  return (state.data.nodeSchedule || [])
+    .filter(x => x.day === state.day && x.status === '正式')
+    .sort((a, b) => Number(a.step) - Number(b.step))
+    .find(x => Number(x.step) === Number(route.nodeIndex || 0) + 1) || null;
 }
 function nextActions(state) {
   const out = [];
+  const nextSchedule = nextDaySchedule(state);
+  if ((state.phase === 'node_resolved' || state.phase === 'init') && nextSchedule?.kind === 'node_choice') out.push({ type: 'GENERATE_NODE_OPTIONS', label: '生成节点候选' });
+  if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'battle_choice') out.push({ type: 'GENERATE_BATTLE_OPTIONS', label: '生成中午遭遇' });
+  if (state.phase === 'node_choice') {
+    for (const option of state.dayRoute?.options || []) out.push({ type: 'PICK_NODE', label: `选择 ${option.name}`, defaultPayload: { optionId: option.optionId } });
+  }
+  if (state.phase === 'battle_choice') {
+    for (const option of state.dayRoute?.battleOptions || []) out.push({ type: 'PICK_BATTLE_ENCOUNTER', label: `选择 ${option.name}`, defaultPayload: { encounterId: option.encounterId } });
+  }
   if (state.phase === 'init') out.push({ type: 'START_BATTLE', label: '开始战斗' });
   if (state.phase === 'player_turn') {
     out.push({ type: 'MOVE_HERO', label: '移动英雄' });
@@ -460,6 +404,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
       offers,
       events: shop.availableEvents(state).map(e => ({ id: e.id, name: e.name, optionText: e.optionText, costText: e.costText, gainText: e.gainText }))
     },
+    dayRoute: clone(state.dayRoute || { nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] }),
     monsterIntents: state.units.filter(u => u.side === 'enemy' && u.alive).map(u => battle.computeMonsterIntent(state, u)).filter(Boolean),
 	    previewGrid: board.previewGrid,
     threatGrid: board.threatGrid,
@@ -554,7 +499,7 @@ function runCompatibilityCommand(state, command, viewState = makePlayerViewState
 
 function createSnapshot(state, playerId = 'p1', viewState = makePlayerViewState()) {
   const raw = clone(state);
-  raw.indexes = { petsById: state.indexes.petsById.size, monstersByPetId: state.indexes.monstersByPetId.size, shopPools: state.indexes.shopPools.size, rewardPools: state.indexes.rewardPools.size };
+  raw.indexes = { petsById: state.indexes.petsById.size, monstersByPetId: state.indexes.monstersByPetId.size, shopPools: state.indexes.shopPools.size, rewardPools: state.indexes.rewardPools.size, nodePools: state.indexes.nodePools?.size || 0, encounterPools: state.indexes.encounterPools?.size || 0 };
   raw.dataSummary = dataSummary(state);
   raw.viewModel = buildViewModelForPlayer(state, playerId, viewState);
   return raw;
@@ -807,6 +752,10 @@ function createYSBZSUIAdapter(options = {}) {
     replayBattleTrace(events) { return this.run('REPLAY_BATTLE_TRACE', { events }); },
     runBattle() { return this.run('RUN_BATTLE'); },
     runPlayerAllOut(apBySlot = {}) { return this.run('RUN_PLAYER_ALL_OUT', { apBySlot }); },
+    generateNodeOptions(options = {}) { return this.run('GENERATE_NODE_OPTIONS', options); },
+    pickNode(optionId) { return this.run('PICK_NODE', { optionId }); },
+    generateBattleOptions(options = {}) { return this.run('GENERATE_BATTLE_OPTIONS', options); },
+    pickBattleEncounter(encounterId) { return this.run('PICK_BATTLE_ENCOUNTER', { encounterId }); },
     rewardOptions(poolId = 'reward_pT1', count = 3) { return this.run('REWARD_OPTIONS', { poolId, count }); },
     pickReward(index = 0) { return this.run('PICK_REWARD', { index }); },
     enterShop(poolId = 'night_base', slots = 6) { return this.run('ENTER_SHOP', { poolId, slots }); },
@@ -824,19 +773,7 @@ function createYSBZSUIAdapter(options = {}) {
     selectCell(r, c) { return this.run('SELECT_CELL', { r, c }); },
     selectSlot(slotId) { return this.run('SELECT_SLOT', { slotId }); },
     runFullPlayerDayFlow(playerId = defaultPlayerId) {
-      if (state.phase === 'init') this.run({ type: 'START_BATTLE', playerId });
-      this.run({ type: 'RUN_BATTLE', playerId });
-      this.run({ type: 'REWARD_OPTIONS', playerId, poolId: 'reward_pT1', count: 3 });
-      this.run({ type: 'PICK_REWARD', playerId, index: 0 });
-      this.run({ type: 'ENTER_SHOP', playerId, poolId: 'night_base', slots: 6 });
-      const first = state.shop.offers[0];
-      if (first) this.run({ type: 'FREEZE_OFFER', playerId, offerId: first.offerId });
-      this.run({ type: 'ROLL_SHOP', playerId, slots: 6 });
-      const affordable = state.shop.offers.find(o => o.price <= state.gold);
-      if (affordable) this.run({ type: 'BUY_OFFER', playerId, offerId: affordable.offerId });
-      const evt = shop.availableEvents(state)[0];
-      if (evt) this.run({ type: 'APPLY_SHOP_EVENT', playerId, eventId: evt.id });
-      this.run({ type: 'EXIT_SHOP', playerId });
+      dayRoute.runDayRoute(state);
       return this.getViewModel(playerId);
     },
     getViewModel(playerId = defaultPlayerId) { return viewFor(playerId); },

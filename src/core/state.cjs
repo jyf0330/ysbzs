@@ -220,6 +220,7 @@ function createGameState(opts = {}) {
     relics: [],
     shop: { offers: [], frozen: {}, rollCount: 0, freeRolls: 0, nextDiscount: 0, activePool: 'night_base' },
     rewards: [],
+    dayRoute: { day: opts.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] },
     result: null,
 	    selected: { unitId: null, slotId: null, cell: null, direction: 'right' },
 	    teamPlacementPreview: { activeUnitId: null, movedUnitIds: [] },

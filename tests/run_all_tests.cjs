@@ -9,6 +9,16 @@ let tests=[]; function test(name, fn){ tests.push({name, fn}); }
 function hasEvent(state,type){ return state.events.some(e=>e.type===type); }
 
 test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,127); assert.equal(data.monsters.length,34); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,127); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,127); assert.equal(data.validation.length,10); assert.equal(data.day7Trial.length,9); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
+test('Day1 node route data defines four growth choices, one midday battle choice, and evening fixed battle',()=>{
+  assert.equal(data.nodeSchedule.length,6);
+  assert.equal(data.nodeSchedule.filter(x=>x.day===1 && x.kind==='node_choice').length,4);
+  const midday=data.nodeSchedule.find(x=>x.day===1 && x.kind==='battle_choice');
+  assert.ok(midday);
+  assert.equal(midday.choiceCount,3);
+  const evening=data.nodeSchedule.find(x=>x.day===1 && x.kind==='fixed_battle');
+  assert.ok(evening);
+  assert.equal(evening.encounterId,'enc_d01_evening_fixed');
+});
 test('all cross-table references connected',()=>{ const v=validateData(); assert.deepEqual(v.issues,[]); assert.equal(v.ok,true); });
 test('all mechanism IDs have executable handler registration',()=>{ for(const m of data.mechanisms) assert.ok(SUPPORTED_MECHANICS.has(m.id), `unsupported ${m.id}`); });
 test('every pet has shape and shop row',()=>{ const ix=buildIndexes(); for(const p of data.pets){ assert.ok(ix.shapesByPetId.has(p.id), p.id); assert.ok(ix.shopByPetId.has(p.id), p.id); } });
@@ -27,8 +37,30 @@ test('shop blocks unaffordable buy',()=>{ const s=createGameState({gold:0}); dis
 test('shop event connects event table',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(hasEvent(s,'SHOP_EVENT_APPLY')); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
 test('element shop event rolls element pool',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
 test('reward options can include pet/relic and pick reward',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'REWARD_OPTIONS',poolId:'reward_pT1',count:3}); assert.equal(s.rewards.length,3); dispatch(s,{type:'PICK_REWARD',index:0}); assert.ok(hasEvent(s,'REWARD_PICK')); });
-test('full day includes battle reward shop buy exit',()=>{ const s=runFullDayScenario({gold:999}); for(const t of ['BATTLE_END','REWARD_OPTIONS','SHOP_ENTER','SHOP_ROLL','SHOP_FREEZE','SHOP_BUY','SHOP_EXIT']) assert.ok(hasEvent(s,t), t); });
-test('text report includes battle and shop',()=>{ const s=runFullDayScenario({gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('战斗')); assert.ok(txt.includes('商店刷新')); assert.ok(txt.includes('购买')); assert.ok(txt.includes('最终状态')); });
+test('node shop returns to day route while manual shop still exits to day_end',()=>{
+  const routed=createGameState({day:1,gold:999});
+  dispatch(routed,{type:'GENERATE_NODE_OPTIONS'});
+  dispatch(routed,{type:'PICK_NODE',nodeId:'node_shop_basic'});
+  assert.equal(routed.phase,'shop');
+  dispatch(routed,{type:'EXIT_SHOP'});
+  assert.equal(routed.phase,'node_resolved');
+  const manual=createGameState({day:1,gold:999});
+  dispatch(manual,{type:'ENTER_SHOP',poolId:'night_base',slots:3});
+  dispatch(manual,{type:'EXIT_SHOP'});
+  assert.equal(manual.phase,'day_end');
+});
+test('Day1 full day route uses node choices, midday encounter choice, and evening fixed battle',()=>{
+  const s=runFullDayScenario({day:1,gold:999});
+  const types=s.events.map(e=>e.type);
+  assert.deepEqual(types.filter(t=>t==='NODE_OPTIONS').length,4);
+  assert.deepEqual(types.filter(t=>t==='NODE_PICK').length,4);
+  assert.equal(types.filter(t=>t==='BATTLE_OPTIONS').length,1);
+  assert.equal(types.filter(t=>t==='BATTLE_PICK').length,1);
+  assert.ok(s.events.some(e=>e.type==='FIXED_BATTLE_START' && e.encounterId==='enc_d01_evening_fixed'));
+  assert.equal(s.phase,'day_end');
+  assert.equal(s.dayRoute.nodeIndex,6);
+});
+test('text report includes node route and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('中午遭遇')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });
 test('mechanism table statuses are preserved',()=>{ assert.ok(data.mechanisms.some(m=>m.integrationStatus==='待接入')); assert.ok(data.mechanisms.some(m=>m.integrationStatus==='可接入')); });
 test('events connect to shop phase',()=>{ assert.ok(data.events.every(e=>e.id && e.layer)); assert.ok(data.events.some(e=>e.layer==='shop_phase')); });

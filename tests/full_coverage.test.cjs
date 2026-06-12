@@ -11,7 +11,20 @@ function hasEvent(resultOrState, type) {
   return events.some(e => e.type === type);
 }
 
-const expectedCounts = { pets:127, monsters:34, waves:134, mechanisms:61, events:32, shop:127, relics:40, shapes:127, validation:10 };
+const expectedCounts = {
+  pets: 127,
+  monsters: 34,
+  waves: 134,
+  mechanisms: 61,
+  events: 32,
+  shop: 127,
+  relics: 40,
+  shapes: 127,
+  validation: 10,
+  nodeSchedule: 6,
+  nodePool: 6,
+  encounterPool: 4
+};
 
 test('FC01 当前 CSV 单源数据规模与波次规则表一致', () => {
   for (const [key, count] of Object.entries(expectedCounts)) assert.equal(data[key].length, count, key);

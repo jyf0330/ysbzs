@@ -36,7 +36,8 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   assert.match(css, /\.slot-list\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s, '12 action blocks should form a compact 3-column grid');
   assert.match(css, /\.detail-stat-grid/, 'right detail should use a full stat grid');
   assert.match(css, /\.bottom-panel\{[^}]*margin-left:310px[^}]*margin-right:310px/s, 'event log should align to the center board column');
-  assert.match(css, /body\[data-phase="init"\]\s+\.shop-phase-panel/, 'shop panel should hide outside legal phases');
+  assert.match(css, /body\[data-phase="player_turn"\]\s+\.shop-phase-panel/, 'shop panel should hide during combat phases');
+  assert.doesNotMatch(css, /body\[data-phase="init"\]\s+\.shop-phase-panel/, 'Day1 init can expose node choices before combat');
 });
 
 test('bottom event log is internally scrollable and follows newest content', () => {

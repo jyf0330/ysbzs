@@ -172,7 +172,6 @@ body[data-phase="round_end"] .shop-list{display:none}
 .ap-choice{width:28px;height:26px;border:1px solid rgba(124,89,53,.55);background:#fbf1d9;color:#3f2e22;font-weight:900}
 .ap-choice.sel{background:#c8a050;color:#1d140c}
 .shop-phase-panel{display:block}
-body[data-phase="init"] .shop-phase-panel,
 body[data-phase="player_turn"] .shop-phase-panel,
 body[data-phase="monster_turn"] .shop-phase-panel,
 body[data-phase="round_end"] .shop-phase-panel,

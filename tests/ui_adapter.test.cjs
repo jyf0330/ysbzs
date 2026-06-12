@@ -29,6 +29,7 @@ function adjacentStandForTarget(state, target) {
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
   for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
 });
 
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
@@ -113,10 +114,27 @@ test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   const vm = adapter.runFullPlayerDayFlow();
   const types = new Set(adapter.getEvents().map(e => e.type));
-  for (const t of ['BATTLE_START','BATTLE_END','REWARD_OPTIONS','REWARD_PICK','SHOP_ENTER','SHOP_ROLL','SHOP_EXIT']) assert.ok(types.has(t), t);
+  for (const t of ['NODE_OPTIONS','NODE_PICK','BATTLE_OPTIONS','BATTLE_PICK','BATTLE_START','BATTLE_END','FIXED_BATTLE_START']) assert.ok(types.has(t), t);
+  assert.equal(types.has('REWARD_OPTIONS'), false);
   assert.equal(vm.phase, 'day_end');
   assert.ok(adapter.getTextReport('player').includes('全数据纯文字流程报告'));
-  assert.ok(adapter.getTextReport('shop').includes('商店链路报告'));
+  assert.ok(adapter.getTextReport('shop').includes('节点'));
+});
+
+test('UI07B Day1 节点选择和中午遭遇选择通过适配层公开命令推进', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 20, seed: 'route_ui_test' });
+  const nodeOptions = adapter.generateNodeOptions();
+  assert.ok(hasEvent(nodeOptions, 'NODE_OPTIONS'));
+  assert.equal(nodeOptions.viewModel.dayRoute.options.length, 3);
+  const firstNode = nodeOptions.viewModel.dayRoute.options[0];
+  const pickedNode = adapter.pickNode(firstNode.optionId);
+  assert.ok(hasEvent(pickedNode, 'NODE_PICK'));
+  const battleOptions = adapter.run('GENERATE_BATTLE_OPTIONS', { scheduleStep: 3 });
+  assert.ok(hasEvent(battleOptions, 'BATTLE_OPTIONS'));
+  assert.equal(battleOptions.viewModel.dayRoute.battleOptions.length, 3);
+  const pickedBattle = adapter.pickBattleEncounter(battleOptions.viewModel.dayRoute.battleOptions[0].encounterId);
+  assert.ok(hasEvent(pickedBattle, 'BATTLE_PICK'));
+  assert.equal(pickedBattle.viewModel.dayRoute.currentEncounter.phaseLabel, '中午战');
 });
 
 test('UI08 未知 UI 命令会被拦截', () => {

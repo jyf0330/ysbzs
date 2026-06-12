@@ -36,10 +36,35 @@ Do not pause unless a High-Risk Exception applies.
 ```text
 read entry docs -> classify -> check tasks/ + git status ->
 resolve conflicts -> plan -> execute -> verify (node test.js) ->
+if visible change -> visual QA subthread gate ->
 update docs -> if auto-commit conditions met -> commit
 ```
 
 **详细执行规则（Goal 默认执行、不机械执行、核心层/显示层分离、模块拆分、四层棋盘格）见 `docs/00_AI_START_HERE.md` →「Goal 执行规则」章节。**
+
+## 提交前可见验收门禁
+
+适用范围：任何 UI、棋盘、可见预览、交互反馈、布局、文案可读性、浏览器画面相关改动。
+
+这些任务在进入暂存和自动提交检查前，必须先完成以下顺序：
+
+```text
+implementation thread finishes code/tests
+-> testing subthread operates the real browser through player actions
+-> testing subthread saves screenshot and DOM/state/console evidence
+-> main thread reviews screenshot for visible correctness
+-> only then run auto-commit eligibility check
+```
+
+硬规则：
+
+1. 优先派独立测试子线程做验收；如果当前工具没有可用子线程，必须执行独立 tester pass，并在任务卡记录 `TEST_SUBTHREAD_UNAVAILABLE` 与替代验证命令。
+2. 测试子线程必须在真实浏览器里操作页面，动作包含按钮点击、棋盘点击、hover、结束回合、dispatch 或 `autoExecuteTurn` 等玩家可触发入口。
+3. `/api/action`、DOM / ViewModel / 状态断言只能作为辅助证据；直接调用内部函数只能补单元测试，不能替代真实浏览器操作验收。
+4. 必须保存真实浏览器截图到 `output/playwright/` 或任务卡指定路径。
+5. 任务卡验证记录必须包含真实浏览器操作步骤、截图路径、关键 DOM / ViewModel / 状态断言、console error 结果。
+6. 主线程必须查看截图，确认关键可见效果“感觉正确”、没有明显遮挡、错位、缺失或错误数值。
+7. 缺少真实浏览器操作、缺少截图、截图未复核、console 有新增 error、DOM/状态断言不匹配时，不得进入自动提交检查；只能输出 blocked/Commit Plan。
 
 ## diff
 
@@ -158,8 +183,8 @@ Always trigger matching skills when available:
 | Unclear goal, exploration, standalone `diff` | `brainstorming`, `writing-plans`, `ywh-game` |
 | Consultation, architecture evaluation, engine/tool choice, “要不要做 / 值不值得做” | `ywh-game` + 1 个最相关领域 skill；先不要默认加载实现/验收 skill |
 | Numbers, rules, levels, systems | `brainstorming`, `writing-plans`, `balance-check`, `ywh-game` |
-| Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
-| UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion` |
+| Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
+| UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
 | UI behavior bug, 点不了, 移动不了, 选不中, 状态不对 | `systematic-debugging`, `test-driven-development`, `game-ui-frontend`, `ywh-web-game`, `playwright`, `verification-before-completion` |
 | Docs, CHANGELOG, workflow rules that require edits | `task-occupancy`, `ywh-game`, `verification-before-completion` |
 | `git-c`, finish, pre-commit check | `task-occupancy`, `verification-before-completion`, `ywh-game` |
@@ -202,6 +227,7 @@ For any task that will edit files, `task-occupancy` is the first gate:
 read workflow/task docs -> git status ->
 create/update ACTIVE task card -> reserve related_files ->
 check overlap / dirty files -> edit -> verify ->
+visible changes: testing subthread screenshot gate ->
 archive task card -> commit if conditions allow
 ```
 

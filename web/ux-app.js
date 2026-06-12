@@ -666,6 +666,12 @@
 	    const preview = previews.find(p => p?.isActiveActor) || previews[0] || null;
 		    const threat = detail?.threat || cell?.threat;
 		    const teamRisk = detail?.teamRisk || cell?.teamRisk || (unit?.side === 'hero' ? teamRiskForUnit(unit) : null);
+		    if (unit?.side === 'hero' && teamRisk) {
+		      $('detail-summary').textContent = `${teamRisk.unitName || unit.displayName || unit.name} 受击预警`;
+		      $('cell-detail').className = 'detail-card selected-detail';
+		      $('cell-detail').innerHTML = renderTeamRiskPanel(teamRisk);
+		      return;
+		    }
 		    if (preview) {
 		      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`}`).join('；');
 		      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);

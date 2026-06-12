@@ -242,7 +242,7 @@ function makeBoardVM(state, selected = {}) {
   const riskUnitId = selected.unitId || state.teamPlacementPreview?.activeUnitId || state.units.find(u => u.side === 'hero' && u.alive !== false && u.hp > 0)?.id || null;
   const moveRiskGrid = riskUnitId ? battle.buildMoveRiskGrid(state, riskUnitId) : [];
   const movedUnitIds = Array.isArray(state.teamPlacementPreview?.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
-  const teamRiskGrid = movedUnitIds.length ? battle.buildTeamRiskGrid(state, movedUnitIds) : [];
+  const teamRiskGrid = battle.buildTeamRiskGrid(state, movedUnitIds.length ? movedUnitIds : null);
 	  const previewMap = new Map(previewGrid.map(x => [`${x.r},${x.c}`, x]));
 	  const previewGroups = new Map();
 	  for (const p of previewGrid) {

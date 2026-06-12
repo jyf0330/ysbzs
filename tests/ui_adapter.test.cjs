@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createYSBZSUIAdapter, PUBLIC_COMMANDS } = require('../src/uiAdapter.cjs');
+const { createYSBZSUIAdapter, createViewModel, PUBLIC_COMMANDS } = require('../src/uiAdapter.cjs');
 const battle = require('../src/core/battle.cjs');
 const { createGameState, getCell, syncBoardUnits } = require('../src/core/state.cjs');
 
@@ -431,4 +431,42 @@ test('UI21 候选落点返回真实行动后的沙盒棋盘与单位结果', () 
   assert.ok(candidate.unitDiffs.some(diff => diff.id === target.id && diff.after.hp < diff.before.hp), '单位 diff 需要记录目标 HP 变化');
   assert.ok(candidate.cellDiffs.some(diff => diff.r === target.position.r && diff.c === target.position.c), '棋盘 diff 需要记录目标格变化');
   assert.ok(candidate.sandboxEvents.some(evt => evt.type === 'FIRE_EXPLODE_AFTER_ATTACK'), '沙盒事件需要保留真实结算事件');
+});
+
+test('UI22 未移动前伤害预览直接显示敌方宠物 AP 累计伤害', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'enemy_pet_baseline_damage_preview' });
+  battle.startBattle(state);
+  const hero = state.units.find(u => u.side === 'hero' && u.alive);
+  const enemy = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(hero && enemy, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== enemy.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  hero.position = { r: 5, c: 3 };
+  hero.def = 0;
+  hero.shield = 0;
+  hero.hp = 30;
+  enemy.position = { r: 5, c: 4 };
+  enemy.ap = 3;
+  enemy.atk = 7;
+  enemy.actionSlotsUsed = {};
+  enemy.shape = Object.assign({}, enemy.shape, {
+    hitCells: 1,
+    slotCount: 3,
+    slotElements: [enemy.element || '火', enemy.element || '火', enemy.element || '火'],
+    baseLayers: 1
+  });
+  for (let i = 0; i < 3; i++) state.actionDirs[`${enemy.id}:slot${i}`] = 'left';
+  syncBoardUnits(state);
+
+  const vm = createViewModel(state);
+  const risk = vm.teamRiskGrid.find(x => x.unitId === hero.id);
+  assert.ok(risk, 'ViewModel 未移动前也应暴露我方单位受击预览');
+  assert.equal(risk.damage, 21);
+  assert.equal(risk.threats.length, 3);
+  const cell = vm.board.cells.find(x => x.r === hero.position.r && x.c === hero.position.c);
+  assert.equal(cell.teamRisk.damage, 21);
 });

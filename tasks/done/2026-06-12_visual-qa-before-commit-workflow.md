@@ -41,11 +41,12 @@
 
 - 2026-06-12：开工，已确认现有规则只要求测试通过和任务卡条件，没有把截图验收作为提交前硬门槛。
 - 2026-06-12：已在 `AGENTS.md`、`docs/02_CURRENT_WORKFLOW.md`、`tasks/README.md`、`docs/00_AI_START_HERE.md` 增加可见变更提交前验收门禁：测试子线程或等价 tester pass -> 真实入口 -> 截图与 DOM / ViewModel / console 证据 -> 主线程截图复核 -> 自动提交检查。
+- 2026-06-12：按最新用户口径收紧：测试子线程必须真实在浏览器里操作页面，截图看效果是否正确；`/api/action`、DOM / ViewModel 断言只能作为辅助证据。
 - 2026-06-12：仓库内未发现 `docs/10_CHANGELOG.md`，本轮不新建 changelog；以本任务卡记录工作流变更。
 
 ## 验证记录
 
-- `rg -n "测试子线程|tester pass|截图|自动提交检查|可见验收门禁|TEST_SUBTHREAD_UNAVAILABLE" AGENTS.md docs/00_AI_START_HERE.md docs/02_CURRENT_WORKFLOW.md tasks/README.md`：通过，四个入口均包含新门禁关键词。
+- `rg -n "测试子线程|tester pass|真实浏览器|操作页面|截图|自动提交检查|可见验收门禁|TEST_SUBTHREAD_UNAVAILABLE" AGENTS.md docs/00_AI_START_HERE.md docs/02_CURRENT_WORKFLOW.md tasks/README.md`：通过，四个入口均包含新门禁关键词。
 - `git diff --check`：通过。
 - `git status --short --untracked-files=all`：仅本任务文件变更。
 

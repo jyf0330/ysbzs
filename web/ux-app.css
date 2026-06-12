@@ -305,9 +305,9 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .action-block span strong{font-size:10px}
 .action-block span small{font-size:8px}
 .action-block i{font-size:13px}
-.detail-zone{min-height:0;display:flex;flex-direction:column}
-.right-panel .detail-card{flex:1 1 auto;min-height:360px;max-height:390px;overflow:auto}
-.manual-flow-controls{margin-top:0}
+.detail-zone{min-height:0;display:flex;flex:1 1 auto;flex-direction:column;overflow:hidden}
+.right-panel .detail-card{flex:1 1 auto;min-height:0;max-height:none;overflow:auto}
+.manual-flow-controls{flex:0 0 auto;margin-top:0}
 .auto-controls{margin-top:auto}
 .action-popover.hidden{display:none}
 .action-popover{position:absolute;left:calc(100% + 8px);top:300px;z-index:90;width:238px;padding:9px;background:#fff8e6;border:2px solid #426c88;box-shadow:0 12px 28px rgba(47,33,24,.28),inset 0 0 0 1px rgba(255,248,224,.8);color:#3f2e22}

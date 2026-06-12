@@ -73,7 +73,8 @@ test('action blocks sit lower and edit through a local popover instead of the ri
   assert.match(css, /\.active-pet-zone\{[^}]*flex:0 0 310px/s, 'active pets should get more vertical room and stop feeling compressed');
   assert.match(css, /\.slot-list\{[^}]*height:124px/s, '12 action blocks should move down into a readable left-bottom strip');
   assert.match(css, /\.action-block-zone\{[^}]*margin-top:auto/s, 'action block zone should sit lower in the left panel');
-  assert.match(css, /\.right-panel \.detail-card\{[^}]*min-height:360px/s, 'right detail panel should stay large after removing slot controls');
+  assert.match(css, /\.detail-zone\{[^}]*flex:1 1 auto/s, 'right detail zone should flex to available space instead of overlapping controls');
+  assert.match(css, /\.right-panel \.detail-card\{[^}]*flex:1 1 auto[^}]*min-height:0/s, 'right detail panel should scroll inside available space');
   assert.match(css, /\.action-popover/, 'action popover needs visible floating-panel styling');
 
   for (const file of ['web/js/main.js', 'web/ux-app.js']) {
@@ -120,8 +121,11 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	    assert.match(js, /unit-stat-badge unit-stat-hp/, `${file} board tokens should render an in-cell HP numeric badge`);
 	    assert.match(js, /unit-stat-badge unit-stat-atk/, `${file} board tokens should render an in-cell attack numeric badge`);
 	    assert.match(js, /function threatDetailText/, `${file} should render detailed enemy pet threat previews`);
+	    assert.match(js, /function teamRiskDetailText/, `${file} should render detailed incoming team risk previews`);
 	    assert.match(js, /次行动块/, `${file} threat detail should show enemy action-block count`);
 	    assert.match(js, /合计/, `${file} threat detail should show total incoming damage`);
+	    assert.match(js, /受击预警/, `${file} should default the detail panel to incoming damage warnings`);
+	    assert.match(js, /KO/, `${file} should expose lethal incoming damage in visible copy`);
 	    assert.doesNotMatch(js, /friendly-warning|误伤/, `${file} should not render friendly-fire UI because current rules do not support it`);
 	    assert.doesNotMatch(js, /class="unit-token[^`]*\btitle="/, `${file} board unit token must not trigger native title hover text`);
 	    assert.doesNotMatch(js, /opChip\('目标'/, `${file} should not keep target details in the board-side rail`);

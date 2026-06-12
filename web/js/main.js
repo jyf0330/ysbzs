@@ -64,6 +64,17 @@ import { createGameRuntime } from './runtime-client.js';
   function cellAt(r, c) { return (ui.vm?.board?.cells || []).find(x => Number(x.r) === Number(r) && Number(x.c) === Number(c)) || null; }
   function isNext(type) { return (ui.vm?.nextActions || []).some(a => a.type === type); }
   function selectedHero() { return unitById(ui.selectedUnitId || ui.vm?.selected?.unitId) || null; }
+  function teamRiskForUnit(unit) {
+    if (!unit?.id) return null;
+    const risks = ui.vm?.teamRiskGrid || ui.vm?.board?.teamRiskGrid || [];
+    const direct = risks.find(risk => risk.unitId === unit.id);
+    if (direct) return direct;
+    return unit.position ? cellAt(unit.position.r, unit.position.c)?.teamRisk || null : null;
+  }
+  function primaryTeamRisk() {
+    const risks = (ui.vm?.teamRiskGrid || ui.vm?.board?.teamRiskGrid || []).filter(risk => Number(risk.damage || 0) > 0);
+    return risks.sort((a, b) => Number(!!b.lethal) - Number(!!a.lethal) || Number(b.damage || 0) - Number(a.damage || 0))[0] || null;
+  }
   function qualityMark(q) { return { '钻石': '◆', '黄金': '★', '白银': '◇', '青铜': '●' }[q] || ''; }
   function qualityTag(q) {
     return q ? `<span class="quality-tag quality-${esc(q)}">${qualityMark(q)}${esc(q)}</span>` : '';
@@ -278,16 +289,17 @@ import { createGameRuntime } from './runtime-client.js';
 	      selectedUnitId: ui.selectedUnitId,
 	      slotArmed: ui.slotArmed
 	    })) renderBoard();
-    if (renderCache.shouldRender('cellDetail', {
-      selectedCell: ui.selectedCell || vm.selected?.cell,
-      selectedUnitId: ui.selectedUnitId,
-      selectedSlotGlobal: ui.selectedSlotGlobal,
-      selectedSlot: ui.selectedSlot,
-      slotArmed: ui.slotArmed,
-      apBySlot: ui.apBySlot,
-      detail: ui.cellDetail,
-      board: vm.board
-    })) renderCellDetail();
+        if (renderCache.shouldRender('cellDetail', {
+          selectedCell: ui.selectedCell || vm.selected?.cell,
+          selectedUnitId: ui.selectedUnitId,
+          selectedSlotGlobal: ui.selectedSlotGlobal,
+          selectedSlot: ui.selectedSlot,
+          slotArmed: ui.slotArmed,
+          apBySlot: ui.apBySlot,
+          detail: ui.cellDetail,
+          board: vm.board,
+          teamRiskGrid: vm.teamRiskGrid
+        })) renderCellDetail();
     if (renderCache.shouldRender('slots', { heroes: vm.heroes, phase: vm.phase, selectedSlotGlobal: ui.selectedSlotGlobal, selectedSlot: ui.selectedSlot, slotArmed: ui.slotArmed, busy: ui.busy, apBySlot: ui.apBySlot })) renderSlots();
     renderActionPopover();
     renderControls();
@@ -502,7 +514,7 @@ import { createGameRuntime } from './runtime-client.js';
 	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
 	        ${previews.length ? previewBadge(previews) : ''}
         ${moveTargets.has(key) && moveRisk?.damage > 0 ? `<span class="risk-num">受${esc(moveRisk.damage)}</span>` : ''}
-        ${unit && teamRisk?.damage > 0 ? `<span class="team-risk-num">受${esc(teamRisk.damage)}</span>` : ''}
+        ${unit && teamRisk?.damage > 0 ? `<span class="team-risk-num">受${esc(teamRisk.damage)}${teamRisk.lethal ? ' KO' : ''}</span>` : ''}
 	        ${t ? `<span class="threat-num">危${esc(t.damage ?? t.atk ?? '!')}</span>` : ''}
 	      </button>`;
 	    }).join('');
@@ -586,18 +598,33 @@ import { createGameRuntime } from './runtime-client.js';
       $('cell-detail').innerHTML = renderSlotInfo(slotInfo);
       return;
     }
-    const hero = selectedHero();
-    const c = ui.selectedCell || ui.vm.selected?.cell;
-    if (hero && (!c || unitById(cellAt(c.r, c.c)?.unitId)?.id === hero.id)) {
-      $('detail-summary').textContent = hero.name;
-      $('cell-detail').className = 'detail-card selected-detail';
-      $('cell-detail').innerHTML = renderUnitDetail(hero);
+	    const hero = selectedHero();
+	    const c = ui.selectedCell || ui.vm.selected?.cell;
+	    const selectedCellUnit = c ? unitById(cellAt(c.r, c.c)?.unitId) : null;
+	    const selectedUnitRisk = selectedCellUnit?.side === 'hero' ? teamRiskForUnit(selectedCellUnit) : null;
+	    if (selectedUnitRisk) {
+	      $('detail-summary').textContent = `${selectedUnitRisk.unitName || selectedCellUnit.displayName || selectedCellUnit.name} 受击预警`;
+	      $('cell-detail').className = 'detail-card selected-detail';
+	      $('cell-detail').innerHTML = renderTeamRiskPanel(selectedUnitRisk);
+	      return;
+	    }
+	    if (hero && (!c || selectedCellUnit?.id === hero.id)) {
+	      $('detail-summary').textContent = hero.name;
+	      $('cell-detail').className = 'detail-card selected-detail';
+	      $('cell-detail').innerHTML = renderUnitDetail(hero);
       return;
     }
-    if (!c) {
-      $('detail-summary').textContent = '未选择';
-      $('cell-detail').className = 'detail-card empty';
-      $('cell-detail').innerHTML = '请选择宠物、行动块或棋盘格。';
+	    if (!c) {
+	      const risk = primaryTeamRisk();
+	      if (risk) {
+	        $('detail-summary').textContent = `${risk.unitName || '我方单位'} 受击预警`;
+	        $('cell-detail').className = 'detail-card selected-detail';
+	        $('cell-detail').innerHTML = renderTeamRiskPanel(risk);
+	        return;
+	      }
+	      $('detail-summary').textContent = '未选择';
+	      $('cell-detail').className = 'detail-card empty';
+	      $('cell-detail').innerHTML = '请选择宠物、行动块或棋盘格。';
       return;
     }
     $('detail-summary').textContent = `R${Number(c.r) + 1} C${Number(c.c) + 1}`;
@@ -622,14 +649,16 @@ import { createGameRuntime } from './runtime-client.js';
     if (terrain?.modules?.length) parts.push(`<div class="detail-terrain">地形：${terrain.modules.join('、')}</div>`);
 	    const previews = detail?.previews || cell?.previews || (detail?.preview || cell?.preview ? [detail?.preview || cell?.preview] : []);
 	    const preview = previews.find(p => p?.isActiveActor) || previews[0] || null;
-	    const threat = detail?.threat || cell?.threat;
-	    if (preview) {
-	      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`}`).join('；');
-	      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);
-	    }
-	    if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threatDetailText(threat))}</div>`);
-	    $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
-	  }
+		    const threat = detail?.threat || cell?.threat;
+		    const teamRisk = detail?.teamRisk || cell?.teamRisk || (unit?.side === 'hero' ? teamRiskForUnit(unit) : null);
+		    if (preview) {
+		      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`}`).join('；');
+		      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);
+		    }
+		    if (teamRisk) parts.push(`<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(teamRisk))}</div>`);
+		    else if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threatDetailText(threat))}</div>`);
+		    $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
+		  }
 	  function threatDetailText(threat) {
 	    const hits = Array.isArray(threat?.hits) ? threat.hits : [];
 	    const actionCount = threat.actionCount || (Array.isArray(threat.actionIndexes) ? threat.actionIndexes.length : hits.length) || 1;
@@ -637,9 +666,27 @@ import { createGameRuntime } from './runtime-client.js';
 	      const label = hit.slotLabel || (Array.isArray(threat.actionIndexes) ? `第${Number(threat.actionIndexes[i] ?? i) + 1}槽` : `第${i + 1}次`);
 	      return `${label}${hit.targetName ? ` ${hit.targetName}` : ''} 伤${hit.damage ?? hit.raw ?? 0}${hit.lethal ? ' KO' : ''}`;
 	    }).join(' / ');
-	    const total = threat.totalDamage ?? threat.damage ?? threat.atk ?? 0;
-	    return `${threat.unitName || '敌方宠物'} ${actionCount}次行动块${hitText ? `：${hitText}` : ''}；合计${total}${threat.lethal ? ' KO' : ''}`;
-	  }
+		    const total = threat.totalDamage ?? threat.damage ?? threat.atk ?? 0;
+		    return `${threat.unitName || '敌方宠物'} ${actionCount}次行动块${hitText ? `：${hitText}` : ''}；合计${total}${threat.lethal ? ' KO' : ''}`;
+		  }
+		  function teamRiskDetailText(teamRisk) {
+		    const threats = Array.isArray(teamRisk?.threats) ? teamRisk.threats : [];
+		    const actionCount = threats.length || 1;
+		    const enemyName = threats[0]?.enemyName || '敌方宠物';
+		    const hitText = threats.map((threat, i) => {
+		      const label = threat.slotLabel || `第${Number(threat.slotIndex ?? i) + 1}槽`;
+		      const ko = teamRisk.lethal && i === threats.length - 1 ? ' KO' : '';
+		      return `${label} ${teamRisk.unitName || '我方单位'} 伤${threat.damage ?? 0}${ko}`;
+		    }).join(' / ');
+		    return `${enemyName} ${actionCount}次行动块${hitText ? `：${hitText}` : ''}；合计${teamRisk.damage ?? 0}${teamRisk.lethal ? ' KO' : ''}`;
+		  }
+		  function renderTeamRiskPanel(teamRisk) {
+		    return [
+		      `<div class="detail-unit"><strong>${esc(teamRisk.unitName || '我方单位')}</strong><small>受击预警</small></div>`,
+		      `<div class="detail-state-panel"><span><b>预计伤害</b>${esc(teamRisk.damage ?? 0)}</span><span><b>HP</b>${esc(teamRisk.hpFrom ?? '-')}→${esc(teamRisk.hpTo ?? '-')}</span><span><b>结果</b>${teamRisk.lethal ? 'KO' : '存活'}</span></div>`,
+		      `<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(teamRisk))}</div>`
+		    ].join('\n');
+		  }
 	  function renderActionPopover() {
     const panel = $('action-popover');
     const info = ui.slotArmed ? selectedSlotInfo() : null;
@@ -691,14 +738,15 @@ import { createGameRuntime } from './runtime-client.js';
 	    const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(s.label || s.shapeName || '行动块')} · ${esc(s.element || '-')} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
 	    const activeSlot = selectedSlotInfo();
 	    const facing = activeSlot?.hero?.id === unit.id ? activeSlot.slot.direction : (ui.vm?.selected?.direction || 'right');
-	    const unitThreat = unit.position ? ((ui.cellDetail && Number(ui.cellDetail.r) === Number(unit.position.r) && Number(ui.cellDetail.c) === Number(unit.position.c) ? ui.cellDetail.threat : null) || cellAt(unit.position.r, unit.position.c)?.threat) : null;
+		    const unitRisk = unit.side === 'hero' ? teamRiskForUnit(unit) : null;
+		    const unitThreat = unit.position ? ((ui.cellDetail && Number(ui.cellDetail.r) === Number(unit.position.r) && Number(ui.cellDetail.c) === Number(unit.position.c) ? ui.cellDetail.threat : null) || cellAt(unit.position.r, unit.position.c)?.threat) : null;
 	    return [
 	      `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><div><strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.element || '-')} · ${esc(unit.quality || '普通')} · ${esc(unit.role || '-')}</small></div></div>`,
 	      renderStatGrid(heroBattleStats(unit)),
 	      `<div class="detail-skill-panel"><strong>技能 ${esc(skillName(unit))}</strong><span>${esc(skillDescription(unit))}</span></div>`,
 	      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
 	      `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
-	      unitThreat ? `<div class="detail-extra threat">⚠ ${esc(threatDetailText(unitThreat))}</div>` : '',
+		      unitRisk ? `<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(unitRisk))}</div>` : (unitThreat ? `<div class="detail-extra threat">⚠ ${esc(threatDetailText(unitThreat))}</div>` : ''),
 	      elementLayers ? `<div class="detail-els">${elementLayers}</div>` : '<div class="detail-els">元素层：<span class="dim">无</span></div>',
 	      slotList ? `<div class="detail-slot-list">${slotList}</div>` : ''
 	    ].join('\n');

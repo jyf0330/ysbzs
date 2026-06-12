@@ -70,3 +70,18 @@ test('UI05 board click moves selected hero before hover preview can turn the tar
     'legal movement should be checked before hero-unit detection because hover previews can render the target as a sandbox hero'
   );
 });
+
+test('UI06 board hover preview is disabled so only clicks change the board interaction state', () => {
+  const main = read('web/js/main.js');
+  const css = read('web/ux-app.css');
+  const eventBindingBody = main.match(/\$\('fullscreen-btn'\)[\s\S]*?\n  function scaleApp/);
+  assert.ok(eventBindingBody, 'event binding section should exist');
+  assert.doesNotMatch(eventBindingBody[0], /\$\('board'\)\.addEventListener\('mouseover'/, 'board should not update previews on hover');
+  assert.doesNotMatch(eventBindingBody[0], /\$\('board'\)\.addEventListener\('mouseleave'/, 'board should not clear/re-render hover state on mouse leave');
+  assert.doesNotMatch(main, /const hoverRisk =/, 'renderBoard should not derive sandbox previews from hover state');
+  assert.doesNotMatch(main, /sandboxBoardCells/, 'renderBoard should not swap board cells from hover sandbox data');
+  assert.doesNotMatch(css, /\.cell:hover/, 'board cells should not have CSS hover highlighting');
+  assert.doesNotMatch(css, /hover-move-target/, 'unused hover move target styling should stay removed');
+  assert.match(css, /button:not\(\.cell\):hover/, 'global button hover should exclude board cells');
+  assert.doesNotMatch(css, /button:hover\{filter:brightness/, 'generic button hover should not affect board cells');
+});

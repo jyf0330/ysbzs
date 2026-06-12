@@ -36,8 +36,7 @@ import { createGameRuntime } from './runtime-client.js';
 	    prepOpen: false,
 	    prepFilter: '',
 	    draggedRosterId: null,
-	    manualAutoLock: false,
-	    hoveredCell: null
+	    manualAutoLock: false
   };
   Object.assign(ui, sharedUi);
   const renderCache = createRenderCache();
@@ -285,7 +284,6 @@ import { createGameRuntime } from './runtime-client.js';
       moveRiskGrid: vm.moveRiskGrid,
       teamRiskGrid: vm.teamRiskGrid,
 	      selectedCell: ui.selectedCell || vm.selected?.cell,
-	      hoveredCell: ui.hoveredCell,
 	      selectedUnitId: ui.selectedUnitId,
 	      slotArmed: ui.slotArmed
 	    })) renderBoard();
@@ -455,17 +453,11 @@ import { createGameRuntime } from './runtime-client.js';
 	    const selectedH = selectedHero();
 	    const moveTargets = legalMoveTargets(selectedH);
 	    const threatMap = new Map((ui.vm.threatGrid || []).map(x => [`${x.r},${x.c}`, x]));
-    const riskMap = new Map((ui.vm.moveRiskGrid || ui.vm.board?.moveRiskGrid || []).map(x => [`${x.r},${x.c}`, x]));
-    const hoveredKey = ui.hoveredCell ? `${ui.hoveredCell.r},${ui.hoveredCell.c}` : null;
-    const hoverRisk = hoveredKey ? riskMap.get(hoveredKey) : null;
-    const sandboxCellMap = hoverRisk && Array.isArray(hoverRisk.sandboxBoardCells) ? new Map(hoverRisk.sandboxBoardCells.map(x => [`${x.r},${x.c}`, x])) : null;
-    const sandboxUnitMap = hoverRisk && Array.isArray(hoverRisk.sandboxUnits) ? new Map(hoverRisk.sandboxUnits.map(x => [x.id, x])) : null;
-    const renderCells = sandboxCellMap ? board.cells.map(cell => Object.assign({}, cell, sandboxCellMap.get(`${cell.r},${cell.c}`) || {})) : board.cells;
-    const unitForBoard = id => (sandboxUnitMap && sandboxUnitMap.get(id)) || unitById(id);
-    const previewSource = hoverRisk && Array.isArray(hoverRisk.previewGrid) ? hoverRisk.previewGrid : (ui.vm.previewGrid || []);
-    const useHoverTeamRisk = !!(hoverRisk && Array.isArray(hoverRisk.teamRiskGrid));
-    const teamRiskMap = new Map((useHoverTeamRisk ? hoverRisk.teamRiskGrid : (ui.vm.teamRiskGrid || ui.vm.board?.teamRiskGrid || [])).map(x => [`${x.r},${x.c}`, x]));
-    const activePreviewUnitId = hoverRisk?.unitId || ui.vm.teamPlacementPreview?.activeUnitId || previewSource[0]?.actorId || null;
+    const renderCells = board.cells;
+    const unitForBoard = id => unitById(id);
+    const previewSource = ui.vm.previewGrid || [];
+    const teamRiskMap = new Map((ui.vm.teamRiskGrid || ui.vm.board?.teamRiskGrid || []).map(x => [`${x.r},${x.c}`, x]));
+    const activePreviewUnitId = ui.vm.teamPlacementPreview?.activeUnitId || previewSource[0]?.actorId || null;
     const previewKeys = new Set(previewSource.map(x => `${x.r},${x.c}`));
     const previewMap = new Map(previewSource.map(x => [`${x.r},${x.c}`, x]));
     const previewGroups = new Map();
@@ -479,18 +471,17 @@ import { createGameRuntime } from './runtime-client.js';
 
 	    $('board').innerHTML = renderCells.map(cell => {
 	      const key = `${cell.r},${cell.c}`;
-      const teamRisk = (useHoverTeamRisk ? teamRiskMap.get(key) : (cell.teamRisk || teamRiskMap.get(key))) || null;
+      const teamRisk = (cell.teamRisk || teamRiskMap.get(key)) || null;
       const t = threatMap.get(key);
 	      const unit = unitForBoard(cell.unitId);
       const hasIncomingHit = !!(unit && teamRisk?.damage > 0);
-	      const previews = previewGroups.get(key) || (!hoverRisk ? (Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : [])) : []);
+	      const previews = previewGroups.get(key) || (Array.isArray(cell.previews) ? cell.previews : (cell.preview ? [cell.preview] : []));
 	      const currentPreviews = previews.filter(p => p.isActiveActor);
 	      const hasCurrentPreview = currentPreviews.length > 0;
 	      const hasEnemyHit = previews.some(p => p.hitEnemy);
 	      const arrow = unit ? actorPreviewMap.get(unit.id) : null;
 	      const classes = ['cell'];
 	      if (selected && selected.r === cell.r && selected.c === cell.c) classes.push('selected');
-	      if (ui.hoveredCell && ui.hoveredCell.r === cell.r && ui.hoveredCell.c === cell.c && moveTargets.has(key)) classes.push('hover-move-target');
 	      if (moveTargets.has(key)) classes.push('move-target');
 	      if (previewKeys.has(key)) classes.push('preview-hit');
 	      if (hasCurrentPreview) classes.push('preview-current');
@@ -1183,20 +1174,6 @@ import { createGameRuntime } from './runtime-client.js';
 	    $('board').addEventListener('click', ev => {
 	      const btn = ev.target.closest('[data-r][data-c]');
 	      if (btn) onCellClick(Number(btn.dataset.r), Number(btn.dataset.c));
-	    });
-	    $('board').addEventListener('mouseover', ev => {
-	      const btn = ev.target.closest('[data-r][data-c]');
-	      if (!btn) return;
-	      const next = { r: Number(btn.dataset.r), c: Number(btn.dataset.c) };
-	      if (ui.hoveredCell && ui.hoveredCell.r === next.r && ui.hoveredCell.c === next.c) return;
-	      ui.hoveredCell = next;
-	      renderCache.invalidate('board');
-	      renderBoard();
-	    });
-	    $('board').addEventListener('mouseleave', () => {
-	      ui.hoveredCell = null;
-	      renderCache.invalidate('board');
-	      renderBoard();
 	    });
     $('slot-list').addEventListener('click', ev => {
       const dirBtn = ev.target.closest('[data-slot-dir]');

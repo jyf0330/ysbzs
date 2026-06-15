@@ -203,7 +203,8 @@ function runDayRoute(state) {
     if (schedule.kind === 'node_choice') {
       const options = generateNodeOptions(state);
       if (!options) return false;
-      pickNode(state, options[0].optionId);
+      const option = options[(Number(schedule.step || 1) - 1) % options.length] || options[0];
+      pickNode(state, option.optionId);
       if (state.phase === 'shop') { shop.exitShop(state); state.phase = 'node_resolved'; }
       if (state.phase === 'reward' && state.rewards.length) shop.pickReward(state, 0);
       if (state.phase !== 'day_end' && state.phase !== 'battle_end') state.phase = 'node_resolved';

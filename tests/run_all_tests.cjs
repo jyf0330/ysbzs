@@ -2,22 +2,21 @@ const assert = require('assert');
 const { data, validateData, buildIndexes } = require('../src/core/data.cjs');
 const { createGameState } = require('../src/core/state.cjs');
 const { dispatch } = require('../src/core/reducer.cjs');
-const { runFullDayScenario } = require('../src/scenarios/fullDay.cjs');
+const { runFullDayScenario, runDayRangeScenario } = require('../src/scenarios/fullDay.cjs');
 const { renderPlayerReport } = require('../src/render/textReport.cjs');
 const { SUPPORTED_MECHANICS } = require('../src/core/mechanics.cjs');
 let tests=[]; function test(name, fn){ tests.push({name, fn}); }
 function hasEvent(state,type){ return state.events.some(e=>e.type===type); }
 
 test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,127); assert.equal(data.monsters.length,34); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,127); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,127); assert.equal(data.validation.length,10); assert.equal(data.day7Trial.length,9); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
-test('Day1 node route data defines four growth choices, one midday battle choice, and evening fixed battle',()=>{
-  assert.equal(data.nodeSchedule.length,6);
-  assert.equal(data.nodeSchedule.filter(x=>x.day===1 && x.kind==='node_choice').length,4);
-  const midday=data.nodeSchedule.find(x=>x.day===1 && x.kind==='battle_choice');
-  assert.ok(midday);
-  assert.equal(midday.choiceCount,3);
-  const evening=data.nodeSchedule.find(x=>x.day===1 && x.kind==='fixed_battle');
-  assert.ok(evening);
-  assert.equal(evening.encounterId,'enc_d01_evening_fixed');
+test('Day1-Day3 route data defines at least four outer decisions and fixed battle each day',()=>{
+  for (const day of [1, 2, 3]) {
+    const rows = data.nodeSchedule.filter(x => x.day === day);
+    const decisions = rows.filter(x => x.kind === 'node_choice' || x.kind === 'battle_choice');
+    assert.ok(decisions.length >= 4, `day ${day} should have at least four outer decisions`);
+    assert.ok(decisions.every(x => Number(x.choiceCount || 3) === 3), `day ${day} choices should be 3选1`);
+    assert.ok(rows.some(x => x.kind === 'fixed_battle'), `day ${day} should have fixed battle`);
+  }
 });
 test('all cross-table references connected',()=>{ const v=validateData(); assert.deepEqual(v.issues,[]); assert.equal(v.ok,true); });
 test('all mechanism IDs have executable handler registration',()=>{ for(const m of data.mechanisms) assert.ok(SUPPORTED_MECHANICS.has(m.id), `unsupported ${m.id}`); });
@@ -59,6 +58,19 @@ test('Day1 full day route uses node choices, midday encounter choice, and evenin
   assert.ok(s.events.some(e=>e.type==='FIXED_BATTLE_START' && e.encounterId==='enc_d01_evening_fixed'));
   assert.equal(s.phase,'day_end');
   assert.equal(s.dayRoute.nodeIndex,6);
+});
+test('Day1-Day3 route can run continuously and records daily route history',()=>{
+  const s=runDayRangeScenario({fromDay:1,toDay:3,gold:999});
+  assert.equal(s.day,3);
+  assert.equal(s.phase,'day_end');
+  assert.equal(s.dayRouteRuns.length,3);
+  for (const run of s.dayRouteRuns) {
+    const choices = run.history.filter(x => x.kind === 'node' || x.kind === 'battle_choice');
+    const nodeNames = Array.from(new Set(run.history.filter(x => x.kind === 'node').map(x => x.option.name)));
+    assert.ok(choices.length >= 4, `day ${run.day} should record at least four outer decisions`);
+    assert.ok(nodeNames.length >= 2, `day ${run.day} should auto-pick at least two different node types`);
+    assert.ok(run.history.some(x => x.kind === 'fixed_battle'), `day ${run.day} should record fixed battle`);
+  }
 });
 test('text report includes node route and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('中午遭遇')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });

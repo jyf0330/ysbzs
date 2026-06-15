@@ -21,9 +21,9 @@ const expectedCounts = {
   relics: 40,
   shapes: 127,
   validation: 10,
-  nodeSchedule: 6,
-  nodePool: 6,
-  encounterPool: 4
+  nodeSchedule: 18,
+  nodePool: 18,
+  encounterPool: 12
 };
 
 test('FC01 当前 CSV 单源数据规模与波次规则表一致', () => {

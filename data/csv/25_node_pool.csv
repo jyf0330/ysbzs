@@ -5,3 +5,15 @@ node_shop_basic,node_pool_d01_growth,夜市商人,shop,80,1,night_base,,,6,,正�
 node_event_discount,node_pool_d01_growth,折扣摊位,event,70,1,night_base,reward_pT1,evt_discount,,50,正式,下一件商品半价
 node_shop_fire,node_pool_d01_growth,火系补货商人,shop,60,1,elem_火,,,3,,正式,进入火元素定向摊位
 node_rest_gold,node_pool_d01_growth,休整补给,rest,50,1,,,,,2,正式,直接获得金币
+node_d02_role_summon,node_pool_d02_growth,召唤摊位,shop,100,2,role_召唤,,,4,,正式,进入召唤标签摊位
+node_d02_role_tank,node_pool_d02_growth,前排摊位,shop,90,2,role_坦克,,,4,,正式,进入坦克标签摊位
+node_d02_reward_pet,node_pool_d02_growth,宠物奖励,reward,80,2,,reward_pT1,,3,,正式,生成 3 个 pT1 奖励候选
+node_d02_event_summon,node_pool_d02_growth,召唤补强,event,70,2,role_召唤,reward_summon,evt_role_summon,,2,正式,获得召唤流补强机会
+node_d02_shop_water,node_pool_d02_growth,水系补货商人,shop,60,2,elem_水,,,3,,正式,进入水元素定向摊位
+node_d02_rest_gold,node_pool_d02_growth,休整补给,rest,50,2,,,,,2,正式,直接获得金币
+node_d03_tier2_shop,node_pool_d03_growth,白银预备商人,shop,100,3,tier_pT2,,,4,,正式,进入 pT2 标签摊位
+node_d03_reward_tier2,node_pool_d03_growth,白银奖励,reward,90,3,,reward_pT2,,3,,正式,生成 3 个 pT2 奖励候选
+node_d03_fire_shop,node_pool_d03_growth,火系强化商人,shop,80,3,elem_火,,,4,,正式,进入火元素强化摊位
+node_d03_summon_shop,node_pool_d03_growth,召唤强化商人,shop,70,3,role_召唤,,,4,,正式,进入召唤标签摊位
+node_d03_event_discount,node_pool_d03_growth,折扣摊位,event,60,3,night_base,reward_pT2,evt_discount,,50,正式,下一件商品半价
+node_d03_rest_gold,node_pool_d03_growth,休整补给,rest,50,3,,,,,3,正式,直接获得金币

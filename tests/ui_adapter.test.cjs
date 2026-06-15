@@ -115,7 +115,8 @@ test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
   const vm = adapter.runFullPlayerDayFlow();
   const types = new Set(adapter.getEvents().map(e => e.type));
   for (const t of ['NODE_OPTIONS','NODE_PICK','BATTLE_OPTIONS','BATTLE_PICK','BATTLE_START','BATTLE_END','FIXED_BATTLE_START']) assert.ok(types.has(t), t);
-  assert.equal(types.has('REWARD_OPTIONS'), false);
+  assert.equal(types.has('REWARD_OPTIONS'), true);
+  assert.equal(types.has('REWARD_PICK'), true);
   assert.equal(vm.phase, 'day_end');
   assert.ok(adapter.getTextReport('player').includes('全数据纯文字流程报告'));
   assert.ok(adapter.getTextReport('shop').includes('节点'));

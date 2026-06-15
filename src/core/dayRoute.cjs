@@ -188,14 +188,43 @@ function runFixedBattle(state, opts = {}) {
   pushEvent(state, 'DAY_ROUTE_END', { day: state.day, text: `第${state.day}天路线结束。` });
   return true;
 }
-function rewardPoolForOutcome(state, result) {
+function dayExprAllows(expr, day) {
+  if (!expr) return true;
+  const range = String(expr).match(/D(\d+)\s*-\s*D(\d+)/);
+  if (range) return Number(day || 1) >= Number(range[1]) && Number(day || 1) <= Number(range[2]);
+  const single = String(expr).match(/D(\d+)/);
+  return single ? Number(day || 1) === Number(single[1]) : true;
+}
+function isPressureEncounter(encounter) {
+  return /精英|Boss|终局/.test(`${encounter?.name || ''}${encounter?.phaseLabel || ''}${encounter?.note || ''}`);
+}
+function baseRewardPoolForOutcome(state, result) {
   if (!result || result.code === 'LOSE') return 'reward_none';
   if (result.code === 'WIN_FAST') return 'reward_fast_clear';
   return Number(state.day || 1) >= 3 ? 'reward_pT2' : 'reward_pT1';
 }
+function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId) {
+  if (!result?.win || !isPressureEncounter(encounter)) return { rewardPoolId: baseRewardPoolId, events: [] };
+  const event = (state.data.events || []).find(e => e.id === 'evt_elite_reward' && e.layer === 'post_battle' && e.status === '正式' && dayExprAllows(e.dayExpr, state.day));
+  if (!event) return { rewardPoolId: baseRewardPoolId, events: [] };
+  const rewardPoolId = event.rewardPoolId || baseRewardPoolId;
+  return {
+    rewardPoolId,
+    events: [{
+      eventId: event.id,
+      name: event.name,
+      rewardPoolFrom: baseRewardPoolId,
+      rewardPoolTo: rewardPoolId,
+      condition: 'pressure_win',
+      encounterId: encounter.encounterId || null
+    }]
+  };
+}
 function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) {
   const route = ensureDayRoute(state);
-  const rewardPoolId = rewardPoolForOutcome(state, result);
+  const baseRewardPoolId = baseRewardPoolForOutcome(state, result);
+  const postBattle = postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId);
+  const rewardPoolId = postBattle.rewardPoolId;
   const outcome = {
     day: state.day,
     battleIndex: route.battleIndex,
@@ -210,8 +239,10 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
     goldTo: state.gold,
     goldBaseDelta: Number(state.gold || 0) - Number(beforeGold || 0),
     goldDelta: Number(state.gold || 0) - Number(beforeGold || 0),
+    baseRewardPoolId,
     rewardPoolId,
     rewardEligible: !!result?.win,
+    postBattleEvents: clone(postBattle.events),
     runEffects: []
   };
   const runEffectResult = applyRouteBattleOutcomeEffects(state, outcome, beforeGold);
@@ -234,8 +265,19 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
       claimed: false
     });
   }
+  for (const event of outcome.postBattleEvents) {
+    pushEvent(state, 'ROUTE_POST_BATTLE_EVENT_APPLY', {
+      eventId: event.eventId,
+      encounterId: outcome.encounterId,
+      rewardPoolFrom: event.rewardPoolFrom,
+      rewardPoolTo: event.rewardPoolTo,
+      event: clone(event),
+      text: `精英奖励：${outcome.name} 胜利，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`
+    });
+  }
   const effectText = outcome.runEffects.length ? `，奖励折损${outcome.goldBaseDelta}→${outcome.goldDelta}` : '';
-  pushEvent(state, 'ROUTE_BATTLE_OUTCOME', { outcome: clone(outcome), runEffects: clone(outcome.runEffects), text: `${outcome.phaseLabel}结算：${outcome.resultCode}，金币${outcome.goldFrom}→${outcome.goldTo}${effectText}，奖励池=${rewardPoolId}。` });
+  const postBattleText = outcome.postBattleEvents.length ? '，精英奖励' : '';
+  pushEvent(state, 'ROUTE_BATTLE_OUTCOME', { outcome: clone(outcome), runEffects: clone(outcome.runEffects), postBattleEvents: clone(outcome.postBattleEvents), text: `${outcome.phaseLabel}结算：${outcome.resultCode}，金币${outcome.goldFrom}→${outcome.goldTo}${effectText}${postBattleText}，奖励池=${rewardPoolId}。` });
   return outcome;
 }
 function pendingRewardIndex(route, ref) {

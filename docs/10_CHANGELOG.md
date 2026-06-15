@@ -2,6 +2,7 @@
 
 ## 2026-06-15
 
+- 外层精英战奖励开始回写高奖池：`evt_elite_reward` 从待接入转为正式战后事件，精英/Boss 压力战胜利后路线奖励池切到 `reward_elite`，并写入 outcome、pending reward、结构化事件和战报。
 - 外层风险经济事件开始进入 run 压力闭环：`evt_curse_gold` 从待接入转为正式事件，Day6 路线新增“贪婪诅咒”；选择后立刻获得金币，但下一场路线战斗奖励金币按 90% 结算并写入 ViewModel / 战报。
 - 外层陷阱流开始影响战斗核心：`evt_trap_bonus` 从待接入转为正式事件，Day5 路线新增陷阱商人；选择后下一场火陷阱触发会获得陷阱增伤、消耗战前效果并写入战报。
 - 外层 `pre_battle` 事件开始进入战斗核心：Day4 路线新增“战前护盾祝福”，选择后写入 `state.battlePrepEffects`，下一场战斗开局给我方单位护盾并进入 ViewModel / 文字战报。

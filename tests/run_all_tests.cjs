@@ -232,6 +232,27 @@ test('route curse gold event grants immediate gold and discounts next route batt
   assert.ok(s.events.some(e=>e.type==='OUTER_RUN_EFFECT_CONSUME' && e.eventId==='evt_curse_gold'));
   assert.ok(renderPlayerReport(s).includes('奖励折损'));
 });
+test('elite route battle win upgrades pending reward into elite reward pool',()=>{
+  const event=data.events.find(e=>e.id==='evt_elite_reward');
+  assert.ok(event, 'elite reward event should exist');
+  assert.equal(event.status,'正式');
+  const eliteRewards=data.shop.filter(x=>(x.rewardPools||[]).includes('reward_elite'));
+  assert.ok(eliteRewards.length>=2, 'elite reward pool should contain claimable rewards');
+  const s=createGameState({day:6,gold:20});
+  dayRoute.ensureDayRoute(s);
+  s.dayRoute.history.push({kind:'battle_choice', option:{encounterId:'enc_d06_midday_a', name:'第六天精英遭遇A'}});
+  const beforeGold=s.gold;
+  s.gold+=8;
+  dayRoute.recordBattleOutcome(s,{encounterId:'enc_d06_midday_a', name:'第六天精英遭遇A', phaseLabel:'精英战', note:'Day6 精英压力上午波次'},{code:'WIN', win:true, grade:'A'}, beforeGold, {kind:'battle_choice'});
+  const outcome=s.dayRoute.battleOutcomes[0];
+  assert.equal(outcome.rewardPoolId,'reward_elite');
+  assert.ok(outcome.postBattleEvents.some(x=>x.eventId==='evt_elite_reward'));
+  assert.equal(s.dayRoute.pendingRewards[0].rewardPoolId,'reward_elite');
+  assert.ok(s.events.some(e=>e.type==='ROUTE_POST_BATTLE_EVENT_APPLY' && e.eventId==='evt_elite_reward'));
+  dispatch(s,{type:'CLAIM_ROUTE_REWARD', rewardIndex:0});
+  assert.equal(s.dayRoute.claimedRewards[0].rewardPoolId,'reward_elite');
+  assert.ok(renderPlayerReport(s).includes('精英奖励'));
+});
 test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });
 test('mechanism table statuses are preserved',()=>{ assert.ok(data.mechanisms.some(m=>m.integrationStatus==='待接入')); assert.ok(data.mechanisms.some(m=>m.integrationStatus==='可接入')); });

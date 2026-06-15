@@ -12,6 +12,7 @@ const { stateHash } = require('./core/stateHash.cjs');
 const { buildSaveDocument, applySaveToState, assertSaveDocument } = require('./storage/saveCodec.cjs');
 const { statusOfMechanic, activationBlockReason } = require('./core/mechanicGate.cjs');
 const { canonicalEventLog } = require('./core/eventProjection.cjs');
+const { buildConstructionSummary } = require('./core/buildSummary.cjs');
 const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
 
 const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT']);
@@ -392,8 +393,9 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     leaders,
     heroes,
     enemies,
-	    board,
+    board,
     inventory: inventoryVM(state),
+    buildCore: buildConstructionSummary(state),
     relics: clone(state.relics),
     rewards,
     battlePrepEffects: clone(state.battlePrepEffects || []),

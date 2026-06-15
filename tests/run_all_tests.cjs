@@ -104,6 +104,29 @@ test('route shop node enters a named stall with tags and filtered offers',()=>{
   assert.ok(s.events.some(e=>e.type==='SHOP_ENTER' && e.stall && e.stall.name==='火系补货商人'));
   assert.ok(renderPlayerReport(s).includes('当前摊位：火系补货商人'));
 });
+test('construction summary exposes build core tags in ViewModel and text report',()=>{
+  const { createViewModel } = require('../src/uiAdapter.cjs');
+  const s=createGameState({day:2,gold:999,activePets:[]});
+  dispatch(s,{type:'ENTER_SHOP',poolId:'elem_火',slots:6});
+  const fire=s.shop.offers.find(o=>o.element==='火' && o.price<=s.gold);
+  assert.ok(fire, 'fire stall should offer a buyable fire pet');
+  dispatch(s,{type:'BUY_OFFER',offerId:fire.offerId});
+  dispatch(s,{type:'ENTER_SHOP',poolId:'role_召唤',slots:6});
+  const summon=s.shop.offers.find(o=>o.role==='召唤' && o.price<=s.gold);
+  assert.ok(summon, 'summon stall should offer a buyable summon pet');
+  dispatch(s,{type:'BUY_OFFER',offerId:summon.offerId});
+  const vm=createViewModel(s);
+  assert.ok(vm.buildCore, 'ViewModel should expose buildCore');
+  assert.equal(vm.buildCore.inventory.totalCount,s.inventory.length);
+  assert.ok(vm.buildCore.tags.some(x=>x.id==='element:火' && x.label==='火系'));
+  assert.ok(vm.buildCore.tags.some(x=>x.id==='role:召唤' && x.label==='召唤'));
+  assert.ok(vm.buildCore.summaryText.includes('火系'));
+  assert.ok(vm.buildCore.summaryText.includes('召唤'));
+  const report=renderPlayerReport(s);
+  assert.ok(report.includes('构筑核心：'));
+  assert.ok(report.includes('火系'));
+  assert.ok(report.includes('召唤'));
+});
 test('Day1 full day route uses node choices, midday encounter choice, and evening fixed battle',()=>{
   const s=runFullDayScenario({day:1,gold:999});
   const types=s.events.map(e=>e.type);

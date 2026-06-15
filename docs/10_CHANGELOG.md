@@ -2,6 +2,7 @@
 
 ## 2026-06-15
 
+- 外层构筑核心现在进入 ViewModel 和文字战报：系统会从背包、遗物和定向补货状态派生 `buildCore`，输出火系、召唤、等级等当前构筑标签，帮助玩家理解本局 run 的成长方向。
 - 外层 Day10 终局状态进入自动 run 闭环：Day10 终局固定战后现在写入 `state.dayRoute.terminal` 和 `RUN_TERMINAL`，`runDayRangeScenario` 能断言最终 Boss 状态，文字战报也会输出终局记录。
 - 外层陷阱增伤进入统一 modifier 证据链：`evt_trap_bonus` 触发火陷阱时现在通过 `modifierEngine` 计算伤害，并写入 `APPLY_OUTER_BATTLE_MODIFIER` changeLog，方便战报和 replay 解释外层奖励如何影响战斗触发。
 - 外层五回合高奖进入路线战后闭环：`evt_battle_bonus` 现在会在路线战斗 `WIN_FAST` 时写入 post-battle event，保留 `reward_fast_clear` pending reward，并进入 outcome、路线历史和文字战报。

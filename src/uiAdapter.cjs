@@ -402,6 +402,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
       rollCount: state.shop.rollCount,
       freeRolls: state.shop.freeRolls,
       nextDiscount: state.shop.nextDiscount,
+      refreshState: state.shop.refreshState ? clone(state.shop.refreshState) : null,
       offers,
       events: shop.availableEvents(state).map(e => ({ id: e.id, name: e.name, optionText: e.optionText, costText: e.costText, gainText: e.gainText }))
     },

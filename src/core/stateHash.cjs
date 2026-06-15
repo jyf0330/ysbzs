@@ -92,6 +92,27 @@ function serializableState(state) {
       rollCount: state.shop && state.shop.rollCount,
       freeRolls: state.shop && state.shop.freeRolls,
       nextDiscount: state.shop && state.shop.nextDiscount,
+      refreshState: state.shop && state.shop.refreshState ? {
+        freeRolls: state.shop.refreshState.freeRolls,
+        nextDiscount: state.shop.refreshState.nextDiscount,
+        targetedRestocks: (state.shop.refreshState.targetedRestocks || []).map(x => ({
+          restockId: x.restockId,
+          eventId: x.eventId,
+          poolId: x.poolId,
+          tags: x.tags || [],
+          slots: x.slots,
+          status: x.status,
+          offerIds: x.offerIds || []
+        })),
+        effects: (state.shop.refreshState.effects || []).map(x => ({
+          eventId: x.eventId,
+          source: x.source,
+          freeRolls: x.freeRolls,
+          nextDiscount: x.nextDiscount,
+          targetedPoolId: x.targetedPoolId
+        })),
+        lastRoll: state.shop.refreshState.lastRoll || null
+      } : null,
       offers: ((state.shop && state.shop.offers) || []).map(o => ({
         offerId: o.offerId,
         petId: o.petId,

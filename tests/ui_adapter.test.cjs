@@ -110,6 +110,21 @@ test('UI06 商店事件和离店通过适配层', () => {
   assert.equal(adapter.getViewModel().phase, 'day_end');
 });
 
+test('UI06B 商店刷新控制状态进入 ViewModel', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 20 });
+  adapter.enterShop('night_base', 6);
+  adapter.applyShopEvent('evt_free_roll');
+  adapter.applyShopEvent('evt_discount');
+  const applied = adapter.applyShopEvent('evt_shop_fire');
+  assert.ok(hasEvent(applied, 'SHOP_TARGETED_RESTOCK'));
+  const vm = adapter.getViewModel();
+  assert.equal(vm.shop.refreshState.freeRolls, 1);
+  assert.equal(vm.shop.refreshState.nextDiscount, 0);
+  assert.equal(vm.shop.refreshState.lastRoll.discountApplied, 50);
+  assert.ok(vm.shop.refreshState.targetedRestocks.some(x => x.poolId === 'elem_火' && x.status === 'applied'));
+  assert.equal(vm.shop.refreshState.lastRoll.poolId, 'elem_火');
+});
+
 test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   const vm = adapter.runFullPlayerDayFlow();

@@ -20,6 +20,7 @@ function resetRouteForDay(state, day) {
   state.shop.offers = [];
   state.shop.activePool = 'night_base';
   state.shop.activeStall = null;
+  state.shop.refreshState = { freeRolls: state.shop.freeRolls || 0, nextDiscount: state.shop.nextDiscount || 0, targetedRestocks: [], effects: [], lastRoll: null };
 }
 
 function runDayRangeScenario(opts = {}) {

@@ -36,6 +36,34 @@ test('shop buy changes gold and inventory',()=>{ const s=createGameState({gold:9
 test('shop blocks unaffordable buy',()=>{ const s=createGameState({gold:0}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); const o=s.shop.offers[0]; dispatch(s,{type:'BUY_OFFER',offerId:o.offerId}); assert.ok(hasEvent(s,'SHOP_BUY_BLOCKED')); });
 test('shop event connects event table',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(hasEvent(s,'SHOP_EVENT_APPLY')); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
 test('element shop event rolls element pool',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
+test('shop refresh controls store free roll, discount, and targeted restock state',()=>{
+  const s=createGameState({day:1,gold:20});
+  dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6});
+  dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_free_roll'});
+  assert.equal(s.shop.freeRolls,1);
+  assert.equal(s.shop.refreshState.freeRolls,1);
+  dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_discount'});
+  assert.equal(s.shop.nextDiscount,50);
+  assert.equal(s.shop.refreshState.nextDiscount,50);
+  dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'});
+  const restock=s.shop.refreshState.targetedRestocks.find(x=>x.eventId==='evt_shop_fire');
+  assert.ok(restock);
+  assert.equal(restock.poolId,'elem_火');
+  assert.deepEqual(restock.tags,['元素','火']);
+  assert.equal(restock.status,'applied');
+  assert.ok(restock.offerIds.length > 0);
+  assert.equal(s.shop.refreshState.lastRoll.poolId,'elem_火');
+  assert.ok(s.events.some(e=>e.type==='SHOP_TARGETED_RESTOCK' && e.poolId==='elem_火'));
+  assert.ok(renderPlayerReport(s).includes('定向补货'));
+});
+test('route event node changes the same shop refresh state',()=>{
+  const s=createGameState({day:1,gold:20});
+  dispatch(s,{type:'GENERATE_NODE_OPTIONS'});
+  dispatch(s,{type:'PICK_NODE',nodeId:'node_event_free_roll'});
+  assert.equal(s.shop.freeRolls,1);
+  assert.equal(s.shop.refreshState.freeRolls,1);
+  assert.ok(s.shop.refreshState.effects.some(x=>x.eventId==='evt_free_roll' && x.source==='route_event'));
+});
 test('reward options can include pet/relic and pick reward',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'REWARD_OPTIONS',poolId:'reward_pT1',count:3}); assert.equal(s.rewards.length,3); dispatch(s,{type:'PICK_REWARD',index:0}); assert.ok(hasEvent(s,'REWARD_PICK')); });
 test('node shop returns to day route while manual shop still exits to day_end',()=>{
   const routed=createGameState({day:1,gold:999});

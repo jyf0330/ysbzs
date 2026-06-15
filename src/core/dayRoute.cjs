@@ -106,8 +106,7 @@ function applyRouteEvent(state, option) {
     return true;
   }
   const before = state.gold;
-  if (String(event.gainText || '').includes('免费刷新')) state.shop.freeRolls += Number(event.value || option.value || 1);
-  if (String(event.gainText || '').includes('折扣')) state.shop.nextDiscount = Math.max(state.shop.nextDiscount || 0, Number(event.value || option.value || 50));
+  shop.applyShopEventModifiers(state, event, 'route_event');
   state.phase = 'node_resolved';
   pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
   return true;

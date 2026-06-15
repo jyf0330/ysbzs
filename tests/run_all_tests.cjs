@@ -72,7 +72,23 @@ test('Day1-Day3 route can run continuously and records daily route history',()=>
     assert.ok(run.history.some(x => x.kind === 'fixed_battle'), `day ${run.day} should record fixed battle`);
   }
 });
-test('text report includes node route and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('中午遭遇')); assert.ok(txt.includes('最终状态')); });
+test('Day1-Day3 route battle outcomes write back result, economy, and reward eligibility',()=>{
+  const s=runDayRangeScenario({fromDay:1,toDay:3,gold:999});
+  assert.equal(s.dayRouteRuns.length,3);
+  for (const run of s.dayRouteRuns) {
+    assert.equal(run.battleOutcomes.length,2, `day ${run.day} should record midday and fixed battle outcomes`);
+    for (const outcome of run.battleOutcomes) {
+      assert.ok(['WIN_FAST','WIN','LOSE'].includes(outcome.resultCode), `day ${run.day} outcome resultCode`);
+      assert.equal(typeof outcome.goldDelta, 'number', `day ${run.day} outcome goldDelta`);
+      assert.ok(outcome.goldDelta >= 0, `day ${run.day} outcome goldDelta non-negative`);
+      assert.ok(outcome.rewardPoolId, `day ${run.day} outcome reward pool`);
+      assert.equal(outcome.rewardEligible, outcome.resultCode !== 'LOSE', `day ${run.day} reward eligibility follows result`);
+    }
+    assert.equal(run.pendingRewards.length, run.battleOutcomes.filter(x => x.rewardEligible).length, `day ${run.day} pending rewards should follow eligible outcomes`);
+  }
+  assert.ok(s.events.some(e=>e.type==='ROUTE_BATTLE_OUTCOME'));
+});
+test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });
 test('mechanism table statuses are preserved',()=>{ assert.ok(data.mechanisms.some(m=>m.integrationStatus==='待接入')); assert.ok(data.mechanisms.some(m=>m.integrationStatus==='可接入')); });
 test('events connect to shop phase',()=>{ assert.ok(data.events.every(e=>e.id && e.layer)); assert.ok(data.events.some(e=>e.layer==='shop_phase')); });

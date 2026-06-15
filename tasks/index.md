@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_route-battle-outcome-reward.md`
 - `tasks/done/2026-06-15_day1-day3-bazaar-route.md`
 - `tasks/done/2026-06-15_bazaar-outer-loop-acceptance-standard.md`
 - `tasks/done/2026-06-12_day1-bazaar-node-flow.md`

@@ -9,11 +9,13 @@ function activeRows(rows, day) {
 }
 function ensureDayRoute(state) {
   if (!state.dayRoute) {
-    state.dayRoute = { day: state.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] };
+    state.dayRoute = { day: state.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [] };
   }
   if (!Array.isArray(state.dayRoute.options)) state.dayRoute.options = [];
   if (!Array.isArray(state.dayRoute.battleOptions)) state.dayRoute.battleOptions = [];
   if (!Array.isArray(state.dayRoute.history)) state.dayRoute.history = [];
+  if (!Array.isArray(state.dayRoute.battleOutcomes)) state.dayRoute.battleOutcomes = [];
+  if (!Array.isArray(state.dayRoute.pendingRewards)) state.dayRoute.pendingRewards = [];
   return state.dayRoute;
 }
 function scheduleRows(state) {
@@ -142,7 +144,7 @@ function pickBattleEncounter(state, ref) {
   route.history.push({ kind: 'battle_choice', option: clone(option) });
   route.battleOptions = [];
   pushEvent(state, 'BATTLE_PICK', { encounterId: option.encounterId, scheduleStep: route.nodeIndex, text: `选择${option.phaseLabel}：${option.name}。` });
-  return runEncounterBattle(state, option);
+  return runEncounterBattle(state, option, { kind: 'battle_choice' });
 }
 function runFixedBattle(state, opts = {}) {
   const route = ensureDayRoute(state);
@@ -163,18 +165,61 @@ function runFixedBattle(state, opts = {}) {
   route.currentEncounter = clone(encounter);
   route.history.push({ kind: 'fixed_battle', option: clone(encounter) });
   pushEvent(state, 'FIXED_BATTLE_START', { encounterId: encounter.encounterId, scheduleStep: route.nodeIndex, text: `进入${encounter.phaseLabel || schedule.phaseLabel || '固定战'}：${encounter.name || encounter.encounterId}。` });
-  runEncounterBattle(state, encounter);
+  runEncounterBattle(state, encounter, { kind: 'fixed_battle' });
   state.phase = 'day_end';
   pushEvent(state, 'DAY_ROUTE_END', { day: state.day, text: `第${state.day}天路线结束。` });
   return true;
 }
-function runEncounterBattle(state, encounter) {
+function rewardPoolForOutcome(state, result) {
+  if (!result || result.code === 'LOSE') return 'reward_none';
+  if (result.code === 'WIN_FAST') return 'reward_fast_clear';
+  return Number(state.day || 1) >= 3 ? 'reward_pT2' : 'reward_pT1';
+}
+function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) {
+  const route = ensureDayRoute(state);
+  const rewardPoolId = rewardPoolForOutcome(state, result);
+  const outcome = {
+    day: state.day,
+    battleIndex: route.battleIndex,
+    kind: source.kind || 'battle',
+    encounterId: encounter.encounterId,
+    name: encounter.name || encounter.encounterId,
+    phaseLabel: encounter.phaseLabel || '战斗',
+    resultCode: result?.code || 'UNKNOWN',
+    grade: result?.grade || '-',
+    win: !!result?.win,
+    goldFrom: beforeGold,
+    goldTo: state.gold,
+    goldDelta: Number(state.gold || 0) - Number(beforeGold || 0),
+    rewardPoolId,
+    rewardEligible: !!result?.win
+  };
+  route.battleOutcomes.push(outcome);
+  const historyItem = route.history[route.history.length - 1];
+  if (historyItem && (historyItem.kind === 'battle_choice' || historyItem.kind === 'fixed_battle')) historyItem.outcome = clone(outcome);
+  if (outcome.rewardEligible) {
+    route.pendingRewards.push({
+      day: outcome.day,
+      battleIndex: outcome.battleIndex,
+      encounterId: outcome.encounterId,
+      rewardPoolId,
+      resultCode: outcome.resultCode,
+      grade: outcome.grade,
+      claimed: false
+    });
+  }
+  pushEvent(state, 'ROUTE_BATTLE_OUTCOME', { outcome: clone(outcome), text: `${outcome.phaseLabel}结算：${outcome.resultCode}，金币${outcome.goldFrom}→${outcome.goldTo}，奖励池=${rewardPoolId}。` });
+  return outcome;
+}
+function runEncounterBattle(state, encounter, source = {}) {
   resetBattlefield(state);
   state.period = encounter.wavePeriod || '上午';
   state.round = 0;
   state.result = null;
   state.phase = 'init';
-  battle.runBattle(state);
+  const beforeGold = Number(state.gold || 0);
+  const result = battle.runBattle(state);
+  recordBattleOutcome(state, encounter, result, beforeGold, source);
   return true;
 }
 function resetBattlefield(state) {
@@ -221,4 +266,4 @@ function runDayRoute(state) {
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute };
+module.exports = { ensureDayRoute, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, recordBattleOutcome };

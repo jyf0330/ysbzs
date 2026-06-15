@@ -85,6 +85,7 @@ function serializableState(state) {
       nodeId: x.nodeId || null,
       type: x.type,
       shield: x.shield,
+      bonusDamage: x.bonusDamage,
       status: x.status,
       dayQueued: x.dayQueued,
       usesRemaining: x.usesRemaining

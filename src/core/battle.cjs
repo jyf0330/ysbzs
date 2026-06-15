@@ -498,4 +498,4 @@ function runBattle(state) {
   buildThreatGrid: (...args) => buildThreatGrid(...args)
 }));
 
-module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, runMonsterTurn, runBattle, damageUnit, settleElements, startBattle, startNextRound, endPlayerTurn, moveHero, moveUnitGeneral, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid, getCellDetail, syncDerivedBoard, slotsForUnit, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, factionRules, effectiveMoveRange, boardMaxDistance };
+module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, runMonsterTurn, runBattle, damageUnit, settleElements, triggerTerrainOnEnter, startBattle, startNextRound, endPlayerTurn, moveHero, moveUnitGeneral, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid, getCellDetail, syncDerivedBoard, slotsForUnit, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, factionRules, effectiveMoveRange, boardMaxDistance };

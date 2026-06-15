@@ -27,6 +27,7 @@ node_d04_rest_gold,node_pool_d04_growth,休整补给,rest,50,4,,,,,3,正式,直�
 node_d05_tier2_shop,node_pool_d05_growth,白银精选商会,shop,100,5,tier_pT2,,,5,,正式,进入 pT2 标签摊位
 node_d05_reward_tier2,node_pool_d05_growth,白银精选奖励,reward,90,5,,reward_pT2,,3,,正式,生成 3 个 pT2 奖励候选
 node_d05_water_shop,node_pool_d05_growth,水系治疗商人,shop,80,5,elem_水,,,4,,正式,进入水元素定向摊位
+node_d05_event_trap,node_pool_d05_growth,陷阱商人,event,75,5,elem_火,reward_trap,evt_trap_bonus,,1,正式,下一场火陷阱伤害提高
 node_d05_heal_shop,node_pool_d05_growth,治疗补强商人,shop,70,5,role_治疗,,,4,,正式,进入治疗标签摊位
 node_d05_event_free_roll,node_pool_d05_growth,免费刷新补给,event,60,5,night_base,reward_pT2,evt_free_roll,,1,正式,获得一次免费刷新
 node_d05_rest_gold,node_pool_d05_growth,休整补给,rest,50,5,,,,,3,正式,直接获得金币

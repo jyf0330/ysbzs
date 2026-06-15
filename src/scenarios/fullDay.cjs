@@ -19,6 +19,7 @@ function resetRouteForDay(state, day) {
   state.rewards = [];
   state.shop.offers = [];
   state.shop.activePool = 'night_base';
+  state.shop.activeStall = null;
 }
 
 function runDayRangeScenario(opts = {}) {

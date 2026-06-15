@@ -3,8 +3,30 @@ const { rng, pickWeighted } = require('./rng.cjs');
 function parseGoldCost(text){ if(!text || text==='无') return 0; const m=String(text).match(/金币\s*-\s*(\d+)/); return m ? Number(m[1]) : 0; }
 function enabledShopItems(state, poolId='night_base'){ return state.data.shop.filter(i => i.status==='启用' && i.unlockDay <= state.day && (i.shopPools||[]).includes(poolId)); }
 function itemWeight(item,poolId){ if(poolId==='night_base') return item.weights.night; if(poolId.startsWith('elem_')) return item.weights.element; if(poolId.startsWith('role_')) return item.weights.role; if(poolId.startsWith('tier_')) return item.weights.tier; return item.weights.night || 1; }
+function stallTags(poolId='night_base') {
+ if (poolId.startsWith('elem_')) return ['元素', poolId.replace('elem_', '')];
+ if (poolId.startsWith('role_')) return ['流派', poolId.replace('role_', '')];
+ if (poolId.startsWith('tier_')) {
+  const tier = poolId.replace('tier_', '');
+  const publicTier = { pT1: '青铜', pT2: '白银', pT3: '黄金', pT4: '钻石' }[tier] || tier;
+  return ['等级', publicTier];
+ }
+ return ['通用', '夜市'];
+}
+function makeStall(state, poolId='night_base', slots=6, meta={}) {
+ return {
+  nodeId: meta.nodeId || null,
+  name: meta.name || (poolId === 'night_base' ? '夜市商人' : `摊位 ${poolId}`),
+  shopPoolId: poolId,
+  tags: meta.tags || stallTags(poolId),
+  slots: Number(slots || meta.slots || 6),
+  unlockDay: Number(meta.unlockDay || state.day || 1),
+  priceRule: meta.priceRule || '标准价格',
+  note: meta.note || ''
+ };
+}
 function buildOffer(state, item, slot, poolId){ const discount = state.shop.nextDiscount || 0; const price = Math.max(0, Math.ceil(item.price * (100-discount)/100)); return { offerId:`offer_${state.day}_${state.period}_${state.shop.rollCount}_${slot}_${item.petId}`, type:'pet', petId:item.petId, name:item.name, element:item.element, role:item.role, poolTier:item.poolTier, poolId, price, frozen:false }; }
-function enterShop(state, poolId='night_base', slots=6){ state.phase='shop'; state.shop.activePool=poolId; state.shop.offers=[]; pushEvent(state,'SHOP_ENTER',{poolId,text:`进入第${state.day}天夜晚商店，池=${poolId}，金币${state.gold}。`}); rollShop(state,{poolId,slots,free:true}); }
+function enterShop(state, poolId='night_base', slots=6, opts={}){ const stall=makeStall(state,poolId,slots,opts.stall||opts); state.phase='shop'; state.shop.activePool=poolId; state.shop.activeStall=stall; state.shop.offers=[]; pushEvent(state,'SHOP_ENTER',{poolId,stall,text:`进入${stall.name}，倾向=${stall.tags.join('/')}，池=${poolId}，槽位=${stall.slots}，金币${state.gold}。`}); rollShop(state,{poolId,slots:stall.slots,free:true}); return true; }
 function rollShop(state,{poolId=state.shop.activePool||'night_base', slots=6, free=false}={}){ const cost = free || state.shop.freeRolls>0 ? 0 : 1; if(cost>0 && state.gold < cost) { pushEvent(state,'SHOP_ROLL_BLOCKED',{text:`金币不足，无法刷新。`}); return false; }
  if(cost>0) state.gold-=cost; else if(!free && state.shop.freeRolls>0) state.shop.freeRolls-=1;
  const random=rng(`${state.day}:${state.period}:${state.shop.rollCount}:${poolId}:${state.gold}`); const pool=enabledShopItems(state,poolId); const kept=(state.shop.offers||[]).filter(o=>o.frozen); const offers=[...kept]; let slot=0; while(offers.length<slots && pool.length){ const item=pickWeighted(pool, i=>itemWeight(i,poolId), random); if(!item) break; offers.push(buildOffer(state,item,slot++,poolId)); }
@@ -20,5 +42,5 @@ function applyShopEvent(state, eventId){ const e=state.data.events.find(x=>x.id=
 function rewardOptions(state, poolId='reward_pT1', count=3){ const pool=state.data.shop.filter(i => i.unlockDay<=state.day && (i.rewardPools||[]).includes(poolId)); const relics=state.data.relics.filter(r=>r.unlockDay<=state.day && r.rewardPoolId===poolId && r.status==='正式'); const random=rng(`reward:${state.day}:${state.period}:${poolId}:${state.round}`); const out=[]; for(let i=0;i<count;i++){ const source = i===count-1 && relics.length ? 'relic' : 'pet'; if(source==='relic'){ const r=pickWeighted(relics,x=>x.weight||1,random); if(r) out.push({type:'relic', id:r.id, name:r.name, poolId}); } else { const it=pickWeighted(pool,x=>x.weights.reward||1,random); if(it) out.push({type:'pet', petId:it.petId, name:it.name, poolId}); } }
  state.rewards=out; pushEvent(state,'REWARD_OPTIONS',{poolId,options:out,text:`奖励候选：${out.map(x=>x.name).join('、')}。`}); return out; }
 function pickReward(state, index=0){ const r=state.rewards[index]; if(!r) return false; if(r.type==='pet') addInventory(state,r.petId); if(r.type==='relic') state.relics.push(r.id); pushEvent(state,'REWARD_PICK',{reward:r,text:`选择奖励：${r.name}。`}); return true; }
-function exitShop(state){ const returnPhase=state.shop.routeReturnPhase || null; delete state.shop.routeReturnPhase; state.phase=returnPhase || 'day_end'; pushEvent(state,'SHOP_EXIT',{text:`离开商店：金币${state.gold}，背包${state.inventory.length}种宠物，遗物${state.relics.length}件。`}); }
-module.exports={ enterShop, rollShop, freezeOffer, buyOffer, availableEvents, applyShopEvent, rewardOptions, pickReward, exitShop, enabledShopItems };
+function exitShop(state){ const returnPhase=state.shop.routeReturnPhase || null; delete state.shop.routeReturnPhase; state.phase=returnPhase || 'day_end'; pushEvent(state,'SHOP_EXIT',{stall:state.shop.activeStall||null,text:`离开商店：金币${state.gold}，背包${state.inventory.length}种宠物，遗物${state.relics.length}件。`}); }
+module.exports={ enterShop, rollShop, freezeOffer, buyOffer, availableEvents, applyShopEvent, rewardOptions, pickReward, exitShop, enabledShopItems, makeStall, stallTags };

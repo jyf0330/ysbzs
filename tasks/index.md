@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_route-shop-stall-identity.md`
 - `tasks/done/2026-06-15_route-pending-reward-claim.md`
 - `tasks/done/2026-06-15_route-battle-outcome-reward.md`
 - `tasks/done/2026-06-15_day1-day3-bazaar-route.md`

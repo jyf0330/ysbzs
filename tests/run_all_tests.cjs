@@ -49,6 +49,23 @@ test('node shop returns to day route while manual shop still exits to day_end',(
   dispatch(manual,{type:'EXIT_SHOP'});
   assert.equal(manual.phase,'day_end');
 });
+test('route shop node enters a named stall with tags and filtered offers',()=>{
+  const s=createGameState({day:1,gold:999});
+  dispatch(s,{type:'GENERATE_NODE_OPTIONS',count:6});
+  dispatch(s,{type:'PICK_NODE',nodeId:'node_shop_fire'});
+  assert.equal(s.phase,'shop');
+  assert.equal(s.shop.activeStall.nodeId,'node_shop_fire');
+  assert.equal(s.shop.activeStall.name,'火系补货商人');
+  assert.deepEqual(s.shop.activeStall.tags,['元素','火']);
+  assert.equal(s.shop.activeStall.shopPoolId,'elem_火');
+  assert.equal(s.shop.activeStall.slots,3);
+  assert.equal(s.shop.activeStall.unlockDay,1);
+  assert.ok(s.shop.offers.length > 0);
+  assert.ok(s.shop.offers.every(o=>o.poolId==='elem_火' && o.element==='火'));
+  assert.ok(s.dayRoute.history.some(x=>x.stall && x.stall.nodeId==='node_shop_fire'));
+  assert.ok(s.events.some(e=>e.type==='SHOP_ENTER' && e.stall && e.stall.name==='火系补货商人'));
+  assert.ok(renderPlayerReport(s).includes('当前摊位：火系补货商人'));
+});
 test('Day1 full day route uses node choices, midday encounter choice, and evening fixed battle',()=>{
   const s=runFullDayScenario({day:1,gold:999});
   const types=s.events.map(e=>e.type);

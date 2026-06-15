@@ -138,6 +138,17 @@ test('UI07B Day1 节点选择和中午遭遇选择通过适配层公开命令推
   assert.equal(pickedBattle.viewModel.dayRoute.currentEncounter.phaseLabel, '中午战');
 });
 
+test('UI07C 路线商店摊位身份进入 ViewModel', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999 });
+  adapter.generateNodeOptions({ count: 6 });
+  const picked = adapter.pickNode('node_shop_fire');
+  assert.equal(picked.viewModel.phase, 'shop');
+  assert.equal(picked.viewModel.shop.activeStall.nodeId, 'node_shop_fire');
+  assert.equal(picked.viewModel.shop.activeStall.name, '火系补货商人');
+  assert.deepEqual(picked.viewModel.shop.activeStall.tags, ['元素','火']);
+  assert.ok(picked.viewModel.shop.offers.every(o => o.poolId === 'elem_火' && o.element === '火'));
+});
+
 test('UI08 未知 UI 命令会被拦截', () => {
   const adapter = createYSBZSUIAdapter();
   assert.throws(() => adapter.run('DIRECT_CORE_CALL'), /Unknown UI adapter command/);

@@ -218,7 +218,7 @@ function createGameState(opts = {}) {
     units: [],
     inventory: [],
     relics: [],
-    shop: { offers: [], frozen: {}, rollCount: 0, freeRolls: 0, nextDiscount: 0, activePool: 'night_base' },
+    shop: { offers: [], frozen: {}, rollCount: 0, freeRolls: 0, nextDiscount: 0, activePool: 'night_base', activeStall: null },
     rewards: [],
     dayRoute: { day: opts.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] },
     result: null,

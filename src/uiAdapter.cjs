@@ -398,6 +398,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     rewards,
     shop: {
       activePool: state.shop.activePool,
+      activeStall: state.shop.activeStall ? clone(state.shop.activeStall) : null,
       rollCount: state.shop.rollCount,
       freeRolls: state.shop.freeRolls,
       nextDiscount: state.shop.nextDiscount,

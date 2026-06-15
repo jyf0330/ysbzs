@@ -78,8 +78,12 @@ function pickNode(state, ref) {
   route.options = [];
   pushEvent(state, 'NODE_PICK', { nodeId: option.nodeId, nodeType: option.nodeType, scheduleStep: route.nodeIndex, text: `选择节点：${option.name}。` });
   if (option.nodeType === 'shop') {
-    const ok = shop.enterShop(state, option.shopPoolId || 'night_base', Number(option.slots || 6));
-    if (ok !== false) state.shop.routeReturnPhase = 'node_resolved';
+    const ok = shop.enterShop(state, option.shopPoolId || 'night_base', Number(option.slots || 6), { stall: option });
+    if (ok !== false) {
+      state.shop.routeReturnPhase = 'node_resolved';
+      const historyItem = route.history[route.history.length - 1];
+      if (historyItem) historyItem.stall = clone(state.shop.activeStall);
+    }
     return ok;
   }
   if (option.nodeType === 'reward') { shop.rewardOptions(state, option.rewardPoolId || 'reward_pT1', Number(option.slots || 3)); state.phase = 'reward'; return true; }

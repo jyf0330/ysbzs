@@ -80,6 +80,15 @@ function serializableState(state) {
     })),
     shop: {
       activePool: state.shop && state.shop.activePool,
+      activeStall: state.shop && state.shop.activeStall ? {
+        nodeId: state.shop.activeStall.nodeId || null,
+        name: state.shop.activeStall.name,
+        shopPoolId: state.shop.activeStall.shopPoolId,
+        tags: state.shop.activeStall.tags || [],
+        slots: state.shop.activeStall.slots,
+        unlockDay: state.shop.activeStall.unlockDay,
+        priceRule: state.shop.activeStall.priceRule
+      } : null,
       rollCount: state.shop && state.shop.rollCount,
       freeRolls: state.shop && state.shop.freeRolls,
       nextDiscount: state.shop && state.shop.nextDiscount,

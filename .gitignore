@@ -42,3 +42,4 @@ backups/
 output/
 player_edit_csv_guide_*.txt
 tests/player_operation_test_notes.txt
+pipeline/*.tmp

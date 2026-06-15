@@ -2,6 +2,15 @@
 
 ## 2026-06-15
 
+- 新增 pipeline/ 双 Agent 协作工具：`run.sh` 状态机支持 plan→review→implement→verify→fix→commit 六阶段流转，prompt.md 写需求、output.md 依次追加产出，适合我+Codex 接力开发。详见 `pipeline/README.md`。
+- 购买定向补货商品后，来源现在会真正进入构筑：背包条目、`SHOP_BUY` 事件、ViewModel inventory、state hash 和玩家战报都会保留 `restock_offer` 来源，能追踪“火元素补货”等商店事件如何变成后续队伍资产。
+- 定向补货生成的商品现在携带来源证据：`offer.restock` 记录 `restockId`、事件名、补货池和标签，ViewModel / state hash / 文字报告 / 浏览器商品卡都能看到“补货：火元素补货”等来源，方便追踪商店事件如何塑造构筑。
+- 完整 run 终局后的顶部下一步提示修正为“查看终局报告”：`terminalSummary` 进入 ViewModel，terminal 状态下不再把未领取奖励动作暴露成下一步，避免玩家到 Day10 后误以为还要继续领奖。
+- 浏览器现在有完整 run 入口：右侧自动控制区新增“完整Run”按钮，通过 `/api/action` 发送 `RUN_FULL_RUN`，可从 Day1 自动推进到 Day10 终局，并在状态条 / 战报中保留终局与跨天成长。
+- Day1-Day10 自动 run 现在记录跨天成长快照：`dayRouteRuns[]` 每天包含金币变化、背包/遗物数量和构筑核心摘要，玩家战报新增 `【跨天成长】` 段落，便于验收一局 run 的经济与构筑轨迹。
+- 触发对象现在进入玩家可读战报和 replay 协议：`TRIGGER_OBJECT_RESOLVE` 会在 battleTrace protocol 暴露 object id，`buildTraceFromChanges` 和玩家报告会输出 `fire_trap_*` 触发链，便于复盘 objectRegistry 触发来源。
+- `objectRegistry` 开始进入真实火陷阱触发链路：火陷阱触发前会从可触发对象视图定位 `fire_trap_*`，触发事件写入对象证据，并新增 `TRIGGER_OBJECT_RESOLVE` changeLog，方便 replay/战报解释触发来源。
+- 路线遭遇和固定战现在显示战前压力预览：遭遇 3 选 1 卡片和固定战预告会展示时段、波次数、总威胁、峰值威胁、敌量、主品质和胜利奖励预期，数据来自当前遭遇与真实波次表。
 - 路线固定战 / 终局 Boss 战现在有明确玩家入口：外层日程走到固定战时，ViewModel `nextActions` 会暴露 `RUN_ROUTE_FIXED_BATTLE`，浏览器“生成遭遇”按钮会切换成“进入晚上战 / 终局Boss战”，点击后走路线固定战、回写 outcome 和终局状态。
 - 路线战斗奖励现在能在浏览器奖励区直接领取：`dayRoute.pendingRewards` 会显示为“路线战斗奖励”卡片，点击后走 `CLAIM_ROUTE_REWARD`，写入 claimed reward，并清空临时候选，避免玩家误以为还能重复选择普通奖励。
 - 商店界面现在直接显示当前摊位和刷新经济状态：浏览器商店面板会展示摊位名、标签倾向、商品池、槽位、价格规则、免费刷新、下次折扣、最近刷新和定向补货数量，玩家不需要从日志里猜当前商店状态。

@@ -67,6 +67,20 @@ test('UI03C route option cards render structured choice consequence previews', (
   assert.match(css, /\.choice-meta/, 'choice preview metadata needs explicit readable styling');
 });
 
+test('UI03D shop panel renders stall identity and refresh economy status', () => {
+  const main = read('web/js/main.js');
+  const css = read('web/ux-app.css');
+
+  assert.match(main, /function renderShopStallSummary\(/, 'shop panel should use a dedicated stall summary renderer');
+  assert.match(main, /function renderShopRefreshSummary\(/, 'shop panel should use a dedicated refresh summary renderer');
+  assert.match(main, /activeStall/, 'shop panel should read ViewModel activeStall');
+  assert.match(main, /refreshState/, 'shop panel should read ViewModel refreshState');
+  assert.match(main, /class="shop-stall-summary"/, 'shop panel should render stall identity block');
+  assert.match(main, /class="shop-refresh-summary"/, 'shop panel should render refresh economy block');
+  assert.match(css, /\.shop-stall-summary/, 'stall summary needs explicit styling');
+  assert.match(css, /\.shop-refresh-summary/, 'refresh summary needs explicit styling');
+});
+
 test('UI04 all-out flow rechecks the current ViewModel until no usable slots remain', () => {
   const main = read('web/js/main.js');
   assert.match(main, /function nextUsableSlotInfo\(/, 'all-out should use a helper that reads the latest slot state');

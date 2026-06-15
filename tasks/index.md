@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_shop-stall-status-panel.md`
 - `tasks/done/2026-06-15_route-choice-consequence-preview.md`
 - `tasks/done/2026-06-15_outer-build-core-statusbar.md`
 - `tasks/done/2026-06-15_outer-build-core-summary.md`

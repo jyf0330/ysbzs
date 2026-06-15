@@ -998,15 +998,48 @@ import { createGameRuntime } from './runtime-client.js';
     </button>`).join('');
     $('reward-list').innerHTML = nodeHtml + battleHtml + rewardHtml;
   }
+  function renderShopStallSummary(shop = {}) {
+    const stall = shop.activeStall || {};
+    const tags = (stall.tags || []).filter(Boolean);
+    const tagHtml = tags.map(tag => `<span>${esc(tag)}</span>`).join('');
+    const pool = stall.shopPoolId || shop.activePool || 'night_base';
+    const slots = Number(stall.slots || (shop.offers || []).length || 0);
+    return `<section class="shop-stall-summary">
+      <div><strong>${esc(stall.name || '夜市商人')}</strong><span>${esc(stall.note || '当前商店摊位')}</span></div>
+      <div class="shop-stall-tags">${tagHtml || '<span>通用</span>'}</div>
+      <p>池 ${esc(pool)} · 槽位 ${esc(slots)} · 规则 ${esc(stall.priceRule || '标准价格')}</p>
+    </section>`;
+  }
+  function renderShopRefreshSummary(shop = {}) {
+    const refresh = shop.refreshState || {};
+    const freeRolls = Number(refresh.freeRolls ?? shop.freeRolls ?? 0);
+    const nextDiscount = Number(refresh.nextDiscount ?? shop.nextDiscount ?? 0);
+    const lastRoll = refresh.lastRoll || null;
+    const targeted = (refresh.targetedRestocks || []).filter(Boolean);
+    const chips = [
+      `免费刷新 ${freeRolls}`,
+      `下次折扣 ${nextDiscount}%`,
+      lastRoll ? `最近 ${lastRoll.poolId || '-'} / ${lastRoll.cost || 0}金` : '最近 未刷新',
+      `定向补货 ${targeted.length}`
+    ];
+    const targetedText = targeted.slice(-2).map(x => `${x.name || x.poolId}:${x.status || 'pending'}`).join(' / ');
+    return `<section class="shop-refresh-summary">
+      <div>${chips.map(x => `<span>${esc(x)}</span>`).join('')}</div>
+      ${targetedText ? `<p>${esc(targetedText)}</p>` : ''}
+    </section>`;
+  }
   function renderShop() {
-    const offers = ui.vm.shop?.offers || [];
-    const events = ui.vm.shop?.events || [];
+    const shop = ui.vm.shop || {};
+    const offers = shop.offers || [];
+    const events = shop.events || [];
+    const stallHtml = renderShopStallSummary(shop);
+    const refreshHtml = renderShopRefreshSummary(shop);
     const eventHtml = events.length ? `<div class="shop-event-list">${events.map(e => `<div class="shop-event-card"><div><strong>${esc(e.name)}</strong><span>${esc(e.optionText || '')} · ${esc(e.costText || '无成本')} → ${esc(e.gainText || '')}</span></div><button class="mini-btn" data-shop-event="${esc(e.id)}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>触发</button></div>`).join('')}</div>` : '';
     const offerHtml = offers.map(o => `<div class="offer-card${o.frozen ? ' frozen' : ''}">
       <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span></div>
       <div class="offer-actions"><button class="mini-btn buy" data-buy-offer="${esc(o.offerId)}" type="button"${ui.busy || ui.vm.phase !== 'shop' || Number(o.price) > Number(ui.vm.gold || 0) ? ' disabled' : ''}>购买</button><button class="mini-btn freeze" data-freeze-offer="${esc(o.offerId)}" data-frozen="${o.frozen ? '1' : '0'}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>${o.frozen ? '解冻' : '冻结'}</button></div>
     </div>`).join('');
-    $('shop-list').innerHTML = eventHtml + offerHtml;
+    $('shop-list').innerHTML = stallHtml + refreshHtml + eventHtml + offerHtml;
   }
   function renderTrial() {
     const t = ui.vm.day7Trial;

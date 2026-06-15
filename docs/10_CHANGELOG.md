@@ -2,6 +2,7 @@
 
 ## 2026-06-15
 
+- 外层构筑核心进入浏览器第一屏状态条：顶部 HUD 现在显示阶段、当天、外层进度、金币、构筑核心和下一步，节点候选生成后能直接看到 `节点 0 · 3选1` 与 `选择节点`。
 - 外层构筑核心现在进入 ViewModel 和文字战报：系统会从背包、遗物和定向补货状态派生 `buildCore`，输出火系、召唤、等级等当前构筑标签，帮助玩家理解本局 run 的成长方向。
 - 外层 Day10 终局状态进入自动 run 闭环：Day10 终局固定战后现在写入 `state.dayRoute.terminal` 和 `RUN_TERMINAL`，`runDayRangeScenario` 能断言最终 Boss 状态，文字战报也会输出终局记录。
 - 外层陷阱增伤进入统一 modifier 证据链：`evt_trap_bonus` 触发火陷阱时现在通过 `modifierEngine` 计算伤害，并写入 `APPLY_OUTER_BATTLE_MODIFIER` changeLog，方便战报和 replay 解释外层奖励如何影响战斗触发。

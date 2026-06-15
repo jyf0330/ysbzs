@@ -39,6 +39,21 @@ test('UI03 render cache prevents unchanged sections from doing full DOM rebuild 
   assert.match(main, /renderStaticStatus\(vm\)/);
 });
 
+test('UI03B top status bar exposes outer route progress, build core, and next step', () => {
+  const html = read('web/index.html');
+  const main = read('web/js/main.js');
+  const css = read('web/ux-app.css');
+
+  assert.match(html, /id="route-progress-label"/, 'top status should expose route progress');
+  assert.match(html, /id="build-core-label"/, 'top status should expose build core');
+  assert.match(html, /id="next-step-label"/, 'top status should expose next step');
+  assert.match(main, /function routeProgressText\(vm\)/, 'renderStaticStatus should use a dedicated route progress helper');
+  assert.match(main, /function nextStepText\(vm\)/, 'renderStaticStatus should use a dedicated next-step helper');
+  assert.match(main, /vm\.buildCore\?\.summaryText/, 'build core label should read ViewModel buildCore');
+  assert.match(css, /\.status-pill\.build-core/, 'build core pill needs compact readable styling');
+  assert.match(css, /\.status-pill\.next-step/, 'next-step pill needs compact readable styling');
+});
+
 test('UI04 all-out flow rechecks the current ViewModel until no usable slots remain', () => {
   const main = read('web/js/main.js');
   assert.match(main, /function nextUsableSlotInfo\(/, 'all-out should use a helper that reads the latest slot state');

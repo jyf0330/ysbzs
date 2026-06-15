@@ -13,15 +13,19 @@
       <section class="brand-block">
         <div class="eyebrow">元素背包史 / YSBZS</div>
         <h1>棋盘战斗交互重构版</h1>
+        <div class="brand-actions">
+          <a class="fullscreen-btn" href="puzzle-submission.html" title="打开玩家谜题投稿器">投稿</a>
+          <button id="fullscreen-btn" class="fullscreen-btn" type="button" aria-pressed="false" title="全屏显示游戏">全屏</button>
+        </div>
       </section>
       <section class="status-strip" aria-label="战斗状态">
         <div class="status-pill"><span>阶段</span><strong id="phase-label">加载中</strong></div>
         <div class="status-pill"><span>天数</span><strong id="day-label">-</strong></div>
-        <div class="status-pill"><span>回合</span><strong id="round-label">-</strong></div>
+        <div class="status-pill route-progress"><span>进度</span><strong id="route-progress-label">-</strong></div>
         <div class="status-pill gold"><span>金币</span><strong id="gold-label">0</strong></div>
-        <div class="status-pill"><span>版本</span><strong id="state-version-label">v0</strong></div>
-        <a class="fullscreen-btn" href="puzzle-submission.html" title="打开玩家谜题投稿器">投稿</a>
-        <button id="fullscreen-btn" class="fullscreen-btn" type="button" aria-pressed="false" title="全屏显示游戏">全屏</button>
+        <div class="status-pill build-core"><span>构筑核心</span><strong id="build-core-label">尚未形成</strong></div>
+        <div class="status-pill next-step"><span>下一步</span><strong id="next-step-label">读取中</strong></div>
+        <span id="state-version-label" class="state-version-hidden">v0</span>
       </section>
       <section class="leader-strip" aria-label="双方核心血量">
         <div class="leader-card player">

@@ -14,7 +14,8 @@ import { createGameRuntime } from './runtime-client.js';
   const EL_ICON = { '火': '火', '水': '水', '风': '风', '土': '土' };
   const PHASE_TEXT = {
     init: '准备', player_turn: '玩家回合', monster_turn: '怪物行动', round_end: '回合结算',
-    battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中'
+    battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中',
+    node_choice: '节点选择', node_resolved: '节点结算', reward: '奖励'
   };
   const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT']);
 
@@ -252,13 +253,44 @@ import { createGameRuntime } from './runtime-client.js';
     window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, makeCommand, saveGame, loadGameFromStorage, isBusy: () => ui.busy };
   }
 
+  function routeProgressText(vm) {
+    const route = vm.dayRoute || {};
+    if (route.terminal) return `终局 ${route.terminal.status || ''}`.trim();
+    if (vm.phase === 'player_turn' || vm.phase === 'monster_turn' || vm.phase === 'round_end' || vm.phase === 'battle_end') return `战斗 ${vm.round || 0}/${vm.maxRounds || '-'}`;
+    if (route.currentEncounter) return route.currentEncounter.phaseLabel || route.currentEncounter.name || '遭遇';
+    if ((route.battleOptions || []).length) return `遭遇 ${route.battleIndex || 0} · ${route.battleOptions.length}选1`;
+    if ((route.options || []).length) return `节点 ${route.nodeIndex || 0} · ${route.options.length}选1`;
+    if ((route.pendingRewards || []).length) return `奖励 ${route.pendingRewards.length}`;
+    if (vm.shop?.activeStall) return vm.shop.activeStall.name || '摊位';
+    return `节点 ${route.nodeIndex || 0}`;
+  }
+  function nextStepText(vm) {
+    const route = vm.dayRoute || {};
+    if ((route.options || []).length) return '选择节点';
+    if ((route.battleOptions || []).length) return '选择遭遇';
+    if ((vm.rewards || []).length || (route.pendingRewards || []).length) return '选择奖励';
+    if (vm.phase === 'shop') return (vm.shop?.offers || []).length ? '购买/离店' : '离开商店';
+    if (vm.phase === 'player_turn') return ui.slotArmed ? '瞄准施放' : '移动/行动';
+    if (vm.phase === 'monster_turn' || vm.phase === 'round_end') return '怪物行动';
+    const first = (vm.nextActions || []).find(a => a && a.label);
+    return first ? first.label : phaseText(vm.phase);
+  }
+  function buildCoreStatusText(vm) {
+    const primary = vm.buildCore?.primaryTags || [];
+    if (primary.length) return primary.slice(0, 3).map(x => x.label).join(' / ');
+    return vm.buildCore?.summaryText || '尚未形成';
+  }
   function renderStaticStatus(vm) {
     document.body.dataset.phase = vm.phase || 'init';
     $('game-shell').dataset.phase = vm.phase || 'init';
     $('phase-label').textContent = phaseText(vm.phase);
     $('day-label').textContent = `第${vm.day || 1}天 ${vm.period || ''}`.trim();
-    $('round-label').textContent = `${vm.round || 0}/${vm.maxRounds || '-'}`;
+    $('route-progress-label').textContent = routeProgressText(vm);
     $('gold-label').textContent = vm.gold ?? 0;
+    $('build-core-label').textContent = buildCoreStatusText(vm);
+    $('build-core-label').title = vm.buildCore?.summaryText || '';
+    $('next-step-label').textContent = nextStepText(vm);
+    $('next-step-label').title = nextStepText(vm);
     if ($('state-version-label')) $('state-version-label').textContent = `v${vm.stateVersion ?? 0}`;
     const pl = vm.leaders?.player, en = vm.leaders?.enemy;
     $('p-castle-txt').textContent = pl ? `${pl.hp}/${pl.maxHp}` : '-/-';

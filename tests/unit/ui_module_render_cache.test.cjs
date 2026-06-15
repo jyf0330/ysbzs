@@ -81,6 +81,18 @@ test('UI03D shop panel renders stall identity and refresh economy status', () =>
   assert.match(css, /\.shop-refresh-summary/, 'refresh summary needs explicit styling');
 });
 
+test('UI03E reward panel renders claimable route battle rewards', () => {
+  const main = read('web/js/main.js');
+  const css = read('web/ux-app.css');
+
+  assert.match(main, /function renderRoutePendingRewards\(/, 'reward panel should use a dedicated route pending reward renderer');
+  assert.match(main, /dayRoute\?\.pendingRewards/, 'reward panel should read ViewModel dayRoute pendingRewards');
+  assert.match(main, /route-pending-reward/, 'reward panel should render route pending reward cards');
+  assert.match(main, /data-route-reward-id/, 'route reward card should expose a player-clickable reward id');
+  assert.match(main, /CLAIM_ROUTE_REWARD/, 'browser click path should dispatch the public route reward claim command');
+  assert.match(css, /\.route-pending-reward/, 'route pending reward cards need explicit styling');
+});
+
 test('UI04 all-out flow rechecks the current ViewModel until no usable slots remain', () => {
   const main = read('web/js/main.js');
   assert.match(main, /function nextUsableSlotInfo\(/, 'all-out should use a helper that reads the latest slot state');

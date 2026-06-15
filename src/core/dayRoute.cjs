@@ -457,6 +457,7 @@ function claimRouteReward(state, ref, opts = {}) {
     pushEvent(state, 'ROUTE_REWARD_BLOCKED', { rewardId: pending.rewardId, text: '路线奖励领取失败：候选不存在。' });
     return false;
   }
+  state.rewards = [];
   const claimed = {
     ...clone(pending),
     claimed: true,

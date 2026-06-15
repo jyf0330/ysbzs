@@ -983,10 +983,20 @@ import { createGameRuntime } from './runtime-client.js';
       <div class="choice-meta">${meta.map(x => `<span>${esc(x)}</span>`).join('')}${tagHtml}</div>
     </div>`;
   }
+  function renderRoutePendingRewards(route = {}) {
+    const pending = (ui.vm.dayRoute?.pendingRewards || route?.pendingRewards || []).filter(x => x && !x.claimed);
+    if (!pending.length) return '';
+    return pending.map((reward, i) => `<button class="reward-card route-pending-reward" data-route-reward-id="${esc(reward.rewardId)}" data-route-reward-index="${i}" type="button"${ui.busy ? ' disabled' : ''}>
+      <strong>路线战斗奖励</strong>
+      <span>${esc(reward.rewardPoolId || '奖励池')}</span>
+      <p>${esc(reward.phaseLabel || reward.encounterId || '遭遇')} · ${esc(reward.resultCode || 'WIN')} · ${esc(reward.grade || '-')}</p>
+    </button>`).join('');
+  }
 
   function renderRewards() {
     const rewards = ui.vm.rewards || [];
     const route = ui.vm.dayRoute || {};
+    const routePendingHtml = renderRoutePendingRewards(route);
     const nodeHtml = (route.options || []).map(o => `<button class="reward-card route-choice" data-node-option="${esc(o.optionId)}" type="button"${ui.busy ? ' disabled' : ''}>
       <strong>${esc(o.name || o.nodeId)}</strong><span>${esc(o.choicePreview?.kindLabel || o.nodeType || '节点')}</span>${renderChoicePreview(o)}
     </button>`).join('');
@@ -996,7 +1006,7 @@ import { createGameRuntime } from './runtime-client.js';
     const rewardHtml = rewards.map((r, i) => `<button class="reward-card" data-reward-index="${i}" type="button"${ui.busy ? ' disabled' : ''}>
       <strong>${esc(r.name || r.petName || r.relicName || r.type || `奖励${i + 1}`)}</strong><span>选择</span>
     </button>`).join('');
-    $('reward-list').innerHTML = nodeHtml + battleHtml + rewardHtml;
+    $('reward-list').innerHTML = routePendingHtml + nodeHtml + battleHtml + rewardHtml;
   }
   function renderShopStallSummary(shop = {}) {
     const stall = shop.activeStall || {};
@@ -1293,6 +1303,8 @@ import { createGameRuntime } from './runtime-client.js';
       if (useBtn) useSlot(Number(useBtn.dataset.use));
     });
     $('reward-list').addEventListener('click', ev => {
+      const routeReward = ev.target.closest('[data-route-reward-id]');
+      if (routeReward) { runCommand('CLAIM_ROUTE_REWARD', { rewardId: routeReward.dataset.routeRewardId, rewardIndex: 0 }); return; }
       const node = ev.target.closest('[data-node-option]');
       if (node) { runCommand('PICK_NODE', { optionId: node.dataset.nodeOption }); return; }
       const battle = ev.target.closest('[data-battle-option]');

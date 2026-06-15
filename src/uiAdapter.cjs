@@ -337,6 +337,7 @@ function nextActions(state) {
   if (state.phase === 'round_end' && state.round < state.maxRounds) out.push({ type: 'START_NEXT_ROUND', label: '下一回合' });
   if (state.phase === 'monster_turn') out.push({ type: 'RUN_MONSTER_TURN', label: '怪物行动' });
   if (state.phase === 'battle_end') out.push({ type: 'REWARD_OPTIONS', label: '生成奖励候选', defaultPayload: { poolId: 'reward_pT1', count: 3 } });
+  for (const pending of state.dayRoute?.pendingRewards || []) if (pending && !pending.claimed) out.push({ type: 'CLAIM_ROUTE_REWARD', label: `领取路线奖励 ${pending.rewardPoolId}`, defaultPayload: { rewardId: pending.rewardId, rewardIndex: 0 } });
   if (state.rewards && state.rewards.length) for (let i = 0; i < state.rewards.length; i++) out.push({ type: 'PICK_REWARD', label: `选择奖励${i + 1}`, defaultPayload: { index: i } });
   if (state.phase !== 'shop' && state.phase !== 'day_end') out.push({ type: 'ENTER_SHOP', label: '进入夜晚商店', defaultPayload: { poolId: 'night_base', slots: 6 } });
   out.push({ type: 'RUN_BATTLE', label: '自动完成战斗' });

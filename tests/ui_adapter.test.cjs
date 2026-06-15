@@ -2,6 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createYSBZSUIAdapter, createViewModel, PUBLIC_COMMANDS } = require('../src/uiAdapter.cjs');
 const battle = require('../src/core/battle.cjs');
+const dayRoute = require('../src/core/dayRoute.cjs');
+const { dispatch } = require('../src/core/reducer.cjs');
 const { createGameState, getCell, syncBoardUnits } = require('../src/core/state.cjs');
 
 function hasEvent(result, type) { return result.events.some(e => e.type === type); }
@@ -171,6 +173,29 @@ test('UI07C 路线商店摊位身份进入 ViewModel', () => {
   assert.equal(picked.viewModel.shop.activeStall.name, '火系补货商人');
   assert.deepEqual(picked.viewModel.shop.activeStall.tags, ['元素','火']);
   assert.ok(picked.viewModel.shop.offers.every(o => o.poolId === 'elem_火' && o.element === '火'));
+});
+
+test('UI07D 路线战斗 pending reward 进入玩家可领取动作', () => {
+  const state = createGameState({ day: 1, gold: 20 });
+  dayRoute.ensureDayRoute(state);
+  state.dayRoute.history.push({ kind: 'battle_choice', option: { encounterId: 'enc_reward_ui', name: '奖励UI测试战', phaseLabel: '中午战' } });
+  dayRoute.recordBattleOutcome(state, { encounterId: 'enc_reward_ui', name: '奖励UI测试战', phaseLabel: '中午战' }, { code: 'WIN', win: true, grade: 'A' }, state.gold, { kind: 'battle_choice' });
+
+  const vm = createViewModel(state);
+  const pending = vm.dayRoute.pendingRewards[0];
+  assert.ok(pending, 'route battle should create a pending reward');
+  assert.equal(pending.claimed, false);
+  assert.ok(vm.nextActions.some(x => x.type === 'CLAIM_ROUTE_REWARD' && x.defaultPayload.rewardId === pending.rewardId));
+
+  const claimResult = dispatch(state, { type: 'CLAIM_ROUTE_REWARD', rewardId: pending.rewardId, rewardIndex: 0 });
+  assert.ok(claimResult.selectedReward);
+  const claimedVm = createViewModel(state);
+  assert.equal(claimedVm.dayRoute.pendingRewards.length, 0);
+  assert.equal(claimedVm.dayRoute.claimedRewards.length, 1);
+  assert.ok(claimedVm.dayRoute.claimedRewards[0].selectedReward);
+  assert.equal(claimedVm.rewards.length, 0);
+  assert.equal(claimedVm.nextActions.some(x => x.type === 'PICK_REWARD'), false);
+  assert.ok(state.events.some(e => e.type === 'ROUTE_REWARD_CLAIM'));
 });
 
 test('UI08 未知 UI 命令会被拦截', () => {

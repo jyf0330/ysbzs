@@ -208,7 +208,26 @@ function baseRewardPoolForOutcome(state, result) {
   if (result.code === 'WIN_FAST') return 'reward_fast_clear';
   return Number(state.day || 1) >= 3 ? 'reward_pT2' : 'reward_pT1';
 }
-function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId) {
+function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId, source = {}) {
+  if (result && result.code === 'LOSE') {
+    const event = (state.data.events || []).find(e => e.id === 'evt_battle_fail' && e.layer === 'post_battle' && e.status === '正式' && dayExprAllows(e.dayExpr, state.day));
+    if (!event) return { rewardPoolId: baseRewardPoolId, events: [] };
+    return {
+      rewardPoolId: event.rewardPoolId || baseRewardPoolId,
+      events: [{
+        eventId: event.id,
+        name: event.name,
+        rewardPoolFrom: baseRewardPoolId,
+        rewardPoolTo: event.rewardPoolId || baseRewardPoolId,
+        condition: 'battle_loss',
+        encounterId: encounter.encounterId || null,
+        castleLineFrom: Number.isFinite(Number(source.castleLineFrom)) ? Number(source.castleLineFrom) : Number(state.castleLine || 0),
+        castleLineTo: Number(state.castleLine || 0),
+        economyMultiplierFrom: Number.isFinite(Number(source.economyMultiplierFrom)) ? Number(source.economyMultiplierFrom) : Number(state.economyMultiplier || 1),
+        economyMultiplierTo: Number(state.economyMultiplier || 1)
+      }]
+    };
+  }
   if (!result?.win || !isPressureEncounter(encounter)) return { rewardPoolId: baseRewardPoolId, events: [] };
   const event = (state.data.events || []).find(e => e.id === 'evt_elite_reward' && e.layer === 'post_battle' && e.status === '正式' && dayExprAllows(e.dayExpr, state.day));
   if (!event) return { rewardPoolId: baseRewardPoolId, events: [] };
@@ -228,7 +247,7 @@ function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId) 
 function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) {
   const route = ensureDayRoute(state);
   const baseRewardPoolId = baseRewardPoolForOutcome(state, result);
-  const postBattle = postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId);
+  const postBattle = postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId, source);
   const rewardPoolId = postBattle.rewardPoolId;
   const outcome = {
     day: state.day,
@@ -271,17 +290,20 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
     });
   }
   for (const event of outcome.postBattleEvents) {
+    const text = event.eventId === 'evt_battle_fail'
+      ? `失败惩罚：${outcome.name} 未清场，防线 ${event.castleLineFrom}→${event.castleLineTo}，经济倍率 ${event.economyMultiplierFrom}→${event.economyMultiplierTo}。`
+      : `精英奖励：${outcome.name} 胜利，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`;
     pushEvent(state, 'ROUTE_POST_BATTLE_EVENT_APPLY', {
       eventId: event.eventId,
       encounterId: outcome.encounterId,
       rewardPoolFrom: event.rewardPoolFrom,
       rewardPoolTo: event.rewardPoolTo,
       event: clone(event),
-      text: `精英奖励：${outcome.name} 胜利，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`
+      text
     });
   }
   const effectText = outcome.runEffects.length ? `，奖励折损${outcome.goldBaseDelta}→${outcome.goldDelta}` : '';
-  const postBattleText = outcome.postBattleEvents.length ? '，精英奖励' : '';
+  const postBattleText = outcome.postBattleEvents.length ? `，${outcome.postBattleEvents.map(x => x.name).join('、')}` : '';
   pushEvent(state, 'ROUTE_BATTLE_OUTCOME', { outcome: clone(outcome), runEffects: clone(outcome.runEffects), postBattleEvents: clone(outcome.postBattleEvents), text: `${outcome.phaseLabel}结算：${outcome.resultCode}，金币${outcome.goldFrom}→${outcome.goldTo}${effectText}${postBattleText}，奖励池=${rewardPoolId}。` });
   return outcome;
 }
@@ -340,8 +362,10 @@ function runEncounterBattle(state, encounter, source = {}) {
   state.result = null;
   state.phase = 'init';
   const beforeGold = Number(state.gold || 0);
+  const castleLineFrom = Number(state.castleLine || 0);
+  const economyMultiplierFrom = Number(state.economyMultiplier || 1);
   const result = battle.runBattle(state);
-  recordBattleOutcome(state, encounter, result, beforeGold, source);
+  recordBattleOutcome(state, encounter, result, beforeGold, Object.assign({}, source, { castleLineFrom, economyMultiplierFrom }));
   return true;
 }
 function resetBattlefield(state) {

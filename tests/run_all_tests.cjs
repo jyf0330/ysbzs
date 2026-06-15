@@ -144,6 +144,37 @@ test('Day1-Day10 route battle outcomes write back result, economy, and reward el
   }
   assert.ok(s.events.some(e=>e.type==='ROUTE_BATTLE_OUTCOME'));
 });
+test('route battle loss writes fail penalty post-battle event into run pressure',()=>{
+  const { createViewModel } = require('../src/uiAdapter.cjs');
+  const event=data.events.find(e=>e.id==='evt_battle_fail');
+  assert.ok(event, 'battle fail event should exist');
+  assert.equal(event.status,'正式');
+  const s=createGameState({day:3,gold:20});
+  dayRoute.ensureDayRoute(s);
+  s.dayRoute.history.push({kind:'battle_choice', option:{encounterId:'enc_fail_test', name:'失败压力测试'}});
+  const beforeGold=s.gold;
+  const castleLineFrom=s.castleLine;
+  const economyMultiplierFrom=s.economyMultiplier;
+  s.castleLine-=1;
+  s.economyMultiplier*=0.9;
+  dayRoute.recordBattleOutcome(s,{encounterId:'enc_fail_test', name:'失败压力测试', phaseLabel:'中午战'},{code:'LOSE', win:false, grade:'D'}, beforeGold, {kind:'battle_choice', castleLineFrom, economyMultiplierFrom});
+  const outcome=s.dayRoute.battleOutcomes[0];
+  assert.equal(outcome.rewardPoolId,'reward_none');
+  assert.equal(outcome.rewardEligible,false);
+  assert.equal(s.dayRoute.pendingRewards.length,0);
+  const failEvent=outcome.postBattleEvents.find(x=>x.eventId==='evt_battle_fail');
+  assert.ok(failEvent);
+  assert.equal(failEvent.castleLineFrom,castleLineFrom);
+  assert.equal(failEvent.castleLineTo,s.castleLine);
+  assert.equal(failEvent.economyMultiplierFrom,economyMultiplierFrom);
+  assert.equal(failEvent.economyMultiplierTo,s.economyMultiplier);
+  assert.ok(s.dayRoute.history.some(x=>x.outcome && x.outcome.postBattleEvents.some(e=>e.eventId==='evt_battle_fail')));
+  assert.ok(s.events.some(e=>e.type==='ROUTE_POST_BATTLE_EVENT_APPLY' && e.eventId==='evt_battle_fail'));
+  const vm=createViewModel(s);
+  assert.equal(vm.castleLine,9);
+  assert.equal(vm.economyMultiplier,0.9);
+  assert.ok(renderPlayerReport(s).includes('失败惩罚'));
+});
 test('route pending battle reward can be claimed into construction through reducer',()=>{
   const s=createGameState({day:2,gold:20});
   dayRoute.ensureDayRoute(s);

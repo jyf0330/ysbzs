@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_outer-battle-fail-penalty-event.md`
 - `tasks/done/2026-06-15_outer-duplicate-pet-event.md`
 - `tasks/done/2026-06-15_outer-elite-reward-pool.md`
 - `tasks/done/2026-06-15_outer-curse-gold-risk-effect.md`

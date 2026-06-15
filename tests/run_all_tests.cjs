@@ -255,6 +255,9 @@ test('route trap bonus event arms next battle fire trap modifier and consumes on
   assert.equal(trigger.baseDamage,6);
   assert.equal(trigger.bonusDamage,1);
   assert.equal(trigger.damage,7);
+  assert.ok(Array.isArray(trigger.effects[0].modifierApplied), 'trap effect should expose modifierApplied array');
+  assert.ok(trigger.effects[0].modifierApplied.some(x=>x.id==='evt_trap_bonus_trap_damage_add' && x.from===6 && x.to===7));
+  assert.ok((s.changes||[]).some(x=>x.type==='APPLY_OUTER_BATTLE_MODIFIER' && x.source && x.source.eventId==='evt_trap_bonus' && x.from===6 && x.to===7));
   const consumed=s.battlePrepEffects.find(x=>x.eventId==='evt_trap_bonus');
   assert.equal(consumed.status,'consumed');
   assert.equal(consumed.usesRemaining,0);

@@ -1,4 +1,6 @@
 const { pushEvent } = require('./events.cjs');
+const { recordChange } = require('./changeLog.cjs');
+const { computeModifiedValue } = require('./modifierEngine.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
@@ -105,19 +107,64 @@ function applyBattlePrepEffects(state) {
 function applyTrapDamageBonus(state, baseDamage, meta = {}) {
   const effects = ensureBattlePrepEffects(state);
   const active = effects.filter(effect => effect.type === 'trap_damage_bonus' && ['active', 'pending'].includes(effect.status) && Number(effect.usesRemaining || 0) > 0);
-  const bonusDamage = active.reduce((sum, effect) => sum + Number(effect.bonusDamage || 0), 0);
-  if (bonusDamage <= 0) return { baseDamage: Number(baseDamage || 0), bonusDamage: 0, damage: Number(baseDamage || 0), effects: [] };
+  const modifiers = active
+    .map(effect => ({
+      id: `${effect.eventId}_trap_damage_add`,
+      op: 'add',
+      value: Number(effect.bonusDamage || 0),
+      priority: 70,
+      sourceId: effect.effectId
+    }))
+    .filter(modifier => Number(modifier.value || 0) > 0);
+  const modified = computeModifiedValue(Number(baseDamage || 0), modifiers, {
+    source: meta.source || null,
+    r: meta.r ?? null,
+    c: meta.c ?? null,
+    unitId: meta.unitId || null
+  });
+  const effectById = new Map(active.map(effect => [effect.effectId, effect]));
+  const modifierApplied = modified.applied.map(applied => {
+    const effect = effectById.get(applied.sourceId) || null;
+    return {
+      ...applied,
+      eventId: effect ? effect.eventId : null,
+      effectId: applied.sourceId,
+      name: effect ? effect.name : null
+    };
+  });
+  const bonusDamage = Number(modified.final || 0) - Number(baseDamage || 0);
+  if (bonusDamage <= 0) return { baseDamage: Number(baseDamage || 0), bonusDamage: 0, damage: Number(baseDamage || 0), effects: [], modifierApplied: [] };
   const consumed = active.map(effect => {
     effect.status = 'consumed';
     effect.usesRemaining = 0;
     effect.consumedAt = { day: Number(state.day || 1), period: state.period || '上午', round: Number(state.round || 0), source: meta.source || null };
-    return clone(effect);
+    const applied = modifierApplied.filter(modifier => modifier.sourceId === effect.effectId);
+    return { ...clone(effect), modifierApplied: clone(applied) };
   });
+  for (const applied of modifierApplied) {
+    recordChange(state, {
+      type: 'APPLY_OUTER_BATTLE_MODIFIER',
+      path: 'fire_trap.damage',
+      from: applied.from,
+      to: applied.to,
+      delta: Number(applied.to || 0) - Number(applied.from || 0),
+      source: {
+        eventId: applied.eventId,
+        effectId: applied.effectId,
+        modifierId: applied.id,
+        source: meta.source || null
+      },
+      reason: 'outer_trap_bonus_modifier',
+      tags: ['outer', 'battle_modifier', 'fire_trap'],
+      text: `外层战斗modifier：${applied.name || applied.id} 使火陷阱伤害 ${applied.from}→${applied.to}。`
+    });
+  }
   return {
     baseDamage: Number(baseDamage || 0),
     bonusDamage,
-    damage: Number(baseDamage || 0) + bonusDamage,
-    effects: consumed
+    damage: Number(modified.final || 0),
+    effects: consumed,
+    modifierApplied: clone(modifierApplied)
   };
 }
 

@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_outer-trap-modifier-evidence.md`
 - `tasks/done/2026-06-15_outer-fast-clear-reward-event.md`
 - `tasks/done/2026-06-15_outer-upgrade-offer-event.md`
 - `tasks/done/2026-06-15_outer-battle-fail-penalty-event.md`

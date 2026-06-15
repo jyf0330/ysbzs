@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_day1-day10-route-skeleton.md`
 - `tasks/done/2026-06-15_shop-refresh-control-state.md`
 - `tasks/done/2026-06-15_route-shop-stall-identity.md`
 - `tasks/done/2026-06-15_route-pending-reward-claim.md`

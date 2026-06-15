@@ -17,3 +17,45 @@ node_d03_fire_shop,node_pool_d03_growth,火系强化商人,shop,80,3,elem_火,,,
 node_d03_summon_shop,node_pool_d03_growth,召唤强化商人,shop,70,3,role_召唤,,,4,,正式,进入召唤标签摊位
 node_d03_event_discount,node_pool_d03_growth,折扣摊位,event,60,3,night_base,reward_pT2,evt_discount,,50,正式,下一件商品半价
 node_d03_rest_gold,node_pool_d03_growth,休整补给,rest,50,3,,,,,3,正式,直接获得金币
+node_d04_tier2_shop,node_pool_d04_growth,白银商会,shop,100,4,tier_pT2,,,4,,正式,进入 pT2 标签摊位
+node_d04_reward_tier2,node_pool_d04_growth,白银奖励,reward,90,4,,reward_pT2,,3,,正式,生成 3 个 pT2 奖励候选
+node_d04_wind_shop,node_pool_d04_growth,风系补货商人,shop,80,4,elem_风,,,4,,正式,进入风元素定向摊位
+node_d04_control_shop,node_pool_d04_growth,控制补强商人,shop,70,4,role_控制,,,4,,正式,进入控制标签摊位
+node_d04_event_wind,node_pool_d04_growth,风系补货事件,event,60,4,elem_风,reward_pT2,evt_shop_wind,,2,正式,刷新风系商品位
+node_d04_rest_gold,node_pool_d04_growth,休整补给,rest,50,4,,,,,3,正式,直接获得金币
+node_d05_tier2_shop,node_pool_d05_growth,白银精选商会,shop,100,5,tier_pT2,,,5,,正式,进入 pT2 标签摊位
+node_d05_reward_tier2,node_pool_d05_growth,白银精选奖励,reward,90,5,,reward_pT2,,3,,正式,生成 3 个 pT2 奖励候选
+node_d05_water_shop,node_pool_d05_growth,水系治疗商人,shop,80,5,elem_水,,,4,,正式,进入水元素定向摊位
+node_d05_heal_shop,node_pool_d05_growth,治疗补强商人,shop,70,5,role_治疗,,,4,,正式,进入治疗标签摊位
+node_d05_event_free_roll,node_pool_d05_growth,免费刷新补给,event,60,5,night_base,reward_pT2,evt_free_roll,,1,正式,获得一次免费刷新
+node_d05_rest_gold,node_pool_d05_growth,休整补给,rest,50,5,,,,,3,正式,直接获得金币
+node_d06_tier3_shop,node_pool_d06_growth,黄金商会,shop,100,6,tier_pT3,,,5,,正式,进入 pT3 标签摊位
+node_d06_reward_tier3,node_pool_d06_growth,黄金奖励,reward,90,6,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选
+node_d06_output_shop,node_pool_d06_growth,输出补强商人,shop,80,6,role_输出,,,5,,正式,进入输出标签摊位
+node_d06_fire_shop,node_pool_d06_growth,火系爆发商人,shop,70,6,elem_火,,,5,,正式,进入火元素强化摊位
+node_d06_event_discount,node_pool_d06_growth,精英战前折扣,event,60,6,night_base,reward_pT3,evt_discount,,50,正式,下一件商品半价
+node_d06_rest_gold,node_pool_d06_growth,精英战前休整,rest,50,6,,,,,4,正式,直接获得金币
+node_d07_tier3_shop,node_pool_d07_growth,黄金精选商会,shop,100,7,tier_pT3,,,5,,正式,进入 pT3 标签摊位
+node_d07_reward_tier3,node_pool_d07_growth,黄金精选奖励,reward,90,7,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选
+node_d07_tank_shop,node_pool_d07_growth,前排补强商人,shop,80,7,role_坦克,,,5,,正式,进入坦克标签摊位
+node_d07_earth_shop,node_pool_d07_growth,土系防线商人,shop,70,7,elem_土,,,5,,正式,进入土元素定向摊位
+node_d07_event_tank,node_pool_d07_growth,前排补强事件,event,60,7,role_坦克,reward_pT3,evt_role_tank,,2,正式,获得前排补强机会
+node_d07_rest_gold,node_pool_d07_growth,精英战前休整,rest,50,7,,,,,4,正式,直接获得金币
+node_d08_tier3_shop,node_pool_d08_growth,黄金连锁商会,shop,100,8,tier_pT3,,,6,,正式,进入 pT3 标签摊位
+node_d08_reward_tier3,node_pool_d08_growth,黄金连锁奖励,reward,90,8,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选
+node_d08_economy_shop,node_pool_d08_growth,经济补强商人,shop,80,8,role_经济,,,5,,正式,进入经济标签摊位
+node_d08_wind_shop,node_pool_d08_growth,风系连锁商人,shop,70,8,elem_风,,,5,,正式,进入风元素定向摊位
+node_d08_event_wind,node_pool_d08_growth,风系连锁事件,event,60,8,elem_风,reward_pT3,evt_shop_wind,,2,正式,刷新风系商品位
+node_d08_rest_gold,node_pool_d08_growth,精英战前休整,rest,50,8,,,,,4,正式,直接获得金币
+node_d09_tier3_shop,node_pool_d09_growth,终局前黄金商会,shop,100,9,tier_pT3,,,6,,正式,进入 pT3 标签摊位
+node_d09_reward_tier3,node_pool_d09_growth,终局前黄金奖励,reward,90,9,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选
+node_d09_summon_shop,node_pool_d09_growth,召唤终局商人,shop,80,9,role_召唤,,,5,,正式,进入召唤标签摊位
+node_d09_fire_shop,node_pool_d09_growth,火系终局商人,shop,70,9,elem_火,,,5,,正式,进入火元素强化摊位
+node_d09_event_summon,node_pool_d09_growth,召唤终局事件,event,60,9,role_召唤,reward_pT3,evt_role_summon,,2,正式,获得召唤流补强机会
+node_d09_rest_gold,node_pool_d09_growth,Boss 前休整,rest,50,9,,,,,5,正式,直接获得金币
+node_d10_tier3_shop,node_pool_d10_growth,终局黄金商会,shop,100,10,tier_pT3,,,6,,正式,进入 pT3 标签摊位
+node_d10_reward_tier3,node_pool_d10_growth,终局黄金奖励,reward,90,10,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选
+node_d10_output_shop,node_pool_d10_growth,终局输出商人,shop,80,10,role_输出,,,6,,正式,进入输出标签摊位
+node_d10_fire_shop,node_pool_d10_growth,终局火系商人,shop,70,10,elem_火,,,6,,正式,进入火元素强化摊位
+node_d10_event_discount,node_pool_d10_growth,终局折扣摊位,event,60,10,night_base,reward_pT3,evt_discount,,50,正式,下一件商品半价
+node_d10_rest_gold,node_pool_d10_growth,终局前休整,rest,50,10,,,,,5,正式,直接获得金币

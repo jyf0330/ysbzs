@@ -10,13 +10,23 @@ let tests=[]; function test(name, fn){ tests.push({name, fn}); }
 function hasEvent(state,type){ return state.events.some(e=>e.type===type); }
 
 test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,127); assert.equal(data.monsters.length,34); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,127); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,127); assert.equal(data.validation.length,10); assert.equal(data.day7Trial.length,9); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
-test('Day1-Day3 route data defines at least four outer decisions and fixed battle each day',()=>{
-  for (const day of [1, 2, 3]) {
+test('Day1-Day10 route data defines at least four outer decisions and fixed battle each day',()=>{
+  for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = data.nodeSchedule.filter(x => x.day === day);
     const decisions = rows.filter(x => x.kind === 'node_choice' || x.kind === 'battle_choice');
     assert.ok(decisions.length >= 4, `day ${day} should have at least four outer decisions`);
     assert.ok(decisions.every(x => Number(x.choiceCount || 3) === 3), `day ${day} choices should be 3选1`);
     assert.ok(rows.some(x => x.kind === 'fixed_battle'), `day ${day} should have fixed battle`);
+  }
+});
+test('Day4-Day10 route data escalates shop reward tier and encounter pressure',()=>{
+  for (const day of [4, 5, 6, 7, 8, 9, 10]) {
+    const nodes = data.nodePool.filter(x => x.unlockDay === day);
+    assert.ok(nodes.some(x => x.shopPoolId === 'tier_pT2' || x.shopPoolId === 'tier_pT3' || x.rewardPoolId === 'reward_pT2' || x.rewardPoolId === 'reward_pT3'), `day ${day} should include higher tier economy`);
+  }
+  for (const day of [6, 7, 8, 9, 10]) {
+    const encounters = data.encounterPool.filter(x => x.unlockDay === day);
+    assert.ok(encounters.some(x => /精英|Boss|终局/.test(`${x.name}${x.phaseLabel}${x.note}`)), `day ${day} should include pressure label`);
   }
 });
 test('all cross-table references connected',()=>{ const v=validateData(); assert.deepEqual(v.issues,[]); assert.equal(v.ok,true); });
@@ -105,11 +115,11 @@ test('Day1 full day route uses node choices, midday encounter choice, and evenin
   assert.equal(s.phase,'day_end');
   assert.equal(s.dayRoute.nodeIndex,6);
 });
-test('Day1-Day3 route can run continuously and records daily route history',()=>{
-  const s=runDayRangeScenario({fromDay:1,toDay:3,gold:999});
-  assert.equal(s.day,3);
+test('Day1-Day10 route can run continuously and records daily route history',()=>{
+  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999});
+  assert.equal(s.day,10);
   assert.equal(s.phase,'day_end');
-  assert.equal(s.dayRouteRuns.length,3);
+  assert.equal(s.dayRouteRuns.length,10);
   for (const run of s.dayRouteRuns) {
     const choices = run.history.filter(x => x.kind === 'node' || x.kind === 'battle_choice');
     const nodeNames = Array.from(new Set(run.history.filter(x => x.kind === 'node').map(x => x.option.name)));
@@ -118,9 +128,9 @@ test('Day1-Day3 route can run continuously and records daily route history',()=>
     assert.ok(run.history.some(x => x.kind === 'fixed_battle'), `day ${run.day} should record fixed battle`);
   }
 });
-test('Day1-Day3 route battle outcomes write back result, economy, and reward eligibility',()=>{
-  const s=runDayRangeScenario({fromDay:1,toDay:3,gold:999});
-  assert.equal(s.dayRouteRuns.length,3);
+test('Day1-Day10 route battle outcomes write back result, economy, and reward eligibility',()=>{
+  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999});
+  assert.equal(s.dayRouteRuns.length,10);
   for (const run of s.dayRouteRuns) {
     assert.equal(run.battleOutcomes.length,2, `day ${run.day} should record midday and fixed battle outcomes`);
     for (const outcome of run.battleOutcomes) {

@@ -93,6 +93,12 @@
 .status-strip{grid-template-columns:66px 104px 108px 58px minmax(178px,1.2fr) minmax(96px,1fr);gap:5px;padding:6px}
 .status-pill{min-width:0;padding:6px 7px}
 .status-pill.route-progress strong,.status-pill.build-core strong,.status-pill.next-step strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:1.1}
+.reward-card.route-choice{grid-template-columns:1fr;align-items:start;text-align:left}
+.reward-card.route-choice>span{font-weight:800;color:#8a5d16}
+.choice-preview{display:flex;flex-direction:column;gap:5px;min-width:0}
+.choice-preview p{margin:0;color:#5f4a36;font-size:12px;line-height:1.35}
+.choice-meta{display:flex;flex-wrap:wrap;gap:4px}
+.choice-meta span{font-size:11px;line-height:1.1;padding:3px 5px;border:1px solid rgba(124,89,53,.28);background:#f5e3c1;color:#5b3d22}
 .status-pill.build-core{border-left:4px solid #557d4b}
 .status-pill.next-step{border-left:4px solid #426c88}
 .state-version-hidden{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}

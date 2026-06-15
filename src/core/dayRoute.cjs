@@ -36,6 +36,86 @@ function nextSchedule(state) {
 function firstN(rows, count) {
   return rows.slice().sort((a, b) => Number(b.weight || 0) - Number(a.weight || 0) || String(a.nodeId || a.encounterId).localeCompare(String(b.nodeId || b.encounterId))).slice(0, count);
 }
+function publicTierLabel(poolId) {
+  const tier = String(poolId || '').replace(/^reward_/, '').replace(/^tier_/, '');
+  return { pT1: '青铜', pT2: '白银', pT3: '黄金', pT4: '钻石', elite: '精英' }[tier] || tier || null;
+}
+function eventForNode(state, node) {
+  return (state.data.events || []).find(e => e.id === node.eventId) || null;
+}
+function eventTags(event) {
+  if (!event) return [];
+  const text = `${event.group || ''}${event.name || ''}${event.gainText || ''}${event.optionText || ''}`;
+  const tags = [];
+  if (/经济|刷新|折扣|金币/.test(text)) tags.push('经济');
+  if (/补货|商店|商品/.test(text)) tags.push('商店');
+  if (/复制|升阶|升级/.test(text)) tags.push('构筑');
+  if (/护盾|陷阱|战前/.test(text)) tags.push('战斗准备');
+  if (/诅咒|风险|折损/.test(text)) tags.push('风险');
+  return tags;
+}
+function nodeKindLabel(type) {
+  return { shop: '摊位', reward: '奖励', event: '事件', rest: '休整' }[type] || '节点';
+}
+function buildNodeChoicePreview(state, node) {
+  const event = eventForNode(state, node);
+  if (node.nodeType === 'shop') {
+    const tags = shop.stallTags(node.shopPoolId || 'night_base');
+    return {
+      kindLabel: '摊位',
+      summary: `${node.name}：${tags.join('/')}商品倾向，${Number(node.slots || 6)}个商品位。`,
+      costText: '进店免费',
+      gainText: `${Number(node.slots || 6)}个候选`,
+      tags
+    };
+  }
+  if (node.nodeType === 'reward') {
+    const tier = publicTierLabel(node.rewardPoolId);
+    return {
+      kindLabel: '奖励',
+      summary: `${node.name}：从${tier || node.rewardPoolId || '奖励'}池中选择构筑补强。`,
+      costText: '无',
+      gainText: `${Number(node.slots || 3)}选1`,
+      tags: ['构筑', tier].filter(Boolean)
+    };
+  }
+  if (node.nodeType === 'event') {
+    return {
+      kindLabel: '事件',
+      summary: `${node.name}：${event?.optionText || node.note || '结算一次外层事件'}。`,
+      costText: event?.costText || '无',
+      gainText: event?.gainText || node.note || '已结算',
+      tags: eventTags(event)
+    };
+  }
+  if (node.nodeType === 'rest') {
+    return {
+      kindLabel: '休整',
+      summary: `${node.name}：跳过构筑选择，直接补给。`,
+      costText: '无',
+      gainText: `金币+${Number(node.value || 1)}`,
+      tags: ['经济', '安全']
+    };
+  }
+  return {
+    kindLabel: nodeKindLabel(node.nodeType),
+    summary: node.note || node.name || '节点选择',
+    costText: '无',
+    gainText: node.value != null ? String(node.value) : '',
+    tags: []
+  };
+}
+function buildBattleChoicePreview(enc, schedule) {
+  const label = enc.phaseLabel || schedule.phaseLabel || '战斗';
+  const pressure = isPressureEncounter(enc);
+  return {
+    kindLabel: pressure ? '高压遭遇' : '遭遇',
+    summary: `${label}：${enc.name || enc.encounterId}，将进入元素棋盘战斗。`,
+    costText: '消耗战斗机会',
+    gainText: pressure ? '高压力 / 高奖励' : '胜利获得路线奖励',
+    tags: ['战斗压力', pressure ? '精英/Boss' : '常规战'].filter(Boolean)
+  };
+}
 function generateNodeOptions(state, opts = {}) {
   const route = ensureDayRoute(state);
   const schedule = opts.scheduleStep ? scheduleAt(state, opts.scheduleStep) : nextSchedule(state);
@@ -56,7 +136,8 @@ function generateNodeOptions(state, opts = {}) {
     rewardPoolId: node.rewardPoolId || null,
     eventId: node.eventId || null,
     slots: node.slots || null,
-    value: node.value || null
+    value: node.value || null,
+    choicePreview: buildNodeChoicePreview(state, node)
   }));
   route.options = options;
   state.phase = 'node_choice';
@@ -146,7 +227,8 @@ function generateBattleOptions(state, opts = {}) {
     name: enc.name,
     wavePeriod: enc.wavePeriod || '上午',
     battleIndex: enc.battleIndex || 1,
-    phaseLabel: enc.phaseLabel || schedule.phaseLabel || '战斗'
+    phaseLabel: enc.phaseLabel || schedule.phaseLabel || '战斗',
+    choicePreview: buildBattleChoicePreview(enc, schedule)
   }));
   route.battleOptions = options;
   state.phase = 'battle_choice';

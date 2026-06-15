@@ -54,6 +54,19 @@ test('UI03B top status bar exposes outer route progress, build core, and next st
   assert.match(css, /\.status-pill\.next-step/, 'next-step pill needs compact readable styling');
 });
 
+test('UI03C route option cards render structured choice consequence previews', () => {
+  const main = read('web/js/main.js');
+  const css = read('web/ux-app.css');
+
+  assert.match(main, /battle_choice:\s*'遭遇选择'/, 'battle choice phase should render as player-readable Chinese');
+  assert.match(main, /function renderChoicePreview\(option\)/, 'route cards should use a dedicated choice preview renderer');
+  assert.match(main, /choicePreview/, 'route card renderer should read ViewModel choicePreview');
+  assert.match(main, /class="choice-preview"/, 'route cards should include a consequence preview block');
+  assert.match(main, /class="choice-meta"/, 'route cards should show compact tags/cost/gain metadata');
+  assert.match(css, /\.choice-preview/, 'choice preview block needs explicit readable styling');
+  assert.match(css, /\.choice-meta/, 'choice preview metadata needs explicit readable styling');
+});
+
 test('UI04 all-out flow rechecks the current ViewModel until no usable slots remain', () => {
   const main = read('web/js/main.js');
   assert.match(main, /function nextUsableSlotInfo\(/, 'all-out should use a helper that reads the latest slot state');

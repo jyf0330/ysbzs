@@ -15,7 +15,7 @@ import { createGameRuntime } from './runtime-client.js';
   const PHASE_TEXT = {
     init: '准备', player_turn: '玩家回合', monster_turn: '怪物行动', round_end: '回合结算',
     battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中',
-    node_choice: '节点选择', node_resolved: '节点结算', reward: '奖励'
+    node_choice: '节点选择', node_resolved: '节点结算', battle_choice: '遭遇选择', reward: '奖励'
   };
   const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT']);
 
@@ -968,14 +968,30 @@ import { createGameRuntime } from './runtime-client.js';
     toast(`我方全部出击：尝试释放 ${count} 个行动块。`);
   }
 
+  function renderChoicePreview(option) {
+    const preview = option.choicePreview || {};
+    const tags = (preview.tags || []).filter(Boolean).slice(0, 3);
+    const meta = [
+      preview.kindLabel,
+      preview.costText ? `成本 ${preview.costText}` : '',
+      preview.gainText ? `收益 ${preview.gainText}` : ''
+    ].filter(Boolean);
+    const summary = preview.summary || option.note || option.phaseLabel || option.nodeType || '选择后继续推进路线';
+    const tagHtml = tags.map(tag => `<span>${esc(tag)}</span>`).join('');
+    return `<div class="choice-preview">
+      <p>${esc(summary)}</p>
+      <div class="choice-meta">${meta.map(x => `<span>${esc(x)}</span>`).join('')}${tagHtml}</div>
+    </div>`;
+  }
+
   function renderRewards() {
     const rewards = ui.vm.rewards || [];
     const route = ui.vm.dayRoute || {};
-    const nodeHtml = (route.options || []).map(o => `<button class="reward-card" data-node-option="${esc(o.optionId)}" type="button"${ui.busy ? ' disabled' : ''}>
-      <strong>${esc(o.name || o.nodeId)}</strong><span>${esc(o.nodeType || '节点')}</span>
+    const nodeHtml = (route.options || []).map(o => `<button class="reward-card route-choice" data-node-option="${esc(o.optionId)}" type="button"${ui.busy ? ' disabled' : ''}>
+      <strong>${esc(o.name || o.nodeId)}</strong><span>${esc(o.choicePreview?.kindLabel || o.nodeType || '节点')}</span>${renderChoicePreview(o)}
     </button>`).join('');
-    const battleHtml = (route.battleOptions || []).map(o => `<button class="reward-card" data-battle-option="${esc(o.encounterId)}" type="button"${ui.busy ? ' disabled' : ''}>
-      <strong>${esc(o.name || o.encounterId)}</strong><span>${esc(o.phaseLabel || '遭遇')}</span>
+    const battleHtml = (route.battleOptions || []).map(o => `<button class="reward-card route-choice" data-battle-option="${esc(o.encounterId)}" type="button"${ui.busy ? ' disabled' : ''}>
+      <strong>${esc(o.name || o.encounterId)}</strong><span>${esc(o.choicePreview?.kindLabel || o.phaseLabel || '遭遇')}</span>${renderChoicePreview(o)}
     </button>`).join('');
     const rewardHtml = rewards.map((r, i) => `<button class="reward-card" data-reward-index="${i}" type="button"${ui.busy ? ' disabled' : ''}>
       <strong>${esc(r.name || r.petName || r.relicName || r.type || `奖励${i + 1}`)}</strong><span>选择</span>

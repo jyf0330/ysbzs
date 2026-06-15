@@ -90,6 +90,18 @@ function serializableState(state) {
       dayQueued: x.dayQueued,
       usesRemaining: x.usesRemaining
     })),
+    outerRunEffects: (state.outerRunEffects || []).map(x => ({
+      effectId: x.effectId,
+      eventId: x.eventId,
+      source: x.source,
+      nodeId: x.nodeId || null,
+      type: x.type,
+      multiplier: x.multiplier,
+      immediateGold: x.immediateGold,
+      status: x.status,
+      dayQueued: x.dayQueued,
+      usesRemaining: x.usesRemaining
+    })),
     shop: {
       activePool: state.shop && state.shop.activePool,
       activeStall: state.shop && state.shop.activeStall ? {

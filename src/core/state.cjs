@@ -219,6 +219,7 @@ function createGameState(opts = {}) {
     inventory: [],
     relics: [],
     battlePrepEffects: [],
+    outerRunEffects: [],
     shop: { offers: [], frozen: {}, rollCount: 0, freeRolls: 0, nextDiscount: 0, activePool: 'night_base', activeStall: null, refreshState: { freeRolls: 0, nextDiscount: 0, targetedRestocks: [], effects: [], lastRoll: null } },
     rewards: [],
     dayRoute: { day: opts.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] },

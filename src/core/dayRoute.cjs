@@ -3,6 +3,7 @@ const shop = require('./shop.cjs');
 const { pushEvent } = require('./events.cjs');
 const { syncBoardUnits } = require('./state.cjs');
 const { queueBattlePrepEffectFromEvent } = require('./outerBattleEffects.cjs');
+const { queueOuterRunEffectFromEvent, applyRouteBattleOutcomeEffects } = require('./outerRunEffects.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function activeRows(rows, day) {
@@ -110,12 +111,17 @@ function applyRouteEvent(state, option) {
   const before = state.gold;
   shop.applyShopEventModifiers(state, event, 'route_event');
   const prepEffect = queueBattlePrepEffectFromEvent(state, event, { source: 'route_event', nodeId: option.nodeId });
+  const runEffect = queueOuterRunEffectFromEvent(state, event, { source: 'route_event', nodeId: option.nodeId });
   if (prepEffect) {
     const historyItem = route.history[route.history.length - 1];
     if (historyItem) historyItem.prepEffect = clone(prepEffect);
   }
+  if (runEffect) {
+    const historyItem = route.history[route.history.length - 1];
+    if (historyItem) historyItem.runEffect = clone(runEffect);
+  }
   state.phase = 'node_resolved';
-  pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, prepEffect: prepEffect ? clone(prepEffect) : null, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
+  pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, prepEffect: prepEffect ? clone(prepEffect) : null, runEffect: runEffect ? clone(runEffect) : null, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
   return true;
 }
 function generateBattleOptions(state, opts = {}) {
@@ -202,10 +208,17 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
     win: !!result?.win,
     goldFrom: beforeGold,
     goldTo: state.gold,
+    goldBaseDelta: Number(state.gold || 0) - Number(beforeGold || 0),
     goldDelta: Number(state.gold || 0) - Number(beforeGold || 0),
     rewardPoolId,
-    rewardEligible: !!result?.win
+    rewardEligible: !!result?.win,
+    runEffects: []
   };
+  const runEffectResult = applyRouteBattleOutcomeEffects(state, outcome, beforeGold);
+  outcome.goldBaseDelta = runEffectResult.goldBaseDelta;
+  outcome.goldDelta = runEffectResult.goldDelta;
+  outcome.goldTo = state.gold;
+  outcome.runEffects = runEffectResult.consumed;
   route.battleOutcomes.push(outcome);
   const historyItem = route.history[route.history.length - 1];
   if (historyItem && (historyItem.kind === 'battle_choice' || historyItem.kind === 'fixed_battle')) historyItem.outcome = clone(outcome);
@@ -221,7 +234,8 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
       claimed: false
     });
   }
-  pushEvent(state, 'ROUTE_BATTLE_OUTCOME', { outcome: clone(outcome), text: `${outcome.phaseLabel}结算：${outcome.resultCode}，金币${outcome.goldFrom}→${outcome.goldTo}，奖励池=${rewardPoolId}。` });
+  const effectText = outcome.runEffects.length ? `，奖励折损${outcome.goldBaseDelta}→${outcome.goldDelta}` : '';
+  pushEvent(state, 'ROUTE_BATTLE_OUTCOME', { outcome: clone(outcome), runEffects: clone(outcome.runEffects), text: `${outcome.phaseLabel}结算：${outcome.resultCode}，金币${outcome.goldFrom}→${outcome.goldTo}${effectText}，奖励池=${rewardPoolId}。` });
   return outcome;
 }
 function pendingRewardIndex(route, ref) {

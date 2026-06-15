@@ -228,6 +228,23 @@ function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId, 
       }]
     };
   }
+  if (result && result.code === 'WIN_FAST') {
+    const event = (state.data.events || []).find(e => e.id === 'evt_battle_bonus' && e.layer === 'post_battle' && e.status === '正式' && dayExprAllows(e.dayExpr, state.day));
+    if (!event) return { rewardPoolId: baseRewardPoolId, events: [] };
+    const rewardPoolId = event.rewardPoolId || baseRewardPoolId;
+    return {
+      rewardPoolId,
+      events: [{
+        eventId: event.id,
+        name: event.name,
+        rewardPoolFrom: baseRewardPoolId,
+        rewardPoolTo: rewardPoolId,
+        condition: 'fast_clear_win',
+        encounterId: encounter.encounterId || null,
+        grade: result.grade || null
+      }]
+    };
+  }
   if (!result?.win || !isPressureEncounter(encounter)) return { rewardPoolId: baseRewardPoolId, events: [] };
   const event = (state.data.events || []).find(e => e.id === 'evt_elite_reward' && e.layer === 'post_battle' && e.status === '正式' && dayExprAllows(e.dayExpr, state.day));
   if (!event) return { rewardPoolId: baseRewardPoolId, events: [] };
@@ -292,7 +309,9 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
   for (const event of outcome.postBattleEvents) {
     const text = event.eventId === 'evt_battle_fail'
       ? `失败惩罚：${outcome.name} 未清场，防线 ${event.castleLineFrom}→${event.castleLineTo}，经济倍率 ${event.economyMultiplierFrom}→${event.economyMultiplierTo}。`
-      : `精英奖励：${outcome.name} 胜利，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`;
+      : (event.eventId === 'evt_battle_bonus'
+        ? `五回合高奖：${outcome.name} 快速清场，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`
+        : `精英奖励：${outcome.name} 胜利，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`);
     pushEvent(state, 'ROUTE_POST_BATTLE_EVENT_APPLY', {
       eventId: event.eventId,
       encounterId: outcome.encounterId,

@@ -175,6 +175,31 @@ test('route battle loss writes fail penalty post-battle event into run pressure'
   assert.equal(vm.economyMultiplier,0.9);
   assert.ok(renderPlayerReport(s).includes('失败惩罚'));
 });
+test('route fast clear win writes high reward post-battle event into pending reward',()=>{
+  const { createViewModel } = require('../src/uiAdapter.cjs');
+  const event=data.events.find(e=>e.id==='evt_battle_bonus');
+  assert.ok(event, 'fast clear reward event should exist');
+  assert.equal(event.status,'正式');
+  const s=createGameState({day:3,gold:20});
+  dayRoute.ensureDayRoute(s);
+  s.dayRoute.history.push({kind:'battle_choice', option:{encounterId:'enc_fast_test', name:'快速清场测试'}});
+  const beforeGold=s.gold;
+  s.gold+=6;
+  dayRoute.recordBattleOutcome(s,{encounterId:'enc_fast_test', name:'快速清场测试', phaseLabel:'中午战'},{code:'WIN_FAST', win:true, grade:'S'}, beforeGold, {kind:'battle_choice'});
+  const outcome=s.dayRoute.battleOutcomes[0];
+  assert.equal(outcome.rewardPoolId,'reward_fast_clear');
+  assert.equal(outcome.rewardEligible,true);
+  assert.equal(s.dayRoute.pendingRewards[0].rewardPoolId,'reward_fast_clear');
+  const fastEvent=outcome.postBattleEvents.find(x=>x.eventId==='evt_battle_bonus');
+  assert.ok(fastEvent);
+  assert.equal(fastEvent.rewardPoolFrom,'reward_fast_clear');
+  assert.equal(fastEvent.rewardPoolTo,'reward_fast_clear');
+  assert.equal(fastEvent.condition,'fast_clear_win');
+  assert.ok(s.dayRoute.history.some(x=>x.outcome && x.outcome.postBattleEvents.some(e=>e.eventId==='evt_battle_bonus')));
+  assert.ok(s.events.some(e=>e.type==='ROUTE_POST_BATTLE_EVENT_APPLY' && e.eventId==='evt_battle_bonus'));
+  assert.ok(createViewModel(s).dayRoute.pendingRewards.some(x=>x.rewardPoolId==='reward_fast_clear'));
+  assert.ok(renderPlayerReport(s).includes('五回合高奖'));
+});
 test('route pending battle reward can be claimed into construction through reducer',()=>{
   const s=createGameState({day:2,gold:20});
   dayRoute.ensureDayRoute(s);

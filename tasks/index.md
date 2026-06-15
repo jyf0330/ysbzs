@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_bazaar-outer-loop-acceptance-standard.md`
 - `tasks/done/2026-06-12_day1-bazaar-node-flow.md`
 - `tasks/done/2026-06-12_disable-board-hover-preview.md`
 - `tasks/done/2026-06-12_all-out-two-round-browser-flow.md`

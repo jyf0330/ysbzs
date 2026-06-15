@@ -43,16 +43,35 @@ function rollShop(state,{poolId=state.shop.activePool||'night_base', slots=6, fr
 function freezeOffer(state, offerId, frozen=true){ const offer=state.shop.offers.find(o=>o.offerId===offerId); if(!offer) return false; offer.frozen=frozen; pushEvent(state,frozen?'SHOP_FREEZE':'SHOP_UNFREEZE',{offerId,text:`${frozen?'冻结':'解冻'}商品：${offer.name}。`}); return true; }
 function addInventory(state, petId){ let inv=state.inventory.find(x=>x.petId===petId && x.active===false && x.level<3); if(!inv){ state.nextInventory = Number(state.nextInventory || 1); const instanceId=`bench_${petId}_${state.nextInventory++}`; state.inventory.push({petId,count:1,level:1,active:false,instanceId}); return {merged:false, level:1, active:false, instanceId}; } inv.count+=1; let merged=false; while(inv.count>=2 && inv.level<3){ inv.count-=2; inv.level+=1; inv.count+=1; merged=true; } return {merged, level:inv.level, count:inv.count, active:false}; }
 function isConstructionDuplicateEvent(e){ return !!e && /复制/.test(`${e.optionText || ''}${e.gainText || ''}`); }
+function isConstructionUpgradeEvent(e){ return !!e && /升阶|升级/.test(`${e.optionText || ''}${e.gainText || ''}${e.name || ''}`); }
+function isConstructionEvent(e){ return isConstructionDuplicateEvent(e) || isConstructionUpgradeEvent(e); }
 function constructionTarget(state, meta={}) {
  const targetPetId = meta.petId || meta.targetPetId || null;
  if (targetPetId) return (state.inventory || []).find(x => x.petId === targetPetId) || null;
  return (state.inventory || []).find(x => x.active !== false) || (state.inventory || [])[0] || null;
 }
+function upgradeTarget(state, meta={}) {
+ const targetPetId = meta.petId || meta.targetPetId || null;
+ const list = state.inventory || [];
+ if (targetPetId) return list.find(x => x.petId === targetPetId && Number(x.level || 1) < 3) || null;
+ return list.find(x => x.active !== false && Number(x.level || 1) < 3) || list.find(x => Number(x.level || 1) < 3) || null;
+}
 function petDisplayName(state, petId){ const pet=state.indexes?.petsById?.get(petId) || (state.data?.pets || []).find(x=>x.petId===petId) || {}; return pet.name || petId; }
 function applyConstructionEvent(state, e, source='shop_event', meta={}) {
- if (!isConstructionDuplicateEvent(e)) return null;
+ if (!isConstructionEvent(e)) return null;
  const cost=parseGoldCost(e.costText);
  if(state.gold<cost){ pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold, text:`金币不足，无法执行构筑事件 ${e.name}。`}); return null; }
+ if(isConstructionUpgradeEvent(e)) {
+  const target=upgradeTarget(state, meta);
+  if(!target){ pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold, text:`没有可升阶的已拥有宠物。`}); return null; }
+  const before=state.gold;
+  const levelFrom=Number(target.level || 1);
+  state.gold-=cost;
+  target.level=Math.min(3, levelFrom + Number(e.value || 1));
+  const effect={eventId:e.id, name:e.name, source, nodeId:meta.nodeId || null, type:'upgrade_pet', petId:target.petId, petName:petDisplayName(state,target.petId), cost, goldFrom:before, goldTo:state.gold, levelFrom, levelTo:target.level, inventory:{level:target.level, active:target.active !== false, instanceId:target.instanceId || null}};
+  pushEvent(state,'CONSTRUCTION_EVENT_APPLY',{eventId:e.id, name:e.name, source, nodeId:meta.nodeId || null, constructionEffect:clone(effect), petId:target.petId, petName:effect.petName, cost, goldFrom:before, goldTo:state.gold, levelFrom, levelTo:target.level, inventory:clone(effect.inventory), text:`构筑事件【${e.name}】：升阶机会 ${effect.petName} Lv${levelFrom}→Lv${target.level}，金币${before}→${state.gold}。`});
+  return effect;
+ }
  const target=constructionTarget(state, meta);
  if(!target){ pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold, text:`没有可复制的已拥有宠物。`}); return null; }
  const before=state.gold;
@@ -76,7 +95,7 @@ function applyShopEventModifiers(state, e, source='shop_event') {
  ensureRefreshState(state).effects.push(effect);
  return effect;
 }
-function applyShopEvent(state, eventId){ const e=state.data.events.find(x=>x.id===eventId); if(!e) return false; if(isConstructionDuplicateEvent(e)){ const effect=applyConstructionEvent(state,e,'shop_event'); if(!effect) return false; pushEvent(state,'SHOP_EVENT_APPLY',{eventId,cost:effect.cost,goldFrom:effect.goldFrom,goldTo:effect.goldTo,effect:clone(effect),refreshState:clone(ensureRefreshState(state)),text:`选择商店事件【${e.name}】：${e.optionText}，金币${effect.goldFrom}→${effect.goldTo}。`}); return true; } const cost=parseGoldCost(e.costText); if(state.gold<cost){ pushEvent(state,'SHOP_EVENT_BLOCKED',{eventId,text:`金币不足，无法选择事件 ${e.name}。`}); return false; } const before=state.gold; state.gold-=cost; const effect=applyShopEventModifiers(state,e,'shop_event'); if(e.shopPoolId && /候选|商品位|补货/.test(e.gainText||'')){ const slots=Math.max(3, e.value || 2); const restock={restockId:`restock_${state.day}_${state.nextStep || 0}_${eventId}`, eventId:e.id, name:e.name, source:'shop_event', poolId:e.shopPoolId, tags:stallTags(e.shopPoolId), slots, status:'pending', offerIds:[]}; ensureRefreshState(state).targetedRestocks.push(restock); rollShop(state,{poolId:e.shopPoolId, slots, free:true}); restock.status='applied'; restock.offerIds=(state.shop.offers||[]).map(o=>o.offerId); pushEvent(state,'SHOP_TARGETED_RESTOCK',{poolId:e.shopPoolId, restock:clone(restock), text:`定向补货：${e.name} -> ${e.shopPoolId}，槽位${slots}。`}); } pushEvent(state,'SHOP_EVENT_APPLY',{eventId,cost,goldFrom:before,goldTo:state.gold,effect:effect?clone(effect):null,refreshState:clone(ensureRefreshState(state)),text:`选择商店事件【${e.name}】：${e.optionText}，金币${before}→${state.gold}。`}); return true; }
+function applyShopEvent(state, eventId){ const e=state.data.events.find(x=>x.id===eventId); if(!e) return false; if(isConstructionEvent(e)){ const effect=applyConstructionEvent(state,e,'shop_event'); if(!effect) return false; pushEvent(state,'SHOP_EVENT_APPLY',{eventId,cost:effect.cost,goldFrom:effect.goldFrom,goldTo:effect.goldTo,effect:clone(effect),refreshState:clone(ensureRefreshState(state)),text:`选择商店事件【${e.name}】：${e.optionText}，金币${effect.goldFrom}→${effect.goldTo}。`}); return true; } const cost=parseGoldCost(e.costText); if(state.gold<cost){ pushEvent(state,'SHOP_EVENT_BLOCKED',{eventId,text:`金币不足，无法选择事件 ${e.name}。`}); return false; } const before=state.gold; state.gold-=cost; const effect=applyShopEventModifiers(state,e,'shop_event'); if(e.shopPoolId && /候选|商品位|补货/.test(e.gainText||'')){ const slots=Math.max(3, e.value || 2); const restock={restockId:`restock_${state.day}_${state.nextStep || 0}_${eventId}`, eventId:e.id, name:e.name, source:'shop_event', poolId:e.shopPoolId, tags:stallTags(e.shopPoolId), slots, status:'pending', offerIds:[]}; ensureRefreshState(state).targetedRestocks.push(restock); rollShop(state,{poolId:e.shopPoolId, slots, free:true}); restock.status='applied'; restock.offerIds=(state.shop.offers||[]).map(o=>o.offerId); pushEvent(state,'SHOP_TARGETED_RESTOCK',{poolId:e.shopPoolId, restock:clone(restock), text:`定向补货：${e.name} -> ${e.shopPoolId}，槽位${slots}。`}); } pushEvent(state,'SHOP_EVENT_APPLY',{eventId,cost,goldFrom:before,goldTo:state.gold,effect:effect?clone(effect):null,refreshState:clone(ensureRefreshState(state)),text:`选择商店事件【${e.name}】：${e.optionText}，金币${before}→${state.gold}。`}); return true; }
 function rewardOptions(state, poolId='reward_pT1', count=3){ const pool=state.data.shop.filter(i => i.unlockDay<=state.day && (i.rewardPools||[]).includes(poolId)); const relics=state.data.relics.filter(r=>r.unlockDay<=state.day && r.rewardPoolId===poolId && r.status==='正式'); const random=rng(`reward:${state.day}:${state.period}:${poolId}:${state.round}`); const out=[]; for(let i=0;i<count;i++){ const source = i===count-1 && relics.length ? 'relic' : 'pet'; if(source==='relic'){ const r=pickWeighted(relics,x=>x.weight||1,random); if(r) out.push({type:'relic', id:r.id, name:r.name, poolId}); } else { const it=pickWeighted(pool,x=>x.weights.reward||1,random); if(it) out.push({type:'pet', petId:it.petId, name:it.name, poolId}); } }
  state.rewards=out; pushEvent(state,'REWARD_OPTIONS',{poolId,options:out,text:`奖励候选：${out.map(x=>x.name).join('、')}。`}); return out; }
 function pickReward(state, index=0){ const r=state.rewards[index]; if(!r) return false; if(r.type==='pet') addInventory(state,r.petId); if(r.type==='relic') state.relics.push(r.id); pushEvent(state,'REWARD_PICK',{reward:r,text:`选择奖励：${r.name}。`}); return true; }

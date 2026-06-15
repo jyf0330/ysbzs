@@ -22,7 +22,7 @@ const expectedCounts = {
   shapes: 127,
   validation: 10,
   nodeSchedule: 60,
-  nodePool: 64,
+  nodePool: 65,
   encounterPool: 40
 };
 

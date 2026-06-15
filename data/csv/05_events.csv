@@ -8,7 +8,7 @@ evt_role_tank,定位补强,前排补强,夜晚商店,D2-D10,A,坦克定位候选
 evt_free_roll,商店经济,免费刷新,夜晚商店,D1-D10,A,本晚获得1次免费刷新,pal_007,伏特喵,风,坦克,none,无机制,night_base,reward_pT1,无,免费刷新+1,1,shop_phase,正式,轻量经济事件
 evt_discount,商店经济,折扣摊位,夜晚商店,D1-D10,A,下一件商品半价,pal_008,新叶猿,风,坦克,none,无机制,night_base,reward_pT1,金币-1,折扣50%,50,shop_phase,正式,事件商店
 evt_duplicate,合成,同名复制,夜晚商店,D3-D10,A,复制一个已拥有宠物,pal_009,燎火鹿,火,输出,none,无机制,special_merchant,reward_pT2,金币-4,复制候选+1,1,shop_phase,正式,复制商店
-evt_upgrade_offer,合成,升阶机会,夜晚商店,D4-D10,A,给一个同名升阶候选,pal_010,企丸丸,水,治疗,none,无机制,special_merchant,reward_pT3,金币-6,升阶候选+1,1,shop_phase,待接入,合成商店
+evt_upgrade_offer,合成,升阶机会,夜晚商店,D4-D10,A,给一个同名升阶候选,pal_010,企丸丸,水,治疗,none,无机制,special_merchant,reward_pT3,金币-6,升阶候选+1,1,shop_phase,正式,合成商店
 evt_battle_bonus,战斗奖励,五回合高奖,战斗结算,D1-D10,A,5回合内清场奖励提高,pal_011,企丸王,水,治疗,none,无机制,night_base,reward_fast_clear,5回合内清场,奖励x1.3,130,post_battle,正式,对齐5回合高奖
 evt_battle_fail,战斗惩罚,十回合失败,战斗结算,D1-D10,A,10回合未清场扣城堡线,pal_012,电棘鼠,风,控制,none,无机制,night_base,reward_none,10回合未清场,城堡-1/经济x0.9,90,post_battle,正式,失败惩罚
 evt_trap_bonus,地形,陷阱商人,夜晚商店,D3-D10,A,下一战陷阱伤害+1,pal_013,叶泥泥,土,坦克,none,无机制,elem_火,reward_trap,金币-2,陷阱伤害+1,1,pre_battle,正式,陷阱流

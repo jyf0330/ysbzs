@@ -305,6 +305,34 @@ test('route duplicate event copies an owned pet into construction state',()=>{
   assert.ok(createViewModel(s).inventory.bench.some(x=>x.petId==='pal_005' && x.active===false));
   assert.ok(renderPlayerReport(s).includes('同名复制'));
 });
+test('route upgrade event raises an owned pet level through construction state',()=>{
+  const { createViewModel } = require('../src/uiAdapter.cjs');
+  const event=data.events.find(e=>e.id==='evt_upgrade_offer');
+  assert.ok(event, 'upgrade event should exist');
+  assert.equal(event.status,'正式');
+  const s=createGameState({day:4,gold:20,activePets:['pal_005']});
+  dispatch(s,{type:'GENERATE_NODE_OPTIONS', count:8});
+  assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_upgrade_offer'), 'Day4 route should expose upgrade merchant');
+  dispatch(s,{type:'PICK_NODE', nodeId:'node_d04_event_upgrade'});
+  assert.equal(s.gold,14);
+  const upgraded=s.inventory.find(x=>x.petId==='pal_005' && x.active!==false);
+  assert.equal(upgraded.level,2);
+  const history=s.dayRoute.history.find(x=>x.constructionEffect && x.constructionEffect.eventId==='evt_upgrade_offer');
+  assert.ok(history);
+  assert.equal(history.constructionEffect.type,'upgrade_pet');
+  assert.equal(history.constructionEffect.levelFrom,1);
+  assert.equal(history.constructionEffect.levelTo,2);
+  assert.ok(s.events.some(e=>e.type==='CONSTRUCTION_EVENT_APPLY' && e.eventId==='evt_upgrade_offer'));
+  assert.ok(createViewModel(s).inventory.active.some(x=>x.petId==='pal_005' && x.level===2));
+  assert.ok(renderPlayerReport(s).includes('升阶机会'));
+
+  const shopState=createGameState({day:4,gold:20,activePets:['pal_005']});
+  dispatch(shopState,{type:'ENTER_SHOP',poolId:'night_base',slots:3});
+  dispatch(shopState,{type:'APPLY_SHOP_EVENT',eventId:'evt_upgrade_offer'});
+  assert.equal(shopState.gold,14);
+  assert.equal(shopState.inventory.find(x=>x.petId==='pal_005').level,2);
+  assert.ok(shopState.events.some(e=>e.type==='SHOP_EVENT_APPLY' && e.eventId==='evt_upgrade_offer'));
+});
 test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });
 test('mechanism table statuses are preserved',()=>{ assert.ok(data.mechanisms.some(m=>m.integrationStatus==='待接入')); assert.ok(data.mechanisms.some(m=>m.integrationStatus==='可接入')); });

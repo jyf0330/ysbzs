@@ -2,6 +2,7 @@
 
 ## 2026-06-15
 
+- 外层升阶机会进入构筑成长闭环：`evt_upgrade_offer` 从待接入转为正式，Day4 路线新增“升阶机会商人”；选择后花费金币提升已拥有宠物等级，并写入路线历史、ViewModel 和文字战报。
 - 外层失败惩罚事件进入路线战后闭环：`evt_battle_fail` 现在会在路线战斗失败时写入 post-battle event，记录防线与经济倍率变化，并进入 outcome、路线历史和文字战报。
 - 外层同名复制事件进入构筑成长闭环：`evt_duplicate` 从待接入转为正式，Day3 路线新增“同名复制商人”；选择后花费金币复制已拥有宠物到 bench/合成背包，并写入路线历史、ViewModel 和文字战报。
 - 外层精英战奖励开始回写高奖池：`evt_elite_reward` 从待接入转为正式战后事件，精英/Boss 压力战胜利后路线奖励池切到 `reward_elite`，并写入 outcome、pending reward、结构化事件和战报。

@@ -2,6 +2,7 @@
 
 ## 2026-06-15
 
+- 外层 Day10 终局状态进入自动 run 闭环：Day10 终局固定战后现在写入 `state.dayRoute.terminal` 和 `RUN_TERMINAL`，`runDayRangeScenario` 能断言最终 Boss 状态，文字战报也会输出终局记录。
 - 外层陷阱增伤进入统一 modifier 证据链：`evt_trap_bonus` 触发火陷阱时现在通过 `modifierEngine` 计算伤害，并写入 `APPLY_OUTER_BATTLE_MODIFIER` changeLog，方便战报和 replay 解释外层奖励如何影响战斗触发。
 - 外层五回合高奖进入路线战后闭环：`evt_battle_bonus` 现在会在路线战斗 `WIN_FAST` 时写入 post-battle event，保留 `reward_fast_clear` pending reward，并进入 outcome、路线历史和文字战报。
 - 外层升阶机会进入构筑成长闭环：`evt_upgrade_offer` 从待接入转为正式，Day4 路线新增“升阶机会商人”；选择后花费金币提升已拥有宠物等级，并写入路线历史、ViewModel 和文字战报。

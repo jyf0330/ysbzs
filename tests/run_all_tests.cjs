@@ -120,6 +120,13 @@ test('Day1-Day10 route can run continuously and records daily route history',()=
   assert.equal(s.day,10);
   assert.equal(s.phase,'day_end');
   assert.equal(s.dayRouteRuns.length,10);
+  const finalRun=s.dayRouteRuns[9];
+  assert.ok(finalRun.terminal, 'Day10 run should expose terminal state');
+  assert.equal(finalRun.terminal.kind,'final_boss');
+  assert.ok(['victory','defeat','reached'].includes(finalRun.terminal.status));
+  assert.ok(s.dayRoute.terminal && s.dayRoute.terminal.day===10);
+  assert.ok(s.events.some(e=>e.type==='RUN_TERMINAL' && e.terminal && e.terminal.kind==='final_boss'));
+  assert.ok(renderPlayerReport(s).includes('终局'));
   for (const run of s.dayRouteRuns) {
     const choices = run.history.filter(x => x.kind === 'node' || x.kind === 'battle_choice');
     const nodeNames = Array.from(new Set(run.history.filter(x => x.kind === 'node').map(x => x.option.name)));

@@ -187,7 +187,8 @@ function runFixedBattle(state, opts = {}) {
   route.currentEncounter = clone(encounter);
   route.history.push({ kind: 'fixed_battle', option: clone(encounter) });
   pushEvent(state, 'FIXED_BATTLE_START', { encounterId: encounter.encounterId, scheduleStep: route.nodeIndex, text: `进入${encounter.phaseLabel || schedule.phaseLabel || '固定战'}：${encounter.name || encounter.encounterId}。` });
-  runEncounterBattle(state, encounter, { kind: 'fixed_battle' });
+  const outcome = runEncounterBattle(state, encounter, { kind: 'fixed_battle' });
+  if (isTerminalEncounter(state, encounter)) markRunTerminal(state, encounter, outcome);
   claimAvailableRouteRewards(state);
   state.phase = 'day_end';
   pushEvent(state, 'DAY_ROUTE_END', { day: state.day, text: `第${state.day}天路线结束。` });
@@ -202,6 +203,28 @@ function dayExprAllows(expr, day) {
 }
 function isPressureEncounter(encounter) {
   return /精英|Boss|终局/.test(`${encounter?.name || ''}${encounter?.phaseLabel || ''}${encounter?.note || ''}`);
+}
+function isTerminalEncounter(state, encounter) {
+  return Number(state.day || 1) >= 10 && /Boss|终局/.test(`${encounter?.name || ''}${encounter?.phaseLabel || ''}${encounter?.note || ''}`);
+}
+function markRunTerminal(state, encounter, outcome) {
+  const route = ensureDayRoute(state);
+  const terminal = {
+    day: Number(state.day || 1),
+    kind: 'final_boss',
+    status: outcome && outcome.win ? 'victory' : 'defeat',
+    encounterId: encounter.encounterId || null,
+    name: encounter.name || encounter.encounterId || '终局战',
+    resultCode: outcome ? outcome.resultCode : 'UNKNOWN',
+    grade: outcome ? outcome.grade : '-',
+    battleIndex: outcome ? outcome.battleIndex : Number(route.battleIndex || 0)
+  };
+  route.terminal = terminal;
+  pushEvent(state, 'RUN_TERMINAL', {
+    terminal: clone(terminal),
+    text: `外层终局：第${terminal.day}天${terminal.name} ${terminal.status}，结果=${terminal.resultCode}，评级=${terminal.grade}。`
+  });
+  return terminal;
 }
 function baseRewardPoolForOutcome(state, result) {
   if (!result || result.code === 'LOSE') return 'reward_none';
@@ -384,8 +407,7 @@ function runEncounterBattle(state, encounter, source = {}) {
   const castleLineFrom = Number(state.castleLine || 0);
   const economyMultiplierFrom = Number(state.economyMultiplier || 1);
   const result = battle.runBattle(state);
-  recordBattleOutcome(state, encounter, result, beforeGold, Object.assign({}, source, { castleLineFrom, economyMultiplierFrom }));
-  return true;
+  return recordBattleOutcome(state, encounter, result, beforeGold, Object.assign({}, source, { castleLineFrom, economyMultiplierFrom }));
 }
 function resetBattlefield(state) {
   state.units = (state.units || []).filter(u => u.side === 'hero' || u.side === 'hero_leader');

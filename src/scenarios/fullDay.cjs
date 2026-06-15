@@ -39,7 +39,8 @@ function runDayRangeScenario(opts = {}) {
       history: clone(state.dayRoute.history),
       battleOutcomes: clone(state.dayRoute.battleOutcomes),
       pendingRewards: clone(state.dayRoute.pendingRewards),
-      claimedRewards: clone(state.dayRoute.claimedRewards)
+      claimedRewards: clone(state.dayRoute.claimedRewards),
+      terminal: state.dayRoute.terminal ? clone(state.dayRoute.terminal) : null
     });
     if (state.phase !== 'day_end') break;
   }

@@ -2,6 +2,7 @@ const battle = require('./battle.cjs');
 const shop = require('./shop.cjs');
 const { pushEvent } = require('./events.cjs');
 const { syncBoardUnits } = require('./state.cjs');
+const { queueBattlePrepEffectFromEvent } = require('./outerBattleEffects.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function activeRows(rows, day) {
@@ -99,6 +100,7 @@ function pickNode(state, ref) {
   return true;
 }
 function applyRouteEvent(state, option) {
+  const route = ensureDayRoute(state);
   const event = (state.data.events || []).find(e => e.id === option.eventId);
   if (!event) {
     state.phase = 'node_resolved';
@@ -107,8 +109,13 @@ function applyRouteEvent(state, option) {
   }
   const before = state.gold;
   shop.applyShopEventModifiers(state, event, 'route_event');
+  const prepEffect = queueBattlePrepEffectFromEvent(state, event, { source: 'route_event', nodeId: option.nodeId });
+  if (prepEffect) {
+    const historyItem = route.history[route.history.length - 1];
+    if (historyItem) historyItem.prepEffect = clone(prepEffect);
+  }
   state.phase = 'node_resolved';
-  pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
+  pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, prepEffect: prepEffect ? clone(prepEffect) : null, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
   return true;
 }
 function generateBattleOptions(state, opts = {}) {

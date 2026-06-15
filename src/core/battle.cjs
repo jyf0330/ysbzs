@@ -4,6 +4,7 @@ const { ensureBoard, getCell, syncBoardUnits, normalizePosition, makeUnit, posit
 const mech = require('./mechanics.cjs');
 const elementRules = require('./elements.cjs');
 const { ACTIVE_ELEMENTS, fireDamage, explodeIfEnemyOnFire } = elementRules;
+const { applyBattlePrepEffects } = require('./outerBattleEffects.cjs');
 
 const { createPositionModule } = require('./battle/position.cjs');
 const { createActionsModule } = require('./battle/actions.cjs');
@@ -200,6 +201,7 @@ function startBattle(state) {
   state.result = null;
   for (const u of state.units) { u.actionSlotsUsed = {}; u.actionApSpent = 0; }
   pushEvent(state, 'BATTLE_START', { day: state.day, period: state.period, text: `第${state.day}天${state.period}战斗开始。进入玩家回合。` });
+  applyBattlePrepEffects(state);
   pushEvent(state, 'ROUND_START', { text: `第${state.day}天${state.period}第${state.round}回合开始。` });
   for (const u of state.units) if (u.alive) mech.applyRoundStart(state, u);
   spawnWave(state);

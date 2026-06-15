@@ -396,6 +396,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     inventory: inventoryVM(state),
     relics: clone(state.relics),
     rewards,
+    battlePrepEffects: clone(state.battlePrepEffects || []),
     shop: {
       activePool: state.shop.activePool,
       activeStall: state.shop.activeStall ? clone(state.shop.activeStall) : null,

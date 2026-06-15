@@ -20,6 +20,7 @@ node_d03_rest_gold,node_pool_d03_growth,休整补给,rest,50,3,,,,,3,正式,直�
 node_d04_tier2_shop,node_pool_d04_growth,白银商会,shop,100,4,tier_pT2,,,4,,正式,进入 pT2 标签摊位
 node_d04_reward_tier2,node_pool_d04_growth,白银奖励,reward,90,4,,reward_pT2,,3,,正式,生成 3 个 pT2 奖励候选
 node_d04_wind_shop,node_pool_d04_growth,风系补货商人,shop,80,4,elem_风,,,4,,正式,进入风元素定向摊位
+node_d04_event_shield,node_pool_d04_growth,战前护盾祝福,event,75,4,role_坦克,reward_tank,evt_shield_bless,,2,正式,下一场战斗我方获得护盾
 node_d04_control_shop,node_pool_d04_growth,控制补强商人,shop,70,4,role_控制,,,4,,正式,进入控制标签摊位
 node_d04_event_wind,node_pool_d04_growth,风系补货事件,event,60,4,elem_风,reward_pT2,evt_shop_wind,,2,正式,刷新风系商品位
 node_d04_rest_gold,node_pool_d04_growth,休整补给,rest,50,4,,,,,3,正式,直接获得金币

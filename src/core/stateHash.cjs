@@ -78,6 +78,17 @@ function serializableState(state) {
       active: x.active !== false,
       slot: x.slot
     })),
+    battlePrepEffects: (state.battlePrepEffects || []).map(x => ({
+      effectId: x.effectId,
+      eventId: x.eventId,
+      source: x.source,
+      nodeId: x.nodeId || null,
+      type: x.type,
+      shield: x.shield,
+      status: x.status,
+      dayQueued: x.dayQueued,
+      usesRemaining: x.usesRemaining
+    })),
     shop: {
       activePool: state.shop && state.shop.activePool,
       activeStall: state.shop && state.shop.activeStall ? {

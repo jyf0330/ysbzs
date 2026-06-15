@@ -160,6 +160,22 @@ test('route pending battle reward can be claimed into construction through reduc
   assert.ok(hasEvent(s,'ROUTE_REWARD_CLAIM'));
   assert.ok(renderPlayerReport(s).includes('路线奖励'));
 });
+test('route pre-battle shield event becomes next battle core effect and report evidence',()=>{
+  const { createViewModel } = require('../src/uiAdapter.cjs');
+  const s=createGameState({day:4,gold:20});
+  dispatch(s,{type:'GENERATE_NODE_OPTIONS', count:6});
+  assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_shield_bless'), 'Day4 route should expose shield blessing event');
+  dispatch(s,{type:'PICK_NODE', nodeId:'node_d04_event_shield'});
+  assert.ok((s.battlePrepEffects||[]).some(x=>x.eventId==='evt_shield_bless' && x.status==='pending'), 'shield blessing should become pending battle prep effect');
+  assert.ok(createViewModel(s).battlePrepEffects.some(x=>x.eventId==='evt_shield_bless'));
+  dispatch(s,{type:'RUN_BATTLE'});
+  const applied=s.events.find(e=>e.type==='BATTLE_PREP_EFFECT_APPLY' && e.eventId==='evt_shield_bless');
+  assert.ok(applied, 'next battle should apply shield blessing');
+  assert.equal(applied.shield,2);
+  assert.ok(applied.targets.length>=1);
+  assert.ok(s.dayRoute.history.some(x=>x.prepEffect && x.prepEffect.eventId==='evt_shield_bless'));
+  assert.ok(renderPlayerReport(s).includes('战前护盾'));
+});
 test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });
 test('mechanism table statuses are preserved',()=>{ assert.ok(data.mechanisms.some(m=>m.integrationStatus==='待接入')); assert.ok(data.mechanisms.some(m=>m.integrationStatus==='可接入')); });

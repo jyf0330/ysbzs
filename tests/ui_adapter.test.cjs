@@ -29,7 +29,7 @@ function adjacentStandForTarget(state, target) {
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
   for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
-  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','CLAIM_ROUTE_REWARD']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
 });
 
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
@@ -148,6 +148,9 @@ test('UI09 UI 别名命令可用，但仍归一到公开 Command', () => {
   const result = adapter.run('enterShop', { poolId: 'night_base', slots: 3 });
   assert.equal(result.command, 'ENTER_SHOP');
   assert.ok(hasEvent(result, 'SHOP_ENTER'));
+  const blockedReward = adapter.run('claimRouteReward');
+  assert.equal(blockedReward.command, 'CLAIM_ROUTE_REWARD');
+  assert.ok(hasEvent(blockedReward, 'ROUTE_REWARD_BLOCKED'));
 });
 
 test('UI10 池查询和商品查询通过适配层', () => {

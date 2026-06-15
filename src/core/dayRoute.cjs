@@ -9,13 +9,14 @@ function activeRows(rows, day) {
 }
 function ensureDayRoute(state) {
   if (!state.dayRoute) {
-    state.dayRoute = { day: state.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [] };
+    state.dayRoute = { day: state.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [], claimedRewards: [] };
   }
   if (!Array.isArray(state.dayRoute.options)) state.dayRoute.options = [];
   if (!Array.isArray(state.dayRoute.battleOptions)) state.dayRoute.battleOptions = [];
   if (!Array.isArray(state.dayRoute.history)) state.dayRoute.history = [];
   if (!Array.isArray(state.dayRoute.battleOutcomes)) state.dayRoute.battleOutcomes = [];
   if (!Array.isArray(state.dayRoute.pendingRewards)) state.dayRoute.pendingRewards = [];
+  if (!Array.isArray(state.dayRoute.claimedRewards)) state.dayRoute.claimedRewards = [];
   return state.dayRoute;
 }
 function scheduleRows(state) {
@@ -166,6 +167,7 @@ function runFixedBattle(state, opts = {}) {
   route.history.push({ kind: 'fixed_battle', option: clone(encounter) });
   pushEvent(state, 'FIXED_BATTLE_START', { encounterId: encounter.encounterId, scheduleStep: route.nodeIndex, text: `进入${encounter.phaseLabel || schedule.phaseLabel || '固定战'}：${encounter.name || encounter.encounterId}。` });
   runEncounterBattle(state, encounter, { kind: 'fixed_battle' });
+  claimAvailableRouteRewards(state);
   state.phase = 'day_end';
   pushEvent(state, 'DAY_ROUTE_END', { day: state.day, text: `第${state.day}天路线结束。` });
   return true;
@@ -199,6 +201,7 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
   if (historyItem && (historyItem.kind === 'battle_choice' || historyItem.kind === 'fixed_battle')) historyItem.outcome = clone(outcome);
   if (outcome.rewardEligible) {
     route.pendingRewards.push({
+      rewardId: `route_reward_${outcome.day}_${outcome.battleIndex}`,
       day: outcome.day,
       battleIndex: outcome.battleIndex,
       encounterId: outcome.encounterId,
@@ -210,6 +213,54 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
   }
   pushEvent(state, 'ROUTE_BATTLE_OUTCOME', { outcome: clone(outcome), text: `${outcome.phaseLabel}结算：${outcome.resultCode}，金币${outcome.goldFrom}→${outcome.goldTo}，奖励池=${rewardPoolId}。` });
   return outcome;
+}
+function pendingRewardIndex(route, ref) {
+  if (!route.pendingRewards.length) return -1;
+  if (ref === undefined || ref === null) return route.pendingRewards.findIndex(x => !x.claimed);
+  if (typeof ref === 'number') return ref;
+  return route.pendingRewards.findIndex(x => x.rewardId === ref || x.encounterId === ref);
+}
+function claimRouteReward(state, ref, opts = {}) {
+  const route = ensureDayRoute(state);
+  const idx = pendingRewardIndex(route, ref);
+  const pending = idx >= 0 ? route.pendingRewards[idx] : null;
+  if (!pending || pending.claimed) {
+    pushEvent(state, 'ROUTE_REWARD_BLOCKED', { text: '没有可领取的路线战斗奖励。' });
+    return false;
+  }
+  const rewardOptions = shop.rewardOptions(state, pending.rewardPoolId, Number(opts.count || 3));
+  const requestedIndex = Number(opts.rewardIndex || 0);
+  const rewardIndex = rewardOptions[requestedIndex] ? requestedIndex : 0;
+  const selected = rewardOptions[rewardIndex] || null;
+  if (!selected) {
+    pushEvent(state, 'ROUTE_REWARD_BLOCKED', { rewardId: pending.rewardId, rewardPoolId: pending.rewardPoolId, text: `路线奖励池为空：${pending.rewardPoolId}。` });
+    return false;
+  }
+  if (shop.pickReward(state, rewardIndex) === false) {
+    pushEvent(state, 'ROUTE_REWARD_BLOCKED', { rewardId: pending.rewardId, text: '路线奖励领取失败：候选不存在。' });
+    return false;
+  }
+  const claimed = {
+    ...clone(pending),
+    claimed: true,
+    selectedReward: clone(selected)
+  };
+  route.pendingRewards.splice(idx, 1);
+  route.claimedRewards.push(claimed);
+  const historyItem = route.history.slice().reverse().find(x => x?.outcome?.battleIndex === claimed.battleIndex)
+    || route.history.slice().reverse().find(x => x.kind === 'battle_choice' || x.kind === 'fixed_battle');
+  if (historyItem) historyItem.claimedReward = clone(claimed);
+  if (state.phase === 'battle_end' || state.phase === 'reward') state.phase = 'node_resolved';
+  pushEvent(state, 'ROUTE_REWARD_CLAIM', { reward: clone(claimed), text: `路线奖励：${pending.rewardPoolId} 领取 ${selected.name}。` });
+  return claimed;
+}
+function claimAvailableRouteRewards(state) {
+  let claimed = 0;
+  while ((ensureDayRoute(state).pendingRewards || []).some(x => !x.claimed)) {
+    if (!claimRouteReward(state, undefined, { rewardIndex: 0 })) break;
+    claimed += 1;
+  }
+  return claimed;
 }
 function runEncounterBattle(state, encounter, source = {}) {
   resetBattlefield(state);
@@ -259,6 +310,7 @@ function runDayRoute(state) {
       const options = generateBattleOptions(state);
       if (!options) return false;
       pickBattleEncounter(state, options[0].encounterId);
+      claimAvailableRouteRewards(state);
       continue;
     }
     if (schedule.kind === 'fixed_battle') return runFixedBattle(state);
@@ -266,4 +318,4 @@ function runDayRoute(state) {
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, recordBattleOutcome };
+module.exports = { ensureDayRoute, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, recordBattleOutcome, claimRouteReward };

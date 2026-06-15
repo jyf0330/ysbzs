@@ -304,7 +304,7 @@ function logGroups(state) {
   return {
     player: state.events.filter(e => /PLAYER|SELECT|MOVE_HERO|USE_SLOT|ACTION_DIRECTION|ROUND|BATTLE|NODE/.test(e.type)).slice(-40).map(e => e.text || e.type),
     debug: state.events.slice(-80).map(e => `${e.step} ${e.type}: ${e.text || ''}`),
-    shop: state.events.filter(e => /SHOP|REWARD|SELL|TOGGLE|NODE|BATTLE_OPTIONS|BATTLE_PICK/.test(e.type)).slice(-40).map(e => e.text || e.type)
+    shop: state.events.filter(e => /SHOP|REWARD|SELL|TOGGLE|NODE|BATTLE_OPTIONS|BATTLE_PICK|ROUTE_REWARD/.test(e.type)).slice(-40).map(e => e.text || e.type)
   };
 }
 function nextDaySchedule(state) {
@@ -756,6 +756,7 @@ function createYSBZSUIAdapter(options = {}) {
     pickNode(optionId) { return this.run('PICK_NODE', { optionId }); },
     generateBattleOptions(options = {}) { return this.run('GENERATE_BATTLE_OPTIONS', options); },
     pickBattleEncounter(encounterId) { return this.run('PICK_BATTLE_ENCOUNTER', { encounterId }); },
+    claimRouteReward(options = {}) { return this.run('CLAIM_ROUTE_REWARD', options); },
     rewardOptions(poolId = 'reward_pT1', count = 3) { return this.run('REWARD_OPTIONS', { poolId, count }); },
     pickReward(index = 0) { return this.run('PICK_REWARD', { index }); },
     enterShop(poolId = 'night_base', slots = 6) { return this.run('ENTER_SHOP', { poolId, slots }); },

@@ -2,6 +2,7 @@ const assert = require('assert');
 const { data, validateData, buildIndexes } = require('../src/core/data.cjs');
 const { createGameState } = require('../src/core/state.cjs');
 const { dispatch } = require('../src/core/reducer.cjs');
+const dayRoute = require('../src/core/dayRoute.cjs');
 const { runFullDayScenario, runDayRangeScenario } = require('../src/scenarios/fullDay.cjs');
 const { renderPlayerReport } = require('../src/render/textReport.cjs');
 const { SUPPORTED_MECHANICS } = require('../src/core/mechanics.cjs');
@@ -87,6 +88,22 @@ test('Day1-Day3 route battle outcomes write back result, economy, and reward eli
     assert.equal(run.pendingRewards.length, run.battleOutcomes.filter(x => x.rewardEligible).length, `day ${run.day} pending rewards should follow eligible outcomes`);
   }
   assert.ok(s.events.some(e=>e.type==='ROUTE_BATTLE_OUTCOME'));
+});
+test('route pending battle reward can be claimed into construction through reducer',()=>{
+  const s=createGameState({day:2,gold:20});
+  dayRoute.ensureDayRoute(s);
+  s.dayRoute.history.push({kind:'battle_choice', option:{encounterId:'enc_test_win', name:'测试胜利'}});
+  dayRoute.recordBattleOutcome(s,{encounterId:'enc_test_win', name:'测试胜利', phaseLabel:'中午战'},{code:'WIN', win:true, grade:'A'}, s.gold, {kind:'battle_choice'});
+  assert.equal(s.dayRoute.pendingRewards.length,1);
+  const beforeInventory=s.inventory.length;
+  const beforeRelics=s.relics.length;
+  dispatch(s,{type:'CLAIM_ROUTE_REWARD', rewardIndex:0});
+  assert.equal(s.dayRoute.pendingRewards.length,0);
+  assert.equal(s.dayRoute.claimedRewards.length,1);
+  assert.ok(s.inventory.length>beforeInventory || s.relics.length>beforeRelics);
+  assert.ok(s.dayRoute.history.some(x=>x.claimedReward));
+  assert.ok(hasEvent(s,'ROUTE_REWARD_CLAIM'));
+  assert.ok(renderPlayerReport(s).includes('路线奖励'));
 });
 test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });

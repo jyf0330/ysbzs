@@ -15,7 +15,7 @@ function resetRouteForDay(state, day) {
   state.round = 0;
   state.result = null;
   state.phase = 'init';
-  state.dayRoute = { day, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [] };
+  state.dayRoute = { day, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [], claimedRewards: [] };
   state.rewards = [];
   state.shop.offers = [];
   state.shop.activePool = 'night_base';
@@ -36,7 +36,8 @@ function runDayRangeScenario(opts = {}) {
       battleIndex: state.dayRoute.battleIndex,
       history: clone(state.dayRoute.history),
       battleOutcomes: clone(state.dayRoute.battleOutcomes),
-      pendingRewards: clone(state.dayRoute.pendingRewards)
+      pendingRewards: clone(state.dayRoute.pendingRewards),
+      claimedRewards: clone(state.dayRoute.claimedRewards)
     });
     if (state.phase !== 'day_end') break;
   }

@@ -320,12 +320,9 @@ function nextActions(state) {
   const nextSchedule = nextDaySchedule(state);
   if ((state.phase === 'node_resolved' || state.phase === 'init') && nextSchedule?.kind === 'node_choice') out.push({ type: 'GENERATE_NODE_OPTIONS', label: '生成节点候选' });
   if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'battle_choice') out.push({ type: 'GENERATE_BATTLE_OPTIONS', label: '生成中午遭遇' });
-  if (state.phase === 'node_choice') {
-    for (const option of state.dayRoute?.options || []) out.push({ type: 'PICK_NODE', label: `选择 ${option.name}`, defaultPayload: { optionId: option.optionId } });
-  }
-  if (state.phase === 'battle_choice') {
-    for (const option of state.dayRoute?.battleOptions || []) out.push({ type: 'PICK_BATTLE_ENCOUNTER', label: `选择 ${option.name}`, defaultPayload: { encounterId: option.encounterId } });
-  }
+  if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'fixed_battle') out.push({ type: 'RUN_ROUTE_FIXED_BATTLE', label: `进入${nextSchedule.phaseLabel || nextSchedule.label || '固定战'}`, defaultPayload: { scheduleStep: nextSchedule.step } });
+  if (state.phase === 'node_choice') for (const option of state.dayRoute?.options || []) out.push({ type: 'PICK_NODE', label: `选择 ${option.name}`, defaultPayload: { optionId: option.optionId } });
+  if (state.phase === 'battle_choice') for (const option of state.dayRoute?.battleOptions || []) out.push({ type: 'PICK_BATTLE_ENCOUNTER', label: `选择 ${option.name}`, defaultPayload: { encounterId: option.encounterId } });
   if (state.phase === 'init') out.push({ type: 'START_BATTLE', label: '开始战斗' });
   if (state.phase === 'player_turn') {
     out.push({ type: 'MOVE_HERO', label: '移动英雄' });

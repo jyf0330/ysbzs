@@ -93,6 +93,14 @@ test('UI03E reward panel renders claimable route battle rewards', () => {
   assert.match(css, /\.route-pending-reward/, 'route pending reward cards need explicit styling');
 });
 
+test('UI03F fixed route battle is exposed through the encounter button', () => {
+  const main = read('web/js/main.js');
+
+  assert.match(main, /RUN_ROUTE_FIXED_BATTLE/, 'browser controls should know the public fixed route battle command');
+  assert.match(main, /isNext\('RUN_ROUTE_FIXED_BATTLE'\)/, 'encounter button should enable on fixed route battle nextAction');
+  assert.match(main, /runCommand\(isNext\('RUN_ROUTE_FIXED_BATTLE'\)\s*\?\s*'RUN_ROUTE_FIXED_BATTLE'\s*:\s*'GENERATE_BATTLE_OPTIONS'/, 'encounter button should dispatch fixed route battle instead of generic RUN_BATTLE');
+});
+
 test('UI04 all-out flow rechecks the current ViewModel until no usable slots remain', () => {
   const main = read('web/js/main.js');
   assert.match(main, /function nextUsableSlotInfo\(/, 'all-out should use a helper that reads the latest slot state');

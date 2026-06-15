@@ -31,7 +31,7 @@ function adjacentStandForTarget(state, target) {
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
   for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
-  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','CLAIM_ROUTE_REWARD']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
 });
 
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
@@ -196,6 +196,27 @@ test('UI07D 路线战斗 pending reward 进入玩家可领取动作', () => {
   assert.equal(claimedVm.rewards.length, 0);
   assert.equal(claimedVm.nextActions.some(x => x.type === 'PICK_REWARD'), false);
   assert.ok(state.events.some(e => e.type === 'ROUTE_REWARD_CLAIM'));
+});
+
+test('UI07E 固定战和终局 Boss 通过公开路线命令进入', () => {
+  const state = createGameState({ day: 10, gold: 999 });
+  dayRoute.ensureDayRoute(state);
+  state.dayRoute.nodeIndex = 5;
+  state.phase = 'node_resolved';
+
+  const beforeVm = createViewModel(state);
+  const action = beforeVm.nextActions.find(x => x.type === 'RUN_ROUTE_FIXED_BATTLE');
+  assert.ok(action, 'fixed battle should be exposed as a player route action');
+  assert.match(action.label, /终局Boss战|固定战|终局战/);
+
+  const result = dispatch(state, { type: 'RUN_ROUTE_FIXED_BATTLE' });
+  assert.equal(result, true);
+  assert.equal(state.phase, 'day_end');
+  assert.ok(state.dayRoute.history.some(x => x.kind === 'fixed_battle' && x.option.encounterId === 'enc_d10_final_boss'));
+  assert.ok(state.dayRoute.battleOutcomes.some(x => x.kind === 'fixed_battle' && x.encounterId === 'enc_d10_final_boss'));
+  assert.ok(state.dayRoute.terminal && state.dayRoute.terminal.kind === 'final_boss');
+  assert.ok(state.events.some(e => e.type === 'FIXED_BATTLE_START'));
+  assert.ok(state.events.some(e => e.type === 'RUN_TERMINAL'));
 });
 
 test('UI08 未知 UI 命令会被拦截', () => {

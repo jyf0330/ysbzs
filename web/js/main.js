@@ -63,6 +63,7 @@ import { createGameRuntime } from './runtime-client.js';
   function unitById(id) { return getAllUnits().find(u => u.id === id) || null; }
   function cellAt(r, c) { return (ui.vm?.board?.cells || []).find(x => Number(x.r) === Number(r) && Number(x.c) === Number(c)) || null; }
   function isNext(type) { return (ui.vm?.nextActions || []).some(a => a.type === type); }
+  function nextAction(type) { return (ui.vm?.nextActions || []).find(a => a.type === type) || null; }
   function selectedHero() { return unitById(ui.selectedUnitId || ui.vm?.selected?.unitId) || null; }
   function teamRiskForUnit(unit) {
     if (!unit?.id) return null;
@@ -883,7 +884,9 @@ import { createGameRuntime } from './runtime-client.js';
     $('exit-shop-btn').disabled = phase !== 'shop' || ui.busy;
     $('reward-btn').disabled = !(phase === 'battle_end' || isNext('REWARD_OPTIONS')) || ui.busy;
     $('node-options-btn').disabled = ui.busy || !isNext('GENERATE_NODE_OPTIONS');
-    $('battle-options-btn').disabled = ui.busy || !isNext('GENERATE_BATTLE_OPTIONS');
+    const fixedBattleAction = nextAction('RUN_ROUTE_FIXED_BATTLE');
+    $('battle-options-btn').textContent = fixedBattleAction?.label || '生成遭遇';
+    $('battle-options-btn').disabled = ui.busy || !(isNext('GENERATE_BATTLE_OPTIONS') || fixedBattleAction);
     $('operation-hint').textContent = hintText();
   }
   function renderOperationRail() {
@@ -1229,7 +1232,7 @@ import { createGameRuntime } from './runtime-client.js';
     });
     $('reward-btn').addEventListener('click', () => runCommand('REWARD_OPTIONS', { poolId: 'reward_pT1', count: 3 }));
     $('node-options-btn').addEventListener('click', () => runCommand('GENERATE_NODE_OPTIONS'));
-    $('battle-options-btn').addEventListener('click', () => runCommand('GENERATE_BATTLE_OPTIONS'));
+    $('battle-options-btn').addEventListener('click', () => runCommand(isNext('RUN_ROUTE_FIXED_BATTLE') ? 'RUN_ROUTE_FIXED_BATTLE' : 'GENERATE_BATTLE_OPTIONS'));
     $('shop-btn').addEventListener('click', () => runCommand('ENTER_SHOP', { poolId: 'night_base', slots: 6 }));
     $('roll-shop-btn').addEventListener('click', () => runCommand('ROLL_SHOP', { slots: 6 }));
     $('exit-shop-btn').addEventListener('click', () => runCommand('EXIT_SHOP'));

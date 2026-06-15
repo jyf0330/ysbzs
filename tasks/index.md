@@ -12,6 +12,14 @@
 
 ## DONE
 
+- `tasks/done/2026-06-15_restock-purchase-build-source.md`
+- `tasks/done/2026-06-15_targeted-restock-offer-provenance.md`
+- `tasks/done/2026-06-15_terminal-run-summary-ui.md`
+- `tasks/done/2026-06-15_full-run-browser-entry.md`
+- `tasks/done/2026-06-15_day-range-growth-snapshots.md`
+- `tasks/done/2026-06-15_trigger-object-readable-report.md`
+- `tasks/done/2026-06-15_object-registry-fire-trap-trigger.md`
+- `tasks/done/2026-06-15_route-battle-pressure-preview.md`
 - `tasks/done/2026-06-15_route-fixed-battle-entry.md`
 - `tasks/done/2026-06-15_route-pending-reward-ui.md`
 - `tasks/done/2026-06-15_shop-stall-status-panel.md`

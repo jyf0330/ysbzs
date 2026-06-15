@@ -1,5 +1,6 @@
 const { createGameState } = require('../core/state.cjs');
 const dayRoute = require('../core/dayRoute.cjs');
+const { buildConstructionSummary } = require('../core/buildSummary.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
@@ -23,6 +24,30 @@ function resetRouteForDay(state, day) {
   state.shop.refreshState = { freeRolls: state.shop.freeRolls || 0, nextDiscount: state.shop.nextDiscount || 0, targetedRestocks: [], effects: [], lastRoll: null };
 }
 
+function compactBuildCore(summary) {
+  return {
+    summaryText: summary.summaryText,
+    primaryTags: (summary.primaryTags || []).map(x => ({ id: x.id, label: x.label, kind: x.kind, weight: x.weight }))
+  };
+}
+
+function constructionSnapshot(state, before = null) {
+  const summary = buildConstructionSummary(state);
+  const inventoryCount = summary.inventory.totalCount;
+  const relicCount = summary.relicCount;
+  return {
+    inventoryFrom: before ? before.inventoryCount : inventoryCount,
+    inventoryCount,
+    inventoryDelta: before ? inventoryCount - before.inventoryCount : 0,
+    activeCount: summary.inventory.activeCount,
+    benchCount: summary.inventory.benchCount,
+    relicFrom: before ? before.relicCount : relicCount,
+    relicCount,
+    relicDelta: before ? relicCount - before.relicCount : 0,
+    buildCore: compactBuildCore(summary)
+  };
+}
+
 function runDayRangeScenario(opts = {}) {
   const fromDay = Number(opts.fromDay || 1);
   const toDay = Number(opts.toDay || fromDay);
@@ -30,12 +55,29 @@ function runDayRangeScenario(opts = {}) {
   state.dayRouteRuns = [];
   for (let day = fromDay; day <= toDay; day += 1) {
     resetRouteForDay(state, day);
+    const goldFrom = Number(state.gold || 0);
+    const castleLineFrom = Number(state.castleLine || 0);
+    const economyMultiplierFrom = Number(state.economyMultiplier || 1);
+    const constructionFrom = constructionSnapshot(state);
     dayRoute.runDayRoute(state);
+    const goldTo = Number(state.gold || 0);
+    const castleLineTo = Number(state.castleLine || 0);
+    const economyMultiplierTo = Number(state.economyMultiplier || 1);
     state.dayRouteRuns.push({
       day,
       phase: state.phase,
       nodeIndex: state.dayRoute.nodeIndex,
       battleIndex: state.dayRoute.battleIndex,
+      economy: {
+        goldFrom,
+        goldTo,
+        goldDelta: goldTo - goldFrom,
+        castleLineFrom,
+        castleLineTo,
+        economyMultiplierFrom,
+        economyMultiplierTo
+      },
+      construction: constructionSnapshot(state, constructionFrom),
       history: clone(state.dayRoute.history),
       battleOutcomes: clone(state.dayRoute.battleOutcomes),
       pendingRewards: clone(state.dayRoute.pendingRewards),

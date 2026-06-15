@@ -49,9 +49,12 @@ test('UI03B top status bar exposes outer route progress, build core, and next st
   assert.match(html, /id="next-step-label"/, 'top status should expose next step');
   assert.match(main, /function routeProgressText\(vm\)/, 'renderStaticStatus should use a dedicated route progress helper');
   assert.match(main, /function nextStepText\(vm\)/, 'renderStaticStatus should use a dedicated next-step helper');
+  assert.match(main, /terminalSummary\?\.nextStepText/, 'terminal next-step copy should come from ViewModel terminal summary');
+  assert.match(main, /if \(route\.terminal\) return vm\.terminalSummary\?\.nextStepText \|\| '查看终局报告';/, 'terminal copy must win over reward and shop next steps');
   assert.match(main, /vm\.buildCore\?\.summaryText/, 'build core label should read ViewModel buildCore');
   assert.match(css, /\.status-pill\.build-core/, 'build core pill needs compact readable styling');
   assert.match(css, /\.status-pill\.next-step/, 'next-step pill needs compact readable styling');
+  assert.match(css, /\.status-pill\.next-step strong\{[^}]*white-space:normal/, 'terminal next-step copy must be allowed to show without ellipsis truncation');
 });
 
 test('UI03C route option cards render structured choice consequence previews', () => {
@@ -79,6 +82,9 @@ test('UI03D shop panel renders stall identity and refresh economy status', () =>
   assert.match(main, /class="shop-refresh-summary"/, 'shop panel should render refresh economy block');
   assert.match(css, /\.shop-stall-summary/, 'stall summary needs explicit styling');
   assert.match(css, /\.shop-refresh-summary/, 'refresh summary needs explicit styling');
+  assert.match(main, /offer-source/, 'targeted restock offers should show their source on offer cards');
+  assert.match(main, /o\.restock\?\.name/, 'offer cards should read restock provenance from ViewModel');
+  assert.match(css, /\.offer-source/, 'offer provenance needs compact readable styling');
 });
 
 test('UI03E reward panel renders claimable route battle rewards', () => {
@@ -99,6 +105,18 @@ test('UI03F fixed route battle is exposed through the encounter button', () => {
   assert.match(main, /RUN_ROUTE_FIXED_BATTLE/, 'browser controls should know the public fixed route battle command');
   assert.match(main, /isNext\('RUN_ROUTE_FIXED_BATTLE'\)/, 'encounter button should enable on fixed route battle nextAction');
   assert.match(main, /runCommand\(isNext\('RUN_ROUTE_FIXED_BATTLE'\)\s*\?\s*'RUN_ROUTE_FIXED_BATTLE'\s*:\s*'GENERATE_BATTLE_OPTIONS'/, 'encounter button should dispatch fixed route battle instead of generic RUN_BATTLE');
+});
+
+test('UI03G battle cards render route pressure preview', () => {
+  const main = read('web/js/main.js');
+  const css = read('web/ux-app.css');
+
+  assert.match(main, /function renderBattlePressurePreview\(/, 'browser should use a dedicated pressure preview renderer');
+  assert.match(main, /pressurePreview/, 'route cards should read ViewModel pressurePreview');
+  assert.match(main, /class="battle-pressure-preview"/, 'route cards should include a pressure preview block');
+  assert.match(main, /route-fixed-pressure/, 'fixed battle nextAction should render a visible pressure block');
+  assert.match(css, /\.battle-pressure-preview/, 'pressure preview needs explicit readable styling');
+  assert.match(css, /\.route-fixed-pressure/, 'fixed battle pressure block needs explicit styling');
 });
 
 test('UI04 all-out flow rechecks the current ViewModel until no usable slots remain', () => {

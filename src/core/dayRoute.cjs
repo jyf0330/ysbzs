@@ -116,6 +116,61 @@ function buildBattleChoicePreview(enc, schedule) {
     tags: ['战斗压力', pressure ? '精英/Boss' : '常规战'].filter(Boolean)
   };
 }
+function round1(n) { return Math.round(Number(n || 0) * 10) / 10; }
+function waveThreat(row) { return Number(row?.threat ?? row?.threatComputed ?? row?.threatManual ?? 0) || 0; }
+function dominantQuality(rows) {
+  const totals = {};
+  for (const row of rows || []) for (const [q, v] of Object.entries(row.qualityWeights || {})) totals[q] = (totals[q] || 0) + Number(v || 0);
+  return Object.entries(totals).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || null;
+}
+function previewRewardPoolId(state, encounter) {
+  if (isPressureEncounter(encounter)) return 'reward_elite';
+  return Number(state.day || 1) >= 3 ? 'reward_pT2' : 'reward_pT1';
+}
+function buildBattlePressurePreview(state, encounter = {}, schedule = {}) {
+  const wavePeriod = encounter.wavePeriod || schedule.wavePeriod || state.period || '上午';
+  const rows = (state.data.waves || []).filter(w => Number(w.day) === Number(state.day || encounter.unlockDay || 1) && w.period === wavePeriod);
+  const threats = rows.map(waveThreat);
+  const totalThreat = round1(threats.reduce((sum, n) => sum + n, 0));
+  const totalSpawnCount = rows.reduce((sum, row) => sum + Number(row.spawnCount || 0), 0);
+  const pressureTier = isTerminalEncounter(state, encounter) ? '终局' : (isPressureEncounter(encounter) ? '高压' : '常规');
+  const rewardPoolId = previewRewardPoolId(state, encounter);
+  const rewardLabel = publicTierLabel(rewardPoolId) || rewardPoolId;
+  const phaseLabel = encounter.phaseLabel || schedule.phaseLabel || '战斗';
+  return {
+    encounterId: encounter.encounterId || schedule.encounterId || null,
+    name: encounter.name || schedule.label || encounter.encounterId || '路线战斗',
+    phaseLabel,
+    wavePeriod,
+    battleIndex: Number(encounter.battleIndex || schedule.battleIndex || 1),
+    pressureTier,
+    roundCount: new Set(rows.map(x => x.round)).size,
+    waveRows: rows.length,
+    totalThreat,
+    peakThreat: round1(Math.max(0, ...threats)),
+    totalSpawnCount,
+    peakSpawnCount: Math.max(0, ...rows.map(x => Number(x.spawnCount || 0))),
+    dominantQuality: dominantQuality(rows),
+    rewardPoolId,
+    rewardText: `${pressureTier === '常规' ? '胜利预期' : '高压胜利预期'}：${rewardLabel}奖励`,
+    summary: `${phaseLabel} · ${pressureTier} · ${wavePeriod}${rows.length ? ` ${rows.length}波` : ''} · 威胁${totalThreat}`
+  };
+}
+function fixedEncounterForSchedule(state, schedule) {
+  if (!schedule) return null;
+  return (state.data.encounterPool || []).find(x => x.encounterId === schedule.encounterId) || {
+    encounterId: schedule.encounterId,
+    name: schedule.label,
+    wavePeriod: '下午',
+    battleIndex: Number(ensureDayRoute(state).battleIndex || 0) + 1,
+    phaseLabel: schedule.phaseLabel || '固定战',
+    note: schedule.note || ''
+  };
+}
+function fixedBattlePressurePreview(state, schedule) {
+  const encounter = fixedEncounterForSchedule(state, schedule);
+  return encounter ? buildBattlePressurePreview(state, encounter, schedule) : null;
+}
 function generateNodeOptions(state, opts = {}) {
   const route = ensureDayRoute(state);
   const schedule = opts.scheduleStep ? scheduleAt(state, opts.scheduleStep) : nextSchedule(state);
@@ -228,7 +283,8 @@ function generateBattleOptions(state, opts = {}) {
     wavePeriod: enc.wavePeriod || '上午',
     battleIndex: enc.battleIndex || 1,
     phaseLabel: enc.phaseLabel || schedule.phaseLabel || '战斗',
-    choicePreview: buildBattleChoicePreview(enc, schedule)
+    choicePreview: buildBattleChoicePreview(enc, schedule),
+    pressurePreview: buildBattlePressurePreview(state, enc, schedule)
   }));
   route.battleOptions = options;
   state.phase = 'battle_choice';
@@ -537,4 +593,4 @@ function runDayRoute(state) {
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, recordBattleOutcome, claimRouteReward };
+module.exports = { ensureDayRoute, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview };

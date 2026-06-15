@@ -50,6 +50,11 @@ function explainProtocolEvent(event) {
   if (event.type === 'APPLY_ELEMENT_MODIFIERS' && change) {
     return `${actor}的元素包modifier生效：${change.path || ''} ${change.from}→${change.to}。`;
   }
+  if (event.type === 'TRIGGER_OBJECT_RESOLVE' && change) {
+    const objectId = change.source?.objectId || event.payload?.objectId || change.path || '触发物体';
+    const target = change.source?.unitId ? `，目标=${change.source.unitId}` : '';
+    return `触发物体：${objectId} ${change.from ?? ''}→${change.to ?? ''}${target}。`;
+  }
   if (event.type === 'WATER_CATALYST') return event.reason || '水汽催化触发。';
   return event.text || `${event.type}${change ? ` ${change.path || ''} ${change.from ?? ''}→${change.to ?? ''}` : ''}`;
 }
@@ -97,6 +102,8 @@ function eventToProtocolLine(event) {
   if (event.payload?.element) parts.push(`element=${event.payload.element}`);
   if (event.payload?.amount !== undefined) parts.push(`amount=${event.payload.amount}`);
   if (event.payload?.packetId) parts.push(`packet=${event.payload.packetId}`);
+  const objectId = event.payload?.objectId || event.source?.objectId || event.changes?.[0]?.source?.objectId;
+  if (objectId) parts.push(`object=${objectId}`);
   return parts.join('|');
 }
 function recordBattleEvent(state, eventInput) {

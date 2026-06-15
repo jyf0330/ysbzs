@@ -76,7 +76,15 @@ function serializableState(state) {
       count: x.count,
       level: x.level,
       active: x.active !== false,
-      slot: x.slot
+      slot: x.slot,
+      acquiredFrom: x.acquiredFrom ? {
+        type: x.acquiredFrom.type,
+        restockId: x.acquiredFrom.restockId,
+        eventId: x.acquiredFrom.eventId,
+        name: x.acquiredFrom.name,
+        poolId: x.acquiredFrom.poolId,
+        tags: x.acquiredFrom.tags || []
+      } : null
     })),
     battlePrepEffects: (state.battlePrepEffects || []).map(x => ({
       effectId: x.effectId,
@@ -142,7 +150,15 @@ function serializableState(state) {
         petId: o.petId,
         price: o.price,
         frozen: !!o.frozen,
-        poolId: o.poolId
+        poolId: o.poolId,
+        restock: o.restock ? {
+          restockId: o.restock.restockId,
+          eventId: o.restock.eventId,
+          name: o.restock.name,
+          poolId: o.restock.poolId,
+          tags: o.restock.tags || [],
+          status: o.restock.status
+        } : null
       }))
     },
     rewards: state.rewards || []

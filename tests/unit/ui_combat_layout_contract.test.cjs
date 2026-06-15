@@ -26,6 +26,7 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   assert.match(html, /data-prep-drop-zone="active"/, 'active lineup needs a drag/drop target');
   assert.match(html, /data-prep-drop-zone="bench"/, 'bench backpack needs a drag/drop target');
   assert.match(html, /id="all-out-btn"/, 'right controls need 我方全部出击');
+  assert.match(html, /id="full-run-btn"/, 'right controls need a complete Day1-Day10 run entry');
   assert.match(html, /id="auto-controls"/, 'auto actions should sit in a dedicated right-bottom cluster');
   assert.doesNotMatch(html, /id="exa"/, '自动战斗 should not be a player-facing primary button');
   assert.doesNotMatch(html, />自动战斗</, '自动战斗 copy should not compete with the two core automation choices');
@@ -106,6 +107,8 @@ test('combat layout scripts keep info in right panel without hover detail popups
     assert.doesNotMatch(js, /document\.addEventListener\('mousemove'/, `${file} should not bind document mousemove hover details`);
     assert.match(js, /manualAutoLock/, `${file} should track manual operation lock`);
     assert.match(js, /RUN_FULL_DAY/, `${file} should keep full-day flow through the API`);
+    assert.match(js, /RUN_FULL_RUN/, `${file} should expose complete run flow through the API`);
+    assert.match(js, /full-run-btn/, `${file} should bind the complete run button`);
     assert.match(js, /runAllOut/, `${file} should expose 我方全部出击 flow`);
     assert.match(js, /data-ap-choice/, `${file} should render AP choices in the action popover`);
     assert.match(js, /dragstart/, `${file} should support drag prep interactions`);

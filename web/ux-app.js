@@ -1131,6 +1131,7 @@
       if (ui.manualAutoLock) { toast('已手动操作，本场完整自动流程已锁定。', true); return; }
       runCommand('RUN_FULL_DAY', {}, { autoFlow: true });
     });
+    $('full-run-btn')?.addEventListener('click', () => runCommand('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: Math.max(999, Number(ui.vm?.gold || 0)) }, { autoFlow: true }));
     $('all-out-btn')?.addEventListener('click', () => runAllOut());
     $('prep-open-btn')?.addEventListener('click', () => { ui.prepOpen = true; renderPrepOverlay(); });
     $('prep-close-btn')?.addEventListener('click', () => { ui.prepOpen = false; renderPrepOverlay(); });

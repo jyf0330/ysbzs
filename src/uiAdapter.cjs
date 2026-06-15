@@ -14,14 +14,12 @@ const { statusOfMechanic, activationBlockReason } = require('./core/mechanicGate
 const { canonicalEventLog } = require('./core/eventProjection.cjs');
 const { buildConstructionSummary } = require('./core/buildSummary.cjs');
 const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
+const { runFullDayCommand, runFullRunCommand, runFullRunFlow } = require('./uiAdapterFlowCommands.cjs');
 
-const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT']);
-const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
+const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
 const MAX_ACTIVE_UNITS = 4;
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
-function commandText(command) { return typeof command === 'string' ? command : command.type; }
-function nextAllOutSlot(vm, blocked = new Set()) {
+function clone(value) { return JSON.parse(JSON.stringify(value)); } function commandText(command) { return typeof command === 'string' ? command : command.type; } function nextAllOutSlot(vm, blocked = new Set()) {
   for (const hero of vm?.heroes || []) {
     for (let slotId = 0; slotId < (hero.slots || []).length; slotId++) {
       const slot = hero.slots[slotId];
@@ -124,7 +122,7 @@ function stripOffer(offer) {
     element: offer.element,
     role: offer.role,
     poolTier: offer.poolTier,
-    poolId: offer.poolId,
+    poolId: offer.poolId, restock: offer.restock ? clone(offer.restock) : null,
     price: offer.price,
     frozen: !!offer.frozen
   };
@@ -317,10 +315,11 @@ function nextDaySchedule(state) {
 }
 function nextActions(state) {
   const out = [];
+  if (state.dayRoute?.terminal) return out;
   const nextSchedule = nextDaySchedule(state);
   if ((state.phase === 'node_resolved' || state.phase === 'init') && nextSchedule?.kind === 'node_choice') out.push({ type: 'GENERATE_NODE_OPTIONS', label: '生成节点候选' });
   if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'battle_choice') out.push({ type: 'GENERATE_BATTLE_OPTIONS', label: '生成中午遭遇' });
-  if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'fixed_battle') out.push({ type: 'RUN_ROUTE_FIXED_BATTLE', label: `进入${nextSchedule.phaseLabel || nextSchedule.label || '固定战'}`, defaultPayload: { scheduleStep: nextSchedule.step } });
+  if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'fixed_battle') out.push({ type: 'RUN_ROUTE_FIXED_BATTLE', label: `进入${nextSchedule.phaseLabel || nextSchedule.label || '固定战'}`, defaultPayload: { scheduleStep: nextSchedule.step, pressurePreview: dayRoute.fixedBattlePressurePreview(state, nextSchedule) } });
   if (state.phase === 'node_choice') for (const option of state.dayRoute?.options || []) out.push({ type: 'PICK_NODE', label: `选择 ${option.name}`, defaultPayload: { optionId: option.optionId } });
   if (state.phase === 'battle_choice') for (const option of state.dayRoute?.battleOptions || []) out.push({ type: 'PICK_BATTLE_ENCOUNTER', label: `选择 ${option.name}`, defaultPayload: { encounterId: option.encounterId } });
   if (state.phase === 'init') out.push({ type: 'START_BATTLE', label: '开始战斗' });
@@ -339,6 +338,7 @@ function nextActions(state) {
   if (state.phase !== 'shop' && state.phase !== 'day_end') out.push({ type: 'ENTER_SHOP', label: '进入夜晚商店', defaultPayload: { poolId: 'night_base', slots: 6 } });
   out.push({ type: 'RUN_BATTLE', label: '自动完成战斗' });
   out.push({ type: 'RUN_FULL_DAY', label: '一键完整流程' });
+  if (!state.dayRoute?.terminal) out.push({ type: 'RUN_FULL_RUN', label: '一键完整Run', defaultPayload: { fromDay: 1, toDay: 10, gold: Math.max(8, Number(state.gold || 0)) } });
   out.push({ type: 'SETUP_DAY7_FIRE_TRIAL', label: '第7天火核心试炼' });
   if (state.day7Trial && !state.day7Trial.round1Executed) out.push({ type: 'RUN_DAY7_FIRE_TURN_1', label: '执行第7天第1回合' });
   if (state.day7Trial && state.day7Trial.status !== 'trial_pass') out.push({ type: 'RUN_DAY7_FIRE_TRIAL_ALL', label: '自动执行到试炼通过' });
@@ -409,6 +409,8 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
       events: shop.availableEvents(state).map(e => ({ id: e.id, name: e.name, optionText: e.optionText, costText: e.costText, gainText: e.gainText }))
     },
     dayRoute: clone(state.dayRoute || { nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] }),
+    dayRouteRuns: clone(state.dayRouteRuns || []),
+    terminalSummary: state.dayRoute?.terminal ? { day: state.dayRoute.terminal.day, kind: state.dayRoute.terminal.kind, status: state.dayRoute.terminal.status, resultCode: state.dayRoute.terminal.resultCode, grade: state.dayRoute.terminal.grade, name: state.dayRoute.terminal.name, nextStepText: '查看终局报告', summaryText: `第${state.dayRoute.terminal.day}天${state.dayRoute.terminal.name || '终局'} ${state.dayRoute.terminal.status || ''}`.trim() } : null,
     monsterIntents: state.units.filter(u => u.side === 'enemy' && u.alive).map(u => battle.computeMonsterIntent(state, u)).filter(Boolean),
 	    previewGrid: board.previewGrid,
     threatGrid: board.threatGrid,
@@ -422,7 +424,6 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
   };
 }
 function createViewModel(state, playerId = 'p1', playerViewState = makePlayerViewState()) { return buildViewModelForPlayer(state, playerId, playerViewState); }
-
 function findInventoryEntry(state, petIdOrInstanceId) {
   if (!petIdOrInstanceId) return null;
   return state.inventory.find(x => x.instanceId === petIdOrInstanceId)
@@ -500,7 +501,6 @@ function runCompatibilityCommand(state, command, viewState = makePlayerViewState
       return undefined;
   }
 }
-
 function createSnapshot(state, playerId = 'p1', viewState = makePlayerViewState()) {
   const raw = clone(state);
   raw.indexes = { petsById: state.indexes.petsById.size, monstersByPetId: state.indexes.monstersByPetId.size, shopPools: state.indexes.shopPools.size, rewardPools: state.indexes.rewardPools.size, nodePools: state.indexes.nodePools?.size || 0, encounterPools: state.indexes.encounterPools?.size || 0 };
@@ -519,7 +519,7 @@ function mapPublicEvents(events) {
     phase: e.phase,
     commandId: e.commandId,
     playerId: e.playerId,
-    teamId: e.teamId
+    teamId: e.teamId, inventory: e.inventory ? clone(e.inventory) : undefined, acquiredFrom: e.acquiredFrom ? clone(e.acquiredFrom) : undefined
   }));
 }
 function runSelectionCommand(state, command, viewState) {
@@ -678,34 +678,33 @@ function createYSBZSUIAdapter(options = {}) {
       }
 
       if (command.type === 'RUN_FULL_DAY') {
-        const rollbackSave = buildSaveDocument(state, { playerId: command.playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) });
-        try {
-          const beforeIds = new Set((state.battleTrace || []).map(e => e.eventId || `${e.step}:${e.type}`));
-          const result = this.runFullPlayerDayFlow(command.playerId);
-          const events = mapPublicEvents((state.battleTrace || []).filter(e => !beforeIds.has(e.eventId || `${e.step}:${e.type}`)));
-          const hash = stateHash(state);
-          return {
-            ok: true,
-            accepted: true,
-            flowCommand: true,
-            command: commandText(command),
-            commandEnvelope: clone(command),
-            stateVersion: state.stateVersion || 0,
-            stateHash: hash,
-            result: clone(result),
-            events,
-            trace: { id: `${state.battleId}:${command.commandId}:flow`, commandId: command.commandId, events },
-            authoritativeState: createSnapshot(state, command.playerId, viewState),
-            viewModel: viewFor(command)
-          };
-        } catch (err) {
-          applySaveToState(state, ensureMultiplayerState(createGameState(options), options), rollbackSave);
-          restoreViewStates(viewStates, rollbackSave.viewStates || {});
-          const rejected = rejectedCommandResult(state, command, err);
-          rejected.rolledBack = true;
-          rejected.viewModel = viewFor(command);
-          return rejected;
-        }
+        return runFullDayCommand({
+          state,
+          command,
+          options,
+          adapterVersion: adapter.version,
+          viewStatesToObject: () => viewStatesToObject(viewStates),
+          restoreViewStates: raw => restoreViewStates(viewStates, raw),
+          runFullPlayerDayFlow: playerId => this.runFullPlayerDayFlow(playerId),
+          mapPublicEvents,
+          createSnapshot: playerId => createSnapshot(state, playerId, viewState),
+          viewFor
+        });
+      }
+
+      if (command.type === 'RUN_FULL_RUN') {
+        return runFullRunCommand({
+          state,
+          command,
+          options,
+          adapterVersion: adapter.version,
+          viewStatesToObject: () => viewStatesToObject(viewStates),
+          restoreViewStates: raw => restoreViewStates(viewStates, raw),
+          mapPublicEvents,
+          createSnapshot: playerId => createSnapshot(state, playerId, viewState),
+          viewFor,
+          runFullRunFlow: opts => this.runFullRunFlow(opts)
+        });
       }
 
       const rollbackSave = buildSaveDocument(state, { playerId: command.playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) });
@@ -771,6 +770,7 @@ function createYSBZSUIAdapter(options = {}) {
     applyShopEvent(eventId) { return this.run('APPLY_SHOP_EVENT', { eventId }); },
     exitShop() { return this.run('EXIT_SHOP'); },
     runFullDay() { return this.run('RUN_FULL_DAY'); },
+    runFullRun(options = {}) { return this.run('RUN_FULL_RUN', options); },
     sellUnit(instanceId) { return this.run('SELL_UNIT', { instanceId }); },
     toggleUnitActive(instanceId) { return this.run('TOGGLE_UNIT_ACTIVE', { instanceId }); },
     selectUnit(unitId) { return this.run('SELECT_UNIT', { unitId }); },
@@ -780,6 +780,9 @@ function createYSBZSUIAdapter(options = {}) {
     runFullPlayerDayFlow(playerId = defaultPlayerId) {
       dayRoute.runDayRoute(state);
       return this.getViewModel(playerId);
+    },
+    runFullRunFlow(opts = {}) {
+      return runFullRunFlow({ state, options, defaultPlayerId, getViewModel: playerId => this.getViewModel(playerId), opts });
     },
     getViewModel(playerId = defaultPlayerId) { return viewFor(playerId); },
     getStateSnapshot(playerId = defaultPlayerId) { return createSnapshot(state, playerId, viewStateFor(playerId)); },

@@ -31,7 +31,7 @@ function adjacentStandForTarget(state, target) {
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
   for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
-  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD','RUN_FULL_RUN']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
 });
 
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
@@ -125,6 +125,35 @@ test('UI06B 商店刷新控制状态进入 ViewModel', () => {
   assert.equal(vm.shop.refreshState.lastRoll.discountApplied, 50);
   assert.ok(vm.shop.refreshState.targetedRestocks.some(x => x.poolId === 'elem_火' && x.status === 'applied'));
   assert.equal(vm.shop.refreshState.lastRoll.poolId, 'elem_火');
+  const restock = vm.shop.refreshState.targetedRestocks.find(x => x.eventId === 'evt_shop_fire');
+  assert.ok(restock.offerIds.length > 0, 'targeted restock should record generated offer ids');
+  const sourcedOffers = vm.shop.offers.filter(o => o.restock && o.restock.restockId === restock.restockId);
+  assert.equal(sourcedOffers.length, restock.offerIds.length, 'ViewModel offers should keep restock provenance');
+  assert.ok(sourcedOffers.every(o => o.restock.eventId === 'evt_shop_fire'));
+  assert.ok(sourcedOffers.every(o => o.restock.name === '火元素补货'));
+  assert.ok(sourcedOffers.every(o => o.restock.poolId === 'elem_火'));
+  assert.ok(sourcedOffers.every(o => o.restock.tags.includes('火')));
+  assert.match(adapter.getTextReport('shop'), /补货[:：]火元素补货/);
+});
+
+test('UI06C 购买定向补货商品会把来源写入背包和购买事件', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999 });
+  adapter.enterShop('night_base', 6);
+  adapter.applyShopEvent('evt_shop_fire');
+  const offer = adapter.getViewModel().shop.offers.find(o => o.restock?.eventId === 'evt_shop_fire');
+  assert.ok(offer, 'targeted restock should create a buyable sourced offer');
+  const buy = adapter.buyOffer(offer.offerId);
+  assert.ok(hasEvent(buy, 'SHOP_BUY'));
+  const buyEvent = buy.events.find(e => e.type === 'SHOP_BUY');
+  assert.equal(buyEvent.inventory.acquiredFrom.eventId, 'evt_shop_fire');
+  assert.equal(buyEvent.inventory.acquiredFrom.name, '火元素补货');
+  assert.equal(buyEvent.inventory.acquiredFrom.poolId, 'elem_火');
+  assert.equal(buyEvent.inventory.acquiredFrom.type, 'restock_offer');
+  const bought = adapter.getViewModel().inventory.items.find(x => x.instanceId === buyEvent.inventory.instanceId);
+  assert.ok(bought, 'bought inventory entry should be visible in ViewModel inventory');
+  assert.equal(bought.acquiredFrom.eventId, 'evt_shop_fire');
+  assert.equal(bought.acquiredFrom.name, '火元素补货');
+  assert.match(adapter.getTextReport('player'), /来源[:：]火元素补货/);
 });
 
 test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
@@ -137,6 +166,22 @@ test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
   assert.equal(vm.phase, 'day_end');
   assert.ok(adapter.getTextReport('player').includes('全数据纯文字流程报告'));
   assert.ok(adapter.getTextReport('shop').includes('节点'));
+});
+test('UI07G RUN_FULL_RUN 通过公开命令跑到 Day10 终局并保留跨天成长', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'full_run_ui' });
+  const before = adapter.getViewModel();
+  assert.ok(before.nextActions.some(x => x.type === 'RUN_FULL_RUN'), 'full run should be exposed as a player action');
+  const result = adapter.run('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: 999 });
+  assert.equal(result.accepted, true);
+  assert.equal(result.viewModel.day, 10);
+  assert.equal(result.viewModel.phase, 'day_end');
+  assert.ok(result.viewModel.dayRoute.terminal, 'full run should end with terminal state');
+  assert.equal(result.viewModel.dayRoute.terminal.kind, 'final_boss');
+  assert.equal(result.viewModel.terminalSummary.nextStepText, '查看终局报告');
+  assert.equal(result.viewModel.nextActions.some(x => ['PICK_REWARD', 'CLAIM_ROUTE_REWARD'].includes(x.type)), false, 'terminal run should not keep reward actions as next steps');
+  assert.equal(result.viewModel.dayRouteRuns.length, 10);
+  assert.ok(result.viewModel.dayRouteRuns[9].construction.buildCore.summaryText);
+  assert.ok(adapter.getTextReport().includes('【跨天成长】'));
 });
 
 test('UI07B Day1 节点选择和中午遭遇选择通过适配层公开命令推进', () => {
@@ -217,6 +262,30 @@ test('UI07E 固定战和终局 Boss 通过公开路线命令进入', () => {
   assert.ok(state.dayRoute.terminal && state.dayRoute.terminal.kind === 'final_boss');
   assert.ok(state.events.some(e => e.type === 'FIXED_BATTLE_START'));
   assert.ok(state.events.some(e => e.type === 'RUN_TERMINAL'));
+});
+
+test('UI07F 路线遭遇和固定战暴露战前压力预览', () => {
+  const adapter = createYSBZSUIAdapter({ day: 6, gold: 20, seed: 'pressure-preview' });
+  const optionsResult = adapter.run('GENERATE_BATTLE_OPTIONS', { scheduleStep: 3 });
+  assert.ok(hasEvent(optionsResult, 'BATTLE_OPTIONS'));
+  const firstBattle = optionsResult.viewModel.dayRoute.battleOptions[0];
+  assert.ok(firstBattle.pressurePreview, 'battle option should expose pressure preview');
+  assert.equal(firstBattle.pressurePreview.wavePeriod, firstBattle.wavePeriod);
+  assert.equal(firstBattle.pressurePreview.pressureTier, '高压');
+  assert.ok(firstBattle.pressurePreview.totalThreat > 0);
+  assert.ok(firstBattle.pressurePreview.peakThreat > 0);
+  assert.ok(firstBattle.pressurePreview.totalSpawnCount > 0);
+  assert.match(firstBattle.pressurePreview.rewardText, /精英|奖励/);
+
+  const state = createGameState({ day: 10, gold: 999 });
+  dayRoute.ensureDayRoute(state);
+  state.dayRoute.nodeIndex = 5;
+  state.phase = 'node_resolved';
+  const action = createViewModel(state).nextActions.find(x => x.type === 'RUN_ROUTE_FIXED_BATTLE');
+  assert.ok(action.defaultPayload.pressurePreview, 'fixed battle action should carry pressure preview');
+  assert.equal(action.defaultPayload.pressurePreview.pressureTier, '终局');
+  assert.match(action.defaultPayload.pressurePreview.summary, /终局|Boss/);
+  assert.ok(action.defaultPayload.pressurePreview.totalSpawnCount > 0);
 });
 
 test('UI08 未知 UI 命令会被拦截', () => {

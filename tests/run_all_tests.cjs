@@ -174,6 +174,28 @@ test('Day1-Day10 route battle outcomes write back result, economy, and reward el
   }
   assert.ok(s.events.some(e=>e.type==='ROUTE_BATTLE_OUTCOME'));
 });
+test('Day1-Day10 route records economy and construction growth snapshots',()=>{
+  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999});
+  assert.equal(s.dayRouteRuns.length,10);
+  for (const run of s.dayRouteRuns) {
+    assert.ok(run.economy, `day ${run.day} should expose economy snapshot`);
+    assert.equal(typeof run.economy.goldFrom, 'number', `day ${run.day} goldFrom`);
+    assert.equal(typeof run.economy.goldTo, 'number', `day ${run.day} goldTo`);
+    assert.equal(run.economy.goldDelta, run.economy.goldTo - run.economy.goldFrom, `day ${run.day} goldDelta`);
+    assert.ok(run.construction, `day ${run.day} should expose construction snapshot`);
+    assert.equal(typeof run.construction.inventoryCount, 'number', `day ${run.day} inventory count`);
+    assert.equal(typeof run.construction.activeCount, 'number', `day ${run.day} active count`);
+    assert.equal(typeof run.construction.benchCount, 'number', `day ${run.day} bench count`);
+    assert.equal(typeof run.construction.relicCount, 'number', `day ${run.day} relic count`);
+    assert.ok(run.construction.buildCore && run.construction.buildCore.summaryText, `day ${run.day} build core`);
+    assert.ok(Array.isArray(run.construction.buildCore.primaryTags), `day ${run.day} primary tags`);
+  }
+  assert.ok(s.dayRouteRuns.some(run=>run.construction.inventoryCount>4 || run.construction.relicCount>0), 'route should show construction growth beyond starting team');
+  const report=renderPlayerReport(s);
+  assert.ok(report.includes('【跨天成长】'));
+  assert.ok(report.includes('Day10'));
+  assert.ok(report.includes('构筑='));
+});
 test('route battle loss writes fail penalty post-battle event into run pressure',()=>{
   const { createViewModel } = require('../src/uiAdapter.cjs');
   const event=data.events.find(e=>e.id==='evt_battle_fail');
@@ -264,6 +286,8 @@ test('route pre-battle shield event becomes next battle core effect and report e
 });
 test('route trap bonus event arms next battle fire trap modifier and consumes on trigger',()=>{
   const battleCore = require('../src/core/battle.cjs');
+  const { buildModuleManifest } = require('../src/core/moduleManifest.cjs');
+  const { buildTraceFromChanges } = require('../src/core/explainTrace.cjs');
   const s=createGameState({day:5,gold:20});
   dispatch(s,{type:'GENERATE_NODE_OPTIONS', count:7});
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_trap_bonus'), 'Day5 route should expose trap bonus event');
@@ -278,16 +302,27 @@ test('route trap bonus event arms next battle fire trap modifier and consumes on
   const trap=s.board.cells.find(c=>!c.unitId && c.r!==enemy.position.r && c.c!==enemy.position.c);
   trap.elements['火']=3;
   trap.elementCamps['火']='player';
+  const manifestBefore=buildModuleManifest(s);
+  const trapObjectId=`fire_trap_${trap.r}_${trap.c}`;
+  assert.ok(manifestBefore.effectObjects.some(x=>x.objectId===trapObjectId && x.objectType==='fire_trap'), 'objectRegistry should expose fire trap before it triggers');
   enemy.position={r:trap.r,c:trap.c};
   battleCore.triggerTerrainOnEnter(s, enemy, trap);
   const trigger=s.events.find(e=>e.type==='FIRE_TRAP_TRIGGER' && e.eventId==='evt_trap_bonus');
   assert.ok(trigger, 'fire trap trigger should record trap bonus event');
+  assert.equal(trigger.object.objectId, trapObjectId);
+  assert.equal(trigger.object.objectType, 'fire_trap');
   assert.equal(trigger.baseDamage,6);
   assert.equal(trigger.bonusDamage,1);
   assert.equal(trigger.damage,7);
   assert.ok(Array.isArray(trigger.effects[0].modifierApplied), 'trap effect should expose modifierApplied array');
   assert.ok(trigger.effects[0].modifierApplied.some(x=>x.id==='evt_trap_bonus_trap_damage_add' && x.from===6 && x.to===7));
+  assert.ok((s.changes||[]).some(x=>x.type==='TRIGGER_OBJECT_RESOLVE' && x.source && x.source.objectId===trapObjectId && x.to==='triggered'));
   assert.ok((s.changes||[]).some(x=>x.type==='APPLY_OUTER_BATTLE_MODIFIER' && x.source && x.source.eventId==='evt_trap_bonus' && x.from===6 && x.to===7));
+  const objectTrace=s.battleTrace.find(e=>e.type==='TRIGGER_OBJECT_RESOLVE' && e.source && e.source.objectId===trapObjectId);
+  assert.ok(objectTrace, 'battleTrace should include trigger object resolve event');
+  assert.ok(objectTrace.protocol.includes(`object=${trapObjectId}`), 'battleTrace protocol should expose object id');
+  assert.ok(buildTraceFromChanges(s.changes).some(line=>line.includes(trapObjectId) && line.includes('触发物体')), 'trace explanation should be player-readable');
+  assert.ok(renderPlayerReport(s).includes(`触发物体：${trapObjectId}`), 'player report should include trigger object chain');
   const consumed=s.battlePrepEffects.find(x=>x.eventId==='evt_trap_bonus');
   assert.equal(consumed.status,'consumed');
   assert.equal(consumed.usesRemaining,0);

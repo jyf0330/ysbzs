@@ -267,6 +267,7 @@ import { createGameRuntime } from './runtime-client.js';
   }
   function nextStepText(vm) {
     const route = vm.dayRoute || {};
+    if (route.terminal) return vm.terminalSummary?.nextStepText || '查看终局报告';
     if ((route.options || []).length) return '选择节点';
     if ((route.battleOptions || []).length) return '选择遭遇';
     if ((vm.rewards || []).length || (route.pendingRewards || []).length) return '选择奖励';
@@ -336,7 +337,7 @@ import { createGameRuntime } from './runtime-client.js';
     renderControls();
     renderPrepOverlay();
     renderOperationRail();
-    if (renderCache.shouldRender('rewards', { rewards: vm.rewards, dayRoute: vm.dayRoute, busy: ui.busy })) renderRewards();
+    if (renderCache.shouldRender('rewards', { rewards: vm.rewards, dayRoute: vm.dayRoute, nextActions: vm.nextActions, busy: ui.busy })) renderRewards();
     if (renderCache.shouldRender('shop', { shop: vm.shop, gold: vm.gold, phase: vm.phase, busy: ui.busy })) renderShop();
     if (renderCache.shouldRender('trial', vm.day7Trial)) renderTrial();
     if (renderCache.shouldRender('log', { tab: ui.activeLogTab, events: vm.events, selected: vm.selected, meta: vm.meta, replay: ui.replay })) renderLog();
@@ -984,6 +985,22 @@ import { createGameRuntime } from './runtime-client.js';
     return `<div class="choice-preview">
       <p>${esc(summary)}</p>
       <div class="choice-meta">${meta.map(x => `<span>${esc(x)}</span>`).join('')}${tagHtml}</div>
+      ${renderBattlePressurePreview(option.pressurePreview)}
+    </div>`;
+  }
+  function renderBattlePressurePreview(pressure) {
+    if (!pressure) return '';
+    const chips = [
+      pressure.pressureTier,
+      `${pressure.wavePeriod || '-'} ${pressure.waveRows || 0}波`,
+      `敌量 ${pressure.totalSpawnCount || 0}`,
+      `峰值 ${pressure.peakSpawnCount || 0}`,
+      pressure.dominantQuality ? `主品质 ${pressure.dominantQuality}` : ''
+    ].filter(Boolean);
+    return `<div class="battle-pressure-preview">
+      <strong>${esc(pressure.summary || '战前压力')}</strong>
+      <p>威胁 ${esc(pressure.totalThreat || 0)} / 峰值 ${esc(pressure.peakThreat || 0)} · ${esc(pressure.rewardText || '胜利获得奖励')}</p>
+      <div>${chips.map(x => `<span>${esc(x)}</span>`).join('')}</div>
     </div>`;
   }
   function renderRoutePendingRewards(route = {}) {
@@ -995,10 +1012,16 @@ import { createGameRuntime } from './runtime-client.js';
       <p>${esc(reward.phaseLabel || reward.encounterId || '遭遇')} · ${esc(reward.resultCode || 'WIN')} · ${esc(reward.grade || '-')}</p>
     </button>`).join('');
   }
+  function renderFixedBattlePressure() {
+    const pressure = nextAction('RUN_ROUTE_FIXED_BATTLE')?.defaultPayload?.pressurePreview;
+    if (!pressure) return '';
+    return `<section class="route-fixed-pressure"><div><strong>固定战预告</strong><span>${esc(pressure.name || pressure.phaseLabel || '路线战斗')}</span></div>${renderBattlePressurePreview(pressure)}</section>`;
+  }
 
   function renderRewards() {
     const rewards = ui.vm.rewards || [];
     const route = ui.vm.dayRoute || {};
+    const fixedPressureHtml = renderFixedBattlePressure();
     const routePendingHtml = renderRoutePendingRewards(route);
     const nodeHtml = (route.options || []).map(o => `<button class="reward-card route-choice" data-node-option="${esc(o.optionId)}" type="button"${ui.busy ? ' disabled' : ''}>
       <strong>${esc(o.name || o.nodeId)}</strong><span>${esc(o.choicePreview?.kindLabel || o.nodeType || '节点')}</span>${renderChoicePreview(o)}
@@ -1009,7 +1032,7 @@ import { createGameRuntime } from './runtime-client.js';
     const rewardHtml = rewards.map((r, i) => `<button class="reward-card" data-reward-index="${i}" type="button"${ui.busy ? ' disabled' : ''}>
       <strong>${esc(r.name || r.petName || r.relicName || r.type || `奖励${i + 1}`)}</strong><span>选择</span>
     </button>`).join('');
-    $('reward-list').innerHTML = routePendingHtml + nodeHtml + battleHtml + rewardHtml;
+    $('reward-list').innerHTML = fixedPressureHtml + routePendingHtml + nodeHtml + battleHtml + rewardHtml;
   }
   function renderShopStallSummary(shop = {}) {
     const stall = shop.activeStall || {};
@@ -1048,10 +1071,13 @@ import { createGameRuntime } from './runtime-client.js';
     const stallHtml = renderShopStallSummary(shop);
     const refreshHtml = renderShopRefreshSummary(shop);
     const eventHtml = events.length ? `<div class="shop-event-list">${events.map(e => `<div class="shop-event-card"><div><strong>${esc(e.name)}</strong><span>${esc(e.optionText || '')} · ${esc(e.costText || '无成本')} → ${esc(e.gainText || '')}</span></div><button class="mini-btn" data-shop-event="${esc(e.id)}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>触发</button></div>`).join('')}</div>` : '';
-    const offerHtml = offers.map(o => `<div class="offer-card${o.frozen ? ' frozen' : ''}">
-      <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span></div>
+    const offerHtml = offers.map(o => {
+      const sourceHtml = o.restock?.name ? `<span class="offer-source">补货：${esc(o.restock.name)} / ${esc(o.restock.poolId || o.poolId || '-')}</span>` : '';
+      return `<div class="offer-card${o.frozen ? ' frozen' : ''}">
+      <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span>${sourceHtml}</div>
       <div class="offer-actions"><button class="mini-btn buy" data-buy-offer="${esc(o.offerId)}" type="button"${ui.busy || ui.vm.phase !== 'shop' || Number(o.price) > Number(ui.vm.gold || 0) ? ' disabled' : ''}>购买</button><button class="mini-btn freeze" data-freeze-offer="${esc(o.offerId)}" data-frozen="${o.frozen ? '1' : '0'}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>${o.frozen ? '解冻' : '冻结'}</button></div>
-    </div>`).join('');
+    </div>`;
+    }).join('');
     $('shop-list').innerHTML = stallHtml + refreshHtml + eventHtml + offerHtml;
   }
   function renderTrial() {
@@ -1220,6 +1246,7 @@ import { createGameRuntime } from './runtime-client.js';
       if (ui.manualAutoLock) { toast('已手动操作，本场完整自动流程已锁定。', true); return; }
       runCommand('RUN_FULL_DAY', {}, { autoFlow: true });
     });
+    $('full-run-btn')?.addEventListener('click', () => runCommand('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: Math.max(999, Number(ui.vm?.gold || 0)) }, { autoFlow: true }));
     $('all-out-btn')?.addEventListener('click', () => runAllOut());
     $('prep-open-btn')?.addEventListener('click', () => { ui.prepOpen = true; renderPrepOverlay(); });
     $('prep-close-btn')?.addEventListener('click', () => { ui.prepOpen = false; renderPrepOverlay(); });

@@ -253,6 +253,27 @@ test('elite route battle win upgrades pending reward into elite reward pool',()=
   assert.equal(s.dayRoute.claimedRewards[0].rewardPoolId,'reward_elite');
   assert.ok(renderPlayerReport(s).includes('精英奖励'));
 });
+test('route duplicate event copies an owned pet into construction state',()=>{
+  const { createViewModel } = require('../src/uiAdapter.cjs');
+  const event=data.events.find(e=>e.id==='evt_duplicate');
+  assert.ok(event, 'duplicate event should exist');
+  assert.equal(event.status,'正式');
+  const s=createGameState({day:3,gold:20,activePets:['pal_005']});
+  dispatch(s,{type:'GENERATE_NODE_OPTIONS', count:7});
+  assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_duplicate'), 'Day3 route should expose duplicate merchant');
+  const beforeInventory=s.inventory.length;
+  dispatch(s,{type:'PICK_NODE', nodeId:'node_d03_event_duplicate'});
+  assert.equal(s.gold,16);
+  assert.ok(s.inventory.length>beforeInventory);
+  const copied=s.inventory.find(x=>x.petId==='pal_005' && x.active===false);
+  assert.ok(copied, 'duplicate event should create an inactive bench copy of an owned pet');
+  const history=s.dayRoute.history.find(x=>x.constructionEffect && x.constructionEffect.eventId==='evt_duplicate');
+  assert.ok(history);
+  assert.equal(history.constructionEffect.petId,'pal_005');
+  assert.ok(s.events.some(e=>e.type==='CONSTRUCTION_EVENT_APPLY' && e.eventId==='evt_duplicate'));
+  assert.ok(createViewModel(s).inventory.bench.some(x=>x.petId==='pal_005' && x.active===false));
+  assert.ok(renderPlayerReport(s).includes('同名复制'));
+});
 test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });
 test('all days and periods have runnable waves or no crash',()=>{ for(let day=1;day<=10;day++){ for(const period of ['上午','下午']){ const s=createGameState({day, period}); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.result, `${day}${period}`); } } });
 test('mechanism table statuses are preserved',()=>{ assert.ok(data.mechanisms.some(m=>m.integrationStatus==='待接入')); assert.ok(data.mechanisms.some(m=>m.integrationStatus==='可接入')); });

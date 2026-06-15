@@ -109,9 +109,14 @@ function applyRouteEvent(state, option) {
     return true;
   }
   const before = state.gold;
-  shop.applyShopEventModifiers(state, event, 'route_event');
+  const constructionEffect = shop.applyConstructionEvent(state, event, 'route_event', { nodeId: option.nodeId });
+  if (!constructionEffect) shop.applyShopEventModifiers(state, event, 'route_event');
   const prepEffect = queueBattlePrepEffectFromEvent(state, event, { source: 'route_event', nodeId: option.nodeId });
   const runEffect = queueOuterRunEffectFromEvent(state, event, { source: 'route_event', nodeId: option.nodeId });
+  if (constructionEffect) {
+    const historyItem = route.history[route.history.length - 1];
+    if (historyItem) historyItem.constructionEffect = clone(constructionEffect);
+  }
   if (prepEffect) {
     const historyItem = route.history[route.history.length - 1];
     if (historyItem) historyItem.prepEffect = clone(prepEffect);
@@ -121,7 +126,7 @@ function applyRouteEvent(state, option) {
     if (historyItem) historyItem.runEffect = clone(runEffect);
   }
   state.phase = 'node_resolved';
-  pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, prepEffect: prepEffect ? clone(prepEffect) : null, runEffect: runEffect ? clone(runEffect) : null, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
+  pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, constructionEffect: constructionEffect ? clone(constructionEffect) : null, prepEffect: prepEffect ? clone(prepEffect) : null, runEffect: runEffect ? clone(runEffect) : null, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
   return true;
 }
 function generateBattleOptions(state, opts = {}) {

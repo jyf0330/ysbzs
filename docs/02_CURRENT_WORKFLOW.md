@@ -113,6 +113,42 @@ collaboration:
 3. Tester Pass 如果发现截图、DOM、ViewModel、状态或 console 不匹配，Lead 必须回到实现或输出 blocked，不得自动提交。
 4. 多 AI 之间不互相转交提交权；只有 Lead 执行精确暂存、提交和任务归档。
 
+### External AI CLI Runner
+
+当用户明确要求 DeepSeek / Claude / Gemini / 其他外部 AI “干明确的活”时，Lead 应把它当成 External AI Worker，而不是让高智能 Lead 直接包办实现。
+
+优先使用可观察会话：
+
+- 通过 `tmux`、真实终端或等价可见会话运行外部 CLI，例如 `cys`。
+- 避免默认使用完全黑箱的 `--print` 一次性输出模式；除非任务很小且用户不要求观看过程。
+- 若使用后台会话，Lead 必须提供会话名、日志路径或查看方式。
+
+后台会话监控优先使用 tmux pane activity，不要求外部 AI 额外写状态文件：
+
+```bash
+last=$(tmux display-message -p -t <session-name> '#{pane_last}')
+now=$(date +%s)
+echo $((now - last)) "秒前有活动"
+```
+
+如果当前 tmux 版本返回 `0` 或空值，改用 `pipe-pane` 日志文件 mtime：
+
+```bash
+tmux pipe-pane -o -t <session-name> 'cat >> <log-path>'
+last=$(stat -f '%m' <log-path>)
+now=$(date +%s)
+echo $((now - last)) "秒前有日志活动"
+```
+
+执行规则：
+
+1. Lead 每轮只检查 tmux pane activity、pane log 和 git diff，不抢写外部 AI 的 owned files。
+2. pane activity 小于 180 秒：继续等待。
+3. pane activity 大于等于 180 秒：先保存 pane 输出和日志，再中断外部 AI，不接管实现。
+4. 同一问题最多允许外部 AI 修 3 次；每次失败都必须记录失败证据、原因假设和下一次修正边界。
+5. 第 3 次仍未解决时，终止该外部 AI 任务，写入任务卡 `EXTERNAL_AI_FAILED_THREE_TIMES`，记录失败原因分析和后续建议；除非用户明确授权，Lead 不继续代写实现。
+6. External AI 不得提交；最终测试、截图复核、精确暂存、提交和任务归档只由 Lead 执行。
+
 ## diff
 
 If `diff` is the user intent or a standalone suffix, enter `diff` mode.

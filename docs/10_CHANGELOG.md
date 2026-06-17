@@ -2,6 +2,8 @@
 
 ## 2026-06-17
 
+- 外部 AI CLI 协作规则补充：DeepSeek/Claude/Gemini 等外部 Worker 默认用可观察 `tmux` 会话，Lead 用 `#{pane_last}` 判断活动时间；若当前 tmux 返回 `0`/空值，则用 `pipe-pane` 日志 mtime 作为零干扰 fallback。3 分钟无活动先中断，同一问题 3 次失败则终止任务并记录复盘，避免 Lead 黑箱等待或接管代写。
+- 外部 AI 压测记录：棋盘格右侧详情来源标签任务交给 `cys` / DeepSeek 执行 3 次，均未通过 Lead 的真实浏览器点击验收；未交付 UI 代码，失败原因已归档到任务卡。
 - 优化多 AI 协作工作流：`docs/02_CURRENT_WORKFLOW.md` 现在明确 Lead Agent、Specialist Agent、Tester Pass、External AI 的职责边界、派发条件、交接格式和冲突处理，避免外部建议或测试线程绕过任务卡、真实入口验收和精确提交规则。
 
 ## 2026-06-15

@@ -66,6 +66,53 @@ implementation thread finishes code/tests
 6. 主线程必须查看截图，确认关键可见效果“感觉正确”、没有明显遮挡、错位、缺失或错误数值。
 7. 缺少真实浏览器操作、缺少截图、截图未复核、console 有新增 error、DOM/状态断言不匹配时，不得进入自动提交检查；只能输出 blocked/Commit Plan。
 
+## Multi-AI Collaboration
+
+目标：多 AI 协作只用来提高独立性和吞吐，不允许制造第二套真相源。项目真相源仍是当前代码、`docs/00_AI_START_HERE.md`、`docs/02_CURRENT_WORKFLOW.md`、任务卡和用户最新指令。
+
+### 角色
+
+| 角色 | 责任 | 允许写入 |
+|---|---|---|
+| Lead Agent | 占用任务卡、决定范围、修改文件、整合外部意见、运行最终验证、提交或输出 Commit Plan | 当前任务 `related_files` |
+| Specialist Agent | 只做窄域审查、方案对照、代码风险点或测试建议；结论必须可被 Lead 复核 | 默认只读，除非 Lead 在任务卡中明确分配文件 |
+| Tester Pass | 独立真实入口验收，保存截图，记录操作步骤、DOM/ViewModel/state/console 证据 | `output/playwright/` 与任务卡证据；不改实现文件 |
+| External AI | 外部建议、草案、灵感来源 | 不直接写仓库；必须由 Lead 按项目规则筛选 |
+
+### 什么时候派其他 AI
+
+优先单线程推进：
+
+- 小范围文档、局部代码、明确 bug、一次性数据查询。
+- 文件边界清楚且没有 UI / 可见验收要求。
+
+必须或优先增加独立协作：
+
+- UI、棋盘、可见预览、交互反馈、布局、文案可读性：必须有 `Tester Pass` 或测试子线程证据。
+- 大范围规则、架构、经济/数值、跨模块改动：优先派 `Specialist Agent` 做只读审查，再由 Lead 落地。
+- 用户给出外部 AI 建议包：Lead 必须先做适配审查，不能直接照搬。
+- `git-c` 或多任务收口：Lead 先按任务卡分组；必要时让 Specialist 做只读归属审查。
+
+### 协作交接格式
+
+Lead 在任务卡或最终报告中记录以下最小证据：
+
+```text
+collaboration:
+  lead_scope: <本轮负责的目标与文件>
+  specialist_input: <无 / agent 名称 + 只读结论路径或摘要>
+  tester_pass: <无 / TEST_SUBTHREAD_UNAVAILABLE / 截图路径 + 操作步骤 + console 结果>
+  external_ai_input: <无 / 来源 + Lead 采纳与拒绝摘要>
+  lead_decision: <最终采用的方案和原因>
+```
+
+### 冲突处理
+
+1. 任意 AI 发现目标文件被其他任务卡占用，立即触发 `FILE_CONFLICT_STOP`。
+2. Specialist 与 External AI 的意见不能覆盖项目规则；只能作为 Lead 的输入。
+3. Tester Pass 如果发现截图、DOM、ViewModel、状态或 console 不匹配，Lead 必须回到实现或输出 blocked，不得自动提交。
+4. 多 AI 之间不互相转交提交权；只有 Lead 执行精确暂存、提交和任务归档。
+
 ## diff
 
 If `diff` is the user intent or a standalone suffix, enter `diff` mode.

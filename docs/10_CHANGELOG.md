@@ -1,5 +1,9 @@
 # 10_CHANGELOG
 
+## 2026-06-17
+
+- 优化多 AI 协作工作流：`docs/02_CURRENT_WORKFLOW.md` 现在明确 Lead Agent、Specialist Agent、Tester Pass、External AI 的职责边界、派发条件、交接格式和冲突处理，避免外部建议或测试线程绕过任务卡、真实入口验收和精确提交规则。
+
 ## 2026-06-15
 
 - 新增 pipeline/ 双 Agent 协作工具：`run.sh` 状态机支持 plan→review→implement→verify→fix→commit 六阶段流转，prompt.md 写需求、output.md 依次追加产出，适合我+Codex 接力开发。详见 `pipeline/README.md`。

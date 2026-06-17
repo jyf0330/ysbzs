@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-17_ai-collaboration-workflow.md`
 - `tasks/done/2026-06-15_restock-purchase-build-source.md`
 - `tasks/done/2026-06-15_targeted-restock-offer-provenance.md`
 - `tasks/done/2026-06-15_terminal-run-summary-ui.md`

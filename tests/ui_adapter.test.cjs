@@ -701,3 +701,96 @@ test('UI23 敌方移动路径预览标记最终落点且空格攻击范围不承
   assert.ok(attackEmptyCells.length > 0, '测试需要覆盖空格攻击范围');
   assert.ok(attackEmptyCells.every(cell => Number(cell.threat.damage || 0) === 0 && !(cell.teamRisk && cell.teamRisk.damage)), '空格攻击范围不应承载受伤单位伤害');
 });
+
+test('UI24 玩家移动事件只显示位移和预计受伤变化', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'compact_move_event_log' });
+  battle.startBattle(state);
+  const hero = state.units.find(u => u.side === 'hero' && u.alive);
+  const enemy = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(hero && enemy, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== enemy.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  hero.position = { r: 5, c: 0 };
+  hero.moveRange = 4;
+  hero.def = 0;
+  hero.shield = 0;
+  enemy.position = { r: 5, c: 4 };
+  enemy.ap = 1;
+  enemy.atk = 7;
+  enemy.shape = Object.assign({}, enemy.shape, { hitCells: 2, slotCount: 1, baseLayers: 1 });
+  state.actionDirs[`${enemy.id}:slot0`] = 'left';
+  syncBoardUnits(state);
+
+  assert.equal(battle.moveHero(state, hero.id, { r: 5, c: 2 }), true);
+  const event = state.events.find(e => e.type === 'MOVE_HERO');
+  assert.ok(event, '移动事件需要存在');
+  assert.match(event.text, /R6C1->R6C3/);
+  assert.match(event.text, /预计受伤 0->7/);
+  assert.doesNotMatch(event.text, /本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
+});
+
+test('UI25 施放行动槽日志只显示命中、伤害和元素增加摘要', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'compact_action_event_log' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero' && u.alive);
+  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(actor && target, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== target.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  actor.position = { r: 5, c: 3 };
+  actor.shape = Object.assign({}, actor.shape, { shapeName: '二格线', baseLayers: 1, hitCells: 2, slotCount: 1, slotElements: ['火'] });
+  target.position = { r: 5, c: 4 };
+  target.hp = 20;
+  target.shield = 0;
+  target.def = 0;
+  state.actionDirs[`${actor.id}:slot0`] = 'right';
+  syncBoardUnits(state);
+  const targetCell = getCell(state, target.position.r, target.position.c);
+  targetCell.elements.火 = 3;
+  targetCell.elementCamps.火 = 'player';
+
+  assert.equal(battle.useActionSlot(state, actor.id, 0, null), true);
+  const event = state.events.find(e => e.type === 'PLAYER_SELECT_SLOT');
+  assert.ok(event, '施放事件需要存在');
+  assert.match(event.text, /二格线\/火1层\/AP1/);
+  assert.match(event.text, new RegExp(`${target.displayName || target.name}受伤`));
+  assert.deepEqual(event.damageSummary, [`${target.displayName || target.name}受伤6`]);
+  assert.deepEqual(event.elementIncreases, []);
+  assert.doesNotMatch(event.text, /本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
+});
+
+test('UI26 空格施放日志只显示元素增加并忽略元素减少', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'compact_element_increase_log' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero' && u.alive);
+  assert.ok(actor, '需要我方单位');
+  for (const enemy of state.units.filter(u => u.side === 'enemy')) {
+    enemy.alive = false;
+    enemy.hp = 0;
+    enemy.position = null;
+  }
+
+  actor.position = { r: 5, c: 3 };
+  actor.shape = Object.assign({}, actor.shape, { shapeName: '二格线', baseLayers: 1, hitCells: 2, slotCount: 1, slotElements: ['火'] });
+  state.actionDirs[`${actor.id}:slot0`] = 'right';
+  syncBoardUnits(state);
+  const firstCell = getCell(state, 5, 4);
+  firstCell.elements.水 = 1;
+  firstCell.elementCamps.水 = 'enemy';
+
+  assert.equal(battle.useActionSlot(state, actor.id, 0, null), true);
+  const event = state.events.find(e => e.type === 'PLAYER_SELECT_SLOT');
+  assert.ok(event, '施放事件需要存在');
+  assert.match(event.text, /作用2格/);
+  assert.match(event.text, /元素增加：R6C5 火\+1，R6C6 火\+1/);
+  assert.deepEqual(event.elementIncreases, ['R6C5 火+1', 'R6C6 火+1']);
+  assert.doesNotMatch(event.text, /水-1|减少|本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
+});

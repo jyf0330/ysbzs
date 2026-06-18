@@ -7,6 +7,8 @@
  * @typedef {{phase?:string, selected?:{unitId?:string, cell?:Position}, teamPlacementPreview?:{activeUnitId?:string|null,movedUnitIds?:string[]}, units?:BattleUnit[], leaders?:{player?:BattleUnit, enemy?:BattleUnit}, board?:{cells?:BattleCell[]}}} BattleState
  */
 
+const { compactPositionLabel, joinClauses, summarizeRiskChange } = require('./eventSummary.cjs');
+
 /**
  * Build the position and movement API from battle.cjs dependencies.
  *
@@ -14,7 +16,7 @@
  * @returns {{boardUnitAt:(state:BattleState,pos:Position)=>BattleUnit|null,canStandAt:(state:BattleState,actor:BattleUnit,pos:Position)=>boolean,allStandCells:(state:BattleState,actor:BattleUnit)=>Position[],moveHero:(state:BattleState,unitId?:string,to?:Position)=>boolean,moveUnitGeneral:(state:BattleState,unit:BattleUnit,to:Position)=>boolean}}
  */
 function createPositionModule(deps) {
-  const { clone, getUnit, living, leaders, pushEvent, normalizePosition, getCell, syncBoardUnits, BOARD_ROWS, BOARD_COLS, inBoard, dist, effectiveMoveRange, syncDerivedBoard, startBattle } = deps;
+  const { clone, getUnit, living, leaders, pushEvent, normalizePosition, getCell, syncBoardUnits, BOARD_ROWS, BOARD_COLS, inBoard, dist, effectiveMoveRange, syncDerivedBoard, startBattle, buildTeamRiskGrid } = deps;
 /**
  * @param {BattleState} state
  * @param {Position} pos
@@ -70,6 +72,9 @@ function moveHero(state, unitId, to) {
 	  const d = dist(from, target);
 	  const moveRange = effectiveMoveRange(state, unit);
 	  if (d > moveRange) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, from, to: target, moveRange, text: `移动失败：${unit.name} 移动力${moveRange}，距离${d}。` }); return false; }
+	  const beforeRisk = typeof buildTeamRiskGrid === 'function'
+	    ? (buildTeamRiskGrid(state, [unit.id]).find(risk => risk.unitId === unit.id) || null)
+	    : null;
 	  unit.position = target;
 	  state.teamPlacementPreview = state.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
 	  state.teamPlacementPreview.movedUnitIds = Array.isArray(state.teamPlacementPreview.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
@@ -77,43 +82,14 @@ function moveHero(state, unitId, to) {
 	  state.teamPlacementPreview.movedUnitIds.push(unit.id);
 	  state.teamPlacementPreview.activeUnitId = unit.id;
 	  syncDerivedBoard(state);
-  // 同步后再收集受影响格子（syncDerivedBoard 更新了 preview/threat）
-  const get = state.board?.cells || [];
-  const affected = get.filter(c => {
-    const isFrom = c.r === from.r && c.c === from.c;
-    const isTo = c.r === target.r && c.c === target.c;
-    return isFrom || isTo || c.preview || c.threat;
-  });
-  const fromLabel = `第${from.r + 1}行第${from.c + 1}列`;
-  const toLabel = `第${target.r + 1}行第${target.c + 1}列`;
-  const cellLines = [];
-  let seqCell = 1;
-  // 先把旧位置和新位置放在最前面
-  for (const key of [`${from.r},${from.c}`, `${target.r},${target.c}`]) {
-    const [rr, cc] = key.split(',').map(Number);
-    const c = get.find(x => x.r === rr && x.c === cc);
-    if (!c) continue;
-    const u = c.unitId ? (getUnit(state, c.unitId) || null) : null;
-    const unitStr = u ? `${u.displayName || u.name} HP${u.hp}/${u.maxHp}${u.shield ? `/盾${u.shield}` : ''}` : '空格';
-    const els = Object.entries(c.elements || {}).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join('/') || '火0/水0/风0';
-    const pr = c.preview ? (c.preview.predictedDamage > 0 ? `，预计受到${c.preview.predictedDamage}点${c.preview.element}伤害` : `，预计铺${c.preview.element}${c.preview.layers}层`) : '';
-    const th = c.threat ? `${c.threat.damage ? `，受到${c.threat.damage}点威胁` : '，有威胁'}` : '，无威胁';
-    cellLines.push(`${seqCell}）第${c.r + 1}行第${c.c + 1}列：${unitStr}，${els}${pr}${th}`);
-    seqCell++;
-  }
-  for (const c of affected) {
-    const key = `${c.r},${c.c}`;
-    if (key === `${from.r},${from.c}` || key === `${target.r},${target.c}`) continue;
-    const u = c.unitId ? (getUnit(state, c.unitId) || null) : null;
-    const unitStr = u ? `${u.displayName || u.name} HP${u.hp}/${u.maxHp}${u.shield ? `/盾${u.shield}` : ''}` : '空格';
-    const els = Object.entries(c.elements || {}).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join('/') || '火0/水0/风0';
-    const pr = c.preview ? (c.preview.predictedDamage > 0 ? `，预计受到${c.preview.predictedDamage}点${c.preview.element}伤害` : `，预计铺${c.preview.element}${c.preview.layers}层`) : '';
-    const th = c.threat ? `${c.threat.damage ? `，受到${c.threat.damage}点威胁` : '，有威胁'}` : '，无威胁';
-    cellLines.push(`${seqCell}）第${c.r + 1}行第${c.c + 1}列：${unitStr}，${els}${pr}${th}`);
-    seqCell++;
-  }
-  const text = `${unit.displayName || unit.name}从${fromLabel}移动到${toLabel}。\n本次影响${affected.length}格：\n${cellLines.join('\n')}`;
-  pushEvent(state, 'MOVE_HERO', { unitId: unit.id, displayName: unit.displayName, element: unit.element, side: unit.side, camp: unit.camp, from, to: target, apRemaining: unit.availableAp ?? unit.ap, moveRange, text });
+	  const afterRisk = typeof buildTeamRiskGrid === 'function'
+	    ? (buildTeamRiskGrid(state, [unit.id]).find(risk => risk.unitId === unit.id) || null)
+	    : null;
+  const text = `${unit.displayName || unit.name}移动：${joinClauses([
+    `${compactPositionLabel(from)}->${compactPositionLabel(target)}`,
+    summarizeRiskChange(beforeRisk, afterRisk)
+  ])}。`;
+  pushEvent(state, 'MOVE_HERO', { unitId: unit.id, displayName: unit.displayName, element: unit.element, side: unit.side, camp: unit.camp, from, to: target, apRemaining: unit.availableAp ?? unit.ap, moveRange, riskBefore: beforeRisk, riskAfter: afterRisk, text });
   return true;
 }
 

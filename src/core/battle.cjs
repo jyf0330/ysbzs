@@ -397,6 +397,7 @@ function runBattle(state) {
   dist,
   effectiveMoveRange,
   syncDerivedBoard: (...args) => syncDerivedBoard(...args),
+  buildTeamRiskGrid: (...args) => buildTeamRiskGrid(...args),
   startBattle: (...args) => startBattle(...args)
 }));
 

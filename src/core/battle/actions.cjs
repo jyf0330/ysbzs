@@ -8,6 +8,14 @@
  * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean}} ActionSlot
  */
 
+const {
+  joinClauses,
+  snapshotCellElements,
+  snapshotUnitDamage,
+  summarizeElementIncreases,
+  summarizeUnitDamage
+} = require('./eventSummary.cjs');
+
 /**
  * Build action-slot helpers from battle.cjs dependencies.
  *
@@ -72,28 +80,15 @@ function setActionDirection(state, unitId, slotId, dir) {
   const key = unit ? `${unit.id}:slot${idx}` : String(idx);
   state.actionDirs[key] = dir || 'right';
   syncDerivedBoard(state);
-  // 同步后收集受影响格子
-  const allCells = state.board?.cells || [];
-  const previewCells = allCells.filter(c => c.preview && c.preview.actorId === unit?.id);
-  const threatCells = allCells.filter(c => c.threat);
-  const uniqueKeys = new Set();
-  for (const c of previewCells) uniqueKeys.add(`${c.r},${c.c}`);
-  for (const c of threatCells) uniqueKeys.add(`${c.r},${c.c}`);
-  const affected = [...uniqueKeys].map(k => { const [r, c] = k.split(',').map(Number); return allCells.find(x => x.r === r && x.c === c); }).filter(Boolean);
-  const cellLines = []; let seq = 1;
-  for (const c of affected) {
-    const u = c.unitId ? (getUnit(state, c.unitId) || null) : null;
-    const unitStr = u ? `${u.displayName || u.name} HP${u.hp}/${u.maxHp}${u.shield ? `/盾${u.shield}` : ''}` : '空格';
-    const els = Object.entries(c.elements || {}).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join('/') || '火0/水0/风0';
-    const pr = c.preview ? (c.preview.predictedDamage > 0 ? `，预计受到${c.preview.predictedDamage}点${c.preview.element}伤害` : `，预计铺${c.preview.element}${c.preview.layers}层`) : '';
-    const th = c.threat ? `${c.threat.damage ? `，受到${c.threat.damage}点威胁` : '，有威胁'}` : '，无威胁';
-    cellLines.push(`${seq}）第${c.r + 1}行第${c.c + 1}列：${unitStr}，${els}${pr}${th}`);
-    seq++;
-  }
-  const cellDetail = cellLines.length ? `\n影响${affected.length}格：\n${cellLines.join('\n')}` : '';
   const slots = unit ? slotsForUnit(state, unit) : [];
   const slot = slots[idx];
-  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, displayName: unit?.displayName, element: unit?.element, slotId: idx, dir: dir || 'right', slotElement: slot?.element, slotLayers: slot?.layers, shapeId: slot?.shapeId, shapeName: slot?.shapeName, text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向改为${dir || 'right'}。${cellDetail}` });
+  const previewCells = (state.board?.cells || []).filter(c => c.preview && c.preview.actorId === unit?.id);
+  const previewTargets = targetsAtCells(state, previewCells.map(c => ({ r: c.r, c: c.c })), unit ? opposingCamp(unitCamp(unit)) : 'enemy');
+  const summary = joinClauses([
+    previewCells.length ? `预览${previewCells.length}格` : '',
+    previewTargets.length ? `命中${previewTargets.map(t => t.displayName || t.name).join('、')}` : ''
+  ]);
+  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, displayName: unit?.displayName, element: unit?.element, slotId: idx, dir: dir || 'right', slotElement: slot?.element, slotLayers: slot?.layers, shapeId: slot?.shapeId, shapeName: slot?.shapeName, previewCellCount: previewCells.length, previewTargetIds: previewTargets.map(t => t.id), text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向改为${dir || 'right'}${summary ? `：${summary}` : ''}。` });
   return true;
 }
 
@@ -124,6 +119,8 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   const apUsed = requestedAp;
   const effectiveLayers = Math.max(1, Number(slot.layers || 1)) * apUsed;
   const targets = targetsAtCells(state, cells, targetCamp);
+  const beforeElements = snapshotCellElements(state.board?.cells || []);
+  const beforeTargetDamage = snapshotUnitDamage(combatTargets(state, targetCamp));
   const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.layers });
   // 先执行槽效果
   if (targets.length) for (const t of targets) applyElement(state, actor, t, slot.element, effectiveLayers, { slot: appliedSlot, apUsed });
@@ -156,24 +153,16 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   actor.actionApSpent = unitApSpent(actor) + apUsed;
   actor.hasAttacked = true;  // 攻击后锁定位置
   syncDerivedBoard(state);
-  // 执行后构建详细事件文本
-  const allCells = state.board?.cells || [];
-  const affected = allCells.filter(c => cells.some(p => p.r === c.r && p.c === c.c) || c.preview || c.threat);
-  const cellLines = [];
-  let seq = 1;
-  for (const targetPos of cells) {
-    const c = allCells.find(x => x.r === targetPos.r && x.c === targetPos.c);
-    if (!c) continue;
-    const u = c.unitId ? (getUnit(state, c.unitId) || null) : null;
-    const unitStr = u ? `${u.displayName || u.name} HP${u.hp}/${u.maxHp}${u.shield ? `/盾${u.shield}` : ''}` : '空格';
-    const els = Object.entries(c.elements || {}).filter(([, n]) => Number(n) > 0).map(([el, n]) => `${el}${n}`).join('/') || '火0/水0/风0';
-    const pr = c.preview ? (c.preview.predictedDamage > 0 ? `，预计受到${c.preview.predictedDamage}点${c.preview.element}伤害` : `，预计铺${c.preview.element}${c.preview.layers}层`) : '';
-    const th = c.threat ? `${c.threat.damage ? `，受到${c.threat.damage}点威胁` : '，有威胁'}` : '，无威胁';
-    cellLines.push(`${seq}）第${c.r + 1}行第${c.c + 1}列：${unitStr}，${els}${pr}${th}`);
-    seq++;
-  }
-  const cellDetail = cellLines.length ? `\n本次影响${affected.length}格：\n${cellLines.join('\n')}` : '';
-  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.layers, effectiveLayers, text: `${actor.displayName} 施放第${idx + 1}槽：${slot.shapeName}/${slot.element}/${effectiveLayers}层（AP${apUsed}）。${cellDetail}` });
+  const damageSummary = summarizeUnitDamage(beforeTargetDamage, combatTargets(state, targetCamp));
+  const elementIncreases = summarizeElementIncreases(beforeElements, state.board?.cells || []);
+  const targetSummary = targets.length ? `命中${targets.map(t => t.displayName || t.name).join('、')}` : `作用${cells.length}格`;
+  const elementSummary = elementIncreases.length ? `元素增加：${elementIncreases.join('，')}` : '';
+  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.layers, effectiveLayers, targetIds: targets.map(t => t.id), damageSummary, elementIncreases, text: `${actor.displayName} 施放第${idx + 1}槽：${joinClauses([
+    `${slot.shapeName}/${slot.element}${effectiveLayers}层/AP${apUsed}`,
+    targetSummary,
+    damageSummary.join('，'),
+    elementSummary
+  ])}。` });
   return true;
 }
 

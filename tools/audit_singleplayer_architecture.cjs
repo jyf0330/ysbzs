@@ -20,5 +20,7 @@ assert(grep('src/core/mechanicGate.cjs', /unsupportedMechanicsForUnit/), 'mechan
 assert(grep('src/core/battle/actions.cjs', /actionApSpent/), 'AP allocation is consumed by battle action core');
 assert(grep('tools/run_ui_server.cjs', /\/api\/save/) && grep('tools/run_ui_server.cjs', /\/api\/load/), 'server exposes save/load endpoints');
 assert(grep('web/index.html', /save-game-btn/) && grep('web/ux-app.js', /localStorage\.setItem\('ysbzs\.save\.slot1'/), 'browser UI exposes local save/load');
+assert(grep('web/index.html', /js\/local-engine\.js/) && grep('web/js/runtime-client.js', /__YSBZS_LOCAL_ENGINE_FACTORY__/) && grep('web/js/runtime-client.js', /runtime=http/), 'browser UI defaults to bundled pure singleplayer runtime with explicit http fallback');
+assert(grep('tools/build_local_engine_bundle.cjs', /createBrowserLocalEngine/) && grep('web/js/local-engine.js', /__YSBZS_LOCAL_ENGINE_FACTORY__/), 'local engine bundle is generated from core adapter entry');
 assert(read('src/uiAdapter.cjs').split(/\r?\n/).length < 820, 'uiAdapter remains under round5 size guard');
 if (process.exitCode) process.exit(process.exitCode);

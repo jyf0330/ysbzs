@@ -38,10 +38,12 @@ async function main() {
     const mainScript = html.includes('src="js/main.js"') ? 'js/main.js' : 'ux-app.js';
     const js = await fetch(`${base}/${mainScript}`).then(r => r.text());
     const runtimeJs = await fetch(`${base}/js/runtime-client.js`).then(r => r.text());
+    const localEngineJs = await fetch(`${base}/js/local-engine.js`).then(r => r.text());
     const browserJs = `${js}\n${runtimeJs}`;
     const css = await fetch(`${base}/ux-app.css`).then(r => r.text());
     assert(html.includes('棋盘战斗交互重构版'), 'new UI shell title missing');
     assert(html.includes(mainScript) && html.includes('ux-app.css'), 'new UI assets not referenced');
+    assert(html.includes('src="js/local-engine.js"') && html.indexOf('src="js/local-engine.js"') < html.indexOf(`src="${mainScript}"`), 'local engine bundle must load before main UI module');
     assert(html.includes('id="board"') && html.includes('id="slot-list"') && html.includes('id="hero-list"'), 'new UI stable DOM anchors missing');
     assert(html.includes('id="operation-rail"'), 'board operation context rail missing');
     assert(html.includes('id="cell-detail"') && html.includes('id="action-popover"'), 'right-side detail panel or left action popover missing');
@@ -49,6 +51,8 @@ async function main() {
     assert(!html.includes('id="cell-popup"') && !html.includes('id="tooltip"'), 'hover detail surfaces must be removed');
     assert(!html.includes('original-ui-compat-adapter.js') && !html.includes("loadScript('game.js')") && !html.includes('ui.js'), 'old UI bootstrap must be removed');
     assert(js.includes('runtime-client.js') && runtimeJs.includes('createGameRuntime'), 'new UI must route through runtime-client.js');
+    assert(runtimeJs.includes("return 'local'") && runtimeJs.includes('runtime=http'), 'runtime must default to local singleplayer and keep explicit http mode');
+    assert(localEngineJs.includes('__YSBZS_LOCAL_ENGINE_FACTORY__') && localEngineJs.includes('createServerAuthorityAdapter'), 'local engine bundle must register browser engine factory');
     assert(browserJs.includes('/api/action') && browserJs.includes('/api/view') && browserJs.includes('/api/report'), 'new UI must use public API endpoints');
     assert(browserJs.includes('runtime.action') && browserJs.includes('runtime.view') && browserJs.includes('runtime.save') && browserJs.includes('runtime.load'), 'new UI must use runtime action/view/save/load methods');
     assert(!/require\(|\.\/src|core\/|uiAdapter\.cjs/.test(browserJs), 'web UI must not import core or adapter directly');

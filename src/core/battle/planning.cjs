@@ -737,7 +737,7 @@ function buildCellDiffs(beforeCells, afterCells) {
   }).filter(Boolean);
 }
 
-function buildMoveRiskGrid(state, unitId) {
+function buildMoveRiskGrid(state, unitId, opts = {}) {
   const unit = getUnit(state, unitId) || living(state, 'hero')[0];
   if (!unit || unit.side !== 'hero' || unit.alive === false || Number(unit.hp || 0) <= 0) return [];
   const start = normalizePosition(unit.position || { r: 0, c: 0 });
@@ -760,18 +760,27 @@ function buildMoveRiskGrid(state, unitId) {
     sandbox.teamPlacementPreview.activeUnitId = unit.id;
     sandbox.teamPlacementPreview.movedUnitIds = teamUnitIds.slice();
     if (syncBoardUnits) syncBoardUnits(sandbox);
-    const beforeUnits = snapshotSandboxUnits(sandbox);
-    const beforeCells = snapshotSandboxCells(sandbox);
-    const eventStart = Array.isArray(sandbox.events) ? sandbox.events.length : 0;
-    const canSimulateAction = sandbox.phase === 'player_turn';
-    const sandboxActionOk = canSimulateAction && useActionSlot ? !!useActionSlot(sandbox, unit.id, 0, null, { ap: 1 }) : false;
-    if (syncBoardUnits) syncBoardUnits(sandbox);
-    const sandboxBoardCells = snapshotSandboxCells(sandbox);
-    const sandboxUnits = snapshotSandboxUnits(sandbox);
-    const sandboxEvents = Array.isArray(sandbox.events) ? clone(sandbox.events.slice(eventStart)) : [];
-    const cellDiffs = buildCellDiffs(beforeCells, sandboxBoardCells);
-    const unitDiffs = buildUnitDiffs(beforeUnits, sandboxUnits);
-    const previewGrid = buildPreviewGrid ? buildPreviewGrid(sandbox, { unitId: unit.id }) : [];
+    let sandboxActionOk = false;
+    let sandboxBoardCells = [];
+    let sandboxUnits = [];
+    let sandboxEvents = [];
+    let cellDiffs = [];
+    let unitDiffs = [];
+    let previewGrid = [];
+    if (!opts.summaryOnly) {
+      const beforeUnits = snapshotSandboxUnits(sandbox);
+      const beforeCells = snapshotSandboxCells(sandbox);
+      const eventStart = Array.isArray(sandbox.events) ? sandbox.events.length : 0;
+      const canSimulateAction = sandbox.phase === 'player_turn';
+      sandboxActionOk = canSimulateAction && useActionSlot ? !!useActionSlot(sandbox, unit.id, 0, null, { ap: 1 }) : false;
+      if (syncBoardUnits) syncBoardUnits(sandbox);
+      sandboxBoardCells = snapshotSandboxCells(sandbox);
+      sandboxUnits = snapshotSandboxUnits(sandbox);
+      sandboxEvents = Array.isArray(sandbox.events) ? clone(sandbox.events.slice(eventStart)) : [];
+      cellDiffs = buildCellDiffs(beforeCells, sandboxBoardCells);
+      unitDiffs = buildUnitDiffs(beforeUnits, sandboxUnits);
+      previewGrid = buildPreviewGrid ? buildPreviewGrid(sandbox, { unitId: unit.id }) : [];
+    }
     const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
     const currentRisk = teamRiskGrid.find(risk => risk.unitId === unit.id) || null;
     out.push({

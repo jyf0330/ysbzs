@@ -1,4 +1,5 @@
 const LOCAL_RUNTIME_QUERY = 'runtime=local';
+const HTTP_RUNTIME_QUERY = 'runtime=http';
 const DEFAULT_SAVE_SLOT = 'ysbzs.save.slot1';
 
 function getWindow() {
@@ -23,11 +24,12 @@ function engineMissing(method) {
 export function resolveRuntimeMode(options = {}) {
   if (options.mode) return options.mode;
   const win = getWindow();
-  if (!win) return 'http';
+  if (!win) return 'local';
   const params = new URLSearchParams(win.location?.search || '');
+  if (params.get('runtime') === 'http' || (win.location?.search || '').includes(HTTP_RUNTIME_QUERY)) return 'http';
   if (params.get('runtime') === 'local' || (win.location?.search || '').includes(LOCAL_RUNTIME_QUERY)) return 'local';
   if (win.__YSBZS_RUNTIME_MODE__) return win.__YSBZS_RUNTIME_MODE__;
-  return 'http';
+  return 'local';
 }
 
 export function resolveApiBase(options = {}) {
@@ -66,7 +68,10 @@ export function createHttpRuntime(options = {}) {
 
 export function createLocalRuntime(options = {}) {
   const win = getWindow();
-  const engine = options.engine || win?.__YSBZS_LOCAL_ENGINE__ || null;
+  const existingEngine = options.engine || win?.__YSBZS_LOCAL_ENGINE__ || null;
+  const factory = options.engineFactory || win?.__YSBZS_LOCAL_ENGINE_FACTORY__ || null;
+  const engine = existingEngine || (typeof factory === 'function' ? factory(options) : null);
+  if (win && engine && !win.__YSBZS_LOCAL_ENGINE__) win.__YSBZS_LOCAL_ENGINE__ = engine;
   const storage = options.storage || win?.localStorage || null;
   const slotKey = options.slotKey || DEFAULT_SAVE_SLOT;
   const playerId = options.playerId || 'p1';
@@ -106,6 +111,14 @@ export function createLocalRuntime(options = {}) {
       return data;
     }
     if (pathname === '/api/load') return load(body?.save || body);
+    if (pathname === '/api/data/summary' && engine?.getDataSummary) {
+      return {
+        ok: true,
+        summary: engine.getDataSummary(),
+        shopPools: engine.getShopPools ? engine.getShopPools() : [],
+        rewardPools: engine.getRewardPools ? engine.getRewardPools() : []
+      };
+    }
     engineMissing(`request:${pathname}`);
   }
   return { kind: 'local', request, view, report, action, save, load };

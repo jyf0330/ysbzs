@@ -179,8 +179,7 @@ function makeBoardVM(state, selected = {}) {
 	    cell: aimingCell
 	  });
   const threatGrid = battle.buildThreatGrid(state);
-  const riskUnitId = selected.unitId || state.teamPlacementPreview?.activeUnitId || state.units.find(u => u.side === 'hero' && u.alive !== false && u.hp > 0)?.id || null;
-  const moveRiskGrid = riskUnitId ? battle.buildMoveRiskGrid(state, riskUnitId) : [];
+  const moveRiskGrid = [];
   const movedUnitIds = Array.isArray(state.teamPlacementPreview?.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
   const teamRiskGrid = battle.buildTeamRiskGrid(state, movedUnitIds.length ? movedUnitIds : null);
 	  const previewMap = new Map(previewGrid.map(x => [`${x.r},${x.c}`, x]));
@@ -551,6 +550,7 @@ function createYSBZSUIAdapter(options = {}) {
   const state = ensureMultiplayerState(createGameState(options), options);
   const viewStates = new Map();
   const defaultPlayerId = options.playerId || 'p1';
+  const includeAuthoritativeState = options.includeAuthoritativeState !== false;
   function viewStateFor(commandOrPlayerId) {
     const playerId = typeof commandOrPlayerId === 'string' ? commandOrPlayerId : (commandOrPlayerId && commandOrPlayerId.playerId) || defaultPlayerId;
     return getPlayerViewState(viewStates, playerId);
@@ -558,6 +558,9 @@ function createYSBZSUIAdapter(options = {}) {
   function viewFor(commandOrPlayerId) {
     const playerId = typeof commandOrPlayerId === 'string' ? commandOrPlayerId : (commandOrPlayerId && commandOrPlayerId.playerId) || defaultPlayerId;
     return buildViewModelForPlayer(state, playerId, viewStateFor(playerId));
+  }
+  function maybeSnapshot(playerId, viewState) {
+    return includeAuthoritativeState ? createSnapshot(state, playerId, viewState) : undefined;
   }
   const adapter = {
     version: '2026-06-09-command-envelope-local-prediction-ready-round4',
@@ -589,7 +592,7 @@ function createYSBZSUIAdapter(options = {}) {
           result: true,
           events,
           trace: { id: `${state.battleId}:${command.commandId}:ui`, commandId: command.commandId, events },
-          authoritativeState: createSnapshot(state, command.playerId, viewState),
+          authoritativeState: maybeSnapshot(command.playerId, viewState),
           viewModel: viewFor(command)
         };
       }
@@ -608,7 +611,7 @@ function createYSBZSUIAdapter(options = {}) {
           result: result === undefined ? true : clone(result),
           events: [],
           trace: { id: `${state.battleId}:${command.commandId}:read`, commandId: command.commandId, events: [] },
-          authoritativeState: createSnapshot(state, command.playerId, viewState),
+          authoritativeState: maybeSnapshot(command.playerId, viewState),
           viewModel: viewFor(command)
         };
       }
@@ -659,7 +662,7 @@ function createYSBZSUIAdapter(options = {}) {
             result: { count, attempts, guard },
             events: mappedEvents,
             trace: { id: `${state.battleId}:${command.commandId}:all-out`, commandId: command.commandId, events: mappedEvents },
-            authoritativeState: createSnapshot(state, command.playerId, viewState),
+            authoritativeState: maybeSnapshot(command.playerId, viewState),
             viewModel: viewFor(command)
           };
         } catch (err) {
@@ -682,7 +685,7 @@ function createYSBZSUIAdapter(options = {}) {
           restoreViewStates: raw => restoreViewStates(viewStates, raw),
           runFullPlayerDayFlow: playerId => this.runFullPlayerDayFlow(playerId),
           mapPublicEvents,
-          createSnapshot: playerId => createSnapshot(state, playerId, viewState),
+          createSnapshot: playerId => includeAuthoritativeState ? createSnapshot(state, playerId, viewState) : undefined,
           viewFor
         });
       }
@@ -696,7 +699,7 @@ function createYSBZSUIAdapter(options = {}) {
           viewStatesToObject: () => viewStatesToObject(viewStates),
           restoreViewStates: raw => restoreViewStates(viewStates, raw),
           mapPublicEvents,
-          createSnapshot: playerId => createSnapshot(state, playerId, viewState),
+          createSnapshot: playerId => includeAuthoritativeState ? createSnapshot(state, playerId, viewState) : undefined,
           viewFor,
           runFullRunFlow: opts => this.runFullRunFlow(opts)
         });
@@ -723,7 +726,7 @@ function createYSBZSUIAdapter(options = {}) {
           result: result === undefined ? true : clone(result),
           events: mappedEvents,
           trace: { id: `${state.battleId}:${command.commandId}`, commandId: command.commandId, events: mappedEvents },
-          authoritativeState: createSnapshot(state, command.playerId, viewState),
+          authoritativeState: maybeSnapshot(command.playerId, viewState),
           viewModel: viewFor(command)
         };
       } catch (err) {

@@ -61,10 +61,12 @@ implementation thread finishes code/tests
 1. 优先派独立测试子线程做验收；如果当前工具没有可用子线程，必须执行独立 tester pass，并在任务卡记录 `TEST_SUBTHREAD_UNAVAILABLE` 与替代验证命令。
 2. 测试子线程必须在真实浏览器里操作页面，动作包含按钮点击、棋盘点击、hover、结束回合、dispatch 或 `autoExecuteTurn` 等玩家可触发入口。
 3. `/api/action`、DOM / ViewModel / 状态断言只能作为辅助证据；直接调用内部函数只能补单元测试，不能替代真实浏览器操作验收。
-4. 必须保存真实浏览器截图到 `output/playwright/` 或任务卡指定路径。
-5. 任务卡验证记录必须包含真实浏览器操作步骤、截图路径、关键 DOM / ViewModel / 状态断言、console error 结果。
-6. 主线程必须查看截图，确认关键可见效果“感觉正确”、没有明显遮挡、错位、缺失或错误数值。
-7. 缺少真实浏览器操作、缺少截图、截图未复核、console 有新增 error、DOM/状态断言不匹配时，不得进入自动提交检查；只能输出 blocked/Commit Plan。
+4. 截图证据必须来自玩家会实际使用的正式界面和正式入口；不得用临时构造存档、`localStorage`/`importSave` 注入、`page.evaluate` 改状态、调试对象、内部函数或一次性脚本直接制造目标画面来替代验收。
+5. 如果需要构造状态复现 bug，只能作为单元测试、辅助诊断或复现说明；提交前可见验收仍必须从正式界面可达流程自然走到目标状态。若正式流程暂时不可达，必须标记 blocked/Commit Plan，不得用构造场景截图冒充通过。
+6. 必须保存真实浏览器截图到 `output/playwright/` 或任务卡指定路径。
+7. 任务卡验证记录必须包含正式界面操作步骤、截图路径、关键 DOM / ViewModel / 状态断言、console error 结果，并说明没有使用构造存档或内部状态注入作为截图主证据。
+8. 主线程必须查看截图，确认关键可见效果“感觉正确”、没有明显遮挡、错位、缺失或错误数值。
+9. 缺少正式界面真实操作、缺少截图、截图未复核、console 有新增 error、DOM/状态断言不匹配时，不得进入自动提交检查；只能输出 blocked/Commit Plan。
 
 ## Multi-AI Collaboration
 

@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-18_formal-ui-evidence-rule.md`
 - `tasks/done/2026-06-18_action-log-damage-element-summary.md`
 - `tasks/done/2026-06-18_compact-action-event-log.md`
 - `tasks/done/2026-06-18_full-browser-event-log.md`

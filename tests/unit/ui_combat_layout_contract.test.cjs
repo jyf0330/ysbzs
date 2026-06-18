@@ -68,6 +68,7 @@ test('bottom event log is internally scrollable and follows newest content', () 
   assert.match(css, /\.bottom-panel\{[^}]*grid-template-rows:minmax\(0,1fr\)/s, 'bottom panel must constrain the log row instead of clipping overflow');
   assert.match(css, /\.log-view\{[^}]*min-height:0/s, 'log view must allow internal scrolling inside the fixed footer');
   assert.match(css, /\.log-view\{[^}]*max-height:100%/s, 'log view must stay within the footer height');
+  assert.match(css, /\.log-view\{[^}]*user-select:text/s, 'bottom event log should allow selecting and copying visible text');
 
   for (const file of ['web/js/main.js', 'web/ux-app.js']) {
     const js = read(file);

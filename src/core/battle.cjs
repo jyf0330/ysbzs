@@ -195,11 +195,16 @@ function chooseTargets(state, actor) {
   const n = Math.max(1, Number(shape.hitCells || 1));
   return enemies.slice(0, n);
 }
+function resetRoundActionState(unit) {
+  unit.actionSlotsUsed = {};
+  unit.actionApSpent = 0;
+  unit.hasAttacked = false;
+}
 function startBattle(state) {
   state.phase = 'player_turn';
   state.round = 1;
   state.result = null;
-  for (const u of state.units) { u.actionSlotsUsed = {}; u.actionApSpent = 0; }
+  for (const u of state.units) resetRoundActionState(u);
   pushEvent(state, 'BATTLE_START', { day: state.day, period: state.period, text: `第${state.day}天${state.period}战斗开始。进入玩家回合。` });
   applyBattlePrepEffects(state);
   pushEvent(state, 'ROUND_START', { text: `第${state.day}天${state.period}第${state.round}回合开始。` });
@@ -211,7 +216,7 @@ function startNextRound(state) {
   if (state.phase === 'init') return startBattle(state);
   state.round += 1;
   state.phase = 'player_turn';
-  for (const u of state.units) if (u.alive) { u.actionSlotsUsed = {}; u.actionApSpent = 0; mech.applyRoundStart(state, u); }
+  for (const u of state.units) if (u.alive) { resetRoundActionState(u); mech.applyRoundStart(state, u); }
   pushEvent(state, 'ROUND_START', { text: `第${state.day}天${state.period}第${state.round}回合开始。` });
   spawnWave(state);
   return true;

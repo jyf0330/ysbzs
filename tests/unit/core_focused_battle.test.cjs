@@ -52,3 +52,38 @@ test('CB03 preview and AI intent return board-bounded cells with action context'
   assert.ok(Array.isArray(intent.path));
   assert.ok(Array.isArray(intent.attackCells));
 });
+
+test('CB04 startNextRound clears attack movement lock but keeps same-round lock', () => {
+  const state = startState();
+  const hero = state.units.find(u => u.side === 'hero' && u.alive && battle.slotsForUnit(state, u).length);
+  assert.ok(hero);
+
+  hero.position = { r: 5, c: 2 };
+  hero.moveRange = 3;
+  hero.shape = Object.assign({}, hero.shape, {
+    slotCount: 1,
+    slotElements: ['风'],
+    hitCells: 1,
+    baseLayers: 1
+  });
+  battle.syncDerivedBoard(state);
+  const moveTarget = state.board.cells.find(c => (
+    !c.unitId
+    && Math.abs(c.r - hero.position.r) + Math.abs(c.c - hero.position.c) <= hero.moveRange
+    && !(c.r === 5 && c.c === 3)
+  ));
+  assert.ok(moveTarget);
+
+  assert.equal(battle.setActionDirection(state, hero.id, 0, 'right'), true);
+  assert.equal(battle.useActionSlot(state, hero.id, 0, { r: 5, c: 3 }, { ap: 1 }), true);
+  assert.equal(hero.hasAttacked, true);
+  assert.equal(battle.moveHero(state, hero.id, { r: moveTarget.r, c: moveTarget.c }), false);
+  assert.match(state.events.at(-1).text, /位置锁定/);
+
+  battle.startNextRound(state);
+
+  assert.equal(hero.hasAttacked, false);
+  assert.deepEqual(hero.actionSlotsUsed, {});
+  assert.equal(hero.actionApSpent, 0);
+  assert.equal(battle.moveHero(state, hero.id, { r: moveTarget.r, c: moveTarget.c }), true);
+});

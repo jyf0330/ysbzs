@@ -163,6 +163,7 @@ test('UI05 board click moves selected hero before hover preview can turn the tar
 test('UI05B acted heroes do not keep move-target affordances', () => {
   const main = read('web/js/main.js');
   assert.match(main, /function unitPositionLocked\(unit = \{\}\)/, 'UI should have one browser-side lock predicate');
+  assert.match(main, /if \(!unit\) return false;/, 'UI lock predicate should tolerate no selected hero');
   assert.match(main, /\(unit\.slots \|\| \[\]\)\.some\(slot => slot && slot\.used\)/, 'slot usage should lock movement even when hasAttacked is not projected');
   const moveBody = main.match(/function legalMoveTargets\(hero\) \{([\s\S]*?)\n  \}/);
   assert.ok(moveBody, 'legalMoveTargets should exist');

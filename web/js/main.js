@@ -169,6 +169,7 @@ import { createGameRuntime } from './runtime-client.js';
     ui.cellDetail = null;
   }
   function unitPositionLocked(unit = {}) {
+    if (!unit) return false;
     return !!unit.hasAttacked || (unit.slots || []).some(slot => slot && slot.used);
   }
 

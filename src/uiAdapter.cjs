@@ -280,24 +280,7 @@ function firstEmptyHeroCell(state) {
   return { r: 7, c: 0 };
 }
 function recentEvents(state, n = 30) {
-  return state.events.slice(-n).map(e => {
-    const base = { step: e.step, round: e.round, phase: e.phase, type: e.type, text: e.text || e.type };
-    // 附加数据字段（供 UI 展示/调试）
-    if (e.displayName) base.displayName = e.displayName;
-    if (e.element) base.element = e.element;
-    if (e.side) base.side = e.side;
-    if (e.from) base.from = e.from;
-    if (e.to) base.to = e.to;
-    if (e.apRemaining != null) base.apRemaining = e.apRemaining;
-    if (e.moveRange != null) base.moveRange = e.moveRange;
-    if (e.slotId != null) base.slotId = e.slotId;
-    if (e.dir) base.dir = e.dir;
-    if (e.slotElement) base.slotElement = e.slotElement;
-    if (e.slotLayers != null) base.slotLayers = e.slotLayers;
-    if (e.shapeName) base.shapeName = e.shapeName;
-    if (e.actorId) base.actorId = e.actorId;
-    return base;
-  });
+  return state.events.slice(-n).map(toPublicEvent);
 }
 function logGroups(state) {
   return {
@@ -502,19 +485,13 @@ function createSnapshot(state, playerId = 'p1', viewState = makePlayerViewState(
   raw.viewModel = buildViewModelForPlayer(state, playerId, viewState);
   return raw;
 }
+function toPublicEvent(event) {
+  const out = clone(event);
+  out.text = out.text || out.type;
+  return out;
+}
 function mapPublicEvents(events) {
-  return (events || []).map(e => ({
-    eventId: e.eventId,
-    seq: e.seq,
-    step: e.step,
-    type: e.type,
-    text: e.text || e.type,
-    round: e.round,
-    phase: e.phase,
-    commandId: e.commandId,
-    playerId: e.playerId,
-    teamId: e.teamId, inventory: e.inventory ? clone(e.inventory) : undefined, acquiredFrom: e.acquiredFrom ? clone(e.acquiredFrom) : undefined
-  }));
+  return (events || []).map(toPublicEvent);
 }
 function runSelectionCommand(state, command, viewState) {
   viewState.selected = viewState.selected || { unitId: null, slotId: null, cell: null, direction: 'right' };

@@ -123,7 +123,13 @@ test('UI06B 商店刷新控制状态进入 ViewModel', () => {
   adapter.applyShopEvent('evt_discount');
   const applied = adapter.applyShopEvent('evt_shop_fire');
   assert.ok(hasEvent(applied, 'SHOP_TARGETED_RESTOCK'));
+  const targetedEvent = applied.events.find(e => e.type === 'SHOP_TARGETED_RESTOCK');
+  assert.equal(targetedEvent.restock.eventId, 'evt_shop_fire');
+  assert.equal(targetedEvent.restock.poolId, 'elem_火');
   const vm = adapter.getViewModel();
+  const vmTargetedEvent = vm.events.find(e => e.type === 'SHOP_TARGETED_RESTOCK');
+  assert.equal(vmTargetedEvent.restock.eventId, 'evt_shop_fire');
+  assert.equal(vmTargetedEvent.restock.poolId, 'elem_火');
   assert.equal(vm.shop.refreshState.freeRolls, 1);
   assert.equal(vm.shop.refreshState.nextDiscount, 0);
   assert.equal(vm.shop.refreshState.lastRoll.discountApplied, 50);

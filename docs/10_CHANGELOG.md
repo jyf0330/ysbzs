@@ -2,6 +2,7 @@
 
 ## 2026-06-18
 
+- 公开事件输出不再裁掉结构化 payload：`/api/action` 返回的事件和 ViewModel `events` 现在会保留完整事件字段，并只补默认 `text`，避免 `restock`、伤害、目标、来源等数据在 UI 层丢失。
 - 新增独立每日流程页面：`web/daily-flow.html` 通过公开 runtime 读取 `/api/view` 的 `dailyFlow`，并用 `/api/action` 推进生成节点、选择节点、跑完当天和完整 Run；主战斗页顶部新增“流程”入口。
 - `dailyFlow` 从 `src/dailyFlowView.cjs` 进入 ViewModel，展示当天 6 步日程、当前/下一步状态、路线历史、待领奖励、跨天 Run 摘要和终局信息，同时保持 `src/uiAdapter.cjs` 在 round5 行数守卫内。
 

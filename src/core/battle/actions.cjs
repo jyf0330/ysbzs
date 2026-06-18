@@ -119,9 +119,14 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   const targets = targetsAtCells(state, cells, targetCamp);
   const beforeEventCount = Array.isArray(state.events) ? state.events.length : 0;
   const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.layers });
-  // 先执行槽效果
-  if (targets.length) for (const t of targets) applyElement(state, actor, t, slot.element, effectiveLayers, { slot: appliedSlot, apUsed });
-  else for (const p of cells) { const cell = getCell(state, p.r, p.c); if (cell) applyElementToCell(state, actor, cell, slot.element, effectiveLayers); }
+  const targetByCell = new Map(targets.filter(t => t.position).map(t => [`${t.position.r},${t.position.c}`, t]));
+  for (const p of cells) {
+    const cell = getCell(state, p.r, p.c);
+    if (!cell) continue;
+    const target = targetByCell.get(`${p.r},${p.c}`);
+    if (target) applyElement(state, actor, target, slot.element, effectiveLayers, { slot: appliedSlot, apUsed });
+    else applyElementToCell(state, actor, cell, slot.element, effectiveLayers);
+  }
   // 添加元素后检查火引爆
   for (const p of cells) {
     const cell = getCell(state, p.r, p.c);
@@ -143,6 +148,12 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
           text: `R${cell.r}C${cell.c} 火${cell.elements.火}层，形成空格爆火陷阱。`
         });
       }
+    }
+  }
+  const actionDamage = Math.max(0, Number(actor.atk ?? effectiveLayers));
+  if (actionDamage > 0) {
+    for (const t of targets) {
+      damageUnit(state, actor, t, actionDamage, { element: slot.element, sourceType: 'player_action_slot', slot: appliedSlot, apUsed });
     }
   }
   actor.actionSlotsUsed = actor.actionSlotsUsed || {};

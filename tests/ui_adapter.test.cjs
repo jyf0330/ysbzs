@@ -761,10 +761,11 @@ test('UI25 施放行动槽日志同时显示怪物受伤和本次元素增加', 
   const event = state.events.find(e => e.type === 'PLAYER_SELECT_SLOT');
   assert.ok(event, '施放事件需要存在');
   assert.match(event.text, /二格线\/火1层\/AP1/);
-  assert.match(event.text, new RegExp(`${target.displayName || target.name}受火伤6`));
-  assert.match(event.text, /元素增加：R6C5 火\+1/);
-  assert.deepEqual(event.damageSummary, [`${target.displayName || target.name}受火伤6`]);
-  assert.deepEqual(event.elementIncreases, ['R6C5 火+1']);
+  const expectedDamage = Number(actor.atk || 0) + 6;
+  assert.match(event.text, new RegExp(`${target.displayName || target.name}受火伤${expectedDamage}`));
+  assert.match(event.text, /元素增加：R6C5 火\+1，R6C6 火\+1/);
+  assert.deepEqual(event.damageSummary, [`${target.displayName || target.name}受火伤${expectedDamage}`]);
+  assert.deepEqual(event.elementIncreases, ['R6C5 火+1', 'R6C6 火+1']);
   assert.doesNotMatch(event.text, /本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
 });
 
@@ -794,4 +795,40 @@ test('UI26 空格施放日志只显示元素增加并忽略元素减少', () => 
   assert.match(event.text, /元素增加：R6C5 火\+1，R6C6 火\+1/);
   assert.deepEqual(event.elementIncreases, ['R6C5 火+1', 'R6C6 火+1']);
   assert.doesNotMatch(event.text, /水-1|减少|本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
+});
+
+test('UI27 命中敌人的行动槽同时造成行动伤害并铺完整作用格元素', () => {
+  const state = createGameState({ activePets: ['pal_038'], battleId: 'action_damage_element_spread' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero' && u.alive);
+  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(actor && target, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== target.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  actor.position = { r: 5, c: 2 };
+  actor.atk = 17;
+  actor.shape = Object.assign({}, actor.shape, { shapeName: '四格线', baseLayers: 1, hitCells: 4, slotCount: 1, slotElements: ['风'] });
+  target.position = { r: 5, c: 6 };
+  target.hp = 30;
+  target.shield = 0;
+  target.def = 0;
+  state.actionDirs[`${actor.id}:slot0`] = 'right';
+  syncBoardUnits(state);
+
+  assert.equal(battle.useActionSlot(state, actor.id, 0, { r: 5, c: 5 }), true);
+  const event = state.events.find(e => e.type === 'PLAYER_SELECT_SLOT');
+  assert.ok(event, '施放事件需要存在');
+  assert.equal(target.hp, 13);
+  assert.match(event.text, /四格线\/风1层\/AP1/);
+  assert.match(event.text, new RegExp(`${target.displayName || target.name}受风伤17`));
+  assert.match(event.text, /元素增加：R6C4 风\+1，R6C5 风\+1，R6C6 风\+1，R6C7 风\+1/);
+  assert.deepEqual(event.damageSummary, [`${target.displayName || target.name}受风伤17`]);
+  assert.deepEqual(event.elementIncreases, ['R6C4 风+1', 'R6C5 风+1', 'R6C6 风+1', 'R6C7 风+1']);
+  for (const c of [3, 4, 5, 6]) {
+    assert.equal(getCell(state, 5, c).elements.风, 1, `R6C${c + 1} 应铺风1层`);
+  }
 });

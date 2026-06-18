@@ -1,5 +1,10 @@
 # 10_CHANGELOG
 
+## 2026-06-18
+
+- 新增独立每日流程页面：`web/daily-flow.html` 通过公开 runtime 读取 `/api/view` 的 `dailyFlow`，并用 `/api/action` 推进生成节点、选择节点、跑完当天和完整 Run；主战斗页顶部新增“流程”入口。
+- `dailyFlow` 从 `src/dailyFlowView.cjs` 进入 ViewModel，展示当天 6 步日程、当前/下一步状态、路线历史、待领奖励、跨天 Run 摘要和终局信息，同时保持 `src/uiAdapter.cjs` 在 round5 行数守卫内。
+
 ## 2026-06-17
 
 - 外部 AI CLI 协作规则补充：DeepSeek/Claude/Gemini 等外部 Worker 默认用可观察 `tmux` 会话，Lead 用 `#{pane_last}` 判断活动时间；若当前 tmux 返回 `0`/空值，则用 `pipe-pane` 日志 mtime 作为零干扰 fallback。3 分钟无活动先中断，同一问题 3 次失败则终止任务并记录复盘，避免 Lead 黑箱等待或接管代写。

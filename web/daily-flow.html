@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>元素背包史 · 每日流程</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="daily-flow.css" />
+</head>
+<body>
+  <main class="flow-shell">
+    <header class="flow-header">
+      <section class="flow-title">
+        <div class="eyebrow">元素背包史 / Daily Route</div>
+        <h1>每日流程</h1>
+        <p id="flow-summary">读取当天路线中。</p>
+      </section>
+      <nav class="flow-nav" aria-label="页面导航">
+        <a href="index.html">战斗页面</a>
+        <button id="refresh-btn" type="button">刷新</button>
+        <button id="new-day-btn" type="button">新开一天</button>
+      </nav>
+    </header>
+
+    <section class="status-row" aria-label="当前状态">
+      <div><span>阶段</span><strong id="phase-label">加载中</strong></div>
+      <div><span>天数</span><strong id="day-label">-</strong></div>
+      <div><span>路线进度</span><strong id="route-label">-</strong></div>
+      <div><span>金币</span><strong id="gold-label">0</strong></div>
+      <div><span>构筑核心</span><strong id="build-label">尚未形成</strong></div>
+      <div><span>下一步</span><strong id="next-label">读取中</strong></div>
+    </section>
+
+    <section class="flow-actions" aria-label="流程操作">
+      <button id="run-next-btn" class="primary-action" type="button">执行下一步</button>
+      <button id="full-day-btn" type="button">跑完当天</button>
+      <button id="full-run-btn" type="button">完整 Run</button>
+      <a class="subtle-link" href="index.html">回棋盘操作</a>
+    </section>
+
+    <section class="flow-grid">
+      <section class="timeline-panel">
+        <div class="panel-head">
+          <h2>当天步骤</h2>
+          <span id="timeline-count">0/0</span>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </section>
+
+      <section class="choice-panel">
+        <div class="panel-head">
+          <h2>当前可选项</h2>
+          <span id="choice-count">0</span>
+        </div>
+        <div id="choice-list" class="choice-list"></div>
+      </section>
+
+      <section class="history-panel">
+        <div class="panel-head">
+          <h2>路线历史</h2>
+          <span id="history-count">0</span>
+        </div>
+        <div id="history-list" class="history-list"></div>
+      </section>
+
+      <section class="run-panel">
+        <div class="panel-head">
+          <h2>跨天 Run</h2>
+          <span id="run-count">0天</span>
+        </div>
+        <div id="run-list" class="run-list"></div>
+      </section>
+    </section>
+
+    <section class="report-panel">
+      <div class="panel-head">
+        <h2>流程记录</h2>
+        <span id="console-label">console: -</span>
+      </div>
+      <pre id="flow-log">暂无记录。</pre>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+  <script type="module" src="daily-flow.js"></script>
+</body>
+</html>

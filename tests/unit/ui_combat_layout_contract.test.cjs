@@ -10,6 +10,7 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   const html = read('web/index.html');
   const css = read('web/ux-app.css');
 
+  assert.match(html, /href="daily-flow\.html"[\s\S]*>流程</, 'top shell needs an entry to the standalone daily flow page');
   assert.match(html, /id="active-pet-zone"/, 'left rail should split active pets into their own top zone');
   assert.match(html, /id="action-block-zone"/, 'left rail needs an independent 12 action-block zone');
   assert.match(html, /<h2>行动块<\/h2>/, 'left-bottom zone needs a visible action-block title');
@@ -39,6 +40,27 @@ test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   assert.match(css, /\.bottom-panel\{[^}]*margin-left:310px[^}]*margin-right:310px/s, 'event log should align to the center board column');
   assert.match(css, /body\[data-phase="player_turn"\]\s+\.shop-phase-panel/, 'shop panel should hide during combat phases');
   assert.doesNotMatch(css, /body\[data-phase="init"\]\s+\.shop-phase-panel/, 'Day1 init can expose node choices before combat');
+});
+
+test('daily flow is a standalone page using public API surfaces', () => {
+  const index = read('web/index.html');
+  const html = read('web/daily-flow.html');
+  const css = read('web/daily-flow.css');
+  const js = read('web/daily-flow.js');
+
+  assert.match(index, /href="daily-flow\.html"/, 'battle shell should link to the daily flow page');
+  assert.match(html, /<h1>每日流程<\/h1>/, 'daily flow page needs its own first-screen title');
+  assert.match(html, /id="timeline"/, 'daily flow page should expose a timeline region');
+  assert.match(html, /id="choice-list"/, 'daily flow page should expose current route choices');
+  assert.match(html, /id="run-list"/, 'daily flow page should expose cross-day run summaries');
+  assert.match(html, /src="daily-flow\.js"/, 'daily flow page should load its own script');
+  assert.match(css, /\.flow-shell/, 'daily flow page needs dedicated shell styling');
+  assert.match(css, /\.timeline/, 'daily flow timeline needs dedicated layout styling');
+  assert.match(js, /createGameRuntime/, 'daily flow should use the public runtime client');
+  assert.match(js, /runtime\.view\(\)/, 'daily flow must read /api/view through runtime');
+  assert.match(js, /runtime\.action/, 'daily flow must mutate only through /api/action');
+  assert.match(js, /dailyFlow/, 'daily flow script should render the ViewModel dailyFlow surface');
+  assert.doesNotMatch(js, /querySelector\([^)]*src\/core|require\(|uiAdapter\.cjs/, 'daily flow page must not import core or adapter directly');
 });
 
 test('bottom event log is internally scrollable and follows newest content', () => {

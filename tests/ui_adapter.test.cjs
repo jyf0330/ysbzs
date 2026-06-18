@@ -41,6 +41,10 @@ test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', (
   assert.equal(vm.meta.shop, 127);
   assert.ok(vm.heroes.length >= 1);
   assert.ok(Array.isArray(vm.nextActions));
+  assert.ok(vm.dailyFlow, 'daily flow page should read a public ViewModel surface');
+  assert.equal(vm.dailyFlow.day, 1);
+  assert.equal(vm.dailyFlow.totalSteps, 6);
+  assert.equal(vm.dailyFlow.steps[0].status, 'next');
   vm.gold = 999;
   assert.notEqual(adapter.getViewModel().gold, 999);
 });
@@ -189,6 +193,7 @@ test('UI07B Day1 节点选择和中午遭遇选择通过适配层公开命令推
   const nodeOptions = adapter.generateNodeOptions();
   assert.ok(hasEvent(nodeOptions, 'NODE_OPTIONS'));
   assert.equal(nodeOptions.viewModel.dayRoute.options.length, 3);
+  assert.equal(nodeOptions.viewModel.dailyFlow.steps[0].status, 'current');
   const firstNode = nodeOptions.viewModel.dayRoute.options[0];
   assert.equal(firstNode.choicePreview.kindLabel, '事件');
   assert.ok(firstNode.choicePreview.summary.includes('免费刷新'));
@@ -197,6 +202,7 @@ test('UI07B Day1 节点选择和中午遭遇选择通过适配层公开命令推
   assert.ok(firstNode.choicePreview.tags.includes('经济'));
   const pickedNode = adapter.pickNode(firstNode.optionId);
   assert.ok(hasEvent(pickedNode, 'NODE_PICK'));
+  assert.equal(pickedNode.viewModel.dailyFlow.steps[0].status, 'done');
   const battleOptions = adapter.run('GENERATE_BATTLE_OPTIONS', { scheduleStep: 3 });
   assert.ok(hasEvent(battleOptions, 'BATTLE_OPTIONS'));
   assert.equal(battleOptions.viewModel.dayRoute.battleOptions.length, 3);

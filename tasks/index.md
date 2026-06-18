@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-18_daily-flow-page.md`
 - `tasks/done/2026-06-17_cell-detail-preview-source.md`
 - `tasks/done/2026-06-17_ai-collaboration-workflow.md`
 - `tasks/done/2026-06-15_restock-purchase-build-source.md`

@@ -15,6 +15,7 @@ const { canonicalEventLog } = require('./core/eventProjection.cjs');
 const { buildConstructionSummary } = require('./core/buildSummary.cjs');
 const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
 const { runFullDayCommand, runFullRunCommand, runFullRunFlow } = require('./uiAdapterFlowCommands.cjs');
+const { nextDaySchedule, buildDailyFlowVM } = require('./dailyFlowView.cjs');
 
 const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
 const MAX_ACTIVE_UNITS = 4;
@@ -306,13 +307,6 @@ function logGroups(state) {
     shop: state.events.filter(e => /SHOP|REWARD|SELL|TOGGLE|NODE|BATTLE_OPTIONS|BATTLE_PICK|ROUTE_REWARD/.test(e.type)).slice(-40).map(e => e.text || e.type)
   };
 }
-function nextDaySchedule(state) {
-  const route = state.dayRoute || { nodeIndex: 0 };
-  return (state.data.nodeSchedule || [])
-    .filter(x => x.day === state.day && x.status === '正式')
-    .sort((a, b) => Number(a.step) - Number(b.step))
-    .find(x => Number(x.step) === Number(route.nodeIndex || 0) + 1) || null;
-}
 function nextActions(state) {
   const out = [];
   if (state.dayRoute?.terminal) return out;
@@ -409,6 +403,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
       events: shop.availableEvents(state).map(e => ({ id: e.id, name: e.name, optionText: e.optionText, costText: e.costText, gainText: e.gainText }))
     },
     dayRoute: clone(state.dayRoute || { nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] }),
+    dailyFlow: buildDailyFlowVM(state),
     dayRouteRuns: clone(state.dayRouteRuns || []),
     terminalSummary: state.dayRoute?.terminal ? { day: state.dayRoute.terminal.day, kind: state.dayRoute.terminal.kind, status: state.dayRoute.terminal.status, resultCode: state.dayRoute.terminal.resultCode, grade: state.dayRoute.terminal.grade, name: state.dayRoute.terminal.name, nextStepText: '查看终局报告', summaryText: `第${state.dayRoute.terminal.day}天${state.dayRoute.terminal.name || '终局'} ${state.dayRoute.terminal.status || ''}`.trim() } : null,
     monsterIntents: state.units.filter(u => u.side === 'enemy' && u.alive).map(u => battle.computeMonsterIntent(state, u)).filter(Boolean),

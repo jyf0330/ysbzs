@@ -87,7 +87,7 @@
 .op-chip.armed{border-color:#c8a050;background:#fff0bd}
 .op-chip.target{border-color:#8a6944;background:#efe1bf}
 .cell{width:49px;height:49px}
-.brand-block{position:relative;padding-right:86px}
+.brand-block{position:relative;padding-right:130px}
 .brand-actions{position:absolute;right:10px;top:10px;display:flex;gap:5px}
 .brand-actions .fullscreen-btn{min-height:26px;padding:5px 7px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 .status-strip{grid-template-columns:66px 104px 108px 58px minmax(178px,1.2fr) minmax(96px,1fr);gap:5px;padding:6px}

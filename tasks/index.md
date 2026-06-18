@@ -2,7 +2,7 @@
 
 ## ACTIVE
 
-- 无
+- `tasks/doing/2026-06-19_team-risk-intent-source-fix.md`
 
 
 
@@ -12,6 +12,12 @@
 
 ## DONE
 
+- `tasks/done/2026-06-19_movement-risk-log-wording.md`
+- `tasks/done/2026-06-19_move-board-overlays-left-up.md`
+- `tasks/done/2026-06-19_pet-detail-selection-refresh.md`
+- `tasks/done/2026-06-19_all-out-preview-sandbox.md`
+- `tasks/done/2026-06-19_enemy-spawn-yaml-position.md`
+- `tasks/done/2026-06-19_parallel-ai-file-lock-workflow.md`
 - `tasks/done/2026-06-19_battle-resolution-preview.md`
 - `tasks/done/2026-06-19_paper-battle-live-ui.md`
 - `tasks/done/2026-06-18_remove-element-packet-splitting.md`

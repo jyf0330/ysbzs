@@ -524,6 +524,20 @@ test('element packets preserve modifier through wind-to-fire conversion and next
   assert.ok(s.changes.some(c=>c.type==='APPLY_ELEMENT_MODIFIERS'));
 });
 
+test('element packet conversion does not split oversized packets',()=>{
+  const { addElementPacket, convertElementPackets, ensureElementPackets } = require('../src/core/elementPackets.cjs');
+  const s=createGameState(); const target={ elements:{火:0,水:0,风:0,土:0}, elementPackets:[] };
+  ensureElementPackets(target);
+  addElementPacket(s,target,'风',2,{sourceUnitId:'pet_b',sourceName:'宠物B',sourceActionId:'add_wind_2'});
+  const converted=convertElementPackets(s,target,'风','火',1,{sourceUnitId:'pet_c',sourceName:'宠物C'});
+  assert.equal(converted.converted,0);
+  assert.equal(target.elements['风'],2);
+  assert.equal(target.elements['火'],0);
+  assert.equal(target.elementPackets.length,1);
+  assert.equal(target.elementPackets[0].element,'风');
+  assert.ok(!s.changes.some(c=>c.type==='CONVERT_ELEMENT_PACKETS'));
+});
+
 test('trigger queue order is deterministic and board-order aware',()=>{
   const { sortTriggerQueue } = require('../src/core/triggerQueue.cjs');
   const q=sortTriggerQueue([

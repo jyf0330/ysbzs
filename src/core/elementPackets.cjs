@@ -129,27 +129,14 @@ function convertElementPackets(state, holder, fromElement, toElement, amount = I
   for (const packet of holder.elementPackets) {
     if (remain <= 0) break;
     if (packet.element !== fromElement || packet.amount <= 0) continue;
-    const take = remain === Infinity ? packet.amount : Math.min(packet.amount, remain);
-    if (take < packet.amount) {
-      const split = clone(packet);
-      split.packetId = nextPacketId(state);
-      split.amount = take;
-      split.element = toElement;
-      split.originalElement = split.originalElement || fromElement;
-      split.convertedBy = source.unitId || source.sourceUnitId || source.name || source.sourceName || null;
-      split.tags = Array.from(new Set([...(split.tags || []), 'converted', `${fromElement}_to_${toElement}`]));
-      if (options.preserveModifiers === false) split.modifiers = [];
-      packet.amount -= take;
-      holder.elementPackets.push(split);
-      packetIds.push(split.packetId);
-    } else {
-      packet.element = toElement;
-      packet.originalElement = packet.originalElement || fromElement;
-      packet.convertedBy = source.unitId || source.sourceUnitId || source.name || source.sourceName || null;
-      packet.tags = Array.from(new Set([...(packet.tags || []), 'converted', `${fromElement}_to_${toElement}`]));
-      if (options.preserveModifiers === false) packet.modifiers = [];
-      packetIds.push(packet.packetId);
-    }
+    const take = Number(packet.amount || 0);
+    if (remain !== Infinity && take > remain) continue;
+    packet.element = toElement;
+    packet.originalElement = packet.originalElement || fromElement;
+    packet.convertedBy = source.unitId || source.sourceUnitId || source.name || source.sourceName || null;
+    packet.tags = Array.from(new Set([...(packet.tags || []), 'converted', `${fromElement}_to_${toElement}`]));
+    if (options.preserveModifiers === false) packet.modifiers = [];
+    packetIds.push(packet.packetId);
     converted += take;
     if (remain !== Infinity) remain -= take;
   }

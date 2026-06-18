@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-18_remove-element-packet-splitting.md`
 - `tasks/done/2026-06-18_reset-action-lock-next-round.md`
 - `tasks/done/2026-06-18_hide-move-targets-after-action.md`
 - `tasks/done/2026-06-18_clear-stale-target-on-slot-aim.md`

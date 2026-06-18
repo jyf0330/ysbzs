@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-18_clear-stale-target-on-slot-aim.md`
 - `tasks/done/2026-06-18_action-slot-damage-and-element-spread.md`
 - `tasks/done/2026-06-18_formal-ui-evidence-rule.md`
 - `tasks/done/2026-06-18_action-log-damage-element-summary.md`

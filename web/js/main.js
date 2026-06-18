@@ -164,6 +164,10 @@ import { createGameRuntime } from './runtime-client.js';
     const found = flat.find(x => x.hero.id === hero.id && x.localIndex === local);
     return found || flat.find(x => x.hero.id === hero.id) || flat[0] || null;
   }
+  function clearSelectedActionTarget() {
+    ui.selectedCell = null;
+    ui.cellDetail = null;
+  }
 
   async function api(path, body) {
     return runtime.request(path, body);
@@ -822,6 +826,7 @@ import { createGameRuntime } from './runtime-client.js';
   }
   async function selectSlot(globalIndex) {
     const info = slotsFlat()[globalIndex]; if (!info) return;
+    clearSelectedActionTarget();
     document.body.dataset.lastSlotClick = String(globalIndex);
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = true;
     renderCache.invalidate('heroes');
@@ -835,12 +840,13 @@ import { createGameRuntime } from './runtime-client.js';
   async function setSlotDir(globalIndex, dir) {
     const info = slotsFlat()[globalIndex]; if (!info) return;
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = true;
+    clearSelectedActionTarget();
     await runCommand('SET_ACTION_DIRECTION', { unitId: info.hero.id, slotId: info.localIndex, dir });
   }
   async function useSlot(globalIndex) {
     const info = slotsFlat()[globalIndex] || selectedSlotInfo(); if (!info) return;
     ui.selectedUnitId = info.hero.id; ui.selectedSlotGlobal = info.globalIndex; ui.selectedSlot = info.localIndex; ui.slotArmed = false;
-    await runCommand('USE_SLOT', { unitId: info.hero.id, slotId: info.localIndex, cell: ui.selectedCell || ui.vm.selected?.cell || null, ap: ui.apBySlot[`${info.hero.id}:${info.localIndex}`] || 1 });
+    await runCommand('USE_SLOT', { unitId: info.hero.id, slotId: info.localIndex, cell: ui.selectedCell || null, ap: ui.apBySlot[`${info.hero.id}:${info.localIndex}`] || 1 });
   }
 
   function openApModal(info) {

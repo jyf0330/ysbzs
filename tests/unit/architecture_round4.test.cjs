@@ -103,3 +103,12 @@ test('R407 UI exposes prep, replay, debug, AP modal and shop event without hover
   assert.doesNotMatch(js, /data-tip/);
   assert.doesNotMatch(js, /showTooltip|scheduleTooltip|hideTooltip|showCellPopup|hideCellPopup/);
 });
+
+test('R408 action-slot aiming clears stale board targets before release', () => {
+  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'web/js/main.js'), 'utf8');
+  assert.match(js, /function clearSelectedActionTarget\(\)/);
+  assert.match(js, /clearSelectedActionTarget\(\);\s*document\.body\.dataset\.lastSlotClick/s);
+  assert.match(js, /clearSelectedActionTarget\(\);\s*await runCommand\('SET_ACTION_DIRECTION'/s);
+  assert.match(js, /USE_SLOT'[\s\S]*cell:\s*ui\.selectedCell\s*\|\|\s*null/);
+  assert.doesNotMatch(js, /cell:\s*ui\.selectedCell\s*\|\|\s*ui\.vm\.selected\?\.cell\s*\|\|\s*null/);
+});

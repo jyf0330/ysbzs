@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>纸上西游 · 实际数据战斗界面</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="paper-battle.css" />
+</head>
+<body>
+  <div id="game" class="game trace-on" data-phase="loading">
+    <div class="trace-bg" aria-hidden="true"></div>
+    <div class="desk-prop prop-left"></div>
+    <div class="desk-prop prop-right"></div>
+    <div class="desk-prop prop-brush"></div>
+    <div class="desk-prop prop-stamp"></div>
+
+    <header class="top-area">
+      <section class="top-card stage-card">
+        <span class="top-icon">⛰</span>
+        <div>
+          <strong id="stage-title">读取战斗</strong>
+          <small id="stage-sub">Live /api/view</small>
+        </div>
+      </section>
+      <section class="top-card round-card">
+        <strong id="round-title">第 - 回合</strong>
+        <small id="phase-title">加载中</small>
+      </section>
+      <section class="top-card enemy-card">
+        <span>敌方剩余：</span><b id="enemy-count">-</b><span class="enemy-face">👹</span>
+      </section>
+    </header>
+
+    <aside class="panel left-panel">
+      <div class="left-title"><span>我方角色</span><b id="hero-count">0/4</b></div>
+      <div id="hero-list" class="hero-list" aria-label="我方角色列表"></div>
+      <section class="current-box">
+        <div class="current-label">当前选中</div>
+        <div id="current-hero-line" class="current-hero-line">未选择</div>
+      </section>
+      <section class="shape-library">
+        <div class="shape-library-head"><span>作用形状</span><b id="slot-count">0/12</b></div>
+        <div id="slot-grid" class="slot-grid" aria-label="12个作用形状"></div>
+      </section>
+    </aside>
+
+    <main class="board-panel">
+      <div class="board-title-row">
+        <span id="board-main-label">棋盘战场</span>
+        <small id="board-hint">点击角色 / 格子，真实 POST 到 /api/action</small>
+      </div>
+      <div id="board" class="board" aria-label="战斗棋盘"></div>
+    </main>
+
+    <aside class="panel right-panel">
+      <section class="detail-head">
+        <div id="detail-avatar" class="detail-avatar">?</div>
+        <div class="detail-main">
+          <h2 id="detail-name">未选择</h2>
+          <div class="detail-stats"><span>♥ <b id="detail-hp">-</b></span><span>⚔ <b id="detail-atk">-</b></span><span>AP <b id="detail-ap">-</b></span></div>
+          <div id="detail-tags" class="detail-tags"></div>
+        </div>
+      </section>
+      <section class="right-shapes">
+        <div class="right-section-title">可用作用形状</div>
+        <div id="detail-slots" class="detail-slots"></div>
+      </section>
+      <section class="shape-preview-wrap">
+        <div class="right-section-title">当前形状说明</div>
+        <div class="shape-preview-line"><div id="mini-shape" class="mini-shape"></div><div id="shape-copy" class="shape-copy"></div></div>
+      </section>
+      <section class="real-controls">
+        <div class="right-section-title">真实操作</div>
+        <div class="dir-pad" aria-label="方向">
+          <button data-dir="up">上</button><button data-dir="left">左</button><button data-dir="right">右</button><button data-dir="down">下</button>
+        </div>
+        <div class="ap-row" aria-label="AP选择">
+          <button data-ap="1" class="active">AP1</button><button data-ap="2">AP2</button><button data-ap="3">AP3</button>
+        </div>
+        <div class="control-grid">
+          <button id="move-btn" class="soft-btn" type="button">移动到选中格</button>
+          <button id="use-slot-btn" class="soft-btn primary" type="button">施放当前形状</button>
+          <button id="end-turn-btn" class="soft-btn" type="button">结束我方回合</button>
+          <button id="monster-turn-btn" class="soft-btn" type="button">敌方行动</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="event-log">
+      <div class="log-head"><span>事件 / 战报</span><small id="state-label">Live API</small></div>
+      <div id="log-lines" class="log-lines"></div>
+      <div class="paper-scrollbar"></div>
+    </section>
+
+    <button id="start-action" class="start-button" type="button">开始行动</button>
+
+    <div class="toolbar">
+      <button id="new-trial" type="button">新试炼</button>
+      <button id="refresh-view" type="button">刷新</button>
+      <button id="auto-trial" type="button">自动试炼</button>
+      <button id="toggle-trace" type="button">参考图 T</button>
+      <button id="toggle-guide" type="button">描线框 G</button>
+    </div>
+
+    <div id="status-toast" class="status-toast" role="status">初始化中…</div>
+    <div id="error-cover" class="error-cover hidden" role="alert">
+      <div class="error-card">
+        <h2>没有连接到项目服务</h2>
+        <p>请在项目根目录运行 <code>npm run ui</code>，然后打开 <code>http://127.0.0.1:4173/paper-battle.html</code>。</p>
+        <button id="retry-connect" type="button">重新连接</button>
+      </div>
+    </div>
+  </div>
+  <script src="paper-battle.js"></script>
+</body>
+</html>

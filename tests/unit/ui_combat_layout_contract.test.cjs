@@ -149,6 +149,7 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	    assert.match(js, /unit-stat-badge unit-stat-atk/, `${file} board tokens should render an in-cell attack numeric badge`);
 	    assert.match(js, /function threatDetailText/, `${file} should render detailed enemy pet threat previews`);
 	    assert.match(js, /function teamRiskDetailText/, `${file} should render detailed incoming team risk previews`);
+	    assert.match(js, /threatsByEnemy/, `${file} should group incoming team risk detail by enemy instead of labeling all threats as the first enemy`);
 	    assert.match(js, /次行动块/, `${file} threat detail should show enemy action-block count`);
 	    assert.match(js, /合计/, `${file} threat detail should show total incoming damage`);
 	    assert.match(js, /受击预警/, `${file} should default the detail panel to incoming damage warnings`);

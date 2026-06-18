@@ -770,7 +770,7 @@ test('UI22 未移动前伤害预览直接显示敌方宠物 AP 累计伤害', ()
   assert.equal(cell.teamRisk.damage, 21);
 });
 
-test('UI22B 移动风险不应把可到达的三槽主威胁折成杂伤合计', () => {
+test('UI22B 移动风险必须来自真实敌方宠物行动意图', () => {
   const state = createGameState({ activePets: [], battleId: 'reachable_main_threat_risk' });
   state.phase = 'player_turn';
   state.round = 1;
@@ -792,19 +792,21 @@ test('UI22B 移动风险不应把可到达的三槽主威胁折成杂伤合计',
 
   let risk = battle.buildTeamRiskGrid(state, [hero.id]).find(x => x.unitId === hero.id);
   assert.ok(risk, 'R2C5 应有受击预警');
-  assert.equal(risk.damage, 9);
-  assert.equal(risk.hpDamage, 9);
-  assert.deepEqual(risk.enemyIds, [cat.id]);
+  assert.equal(risk.damage, 7);
+  assert.equal(risk.hpDamage, 7);
+  assert.deepEqual(risk.enemyIds, [cat.id, sheep.id]);
   assert.equal(risk.threats.length, 3);
+  assert.equal(risk.riskMode, undefined);
 
   hero.position = { r: 2, c: 6 };
   syncBoardUnits(state);
   risk = battle.buildTeamRiskGrid(state, [hero.id]).find(x => x.unitId === hero.id);
   assert.ok(risk, 'R2C6 应有受击预警');
-  assert.equal(risk.damage, 9);
-  assert.equal(risk.hpDamage, 9);
-  assert.deepEqual(risk.enemyIds, [cat.id]);
-  assert.equal(risk.threats.length, 3);
+  assert.equal(risk.damage, 8);
+  assert.equal(risk.hpDamage, 8);
+  assert.deepEqual(risk.enemyIds, [cat.id, sheep.id]);
+  assert.equal(risk.threats.length, 4);
+  assert.equal(risk.riskMode, undefined);
 });
 
 test('UI23 敌方移动路径预览标记最终落点且空格攻击范围不承载伤害对象', () => {

@@ -712,14 +712,24 @@
 		  }
 		  function teamRiskDetailText(teamRisk) {
 		    const threats = Array.isArray(teamRisk?.threats) ? teamRisk.threats : [];
-		    const actionCount = threats.length || 1;
-		    const enemyName = threats[0]?.enemyName || '敌方宠物';
-		    const hitText = threats.map((threat, i) => {
-		      const label = threat.slotLabel || `第${Number(threat.slotIndex ?? i) + 1}槽`;
-		      const ko = teamRisk.lethal && i === threats.length - 1 ? ' KO' : '';
-		      return `${label} ${teamRisk.unitName || '我方单位'} 伤${threat.damage ?? 0}${ko}`;
-		    }).join(' / ');
-		    return `${enemyName} ${actionCount}次行动块${hitText ? `：${hitText}` : ''}；合计${teamRisk.damage ?? 0}${teamRisk.lethal ? ' KO' : ''}`;
+		    if (!threats.length) return `敌方宠物 0次行动块；合计${teamRisk?.damage ?? 0}${teamRisk?.lethal ? ' KO' : ''}`;
+		    const threatsByEnemy = new Map();
+		    threats.forEach((threat, i) => {
+		      const key = threat.enemyId || threat.enemyName || `enemy_${i}`;
+		      const group = threatsByEnemy.get(key) || { enemyName: threat.enemyName || '敌方宠物', threats: [] };
+		      group.threats.push({ threat, index: i });
+		      threatsByEnemy.set(key, group);
+		    });
+		    const groupText = Array.from(threatsByEnemy.values()).map(group => {
+		      const hitText = group.threats.map(({ threat, index }) => {
+		        const label = threat.slotLabel || `第${Number(threat.slotIndex ?? index) + 1}槽`;
+		        const ko = teamRisk.lethal && index === threats.length - 1 ? ' KO' : '';
+		        return `${label} ${teamRisk.unitName || '我方单位'} 伤${threat.damage ?? 0}${ko}`;
+		      }).join(' / ');
+		      const subtotal = group.threats.reduce((sum, item) => sum + Number(item.threat.damage || 0), 0);
+		      return `${group.enemyName} ${group.threats.length}次行动块${hitText ? `：${hitText}` : ''}；小计${subtotal}`;
+		    }).join('；');
+		    return `${groupText}；合计${teamRisk.damage ?? 0}${teamRisk.lethal ? ' KO' : ''}`;
 		  }
 		  function renderTeamRiskPanel(teamRisk) {
 		    return [

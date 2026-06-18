@@ -154,6 +154,8 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	    assert.match(js, /合计/, `${file} threat detail should show total incoming damage`);
 	    assert.match(js, /受击预警/, `${file} should default the detail panel to incoming damage warnings`);
 	    assert.match(js, /if \(unit\?\.side === 'hero' && teamRisk\)/, `${file} should prioritize incoming warning when clicking a threatened hero cell`);
+	    assert.match(js, /footCellElements/, `${file} should distinguish the selected unit's own element layers from the foot cell element layer`);
+	    assert.match(js, /脚下元素层/, `${file} should show ground element layers when a unit stands on water/fire/wind/earth stacks`);
 	    assert.match(js, /enemy-final-cell/, `${file} should mark enemy final move cells instead of damage-labeling empty cells`);
 	    assert.match(js, /enemy-final-num/, `${file} should render a compact final-position marker for enemy movement`);
 	    assert.doesNotMatch(js, /\$\{t \? `<span class="threat-num">危/, `${file} should not render threat damage numbers on every empty threat cell`);

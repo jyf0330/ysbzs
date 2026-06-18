@@ -811,10 +811,25 @@ import { createGameRuntime } from './runtime-client.js';
     const maxTop = Math.max(8, left.offsetHeight - panel.offsetHeight - 8);
     panel.style.top = `${Math.max(8, Math.min(top, maxTop))}px`;
   }
-	  function renderUnitDetail(unit) {
-	    const elementLayers = Object.entries(unit.elements || unit.elementLayers || {})
+	  function elementLayerChips(elements = {}) {
+	    return Object.entries(elements)
 	      .filter(([, n]) => Number(n) > 0)
-	      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${esc(EL_ICON[el] || el)}${esc(n)}</span>`).join(' ');
+	      .map(([el, n]) => `<span class="popup-el ${clsForEl(el)}">${esc(EL_ICON[el] || el)}${esc(n)}</span>`)
+	      .join(' ');
+	  }
+	  function renderElementLayerRow(label, elements = {}) {
+	    const chips = elementLayerChips(elements);
+	    return `<div class="detail-els">${esc(label)}：${chips || '<span class="dim">无</span>'}</div>`;
+	  }
+	  function renderUnitDetail(unit) {
+	    const unitElements = unit.elementLayers || unit.elements || {};
+	    const footCell = unit.position ? cellAt(unit.position.r, unit.position.c) : null;
+	    const detailForFootCell = ui.cellDetail
+	      && Number(ui.cellDetail.r) === Number(unit.position?.r)
+	      && Number(ui.cellDetail.c) === Number(unit.position?.c)
+	        ? ui.cellDetail
+	        : null;
+	    const footCellElements = detailForFootCell?.elements || footCell?.elements || {};
 	    const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(s.label || s.shapeName || '行动块')} · ${esc(s.element || '-')} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
 	    const activeSlot = selectedSlotInfo();
 	    const facing = activeSlot?.hero?.id === unit.id ? activeSlot.slot.direction : (ui.vm?.selected?.direction || 'right');
@@ -827,7 +842,8 @@ import { createGameRuntime } from './runtime-client.js';
 	      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
 	      `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
 		      unitRisk ? `<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(unitRisk))}</div>` : (unitThreat ? `<div class="detail-extra threat">⚠ ${esc(threatDetailText(unitThreat))}</div>` : ''),
-	      elementLayers ? `<div class="detail-els">${elementLayers}</div>` : '<div class="detail-els">元素层：<span class="dim">无</span></div>',
+	      renderElementLayerRow('单位元素层', unitElements),
+	      renderElementLayerRow('脚下元素层', footCellElements),
 	      slotList ? `<div class="detail-slot-list">${slotList}</div>` : ''
 	    ].join('\n');
 	  }

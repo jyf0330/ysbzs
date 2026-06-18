@@ -2,7 +2,7 @@
 
 task_id: 2026-06-19_team-risk-intent-source-fix
 type: combat core / team risk preview / UI correctness
-status: VERIFIED_NO_COMMIT
+status: DONE
 owner: Codex
 worktree: shared-worktree
 
@@ -16,6 +16,7 @@ worktree: shared-worktree
 - `teamRiskGrid` 只聚合 `computeMonsterIntent` 产生的真实行动步骤。
 - 如果多个敌人都能打到同一我方单位，结构化 threats 必须保留各自 enemyId/enemyName，UI 展示不能归并成第一个敌人的 6 次行动。
 - 单位详情面板必须区分单位自身元素层与脚下格子的元素层；站在 `水3` 等格子元素上时，右侧详情不能显示为元素层无。
+- 玩家可见受击预警进一步压缩为 `敌方名(-3,-3) · 合计-6` 这类扫读格式，括号内按真实行动槽顺序表示命中的槽伤害。
 - 同步本地运行包 `web/js/local-engine.js`。
 
 ## related_files
@@ -24,8 +25,10 @@ worktree: shared-worktree
 - `tests/ui_adapter.test.cjs`
 - `tests/unit/ui_combat_layout_contract.test.cjs`
 - `web/js/main.js`
+- `web/ux-app.css`
 - `web/ux-app.js`
 - `web/js/local-engine.js`
+- `docs/10_CHANGELOG.md`
 - `tasks/doing/2026-06-19_team-risk-intent-source-fix.md`
 - `output/playwright/team-risk-intent-source-2026-06-19.png`
 
@@ -35,6 +38,7 @@ worktree: shared-worktree
 - `tests/ui_adapter.test.cjs`
 - `tests/unit/ui_combat_layout_contract.test.cjs`
 - `web/js/main.js`
+- `web/ux-app.css`
 - `web/ux-app.js`
 - `web/js/local-engine.js`
 
@@ -47,6 +51,7 @@ worktree: shared-worktree
 - `tasks/index.md`
 - `tasks/README.md`
 - `~/Desktop/AI-Memory-Pack/20-projects.md`
+- `~/Desktop/AI-Memory-Pack/10-workflows.md`
 
 ## validation
 
@@ -59,7 +64,13 @@ worktree: shared-worktree
 - Full project test runner: `node tests/run_all_tests.cjs` passed 64/64.
 - Browser gate: Playwright local runtime, real DOM clicks through Day7 trial and board movement; screenshot `output/playwright/team-risk-intent-source-2026-06-19.png`.
 - Browser assertion: moved `我方疾风隼` to R3C3 via board click; detail grouped `敌方骑士蜂黄金复制体 2次行动块` and `敌方棉悠悠黄金复制体 1次行动块`, with subtotals 36/16 and total 52 KO; no console/page errors.
-- Detail panel follow-up: pending; selecting a hero standing on a water element cell must show foot cell element layers in the right detail panel.
+- Detail panel RED: `node --test tests/unit/ui_combat_layout_contract.test.cjs` failed because `web/js/main.js` did not distinguish `footCellElements`.
+- Detail panel GREEN: `node --test tests/unit/ui_combat_layout_contract.test.cjs` passed 7/7 after adding unit/foot cell element rows.
+- UI static regression: `node --test tests/unit/ui_combat_layout_contract.test.cjs tests/unit/ui_module_render_cache.test.cjs` passed 21/21.
+- Connected UI check: `npm run check:ui-connected` passed.
+- Base regression: `node tests/run_all_tests.cjs` passed 64/64.
+- Detail panel browser gate: Playwright local runtime, real Day7 button -> all-out -> end/next-round buttons -> board click move hero onto `水3`; screenshot `output/playwright/detail-foot-element-layer-2026-06-19-scrolled.png`; right detail shows `单位元素层：无` and `脚下元素层：水3`; console/page errors empty.
+- Compact risk follow-up: pending; team risk detail should render source groups like `敌方翠叶鼠(-3,-3) · 合计-6` instead of expanded `第1槽/第2槽` prose.
 - Not run: `npm run check:all` was not executed in this task.
 
 ## commit_plan
@@ -70,7 +81,7 @@ message: `fix(combat): derive team risk from monster intent`
 
 lead_scope: 修正受击预警数据来源和多敌人威胁结构，避免自写投影伪造行动块。
 specialist_input: 无
-tester_pass: TEST_SUBTHREAD_UNAVAILABLE；主线程执行独立 Playwright tester pass。
+tester_pass: TEST_SUBTHREAD_UNAVAILABLE；主线程执行独立 Playwright tester pass；补充详情面板截图 `output/playwright/detail-foot-element-layer-2026-06-19-scrolled.png`。
 external_ai_input: 无
-lead_decision: 先加复现测试，再移除玩家可见风险链路中的投影方法，改回真实 `computeMonsterIntent` 威胁数据。
-commit_status: 已按 commit_plan 提交，提交信息 `fix(combat): derive team risk from monster intent`。
+lead_decision: 先加复现测试，再移除玩家可见风险链路中的投影方法，改回真实 `computeMonsterIntent` 威胁数据；详情面板补充读取单位脚下格子的元素层，避免把单位自身元素层误当作格子元素层；继续将玩家可见受击预警压缩为按敌方来源聚合的伤害序列。
+commit_status: combat 风险预警修复已提交为 `fix(combat): derive team risk from monster intent`；详情面板补丁已提交为 `fix(ui): show foot cell element layers`。

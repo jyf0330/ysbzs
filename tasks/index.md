@@ -2,7 +2,7 @@
 
 ## ACTIVE
 
-- `tasks/doing/2026-06-19_team-risk-intent-source-fix.md`
+- 无
 
 
 
@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-19_team-risk-intent-source-fix.md`
 - `tasks/done/2026-06-19_movement-risk-log-wording.md`
 - `tasks/done/2026-06-19_move-board-overlays-left-up.md`
 - `tasks/done/2026-06-19_pet-detail-selection-refresh.md`

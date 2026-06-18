@@ -13,11 +13,11 @@ import { createGameRuntime } from './runtime-client.js';
   const EL_CLASS = { '火': 'el-fire', '水': 'el-water', '风': 'el-wind', '土': 'el-earth' };
   const EL_ICON = { '火': '火', '水': '水', '风': '风', '土': '土' };
   const PHASE_TEXT = {
-    init: '准备', player_turn: '玩家回合', monster_turn: '怪物行动', round_end: '回合结算',
+    init: '准备', player_turn: '玩家回合', monster_turn: '敌方宠物行动', round_end: '回合结算',
     battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中',
     node_choice: '节点选择', node_resolved: '节点结算', battle_choice: '遭遇选择', reward: '奖励'
   };
-  const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT']);
+  const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT', 'AUTO_POSITION_HEROES']);
 
   const ui = {
     vm: null,
@@ -168,9 +168,17 @@ import { createGameRuntime } from './runtime-client.js';
     ui.selectedCell = null;
     ui.cellDetail = null;
   }
-  function unitPositionLocked(unit = {}) {
-    if (!unit) return false;
-    return !!unit.hasAttacked || (unit.slots || []).some(slot => slot && slot.used);
+	  function unitPositionLocked(unit = {}) {
+	    if (!unit) return false;
+	    return !!unit.hasAttacked || (unit.slots || []).some(slot => slot && slot.used);
+	  }
+  function hasAutoPositionCandidates() {
+    if (ui.vm?.phase !== 'player_turn') return false;
+    const moved = new Set(ui.vm.teamPlacementPreview?.movedUnitIds || []);
+    return (ui.vm.heroes || []).some(hero => {
+      if (!hero?.position || moved.has(hero.id) || unitPositionLocked(hero)) return false;
+      return (hero.slots || []).some(slot => !slot.used && slot.canUse !== false);
+    });
   }
 
   async function api(path, body) {
@@ -281,9 +289,15 @@ import { createGameRuntime } from './runtime-client.js';
     if ((vm.rewards || []).length || (route.pendingRewards || []).length) return '选择奖励';
     if (vm.phase === 'shop') return (vm.shop?.offers || []).length ? '购买/离店' : '离开商店';
     if (vm.phase === 'player_turn') return ui.slotArmed ? '瞄准施放' : '移动/行动';
-    if (vm.phase === 'monster_turn' || vm.phase === 'round_end') return '怪物行动';
+    if (vm.phase === 'monster_turn' || vm.phase === 'round_end') return enemyFlowButtonText(vm.phase);
     const first = (vm.nextActions || []).find(a => a && a.label);
     return first ? first.label : phaseText(vm.phase);
+  }
+  function playerTurnButtonText(phase) {
+    return phase === 'init' ? '开始战斗' : '结算并执行敌方宠物行动';
+  }
+  function enemyFlowButtonText(phase) {
+    return phase === 'round_end' ? '进入下一回合（Boss召唤）' : '执行敌方宠物行动';
   }
   function buildCoreStatusText(vm) {
     const primary = vm.buildCore?.primaryTags || [];
@@ -882,16 +896,21 @@ import { createGameRuntime } from './runtime-client.js';
 
   function renderControls() {
     const phase = ui.vm.phase;
-    $('etb').textContent = phase === 'init' ? '开始战斗' : '结束回合';
+    $('etb').textContent = playerTurnButtonText(phase);
     $('etb').disabled = !(phase === 'init' || phase === 'player_turn') || ui.busy;
+    $('monster-btn').textContent = enemyFlowButtonText(phase);
     $('monster-btn').disabled = !(phase === 'monster_turn' || phase === 'round_end') || ui.busy;
     const fullDayDisabled = ui.busy || ui.manualAutoLock || !['init','battle_end','day_end'].includes(phase);
     $('full-day-btn').disabled = fullDayDisabled;
     $('full-day-btn').title = ui.manualAutoLock ? '已手动移动或施放，本场完整自动流程已锁定。' : '';
-    if ($('all-out-btn')) {
-      const hasUsableSlot = slotsFlat().some(x => !x.slot.used && x.slot.canUse !== false);
-      $('all-out-btn').disabled = ui.busy || phase !== 'player_turn' || !hasUsableSlot;
-      $('all-out-btn').title = phase === 'player_turn' ? '按左侧行动块顺序释放，不移动、不重新摆位。' : '进入玩家回合后可用。';
+	    if ($('all-out-btn')) {
+	      const hasUsableSlot = slotsFlat().some(x => !x.slot.used && x.slot.canUse !== false);
+	      $('all-out-btn').disabled = ui.busy || phase !== 'player_turn' || !hasUsableSlot;
+	      $('all-out-btn').title = phase === 'player_turn' ? '按左侧行动块顺序释放，不移动、不重新摆位。' : '进入玩家回合后可用。';
+	    }
+    if ($('auto-position-btn')) {
+      $('auto-position-btn').disabled = ui.busy || !hasAutoPositionCandidates();
+      $('auto-position-btn').title = phase === 'player_turn' ? '移动未锁定宠物到预计伤害更高的位置，不自动出手。' : '进入玩家回合后可用。';
     }
     $('shop-btn').disabled = ui.busy || phase !== 'battle_end';
     $('day7-btn').disabled = ui.busy;
@@ -941,7 +960,7 @@ import { createGameRuntime } from './runtime-client.js';
       if (hero) return `${hero.name} 已选中：点空格移动；点敌人或Boss查看详情；点行动槽进入瞄准。`;
       return '点棋盘上的我方英雄或左侧英雄卡选中，再点空格移动。';
     }
-    if (phase === 'monster_turn' || phase === 'round_end') return '点击“怪物行动”继续推进。';
+    if (phase === 'monster_turn' || phase === 'round_end') return `点击“${enemyFlowButtonText(phase)}”继续推进。`;
     if (phase === 'battle_end') return '战斗结束，可以生成奖励或进入商店。';
     if (phase === 'shop') return '购买、冻结、刷新商品，然后离开商店。';
     return '可使用右侧按钮继续流程。';
@@ -1263,8 +1282,9 @@ import { createGameRuntime } from './runtime-client.js';
       if (ui.manualAutoLock) { toast('已手动操作，本场完整自动流程已锁定。', true); return; }
       runCommand('RUN_FULL_DAY', {}, { autoFlow: true });
     });
-    $('full-run-btn')?.addEventListener('click', () => runCommand('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: Math.max(999, Number(ui.vm?.gold || 0)) }, { autoFlow: true }));
-    $('all-out-btn')?.addEventListener('click', () => runAllOut());
+	    $('full-run-btn')?.addEventListener('click', () => runCommand('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: Math.max(999, Number(ui.vm?.gold || 0)) }, { autoFlow: true }));
+    $('auto-position-btn')?.addEventListener('click', () => runCommand('AUTO_POSITION_HEROES'));
+	    $('all-out-btn')?.addEventListener('click', () => runAllOut());
     $('prep-open-btn')?.addEventListener('click', () => { ui.prepOpen = true; renderPrepOverlay(); });
     $('prep-close-btn')?.addEventListener('click', () => { ui.prepOpen = false; renderPrepOverlay(); });
     $('prep-ready-btn')?.addEventListener('click', () => runCommand('START_BATTLE'));

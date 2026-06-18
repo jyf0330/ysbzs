@@ -8,6 +8,7 @@ function dispatch(state, command) {
   switch (command.type) {
     case 'START_BATTLE': return battle.startBattle(state);
     case 'START_NEXT_ROUND': return battle.startNextRound(state);
+    case 'AUTO_POSITION_HEROES': return battle.autoPositionHeroes(state);
     case 'MOVE_HERO': return battle.moveHero(state, command.unitId || command.heroId, command.to || command.cell || { r: command.r, c: command.c });
     case 'SELECT_HERO':
     case 'SELECT_UNIT':

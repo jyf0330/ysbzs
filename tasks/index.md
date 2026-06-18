@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-19_battle-resolution-preview.md`
 - `tasks/done/2026-06-19_paper-battle-live-ui.md`
 - `tasks/done/2026-06-18_remove-element-packet-splitting.md`
 - `tasks/done/2026-06-18_reset-action-lock-next-round.md`

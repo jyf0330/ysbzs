@@ -114,15 +114,23 @@ function createPreviewModule(deps) {
 	  return { actors, activeUnitId, movedUnitIds };
 	}
 
-	function actorPreviewSlot(state, actor, opts, isActiveActor) {
+	function actorPreviewSlots(state, actor, opts, isActiveActor) {
 	  const slots = slotsForUnit(state, actor);
-	  const requestedSlot = isActiveActor && opts.unitId === actor.id ? opts.slotId : null;
-	  const slotIndex = parseSlotIndex(requestedSlot ?? 0);
-	  const slot = slots[Math.max(0, Math.min(slots.length - 1, slotIndex))] || slots[0];
-	  if (!slot) return null;
+	  const usable = slots.filter(slot => !slot.used && slot.canUse !== false);
+	  const requestedSlot = isActiveActor && opts.unitId === actor.id && opts.slotId !== null && opts.slotId !== undefined ? parseSlotIndex(opts.slotId) : null;
+	  const availableAp = Math.max(1, Number(usable[0]?.availableAp || actor.ap || 1));
+	  const ordered = usable.slice().sort((a, b) => {
+	    if (requestedSlot !== null) {
+	      if (a.index === requestedSlot) return -1;
+	      if (b.index === requestedSlot) return 1;
+	    }
+	    return a.index - b.index;
+	  }).slice(0, availableAp).sort((a, b) => a.index - b.index);
 	  const autoTarget = nearestEnemy(state, actor);
-	  const direction = slot.direction || previewDirectionTo(actor, autoTarget, 'right');
-	  return Object.assign({}, slot, { direction, autoTarget });
+	  return ordered.map(slot => {
+	    const direction = slot.direction || previewDirectionTo(actor, autoTarget, 'right');
+	    return Object.assign({}, slot, { direction, autoTarget, isRequestedSlot: requestedSlot !== null && slot.index === requestedSlot });
+	  });
 	}
 
 	/**
@@ -137,28 +145,37 @@ function createPreviewModule(deps) {
 	  const out = [];
 	  actors.forEach((actor, order) => {
 	    const isActiveActor = actor.id === activeUnitId;
-	    const slot = actorPreviewSlot(state, actor, opts, isActiveActor);
-	    if (!slot) return;
-	    const cells = targetCellsForSlot(state, actor, slot, isActiveActor ? (opts.cell || null) : null);
-	    cells.forEach(p => {
-	      const cell = getCell(state, p.r, p.c);
-	      const target = cell && cell.unitId ? getUnit(state, cell.unitId) : null;
-	      const key = `${p.r},${p.c}`;
-	      const beforeElements = projectedElements.get(key) || Object.assign({}, cell?.elements || {});
-	      const afterElements = addLayers(beforeElements, slot.element, slot.layers);
-	      const targetCamp = target ? unitCamp(target) : null;
-	      const actorCamp = unitCamp(actor);
-	      const hitsEnemy = !!target && targetCamp !== actorCamp;
-	      const friendlyFire = !!target && targetCamp === actorCamp && target.id !== actor.id;
-	      const sameElementBefore = Number(beforeElements[slot.element] || 0);
-	      const linkElements = Object.entries(beforeElements).filter(([el, n]) => el !== slot.element && Number(n) > 0).map(([el]) => el);
-	      const settlement = target ? settlementPreviewForCell(afterElements, slot.element) : null;
-	      const damage = settlement && (hitsEnemy || friendlyFire) ? estimateDamageToProjectedUnit(target, projectedUnits, settlement.rawDamage) : null;
-	      const projectedAfterSettlement = Object.assign({}, afterElements);
-	      if (settlement && (hitsEnemy || friendlyFire)) projectedAfterSettlement[settlement.element] = 0;
-	      projectedElements.set(key, projectedAfterSettlement);
-	      const triggersElementLink = sameElementBefore > 0 || linkElements.length > 0 || !!settlement;
-	      out.push({
+	    const slots = actorPreviewSlots(state, actor, opts, isActiveActor);
+	    for (const slot of slots) {
+	      const cells = targetCellsForSlot(state, actor, slot, slot.isRequestedSlot ? (opts.cell || null) : null);
+	      cells.forEach(p => {
+	        const cell = getCell(state, p.r, p.c);
+	        const target = cell && cell.unitId ? getUnit(state, cell.unitId) : null;
+	        const key = `${p.r},${p.c}`;
+	        const beforeElements = projectedElements.get(key) || Object.assign({}, cell?.elements || {});
+	        const afterElements = addLayers(beforeElements, slot.element, slot.layers);
+	        const targetCamp = target ? unitCamp(target) : null;
+	        const actorCamp = unitCamp(actor);
+	        const hitsEnemy = !!target && targetCamp !== actorCamp;
+	        const friendlyFire = !!target && targetCamp === actorCamp && target.id !== actor.id;
+	        const sameElementBefore = Number(beforeElements[slot.element] || 0);
+	        const linkElements = Object.entries(beforeElements).filter(([el, n]) => el !== slot.element && Number(n) > 0).map(([el]) => el);
+	        const settlement = target ? settlementPreviewForCell(afterElements, slot.element) : null;
+	        const actionRawDamage = (hitsEnemy || friendlyFire) ? Math.max(0, Number(actor.atk ?? slot.layers ?? 0)) : 0;
+	        const settlementDamage = settlement && (hitsEnemy || friendlyFire) ? estimateDamageToProjectedUnit(target, projectedUnits, settlement.rawDamage) : null;
+	        const actionDamage = actionRawDamage > 0 ? estimateDamageToProjectedUnit(target, projectedUnits, actionRawDamage) : null;
+	        const damageParts = [settlementDamage, actionDamage].filter(Boolean);
+	        const totalDamage = damageParts.reduce((sum, part) => sum + Number(part.final || 0), 0);
+	        const totalRawDamage = damageParts.reduce((sum, part) => sum + Number(part.raw || 0), 0);
+	        const totalHpDamage = damageParts.reduce((sum, part) => sum + Number(part.hpDamage || 0), 0);
+	        const totalShieldDamage = damageParts.reduce((sum, part) => sum + Number(part.shieldDamage || 0), 0);
+	        const firstDamage = damageParts[0] || null;
+	        const lastDamage = damageParts[damageParts.length - 1] || null;
+	        const projectedAfterSettlement = Object.assign({}, afterElements);
+	        if (settlement && (hitsEnemy || friendlyFire)) projectedAfterSettlement[settlement.element] = 0;
+	        projectedElements.set(key, projectedAfterSettlement);
+	        const triggersElementLink = sameElementBefore > 0 || linkElements.length > 0 || !!settlement;
+	        out.push({
 	        r: p.r,
 	        c: p.c,
 	        previewId: `${actor.id}:${slot.slotId}:${p.r},${p.c}`,
@@ -182,21 +199,26 @@ function createPreviewModule(deps) {
 	        hitEnemy: hitsEnemy,
 	        hitAlly: friendlyFire,
 	        friendlyFire,
-	        predictedDamage: damage ? damage.final : 0,
-	        predictedRawDamage: damage ? damage.raw : 0,
-	        predictedHpDamage: damage ? damage.hpDamage : 0,
-	        predictedShieldDamage: damage ? damage.shieldDamage : 0,
-	        predictedHpFrom: damage ? damage.hpFrom : null,
-	        predictedHpTo: damage ? damage.hpTo : null,
-	        predictedShieldFrom: damage ? damage.shieldFrom : null,
-	        predictedShieldTo: damage ? damage.shieldTo : null,
-	        predictedKill: !!damage?.killed,
+	        predictedDamage: totalDamage,
+	        predictedRawDamage: totalRawDamage,
+	        predictedHpDamage: totalHpDamage,
+	        predictedShieldDamage: totalShieldDamage,
+	        predictedHpFrom: firstDamage ? firstDamage.hpFrom : null,
+	        predictedHpTo: lastDamage ? lastDamage.hpTo : null,
+	        predictedShieldFrom: firstDamage ? firstDamage.shieldFrom : null,
+	        predictedShieldTo: lastDamage ? lastDamage.shieldTo : null,
+	        predictedKill: damageParts.some(part => part.killed),
+	        predictedActionDamage: actionDamage ? actionDamage.final : 0,
+	        predictedActionRawDamage: actionDamage ? actionDamage.raw : 0,
+	        predictedSettlementDamage: settlementDamage ? settlementDamage.final : 0,
+	        predictedSettlementRawDamage: settlementDamage ? settlementDamage.raw : 0,
 	        settlement,
 	        triggersElementLink,
 	        elementLinks: linkElements,
 	        text: `${actor.name}${slot.label}${slot.element}${slot.layers}层 ${slot.direction} → R${p.r}C${p.c}${target ? ` ${target.displayName || target.name}` : ''}`
+	        });
 	      });
-	    });
+	    }
 	  });
 	  return out;
 	}

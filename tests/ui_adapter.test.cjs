@@ -30,8 +30,50 @@ function adjacentStandForTarget(state, target) {
 }
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
-  for (const type of ['START_BATTLE','MOVE_HERO','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['START_BATTLE','MOVE_HERO','AUTO_POSITION_HEROES','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
   for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD','RUN_FULL_RUN']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+});
+
+test('UI03C 智能调整站位只移动未移动宠物并提升预计伤害', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'auto_position_heroes' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero' && u.alive);
+  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(actor && target, '需要我方和敌方单位');
+  for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== target.id)) {
+    other.alive = false;
+    other.hp = 0;
+    other.position = null;
+  }
+
+  actor.position = { r: 5, c: 1 };
+  actor.moveRange = 4;
+  actor.atk = 5;
+  actor.shape = Object.assign({}, actor.shape, { baseLayers: 1, hitCells: 1, slotCount: 1, slotElements: ['火'] });
+  actor.actionSlotsUsed = {};
+  actor.hasAttacked = false;
+  target.position = { r: 5, c: 4 };
+  target.hp = 20;
+  target.shield = 0;
+  target.def = 0;
+  state.actionDirs[`${actor.id}:slot0`] = 'right';
+  syncBoardUnits(state);
+
+  const beforePreview = battle.buildPreviewGrid(state, { unitId: actor.id });
+  assert.equal(beforePreview.some(p => p.targetId === target.id), false, '移动前不应命中目标');
+
+  const result = dispatch(state, { type: 'AUTO_POSITION_HEROES' });
+  assert.equal(result.ok, true);
+  assert.equal(result.moves.length, 1);
+  assert.deepEqual(actor.position, { r: 5, c: 3 });
+  assert.equal(actor.hasAttacked, false, '智能站位不能自动出手');
+  assert.deepEqual(actor.actionSlotsUsed, {}, '智能站位不能消耗行动槽');
+  assert.ok(state.events.some(e => e.type === 'AUTO_POSITION_HEROES'));
+
+  const afterPreview = battle.buildPreviewGrid(state, { unitId: actor.id });
+  const hit = afterPreview.find(p => p.targetId === target.id);
+  assert.ok(hit, '移动后应形成可命中的预计伤害');
+  assert.equal(hit.predictedActionDamage, actor.atk);
 });
 
 test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', () => {
@@ -455,12 +497,48 @@ test('UI17 棋盘预览伤害按元素成型结算而不是本次层数', () => 
   assert.equal(hit.projectedElementsBeforeSettle.火, 3);
   assert.equal(hit.projectedElements.火, 0);
   assert.equal(hit.settlement.layers, 3);
-  assert.equal(hit.predictedDamage, 6, '火2+本次火1达到3层时，应预估Σ(1..3)=6点伤害');
+  assert.equal(hit.predictedSettlementDamage, 6, '火2+本次火1达到3层时，应预估Σ(1..3)=6点元素伤害');
+  assert.equal(hit.predictedActionDamage, actor.atk, '命中敌人时还应预估普通行动伤害');
+  assert.equal(hit.predictedDamage, 8, '总预览伤害应包含元素结算和普通行动伤害');
   assert.equal(hit.predictedShieldDamage, 2);
-  assert.equal(hit.predictedHpDamage, 4);
+  assert.equal(hit.predictedHpDamage, 6);
   assert.equal(hit.predictedShieldFrom, 2);
   assert.equal(hit.predictedShieldTo, 0);
-  assert.equal(hit.predictedHpTo, target.hp - 4);
+  assert.equal(hit.predictedHpTo, target.hp - 6);
+});
+
+test('UI17B 棋盘预览汇总即将结算的未用行动槽和普通行动伤害', () => {
+  const state = createGameState({ activePets: ['pal_005'], battleId: 'resolution_preview_all_slots' });
+  battle.startBattle(state);
+  const actor = state.units.find(u => u.side === 'hero' && u.alive);
+  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  assert.ok(actor && target, '需要我方和敌方单位');
+  const stand = adjacentStandForTarget(state, target);
+  assert.ok(stand, '需要敌人旁边有可站位');
+
+  actor.position = stand.pos;
+  actor.atk = 5;
+  actor.shape = Object.assign({}, actor.shape, {
+    baseLayers: 1,
+    hitCells: 1,
+    slotCount: 3,
+    slotElements: ['火', '水', '风']
+  });
+  target.shield = 1;
+  target.def = 0;
+  target.hp = 20;
+  for (const i of [0, 1, 2]) state.actionDirs[`${actor.id}:slot${i}`] = stand.dir;
+  syncBoardUnits(state);
+
+  const previews = battle.buildPreviewGrid(state, { unitId: actor.id });
+  const hits = previews.filter(p => p.targetId === target.id);
+  assert.deepEqual(hits.map(p => p.slotIndex), [0, 1, 2], '预览应覆盖所有即将可结算的未用行动槽');
+  assert.deepEqual(hits.map(p => p.element), ['火', '水', '风']);
+  assert.deepEqual(hits.map(p => p.predictedRawDamage), [5, 5, 5], '每个命中槽都应预估普通行动伤害');
+  assert.deepEqual(hits.map(p => p.predictedDamage), [5, 5, 5]);
+  assert.deepEqual(hits.map(p => p.predictedShieldDamage), [1, 0, 0]);
+  assert.deepEqual(hits.map(p => p.predictedHpDamage), [4, 5, 5]);
+  assert.deepEqual(hits.map(p => p.predictedHpTo), [16, 11, 6]);
 });
 
 test('UI18 可落点风险预览按每个落点模拟敌方伤害', () => {
@@ -584,7 +662,9 @@ test('UI20 候选落点沙盒同时重算我方打敌方预览', () => {
   assert.ok(Array.isArray(candidate.previewGrid), '候选落点需要携带沙盒 previewGrid');
   const hit = candidate.previewGrid.find(p => p.targetId === target.id);
   assert.ok(hit, '候选落点沙盒应命中敌人');
-  assert.equal(hit.predictedDamage, 6);
+  assert.equal(hit.predictedSettlementDamage, 6);
+  assert.equal(hit.predictedActionDamage, actor.atk);
+  assert.equal(hit.predictedDamage, 8);
   assert.equal(hit.direction, 'right');
 });
 

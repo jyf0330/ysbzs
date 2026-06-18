@@ -303,6 +303,55 @@ function buildPlayerAutoPlan(state) {
   return plan;
 }
 
+function hasUsedActionSlot(unit) {
+  return Object.values(unit?.actionSlotsUsed || {}).some(Boolean);
+}
+
+function buildPlayerPositionPlan(state) {
+  const plan = { moves: [], directions: [], score: 0, effectiveDamage: 0, overflow: 0, kills: 0, bossDamage: 0, terrainForms: 0, terrainStacks: 0, weakenBenefit: 0, conflictPenalty: 0, sandbox: null, summary: '' };
+  if (!combatTargets(state, 'enemy').length) { plan.summary = '智能站位：没有敌方目标，跳过。'; return plan; }
+  const movedIds = new Set(Array.isArray(state.teamPlacementPreview?.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : []);
+  const heroes = living(state, 'hero').filter(actor => !movedIds.has(actor.id) && !actor.hasAttacked && !hasUsedActionSlot(actor));
+  if (!heroes.length) { plan.summary = '智能站位：没有可调整位置的我方宠物。'; return plan; }
+  const candidateSets = heroes.map(actor => ({ actor, candidates: generateActorCandidates(state, actor, 10) }));
+  let beams = [{ choices: [], evaluation: evaluateTeamChoices(state, []) }];
+  let evaluatedPlans = 0;
+  const beamWidth = 40;
+  for (const set of candidateSets) {
+    const next = [];
+    for (const beam of beams) {
+      for (const candidate of set.candidates) {
+        const choices = beam.choices.concat(candidate);
+        const evaluation = evaluateTeamChoices(state, choices);
+        evaluatedPlans++;
+        next.push({ choices, evaluation });
+      }
+    }
+    beams = next.sort((a, b) => b.evaluation.score - a.evaluation.score).slice(0, beamWidth);
+  }
+  const best = beams[0] || { choices: [], evaluation: evaluateTeamChoices(state, []) };
+  const evaluation = best.evaluation;
+  for (const choice of best.choices) {
+    const actor = getUnit(state, choice.unitId);
+    if (!actor) continue;
+    const start = normalizePosition(actor.position || choice.pos);
+    if (choice.pos.r !== start.r || choice.pos.c !== start.c) plan.moves.push({ unitId: actor.id, from: start, to: choice.pos, reason: '智能站位最大化预计伤害' });
+    for (const action of choice.actions) plan.directions.push({ unitId: actor.id, slotIndex: action.slotIndex, dir: action.dir, score: action.score, targets: action.targets, cells: action.cells });
+  }
+  plan.score = evaluation.score;
+  plan.effectiveDamage = evaluation.effectiveDamage;
+  plan.overflow = evaluation.overflow;
+  plan.kills = evaluation.kills;
+  plan.bossDamage = evaluation.bossDamage;
+  plan.terrainForms = evaluation.terrainForms;
+  plan.terrainStacks = evaluation.terrainStacks;
+  plan.weakenBenefit = evaluation.weakenBenefit;
+  plan.conflictPenalty = evaluation.conflictPenalty;
+  plan.sandbox = { beamWidth, evaluatedPlans, candidateCounts: candidateSets.map(x => x.candidates.length), movedUnitIds: Array.from(movedIds) };
+  plan.summary = `智能站位：移动${plan.moves.length}只，预计有效伤害${plan.effectiveDamage}，Boss伤害${plan.bossDamage}，预估击杀${plan.kills}。`;
+  return plan;
+}
+
 function cellHasElementOrTerrain(state, pos) {
   const cell = getCell(state, pos.r, pos.c);
   if (!cell) return true;
@@ -768,6 +817,7 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
     let unitDiffs = [];
     let previewGrid = [];
     if (!opts.summaryOnly) {
+      previewGrid = buildPreviewGrid ? buildPreviewGrid(sandbox, { unitId: unit.id }) : [];
       const beforeUnits = snapshotSandboxUnits(sandbox);
       const beforeCells = snapshotSandboxCells(sandbox);
       const eventStart = Array.isArray(sandbox.events) ? sandbox.events.length : 0;
@@ -779,7 +829,6 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
       sandboxEvents = Array.isArray(sandbox.events) ? clone(sandbox.events.slice(eventStart)) : [];
       cellDiffs = buildCellDiffs(beforeCells, sandboxBoardCells);
       unitDiffs = buildUnitDiffs(beforeUnits, sandboxUnits);
-      previewGrid = buildPreviewGrid ? buildPreviewGrid(sandbox, { unitId: unit.id }) : [];
     }
     const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
     const currentRisk = teamRiskGrid.find(risk => risk.unitId === unit.id) || null;
@@ -811,7 +860,7 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
   return out;
 }
 
-  return { targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid };
+  return { targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, buildPlayerPositionPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid };
 }
 
 module.exports = { createPlanningModule };

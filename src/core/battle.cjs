@@ -14,7 +14,7 @@ const { createResolutionModule } = require('./battle/resolution.cjs');
 
 let boardUnitAt, canStandAt, allStandCells, moveHero, moveUnitGeneral;
 let slotsForUnit, parseSlotIndex, targetCellsForSlot, targetsAtCells, unitsAtCells, setActionDirection, useActionSlot;
-let targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid;
+let targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, buildPlayerPositionPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid;
 let buildPreviewGrid, clearPreviewAndThreat, syncDerivedBoard, getCellDetail;
 let applyElement, applyElementToCell, triggerTerrainOnEnter, damageUnit, settleElements;
 
@@ -259,6 +259,17 @@ function runPlayerTurn(state) {
   }
   return endPlayerTurn(state, { auto: true, skipMonster: true });
 }
+function autoPositionHeroes(state) {
+  if (state.phase === 'init') startBattle(state);
+  if (state.phase !== 'player_turn') { const text = `当前阶段 ${state.phase} 不能智能调整站位。`; pushEvent(state, 'AUTO_POSITION_HEROES_BLOCKED', { text }); return { ok: false, moves: [], text }; }
+  const plan = buildPlayerPositionPlan(state), moves = [], occupiedTargets = new Set();
+  for (const m of plan.moves || []) { const key = `${m.to.r},${m.to.c}`; if (occupiedTargets.has(key)) continue; occupiedTargets.add(key); if (moveHero(state, m.unitId, m.to)) moves.push(m); }
+  for (const d of plan.directions || []) state.actionDirs[`${d.unitId}:slot${d.slotIndex}`] = d.dir || 'right';
+  syncDerivedBoard(state); const text = moves.length ? `智能调整站位：移动${moves.length}只我方宠物，预计有效伤害${plan.effectiveDamage || 0}。` : '智能调整站位：没有更优可移动站位。';
+  const clonedMoves = clone(moves), clonedPlan = clone(plan);
+  pushEvent(state, 'AUTO_POSITION_HEROES', { moves: clonedMoves, plan: clonedPlan, text });
+  return { ok: true, moves: clonedMoves, plan: clonedPlan, text };
+}
 function runMonsterTurn(state) {
   state.phase = 'monster_turn';
   for (const u of state.units) u.roundDamageTaken = 0;
@@ -452,7 +463,7 @@ function runBattle(state) {
   startBattle: (...args) => startBattle(...args)
 }));
 
-({ targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid } = createPlanningModule({
+({ targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, buildPlayerPositionPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid } = createPlanningModule({
   ELEMENTS,
   makeEmptyElements,
   clone,
@@ -504,4 +515,4 @@ function runBattle(state) {
   buildThreatGrid: (...args) => buildThreatGrid(...args)
 }));
 
-module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, runMonsterTurn, runBattle, damageUnit, settleElements, triggerTerrainOnEnter, startBattle, startNextRound, endPlayerTurn, moveHero, moveUnitGeneral, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid, getCellDetail, syncDerivedBoard, slotsForUnit, targetCellsForSlot, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, factionRules, effectiveMoveRange, boardMaxDistance };
+module.exports = { living, getUnit, waveRows, spawnWave, runPlayerTurn, autoPositionHeroes, runMonsterTurn, runBattle, damageUnit, settleElements, triggerTerrainOnEnter, startBattle, startNextRound, endPlayerTurn, moveHero, moveUnitGeneral, setActionDirection, useActionSlot, buildPreviewGrid, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid, getCellDetail, syncDerivedBoard, slotsForUnit, targetCellsForSlot, computeMonsterIntent, finishBattle, buildPlayerAutoPlan, buildPlayerPositionPlan, factionRules, effectiveMoveRange, boardMaxDistance };

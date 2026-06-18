@@ -287,7 +287,7 @@ function recentEvents(state, n = null) {
 }
 function logGroups(state) {
   return {
-    player: state.events.filter(e => /PLAYER|SELECT|MOVE_HERO|USE_SLOT|ACTION_DIRECTION|ROUND|BATTLE|NODE/.test(e.type)).slice(-40).map(e => e.text || e.type),
+    player: state.events.filter(e => /PLAYER|SELECT|MOVE_HERO|AUTO_POSITION|USE_SLOT|ACTION_DIRECTION|ROUND|BATTLE|NODE/.test(e.type)).slice(-40).map(e => e.text || e.type),
     debug: state.events.slice(-80).map(e => `${e.step} ${e.type}: ${e.text || ''}`),
     shop: state.events.filter(e => /SHOP|REWARD|SELL|TOGGLE|NODE|BATTLE_OPTIONS|BATTLE_PICK|ROUTE_REWARD/.test(e.type)).slice(-40).map(e => e.text || e.type)
   };
@@ -302,8 +302,9 @@ function nextActions(state) {
   if (state.phase === 'node_choice') for (const option of state.dayRoute?.options || []) out.push({ type: 'PICK_NODE', label: `选择 ${option.name}`, defaultPayload: { optionId: option.optionId } });
   if (state.phase === 'battle_choice') for (const option of state.dayRoute?.battleOptions || []) out.push({ type: 'PICK_BATTLE_ENCOUNTER', label: `选择 ${option.name}`, defaultPayload: { encounterId: option.encounterId } });
   if (state.phase === 'init') out.push({ type: 'START_BATTLE', label: '开始战斗' });
-  if (state.phase === 'player_turn') {
-    out.push({ type: 'MOVE_HERO', label: '移动英雄' });
+	  if (state.phase === 'player_turn') {
+	    out.push({ type: 'AUTO_POSITION_HEROES', label: '智能调整站位' });
+	    out.push({ type: 'MOVE_HERO', label: '移动英雄' });
     out.push({ type: 'SET_ACTION_DIRECTION', label: '调整行动槽方向' });
     out.push({ type: 'USE_SLOT', label: '施放行动槽' });
     out.push({ type: 'END_PLAYER_TURN', label: '结束玩家回合' });
@@ -721,6 +722,7 @@ function createYSBZSUIAdapter(options = {}) {
     startBattle() { return this.run('START_BATTLE'); },
     startNextRound() { return this.run('START_NEXT_ROUND'); },
     moveHero(unitId, to) { return this.run('MOVE_HERO', { unitId, to }); },
+    autoPositionHeroes() { return this.run('AUTO_POSITION_HEROES'); },
     setActionDirection(unitId, slotId, dir) { return this.run('SET_ACTION_DIRECTION', { unitId, slotId, dir }); },
     setSlotDir(slotId, dir) { return this.run('SET_SLOT_DIR', { slotId, dir }); },
     useSlot(unitId, slotId, cell) { return this.run('USE_SLOT', { unitId, slotId, cell }); },

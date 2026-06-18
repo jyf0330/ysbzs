@@ -105,13 +105,13 @@ function createPreviewModule(deps) {
 	  if (!heroes.length) return { actors: [], activeUnitId: null, movedUnitIds: [] };
 	  const placement = ensureTeamPlacementPreview(state);
 	  const movedUnitIds = placement.movedUnitIds.slice();
-	  if (!movedUnitIds.length) {
-	    const actor = heroes[0];
-	    return { actors: [actor], activeUnitId: actor.id, movedUnitIds: [] };
-	  }
-	  const activeUnitId = movedUnitIds.includes(placement.activeUnitId) ? placement.activeUnitId : movedUnitIds[movedUnitIds.length - 1];
-	  const actors = movedUnitIds.map(id => getUnit(state, id)).filter(Boolean);
-	  return { actors, activeUnitId, movedUnitIds };
+	  const heroIds = new Set(heroes.map(actor => actor.id));
+	  const requestedUnitId = opts.unitId && heroIds.has(opts.unitId) ? opts.unitId : null;
+	  const activeUnitId = requestedUnitId
+	    || (placement.activeUnitId && heroIds.has(placement.activeUnitId) ? placement.activeUnitId : null)
+	    || (movedUnitIds.length ? movedUnitIds[movedUnitIds.length - 1] : null)
+	    || heroes[0].id;
+	  return { actors: heroes.slice(), activeUnitId, movedUnitIds };
 	}
 
 	function actorPreviewSlots(state, actor, opts, isActiveActor) {
@@ -157,12 +157,11 @@ function createPreviewModule(deps) {
 	        const targetCamp = target ? unitCamp(target) : null;
 	        const actorCamp = unitCamp(actor);
 	        const hitsEnemy = !!target && targetCamp !== actorCamp;
-	        const friendlyFire = !!target && targetCamp === actorCamp && target.id !== actor.id;
 	        const sameElementBefore = Number(beforeElements[slot.element] || 0);
 	        const linkElements = Object.entries(beforeElements).filter(([el, n]) => el !== slot.element && Number(n) > 0).map(([el]) => el);
 	        const settlement = target ? settlementPreviewForCell(afterElements, slot.element) : null;
-	        const actionRawDamage = (hitsEnemy || friendlyFire) ? Math.max(0, Number(actor.atk ?? slot.layers ?? 0)) : 0;
-	        const settlementDamage = settlement && (hitsEnemy || friendlyFire) ? estimateDamageToProjectedUnit(target, projectedUnits, settlement.rawDamage) : null;
+	        const actionRawDamage = hitsEnemy ? Math.max(0, Number(actor.atk ?? slot.layers ?? 0)) : 0;
+	        const settlementDamage = settlement && hitsEnemy ? estimateDamageToProjectedUnit(target, projectedUnits, settlement.rawDamage) : null;
 	        const actionDamage = actionRawDamage > 0 ? estimateDamageToProjectedUnit(target, projectedUnits, actionRawDamage) : null;
 	        const damageParts = [settlementDamage, actionDamage].filter(Boolean);
 	        const totalDamage = damageParts.reduce((sum, part) => sum + Number(part.final || 0), 0);
@@ -172,7 +171,7 @@ function createPreviewModule(deps) {
 	        const firstDamage = damageParts[0] || null;
 	        const lastDamage = damageParts[damageParts.length - 1] || null;
 	        const projectedAfterSettlement = Object.assign({}, afterElements);
-	        if (settlement && (hitsEnemy || friendlyFire)) projectedAfterSettlement[settlement.element] = 0;
+	        if (settlement && hitsEnemy) projectedAfterSettlement[settlement.element] = 0;
 	        projectedElements.set(key, projectedAfterSettlement);
 	        const triggersElementLink = sameElementBefore > 0 || linkElements.length > 0 || !!settlement;
 	        out.push({
@@ -194,11 +193,11 @@ function createPreviewModule(deps) {
 	        generatedElements: { [slot.element]: slot.layers },
 	        projectedElements: projectedAfterSettlement,
 	        projectedElementsBeforeSettle: afterElements,
-	        targetId: target?.id || null,
-	        targetName: target ? (target.displayName || target.name) : null,
+	        targetId: hitsEnemy ? target.id : null,
+	        targetName: hitsEnemy ? (target.displayName || target.name) : null,
 	        hitEnemy: hitsEnemy,
-	        hitAlly: friendlyFire,
-	        friendlyFire,
+	        hitAlly: false,
+	        friendlyFire: false,
 	        predictedDamage: totalDamage,
 	        predictedRawDamage: totalRawDamage,
 	        predictedHpDamage: totalHpDamage,

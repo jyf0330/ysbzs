@@ -4,7 +4,7 @@ const { createYSBZSUIAdapter, createViewModel, PUBLIC_COMMANDS } = require('../s
 const battle = require('../src/core/battle.cjs');
 const dayRoute = require('../src/core/dayRoute.cjs');
 const { dispatch } = require('../src/core/reducer.cjs');
-const { createGameState, getCell, syncBoardUnits } = require('../src/core/state.cjs');
+const { createGameState, makeUnit, getCell, syncBoardUnits } = require('../src/core/state.cjs');
 
 function hasEvent(result, type) { return result.events.some(e => e.type === type); }
 function firstLegalMoveCell(vm, hero) {
@@ -442,7 +442,8 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
   const vm0 = adapter.getViewModel();
   const [first, second] = vm0.heroes;
   assert.ok(first && second, '需要至少两只上阵宠物验证累计预览');
-  assert.deepEqual(new Set(vm0.previewGrid.map(x => x.actorId)), new Set([first.id]));
+  const heroIds = new Set(vm0.heroes.map(x => x.id));
+  assert.deepEqual(new Set(vm0.previewGrid.map(x => x.actorId)), heroIds, '未移动时预览应按当前全队占位模拟全部出击');
   assert.equal(vm0.teamPlacementPreview.activeUnitId, first.id);
   assert.deepEqual(vm0.teamPlacementPreview.movedUnitIds, []);
 
@@ -453,8 +454,9 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
   const vm1 = adapter.getViewModel();
   assert.equal(vm1.teamPlacementPreview.activeUnitId, second.id);
   assert.deepEqual(vm1.teamPlacementPreview.movedUnitIds, [second.id]);
-  assert.deepEqual(new Set(vm1.previewGrid.map(x => x.actorId)), new Set([second.id]));
-  assert.ok(vm1.previewGrid.every(x => x.isActiveActor === true));
+  assert.deepEqual(new Set(vm1.previewGrid.map(x => x.actorId)), heroIds, '移动一只宠物后仍应按全队未来占位模拟全部出击');
+  assert.ok(vm1.previewGrid.some(x => x.actorId === second.id && x.isActiveActor === true));
+  assert.ok(vm1.previewGrid.some(x => x.actorId === first.id && x.isActiveActor === false));
 
   const firstAfterSecond = vm1.heroes.find(x => x.id === first.id);
   const firstTarget = firstLegalMoveCell(vm1, firstAfterSecond);
@@ -464,11 +466,26 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
   const vm2 = adapter.getViewModel();
   assert.equal(vm2.teamPlacementPreview.activeUnitId, first.id);
   assert.deepEqual(vm2.teamPlacementPreview.movedUnitIds, [second.id, first.id]);
-  assert.deepEqual(new Set(vm2.previewGrid.map(x => x.actorId)), new Set([second.id, first.id]));
+  assert.deepEqual(new Set(vm2.previewGrid.map(x => x.actorId)), heroIds);
   assert.ok(vm2.previewGrid.some(x => x.actorId === first.id && x.isActiveActor === true));
   assert.ok(vm2.previewGrid.some(x => x.actorId === second.id && x.isActiveActor === false));
   assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === second.id)));
   assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === first.id)));
+});
+
+test('UI16B 棋盘预览不把我方行动结算成友方受伤', () => {
+  const adapter = createYSBZSUIAdapter({ gold: 3, battleId: 'team_preview_no_friendly_damage' });
+  adapter.setupDay7FireTrial();
+
+  const vm = adapter.getViewModel();
+  const heroIds = new Set(vm.heroes.map(hero => hero.id));
+  const allyHits = vm.previewGrid.filter(p => heroIds.has(p.targetId));
+  assert.equal(allyHits.length, 0, '我方全队预览不能把友方单位当成伤害目标');
+
+  const allyDamageCells = vm.board.cells.filter(cell =>
+    (cell.previews || []).some(p => heroIds.has(p.targetId) || p.hitAlly || p.friendlyFire || Number(p.predictedDamage || 0) > 0 && heroIds.has(p.targetId))
+  );
+  assert.equal(allyDamageCells.length, 0, '友方所在格不能显示由我方行动生成的伤害预览');
 });
 
 test('UI17 棋盘预览伤害按元素成型结算而不是本次层数', () => {
@@ -753,6 +770,43 @@ test('UI22 未移动前伤害预览直接显示敌方宠物 AP 累计伤害', ()
   assert.equal(cell.teamRisk.damage, 21);
 });
 
+test('UI22B 移动风险不应把可到达的三槽主威胁折成杂伤合计', () => {
+  const state = createGameState({ activePets: [], battleId: 'reachable_main_threat_risk' });
+  state.phase = 'player_turn';
+  state.round = 1;
+  state.units = [];
+  state.leaders.player.position = { r: 7, c: 0 };
+  state.leaders.enemy.position = { r: 0, c: 7 };
+  const hero = makeUnit(state, 'hero', 'pal_038', {
+    id: 'hero_wind_risk',
+    hp: 10,
+    maxHp: 10,
+    def: 0,
+    shield: 0,
+    position: { r: 2, c: 5 }
+  });
+  const cat = makeUnit(state, 'enemy', 'pal_002', { id: 'enemy_cat_risk', position: { r: 1, c: 7 } });
+  const sheep = makeUnit(state, 'enemy', 'pal_001', { id: 'enemy_sheep_risk', position: { r: 0, c: 6 } });
+  state.units.push(hero, cat, sheep);
+  syncBoardUnits(state);
+
+  let risk = battle.buildTeamRiskGrid(state, [hero.id]).find(x => x.unitId === hero.id);
+  assert.ok(risk, 'R2C5 应有受击预警');
+  assert.equal(risk.damage, 9);
+  assert.equal(risk.hpDamage, 9);
+  assert.deepEqual(risk.enemyIds, [cat.id]);
+  assert.equal(risk.threats.length, 3);
+
+  hero.position = { r: 2, c: 6 };
+  syncBoardUnits(state);
+  risk = battle.buildTeamRiskGrid(state, [hero.id]).find(x => x.unitId === hero.id);
+  assert.ok(risk, 'R2C6 应有受击预警');
+  assert.equal(risk.damage, 9);
+  assert.equal(risk.hpDamage, 9);
+  assert.deepEqual(risk.enemyIds, [cat.id]);
+  assert.equal(risk.threats.length, 3);
+});
+
 test('UI23 敌方移动路径预览标记最终落点且空格攻击范围不承载伤害对象', () => {
   const state = createGameState({ activePets: ['pal_005'], battleId: 'enemy_pet_final_move_preview' });
   battle.startBattle(state);
@@ -809,7 +863,7 @@ test('UI24 玩家移动事件只显示位移和预计受伤变化', () => {
   const event = state.events.find(e => e.type === 'MOVE_HERO');
   assert.ok(event, '移动事件需要存在');
   assert.match(event.text, /R6C1->R6C3/);
-  assert.match(event.text, /预计受伤 0->7/);
+  assert.match(event.text, /预计HP损失 0->7/);
   assert.doesNotMatch(event.text, /本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
 });
 

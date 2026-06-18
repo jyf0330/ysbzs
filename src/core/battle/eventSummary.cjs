@@ -11,11 +11,28 @@ function riskDamage(risk) {
   return Math.max(0, Number(risk?.damage || risk?.predictedDamage || 0));
 }
 
+function riskHpDamage(risk) {
+  return Math.max(0, Number(risk?.hpDamage || risk?.predictedHpDamage || 0));
+}
+
+function riskShieldDamage(risk) {
+  return Math.max(0, Number(risk?.shieldDamage || risk?.predictedShieldDamage || 0));
+}
+
 function summarizeRiskChange(beforeRisk, afterRisk) {
+  const beforeHp = riskHpDamage(beforeRisk);
+  const afterHp = riskHpDamage(afterRisk);
+  if (beforeHp !== afterHp) return `预计HP损失 ${beforeHp}->${afterHp}`;
+  if (afterHp > 0) return `预计HP损失 ${afterHp}`;
+  const beforeShield = riskShieldDamage(beforeRisk);
+  const afterShield = riskShieldDamage(afterRisk);
+  if (beforeShield !== afterShield) return `预计护盾消耗 ${beforeShield}->${afterShield}`;
+  if (afterShield > 0) return `预计护盾消耗 ${afterShield}`;
   const before = riskDamage(beforeRisk);
   const after = riskDamage(afterRisk);
-  if (before === after) return '';
-  return `预计受伤 ${before}->${after}`;
+  if (before !== after) return `预计承受攻击 ${before}->${after}`;
+  if (after > 0) return `预计承受攻击 ${after}`;
+  return '';
 }
 
 /**

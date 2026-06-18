@@ -601,6 +601,100 @@ function buildThreatGrid(state) {
   return Array.from(byCell.values()).sort((a, b) => a.r - b.r || a.c - b.c);
 }
 
+function pathCanReachThreatPosition(state, enemy, targetPos, maxSteps) {
+  const start = normalizePosition(enemy.position || { r: 0, c: 0 });
+  const target = normalizePosition(targetPos);
+  if (start.r === target.r && start.c === target.c) return [];
+  const path = pathToward(state, enemy, target, Math.min(maxSteps, dist(start, target)));
+  const end = path[path.length - 1] || start;
+  if (end.r !== target.r || end.c !== target.c) return null;
+  return path;
+}
+
+function projectedEnemyFullSlotRisk(state, enemy, target) {
+  if (!enemy || enemy.alive === false || Number(enemy.hp || 0) <= 0) return null;
+  if (!target || target.alive === false || Number(target.hp || 0) <= 0 || !target.position) return null;
+  const slots = slotsForUnit(state, enemy)
+    .filter(slot => !slot.used && !enemy.actionSlotsUsed?.[slot.index])
+    .sort((a, b) => a.index - b.index);
+  if (!slots.length) return null;
+  const apMax = Math.max(0, Number(enemy.ap || 0));
+  const maxHits = Math.min(apMax || slots.length, slots.length);
+  if (maxHits <= 0) return null;
+  const start = normalizePosition(enemy.position || { r: 0, c: 0 });
+  const targetPos = normalizePosition(target.position);
+  let best = null;
+  for (let r = 0; r < BOARD_ROWS; r++) {
+    for (let c = 0; c < BOARD_COLS; c++) {
+      const pos = { r, c };
+      if (dist(start, pos) > apMax) continue;
+      if (!canEnemyEnterCell(state, enemy, pos)) continue;
+      const path = pathCanReachThreatPosition(state, enemy, pos, apMax);
+      if (path === null) continue;
+      for (const dir of actionDirs()) {
+        const hits = [];
+        for (const slot of slots) {
+          const cells = targetCellsForSlotFrom(state, enemy, slot, pos, dir);
+          if (!cells.some(p => p.r === targetPos.r && p.c === targetPos.c)) continue;
+          hits.push({ slot, cells });
+          if (hits.length >= maxHits) break;
+        }
+        if (!hits.length) continue;
+        const damage = Math.max(0, Number(enemy.atk || 0) - Number(target.def || 0)) * hits.length;
+        const candidate = { pos, dir, path, hits, damage, moveDistance: dist(start, pos) };
+        if (!best || candidate.damage > best.damage || (candidate.damage === best.damage && candidate.moveDistance < best.moveDistance)) {
+          best = candidate;
+        }
+      }
+    }
+  }
+  if (!best) return null;
+  let shieldTo = Math.max(0, Number(target.shield || 0));
+  let hpTo = Math.max(0, Number(target.hp || 0));
+  let shieldDamage = 0;
+  let hpDamage = 0;
+  const threats = [];
+  for (const hit of best.hits) {
+    const raw = Math.max(0, Number(enemy.atk || 0) - Number(target.def || 0));
+    const absorbed = Math.min(shieldTo, raw);
+    const dealtToHp = Math.min(hpTo, Math.max(0, raw - absorbed));
+    shieldTo -= absorbed;
+    hpTo -= dealtToHp;
+    shieldDamage += absorbed;
+    hpDamage += dealtToHp;
+    threats.push({
+      enemyId: enemy.id,
+      enemyName: enemy.displayName || enemy.name,
+      slotIndex: hit.slot.index,
+      slotLabel: hit.slot.label,
+      damage: raw,
+      shieldDamage: absorbed,
+      hpDamage: dealtToHp,
+      attackDirection: best.dir,
+      attackCells: clone(hit.cells || []),
+      path: clone(best.path || []),
+      projectedFullSlotThreat: true
+    });
+  }
+  return {
+    r: targetPos.r,
+    c: targetPos.c,
+    unitId: target.id,
+    unitName: target.displayName || target.name,
+    damage: threats.reduce((sum, threat) => sum + Number(threat.damage || 0), 0),
+    shieldDamage,
+    hpDamage,
+    shieldFrom: Math.max(0, Number(target.shield || 0)),
+    shieldTo,
+    hpFrom: Math.max(0, Number(target.hp || 0)),
+    hpTo,
+    lethal: hpTo <= 0,
+    enemyIds: [enemy.id],
+    threats,
+    riskMode: 'projected_full_slot_threat'
+  };
+}
+
 function buildTeamRiskGrid(state, unitIds = null) {
   const requested = Array.isArray(unitIds) ? new Set(unitIds.filter(Boolean)) : null;
   const units = living(state, 'hero').filter(unit => !requested || requested.has(unit.id) || requested.has(unit.petId));
@@ -621,7 +715,14 @@ function buildTeamRiskGrid(state, unitIds = null) {
     enemyIds: [],
     threats: []
   }]));
+  const projectedById = new Map();
   for (const enemy of living(state, 'enemy')) {
+    for (const unit of units) {
+      const projected = projectedEnemyFullSlotRisk(state, enemy, unit);
+      if (!projected) continue;
+      const current = projectedById.get(unit.id);
+      if (!current || Number(projected.damage || 0) > Number(current.damage || 0)) projectedById.set(unit.id, projected);
+    }
     const intent = computeMonsterIntent(state, enemy);
     if (!intent || !intent.willAttack) continue;
     for (const action of intent.actions || []) {
@@ -652,6 +753,25 @@ function buildTeamRiskGrid(state, unitIds = null) {
         });
       }
     }
+  }
+  for (const [unitId, projected] of projectedById.entries()) {
+    const risk = byId.get(unitId);
+    if (!risk) continue;
+    if (Number(projected.damage || 0) <= Number(risk.damage || 0)) continue;
+    risk.actualDamage = risk.damage;
+    risk.actualShieldDamage = risk.shieldDamage;
+    risk.actualHpDamage = risk.hpDamage;
+    risk.damage = projected.damage;
+    risk.shieldDamage = projected.shieldDamage;
+    risk.hpDamage = projected.hpDamage;
+    risk.shieldFrom = projected.shieldFrom;
+    risk.shieldTo = projected.shieldTo;
+    risk.hpFrom = projected.hpFrom;
+    risk.hpTo = projected.hpTo;
+    risk.lethal = projected.lethal;
+    risk.enemyIds = projected.enemyIds;
+    risk.threats = projected.threats;
+    risk.riskMode = projected.riskMode;
   }
   return Array.from(byId.values())
     .filter(risk => risk.threats.length > 0)
@@ -786,6 +906,44 @@ function buildCellDiffs(beforeCells, afterCells) {
   }).filter(Boolean);
 }
 
+function nextPlayerAllOutAction(state, blocked) {
+  for (const actor of living(state, 'hero')) {
+    if (!actor || actor.alive === false || Number(actor.hp || 0) <= 0) continue;
+    const slots = slotsForUnit(state, actor);
+    for (const slot of slots) {
+      const key = `${actor.id}:${slot.index}`;
+      if (blocked.has(key)) continue;
+      if (slot.used || actor.actionSlotsUsed?.[slot.index] || slot.canUse === false) continue;
+      return { actor, slot, key };
+    }
+  }
+  return null;
+}
+
+function runPlayerAllOutPreviewSandbox(state) {
+  const result = { count: 0, attempts: [], guard: 0 };
+  if (!useActionSlot || state.phase !== 'player_turn') return result;
+  const blocked = new Set();
+  while (state.phase === 'player_turn' && result.guard < 40) {
+    result.guard += 1;
+    const action = nextPlayerAllOutAction(state, blocked);
+    if (!action) break;
+    const ok = !!useActionSlot(state, action.actor.id, action.slot.index, null, { ap: 1 });
+    result.attempts.push({
+      unitId: action.actor.id,
+      unitName: action.actor.displayName || action.actor.name,
+      slotId: action.slot.index,
+      accepted: ok
+    });
+    if (!ok) {
+      blocked.add(action.key);
+      continue;
+    }
+    result.count += 1;
+  }
+  return result;
+}
+
 function buildMoveRiskGrid(state, unitId, opts = {}) {
   const unit = getUnit(state, unitId) || living(state, 'hero')[0];
   if (!unit || unit.side !== 'hero' || unit.alive === false || Number(unit.hp || 0) <= 0) return [];
@@ -809,6 +967,7 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
     sandbox.teamPlacementPreview.activeUnitId = unit.id;
     sandbox.teamPlacementPreview.movedUnitIds = teamUnitIds.slice();
     if (syncBoardUnits) syncBoardUnits(sandbox);
+    const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
     let sandboxActionOk = false;
     let sandboxBoardCells = [];
     let sandboxUnits = [];
@@ -821,8 +980,8 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
       const beforeUnits = snapshotSandboxUnits(sandbox);
       const beforeCells = snapshotSandboxCells(sandbox);
       const eventStart = Array.isArray(sandbox.events) ? sandbox.events.length : 0;
-      const canSimulateAction = sandbox.phase === 'player_turn';
-      sandboxActionOk = canSimulateAction && useActionSlot ? !!useActionSlot(sandbox, unit.id, 0, null, { ap: 1 }) : false;
+      const allOut = runPlayerAllOutPreviewSandbox(sandbox);
+      sandboxActionOk = allOut.count > 0;
       if (syncBoardUnits) syncBoardUnits(sandbox);
       sandboxBoardCells = snapshotSandboxCells(sandbox);
       sandboxUnits = snapshotSandboxUnits(sandbox);
@@ -830,7 +989,6 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
       cellDiffs = buildCellDiffs(beforeCells, sandboxBoardCells);
       unitDiffs = buildUnitDiffs(beforeUnits, sandboxUnits);
     }
-    const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
     const currentRisk = teamRiskGrid.find(risk => risk.unitId === unit.id) || null;
     out.push({
       r: target.r,

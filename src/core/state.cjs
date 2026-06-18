@@ -94,8 +94,39 @@ function defaultHeroPosition(index) {
   const rows = [5, 4, 6, 3, 2, 7, 1, 0];
   return { r: rows[index % rows.length], c: Math.floor(index / rows.length) + 1 };
 }
-function defaultEnemyPosition(state, index = 0) {
+function legacyDefaultEnemyPosition(state, index = 0) {
   return { r: (Number(state.round || 1) + index * 2) % BOARD_ROWS, c: BOARD_COLS - 2 + (index % 2) };
+}
+function topRightExpandedEnemyPosition(state, index = 0, config = {}, context = {}) {
+  syncBoardUnits(state);
+  const sizes = Array.isArray(config.expansionSizes) && config.expansionSizes.length ? config.expansionSizes : [3, 4, 5];
+  const seed = state.rngState?.seed || state.battleId || 'ysbzs-local';
+  const rngIndex = Number.isFinite(Number(state.rngState?.index)) ? Number(state.rngState.index) : 0;
+  for (const rawSize of sizes) {
+    const size = Math.max(1, Math.min(BOARD_ROWS, BOARD_COLS, Math.floor(Number(rawSize) || 0)));
+    if (!size) continue;
+    const rowStart = 0;
+    const rowEnd = Math.min(BOARD_ROWS - 1, size - 1);
+    const colStart = Math.max(0, BOARD_COLS - size);
+    const colEnd = BOARD_COLS - 1;
+    const candidates = [];
+    for (let r = rowStart; r <= rowEnd; r += 1) {
+      for (let c = colStart; c <= colEnd; c += 1) {
+        const cell = getCell(state, r, c);
+        if (cell && !cell.unitId) candidates.push({ r, c });
+      }
+    }
+    if (candidates.length) {
+      const random = rng(`enemy_spawn:${seed}:${state.day}:${state.period}:${state.round}:${context.waveId || ''}:${index}:${size}:${rngIndex}`);
+      return candidates[Math.floor(random() * candidates.length) % candidates.length];
+    }
+  }
+  return legacyDefaultEnemyPosition(state, index);
+}
+function defaultEnemyPosition(state, index = 0, context = {}) {
+  const config = state.data?.waveRules?.enemySpawn || null;
+  if (config && config.mode === 'top_right_expand') return topRightExpandedEnemyPosition(state, index, config, context);
+  return legacyDefaultEnemyPosition(state, index);
 }
 function seededRightEntryPosition(state, index = 0) {
   syncBoardUnits(state);
@@ -112,16 +143,16 @@ function seededRightEntryPosition(state, index = 0) {
   if (!candidates.length) return defaultEnemyPosition(state, index);
   return candidates[Math.floor(random() * candidates.length) % candidates.length];
 }
-function positionFromWaveRule(state, rule, index = 0) {
-  if (!rule) return defaultEnemyPosition(state, index);
+function positionFromWaveRule(state, rule, index = 0, context = {}) {
+  if (!rule) return defaultEnemyPosition(state, index, context);
   const text = String(rule);
   const m = text.match(/R\s*(\d+)\s*C\s*(\d+)/i);
   if (m) return { r: Math.max(0, Math.min(BOARD_ROWS - 1, Number(m[1]))), c: Math.max(0, Math.min(BOARD_COLS - 1, Number(m[2]))) };
   if (/right_entry/.test(text)) return seededRightEntryPosition(state, index);
-  if (/right|右|enemy|城堡|后排/.test(text)) return defaultEnemyPosition(state, index);
+  if (/right|右|enemy|城堡|后排/.test(text)) return defaultEnemyPosition(state, index, context);
   if (/top|上/.test(text)) return { r: 0, c: BOARD_COLS - 2 - (index % 2) };
   if (/bottom|下/.test(text)) return { r: BOARD_ROWS - 1, c: BOARD_COLS - 2 - (index % 2) };
-  return defaultEnemyPosition(state, index);
+  return defaultEnemyPosition(state, index, context);
 }
 function normalizeMechanics(list) {
   if (!list) return ['none'];

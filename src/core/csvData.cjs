@@ -5,6 +5,7 @@ const { normalizeWaveRow, buildQualityMultiplierMap } = require('./waveRules.cjs
 const ROOT = path.resolve(__dirname, '../..');
 const DEFAULT_CSV_DIR = path.join(ROOT, 'data', 'csv');
 const FALLBACK_JSON = path.join(ROOT, 'data', 'normalized_data.json');
+const DEFAULT_WAVE_RULES_YAML = path.join(ROOT, 'yaml', 'wave_rules_20260609.yaml');
 const DATA_CACHE = new Map();
 
 const TABLE_FILES = Object.freeze({
@@ -93,6 +94,51 @@ function parseCsv(text) {
     headers.forEach((h, i) => { obj[h] = cleanCell(r[i]); });
     return obj;
   });
+}
+
+function parseYamlScalar(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  if (/^-?\d+(\.\d+)?$/.test(raw)) return Number(raw);
+  if (/^\[.*\]$/.test(raw)) {
+    return raw.slice(1, -1)
+      .split(',')
+      .map(x => parseYamlScalar(x))
+      .filter(x => x !== '');
+  }
+  return raw.replace(/^["']|["']$/g, '');
+}
+
+function normalizeYamlKey(key) {
+  const map = {
+    expansion_sizes: 'expansionSizes',
+    require_empty: 'requireEmpty'
+  };
+  return map[key] || key;
+}
+
+function parseWaveRulesYaml(text) {
+  const enemySpawn = {};
+  let inDefaultEnemySpawn = false;
+  for (const line of String(text || '').split(/\r?\n/)) {
+    if (/^\s{2}default_enemy_spawn:\s*$/.test(line)) {
+      inDefaultEnemySpawn = true;
+      continue;
+    }
+    if (inDefaultEnemySpawn && /^\S/.test(line)) break;
+    if (!inDefaultEnemySpawn) continue;
+    const m = line.match(/^\s{4}([A-Za-z0-9_]+):\s*(.+?)\s*$/);
+    if (!m) continue;
+    enemySpawn[normalizeYamlKey(m[1])] = parseYamlScalar(m[2]);
+  }
+  return Object.keys(enemySpawn).length ? { enemySpawn } : {};
+}
+
+function loadWaveRulesYaml(yamlFile = DEFAULT_WAVE_RULES_YAML) {
+  if (!fs.existsSync(yamlFile)) return {};
+  return parseWaveRulesYaml(fs.readFileSync(yamlFile, 'utf8'));
 }
 
 function cleanCell(v) {
@@ -423,6 +469,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
     note: row.note || row['备注']
   })).filter(x => x.encounterId);
 
+  const yamlRules = loadWaveRulesYaml(options.waveRulesYaml || DEFAULT_WAVE_RULES_YAML);
   return {
     meta: {
       sourceType: options.sourceType || 'csv',
@@ -460,7 +507,8 @@ function normalizeSourceTables(sourceTables, options = {}) {
     nodePool,
     encounterPool,
     waveRules: {
-      qualityMultiplierMap
+      qualityMultiplierMap,
+      ...yamlRules
     }
   };
 }
@@ -523,23 +571,31 @@ function csvSourceAvailable(csvDir = DEFAULT_CSV_DIR) {
     && fs.existsSync(resolveCsvFile(csvDir, TABLE_FILES.shop));
 }
 
-function csvSignature(csvDir = DEFAULT_CSV_DIR) {
-  return Object.values(TABLE_FILES).map(name => {
+function csvSignature(csvDir = DEFAULT_CSV_DIR, waveRulesYaml = DEFAULT_WAVE_RULES_YAML) {
+  const csvPart = Object.values(TABLE_FILES).map(name => {
     const file = resolveCsvFile(csvDir, name);
     if (!fs.existsSync(file)) return `${name}:missing`;
     const st = fs.statSync(file);
     return `${name}:${st.size}:${Math.round(st.mtimeMs)}`;
   }).join('|');
+  const yamlPart = fs.existsSync(waveRulesYaml)
+    ? (() => {
+      const st = fs.statSync(waveRulesYaml);
+      return `waveRulesYaml:${waveRulesYaml}:${st.size}:${Math.round(st.mtimeMs)}`;
+    })()
+    : `waveRulesYaml:${waveRulesYaml}:missing`;
+  return `${csvPart}|${yamlPart}`;
 }
 
 function loadGameData(options = {}) {
   const csvDir = options.csvDir || DEFAULT_CSV_DIR;
+  const waveRulesYaml = options.waveRulesYaml || DEFAULT_WAVE_RULES_YAML;
   if (options.preferCsv !== false && csvSourceAvailable(csvDir)) {
-    const sig = csvSignature(csvDir);
+    const sig = csvSignature(csvDir, waveRulesYaml);
     const key = `csv:${csvDir}:${sig}`;
     if (options.cache !== false && DATA_CACHE.has(key)) return DATA_CACHE.get(key);
     const tables = loadSourceTablesFromCsv(csvDir);
-    const normalized = normalizeSourceTables(tables, { sourceType: 'csv', csvDir });
+    const normalized = normalizeSourceTables(tables, { sourceType: 'csv', csvDir, waveRulesYaml });
     if (options.cache !== false) DATA_CACHE.set(key, normalized);
     return normalized;
   }
@@ -562,6 +618,8 @@ module.exports = {
   splitMechanics,
   parseParams,
   loadSourceTablesFromCsv,
+  parseWaveRulesYaml,
+  loadWaveRulesYaml,
   normalizeSourceTables,
   csvSourceAvailable,
   csvSignature,

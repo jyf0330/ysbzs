@@ -176,7 +176,7 @@ function spawnWave(state) {
     const entries = buildWaveSpawnEntries(state, row);
     for (let i = 0; i < entries.length; i += 1) {
       const { petId, quality, override } = entries[i];
-      const position = positionFromWaveRule(state, row.positionRule, i + spawned);
+      const position = positionFromWaveRule(state, row.positionRule, i + spawned, { waveId: row.waveId });
       const unit = makeUnit(state, 'enemy', petId, Object.assign({}, override, { position, flags: { waveId: row.waveId, petPoolExpression: row.petPoolExpression, qualityFromWave: quality || null } }));
       state.units.push(unit);
       mech.applyBattleStart(state, unit);

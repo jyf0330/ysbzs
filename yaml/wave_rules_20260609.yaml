@@ -65,6 +65,15 @@ threat_score_rule:
   quality_expected_multiplier: "sum(weight_i / sum(weights) * quality_multiplier_i)"
   final: "round(candidate_average_score * spawn_count * quality_expected_multiplier, 1)"
 
+spawn_position_rules:
+  default_enemy_spawn:
+    mode: top_right_expand
+    origin: top_right
+    expansion_sizes: [3, 4, 5]
+    require_empty: true
+    selection: seeded_random
+    meaning: "敌方 Boss 召唤宠物优先在右上 3x3 找空闲格；满了扩大到 4x4，再扩大到 5x5。"
+
 monster_template_role:
   current_meaning: "怪物模板表不再决定波次出什么怪；波次表直接引用宠物ID/宠物池。"
   suggested_usage:

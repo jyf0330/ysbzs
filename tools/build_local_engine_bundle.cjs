@@ -49,7 +49,8 @@ function collectModule(file) {
 collectModule(path.join(root, 'src/adapters/serverAuthorityAdapter.cjs'));
 moduleFiles.sort();
 const dataFiles = [
-  ...walk(path.join(root, 'data/csv'), file => file.endsWith('.csv')).sort()
+  ...walk(path.join(root, 'data/csv'), file => file.endsWith('.csv')).sort(),
+  ...walk(path.join(root, 'yaml'), file => /\.ya?ml$/.test(file)).sort()
 ];
 
 const modules = {};

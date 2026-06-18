@@ -160,6 +160,19 @@ test('UI05 board click moves selected hero before hover preview can turn the tar
   );
 });
 
+test('UI05B acted heroes do not keep move-target affordances', () => {
+  const main = read('web/js/main.js');
+  assert.match(main, /function unitPositionLocked\(unit = \{\}\)/, 'UI should have one browser-side lock predicate');
+  assert.match(main, /\(unit\.slots \|\| \[\]\)\.some\(slot => slot && slot\.used\)/, 'slot usage should lock movement even when hasAttacked is not projected');
+  const moveBody = main.match(/function legalMoveTargets\(hero\) \{([\s\S]*?)\n  \}/);
+  assert.ok(moveBody, 'legalMoveTargets should exist');
+  assert.match(moveBody[1], /unitPositionLocked\(hero\)/, 'acted heroes should not expose legal move targets');
+  assert.match(main, /位置锁定/, 'hint text should explain attack-lock movement state');
+  const clickBody = main.match(/async function onCellClick\(r, c\) \{([\s\S]*?)\n  \}\n\n\s*function renderCellDetail/);
+  assert.ok(clickBody, 'onCellClick should exist');
+  assert.match(clickBody[1], /本回合已行动，位置锁定/, 'clicking empty cells after acting should explain the lock');
+});
+
 test('UI06 board hover preview is disabled so only clicks change the board interaction state', () => {
   const main = read('web/js/main.js');
   const css = read('web/ux-app.css');

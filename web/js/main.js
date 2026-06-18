@@ -168,6 +168,9 @@ import { createGameRuntime } from './runtime-client.js';
     ui.selectedCell = null;
     ui.cellDetail = null;
   }
+  function unitPositionLocked(unit = {}) {
+    return !!unit.hasAttacked || (unit.slots || []).some(slot => slot && slot.used);
+  }
 
   async function api(path, body) {
     return runtime.request(path, body);
@@ -566,7 +569,7 @@ import { createGameRuntime } from './runtime-client.js';
 	  }
   function legalMoveTargets(hero) {
     const set = new Set();
-    if (!hero?.position || ui.vm.phase !== 'player_turn' || ui.slotArmed) return set;
+    if (!hero?.position || unitPositionLocked(hero) || ui.vm.phase !== 'player_turn' || ui.slotArmed) return set;
     const range = Number(hero.moveRange ?? hero.ap ?? 1);
     for (const cell of ui.vm.board?.cells || []) {
       const d = Math.abs(cell.r - hero.position.r) + Math.abs(cell.c - hero.position.c);
@@ -607,6 +610,11 @@ import { createGameRuntime } from './runtime-client.js';
     if (canMoveSelectedHero) {
       await waitForUiIdle();
       await runCommand('MOVE_HERO', { unitId: hero.id, to: { r, c } });
+      return;
+    }
+    if (ui.vm?.phase === 'player_turn' && unitPositionLocked(hero) && !ui.slotArmed && cell && !cell.unitId) {
+      toast(`${hero.name} 本回合已行动，位置锁定。`, true);
+      await fetchCellDetail(r, c);
       return;
     }
     const unit = unitById(cell?.unitId);
@@ -913,6 +921,7 @@ import { createGameRuntime } from './runtime-client.js';
     const phase = ui.vm?.phase;
     if (phase === 'init') return { label: '准备', cls: 'idle' };
     if (phase === 'player_turn' && slot) return { label: '瞄准', cls: 'armed' };
+    if (phase === 'player_turn' && unitPositionLocked(hero)) return { label: '锁定', cls: 'target' };
     if (phase === 'player_turn' && hero) return { label: '移动', cls: 'ready' };
     if (phase === 'player_turn') return { label: '选英雄', cls: 'idle' };
     if (phase === 'monster_turn' || phase === 'round_end') return { label: '观察', cls: 'target' };
@@ -927,6 +936,7 @@ import { createGameRuntime } from './runtime-client.js';
     if (phase === 'player_turn' && ui.slotArmed) return '瞄准中：点棋盘只选择目标格；点我方英雄可退出瞄准并回到移动。';
     if (phase === 'player_turn') {
       const hero = selectedHero();
+      if (unitPositionLocked(hero)) return `${hero.name} 本回合已行动，位置锁定；可选择其他英雄或点行动槽继续。`;
       if (hero) return `${hero.name} 已选中：点空格移动；点敌人或Boss查看详情；点行动槽进入瞄准。`;
       return '点棋盘上的我方英雄或左侧英雄卡选中，再点空格移动。';
     }

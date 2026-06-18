@@ -4,16 +4,14 @@
  * @typedef {{r:number,c:number}} Position
  * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, ap?:number, actionApSpent?:number, actionSlotsUsed?:Record<string, boolean>, shape?:Record<string, any>, element?:string, position?:Position, displayName?:string}} BattleUnit
  * @typedef {{r:number,c:number,unitId?:string|null,elements?:Record<string, number>,preview?:Record<string, any>|null,threat?:Record<string, any>|null}} BattleCell
- * @typedef {{phase?:string, selected?:Record<string, any>, actionDirs:Record<string, string>, units?:BattleUnit[], board?:{cells?:BattleCell[]}}} BattleState
+ * @typedef {{phase?:string, selected?:Record<string, any>, actionDirs:Record<string, string>, events?:Array<Record<string, any>>, units?:BattleUnit[], board?:{cells?:BattleCell[]}}} BattleState
  * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean}} ActionSlot
  */
 
 const {
   joinClauses,
-  snapshotCellElements,
-  snapshotUnitDamage,
-  summarizeElementIncreases,
-  summarizeUnitDamage
+  summarizeDamageEvents,
+  summarizeElementIncreaseEvents
 } = require('./eventSummary.cjs');
 
 /**
@@ -119,8 +117,7 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   const apUsed = requestedAp;
   const effectiveLayers = Math.max(1, Number(slot.layers || 1)) * apUsed;
   const targets = targetsAtCells(state, cells, targetCamp);
-  const beforeElements = snapshotCellElements(state.board?.cells || []);
-  const beforeTargetDamage = snapshotUnitDamage(combatTargets(state, targetCamp));
+  const beforeEventCount = Array.isArray(state.events) ? state.events.length : 0;
   const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.layers });
   // 先执行槽效果
   if (targets.length) for (const t of targets) applyElement(state, actor, t, slot.element, effectiveLayers, { slot: appliedSlot, apUsed });
@@ -153,8 +150,9 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   actor.actionApSpent = unitApSpent(actor) + apUsed;
   actor.hasAttacked = true;  // 攻击后锁定位置
   syncDerivedBoard(state);
-  const damageSummary = summarizeUnitDamage(beforeTargetDamage, combatTargets(state, targetCamp));
-  const elementIncreases = summarizeElementIncreases(beforeElements, state.board?.cells || []);
+  const actionEvents = (state.events || []).slice(beforeEventCount);
+  const damageSummary = summarizeDamageEvents(actionEvents, id => getUnit(state, id));
+  const elementIncreases = summarizeElementIncreaseEvents(actionEvents);
   const targetSummary = targets.length ? `命中${targets.map(t => t.displayName || t.name).join('、')}` : `作用${cells.length}格`;
   const elementSummary = elementIncreases.length ? `元素增加：${elementIncreases.join('，')}` : '';
   pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.layers, effectiveLayers, targetIds: targets.map(t => t.id), damageSummary, elementIncreases, text: `${actor.displayName} 施放第${idx + 1}槽：${joinClauses([

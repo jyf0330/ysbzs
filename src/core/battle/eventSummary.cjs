@@ -18,53 +18,46 @@ function summarizeRiskChange(beforeRisk, afterRisk) {
   return `预计受伤 ${before}->${after}`;
 }
 
-function snapshotUnitDamage(units = []) {
-  const map = new Map();
-  for (const unit of units || []) {
-    if (!unit || !unit.id) continue;
-    map.set(unit.id, {
-      name: unit.displayName || unit.name || unit.id,
-      hp: Number(unit.hp || 0),
-      shield: Number(unit.shield || 0)
-    });
+/**
+ * @param {Array<Record<string, any>>} [events]
+ * @param {(unitId?: string) => Record<string, any>|null} [getUnit]
+ * @returns {string[]}
+ */
+function summarizeDamageEvents(events = [], getUnit = () => null) {
+  const totals = new Map();
+  for (const event of events || []) {
+    if (!event || event.type !== 'DAMAGE') continue;
+    const amount = Math.max(0, Number(event.final || 0));
+    if (amount <= 0) continue;
+    const target = getUnit(event.targetId) || {};
+    const key = `${event.targetId || 'unknown'}:${event.element || ''}`;
+    const current = totals.get(key) || {
+      name: target.displayName || target.name || event.targetName || event.targetId || '目标',
+      element: event.element || '',
+      amount: 0
+    };
+    current.amount += amount;
+    totals.set(key, current);
   }
-  return map;
+  return Array.from(totals.values()).map(item => `${item.name}受${item.element || ''}伤${item.amount}`);
 }
 
-function summarizeUnitDamage(beforeMap, units = []) {
-  const lines = [];
-  for (const unit of units || []) {
-    const before = beforeMap.get(unit.id);
-    if (!before) continue;
-    const hpLoss = Math.max(0, before.hp - Number(unit.hp || 0));
-    const shieldLoss = Math.max(0, before.shield - Number(unit.shield || 0));
-    const total = hpLoss + shieldLoss;
-    if (total > 0) lines.push(`${before.name}受伤${total}`);
+/**
+ * @param {Array<Record<string, any>>} [events]
+ * @returns {string[]}
+ */
+function summarizeElementIncreaseEvents(events = []) {
+  const totals = new Map();
+  for (const event of events || []) {
+    if (!event || event.type !== 'APPLY_ELEMENT_CELL') continue;
+    const delta = Math.max(0, Number(event.to || 0) - Number(event.from || 0));
+    if (delta <= 0 || !ELEMENTS.includes(event.element)) continue;
+    const key = `${event.r},${event.c}:${event.element}`;
+    const current = totals.get(key) || { r: Number(event.r), c: Number(event.c), element: event.element, amount: 0 };
+    current.amount += delta;
+    totals.set(key, current);
   }
-  return lines;
-}
-
-function snapshotCellElements(cells = []) {
-  const map = new Map();
-  for (const cell of cells || []) {
-    const key = `${cell.r},${cell.c}`;
-    const elements = {};
-    for (const el of ELEMENTS) elements[el] = Number(cell.elements?.[el] || 0);
-    map.set(key, elements);
-  }
-  return map;
-}
-
-function summarizeElementIncreases(beforeMap, cells = []) {
-  const lines = [];
-  for (const cell of cells || []) {
-    const before = beforeMap.get(`${cell.r},${cell.c}`) || {};
-    for (const el of ELEMENTS) {
-      const delta = Number(cell.elements?.[el] || 0) - Number(before[el] || 0);
-      if (delta > 0) lines.push(`${compactPositionLabel(cell)} ${el}+${delta}`);
-    }
-  }
-  return lines;
+  return Array.from(totals.values()).map(item => `${compactPositionLabel(item)} ${item.element}+${item.amount}`);
 }
 
 function joinClauses(clauses) {
@@ -74,9 +67,7 @@ function joinClauses(clauses) {
 module.exports = {
   compactPositionLabel,
   joinClauses,
-  snapshotCellElements,
-  snapshotUnitDamage,
-  summarizeElementIncreases,
+  summarizeDamageEvents,
+  summarizeElementIncreaseEvents,
   summarizeRiskChange,
-  summarizeUnitDamage
 };

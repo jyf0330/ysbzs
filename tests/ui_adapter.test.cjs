@@ -733,7 +733,7 @@ test('UI24 玩家移动事件只显示位移和预计受伤变化', () => {
   assert.doesNotMatch(event.text, /本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
 });
 
-test('UI25 施放行动槽日志只显示命中、伤害和元素增加摘要', () => {
+test('UI25 施放行动槽日志同时显示怪物受伤和本次元素增加', () => {
   const state = createGameState({ activePets: ['pal_005'], battleId: 'compact_action_event_log' });
   battle.startBattle(state);
   const actor = state.units.find(u => u.side === 'hero' && u.alive);
@@ -761,9 +761,10 @@ test('UI25 施放行动槽日志只显示命中、伤害和元素增加摘要', 
   const event = state.events.find(e => e.type === 'PLAYER_SELECT_SLOT');
   assert.ok(event, '施放事件需要存在');
   assert.match(event.text, /二格线\/火1层\/AP1/);
-  assert.match(event.text, new RegExp(`${target.displayName || target.name}受伤`));
-  assert.deepEqual(event.damageSummary, [`${target.displayName || target.name}受伤6`]);
-  assert.deepEqual(event.elementIncreases, []);
+  assert.match(event.text, new RegExp(`${target.displayName || target.name}受火伤6`));
+  assert.match(event.text, /元素增加：R6C5 火\+1/);
+  assert.deepEqual(event.damageSummary, [`${target.displayName || target.name}受火伤6`]);
+  assert.deepEqual(event.elementIncreases, ['R6C5 火+1']);
   assert.doesNotMatch(event.text, /本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
 });
 

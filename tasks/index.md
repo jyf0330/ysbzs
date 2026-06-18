@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-18_full-browser-event-log.md`
 - `tasks/done/2026-06-18_public-event-payloads.md`
 - `tasks/done/2026-06-18_puzzle-solver-page.md`
 - `tasks/done/2026-06-18_pure-singleplayer-runtime.md`

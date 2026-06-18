@@ -39,6 +39,15 @@ test('UI03 render cache prevents unchanged sections from doing full DOM rebuild 
   assert.match(main, /renderStaticStatus\(vm\)/);
 });
 
+test('UI03A event log renders the full browser-visible history from the first event', () => {
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const main = read(file);
+    assert.doesNotMatch(main, /events\.slice\(-22\)/, `${file} should not truncate the event tab to the newest 22 rows`);
+    assert.match(main, /events\.map\(e =>/, `${file} should render every ViewModel event row`);
+    assert.match(main, /scrollTop = 0/, `${file} should keep the event tab positioned at the first event`);
+  }
+});
+
 test('UI03B top status bar exposes outer route progress, build core, and next step', () => {
   const html = read('web/index.html');
   const main = read('web/js/main.js');

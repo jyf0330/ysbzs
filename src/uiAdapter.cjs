@@ -279,8 +279,11 @@ function firstEmptyHeroCell(state) {
   }
   return { r: 7, c: 0 };
 }
-function recentEvents(state, n = 30) {
-  return state.events.slice(-n).map(toPublicEvent);
+function recentEvents(state, n = null) {
+  const events = Array.isArray(state.events) ? state.events : [];
+  const limit = Number(n);
+  const list = Number.isFinite(limit) && limit >= 0 ? events.slice(-limit) : events;
+  return list.map(toPublicEvent);
 }
 function logGroups(state) {
   return {

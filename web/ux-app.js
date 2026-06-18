@@ -1006,8 +1006,8 @@
       return;
     }
     const events = vm.events || [];
-    $('log').textContent = events.slice(-22).map(e => `${String(e.step || '').padStart(3, '0')} [${e.type}] ${e.text || ''}`).join('\n') || '暂无事件。';
-    requestAnimationFrame(() => autoScrollLog());
+    $('log').textContent = events.map(e => `${String(e.step || '').padStart(3, '0')} [${e.type}] ${e.text || ''}`).join('\n') || '暂无事件。';
+    requestAnimationFrame(() => { $('log').scrollTop = 0; });
   }
   function autoScrollLog() {
     const log = $('log');

@@ -1118,11 +1118,11 @@ import { createGameRuntime } from './runtime-client.js';
       HEAL: '治疗', DEATH: '阵亡', STATUS: '状态', TRAP: '陷阱',
       SKILL: '技能', BUFF: '增益', DEBUFF: '减益', PHASE: '阶段',
     };
-    $('log').textContent = events.slice(-22).map(e => {
+    $('log').textContent = events.map(e => {
       const label = EVENT_LABEL[e.type] || e.type;
       return `${String(e.step || '').padStart(3, '0')} [${label}] ${e.text || ''}`;
     }).join('\n') || '暂无事件。';
-    requestAnimationFrame(() => autoScrollLog());
+    requestAnimationFrame(() => { $('log').scrollTop = 0; });
   }
   function autoScrollLog() {
     const log = $('log');

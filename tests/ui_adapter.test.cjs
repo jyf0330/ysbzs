@@ -56,6 +56,10 @@ test('UI03 开始战斗只通过适配层命令，返回事件和 ViewModel', ()
   assert.equal(result.command, 'RUN_BATTLE');
   assert.ok(hasEvent(result, 'BATTLE_START'));
   assert.ok(result.viewModel.result);
+  const allEvents = adapter.getEvents();
+  assert.ok(allEvents.length > 30, 'RUN_BATTLE should produce enough events to catch truncated ViewModel output');
+  assert.equal(result.viewModel.events.length, allEvents.length, 'ViewModel events should keep the full browser-visible history');
+  assert.equal(result.viewModel.events[0].step, allEvents[0].step, 'browser event history should start from the first event');
 });
 
 test('UI03B 我方全部出击通过公开批量命令逐个走核心 USE_SLOT', () => {

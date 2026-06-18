@@ -264,7 +264,7 @@ import { createGameRuntime } from './runtime-client.js';
     const vm = ui.vm;
     if (!vm) return;
     if (!ui.selectedUnitId || !unitById(ui.selectedUnitId)) ui.selectedUnitId = vm.selected?.unitId || null;
-    if (vm.selected?.cell) ui.selectedCell = vm.selected.cell;
+    if (vm.selected?.cell && !ui.selectedCell) ui.selectedCell = vm.selected.cell;
     const info = selectedSlotInfo();
     if (info) { ui.selectedSlotGlobal = info.globalIndex; ui.selectedSlot = info.localIndex; }
     window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, makeCommand, saveGame, loadGameFromStorage, isBusy: () => ui.busy };
@@ -595,6 +595,7 @@ import { createGameRuntime } from './runtime-client.js';
   async function fetchCellDetail(r, c) {
     try {
       const data = await api('/api/action', makeCommand('GET_CELL_DETAIL', { r, c }));
+      ui.selectedCell = { r: Number(r), c: Number(c) };
       ui.cellDetail = data.result || null;
       if (data.viewModel) ui.vm = data.viewModel;
       renderCellDetail();

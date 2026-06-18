@@ -27,15 +27,16 @@ Do not pause unless a High-Risk Exception applies.
 1. git status --short                           # 检查 dirty
 2. read tasks/index.md                          # 读任务总览
 3. read tasks/doing/*.md tasks/paused/*.md      # 读任务卡
-4. check related_files overlap                  # FILE_CONFLICT_STOP
-5. 无冲突 → 推进；有冲突 → 暂停输出报告
+4. create/update current task card              # 声明 owner/status/related_files/exclusive_files
+5. check file-level lease overlap               # FILE_CONFLICT_STOP
+6. 无冲突 → 推进；有冲突 → 暂停输出报告
 ```
 
 推进流程：
 
 ```text
 read entry docs -> classify -> check tasks/ + git status ->
-resolve conflicts -> plan -> execute -> verify (node test.js) ->
+reserve file-level task lease -> resolve conflicts -> plan -> execute -> verify (node test.js) ->
 if visible change -> visual QA subthread gate ->
 update docs -> if auto-commit conditions met -> commit
 ```
@@ -76,10 +77,29 @@ implementation thread finishes code/tests
 
 | 角色 | 责任 | 允许写入 |
 |---|---|---|
-| Lead Agent | 占用任务卡、决定范围、修改文件、整合外部意见、运行最终验证、提交或输出 Commit Plan | 当前任务 `related_files` |
+| Lead Agent | 创建/更新任务卡、决定范围、分配文件级租约、整合外部意见、运行最终验证、提交或输出 Commit Plan | 当前任务 `related_files` / `exclusive_files` |
 | Specialist Agent | 只做窄域审查、方案对照、代码风险点或测试建议；结论必须可被 Lead 复核 | 默认只读，除非 Lead 在任务卡中明确分配文件 |
 | Tester Pass | 独立真实入口验收，保存截图，记录操作步骤、DOM/ViewModel/state/console 证据 | `output/playwright/` 与任务卡证据；不改实现文件 |
 | External AI | 外部建议、草案、灵感来源 | 不直接写仓库；必须由 Lead 按项目规则筛选 |
+
+### 并行任务模型
+
+`tasks/doing/` 允许多个 ACTIVE 任务卡。并行是否合法不再由“是否已有 ACTIVE”决定，而由文件级租约决定：
+
+- `related_files`: 当前任务可写文件。
+- `exclusive_files`: 高风险共享文件，同一时刻只能被一个 ACTIVE 任务占用。
+- `read_files`: 只读参考文件，不形成写入租约。
+- `owner`: 当前任务的负责 AI / 线程 / worker。
+- `branch` / `worktree`: 当前分支或工作区；共享工作区写 `shared-worktree`。
+
+任务状态：
+
+- `ACTIVE_IMPL`: 正在实现。
+- `ACTIVE_TEST`: 等待独立 tester pass 或补充验收。
+- `READY_TO_MERGE`: 证据齐全，等待 Lead 集成/提交。
+- `BLOCKED`: 冲突、验收失败、正式流程不可达或需要用户拍板。
+
+同一任务的实现、测试和提交可以由不同角色参与，但最终精确暂存、提交和归档只由 Lead 执行。
 
 ### 什么时候派其他 AI
 
@@ -110,10 +130,11 @@ collaboration:
 
 ### 冲突处理
 
-1. 任意 AI 发现目标文件被其他任务卡占用，立即触发 `FILE_CONFLICT_STOP`。
+1. 任意 AI 发现目标文件与其他任务卡 `related_files` 或 `exclusive_files` 重叠，立即触发 `FILE_CONFLICT_STOP`。
 2. Specialist 与 External AI 的意见不能覆盖项目规则；只能作为 Lead 的输入。
 3. Tester Pass 如果发现截图、DOM、ViewModel、状态或 console 不匹配，Lead 必须回到实现或输出 blocked，不得自动提交。
 4. 多 AI 之间不互相转交提交权；只有 Lead 执行精确暂存、提交和任务归档。
+5. 不再因为 `tasks/doing/` 里存在其他 ACTIVE 任务而自动停止；只有文件租约、独占文件、dirty/staged 边界或任务卡记录冲突才停止。
 
 ### External AI CLI Runner
 
@@ -190,6 +211,7 @@ read project entry -> read task cards -> analyze current state -> output plan / 
 
 - 允许工作区同时存在多个任务的未提交改动。
 - 按任务边界自动拆成多个 commit，**每个 commit 只属于一个任务**。
+- 多个 `tasks/doing/` 任务可以并行存在；`git-c` 必须按 `related_files` / `exclusive_files` 分组收口。
 - 无法归属的文件：自动忽略垃圾文件 → 低风险 leftovers 集合提交 → 高风险 blocked 暂停。
 - **禁止** `git add .` / `git add -A`，只精确暂存。
 
@@ -207,7 +229,7 @@ Phase 2 分类:
     Task Groups     — 可归属到任务卡的文件组
     Ignore Group    — 明显垃圾文件 (已 gitignore 或建议加入)
     Leftovers Group — 有效项目文件但无法归属，低风险
-    Blocked Group   — 高风险/冲突/无法自动处理
+    Blocked Group   — 高风险/冲突/无法自动处理/多任务声称同一文件
   输出 Commit Plan。
   如果存在 Blocked Group -> 暂停，等待用户拍板。
 
@@ -310,7 +332,7 @@ For any task that will edit files, `task-occupancy` is the first gate:
 
 ```text
 read workflow/task docs -> git status ->
-create/update ACTIVE task card -> reserve related_files ->
+create/update ACTIVE task card -> reserve related_files/exclusive_files ->
 check overlap / dirty files -> edit -> verify ->
 visible changes: testing subthread screenshot gate ->
 archive task card -> commit if conditions allow
@@ -318,8 +340,9 @@ archive task card -> commit if conditions allow
 
 If the task system is required but `tasks/` is missing, create the minimal
 `tasks/index.md`, `tasks/README.md`, `tasks/doing/`, `tasks/paused/`, and
-`tasks/done/` structure before editing. If another ACTIVE task owns the slot,
-stop with `FILE_CONFLICT_STOP` unless the user explicitly continues that task.
+`tasks/done/` structure before editing. If another ACTIVE task owns the same
+`related_files` / `exclusive_files`, stop with `FILE_CONFLICT_STOP` unless the
+user explicitly continues or merges that task.
 
 If the agent cannot invoke a listed skill because the current AI tool does not
 expose it, the skill is missing, the user explicitly excludes it, or the task
@@ -351,7 +374,7 @@ Codex note:
 |---|---|
 | 任务总览与断线恢复 | `tasks/index.md` |
 | 任务系统细则（含 FILE_CONFLICT_STOP、git-c 集成） | `tasks/README.md` |
-| 当前 ACTIVE 任务卡 | `tasks/doing/` 中 |
+| 当前 ACTIVE 任务卡 | `tasks/doing/` 中，可有多个 |
 | PAUSED 任务卡 | `tasks/paused/` 中 |
 | 批量收口提交细则 | `tasks/README.md` → 「git-c 集成细则」 |
 | Goal 执行规则、核心层分离、模块拆分 | `docs/00_AI_START_HERE.md` → 「Goal 执行规则」 |
@@ -360,7 +383,7 @@ Codex note:
 
 ## 冲突硬停规则
 
-如果检测到当前任务要修改的文件与其他任务卡中的 `related_files` 重叠，或工作区脏文件无法归属当前任务，必须：
+如果检测到当前任务要修改的文件与其他任务卡中的 `related_files` / `exclusive_files` 重叠，或工作区脏文件无法归属当前任务，必须：
 
 1. **立即暂停**，不得继续修改或提交
 2. 输出冲突报告

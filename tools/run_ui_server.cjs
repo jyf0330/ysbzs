@@ -3,6 +3,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { createServerAuthorityAdapter } = require('../src/adapters/serverAuthorityAdapter.cjs');
+const { createGameState } = require('../src/core/state.cjs');
+const battle = require('../src/core/battle.cjs');
+const { makeUnitFromData } = require('../src/core/unitFactory.cjs');
+const { generatePuzzleCandidates } = require('../src/core/puzzleGenerator.cjs');
 
 const root = path.resolve(__dirname, '..');
 const webRoot = path.join(root, 'web');
@@ -27,6 +31,31 @@ function replaceSession(id, opts = {}) {
   const adapter = createAdapter(opts);
   sessions.set(id || DEFAULT_SESSION_ID, adapter);
   return adapter;
+}
+
+function demoPuzzleState() {
+  const state = createGameState({ activePets: ['pal_005'], day: 99, period: '谜题', seed: 'puzzle-solver-page' });
+  const hero = state.units.find(u => u.side === 'hero');
+  hero.id = 'hero_fire';
+  hero.position = { r: 3, c: 3 };
+  hero.moveRange = 0;
+  hero.ap = 3;
+  hero.actionApSpent = 0;
+  hero.actionSlotsUsed = {};
+  hero.hasAttacked = false;
+  hero.shape = Object.assign({}, hero.shape, { slotCount: 1, slotElements: ['火'] });
+  state.units = [hero];
+  state.units.push(makeUnitFromData(state, 'enemy', 'pal_001', {
+    id: 'enemy_target',
+    hp: 6,
+    shield: 0,
+    position: { r: 3, c: 4 },
+    mechanics: ['none']
+  }));
+  state.phase = 'player_turn';
+  state.round = 1;
+  battle.syncDerivedBoard(state);
+  return state;
 }
 
 function send(res, status, content, type = 'application/json; charset=utf-8') {
@@ -63,6 +92,11 @@ async function handleApi(req, res) {
   const sessionId = sessionIdFromReq(req, url);
   try {
     if (req.method === 'GET' && url.pathname === '/api/health') return json(res, 200, { ok: true, status: 'ok', sessions: sessions.size }, sessionId);
+    if (req.method === 'GET' && url.pathname === '/api/puzzle/solve-demo') {
+      const count = Math.max(1, Math.min(8, Number(url.searchParams.get('count') || 1)));
+      const candidates = generatePuzzleCandidates({ baseState: demoPuzzleState, count, maxDepth: 1, requireUnique: true });
+      return json(res, 200, { ok: true, candidates }, sessionId);
+    }
     if (req.method === 'POST' && url.pathname === '/api/session/new') {
       const body = await readBody(req);
       const id = body.sessionId || sessionId || `session_${Date.now()}`;

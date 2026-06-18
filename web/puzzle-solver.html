@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>元素背包史 · 谜题求解器</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="puzzle-solver.css" />
+</head>
+<body>
+  <main class="solver-shell">
+    <header class="solver-topbar">
+      <section>
+        <div class="eyebrow">元素背包史 / Exact Puzzle Lab</div>
+        <h1>谜题求解器实验台</h1>
+      </section>
+      <nav class="solver-nav" aria-label="页面导航">
+        <a href="index.html">战斗页面</a>
+        <a href="puzzle-submission.html">投稿器</a>
+        <button id="refresh-demo-btn" type="button">生成唯一解题</button>
+        <button id="solve-btn" class="primary" type="button">运行精确求解</button>
+      </nav>
+    </header>
+
+    <section class="solver-status" aria-label="求解状态">
+      <div><span>状态</span><strong id="solve-status">待运行</strong></div>
+      <div><span>最短深度</span><strong id="shortest-depth">-</strong></div>
+      <div><span>解法数</span><strong id="solution-count">-</strong></div>
+      <div><span>初始 Hash</span><strong id="initial-hash">-</strong></div>
+      <div><span>最终 Hash</span><strong id="final-hash">-</strong></div>
+    </section>
+
+    <section class="solver-layout">
+      <aside class="solver-panel puzzle-panel">
+        <div class="panel-head">
+          <h2>谜题参数</h2>
+          <span id="source-label">fixture</span>
+        </div>
+        <dl class="facts-list">
+          <div><dt>我方</dt><dd>火绒狐 · R4C4 · AP3 · 单火槽</dd></div>
+          <div><dt>敌人</dt><dd>棉悠悠复制体 · R4C5 · HP6</dd></div>
+          <div><dt>目标</dt><dd>1 步内敌方全灭，且唯一最短解</dd></div>
+          <div><dt>结算</dt><dd>火 3 层触发火爆，真实核心输出状态 hash</dd></div>
+        </dl>
+        <div class="trace-box">
+          <h3>精确轨迹</h3>
+          <ol id="solution-steps" class="solution-steps"></ol>
+        </div>
+      </aside>
+
+      <section class="board-lab" aria-label="谜题棋盘">
+        <div class="board-head">
+          <div>
+            <h2>8×8 棋盘</h2>
+            <p id="board-caption">当前展示初始局面。</p>
+          </div>
+          <div class="board-legend" aria-label="图例">
+            <span><i class="ally"></i>我方</span>
+            <span><i class="enemy"></i>敌方</span>
+            <span><i class="hit"></i>命中</span>
+          </div>
+        </div>
+        <div class="board-frame">
+          <div id="solver-board" class="solver-board"></div>
+        </div>
+      </section>
+
+      <aside class="solver-panel proof-panel">
+        <div class="panel-head">
+          <h2>证明输出</h2>
+          <span id="console-status">console: -</span>
+        </div>
+        <pre id="proof-output" class="proof-output">等待求解。</pre>
+      </aside>
+    </section>
+  </main>
+
+  <script src="js/puzzle-solver.js"></script>
+</body>
+</html>

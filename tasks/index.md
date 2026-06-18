@@ -12,7 +12,9 @@
 
 ## DONE
 
+- `tasks/done/2026-06-18_puzzle-solver-page.md`
 - `tasks/done/2026-06-18_pure-singleplayer-runtime.md`
+- `tasks/done/2026-06-18_puzzle-solver-generator.md`
 - `tasks/done/2026-06-18_daily-flow-page.md`
 - `tasks/done/2026-06-17_cell-detail-preview-source.md`
 - `tasks/done/2026-06-17_ai-collaboration-workflow.md`

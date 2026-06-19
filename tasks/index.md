@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-19_player-pet-injury-display.md`
 - `tasks/done/2026-06-19_manual-flow-preview-performance.md`
 - `tasks/done/2026-06-19_move-risk-sandbox-formal-move.md`
 - `tasks/done/2026-06-19_team-risk-intent-source-fix.md`

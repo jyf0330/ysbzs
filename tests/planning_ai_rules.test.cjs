@@ -139,7 +139,11 @@ test('PA05 enemy pet spends AP on consecutive action blocks when already in rang
 
   assert.equal(acted, 3, '3 AP in range should produce three action-block attacks');
   assert.equal(hero.hp, 8, 'three ATK 4 action blocks should deal 12 total HP damage');
-  assert.equal(state.events.filter(e => e.type === 'ENEMY_PET_ACTION').length, 3);
+  const actionEvents = state.events.filter(e => e.type === 'ENEMY_PET_ACTION');
+  assert.equal(actionEvents.length, 3);
+  const heroName = hero.displayName || hero.name;
+  assert.deepEqual(actionEvents[0].damageSummary, [`${heroName}受伤4`]);
+  assert.match(actionEvents[0].text, new RegExp(`${heroName}受伤4`));
   assert.equal(state.events.filter(e => e.type === 'DAMAGE' && e.sourceId === enemy.id).length, 3);
 });
 

@@ -11,6 +11,7 @@ const { createActionsModule } = require('./battle/actions.cjs');
 const { createPlanningModule } = require('./battle/planning.cjs');
 const { createPreviewModule } = require('./battle/preview.cjs');
 const { createResolutionModule } = require('./battle/resolution.cjs');
+const { summarizeDamageEvents } = require('./battle/eventSummary.cjs');
 
 let boardUnitAt, canStandAt, allStandCells, moveHero, moveUnitGeneral;
 let slotsForUnit, parseSlotIndex, targetCellsForSlot, targetsAtCells, unitsAtCells, setActionDirection, useActionSlot;
@@ -304,23 +305,18 @@ function runMonsterTurn(state) {
         const cells = clone(step.attackCells || []);
         const targets = targetsAtCells(state, cells, 'player').filter(target => target.alive !== false && Number(target.hp || 0) > 0);
         if (!targets.length) continue;
+        const targetIds = targets.map(target => target.id);
         unit.actionSlotsUsed = unit.actionSlotsUsed || {};
         unit.actionSlotsUsed[step.slotIndex] = true;
         unit.actionApSpent = Math.max(0, Number(unit.actionApSpent || 0)) + 1;
-        pushEvent(state, 'ENEMY_PET_ACTION', {
-          unitId: unit.id,
-          slotId: step.slotIndex,
-          slotLabel: step.slotLabel,
-          shapeId: step.shapeId,
-          shapeName: step.shapeName,
-          direction: step.direction,
-          cells,
-          targetIds: targets.map(target => target.id),
-          apCost: 1,
-          apAfter: step.apAfter,
-          text: `${unit.displayName || unit.name} 使用${step.slotLabel || `第${Number(step.slotIndex || 0) + 1}槽`}（${step.shapeName || '普通攻击'} / ${step.direction}），命中 ${targets.map(target => target.displayName || target.name).join('、')}。`
-        });
+        const actionPrefix = `${unit.displayName || unit.name} 使用${step.slotLabel || `第${Number(step.slotIndex || 0) + 1}槽`}（${step.shapeName || '普通攻击'} / ${step.direction}）`;
+        const targetText = targets.map(target => target.displayName || target.name).join('、');
+        const actionEvent = pushEvent(state, 'ENEMY_PET_ACTION', { unitId: unit.id, slotId: step.slotIndex, slotLabel: step.slotLabel, shapeId: step.shapeId, shapeName: step.shapeName, direction: step.direction, cells, targetIds, apCost: 1, apAfter: step.apAfter, text: `${actionPrefix}，命中 ${targetText}。` });
+        const damageStartStep = state.nextStep;
         for (const target of targets) damageUnit(state, unit, target, unit.atk, { element: null, attack: true, direction: step.direction, sourceType: 'enemy_pet_action' });
+        const damageSummary = summarizeDamageEvents(state.events.filter(event => event.step >= damageStartStep && event.type === 'DAMAGE' && event.sourceId === unit.id && targetIds.includes(event.targetId)), id => getUnit(state, id));
+        actionEvent.damageSummary = damageSummary;
+        actionEvent.text = `${actionPrefix}，${[`命中 ${targetText}`, damageSummary.join('，')].filter(Boolean).join('，')}。`;
         acted++;
       }
       if (state.phase === 'battle_end') break;

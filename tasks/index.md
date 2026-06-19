@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-20_manual-preview-diff-only-display.md`
 - `tasks/done/2026-06-20_trial-hero-boardwide-move.md`
 - `tasks/done/2026-06-19_structured-performance-timing.md`
 - `tasks/done/2026-06-19_move-simulation-diff-preview.md`

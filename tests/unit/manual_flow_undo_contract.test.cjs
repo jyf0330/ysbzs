@@ -35,6 +35,8 @@ test('manual enemy-flow preview comes from transactional public command data', (
     assert.match(js, /manualFlowPreview/, `${file} should cache the projected two-button preview result`);
     assert.match(js, /function normalizeManualFlowPreviewResult/, `${file} should normalize projected data before rendering`);
     assert.match(js, /cellByKey: indexByCell\(cells\)/, `${file} should index projected cells by board coordinate`);
+    assert.match(js, /function indexById/, `${file} should index projected unit diffs by unit id`);
+    assert.match(js, /unitDiffById: indexById\(unitDiffs\)/, `${file} should expose latest projected unit diffs for rendering`);
     assert.match(js, /function manualFlowPreviewKey/, `${file} should expose a stable render signature for projected data`);
     assert.match(js, /function teamRiskGridSource/, `${file} should centralize incoming-risk data source selection`);
     assert.match(js, /manualFlowPreviewVM\(\)/, `${file} should prefer the projected ViewModel over current-state risk data`);
@@ -43,7 +45,16 @@ test('manual enemy-flow preview comes from transactional public command data', (
     const riskBody = js.match(/function teamRiskForUnit\(unit\) \{([\s\S]*?)\n  \}/);
     assert.ok(riskBody, `${file} should expose teamRiskForUnit`);
     assert.match(riskBody[1], /const projected = manualFlowPreviewVM\(\)/, `${file} should know whether a transaction preview exists`);
-    assert.match(riskBody[1], /if \(projected\) return unit\.position \? previewCellAt\(unit\.position\.r, unit\.position\.c\)\?\.teamRisk \|\| null : null;/, `${file} must not fall back to current cell.teamRisk when projected preview has no risk`);
+    assert.match(riskBody[1], /if \(projected\) return projectedInjuryForUnit\(unit\);/, `${file} should render projected injury from unit diff once sandbox data exists`);
+    assert.doesNotMatch(riskBody[1], /previewCellAt\(unit\.position\.r, unit\.position\.c\)\?\.teamRisk/, `${file} must not use projected teamRisk as final injury result`);
+    const detailBody = js.match(/function renderCellDetail\(\) \{([\s\S]*?)\n  \}/);
+    assert.ok(detailBody, `${file} should expose renderCellDetail`);
+    assert.match(detailBody[1], /const detail = projectedDetail \|\| currentDetail;/, `${file} should let latest projected detail override current cell detail`);
+    assert.match(detailBody[1], /const selectedCellUnit = c \? projectedCellUnit\(detail, selectedCell\) : null;/, `${file} should resolve selected unit from projected detail before current VM`);
+    const boardBody = js.match(/function renderBoard\(\) \{([\s\S]*?)\n\t  \}/);
+    assert.ok(boardBody, `${file} should expose renderBoard`);
+    assert.match(boardBody[1], /const boardInjuries = projected \? projectedInjuries\(\) : teamRiskGridSource\(\);/, `${file} should render board injury badges from latest projected diffs`);
+    assert.doesNotMatch(boardBody[1], /projectedCell\?\.teamRisk/, `${file} must not render projected injury badges from stale teamRisk`);
   }
 });
 

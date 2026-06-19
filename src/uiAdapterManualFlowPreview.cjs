@@ -126,9 +126,13 @@ function buildMoveManualFlowPreview(adapter, command, result) {
   return preview?.ok === true ? preview.result : null;
 }
 
+function shouldPersistTiming(options = {}, command = {}) {
+  return command.persistTiming === true || options.persistTiming === true;
+}
+
 function runManualFlowPreviewTransaction(ctx, rawCommand) {
   const { state, options, defaultPlayerId, adapterRun, viewFor, viewStateFor, maybeSnapshot, commandText } = ctx;
-  const timing = createTimingLog('PREVIEW_MANUAL_FLOW');
+  const timing = createTimingLog('PREVIEW_MANUAL_FLOW', { persistLocal: shouldPersistTiming(options, rawCommand) });
   const transaction = timing.measure('capture_snapshot', () => captureFullSnapshotTransaction(ctx, rawCommand.playerId || defaultPlayerId));
   let command = null;
   try {
@@ -160,7 +164,21 @@ function runManualFlowPreviewTransaction(ctx, rawCommand) {
     const restoredViewState = timing.measure('capture_restored_view_state', () => viewStateFor(command));
     const authoritativeState = timing.measure('capture_authoritative_state', () => maybeSnapshot(command.playerId, restoredViewState));
     const restoredViewModel = timing.measure('capture_restored_view_model', () => viewFor(command));
-    const timingResult = timing.finish({ commandCount: commands.length, cellDiffCount: cellDiffs.length, unitDiffCount: unitDiffs.length });
+    const timingResult = timing.finish({
+      battleId: state.battleId || null,
+      commandId: command.commandId || rawCommand.commandId || null,
+      playerId: command.playerId || rawCommand.playerId || defaultPlayerId || null,
+      phaseBefore: beforeViewModel.phase || state.phase || null,
+      phaseAfter: projectedViewModel.phase || null,
+      roundBefore: beforeViewModel.round ?? state.round ?? null,
+      roundAfter: projectedViewModel.round ?? null,
+      stateVersion: transaction.stateVersion,
+      stateHash: transaction.stateHash,
+      projectedStateHash: projectedHash,
+      commandCount: commands.length,
+      cellDiffCount: cellDiffs.length,
+      unitDiffCount: unitDiffs.length
+    });
     return {
       ok: true,
       accepted: true,
@@ -181,7 +199,16 @@ function runManualFlowPreviewTransaction(ctx, rawCommand) {
     const fallbackCommand = command || Object.assign({ type: rawCommand.type || 'PREVIEW_MANUAL_FLOW', playerId: rawCommand.playerId || defaultPlayerId, commandId: rawCommand.commandId || 'preview_manual_flow_failed' }, rawCommand);
     const rejected = rejectedCommandResult(state, fallbackCommand, err);
     rejected.rolledBack = true;
-    rejected.timing = timing.finish({ error: err.message || String(err) });
+    rejected.timing = timing.finish({
+      battleId: state.battleId || null,
+      commandId: fallbackCommand.commandId || null,
+      playerId: fallbackCommand.playerId || null,
+      phaseBefore: state.phase || null,
+      roundBefore: state.round ?? null,
+      stateVersion: transaction.stateVersion,
+      stateHash: transaction.stateHash,
+      error: err.message || String(err)
+    });
     rejected.viewModel = viewFor(fallbackCommand);
     return rejected;
   }

@@ -84,6 +84,15 @@
     }
     return out;
   }
+  function indexById(items = []) {
+    const out = {};
+    for (const item of items || []) {
+      const id = item?.id ?? item?.unitId;
+      if (!id) continue;
+      out[id] = item;
+    }
+    return out;
+  }
   function normalizeManualFlowPreviewResult(result, sourceKey = null) {
     if (!result?.viewModel) return null;
     const beforeCells = Array.isArray(result.beforeCells) ? result.beforeCells : [];
@@ -117,6 +126,7 @@
       cellByKey: indexByCell(cells),
       cellDetailByKey: indexByCell(cellDetails),
       cellDiffByKey: indexByCell(cellDiffs),
+      unitDiffById: indexById(unitDiffs),
       signature,
       sourceKey
     });
@@ -156,17 +166,59 @@
   }
   function isNext(type) { return (ui.vm?.nextActions || []).some(a => a.type === type); }
   function selectedHero() { return unitById(ui.selectedUnitId || ui.vm?.selected?.unitId) || null; }
+  function injuryFromUnitDiff(diff, fallbackUnit = {}) {
+    if (!diff?.before || !diff?.after) return null;
+    const before = diff.before;
+    const after = diff.after;
+    const hpFrom = Math.max(0, Number(before.hp ?? 0));
+    const hpTo = Math.max(0, Number(after.hp ?? hpFrom));
+    const shieldFrom = Math.max(0, Number(before.shield ?? 0));
+    const shieldTo = Math.max(0, Number(after.shield ?? shieldFrom));
+    const hpDamage = Math.max(0, hpFrom - hpTo);
+    const shieldDamage = Math.max(0, shieldFrom - shieldTo);
+    const damage = hpDamage + shieldDamage;
+    if (damage <= 0) return null;
+    const pos = after.position || before.position || fallbackUnit.position || {};
+    return {
+      r: pos.r,
+      c: pos.c,
+      unitId: after.id || before.id || fallbackUnit.id,
+      unitName: after.displayName || after.name || before.displayName || before.name || fallbackUnit.displayName || fallbackUnit.name,
+      damage,
+      shieldDamage,
+      hpDamage,
+      shieldFrom,
+      shieldTo,
+      hpFrom,
+      hpTo,
+      lethal: hpTo <= 0,
+      enemyIds: [],
+      threats: []
+    };
+  }
+  function projectedInjuryForUnit(unit) {
+    if (!unit?.id) return null;
+    return injuryFromUnitDiff(ui.manualFlowPreview?.unitDiffById?.[unit.id], unit);
+  }
+  function projectedInjuries() {
+    return Object.values(ui.manualFlowPreview?.unitDiffById || {}).map(diff => injuryFromUnitDiff(diff)).filter(Boolean);
+  }
+  function projectedCellUnit(detail, selectedCell) {
+    if (manualFlowPreviewVM() && detail?.unit) return detail.unit;
+    const id = detail?.unit?.id || selectedCell?.unitId;
+    return unitById(id) || detail?.unit || null;
+  }
   function teamRiskForUnit(unit) {
     if (!unit?.id) return null;
     const projected = manualFlowPreviewVM();
+    if (projected) return projectedInjuryForUnit(unit);
     const risks = teamRiskGridSource();
     const direct = risks.find(risk => risk.unitId === unit.id);
     if (direct) return direct;
-    if (projected) return unit.position ? previewCellAt(unit.position.r, unit.position.c)?.teamRisk || null : null;
     return unit.position ? cellAt(unit.position.r, unit.position.c)?.teamRisk || null : null;
   }
   function primaryTeamRisk() {
-    const risks = teamRiskGridSource().filter(risk => Number(risk.damage || 0) > 0);
+    const risks = (manualFlowPreviewVM() ? projectedInjuries() : teamRiskGridSource()).filter(risk => Number(risk.damage || 0) > 0);
     return risks.sort((a, b) => Number(!!b.lethal) - Number(!!a.lethal) || Number(b.damage || 0) - Number(a.damage || 0))[0] || null;
   }
   function qualityMark(q) { return { '钻石': '◆', '黄金': '★', '白银': '◇', '青铜': '●' }[q] || ''; }
@@ -703,7 +755,8 @@
     const unitForBoard = id => unitById(id);
     const previewSource = ui.vm.previewGrid || [];
     const projected = manualFlowPreviewVM();
-    const teamRiskMap = new Map(teamRiskGridSource().map(x => [`${x.r},${x.c}`, x]));
+    const boardInjuries = projected ? projectedInjuries() : teamRiskGridSource();
+    const teamRiskMap = new Map(boardInjuries.map(x => [`${x.r},${x.c}`, x]));
     const activePreviewUnitId = ui.vm.teamPlacementPreview?.activeUnitId || previewSource[0]?.actorId || null;
     const previewKeys = new Set(previewSource.map(x => `${x.r},${x.c}`));
     const previewMap = new Map(previewSource.map(x => [`${x.r},${x.c}`, x]));
@@ -718,9 +771,8 @@
 
 	    $('board').innerHTML = renderCells.map(cell => {
 	      const key = `${cell.r},${cell.c}`;
-      const projectedCell = previewCellAt(cell.r, cell.c);
       const teamRisk = projected
-        ? ((projectedCell?.teamRisk || teamRiskMap.get(key)) || null)
+        ? (teamRiskMap.get(key) || null)
         : ((cell.teamRisk || teamRiskMap.get(key)) || null);
       const t = threatMap.get(key);
 	      const unit = unitForBoard(cell.unitId);
@@ -854,9 +906,9 @@
 	    const c = ui.selectedCell || ui.vm.selected?.cell;
 	    const currentDetail = ui.cellDetail && c && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
 	    const projectedDetail = c && manualFlowPreviewVM() ? previewCellDetailAt(c.r, c.c) : null;
-	    const detail = currentDetail || projectedDetail;
+	    const detail = projectedDetail || currentDetail;
 	    const selectedCell = c ? (previewCellAt(c.r, c.c) || cellAt(c.r, c.c)) : null;
-	    const selectedCellUnit = c ? (unitById(detail?.unit?.id || selectedCell?.unitId) || detail?.unit || null) : null;
+	    const selectedCellUnit = c ? projectedCellUnit(detail, selectedCell) : null;
 	    const selectedUnitRisk = selectedCellUnit?.side === 'hero' ? teamRiskForUnit(selectedCellUnit) : (currentDetail?.teamRisk || null);
 	    if (selectedUnitRisk) {
 	      $('detail-summary').textContent = `${selectedUnitRisk.unitName || selectedCellUnit?.displayName || selectedCellUnit?.name || '我方单位'} 受击预警`;

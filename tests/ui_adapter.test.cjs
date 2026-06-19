@@ -1,5 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { createYSBZSUIAdapter, createViewModel, PUBLIC_COMMANDS } = require('../src/uiAdapter.cjs');
 const battle = require('../src/core/battle.cjs');
 const dayRoute = require('../src/core/dayRoute.cjs');
@@ -828,6 +831,7 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
     'build_cell_diffs',
     'restore_snapshot'
   ]);
+  assert.equal(Object.prototype.hasOwnProperty.call(preview.result.timing, 'localPersistence'), false, '默认不应落盘 timing，避免普通预览增加同步写入成本');
 
   const afterPreview = adapter.getViewModel();
   assert.equal(afterPreview.stateHash, before.stateHash, '预览结束后当前 stateHash 必须回到预览前');
@@ -868,6 +872,41 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
   assert.deepEqual(projectedHeroDetail.unit.slots, projectedHero.slots, '预演详情必须保留行动块列表');
   assert.ok((projectedHeroDetail.unit.slots || []).length > 0, '预演详情里的宠物必须还有行动块用于右侧优化版展示');
   assert.ok(preview.result.events.some(event => event.type === 'PLAYER_TURN_END'), '预览事件必须来自正式结束回合命令');
+});
+
+test('UI22C1 手动流程预览 timing 会落到本地基线日志', () => {
+  const timingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ysbzs-timing-'));
+  const prev = process.env.YSBZS_TIMING_DIR;
+  const prevPersist = process.env.YSBZS_TIMING_PERSIST;
+  process.env.YSBZS_TIMING_DIR = timingDir;
+  try {
+    const adapter = createYSBZSUIAdapter({ activePets: ['pal_005'], battleId: 'manual_flow_preview_timing_local_file' });
+    adapter.run('START_BATTLE');
+    const defaultPreview = adapter.run('PREVIEW_MANUAL_FLOW', { limit: 2 });
+    assert.equal(Object.prototype.hasOwnProperty.call(defaultPreview.result.timing, 'localPersistence'), false, '未开启时不应写本地 timing');
+    const preview = adapter.run('PREVIEW_MANUAL_FLOW', { limit: 2, persistTiming: true });
+    assert.equal(preview.ok, true);
+    const persisted = preview.result.timing.localPersistence;
+    assert.ok(persisted, 'timing 结果需要返回本地落点');
+    assert.equal(persisted.kind, 'file');
+    assert.ok(fs.existsSync(persisted.path), '本地 timing 日志文件必须存在');
+    const lines = fs.readFileSync(persisted.path, 'utf8').trim().split('\n').filter(Boolean);
+    assert.ok(lines.length >= 1, '本地 timing 日志至少应写入一条记录');
+    const record = JSON.parse(lines[lines.length - 1]);
+    assert.equal(record.label, 'PREVIEW_MANUAL_FLOW');
+    assert.equal(record.battleId, 'manual_flow_preview_timing_local_file');
+    assert.equal(record.commandCount, 2);
+    assert.ok(Array.isArray(record.stages) && record.stages.length > 0, '本地 timing 记录必须包含阶段耗时');
+    process.env.YSBZS_TIMING_PERSIST = '1';
+    const envPreview = adapter.run('PREVIEW_MANUAL_FLOW', { limit: 2 });
+    assert.equal(envPreview.result.timing.localPersistence.kind, 'file', '环境变量开启后也应写本地 timing');
+  } finally {
+    if (prev === undefined) delete process.env.YSBZS_TIMING_DIR;
+    else process.env.YSBZS_TIMING_DIR = prev;
+    if (prevPersist === undefined) delete process.env.YSBZS_TIMING_PERSIST;
+    else process.env.YSBZS_TIMING_PERSIST = prevPersist;
+    fs.rmSync(timingDir, { recursive: true, force: true });
+  }
 });
 
 test('UI22D 移动后的可渲染受伤信息来自沙盒全格子 diff 而不是 moveHero 单体风险', () => {

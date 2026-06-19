@@ -3,6 +3,7 @@ const { ensureMultiplayerState } = require('./core/multiplayerState.cjs');
 const { normalizeCommandEnvelope, rejectedCommandResult } = require('./core/commandEnvelope.cjs');
 const { stateHash } = require('./core/stateHash.cjs');
 const { buildSaveDocument, applySaveToState } = require('./storage/saveCodec.cjs');
+const { createTimingLog } = require('./performanceTiming.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function cloneOrNull(value) { return value == null ? null : clone(value); }
@@ -127,35 +128,39 @@ function buildMoveManualFlowPreview(adapter, command, result) {
 
 function runManualFlowPreviewTransaction(ctx, rawCommand) {
   const { state, options, defaultPlayerId, adapterRun, viewFor, viewStateFor, maybeSnapshot, commandText } = ctx;
-  const transaction = captureFullSnapshotTransaction(ctx, rawCommand.playerId || defaultPlayerId);
+  const timing = createTimingLog('PREVIEW_MANUAL_FLOW');
+  const transaction = timing.measure('capture_snapshot', () => captureFullSnapshotTransaction(ctx, rawCommand.playerId || defaultPlayerId));
   let command = null;
   try {
-    command = normalizeCommandEnvelope(rawCommand, state, { playerId: options.playerId, strictVersion: false });
+    command = timing.measure('normalize_command', () => normalizeCommandEnvelope(rawCommand, state, { playerId: options.playerId, strictVersion: false }));
     const limit = Math.max(1, Math.min(4, Number(command.limit || 2)));
     const commands = [];
     const stepResults = [];
-    const beforeViewModel = viewFor(command);
-    const beforeCells = clone(beforeViewModel.board?.cells || []);
-    const beforeCellDetails = buildProjectedCellDetails(beforeViewModel);
-    const beforeUnits = unitsForDiff(beforeViewModel);
+    const beforeViewModel = timing.measure('capture_before_view_model', () => viewFor(command));
+    const beforeCells = timing.measure('clone_before_cells', () => clone(beforeViewModel.board?.cells || []));
+    const beforeCellDetails = timing.measure('build_before_cell_details', () => buildProjectedCellDetails(beforeViewModel));
+    const beforeUnits = timing.measure('capture_before_units', () => unitsForDiff(beforeViewModel));
     for (let i = 0; i < limit; i++) {
-      const type = nextManualFlowCommandType(state, commands);
+      const type = timing.measure(`select_next_command_${i + 1}`, () => nextManualFlowCommandType(state, commands), { step: i + 1 });
       if (!type) break;
-      const step = adapterRun({ type, playerId: command.playerId, previewOf: command.commandId });
+      const step = timing.measure(`sandbox_command_${type}`, () => adapterRun({ type, playerId: command.playerId, previewOf: command.commandId }), { step: i + 1 });
       commands.push({ type, ok: step.ok !== false, accepted: step.accepted !== false, phase: step.viewModel?.phase || state.phase, round: step.viewModel?.round ?? state.round });
       stepResults.push(step);
       if (step.ok === false || step.accepted === false) break;
     }
-    const projectedViewModel = viewFor(command);
-    const cells = clone(projectedViewModel.board?.cells || []);
-    const cellDetails = buildProjectedCellDetails(projectedViewModel);
-    const afterUnits = unitsForDiff(projectedViewModel);
-    const cellDiffs = buildCellDiffs(beforeCells, cells);
-    const unitDiffs = buildUnitDiffs(beforeUnits, afterUnits);
-    const events = stepResults.flatMap(step => Array.isArray(step.events) ? step.events : []).map(clone);
-    const projectedHash = stateHash(state);
-    restoreFullSnapshotTransaction(ctx, transaction);
-    const restoredViewState = viewStateFor(command);
+    const projectedViewModel = timing.measure('capture_projected_view_model', () => viewFor(command));
+    const cells = timing.measure('clone_after_cells', () => clone(projectedViewModel.board?.cells || []));
+    const cellDetails = timing.measure('build_after_cell_details', () => buildProjectedCellDetails(projectedViewModel));
+    const afterUnits = timing.measure('capture_after_units', () => unitsForDiff(projectedViewModel));
+    const cellDiffs = timing.measure('build_cell_diffs', () => buildCellDiffs(beforeCells, cells));
+    const unitDiffs = timing.measure('build_unit_diffs', () => buildUnitDiffs(beforeUnits, afterUnits));
+    const events = timing.measure('collect_events', () => stepResults.flatMap(step => Array.isArray(step.events) ? step.events : []).map(clone));
+    const projectedHash = timing.measure('hash_projected_state', () => stateHash(state));
+    timing.measure('restore_snapshot', () => restoreFullSnapshotTransaction(ctx, transaction));
+    const restoredViewState = timing.measure('capture_restored_view_state', () => viewStateFor(command));
+    const authoritativeState = timing.measure('capture_authoritative_state', () => maybeSnapshot(command.playerId, restoredViewState));
+    const restoredViewModel = timing.measure('capture_restored_view_model', () => viewFor(command));
+    const timingResult = timing.finish({ commandCount: commands.length, cellDiffCount: cellDiffs.length, unitDiffCount: unitDiffs.length });
     return {
       ok: true,
       accepted: true,
@@ -165,17 +170,18 @@ function runManualFlowPreviewTransaction(ctx, rawCommand) {
       commandEnvelope: clone(command),
       stateVersion: transaction.stateVersion,
       stateHash: transaction.stateHash,
-      result: { commands, events, viewModel: clone(projectedViewModel), beforeCells, beforeCellDetails, cells, cellDetails, cellDiffs, unitDiffs, projectedStateHash: projectedHash, rolledBack: true },
+      result: { commands, events, viewModel: clone(projectedViewModel), beforeCells, beforeCellDetails, cells, cellDetails, cellDiffs, unitDiffs, projectedStateHash: projectedHash, rolledBack: true, timing: timingResult },
       events: [],
       trace: { id: `${state.battleId}:${command.commandId}:manual-flow-preview`, commandId: command.commandId, events: [] },
-      authoritativeState: maybeSnapshot(command.playerId, restoredViewState),
-      viewModel: viewFor(command)
+      authoritativeState,
+      viewModel: restoredViewModel
     };
   } catch (err) {
-    restoreFullSnapshotTransaction(ctx, transaction);
+    timing.measure('restore_snapshot', () => restoreFullSnapshotTransaction(ctx, transaction));
     const fallbackCommand = command || Object.assign({ type: rawCommand.type || 'PREVIEW_MANUAL_FLOW', playerId: rawCommand.playerId || defaultPlayerId, commandId: rawCommand.commandId || 'preview_manual_flow_failed' }, rawCommand);
     const rejected = rejectedCommandResult(state, fallbackCommand, err);
     rejected.rolledBack = true;
+    rejected.timing = timing.finish({ error: err.message || String(err) });
     rejected.viewModel = viewFor(fallbackCommand);
     return rejected;
   }

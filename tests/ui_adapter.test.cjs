@@ -7,6 +7,22 @@ const { dispatch } = require('../src/core/reducer.cjs');
 const { createGameState, makeUnit, getCell, syncBoardUnits } = require('../src/core/state.cjs');
 
 function hasEvent(result, type) { return result.events.some(e => e.type === type); }
+function assertStructuredTiming(timing, expectedStages = []) {
+  assert.ok(timing, '高风险事务需要返回结构化 timing 数据');
+  assert.equal(typeof timing.label, 'string');
+  assert.ok(Number.isFinite(timing.totalMs), 'timing.totalMs 必须是数字');
+  assert.ok(timing.totalMs >= 0, 'timing.totalMs 不能为负');
+  assert.ok(Array.isArray(timing.stages), 'timing.stages 必须是数组');
+  for (const stage of timing.stages) {
+    assert.equal(typeof stage.name, 'string');
+    assert.ok(Number.isFinite(stage.ms), `阶段 ${stage.name} 需要 ms`);
+    assert.ok(Number.isFinite(stage.totalMs), `阶段 ${stage.name} 需要 totalMs`);
+    assert.ok(stage.ms >= 0, `阶段 ${stage.name} 的 ms 不能为负`);
+    assert.ok(stage.totalMs >= 0, `阶段 ${stage.name} 的 totalMs 不能为负`);
+  }
+  const names = timing.stages.map(stage => stage.name);
+  for (const name of expectedStages) assert.ok(names.includes(name), `timing 缺少阶段 ${name}`);
+}
 function firstLegalMoveCell(vm, hero) {
   const range = Number(hero.moveRange ?? hero.ap ?? 1);
   return vm.board.cells.find(cell => {
@@ -800,6 +816,18 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
   assert.equal(preview.readOnly, true);
   assert.equal(preview.result.rolledBack, true);
   assert.deepEqual(preview.result.commands.map(command => command.type), ['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN']);
+  assertStructuredTiming(preview.result.timing, [
+    'capture_snapshot',
+    'normalize_command',
+    'capture_before_view_model',
+    'build_before_cell_details',
+    'sandbox_command_RUN_PLAYER_ALL_OUT',
+    'sandbox_command_END_PLAYER_TURN',
+    'capture_projected_view_model',
+    'build_after_cell_details',
+    'build_cell_diffs',
+    'restore_snapshot'
+  ]);
 
   const afterPreview = adapter.getViewModel();
   assert.equal(afterPreview.stateHash, before.stateHash, '预览结束后当前 stateHash 必须回到预览前');
@@ -855,6 +883,7 @@ test('UI22D 移动后的可渲染受伤信息来自沙盒全格子 diff 而不�
   assert.ok(move.manualFlowPreview, 'MOVE_HERO 返回需要直接携带移动后的沙盒投影，避免前端延迟一拍显示');
   assert.deepEqual(move.manualFlowPreview.commands.map(command => command.type), ['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN']);
   assert.ok(move.manualFlowPreview.cellDiffs.length > 0, '移动响应里的沙盒投影需要有全格子 diff');
+  assertStructuredTiming(move.manualFlowPreview.timing, ['sandbox_command_RUN_PLAYER_ALL_OUT', 'sandbox_command_END_PLAYER_TURN', 'restore_snapshot']);
   const moveEvent = move.events.find(event => event.type === 'MOVE_HERO');
   assert.ok(moveEvent, '移动应产生 MOVE_HERO 事件');
   assert.equal(Object.prototype.hasOwnProperty.call(moveEvent, 'riskBefore'), false, '移动核心不再记录单体 beforeRisk');

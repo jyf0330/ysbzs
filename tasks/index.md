@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-19_structured-performance-timing.md`
 - `tasks/done/2026-06-19_move-simulation-diff-preview.md`
 - `tasks/done/2026-06-19_player-pet-injury-display.md`
 - `tasks/done/2026-06-19_manual-flow-preview-performance.md`

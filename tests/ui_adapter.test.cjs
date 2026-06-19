@@ -30,8 +30,24 @@ function adjacentStandForTarget(state, target) {
 }
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
-  for (const type of ['START_BATTLE','MOVE_HERO','AUTO_POSITION_HEROES','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['START_BATTLE','MOVE_HERO','AUTO_POSITION_HEROES','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','PREVIEW_MANUAL_FLOW','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE','CLEAR_SELECTION']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
   for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD','RUN_FULL_RUN']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+});
+
+test('UI01B CLEAR_SELECTION clears per-player unit, slot, and cell selection without changing game state', () => {
+  const adapter = createYSBZSUIAdapter({ gold: 8, battleId: 'clear_selection' });
+  const before = adapter.getViewModel();
+  const heroId = before.heroes[0].id;
+  adapter.run({ type: 'SELECT_UNIT', unitId: heroId, playerId: 'p1', commandId: 'clear_sel_1', baseStateVersion: before.stateVersion });
+  adapter.run({ type: 'SELECT_SLOT', unitId: heroId, slotId: 0, playerId: 'p1', commandId: 'clear_sel_2', baseStateVersion: before.stateVersion });
+  adapter.run({ type: 'SELECT_CELL', r: 2, c: 3, playerId: 'p1', commandId: 'clear_sel_3', baseStateVersion: before.stateVersion });
+
+  const cleared = adapter.run({ type: 'CLEAR_SELECTION', playerId: 'p1', commandId: 'clear_sel_4', baseStateVersion: before.stateVersion });
+
+  assert.equal(cleared.ephemeral, true);
+  assert.equal(cleared.stateVersion, before.stateVersion);
+  assert.equal(cleared.stateHash, before.stateHash);
+  assert.deepEqual(adapter.getViewModel('p1').selected, { unitId: null, slotId: null, cell: null, direction: 'right' });
 });
 
 test('UI03C 智能调整站位只移动未移动宠物并提升预计伤害', () => {
@@ -718,6 +734,7 @@ test('UI21 候选落点返回真实行动后的沙盒棋盘与单位结果', () 
   assert.ok(Array.isArray(candidate.sandboxBoardCells), '候选落点需要携带沙盒后的棋盘格');
   assert.ok(Array.isArray(candidate.sandboxUnits), '候选落点需要携带沙盒后的单位');
   assert.ok(Array.isArray(candidate.sandboxEvents), '候选落点需要携带沙盒事件');
+  assert.ok(candidate.sandboxEvents.some(evt => evt.type === 'MOVE_HERO'), '候选沙盒必须先走正式 MOVE_HERO 链路，而不是直接改 position');
   assert.ok(Array.isArray(candidate.cellDiffs), '候选落点需要携带棋盘差异');
   assert.ok(Array.isArray(candidate.unitDiffs), '候选落点需要携带单位差异');
 
@@ -768,6 +785,46 @@ test('UI22 未移动前伤害预览直接显示敌方宠物 AP 累计伤害', ()
   assert.equal(risk.threats.length, 3);
   const cell = vm.board.cells.find(x => x.r === hero.position.r && x.c === hero.position.c);
   assert.equal(cell.teamRisk.damage, 21);
+});
+
+test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () => {
+  const options = { activePets: ['pal_005'], battleId: 'manual_flow_preview_transaction' };
+  const adapter = createYSBZSUIAdapter(options);
+  adapter.run('START_BATTLE');
+  adapter.run('SELECT_CELL', { r: 5, c: 3 });
+  const before = adapter.getViewModel();
+  const beforeSnapshot = adapter.getStateSnapshot();
+
+  const preview = adapter.run('PREVIEW_MANUAL_FLOW', { limit: 2 });
+  assert.equal(preview.ok, true);
+  assert.equal(preview.readOnly, true);
+  assert.equal(preview.result.rolledBack, true);
+  assert.deepEqual(preview.result.commands.map(command => command.type), ['END_PLAYER_TURN', 'START_NEXT_ROUND']);
+
+  const afterPreview = adapter.getViewModel();
+  assert.equal(afterPreview.stateHash, before.stateHash, '预览结束后当前 stateHash 必须回到预览前');
+  assert.equal(afterPreview.stateVersion, before.stateVersion, '预览结束后当前 stateVersion 必须回到预览前');
+  assert.equal(afterPreview.phase, before.phase, '预览不能改变玩家当前阶段');
+  const afterSnapshot = adapter.getStateSnapshot();
+  assert.equal(afterSnapshot.nextCommand, beforeSnapshot.nextCommand, '预览不能消耗真实命令序号');
+  assert.equal(afterSnapshot.commandLog.length, beforeSnapshot.commandLog.length, '预览不能写入真实 commandLog');
+  assert.equal(afterSnapshot.events.length, beforeSnapshot.events.length, '预览不能写入真实事件流');
+  assert.deepEqual(afterPreview.selected, before.selected, '预览不能改变显示层选中状态');
+
+  const replay = createYSBZSUIAdapter(options);
+  replay.run('START_BATTLE');
+  replay.run('END_PLAYER_TURN');
+  replay.run('START_NEXT_ROUND');
+  const realAfterTwoButtons = replay.getViewModel();
+  const projected = preview.result.viewModel;
+
+  assert.equal(projected.phase, realAfterTwoButtons.phase);
+  assert.equal(projected.round, realAfterTwoButtons.round);
+  assert.deepEqual(projected.heroes.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })), realAfterTwoButtons.heroes.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })));
+  assert.deepEqual(projected.enemies.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })), realAfterTwoButtons.enemies.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })));
+  assert.equal(preview.result.cells.length, realAfterTwoButtons.board.cells.length, '预览需要带回全格子数据');
+  assert.equal(preview.result.cellDetails.length, realAfterTwoButtons.board.cells.length, '预览需要带回每个格子的详情数据');
+  assert.ok(preview.result.events.some(event => event.type === 'PLAYER_TURN_END'), '预览事件必须来自正式结束回合命令');
 });
 
 test('UI22B 移动风险必须来自真实敌方宠物行动意图', () => {

@@ -2,9 +2,37 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const root = path.join(__dirname, '..', '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+
+function extractFunctionSource(js, name) {
+  const start = js.indexOf(`function ${name}`);
+  assert.notEqual(start, -1, `missing ${name}`);
+  const braceStart = js.indexOf('{', start);
+  assert.notEqual(braceStart, -1, `missing body for ${name}`);
+  let depth = 0;
+  for (let i = braceStart; i < js.length; i++) {
+    if (js[i] === '{') depth++;
+    if (js[i] === '}') {
+      depth--;
+      if (depth === 0) return js.slice(start, i + 1);
+    }
+  }
+  assert.fail(`unterminated ${name}`);
+}
+
+function runThreatDetailText(js, threat) {
+  const helperNames = ['threatDamageValue'];
+  const helpers = helperNames
+    .filter(name => js.includes(`function ${name}`))
+    .map(name => extractFunctionSource(js, name));
+  const source = `${helpers.join('\n')}\n${extractFunctionSource(js, 'threatDetailText')}\nresult = threatDetailText(threat);`;
+  const sandbox = { threat, result: null };
+  vm.runInNewContext(source, sandbox);
+  return sandbox.result;
+}
 
 test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   const html = read('web/index.html');
@@ -183,6 +211,39 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	  assert.doesNotMatch(css, /\.cell\.enemy-move-path:after/, 'enemy movement path should not draw every path cell when only the final cell is needed');
 	  assert.doesNotMatch(css, /friendly-warning/, 'friendly-fire warning styles should not remain');
 	});
+
+test('empty attack threat detail shows attack threat instead of empty-cell hit damage', () => {
+  const emptyAttackThreat = {
+    unitName: '敌方翠叶鼠',
+    type: 'attack',
+    damage: 0,
+    totalDamage: 0,
+    threat: 9,
+    atk: 9,
+    hits: [],
+    actionIndexes: [0],
+    actionCount: 1
+  };
+
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const text = runThreatDetailText(read(file), emptyAttackThreat);
+    assert.equal(text, '敌方翠叶鼠 1次行动块；合计9', `${file} should use threat value for empty attack cells`);
+  }
+});
+
+test('clicked cell threat detail stays on current GET_CELL_DETAIL when transaction preview exists', () => {
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const js = read(file);
+    const body = js.match(/function renderCellDetail\(\) \{([\s\S]*?)\n\t  function threatDamageValue/);
+    assert.ok(body, `${file} should keep renderCellDetail before threat formatting helpers`);
+    assert.match(body[1], /const currentDetail = ui\.cellDetail/, `${file} should preserve the clicked cell detail separately from projected detail`);
+    assert.match(
+      body[1],
+      /const threat = currentDetail\?\.threat \|\| cell\?\.threat \|\| detail\?\.threat/,
+      `${file} should render current clicked threat before projected transaction threat`
+    );
+  }
+});
 
 test('publication docs include P2 in the current delivery scope', () => {
   const spec = read('docs/UI_COMBAT_LAYOUT_PUBLICATION_SPEC.md');

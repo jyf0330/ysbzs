@@ -5,7 +5,7 @@ const SYSTEM_COMMANDS = new Set([
   'START_BATTLE', 'START_NEXT_ROUND', 'END_PLAYER_TURN', 'RUN_MONSTER_TURN',
   'RUN_PLAYER_ALL_OUT', 'AUTO_POSITION_HEROES',
   'REWARD_OPTIONS', 'PICK_REWARD', 'ENTER_SHOP', 'ROLL_SHOP', 'EXIT_SHOP',
-  'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY', 'BUILD_PREVIEW', 'GET_CELL_DETAIL'
+  'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY', 'BUILD_PREVIEW', 'GET_CELL_DETAIL', 'PREVIEW_MANUAL_FLOW'
 ]);
 const DEBUG_OR_HOST_COMMANDS = new Set([
   'RUN_BATTLE', 'RUN_FULL_DAY', 'SETUP_DAY7_FIRE_TRIAL', 'RUN_DAY7_FIRE_TURN_1', 'RUN_DAY7_FIRE_TRIAL_ALL'
@@ -25,9 +25,9 @@ function flattenPayload(command) {
   return out;
 }
 function normalizeCommandEnvelope(raw, state, opts = {}) {
-  ensureMultiplayerState(state, opts);
   const base = flattenPayload(clone(raw || {}));
   if (!base.type) throw new Error('command.type is required');
+  ensureMultiplayerState(state, opts);
   base.commandId = base.commandId || nextCommandId(state);
   base.playerId = base.playerId || opts.playerId || DEFAULT_PLAYER_ID;
   base.battleId = base.battleId || state.battleId;
@@ -60,7 +60,7 @@ function validateCommandAuthority(state, command, opts = {}) {
     return true;
   }
   if (SYSTEM_COMMANDS.has(command.type)) return true;
-  if (command.type === 'SELECT_CELL' || command.type === 'SELECT_SLOT') return true;
+  if (command.type === 'SELECT_CELL' || command.type === 'SELECT_SLOT' || command.type === 'CLEAR_SELECTION') return true;
   if (command.type === 'FREEZE_OFFER' || command.type === 'UNFREEZE_OFFER' || command.type === 'BUY_OFFER' || command.type === 'APPLY_SHOP_EVENT') return true;
   if (!UNIT_COMMANDS.has(command.type)) return true;
   const unit = findUnit(state, actorIdFromCommand(state, command));

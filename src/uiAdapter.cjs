@@ -15,9 +15,11 @@ const { canonicalEventLog } = require('./core/eventProjection.cjs');
 const { buildConstructionSummary } = require('./core/buildSummary.cjs');
 const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
 const { runFullDayCommand, runFullRunCommand, runFullRunFlow } = require('./uiAdapterFlowCommands.cjs');
+const { runManualFlowPreviewTransaction } = require('./uiAdapterManualFlowPreview.cjs');
 const { nextDaySchedule, buildDailyFlowVM } = require('./dailyFlowView.cjs');
 
-const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
+const ADAPTER_VERSION = '2026-06-09-command-envelope-local-prediction-ready-round4';
+const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT', 'CLEAR_SELECTION']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
 const MAX_ACTIVE_UNITS = 4;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); } function commandText(command) { return typeof command === 'string' ? command : command.type; } function nextAllOutSlot(vm, blocked = new Set()) {
@@ -504,6 +506,9 @@ function runSelectionCommand(state, command, viewState) {
     viewState.selected.unitId = command.unitId || command.heroId || command.id || null;
     viewState.selected.slotId = null;
     event = makeUiEvent(state, command, 'SELECT_UNIT', { unitId: viewState.selected.unitId, text: `选择单位：${viewState.selected.unitId || '无'}。` });
+  } else if (command.type === 'CLEAR_SELECTION') {
+    viewState.selected = { unitId: null, slotId: null, cell: null, direction: 'right' };
+    event = makeUiEvent(state, command, 'CLEAR_SELECTION', { text: '清除选择。' });
   } else if (command.type === 'SELECT_CELL') {
     viewState.selected.cell = { r: Number(command.r ?? command.row ?? command.cell?.r ?? 0), c: Number(command.c ?? command.col ?? command.cell?.c ?? 0) };
     event = makeUiEvent(state, command, 'SELECT_CELL', { cell: clone(viewState.selected.cell), text: `选择格子：R${viewState.selected.cell.r}C${viewState.selected.cell.c}。` });
@@ -526,7 +531,6 @@ function restoreViewStates(viewStates, raw) {
   const obj = raw && typeof raw === 'object' ? raw : {};
   for (const [playerId, viewState] of Object.entries(obj)) viewStates.set(playerId, Object.assign(makePlayerViewState(), clone(viewState)));
 }
-
 function createYSBZSUIAdapter(options = {}) {
   const state = ensureMultiplayerState(createGameState(options), options);
   const viewStates = new Map();
@@ -543,14 +547,27 @@ function createYSBZSUIAdapter(options = {}) {
   function maybeSnapshot(playerId, viewState) {
     return includeAuthoritativeState ? createSnapshot(state, playerId, viewState) : undefined;
   }
-  const adapter = {
-    version: '2026-06-09-command-envelope-local-prediction-ready-round4',
-    publicCommands: PUBLIC_COMMANDS.slice(),
-    run(typeOrCommand, payload = {}) {
-      const normalized = normalizeCommand(typeOrCommand, payload);
-      assertKnownCommand(normalized);
-      const command = normalizeCommandEnvelope(normalized, state, { playerId: options.playerId, strictVersion: false });
-      const viewState = viewStateFor(command);
+	  const adapter = {
+	    version: ADAPTER_VERSION,
+	    publicCommands: PUBLIC_COMMANDS.slice(),
+	    run(typeOrCommand, payload = {}) {
+	      const normalized = normalizeCommand(typeOrCommand, payload);
+	      assertKnownCommand(normalized);
+      if (normalized.type === 'PREVIEW_MANUAL_FLOW') return runManualFlowPreviewTransaction({
+        state,
+        options,
+        adapterVersion: adapter.version,
+        defaultPlayerId,
+        adapterRun: command => adapter.run(command),
+        viewFor,
+        viewStateFor,
+        maybeSnapshot,
+        viewStatesToObject: () => viewStatesToObject(viewStates),
+        restoreViewStates: raw => restoreViewStates(viewStates, raw),
+        commandText
+      }, normalized);
+	      const command = normalizeCommandEnvelope(normalized, state, { playerId: options.playerId, strictVersion: false });
+	      const viewState = viewStateFor(command);
       try {
         validateCommandAuthority(state, command, { strictVersion: !!options.strictVersion, allowDebugCommands: !!options.allowDebugCommands });
       } catch (err) {
@@ -731,6 +748,7 @@ function createYSBZSUIAdapter(options = {}) {
     runMonsterTurn() { return this.run('RUN_MONSTER_TURN'); },
     buildPreview(payload = {}) { return this.run('BUILD_PREVIEW', payload); },
     getCellDetail(r, c) { return this.run('GET_CELL_DETAIL', { r, c }); },
+    previewManualFlow(payload = {}) { return this.run('PREVIEW_MANUAL_FLOW', payload); },
     exportBattleTrace() { return this.run('EXPORT_BATTLE_TRACE'); },
     replayBattleTrace(events) { return this.run('REPLAY_BATTLE_TRACE', { events }); },
     runBattle() { return this.run('RUN_BATTLE'); },

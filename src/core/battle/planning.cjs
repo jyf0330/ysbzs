@@ -14,7 +14,7 @@
  * @returns {Record<string, Function>}
  */
 function createPlanningModule(deps) {
-  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells, syncBoardUnits, buildPreviewGrid, useActionSlot } = deps;
+  const { ELEMENTS, makeEmptyElements, clone, getUnit, living, getCell, normalizePosition, BOARD_ROWS, BOARD_COLS, sign, dist, unitCamp, sideForCamp, factionRules, combatTargets, terrainModules, hasTerrain, effectiveDamageFromLayers, effectiveMoveRange, actionDirs, canStandAt, allStandCells, slotsForUnit, targetCellsForSlot, targetsAtCells, syncBoardUnits, buildPreviewGrid, useActionSlot, moveHero } = deps;
 /**
  * @param {BattleState} state
  * @param {BattleUnit} actor
@@ -840,14 +840,13 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
   const teamUnitIds = Array.from(new Set(movedUnitIds.concat(unit.id).filter(Boolean)));
   for (const target of targets) {
     const sandbox = clone(state);
-    const sandboxUnit = getUnit(sandbox, unit.id);
-    if (!sandboxUnit) continue;
-    sandboxUnit.position = { r: target.r, c: target.c };
-    sandbox.teamPlacementPreview = sandbox.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
-    sandbox.teamPlacementPreview.activeUnitId = unit.id;
-    sandbox.teamPlacementPreview.movedUnitIds = teamUnitIds.slice();
-    if (syncBoardUnits) syncBoardUnits(sandbox);
-    const teamRiskGrid = buildTeamRiskGrid(sandbox, teamUnitIds);
+    const eventStart = Array.isArray(sandbox.events) ? sandbox.events.length : 0;
+    const movedOk = typeof moveHero === 'function' ? moveHero(sandbox, unit.id, { r: target.r, c: target.c }) : false;
+    if (!movedOk) continue;
+    const riskUnitIds = Array.from(new Set((Array.isArray(sandbox.teamPlacementPreview?.movedUnitIds)
+      ? sandbox.teamPlacementPreview.movedUnitIds
+      : teamUnitIds).concat(unit.id).filter(Boolean)));
+    const teamRiskGrid = buildTeamRiskGrid(sandbox, riskUnitIds);
     let sandboxActionOk = false;
     let sandboxBoardCells = [];
     let sandboxUnits = [];
@@ -859,7 +858,6 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
       previewGrid = buildPreviewGrid ? buildPreviewGrid(sandbox, { unitId: unit.id }) : [];
       const beforeUnits = snapshotSandboxUnits(sandbox);
       const beforeCells = snapshotSandboxCells(sandbox);
-      const eventStart = Array.isArray(sandbox.events) ? sandbox.events.length : 0;
       const allOut = runPlayerAllOutPreviewSandbox(sandbox);
       sandboxActionOk = allOut.count > 0;
       if (syncBoardUnits) syncBoardUnits(sandbox);
@@ -887,6 +885,7 @@ function buildMoveRiskGrid(state, unitId, opts = {}) {
       threats: currentRisk?.threats || [],
       previewGrid,
       teamRiskGrid,
+      sandboxMoveOk: movedOk,
       sandboxActionOk,
       sandboxBoardCells,
       sandboxUnits,

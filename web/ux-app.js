@@ -25,6 +25,8 @@
     battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中'
   };
   const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT', 'AUTO_POSITION_HEROES']);
+  const UNDOABLE_FLOW_TYPES = new Set(['END_PLAYER_TURN', 'RUN_MONSTER_TURN', 'START_NEXT_ROUND']);
+  const UNDO_STACK_LIMIT = 8;
 
   const ui = {
     vm: null,
@@ -44,7 +46,9 @@
 	    prepOpen: false,
 	    prepFilter: '',
 	    draggedRosterId: null,
-	    manualAutoLock: false
+	    manualAutoLock: false,
+	    undoStack: [],
+	    manualFlowPreview: null
 	  };
   Object.assign(ui, sharedUi);
   const renderCache = createRenderCache();
@@ -68,17 +72,63 @@
   }
   function unitById(id) { return getAllUnits().find(u => u.id === id) || null; }
   function cellAt(r, c) { return (ui.vm?.board?.cells || []).find(x => Number(x.r) === Number(r) && Number(x.c) === Number(c)) || null; }
+  function cellKey(r, c) { return `${Number(r)},${Number(c)}`; }
+  function indexByCell(items = []) {
+    const out = {};
+    for (const item of items || []) {
+      const r = item?.r ?? item?.cell?.r;
+      const c = item?.c ?? item?.cell?.c;
+      if (r === undefined || c === undefined) continue;
+      out[cellKey(r, c)] = item;
+    }
+    return out;
+  }
+  function normalizeManualFlowPreviewResult(result) {
+    if (!result?.viewModel) return null;
+    const cells = Array.isArray(result.cells) ? result.cells : (result.viewModel.board?.cells || []);
+    const cellDetails = Array.isArray(result.cellDetails) ? result.cellDetails : [];
+    const commands = Array.isArray(result.commands) ? result.commands.map(command => ({
+      type: command.type,
+      ok: command.ok !== false,
+      accepted: command.accepted !== false,
+      phase: command.phase || null,
+      round: command.round ?? null
+    })) : [];
+    const signature = [
+      ui.vm?.stateHash || '',
+      result.projectedStateHash || result.viewModel.stateHash || '',
+      commands.map(command => `${command.type}:${command.ok ? 1 : 0}:${command.accepted ? 1 : 0}:${command.phase || ''}:${command.round ?? ''}`).join('>')
+    ].join('|');
+    return Object.assign({}, result, {
+      commands,
+      cells,
+      cellDetails,
+      cellByKey: indexByCell(cells),
+      cellDetailByKey: indexByCell(cellDetails),
+      signature
+    });
+  }
+  function manualFlowPreviewVM() { return ui.manualFlowPreview?.viewModel || null; }
+  function previewCellAt(r, c) { return ui.manualFlowPreview?.cellByKey?.[cellKey(r, c)] || (manualFlowPreviewVM()?.board?.cells || []).find(x => Number(x.r) === Number(r) && Number(x.c) === Number(c)) || null; }
+  function previewCellDetailAt(r, c) { return ui.manualFlowPreview?.cellDetailByKey?.[cellKey(r, c)] || null; }
+  function manualFlowPreviewKey() { return ui.manualFlowPreview?.signature || null; }
+  function teamRiskGridSource() {
+    const projected = manualFlowPreviewVM();
+    return projected?.teamRiskGrid || projected?.board?.teamRiskGrid || ui.vm?.teamRiskGrid || ui.vm?.board?.teamRiskGrid || [];
+  }
   function isNext(type) { return (ui.vm?.nextActions || []).some(a => a.type === type); }
   function selectedHero() { return unitById(ui.selectedUnitId || ui.vm?.selected?.unitId) || null; }
   function teamRiskForUnit(unit) {
     if (!unit?.id) return null;
-    const risks = ui.vm?.teamRiskGrid || ui.vm?.board?.teamRiskGrid || [];
+    const projected = manualFlowPreviewVM();
+    const risks = teamRiskGridSource();
     const direct = risks.find(risk => risk.unitId === unit.id);
     if (direct) return direct;
+    if (projected) return unit.position ? previewCellAt(unit.position.r, unit.position.c)?.teamRisk || null : null;
     return unit.position ? cellAt(unit.position.r, unit.position.c)?.teamRisk || null : null;
   }
   function primaryTeamRisk() {
-    const risks = (ui.vm?.teamRiskGrid || ui.vm?.board?.teamRiskGrid || []).filter(risk => Number(risk.damage || 0) > 0);
+    const risks = teamRiskGridSource().filter(risk => Number(risk.damage || 0) > 0);
     return risks.sort((a, b) => Number(!!b.lethal) - Number(!!a.lethal) || Number(b.damage || 0) - Number(a.damage || 0))[0] || null;
   }
   function qualityMark(q) { return { '钻石': '◆', '黄金': '★', '白银': '◇', '青铜': '●' }[q] || ''; }
@@ -193,11 +243,17 @@
     if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   }
+  const runtime = {
+    save: () => api('/api/save'),
+    load: save => api('/api/load', { save }),
+    action: command => api('/api/action', command)
+  };
   async function loadView() {
     const data = await api('/api/view');
     ui.vm = data.viewModel;
     normalizeSelection();
     render();
+    await refreshManualFlowPreview();
   }
   async function report(mode = 'player') {
     const data = await api(`/api/report?mode=${encodeURIComponent(mode)}`);
@@ -216,21 +272,28 @@
 
   async function runCommand(type, payload = {}, options = {}) {
     if (ui.busy) return;
+    let undoSnapshot = null;
+    if (options.undoable && UNDOABLE_FLOW_TYPES.has(type)) undoSnapshot = await captureUndoSnapshot(type);
     if (!options.autoFlow && MANUAL_LOCK_TYPES.has(type)) ui.manualAutoLock = true;
     if (type === 'NEW_GAME') {
       ui.manualAutoLock = false;
       ui.prepOpen = false;
       ui.prepFilter = '';
+      ui.undoStack = [];
+      ui.manualFlowPreview = null;
     }
     ui.busy = true;
     setBusy(true);
     try {
       const data = await api('/api/action', makeCommand(type, payload));
+      if (undoSnapshot && data?.ok !== false) pushUndoSnapshot(undoSnapshot);
       ui.vm = data.viewModel || ui.vm;
       if (type === 'START_BATTLE') ui.prepOpen = false;
       // toast 已关闭
       normalizeSelection();
       render();
+      if (shouldRefreshSelectedCellAfterCommand(type)) await refreshSelectedCellDetail();
+      await refreshManualFlowPreview();
       return data;
     } catch (err) {
       toast(err.message || String(err), true);
@@ -243,6 +306,93 @@
         renderControls();
         renderPrepOverlay();
       }
+    }
+  }
+  function undoLabelForType(type) {
+    if (type === 'END_PLAYER_TURN') return '结算并执行敌方宠物行动';
+    if (type === 'RUN_MONSTER_TURN') return '执行敌方宠物行动';
+    if (type === 'START_NEXT_ROUND') return '进入下一回合';
+    return type;
+  }
+  async function captureUndoSnapshot(type) {
+    try {
+      const data = await runtime.save();
+      if (!data?.save) return null;
+      return {
+        type,
+        label: undoLabelForType(type),
+        save: data.save,
+        manualAutoLock: ui.manualAutoLock,
+        selectedUnitId: ui.selectedUnitId,
+        selectedCell: ui.selectedCell ? JSON.parse(JSON.stringify(ui.selectedCell)) : null
+      };
+    } catch (err) {
+      toast(`撤回快照失败：${err.message || err}`, true);
+      return null;
+    }
+  }
+  function pushUndoSnapshot(entry) {
+    if (!entry) return;
+    ui.undoStack.push(entry);
+    if (ui.undoStack.length > UNDO_STACK_LIMIT) ui.undoStack.splice(0, ui.undoStack.length - UNDO_STACK_LIMIT);
+  }
+  async function runUndoableFlowCommand(type, payload = {}) {
+    return runCommand(type, payload, { undoable: UNDOABLE_FLOW_TYPES.has(type) });
+  }
+  async function undoLastFlowAction() {
+    if (ui.busy) return;
+    const entry = ui.undoStack.pop();
+    if (!entry) return;
+    ui.busy = true;
+    setBusy(true);
+    try {
+      const data = await runtime.load(entry.save);
+      ui.vm = data.viewModel || ui.vm;
+      ui.manualAutoLock = !!entry.manualAutoLock;
+      ui.selectedUnitId = entry.selectedUnitId || null;
+      ui.selectedCell = entry.selectedCell || null;
+      ui.cellDetail = null;
+      renderCache.invalidate();
+      normalizeSelection();
+      render();
+      await refreshSelectedCellDetail();
+      await refreshManualFlowPreview();
+    } catch (err) {
+      ui.undoStack.push(entry);
+      toast(`撤回失败：${err.message || err}`, true);
+    } finally {
+      ui.busy = false;
+      setBusy(false);
+      if (ui.vm) renderControls();
+    }
+  }
+  function shouldRefreshSelectedCellAfterCommand(type) {
+    return UNDOABLE_FLOW_TYPES.has(type) || ['MOVE_HERO', 'USE_SLOT', 'RUN_PLAYER_ALL_OUT', 'AUTO_POSITION_HEROES'].includes(type);
+  }
+  async function refreshSelectedCellDetail() {
+    const cell = ui.selectedCell || ui.vm?.selected?.cell || null;
+    if (!cell) {
+      ui.cellDetail = null;
+      return null;
+    }
+    return fetchCellDetail(cell.r, cell.c);
+  }
+  async function refreshManualFlowPreview() {
+    if (!ui.vm || !['init', 'player_turn', 'monster_turn', 'round_end'].includes(ui.vm.phase)) {
+      ui.manualFlowPreview = null;
+      return null;
+    }
+    try {
+      const data = await runtime.action(makeCommand('PREVIEW_MANUAL_FLOW', { limit: 2 }));
+      ui.manualFlowPreview = normalizeManualFlowPreviewResult(data?.result);
+      renderCache.invalidate('board');
+      renderCache.invalidate('cellDetail');
+      render();
+      return ui.manualFlowPreview;
+    } catch (err) {
+      ui.manualFlowPreview = null;
+      console.warn('manual flow preview failed', err);
+      return null;
     }
   }
   async function saveGame() {
@@ -276,7 +426,7 @@
     if (vm.selected?.cell) ui.selectedCell = vm.selected.cell;
     const info = selectedSlotInfo();
     if (info) { ui.selectedSlotGlobal = info.globalIndex; ui.selectedSlot = info.localIndex; }
-    window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, makeCommand, saveGame, loadGameFromStorage, isBusy: () => ui.busy };
+    window.__YSBZS__ = { lastViewModel: vm, runCommand, loadView, makeCommand, saveGame, loadGameFromStorage, isBusy: () => ui.busy, undoDepth: () => ui.undoStack.length, cellDetail: () => ui.cellDetail, manualFlowPreview: () => ui.manualFlowPreview };
   }
 
   function renderStaticStatus(vm) {
@@ -316,6 +466,7 @@
       threatGrid: vm.threatGrid,
       moveRiskGrid: vm.moveRiskGrid,
       teamRiskGrid: vm.teamRiskGrid,
+      manualFlowPreview: manualFlowPreviewKey(),
 	      selectedCell: ui.selectedCell || vm.selected?.cell,
 	      selectedUnitId: ui.selectedUnitId,
 	      slotArmed: ui.slotArmed
@@ -329,7 +480,8 @@
           apBySlot: ui.apBySlot,
           detail: ui.cellDetail,
           board: vm.board,
-          teamRiskGrid: vm.teamRiskGrid
+          teamRiskGrid: vm.teamRiskGrid,
+          manualFlowPreview: manualFlowPreviewKey()
         })) renderCellDetail();
     if (renderCache.shouldRender('slots', { heroes: vm.heroes, phase: vm.phase, selectedSlotGlobal: ui.selectedSlotGlobal, selectedSlot: ui.selectedSlot, slotArmed: ui.slotArmed, busy: ui.busy, apBySlot: ui.apBySlot })) renderSlots();
     renderActionPopover();
@@ -489,7 +641,8 @@
     const renderCells = board.cells;
     const unitForBoard = id => unitById(id);
     const previewSource = ui.vm.previewGrid || [];
-    const teamRiskMap = new Map((ui.vm.teamRiskGrid || ui.vm.board?.teamRiskGrid || []).map(x => [`${x.r},${x.c}`, x]));
+    const projected = manualFlowPreviewVM();
+    const teamRiskMap = new Map(teamRiskGridSource().map(x => [`${x.r},${x.c}`, x]));
     const activePreviewUnitId = ui.vm.teamPlacementPreview?.activeUnitId || previewSource[0]?.actorId || null;
     const previewKeys = new Set(previewSource.map(x => `${x.r},${x.c}`));
     const previewMap = new Map(previewSource.map(x => [`${x.r},${x.c}`, x]));
@@ -504,7 +657,10 @@
 
 	    $('board').innerHTML = renderCells.map(cell => {
 	      const key = `${cell.r},${cell.c}`;
-      const teamRisk = (cell.teamRisk || teamRiskMap.get(key)) || null;
+      const projectedCell = previewCellAt(cell.r, cell.c);
+      const teamRisk = projected
+        ? ((projectedCell?.teamRisk || teamRiskMap.get(key)) || null)
+        : ((cell.teamRisk || teamRiskMap.get(key)) || null);
       const t = threatMap.get(key);
 	      const unit = unitForBoard(cell.unitId);
       const hasIncomingHit = !!(unit && teamRisk?.damage > 0);
@@ -635,7 +791,8 @@
     }
 	    const hero = selectedHero();
 	    const c = ui.selectedCell || ui.vm.selected?.cell;
-	    const selectedCellUnit = c ? unitById(cellAt(c.r, c.c)?.unitId) : null;
+	    const selectedCell = c ? (previewCellAt(c.r, c.c) || cellAt(c.r, c.c)) : null;
+	    const selectedCellUnit = c ? unitById(selectedCell?.unitId) : null;
 	    const selectedUnitRisk = selectedCellUnit?.side === 'hero' ? teamRiskForUnit(selectedCellUnit) : null;
 	    if (selectedUnitRisk) {
 	      $('detail-summary').textContent = `${selectedUnitRisk.unitName || selectedCellUnit.displayName || selectedCellUnit.name} 受击预警`;
@@ -663,8 +820,10 @@
       return;
     }
     $('detail-summary').textContent = `R${Number(c.r) + 1} C${Number(c.c) + 1}`;
-    const detail = ui.cellDetail && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
-    const cell = cellAt(c.r, c.c);
+    const currentDetail = ui.cellDetail && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
+    const projectedDetail = manualFlowPreviewVM() ? previewCellDetailAt(c.r, c.c) : null;
+    const detail = projectedDetail || currentDetail;
+    const cell = previewCellAt(c.r, c.c) || cellAt(c.r, c.c);
     const unit = detail?.unit || unitById(cell?.unitId);
     const parts = [`<div class="detail-pos">第${Number(c.r) + 1}行第${Number(c.c) + 1}列</div>`];
     if (unit) {
@@ -684,7 +843,7 @@
     if (terrain?.modules?.length) parts.push(`<div class="detail-terrain">地形：${terrain.modules.join('、')}</div>`);
 	    const previews = detail?.previews || cell?.previews || (detail?.preview || cell?.preview ? [detail?.preview || cell?.preview] : []);
 	    const preview = previews.find(p => p?.isActiveActor) || previews[0] || null;
-		    const threat = detail?.threat || cell?.threat;
+		    const threat = currentDetail?.threat || cell?.threat || detail?.threat;
 		    const teamRisk = detail?.teamRisk || cell?.teamRisk || (unit?.side === 'hero' ? teamRiskForUnit(unit) : null);
 		    if (unit?.side === 'hero' && teamRisk) {
 		      $('detail-summary').textContent = `${teamRisk.unitName || unit.displayName || unit.name} 受击预警`;
@@ -700,6 +859,10 @@
 		    else if (threat) parts.push(`<div class="detail-extra threat">⚠ ${esc(threatDetailText(threat))}</div>`);
 		    $('cell-detail').className = 'detail-card'; $('cell-detail').innerHTML = parts.join('\n');
 		  }
+	  function threatDamageValue(threat, hits = []) {
+	    if (threat?.type === 'attack' && !hits.length) return threat.threat ?? threat.atk ?? threat.totalDamage ?? threat.damage ?? 0;
+	    return threat.totalDamage ?? threat.damage ?? threat.threat ?? threat.atk ?? 0;
+	  }
 	  function threatDetailText(threat) {
 	    const hits = Array.isArray(threat?.hits) ? threat.hits : [];
 	    const actionCount = threat.actionCount || (Array.isArray(threat.actionIndexes) ? threat.actionIndexes.length : hits.length) || 1;
@@ -707,10 +870,10 @@
 	      const label = hit.slotLabel || (Array.isArray(threat.actionIndexes) ? `第${Number(threat.actionIndexes[i] ?? i) + 1}槽` : `第${i + 1}次`);
 	      return `${label}${hit.targetName ? ` ${hit.targetName}` : ''} 伤${hit.damage ?? hit.raw ?? 0}${hit.lethal ? ' KO' : ''}`;
 	    }).join(' / ');
-		    const total = threat.totalDamage ?? threat.damage ?? threat.atk ?? 0;
+		    const total = threatDamageValue(threat, hits);
 		    return `${threat.unitName || '敌方宠物'} ${actionCount}次行动块${hitText ? `：${hitText}` : ''}；合计${total}${threat.lethal ? ' KO' : ''}`;
 		  }
-		  function teamRiskDetailText(teamRisk) {
+			  function teamRiskDetailText(teamRisk) {
 			    const threats = Array.isArray(teamRisk?.threats) ? teamRisk.threats : [];
 			    if (!threats.length) return `敌方宠物() · 合计${compactRiskDamageValue(teamRisk?.damage ?? 0)}${teamRisk?.lethal ? ' · KO' : ''}`;
 			    const threatsByEnemy = new Map();
@@ -902,6 +1065,11 @@
     $('etb').disabled = !(phase === 'init' || phase === 'player_turn') || ui.busy;
     $('monster-btn').textContent = enemyFlowButtonText(phase);
     $('monster-btn').disabled = !(phase === 'monster_turn' || phase === 'round_end') || ui.busy;
+    if ($('undo-flow-btn')) {
+      const lastUndo = ui.undoStack[ui.undoStack.length - 1] || null;
+      $('undo-flow-btn').textContent = lastUndo ? `撤回：${lastUndo.label}` : '撤回结算';
+      $('undo-flow-btn').disabled = ui.busy || !lastUndo;
+    }
     const fullDayDisabled = ui.busy || ui.manualAutoLock || !['init','battle_end','day_end'].includes(phase);
     $('full-day-btn').disabled = fullDayDisabled;
     $('full-day-btn').title = ui.manualAutoLock ? '已手动移动或施放，本场完整自动流程已锁定。' : '';
@@ -1180,8 +1348,9 @@
     $('day7-btn').addEventListener('click', () => runCommand('SETUP_DAY7_FIRE_TRIAL'));
     $('save-game-btn')?.addEventListener('click', () => saveGame());
     $('load-game-btn')?.addEventListener('click', () => loadGameFromStorage());
-    $('etb').addEventListener('click', () => runCommand(ui.vm?.phase === 'init' ? 'START_BATTLE' : 'END_PLAYER_TURN'));
-    $('monster-btn').addEventListener('click', () => runCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'));
+    $('etb').addEventListener('click', () => runUndoableFlowCommand(ui.vm?.phase === 'init' ? 'START_BATTLE' : 'END_PLAYER_TURN'));
+    $('monster-btn').addEventListener('click', () => runUndoableFlowCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'));
+    $('undo-flow-btn')?.addEventListener('click', () => undoLastFlowAction());
     $('full-day-btn').addEventListener('click', () => {
       if (ui.manualAutoLock) { toast('已手动操作，本场完整自动流程已锁定。', true); return; }
       runCommand('RUN_FULL_DAY', {}, { autoFlow: true });

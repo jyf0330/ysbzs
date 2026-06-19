@@ -244,6 +244,7 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .right-panel .detail-card{min-height:190px;max-height:218px}
 .manual-flow-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .manual-flow-controls button{min-height:30px;font-size:12px;opacity:.82}
+.manual-flow-controls #undo-flow-btn{grid-column:1/-1}
 .trial-zone{display:none}
 .auto-controls{margin-top:auto;display:grid;grid-template-columns:1fr;gap:7px}
 .auto-controls button{min-height:36px;font-size:14px}
@@ -449,6 +450,8 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .right-panel .auto-controls #all-out-btn{height:30px;min-height:30px}
 .right-panel #etb{background:#4f7a43;color:#fff9e6;border:1px solid #2e5128;box-shadow:0 3px 0 rgba(37,73,30,.42)}
 .right-panel #monster-btn{background:#4d5d68;color:#f6fbff;border:1px solid #303c46}
+.right-panel #undo-flow-btn{height:34px;min-height:34px;background:#8b7554;color:#fff8e7;border:1px solid #5f4b31;box-shadow:0 2px 0 rgba(76,54,30,.34)}
+.right-panel #undo-flow-btn:disabled{background:#d5cfbd;color:#7d7567;border-color:#b9af9d;box-shadow:none}
 .right-panel #auto-position-btn{background:#7e9ab0;color:#172b38;border:1px solid #506879}
 .right-panel #all-out-btn{background:#6f3848;color:#fff4e5;border:1px solid #472331}
 .right-panel #full-day-btn{background:#d5cfbd;color:#514936;border:1px solid #aaa18c}

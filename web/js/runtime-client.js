@@ -68,14 +68,14 @@ export function createHttpRuntime(options = {}) {
 
 export function createLocalRuntime(options = {}) {
   const win = getWindow();
+  const playerId = options.playerId || 'p1';
+  function currentPlayerId() { return getPlayerId(playerId); }
   const existingEngine = options.engine || win?.__YSBZS_LOCAL_ENGINE__ || null;
   const factory = options.engineFactory || win?.__YSBZS_LOCAL_ENGINE_FACTORY__ || null;
-  const engine = existingEngine || (typeof factory === 'function' ? factory(options) : null);
+  const engine = existingEngine || (typeof factory === 'function' ? factory(Object.assign({}, options, { playerId: currentPlayerId() })) : null);
   if (win && engine && !win.__YSBZS_LOCAL_ENGINE__) win.__YSBZS_LOCAL_ENGINE__ = engine;
   const storage = options.storage || win?.localStorage || null;
   const slotKey = options.slotKey || DEFAULT_SAVE_SLOT;
-  const playerId = options.playerId || 'p1';
-  function currentPlayerId() { return getPlayerId(playerId); }
   async function view() {
     if (engine?.view) return engine.view(currentPlayerId());
     if (engine?.getViewModel) return { ok: true, viewModel: engine.getViewModel(currentPlayerId()) };

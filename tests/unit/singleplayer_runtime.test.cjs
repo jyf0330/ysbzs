@@ -38,6 +38,7 @@ test('RT02 runtime client exposes http and local-first modes behind one method s
   assert.match(runtime, /__YSBZS_LOCAL_ENGINE_FACTORY__/);
   assert.match(runtime, /\/ysbzs-api/);
   assert.match(runtime, /return 'local'/);
+  assert.match(runtime, /factory\(Object\.assign\(\{\}, options, \{ playerId: currentPlayerId\(\) \}\)\)/, 'local engine factory should receive a resolved player id, not the UI callback function');
 });
 
 test('RT03 UI connected check verifies runtime abstraction without allowing core imports', () => {

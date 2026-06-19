@@ -174,6 +174,25 @@ test('UI05B acted heroes do not keep move-target affordances', () => {
   assert.match(clickBody[1], /本回合已行动，位置锁定/, 'clicking empty cells after acting should explain the lock');
 });
 
+test('UI05C clicking enemy pets or outside the board clears the current pet selection', () => {
+  const main = read('web/js/main.js');
+  assert.match(main, /async function clearCurrentPetSelection\(/, 'browser should have a shared clear-selection helper');
+  assert.match(main, /runCommand\('CLEAR_SELECTION'/, 'clear helper must sync through the public UI selection command');
+
+  const clickBody = main.match(/async function onCellClick\(r, c\) \{([\s\S]*?)\n  \}\n\n\s*function renderCellDetail/);
+  assert.ok(clickBody, 'onCellClick should exist');
+  assert.match(clickBody[1], /const isEnemyUnit = unit\?\.side === 'enemy'/, 'click handler should identify enemy pet cells');
+  assert.match(clickBody[1], /if \(isEnemyUnit\) \{[\s\S]*?await clearCurrentPetSelection\(\{ preserveCell: true \}\)/, 'enemy pet clicks should clear current pet selection while preserving the clicked detail');
+  assert.ok(
+    clickBody[1].indexOf('await clearCurrentPetSelection({ preserveCell: true })') < clickBody[1].indexOf("SELECT_CELL"),
+    'enemy/non-hero cell clicks should clear stale unit selection before selecting the cell'
+  );
+
+  const eventBindingBody = main.match(/\$\('fullscreen-btn'\)[\s\S]*?\n  function scaleApp/);
+  assert.ok(eventBindingBody, 'event binding section should exist');
+  assert.match(eventBindingBody[0], /document\.addEventListener\('click', async ev => \{[\s\S]*?clearCurrentPetSelection\(\)/, 'document outside clicks should clear current pet selection');
+});
+
 test('UI06 board hover preview is disabled so only clicks change the board interaction state', () => {
   const main = read('web/js/main.js');
   const css = read('web/ux-app.css');

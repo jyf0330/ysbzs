@@ -1,11 +1,49 @@
 const { createGameState } = require('./core/state.cjs');
-const { dispatch: coreDispatch } = require('./core/reducer.cjs');
 const { ensureMultiplayerState } = require('./core/multiplayerState.cjs');
 const { normalizeCommandEnvelope, rejectedCommandResult } = require('./core/commandEnvelope.cjs');
 const { stateHash } = require('./core/stateHash.cjs');
 const { buildSaveDocument, applySaveToState } = require('./storage/saveCodec.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
+function cloneOrNull(value) { return value == null ? null : clone(value); }
+
+function projectedCamp(unit = {}) {
+  if (unit.camp) return unit.camp;
+  if (unit.side === 'hero' || unit.side === 'hero_leader') return 'player';
+  if (unit.side === 'enemy' || unit.side === 'boss') return 'enemy';
+  return unit.side || null;
+}
+
+function projectedUnitDetail(unit) {
+  if (!unit) return null;
+  const detail = clone(unit);
+  detail.camp = projectedCamp(unit);
+  detail.elements = clone(unit.elements || {});
+  return detail;
+}
+
+function buildProjectedCellDetails(viewModel) {
+  const units = [
+    ...(viewModel?.heroes || []),
+    ...(viewModel?.enemies || []),
+    viewModel?.leaders?.player,
+    viewModel?.leaders?.enemy
+  ].filter(Boolean);
+  const unitsById = new Map(units.map(unit => [unit.id, unit]));
+  const cells = viewModel?.board?.cells || [];
+  return cells.map(cell => ({
+    r: cell.r,
+    c: cell.c,
+    key: cell.key || `${cell.r},${cell.c}`,
+    terrain: clone(cell.terrain || { modules: [] }),
+    elements: clone(cell.elements || {}),
+    unit: projectedUnitDetail(unitsById.get(cell.unitId)),
+    preview: cloneOrNull(cell.preview),
+    previews: clone(cell.previews || []),
+    threat: cloneOrNull(cell.threat),
+    teamRisk: cloneOrNull(cell.teamRisk)
+  }));
+}
 
 function nextManualFlowCommandType(state) {
   if (state.phase === 'init') return 'START_BATTLE';
@@ -53,7 +91,7 @@ function runManualFlowPreviewTransaction(ctx, rawCommand) {
     }
     const projectedViewModel = viewFor(command);
     const cells = clone(projectedViewModel.board?.cells || []);
-    const cellDetails = cells.map(cell => coreDispatch(state, { type: 'GET_CELL_DETAIL', r: cell.r, c: cell.c })).filter(Boolean).map(clone);
+    const cellDetails = buildProjectedCellDetails(projectedViewModel);
     const events = stepResults.flatMap(step => Array.isArray(step.events) ? step.events : []).map(clone);
     const projectedHash = stateHash(state);
     restoreFullSnapshotTransaction(ctx, transaction);

@@ -57,6 +57,14 @@ async function clickCell(page, cell) {
   };
 }
 
+async function readDetail(page) {
+  return {
+    summary: await page.locator('#detail-summary').innerText(),
+    detail: await page.locator('#cell-detail').innerText(),
+    state: await page.evaluate(() => window.__YSBZS__?.cellDetail?.() || null)
+  };
+}
+
 test('board pet detail updates when switching from enemy back to hero', { timeout: 30000 }, async () => {
   const port = await getFreePort();
   const { child, ready } = startUiServer(port);
@@ -91,6 +99,60 @@ test('board pet detail updates when switching from enemy back to hero', { timeou
     const secondHero = await clickCell(page, heroCell);
     assert.match(secondHero.detail, new RegExp(heroName));
     assert.doesNotMatch(secondHero.detail, new RegExp(enemyName));
+    assert.deepEqual(errors, []);
+  } finally {
+    if (browser) await browser.close();
+    child.kill('SIGTERM');
+  }
+});
+
+test('moving a pet refreshes detail to the new risky cell without losing rich unit info', { timeout: 30000 }, async () => {
+  const port = await getFreePort();
+  const { child, ready } = startUiServer(port);
+  let browser;
+  try {
+    await ready;
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1365, height: 768 } });
+    const errors = [];
+    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+    page.on('pageerror', err => errors.push(err.message));
+
+    await page.goto(`http://127.0.0.1:${port}/index.html?runtime=local&detailMoveTest=1`, { waitUntil: 'domcontentloaded' });
+    await page.locator('#day7-btn').click();
+    await page.waitForFunction(() => window.__YSBZS__?.lastViewModel?.day7Trial);
+
+    const units = await boardUnits(page);
+    const heroCell = units.find(x => x.unitText.includes('融焰娘'));
+    assert.ok(heroCell, 'expected 融焰娘 on the Day7 board');
+    const target = { r: 3, c: 1 };
+    assert.equal(await page.locator(`#board [data-r="${target.r}"][data-c="${target.c}"] .unit-token`).count(), 0, 'target risky move cell should start empty');
+
+    await clickCell(page, heroCell);
+    await page.locator(`#board [data-r="${target.r}"][data-c="${target.c}"]`).click();
+    await page.waitForFunction(([r, c]) => {
+      const api = window.__YSBZS__;
+      const detail = api?.cellDetail?.();
+      const moved = api?.lastViewModel?.heroes?.find(unit => unit.name === '融焰娘');
+      return !api?.isBusy?.()
+        && detail
+        && Number(detail.r) === Number(r)
+        && Number(detail.c) === Number(c)
+        && Number(moved?.position?.r) === Number(r)
+        && Number(moved?.position?.c) === Number(c);
+    }, [target.r, target.c]);
+
+    const moved = await readDetail(page);
+    assert.equal(Number(moved.state.r), target.r);
+    assert.equal(Number(moved.state.c), target.c);
+    assert.equal(moved.summary, '融焰娘');
+    assert.match(moved.detail, /融焰娘/);
+    assert.match(moved.detail, /技能/);
+    assert.match(moved.detail, /当前状态/);
+    assert.match(moved.detail, /单位元素层/);
+    assert.match(moved.detail, /脚下元素层/);
+    assert.match(moved.detail, /⚠/);
+    assert.match(moved.detail, /合计-\d+/);
     assert.deepEqual(errors, []);
   } finally {
     if (browser) await browser.close();

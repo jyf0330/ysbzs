@@ -46,3 +46,20 @@ test('manual enemy-flow preview comes from transactional public command data', (
     assert.match(riskBody[1], /if \(projected\) return unit\.position \? previewCellAt\(unit\.position\.r, unit\.position\.c\)\?\.teamRisk \|\| null : null;/, `${file} must not fall back to current cell.teamRisk when projected preview has no risk`);
   }
 });
+
+test('manual enemy-flow preview avoids blocking refresh and per-cell read dispatches', () => {
+  const previewSrc = read('src/uiAdapterManualFlowPreview.cjs');
+  assert.match(previewSrc, /function buildProjectedCellDetails/, 'transaction preview should derive projected cell details in one pass');
+  assert.doesNotMatch(previewSrc, /type:\s*'GET_CELL_DETAIL'/, 'transaction preview must not dispatch GET_CELL_DETAIL once per board cell');
+  assert.doesNotMatch(previewSrc, /coreDispatch/, 'transaction preview should not depend on reducer dispatch for projected cell details');
+
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const js = read(file);
+    assert.match(js, /manualFlowPreviewPending/, `${file} should deduplicate concurrent preview refreshes`);
+    assert.match(js, /manualFlowPreviewSourceKey/, `${file} should cache preview results by current state key`);
+    assert.match(js, /scheduleManualFlowPreviewWork/, `${file} should schedule local preview work outside the click task`);
+    assert.match(js, /requestAnimationFrame/, `${file} should let the current state paint before starting local preview work`);
+    assert.match(js, /if \(ui\.manualFlowPreview\?\.sourceKey === sourceKey\)/, `${file} should skip refresh when the current state already has a preview`);
+    assert.doesNotMatch(js, /await refreshManualFlowPreview\(\)/, `${file} should not block player commands on preview refresh`);
+  }
+});

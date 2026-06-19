@@ -824,6 +824,15 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
   assert.deepEqual(projected.enemies.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })), realAfterTwoButtons.enemies.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })));
   assert.equal(preview.result.cells.length, realAfterTwoButtons.board.cells.length, '预览需要带回全格子数据');
   assert.equal(preview.result.cellDetails.length, realAfterTwoButtons.board.cells.length, '预览需要带回每个格子的详情数据');
+  const projectedHero = projected.heroes.find(unit => unit.position);
+  const projectedHeroDetail = preview.result.cellDetails.find(detail => detail.unit?.id === projectedHero.id);
+  assert.ok(projectedHeroDetail, '预演详情必须能按单位 id 找到投影后的我方宠物详情');
+  assert.equal(projectedHeroDetail.unit.quality, projectedHero.quality, '预演详情不能丢失品质字段，否则右侧优化版小标题会退化');
+  assert.equal(projectedHeroDetail.unit.role, projectedHero.role, '预演详情不能丢失定位字段');
+  assert.equal(projectedHeroDetail.unit.element, projectedHero.element, '预演详情不能丢失元素字段');
+  assert.deepEqual(projectedHeroDetail.unit.shape, projectedHero.shape, '预演详情必须保留行动形状/技能字段');
+  assert.deepEqual(projectedHeroDetail.unit.slots, projectedHero.slots, '预演详情必须保留行动块列表');
+  assert.ok((projectedHeroDetail.unit.slots || []).length > 0, '预演详情里的宠物必须还有行动块用于右侧优化版展示');
   assert.ok(preview.result.events.some(event => event.type === 'PLAYER_TURN_END'), '预览事件必须来自正式结束回合命令');
 });
 

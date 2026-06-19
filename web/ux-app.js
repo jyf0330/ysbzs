@@ -48,7 +48,8 @@
 	    draggedRosterId: null,
 	    manualAutoLock: false,
 	    undoStack: [],
-	    manualFlowPreview: null
+	    manualFlowPreview: null,
+	    manualFlowPreviewPending: null
 	  };
   Object.assign(ui, sharedUi);
   const renderCache = createRenderCache();
@@ -83,7 +84,7 @@
     }
     return out;
   }
-  function normalizeManualFlowPreviewResult(result) {
+  function normalizeManualFlowPreviewResult(result, sourceKey = null) {
     if (!result?.viewModel) return null;
     const cells = Array.isArray(result.cells) ? result.cells : (result.viewModel.board?.cells || []);
     const cellDetails = Array.isArray(result.cellDetails) ? result.cellDetails : [];
@@ -105,12 +106,38 @@
       cellDetails,
       cellByKey: indexByCell(cells),
       cellDetailByKey: indexByCell(cellDetails),
-      signature
+      signature,
+      sourceKey
     });
   }
   function manualFlowPreviewVM() { return ui.manualFlowPreview?.viewModel || null; }
   function previewCellAt(r, c) { return ui.manualFlowPreview?.cellByKey?.[cellKey(r, c)] || (manualFlowPreviewVM()?.board?.cells || []).find(x => Number(x.r) === Number(r) && Number(x.c) === Number(c)) || null; }
   function previewCellDetailAt(r, c) { return ui.manualFlowPreview?.cellDetailByKey?.[cellKey(r, c)] || null; }
+  function manualFlowPreviewSourceKey() {
+    if (!ui.vm || !['init', 'player_turn', 'monster_turn', 'round_end'].includes(ui.vm.phase)) return null;
+    return [ui.vm.stateHash || '', ui.vm.phase || '', ui.vm.round ?? '', ui.vm.stateVersion ?? ''].join('|');
+  }
+  function clearStaleManualFlowPreview() {
+    const sourceKey = manualFlowPreviewSourceKey();
+    if (!sourceKey || ui.manualFlowPreview?.sourceKey !== sourceKey) ui.manualFlowPreview = null;
+    if (!sourceKey) ui.manualFlowPreviewPending = null;
+  }
+  function scheduleManualFlowPreviewWork(work) {
+    return new Promise((resolve, reject) => {
+      const run = () => {
+        try { resolve(work()); }
+        catch (err) { reject(err); }
+      };
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => {
+          if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(run, { timeout: 120 });
+          else setTimeout(run, 0);
+        });
+      } else {
+        setTimeout(run, 0);
+      }
+    });
+  }
   function manualFlowPreviewKey() { return ui.manualFlowPreview?.signature || null; }
   function teamRiskGridSource() {
     const projected = manualFlowPreviewVM();
@@ -252,8 +279,9 @@
     const data = await api('/api/view');
     ui.vm = data.viewModel;
     normalizeSelection();
+    clearStaleManualFlowPreview();
     render();
-    await refreshManualFlowPreview();
+    refreshManualFlowPreview();
   }
   async function report(mode = 'player') {
     const data = await api(`/api/report?mode=${encodeURIComponent(mode)}`);
@@ -281,6 +309,7 @@
       ui.prepFilter = '';
       ui.undoStack = [];
       ui.manualFlowPreview = null;
+      ui.manualFlowPreviewPending = null;
     }
     ui.busy = true;
     setBusy(true);
@@ -291,9 +320,10 @@
       if (type === 'START_BATTLE') ui.prepOpen = false;
       // toast 已关闭
       normalizeSelection();
+      clearStaleManualFlowPreview();
       render();
       if (shouldRefreshSelectedCellAfterCommand(type)) await refreshSelectedCellDetail();
-      await refreshManualFlowPreview();
+      refreshManualFlowPreview();
       return data;
     } catch (err) {
       toast(err.message || String(err), true);
@@ -354,9 +384,10 @@
       ui.cellDetail = null;
       renderCache.invalidate();
       normalizeSelection();
+      clearStaleManualFlowPreview();
       render();
       await refreshSelectedCellDetail();
-      await refreshManualFlowPreview();
+      refreshManualFlowPreview();
     } catch (err) {
       ui.undoStack.push(entry);
       toast(`撤回失败：${err.message || err}`, true);
@@ -378,22 +409,36 @@
     return fetchCellDetail(cell.r, cell.c);
   }
   async function refreshManualFlowPreview() {
-    if (!ui.vm || !['init', 'player_turn', 'monster_turn', 'round_end'].includes(ui.vm.phase)) {
+    const sourceKey = manualFlowPreviewSourceKey();
+    if (!sourceKey) {
       ui.manualFlowPreview = null;
+      ui.manualFlowPreviewPending = null;
       return null;
     }
-    try {
-      const data = await runtime.action(makeCommand('PREVIEW_MANUAL_FLOW', { limit: 2 }));
-      ui.manualFlowPreview = normalizeManualFlowPreviewResult(data?.result);
-      renderCache.invalidate('board');
-      renderCache.invalidate('cellDetail');
-      render();
-      return ui.manualFlowPreview;
-    } catch (err) {
-      ui.manualFlowPreview = null;
-      console.warn('manual flow preview failed', err);
-      return null;
-    }
+    if (ui.manualFlowPreview?.sourceKey === sourceKey) return ui.manualFlowPreview;
+    if (ui.manualFlowPreviewPending?.sourceKey === sourceKey) return ui.manualFlowPreviewPending.promise;
+    ui.manualFlowPreview = null;
+    const promise = scheduleManualFlowPreviewWork(() => runtime.action(makeCommand('PREVIEW_MANUAL_FLOW', { limit: 2 })))
+      .then(data => {
+        if (manualFlowPreviewSourceKey() !== sourceKey) return null;
+        ui.manualFlowPreview = normalizeManualFlowPreviewResult(data?.result, sourceKey);
+        renderCache.invalidate('board');
+        renderCache.invalidate('cellDetail');
+        render();
+        return ui.manualFlowPreview;
+      })
+      .catch(err => {
+        if (manualFlowPreviewSourceKey() === sourceKey) {
+          ui.manualFlowPreview = null;
+          console.warn('manual flow preview failed', err);
+        }
+        return null;
+      })
+      .finally(() => {
+        if (ui.manualFlowPreviewPending?.sourceKey === sourceKey) ui.manualFlowPreviewPending = null;
+      });
+    ui.manualFlowPreviewPending = { sourceKey, promise };
+    return promise;
   }
   async function saveGame() {
     try {
@@ -791,11 +836,14 @@
     }
 	    const hero = selectedHero();
 	    const c = ui.selectedCell || ui.vm.selected?.cell;
+	    const currentDetail = ui.cellDetail && c && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
+	    const projectedDetail = c && manualFlowPreviewVM() ? previewCellDetailAt(c.r, c.c) : null;
+	    const detail = currentDetail || projectedDetail;
 	    const selectedCell = c ? (previewCellAt(c.r, c.c) || cellAt(c.r, c.c)) : null;
-	    const selectedCellUnit = c ? unitById(selectedCell?.unitId) : null;
-	    const selectedUnitRisk = selectedCellUnit?.side === 'hero' ? teamRiskForUnit(selectedCellUnit) : null;
+	    const selectedCellUnit = c ? (unitById(detail?.unit?.id || selectedCell?.unitId) || detail?.unit || null) : null;
+	    const selectedUnitRisk = selectedCellUnit?.side === 'hero' ? teamRiskForUnit(selectedCellUnit) : (currentDetail?.teamRisk || null);
 	    if (selectedUnitRisk) {
-	      $('detail-summary').textContent = `${selectedUnitRisk.unitName || selectedCellUnit.displayName || selectedCellUnit.name} 受击预警`;
+	      $('detail-summary').textContent = `${selectedUnitRisk.unitName || selectedCellUnit?.displayName || selectedCellUnit?.name || '我方单位'} 受击预警`;
 	      $('cell-detail').className = 'detail-card selected-detail';
 	      $('cell-detail').innerHTML = renderTeamRiskPanel(selectedUnitRisk);
 	      return;
@@ -804,6 +852,12 @@
 	      $('detail-summary').textContent = hero.name;
 	      $('cell-detail').className = 'detail-card selected-detail';
 	      $('cell-detail').innerHTML = renderUnitDetail(hero);
+      return;
+    }
+	    if (selectedCellUnit?.side === 'hero') {
+	      $('detail-summary').textContent = selectedCellUnit.name;
+	      $('cell-detail').className = 'detail-card selected-detail';
+	      $('cell-detail').innerHTML = renderUnitDetail(selectedCellUnit);
       return;
     }
 	    if (!c) {
@@ -820,11 +874,8 @@
       return;
     }
     $('detail-summary').textContent = `R${Number(c.r) + 1} C${Number(c.c) + 1}`;
-    const currentDetail = ui.cellDetail && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
-    const projectedDetail = manualFlowPreviewVM() ? previewCellDetailAt(c.r, c.c) : null;
-    const detail = projectedDetail || currentDetail;
     const cell = previewCellAt(c.r, c.c) || cellAt(c.r, c.c);
-    const unit = detail?.unit || unitById(cell?.unitId);
+    const unit = unitById(detail?.unit?.id || cell?.unitId) || detail?.unit || null;
     const parts = [`<div class="detail-pos">第${Number(c.r) + 1}行第${Number(c.c) + 1}列</div>`];
     if (unit) {
       parts.push(`<div class="detail-unit"><span class="${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span> <strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.role || unit.element || '')}</small></div>`);
@@ -845,12 +896,6 @@
 	    const preview = previews.find(p => p?.isActiveActor) || previews[0] || null;
 		    const threat = currentDetail?.threat || cell?.threat || detail?.threat;
 		    const teamRisk = detail?.teamRisk || cell?.teamRisk || (unit?.side === 'hero' ? teamRiskForUnit(unit) : null);
-		    if (unit?.side === 'hero' && teamRisk) {
-		      $('detail-summary').textContent = `${teamRisk.unitName || unit.displayName || unit.name} 受击预警`;
-		      $('cell-detail').className = 'detail-card selected-detail';
-		      $('cell-detail').innerHTML = renderTeamRiskPanel(teamRisk);
-		      return;
-		    }
 		    if (preview) {
 		      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`}`).join('；');
 		      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);

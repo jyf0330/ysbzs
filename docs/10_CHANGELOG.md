@@ -2,6 +2,7 @@
 
 ## 2026-06-20
 
+- 移动后的沙盒单位 diff 现在保留受伤来源：`PREVIEW_MANUAL_FLOW.unitDiffs` 会从沙盒 `DAMAGE` 与 `ENEMY_PET_ACTION` 事件回填 `enemyIds` / `threats` / 敌方名称 / 槽位 / 形状来源，右侧详情不再显示 `敌方宠物()` 空来源；默认战斗真实浏览器验证 `疾风隼 R6C3 -> R2C6` 显示 `敌方翠叶鼠(-3,-3) · 合计-6`。
 - 移动后的我方宠物受伤显示彻底改为最新 `manualFlowPreview.unitDiffs`：右侧详情和棋盘格 `受X/KO` 标记在投影预览模式下不再读取 projected/current `teamRisk`，避免旧风险口径覆盖沙盒实际 diff。默认战斗真实浏览器验证 `疾风隼 R6C3 -> R2C6` 显示 `预计伤害 6 / HP10→4 / 受6`，未使用 Day7。
 - `PREVIEW_MANUAL_FLOW` 的 timing 现在支持按需本地基线日志：命令传 `persistTiming: true` 或设置 `YSBZS_TIMING_PERSIST=1` 时写入 `.ysbzs-performance/`，默认不落盘，避免普通预览增加同步写入成本。
 - 第7天火核心试炼不再作为默认测试/验收基准：`npm test`、`check:all`、`check:v1`、coverage 和 all-check runner 都不会自动执行 Day7；显式 `npm run check:day7` 入口保留，仅在用户主动要求时使用。

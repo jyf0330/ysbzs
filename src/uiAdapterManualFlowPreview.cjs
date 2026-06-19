@@ -90,6 +90,92 @@ function buildUnitDiffs(beforeUnits = [], afterUnits = []) {
   }).filter(Boolean);
 }
 
+function unitSourceMap(beforeUnits = [], afterUnits = []) {
+  const out = new Map();
+  for (const unit of [...beforeUnits, ...afterUnits]) {
+    if (unit?.id) out.set(unit.id, unit);
+  }
+  return out;
+}
+
+function sourceNameForDamage(event = {}, action = null, unitsById = new Map()) {
+  const sourceId = event.sourceId || action?.unitId || null;
+  const unit = sourceId ? unitsById.get(sourceId) : null;
+  return unit?.displayName || unit?.name || event.sourceName || action?.unitName || sourceId || '系统';
+}
+
+function matchingActionForDamage(actions = [], event = {}) {
+  for (let i = actions.length - 1; i >= 0; i--) {
+    const action = actions[i];
+    if (action.step > event.step) continue;
+    if (event.sourceId && action.unitId !== event.sourceId) continue;
+    if (Array.isArray(action.targetIds) && event.targetId && !action.targetIds.includes(event.targetId)) continue;
+    return action;
+  }
+  return null;
+}
+
+function damageThreatFromEvent(event = {}, action = null, unitsById = new Map()) {
+  const shieldDamage = Math.max(0, Number(event.shieldFrom ?? 0) - Number(event.shieldTo ?? 0));
+  const hpDamage = Math.max(0, Number(event.hpFrom ?? 0) - Number(event.hpTo ?? 0));
+  const finalDamage = Math.max(0, Number(event.final ?? event.damage ?? 0));
+  const damage = finalDamage || hpDamage + shieldDamage;
+  if (damage <= 0) return null;
+  const enemyId = event.sourceId || action?.unitId || null;
+  const enemyName = sourceNameForDamage(event, action, unitsById);
+  return {
+    enemyId,
+    enemyName,
+    unitId: enemyId,
+    unitName: enemyName,
+    targetId: event.targetId || null,
+    damage,
+    shieldDamage,
+    hpDamage,
+    raw: Number(event.raw ?? damage),
+    final: damage,
+    element: event.element ?? null,
+    slotId: action?.slotId ?? null,
+    slotLabel: action?.slotLabel || null,
+    shapeId: action?.shapeId || null,
+    shapeName: action?.shapeName || null,
+    direction: action?.direction || null,
+    cells: clone(action?.cells || []),
+    actionEventId: action?.eventId || null,
+    damageEventId: event.eventId || null,
+    step: event.step ?? null
+  };
+}
+
+function buildDamageThreatsByTarget(events = [], beforeUnits = [], afterUnits = []) {
+  const unitsById = unitSourceMap(beforeUnits, afterUnits);
+  const actions = [];
+  const threatsByTarget = new Map();
+  for (const event of events || []) {
+    if (!event) continue;
+    if (event.type === 'ENEMY_PET_ACTION') {
+      actions.push(event);
+      continue;
+    }
+    if (event.type !== 'DAMAGE' || !event.targetId) continue;
+    const threat = damageThreatFromEvent(event, matchingActionForDamage(actions, event), unitsById);
+    if (!threat) continue;
+    const list = threatsByTarget.get(event.targetId) || [];
+    list.push(threat);
+    threatsByTarget.set(event.targetId, list);
+  }
+  return threatsByTarget;
+}
+
+function attachUnitDiffSources(unitDiffs = [], events = [], beforeUnits = [], afterUnits = []) {
+  const threatsByTarget = buildDamageThreatsByTarget(events, beforeUnits, afterUnits);
+  return unitDiffs.map(diff => {
+    const threats = threatsByTarget.get(diff.id) || [];
+    const enemyIds = [...new Set(threats.map(threat => threat.enemyId).filter(Boolean))];
+    return Object.assign({}, diff, { enemyIds, threats });
+  });
+}
+
 function nextManualFlowCommandType(state, commands = []) {
   if (state.phase === 'init') return 'START_BATTLE';
   if (state.phase === 'player_turn' || state.phase === 'player') {
@@ -157,8 +243,9 @@ function runManualFlowPreviewTransaction(ctx, rawCommand) {
     const cellDetails = timing.measure('build_after_cell_details', () => buildProjectedCellDetails(projectedViewModel));
     const afterUnits = timing.measure('capture_after_units', () => unitsForDiff(projectedViewModel));
     const cellDiffs = timing.measure('build_cell_diffs', () => buildCellDiffs(beforeCells, cells));
-    const unitDiffs = timing.measure('build_unit_diffs', () => buildUnitDiffs(beforeUnits, afterUnits));
     const events = timing.measure('collect_events', () => stepResults.flatMap(step => Array.isArray(step.events) ? step.events : []).map(clone));
+    const rawUnitDiffs = timing.measure('build_unit_diffs', () => buildUnitDiffs(beforeUnits, afterUnits));
+    const unitDiffs = timing.measure('attach_unit_diff_sources', () => attachUnitDiffSources(rawUnitDiffs, events, beforeUnits, afterUnits));
     const projectedHash = timing.measure('hash_projected_state', () => stateHash(state));
     timing.measure('restore_snapshot', () => restoreFullSnapshotTransaction(ctx, transaction));
     const restoredViewState = timing.measure('capture_restored_view_state', () => viewStateFor(command));

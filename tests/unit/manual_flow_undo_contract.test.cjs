@@ -47,6 +47,12 @@ test('manual enemy-flow preview comes from transactional public command data', (
     assert.match(riskBody[1], /const projected = manualFlowPreviewVM\(\)/, `${file} should know whether a transaction preview exists`);
     assert.match(riskBody[1], /if \(projected\) return projectedInjuryForUnit\(unit\);/, `${file} should render projected injury from unit diff once sandbox data exists`);
     assert.doesNotMatch(riskBody[1], /previewCellAt\(unit\.position\.r, unit\.position\.c\)\?\.teamRisk/, `${file} must not use projected teamRisk as final injury result`);
+    const injuryBody = js.match(/function injuryFromUnitDiff\(diff, fallbackUnit = \{\}\) \{([\s\S]*?)\n  \}/);
+    assert.ok(injuryBody, `${file} should expose injuryFromUnitDiff`);
+    assert.match(injuryBody[1], /enemyIds: diff\.enemyIds \|\| \[\]/, `${file} should keep projected injury source ids from the unit diff`);
+    assert.match(injuryBody[1], /threats: diff\.threats \|\| \[\]/, `${file} should keep projected injury source details from the unit diff`);
+    assert.doesNotMatch(injuryBody[1], /enemyIds:\s*\[\]/, `${file} must not erase projected injury source ids`);
+    assert.doesNotMatch(injuryBody[1], /threats:\s*\[\]/, `${file} must not erase projected injury source details`);
     const detailBody = js.match(/function renderCellDetail\(\) \{([\s\S]*?)\n  \}/);
     assert.ok(detailBody, `${file} should expose renderCellDetail`);
     assert.match(detailBody[1], /const detail = projectedDetail \|\| currentDetail;/, `${file} should let latest projected detail override current cell detail`);

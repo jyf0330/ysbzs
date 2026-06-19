@@ -941,6 +941,29 @@ test('UI22D 移动后的可渲染受伤信息来自沙盒全格子 diff 而不�
   assert.ok(preview.result.unitDiffs.length > 0, '执行前后单位 diff 应提供给前端渲染');
 });
 
+test('UI22E 移动后的沙盒单位 diff 保留受伤来源', () => {
+  const adapter = createYSBZSUIAdapter({ mode: 'solo', battleId: 'move_simulation_diff_provenance' });
+  adapter.run('START_BATTLE');
+  const hero = adapter.getViewModel().heroes.find(unit => unit.name === '疾风隼');
+  assert.ok(hero, '默认战斗需要疾风隼用于第二行第六列复现');
+
+  const move = adapter.run('MOVE_HERO', { unitId: hero.id, to: { r: 1, c: 5 } });
+  assert.equal(move.ok, true);
+  const preview = adapter.run('PREVIEW_MANUAL_FLOW', { limit: 2 });
+  const diff = preview.result.unitDiffs.find(item => item.id === hero.id);
+
+  assert.ok(diff, '疾风隼应该有执行前后单位 diff');
+  assert.equal(diff.before.hp, 10);
+  assert.ok(diff.after.hp < diff.before.hp, '复现格应导致我方疾风隼受伤');
+  const hpLoss = diff.before.hp - diff.after.hp;
+  assert.ok(Array.isArray(diff.enemyIds) && diff.enemyIds.length > 0, '单位 diff 需要保留造成伤害的来源单位 id');
+  assert.ok(Array.isArray(diff.threats) && diff.threats.length > 0, '单位 diff 需要保留造成伤害的来源明细');
+  assert.ok(diff.threats.every(threat => threat.enemyId === diff.enemyIds[0]), '来源明细需要关联到敌方单位 id');
+  assert.ok(diff.threats.every(threat => threat.enemyName && threat.enemyName !== '敌方宠物'), '来源明细需要保留敌方单位名称');
+  assert.ok(diff.threats.every(threat => threat.slotLabel), '来源明细需要保留敌方行动槽');
+  assert.equal(diff.threats.reduce((sum, threat) => sum + Number(threat.damage || 0), 0), hpLoss);
+});
+
 test('UI22B 移动风险必须来自真实敌方宠物行动意图', () => {
   const state = createGameState({ activePets: [], battleId: 'reachable_main_threat_risk' });
   state.phase = 'player_turn';

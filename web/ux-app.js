@@ -192,8 +192,8 @@
       hpFrom,
       hpTo,
       lethal: hpTo <= 0,
-      enemyIds: [],
-      threats: []
+      enemyIds: diff.enemyIds || [],
+      threats: diff.threats || []
     };
   }
   function projectedInjuryForUnit(unit) {

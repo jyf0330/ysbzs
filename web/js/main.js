@@ -80,8 +80,12 @@ import { createGameRuntime } from './runtime-client.js';
   }
   function normalizeManualFlowPreviewResult(result, sourceKey = null) {
     if (!result?.viewModel) return null;
+    const beforeCells = Array.isArray(result.beforeCells) ? result.beforeCells : [];
+    const beforeCellDetails = Array.isArray(result.beforeCellDetails) ? result.beforeCellDetails : [];
     const cells = Array.isArray(result.cells) ? result.cells : (result.viewModel.board?.cells || []);
     const cellDetails = Array.isArray(result.cellDetails) ? result.cellDetails : [];
+    const cellDiffs = Array.isArray(result.cellDiffs) ? result.cellDiffs : [];
+    const unitDiffs = Array.isArray(result.unitDiffs) ? result.unitDiffs : [];
     const commands = Array.isArray(result.commands) ? result.commands.map(command => ({
       type: command.type,
       ok: command.ok !== false,
@@ -96,10 +100,17 @@ import { createGameRuntime } from './runtime-client.js';
     ].join('|');
     return Object.assign({}, result, {
       commands,
+      beforeCells,
+      beforeCellDetails,
       cells,
       cellDetails,
+      cellDiffs,
+      unitDiffs,
+      beforeCellByKey: indexByCell(beforeCells),
+      beforeCellDetailByKey: indexByCell(beforeCellDetails),
       cellByKey: indexByCell(cells),
       cellDetailByKey: indexByCell(cellDetails),
+      cellDiffByKey: indexByCell(cellDiffs),
       signature,
       sourceKey
     });
@@ -327,6 +338,11 @@ import { createGameRuntime } from './runtime-client.js';
       if (!options.suppressToast && data.events && data.events.length) toast(data.events[data.events.length - 1].text || data.events[data.events.length - 1].type);
       normalizeSelection();
       clearStaleManualFlowPreview();
+      if (data.manualFlowPreview) {
+        const sourceKey = manualFlowPreviewSourceKey();
+        ui.manualFlowPreview = normalizeManualFlowPreviewResult(data.manualFlowPreview, sourceKey);
+        ui.manualFlowPreviewPending = null;
+      }
       render();
       if (shouldRefreshSelectedCellAfterCommand(type)) await refreshSelectedCellDetail();
       refreshManualFlowPreview();

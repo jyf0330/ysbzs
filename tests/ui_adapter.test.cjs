@@ -799,7 +799,7 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
   assert.equal(preview.ok, true);
   assert.equal(preview.readOnly, true);
   assert.equal(preview.result.rolledBack, true);
-  assert.deepEqual(preview.result.commands.map(command => command.type), ['END_PLAYER_TURN', 'START_NEXT_ROUND']);
+  assert.deepEqual(preview.result.commands.map(command => command.type), ['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN']);
 
   const afterPreview = adapter.getViewModel();
   assert.equal(afterPreview.stateHash, before.stateHash, '预览结束后当前 stateHash 必须回到预览前');
@@ -813,8 +813,8 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
 
   const replay = createYSBZSUIAdapter(options);
   replay.run('START_BATTLE');
+  replay.run('RUN_PLAYER_ALL_OUT');
   replay.run('END_PLAYER_TURN');
-  replay.run('START_NEXT_ROUND');
   const realAfterTwoButtons = replay.getViewModel();
   const projected = preview.result.viewModel;
 
@@ -824,6 +824,12 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
   assert.deepEqual(projected.enemies.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })), realAfterTwoButtons.enemies.map(unit => ({ id: unit.id, hp: unit.hp, shield: unit.shield, alive: unit.alive, position: unit.position })));
   assert.equal(preview.result.cells.length, realAfterTwoButtons.board.cells.length, '预览需要带回全格子数据');
   assert.equal(preview.result.cellDetails.length, realAfterTwoButtons.board.cells.length, '预览需要带回每个格子的详情数据');
+  assert.equal(preview.result.beforeCells.length, before.board.cells.length, '预览需要先记录执行前全格子数据');
+  assert.equal(preview.result.beforeCellDetails.length, before.board.cells.length, '预览需要先记录执行前每个格子的详情数据');
+  assert.ok(Array.isArray(preview.result.cellDiffs), '预览需要返回执行前后棋盘 diff');
+  assert.ok(Array.isArray(preview.result.unitDiffs), '预览需要返回执行前后单位 diff');
+  assert.ok(preview.result.cellDiffs.length > 0, '真实沙盒执行后应产生可渲染格子差异');
+  assert.ok(preview.result.unitDiffs.length > 0, '真实沙盒执行后应产生可渲染单位差异');
   const projectedHero = projected.heroes.find(unit => unit.position);
   const projectedHeroDetail = preview.result.cellDetails.find(detail => detail.unit?.id === projectedHero.id);
   assert.ok(projectedHeroDetail, '预演详情必须能按单位 id 找到投影后的我方宠物详情');
@@ -834,6 +840,37 @@ test('UI22C 手动流程预览走真实按钮命令并回滚当前局面', () =>
   assert.deepEqual(projectedHeroDetail.unit.slots, projectedHero.slots, '预演详情必须保留行动块列表');
   assert.ok((projectedHeroDetail.unit.slots || []).length > 0, '预演详情里的宠物必须还有行动块用于右侧优化版展示');
   assert.ok(preview.result.events.some(event => event.type === 'PLAYER_TURN_END'), '预览事件必须来自正式结束回合命令');
+});
+
+test('UI22D 移动后的可渲染受伤信息来自沙盒全格子 diff 而不是 moveHero 单体风险', () => {
+  const adapter = createYSBZSUIAdapter({ activePets: ['pal_005'], battleId: 'move_simulation_diff_preview' });
+  adapter.run('START_BATTLE');
+  const beforeMove = adapter.getViewModel();
+  const hero = beforeMove.heroes.find(unit => unit.position);
+  const targetCell = firstLegalMoveCell(beforeMove, hero);
+  assert.ok(hero && targetCell, '需要一个可移动我方宠物和合法落点');
+
+  const move = adapter.run('MOVE_HERO', { unitId: hero.id, to: { r: targetCell.r, c: targetCell.c } });
+  assert.equal(move.ok, true);
+  assert.ok(move.manualFlowPreview, 'MOVE_HERO 返回需要直接携带移动后的沙盒投影，避免前端延迟一拍显示');
+  assert.deepEqual(move.manualFlowPreview.commands.map(command => command.type), ['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN']);
+  assert.ok(move.manualFlowPreview.cellDiffs.length > 0, '移动响应里的沙盒投影需要有全格子 diff');
+  const moveEvent = move.events.find(event => event.type === 'MOVE_HERO');
+  assert.ok(moveEvent, '移动应产生 MOVE_HERO 事件');
+  assert.equal(Object.prototype.hasOwnProperty.call(moveEvent, 'riskBefore'), false, '移动核心不再记录单体 beforeRisk');
+  assert.equal(Object.prototype.hasOwnProperty.call(moveEvent, 'riskAfter'), false, '移动核心不再记录单体 afterRisk');
+  assert.doesNotMatch(moveEvent.text || '', /预计HP损失|预计护盾消耗|预计承受攻击/, '移动事件不再用单体风险变化当作受伤显示来源');
+
+  const afterMove = adapter.getViewModel();
+  const preview = adapter.run('PREVIEW_MANUAL_FLOW', { limit: 2 });
+  assert.equal(preview.ok, true);
+  assert.deepEqual(preview.result.commands.map(command => command.type), ['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN']);
+  assert.equal(preview.result.beforeCells.length, afterMove.board.cells.length);
+  assert.equal(preview.result.cells.length, afterMove.board.cells.length);
+  assert.ok(preview.result.events.some(event => event.type === 'RUN_PLAYER_ALL_OUT' || event.type === 'PLAYER_SELECT_SLOT'), '沙盒必须先执行我方全部行动');
+  assert.ok(preview.result.events.some(event => event.type === 'ENEMY_PET_ACTION' || event.type === 'MONSTER_INTENT'), '沙盒必须执行敌方行动');
+  assert.ok(preview.result.cellDiffs.length > 0, '执行前后全格子 diff 应提供给前端渲染');
+  assert.ok(preview.result.unitDiffs.length > 0, '执行前后单位 diff 应提供给前端渲染');
 });
 
 test('UI22B 移动风险必须来自真实敌方宠物行动意图', () => {
@@ -904,7 +941,7 @@ test('UI23 敌方移动路径预览标记最终落点且空格攻击范围不承
   assert.ok(attackEmptyCells.every(cell => Number(cell.threat.damage || 0) === 0 && !(cell.teamRisk && cell.teamRisk.damage)), '空格攻击范围不应承载受伤单位伤害');
 });
 
-test('UI24 玩家移动事件只显示位移和预计受伤变化', () => {
+test('UI24 玩家移动事件只显示位移，受伤显示交给沙盒预览 diff', () => {
   const state = createGameState({ activePets: ['pal_005'], battleId: 'compact_move_event_log' });
   battle.startBattle(state);
   const hero = state.units.find(u => u.side === 'hero' && u.alive);
@@ -931,7 +968,9 @@ test('UI24 玩家移动事件只显示位移和预计受伤变化', () => {
   const event = state.events.find(e => e.type === 'MOVE_HERO');
   assert.ok(event, '移动事件需要存在');
   assert.match(event.text, /R6C1->R6C3/);
-  assert.match(event.text, /预计HP损失 0->7/);
+  assert.doesNotMatch(event.text, /预计HP损失|预计护盾消耗|预计承受攻击/);
+  assert.equal(Object.prototype.hasOwnProperty.call(event, 'riskBefore'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(event, 'riskAfter'), false);
   assert.doesNotMatch(event.text, /本次影响|火0\/水0\/风0|无威胁|第\d+行第\d+列/);
 });
 

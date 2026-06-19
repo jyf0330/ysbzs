@@ -7,7 +7,7 @@
  * @typedef {{phase?:string, selected?:{unitId?:string, cell?:Position}, teamPlacementPreview?:{activeUnitId?:string|null,movedUnitIds?:string[]}, units?:BattleUnit[], leaders?:{player?:BattleUnit, enemy?:BattleUnit}, board?:{cells?:BattleCell[]}}} BattleState
  */
 
-const { compactPositionLabel, joinClauses, summarizeRiskChange } = require('./eventSummary.cjs');
+const { compactPositionLabel, joinClauses } = require('./eventSummary.cjs');
 
 /**
  * Build the position and movement API from battle.cjs dependencies.
@@ -16,7 +16,7 @@ const { compactPositionLabel, joinClauses, summarizeRiskChange } = require('./ev
  * @returns {{boardUnitAt:(state:BattleState,pos:Position)=>BattleUnit|null,canStandAt:(state:BattleState,actor:BattleUnit,pos:Position)=>boolean,allStandCells:(state:BattleState,actor:BattleUnit)=>Position[],moveHero:(state:BattleState,unitId?:string,to?:Position)=>boolean,moveUnitGeneral:(state:BattleState,unit:BattleUnit,to:Position)=>boolean}}
  */
 function createPositionModule(deps) {
-  const { clone, getUnit, living, leaders, pushEvent, normalizePosition, getCell, syncBoardUnits, BOARD_ROWS, BOARD_COLS, inBoard, dist, effectiveMoveRange, syncDerivedBoard, startBattle, buildTeamRiskGrid } = deps;
+  const { clone, getUnit, living, leaders, pushEvent, normalizePosition, getCell, syncBoardUnits, BOARD_ROWS, BOARD_COLS, inBoard, dist, effectiveMoveRange, syncDerivedBoard, startBattle } = deps;
 /**
  * @param {BattleState} state
  * @param {Position} pos
@@ -69,27 +69,20 @@ function moveHero(state, unitId, to) {
     pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：${unit.displayName} 本回合已攻击，位置锁定。` });
     return false;
   }
-	  const d = dist(from, target);
-	  const moveRange = effectiveMoveRange(state, unit);
-	  if (d > moveRange) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, from, to: target, moveRange, text: `移动失败：${unit.name} 移动力${moveRange}，距离${d}。` }); return false; }
-	  const beforeRisk = typeof buildTeamRiskGrid === 'function'
-	    ? (buildTeamRiskGrid(state, [unit.id]).find(risk => risk.unitId === unit.id) || null)
-	    : null;
-	  unit.position = target;
-	  state.teamPlacementPreview = state.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
-	  state.teamPlacementPreview.movedUnitIds = Array.isArray(state.teamPlacementPreview.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
-	  state.teamPlacementPreview.movedUnitIds = state.teamPlacementPreview.movedUnitIds.filter(id => id !== unit.id);
-	  state.teamPlacementPreview.movedUnitIds.push(unit.id);
-	  state.teamPlacementPreview.activeUnitId = unit.id;
-	  syncDerivedBoard(state);
-	  const afterRisk = typeof buildTeamRiskGrid === 'function'
-	    ? (buildTeamRiskGrid(state, [unit.id]).find(risk => risk.unitId === unit.id) || null)
-	    : null;
+  const d = dist(from, target);
+  const moveRange = effectiveMoveRange(state, unit);
+  if (d > moveRange) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, from, to: target, moveRange, text: `移动失败：${unit.name} 移动力${moveRange}，距离${d}。` }); return false; }
+  unit.position = target;
+  state.teamPlacementPreview = state.teamPlacementPreview || { activeUnitId: null, movedUnitIds: [] };
+  state.teamPlacementPreview.movedUnitIds = Array.isArray(state.teamPlacementPreview.movedUnitIds) ? state.teamPlacementPreview.movedUnitIds : [];
+  state.teamPlacementPreview.movedUnitIds = state.teamPlacementPreview.movedUnitIds.filter(id => id !== unit.id);
+  state.teamPlacementPreview.movedUnitIds.push(unit.id);
+  state.teamPlacementPreview.activeUnitId = unit.id;
+  syncDerivedBoard(state);
   const text = `${unit.displayName || unit.name}移动：${joinClauses([
-    `${compactPositionLabel(from)}->${compactPositionLabel(target)}`,
-    summarizeRiskChange(beforeRisk, afterRisk)
+    `${compactPositionLabel(from)}->${compactPositionLabel(target)}`
   ])}。`;
-  pushEvent(state, 'MOVE_HERO', { unitId: unit.id, displayName: unit.displayName, element: unit.element, side: unit.side, camp: unit.camp, from, to: target, apRemaining: unit.availableAp ?? unit.ap, moveRange, riskBefore: beforeRisk, riskAfter: afterRisk, text });
+  pushEvent(state, 'MOVE_HERO', { unitId: unit.id, displayName: unit.displayName, element: unit.element, side: unit.side, camp: unit.camp, from, to: target, apRemaining: unit.availableAp ?? unit.ap, moveRange, text });
   return true;
 }
 

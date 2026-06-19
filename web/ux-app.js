@@ -86,8 +86,12 @@
   }
   function normalizeManualFlowPreviewResult(result, sourceKey = null) {
     if (!result?.viewModel) return null;
+    const beforeCells = Array.isArray(result.beforeCells) ? result.beforeCells : [];
+    const beforeCellDetails = Array.isArray(result.beforeCellDetails) ? result.beforeCellDetails : [];
     const cells = Array.isArray(result.cells) ? result.cells : (result.viewModel.board?.cells || []);
     const cellDetails = Array.isArray(result.cellDetails) ? result.cellDetails : [];
+    const cellDiffs = Array.isArray(result.cellDiffs) ? result.cellDiffs : [];
+    const unitDiffs = Array.isArray(result.unitDiffs) ? result.unitDiffs : [];
     const commands = Array.isArray(result.commands) ? result.commands.map(command => ({
       type: command.type,
       ok: command.ok !== false,
@@ -102,10 +106,17 @@
     ].join('|');
     return Object.assign({}, result, {
       commands,
+      beforeCells,
+      beforeCellDetails,
       cells,
       cellDetails,
+      cellDiffs,
+      unitDiffs,
+      beforeCellByKey: indexByCell(beforeCells),
+      beforeCellDetailByKey: indexByCell(beforeCellDetails),
       cellByKey: indexByCell(cells),
       cellDetailByKey: indexByCell(cellDetails),
+      cellDiffByKey: indexByCell(cellDiffs),
       signature,
       sourceKey
     });
@@ -321,6 +332,11 @@
       // toast 已关闭
       normalizeSelection();
       clearStaleManualFlowPreview();
+      if (data.manualFlowPreview) {
+        const sourceKey = manualFlowPreviewSourceKey();
+        ui.manualFlowPreview = normalizeManualFlowPreviewResult(data.manualFlowPreview, sourceKey);
+        ui.manualFlowPreviewPending = null;
+      }
       render();
       if (shouldRefreshSelectedCellAfterCommand(type)) await refreshSelectedCellDetail();
       refreshManualFlowPreview();

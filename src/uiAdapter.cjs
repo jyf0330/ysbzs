@@ -15,9 +15,8 @@ const { canonicalEventLog } = require('./core/eventProjection.cjs');
 const { buildConstructionSummary } = require('./core/buildSummary.cjs');
 const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
 const { runFullDayCommand, runFullRunCommand, runFullRunFlow } = require('./uiAdapterFlowCommands.cjs');
-const { runManualFlowPreviewTransaction } = require('./uiAdapterManualFlowPreview.cjs');
+const { buildMoveManualFlowPreview, runManualFlowPreviewTransaction } = require('./uiAdapterManualFlowPreview.cjs');
 const { nextDaySchedule, buildDailyFlowVM } = require('./dailyFlowView.cjs');
-
 const ADAPTER_VERSION = '2026-06-09-command-envelope-local-prediction-ready-round4';
 const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT', 'CLEAR_SELECTION']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
 const MAX_ACTIVE_UNITS = 4;
@@ -714,7 +713,8 @@ function createYSBZSUIAdapter(options = {}) {
         annotateEvents(state, events, command);
         const logEntry = commitAcceptedCommand(state, command, beforeHash, result, events);
         const mappedEvents = mapPublicEvents(events);
-        return {
+        const manualFlowPreview = buildMoveManualFlowPreview(adapter, command, result);
+        const response = {
           ok: true,
           accepted: true,
           command: commandText(command),
@@ -727,6 +727,8 @@ function createYSBZSUIAdapter(options = {}) {
           authoritativeState: maybeSnapshot(command.playerId, viewState),
           viewModel: viewFor(command)
         };
+        if (manualFlowPreview) response.manualFlowPreview = manualFlowPreview;
+        return response;
       } catch (err) {
         applySaveToState(state, ensureMultiplayerState(createGameState(options), options), rollbackSave);
         restoreViewStates(viewStates, rollbackSave.viewStates || {});

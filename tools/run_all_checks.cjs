@@ -9,7 +9,6 @@ const steps = [
   ['player operation tests', 'npm', ['run', 'test:ops']],
   ['prediction authority tests', 'npm', ['run', 'test:prediction']],
   ['csv checks', 'npm', ['run', 'check:csv']],
-  ['day7 checks', 'npm', ['run', 'check:day7']],
   ['dom isolation', 'npm', ['run', 'check:dom']],
   ['ui connected', 'npm', ['run', 'check:ui-connected']],
   ['strict browser flow', 'npm', ['run', 'check:browser']]

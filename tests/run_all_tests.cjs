@@ -9,7 +9,7 @@ const { SUPPORTED_MECHANICS } = require('../src/core/mechanics.cjs');
 let tests=[]; function test(name, fn){ tests.push({name, fn}); }
 function hasEvent(state,type){ return state.events.some(e=>e.type===type); }
 
-test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,127); assert.equal(data.monsters.length,34); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,127); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,127); assert.equal(data.validation.length,10); assert.equal(data.day7Trial.length,9); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
+test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,127); assert.equal(data.monsters.length,34); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,127); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,127); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
 test('Day1-Day10 route data defines at least four outer decisions and fixed battle each day',()=>{
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = data.nodeSchedule.filter(x => x.day === day);
@@ -596,16 +596,14 @@ test('battle add element goes through elementPackets and triggerQueue on ordinar
   assert.ok((s.changes||[]).some(c=>c.type==='TRIGGER_QUEUE_RESOLVE'), 'ordinary battle element add should enter triggerQueue');
 });
 
-test('trial shape lookup uses shapeId index, not petId-only map',()=>{
-  const { createGameState } = require('../src/core/state.cjs');
+test('shape lookup uses shapeId index, not petId-only map',()=>{
   const { buildIndexes } = require('../src/core/data.cjs');
-  const { loadTrialConfig } = require('../src/core/trialEngine.cjs');
   const ix=buildIndexes(); assert.ok(ix.shapesByShapeId.has('A1')); assert.ok(ix.shapesByShapeId.has('B1'));
-  const cfg=loadTrialConfig('day7_fire_trial_v1', createGameState());
-  const core=cfg.playerDefs.find(x=>x.petId==='pal_072');
-  assert.ok(core.shape);
-  assert.equal(core.shape.shapeId,'B2_fire_core_double');
-  assert.ok(core.shape.hitCells >= 1);
+  const shape=ix.shapesByShapeId.get('B1');
+  assert.ok(shape);
+  assert.equal(shape.shapeId,'B1');
+  assert.equal(ix.shapesByPetId.get(shape.petId).shapeId, shape.shapeId);
+  assert.ok(shape.hitCells >= 1);
 });
 
 test('replay data contains inputLog and changeLog',()=>{

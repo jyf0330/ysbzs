@@ -116,13 +116,3 @@ test('FC08 文本报告不依赖 DOM，能输出玩家与商店链路', () => {
   assert.ok(player.includes('全数据纯文字流程报告'));
   assert.ok(shop.includes('商店链路报告'));
 });
-
-test('FC09 第7天火核心试炼通过 uiAdapter 接入核心状态', () => {
-  const adapter = createYSBZSUIAdapter({ gold: 8 });
-  let r = adapter.setupDay7FireTrial();
-  assert.ok(r.viewModel.day7Trial);
-  assert.ok(hasEvent(r, 'TRIAL_SETUP'));
-  r = adapter.runDay7FireTurn1();
-  assert.ok(r.viewModel.day7Trial.round1KillCount >= 0);
-  assert.ok(Array.isArray(r.viewModel.day7Trial.round1Kills));
-});

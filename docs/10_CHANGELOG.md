@@ -1,5 +1,10 @@
 # 10_CHANGELOG
 
+## 2026-06-20
+
+- 第7天火核心试炼不再作为默认测试/验收基准：`npm test`、`check:all`、`check:v1`、coverage 和 all-check runner 都不会自动执行 Day7；显式 `npm run check:day7` 入口保留，仅在用户主动要求时使用。
+- 试炼单位创建路径补齐我方宠物全棋盘移动：`makeTrialUnit()` 现在和普通我方单位一样给 hero 默认显式 board-covering `moveRange`，不恢复 `moveMode: infinite` 特判，敌方和显式移动范围不受影响。
+
 ## 2026-06-19
 
 - 高风险沙盒预览开始返回结构化阶段耗时：`PREVIEW_MANUAL_FLOW.result.timing` 会记录快照、命令归一、前后 ViewModel/格子/详情、沙盒命令、diff、恢复等阶段的 `ms` 和 `totalMs`，移动响应携带的 `manualFlowPreview` 也保留这份 timing，后续性能优化可直接按阶段定位。

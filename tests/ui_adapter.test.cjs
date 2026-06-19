@@ -506,8 +506,8 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
 });
 
 test('UI16B 棋盘预览不把我方行动结算成友方受伤', () => {
-  const adapter = createYSBZSUIAdapter({ gold: 3, battleId: 'team_preview_no_friendly_damage' });
-  adapter.setupDay7FireTrial();
+  const adapter = createYSBZSUIAdapter({ gold: 8, battleId: 'team_preview_no_friendly_damage' });
+  adapter.startBattle();
 
   const vm = adapter.getViewModel();
   const heroIds = new Set(vm.heroes.map(hero => hero.id));

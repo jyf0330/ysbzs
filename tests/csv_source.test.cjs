@@ -11,7 +11,7 @@ const { createGameState } = require('../src/core/state.cjs');
 const root = path.resolve(__dirname, '..');
 const csvDir = path.join(root, 'data', 'csv');
 const expected = { pets:127, monsters:34, waves:134, mechanisms:61, events:32, shop:127, relics:40, shapes:127, validation:10 };
-const expectedExtra = { day7Trial:9, heroDomains:7, elementReactions:8, trialQuestions:4, trialActions:24, victoryRules:4, effectObjects:3, modifiers:3, elementConversions:2 };
+const expectedExtra = { heroDomains:7, elementReactions:8, trialQuestions:4, trialActions:24, victoryRules:4, effectObjects:3, modifiers:3, elementConversions:2 };
 
 function writeCsv(file, rows) {
   const headers = Object.keys(rows[0] || {});
@@ -128,8 +128,7 @@ test('CSV08 精简策划总表可无损导出当前核心程序 CSV', () => {
     '03_monster_waves.csv',
     '04_mechanisms.csv',
     '06_shop_rewards.csv',
-    '08_action_shapes.csv',
-    '13_day7_beast_trial.csv'
+    '08_action_shapes.csv'
   ]) {
     const expectedCsv = fs.readFileSync(path.join(csvDir, name), 'utf8');
     const actualCsv = fs.readFileSync(path.join(outDir, name), 'utf8');
@@ -153,7 +152,6 @@ checks = {
   '01_宠物主表_好读版': 128,
   '03_怪物波次_好读版': 135,
   '06_商店奖励池_好读版': 128,
-  '13_第7天兽群试炼_联动版': 10,
 }
 for sheet, rows in checks.items():
     assert sheet in wb.sheetnames, sheet

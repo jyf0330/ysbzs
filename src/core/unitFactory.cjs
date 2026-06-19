@@ -137,6 +137,9 @@ function makeUnitFromData(state, side, petId, override = {}) {
  * @returns {object} unit
  */
 function makeTrialUnit(def) {
+  const boardRows = Number(def.boardRows || 8);
+  const boardCols = Number(def.boardCols || 8);
+  const boardMaxMove = Math.max(0, boardRows - 1) + Math.max(0, boardCols - 1);
   return createUnit({
     id: def.id,
     petId: def.petId || def.id,
@@ -156,7 +159,7 @@ function makeTrialUnit(def) {
     shield: def.shield || 0,
     maxShield: def.maxShield ?? def.shield ?? 0,
     ap: def.ap,
-    moveRange: def.moveRange ?? def.moveAp ?? null,
+    moveRange: def.moveRange ?? def.moveAp ?? (def.side === 'hero' ? boardMaxMove : null),
     mechanics: def.mechanics || ['table_driven_trial'],
     shape: def.shape || null,
     position: clone(def.position),

@@ -5,6 +5,7 @@ const path = require('path');
 const { createGameState } = require('../../src/core/state.cjs');
 const battle = require('../../src/core/battle.cjs');
 const { pushEvent, filterEvents, EVENT_LEVEL } = require('../../src/core/events.cjs');
+const { makeTrialUnit } = require('../../src/core/unitFactory.cjs');
 
 function firstEmptyCell(state, except = null) {
   battle.syncDerivedBoard(state);
@@ -38,6 +39,44 @@ test('AO02 movement range is a normal unit field and can block movement without 
   const last = state.events.at(-1);
   assert.equal(last.type, 'MOVE_HERO_BLOCKED');
   assert.equal(last.moveRange, 1);
+});
+
+test('AO02B trial hero units get explicit board-covering movement by default', () => {
+  const hero = makeTrialUnit({
+    id: 'trial_hero',
+    petId: 'pal_038',
+    side: 'hero',
+    name: '试炼英雄',
+    displayName: '我方试炼英雄',
+    hp: 10,
+    atk: 1,
+    ap: 3,
+    position: { r: 7, c: 7 }
+  });
+  assert.ok(hero.moveRange >= 14, '试炼我方宠物也应显式覆盖 8x8 全棋盘移动');
+
+  const explicitHero = makeTrialUnit({
+    id: 'trial_hero_explicit',
+    side: 'hero',
+    name: '显式移动试炼英雄',
+    hp: 10,
+    atk: 1,
+    ap: 3,
+    moveRange: 2,
+    position: { r: 0, c: 0 }
+  });
+  assert.equal(explicitHero.moveRange, 2, '显式 moveRange 不能被默认值覆盖');
+
+  const enemy = makeTrialUnit({
+    id: 'trial_enemy',
+    side: 'enemy',
+    name: '试炼敌人',
+    hp: 10,
+    atk: 1,
+    ap: 3,
+    position: { r: 0, c: 0 }
+  });
+  assert.equal(enemy.moveRange, null, '敌方试炼单位不应继承我方全棋盘移动');
 });
 
 test('AO03 event system supports levels and filters without adding nondeterministic time to core events', () => {

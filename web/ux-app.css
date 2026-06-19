@@ -300,6 +300,7 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .detail-state-panel{display:grid;grid-template-columns:1fr;gap:4px;margin:6px 0}
 .detail-state-panel span{display:flex;justify-content:space-between;gap:8px;padding:4px 6px;border:1px dashed rgba(124,89,53,.3);background:rgba(255,248,224,.55);font-size:12px}
 .detail-state-panel b{color:#8a745a}
+.compact-risk{line-height:1.55;font-size:13px;font-weight:900;word-break:keep-all}
 
 /* combat-layout-left-action-zone visual fit */
 .active-pet-zone{flex-basis:262px}

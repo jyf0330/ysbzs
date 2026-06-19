@@ -152,6 +152,9 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	    assert.match(js, /threatsByEnemy/, `${file} should group incoming team risk detail by enemy instead of labeling all threats as the first enemy`);
 	    assert.match(js, /次行动块/, `${file} threat detail should show enemy action-block count`);
 	    assert.match(js, /合计/, `${file} threat detail should show total incoming damage`);
+	    assert.match(js, /function compactRiskDamageSeries/, `${file} should render incoming slot damage as a compact ordered damage series`);
+	    assert.match(js, /function compactTeamRiskSourceLine/, `${file} should render each enemy source as enemyName(-3,-3) style text`);
+	    assert.doesNotMatch(js, /第\$\{Number\(threat\.slotIndex/, `${file} should not expose verbose slot labels in player-facing incoming risk detail`);
 	    assert.match(js, /受击预警/, `${file} should default the detail panel to incoming damage warnings`);
 	    assert.match(js, /if \(unit\?\.side === 'hero' && teamRisk\)/, `${file} should prioritize incoming warning when clicking a threatened hero cell`);
 	    assert.match(js, /footCellElements/, `${file} should distinguish the selected unit's own element layers from the foot cell element layer`);

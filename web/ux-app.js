@@ -711,33 +711,39 @@
 		    return `${threat.unitName || '敌方宠物'} ${actionCount}次行动块${hitText ? `：${hitText}` : ''}；合计${total}${threat.lethal ? ' KO' : ''}`;
 		  }
 		  function teamRiskDetailText(teamRisk) {
-		    const threats = Array.isArray(teamRisk?.threats) ? teamRisk.threats : [];
-		    if (!threats.length) return `敌方宠物 0次行动块；合计${teamRisk?.damage ?? 0}${teamRisk?.lethal ? ' KO' : ''}`;
-		    const threatsByEnemy = new Map();
-		    threats.forEach((threat, i) => {
-		      const key = threat.enemyId || threat.enemyName || `enemy_${i}`;
-		      const group = threatsByEnemy.get(key) || { enemyName: threat.enemyName || '敌方宠物', threats: [] };
-		      group.threats.push({ threat, index: i });
-		      threatsByEnemy.set(key, group);
-		    });
-		    const groupText = Array.from(threatsByEnemy.values()).map(group => {
-		      const hitText = group.threats.map(({ threat, index }) => {
-		        const label = threat.slotLabel || `第${Number(threat.slotIndex ?? index) + 1}槽`;
-		        const ko = teamRisk.lethal && index === threats.length - 1 ? ' KO' : '';
-		        return `${label} ${teamRisk.unitName || '我方单位'} 伤${threat.damage ?? 0}${ko}`;
-		      }).join(' / ');
-		      const subtotal = group.threats.reduce((sum, item) => sum + Number(item.threat.damage || 0), 0);
-		      return `${group.enemyName} ${group.threats.length}次行动块${hitText ? `：${hitText}` : ''}；小计${subtotal}`;
-		    }).join('；');
-		    return `${groupText}；合计${teamRisk.damage ?? 0}${teamRisk.lethal ? ' KO' : ''}`;
-		  }
-		  function renderTeamRiskPanel(teamRisk) {
-		    return [
-		      `<div class="detail-unit"><strong>${esc(teamRisk.unitName || '我方单位')}</strong><small>受击预警</small></div>`,
-		      `<div class="detail-state-panel"><span><b>预计伤害</b>${esc(teamRisk.damage ?? 0)}</span><span><b>HP</b>${esc(teamRisk.hpFrom ?? '-')}→${esc(teamRisk.hpTo ?? '-')}</span><span><b>结果</b>${teamRisk.lethal ? 'KO' : '存活'}</span></div>`,
-		      `<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(teamRisk))}</div>`
-		    ].join('\n');
-		  }
+			    const threats = Array.isArray(teamRisk?.threats) ? teamRisk.threats : [];
+			    if (!threats.length) return `敌方宠物() · 合计${compactRiskDamageValue(teamRisk?.damage ?? 0)}${teamRisk?.lethal ? ' · KO' : ''}`;
+			    const threatsByEnemy = new Map();
+			    threats.forEach((threat, i) => {
+			      const key = threat.enemyId || threat.enemyName || `enemy_${i}`;
+			      const group = threatsByEnemy.get(key) || { enemyName: threat.enemyName || '敌方宠物', threats: [] };
+			      group.threats.push({ threat, index: i });
+			      threatsByEnemy.set(key, group);
+			    });
+			    const groups = Array.from(threatsByEnemy.values());
+			    const groupText = groups.map(group => compactTeamRiskSourceLine(group)).join('；');
+			    const total = groups.length > 1 ? `；总计${compactRiskDamageValue(teamRisk.damage ?? 0)}` : '';
+			    return `${groupText}${total}${teamRisk.lethal ? ' · KO' : ''}`;
+			  }
+			  function compactRiskDamageValue(value) {
+			    const n = Number(value || 0);
+			    if (n > 0) return `-${n}`;
+			    return String(n);
+			  }
+			  function compactRiskDamageSeries(groupThreats = []) {
+			    return groupThreats.map(({ threat }) => compactRiskDamageValue(threat.damage ?? 0)).join(',');
+			  }
+			  function compactTeamRiskSourceLine(group) {
+			    const subtotal = group.threats.reduce((sum, item) => sum + Number(item.threat.damage || 0), 0);
+			    return `${group.enemyName}(${compactRiskDamageSeries(group.threats)}) · 合计${compactRiskDamageValue(subtotal)}`;
+			  }
+			  function renderTeamRiskPanel(teamRisk) {
+			    return [
+			      `<div class="detail-unit"><strong>${esc(teamRisk.unitName || '我方单位')}</strong><small>受击预警</small></div>`,
+			      `<div class="detail-state-panel"><span><b>预计伤害</b>${esc(teamRisk.damage ?? 0)}</span><span><b>HP</b>${esc(teamRisk.hpFrom ?? '-')}→${esc(teamRisk.hpTo ?? '-')}</span><span><b>结果</b>${teamRisk.lethal ? 'KO' : '存活'}</span></div>`,
+			      `<div class="detail-extra threat compact-risk">⚠ ${esc(teamRiskDetailText(teamRisk))}</div>`
+			    ].join('\n');
+			  }
 	  function renderActionPopover() {
     const panel = $('action-popover');
     const info = ui.slotArmed ? selectedSlotInfo() : null;

@@ -107,7 +107,7 @@ function assignPetShapeToShapeRow(shapeRow, context = {}) {
   const shapeId = validExistingId || assignedShapeIdForPet(petId, bodySize, role);
   const def = resolveShapeDefinition(shapeId);
   const group = def ? def.group : shapeGroupFromBodySize(bodySize);
-  const note = '新19形状；所有作用格默认结算3次；旧形状ID不参与战斗。';
+  const note = '新19形状；所有作用格默认结算3次。';
   return Object.assign({}, shapeRow || {}, {
     petId,
     shapeId,
@@ -118,8 +118,7 @@ function assignPetShapeToShapeRow(shapeRow, context = {}) {
     slotCount: Number(shapeRow?.slotCount || 3),
     baseLayers: Number(shapeRow?.baseLayers || 1),
     settleCount: DEFAULT_SHAPE_SETTLE_COUNT,
-    sourceShapeId: shapeRow?.sourceShapeId || shapeRow?.shapeId || null,
-    note: shapeRow?.note ? `${note}${String(shapeRow.note).includes('旧形状') ? '' : ` 原备注：${shapeRow.note}`}` : note
+    note: shapeRow?.note ? `${note} 原备注：${shapeRow.note}` : note
   });
 }
 

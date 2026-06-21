@@ -5,7 +5,7 @@
  * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, ap?:number, actionApSpent?:number, actionSlotsUsed?:Record<string, boolean>, shape?:Record<string, any>, element?:string, position?:Position, displayName?:string}} BattleUnit
  * @typedef {{r:number,c:number,unitId?:string|null,elements?:Record<string, number>,preview?:Record<string, any>|null,threat?:Record<string, any>|null}} BattleCell
  * @typedef {{phase?:string, selected?:Record<string, any>, actionDirs:Record<string, string>, events?:Array<Record<string, any>>, units?:BattleUnit[], board?:{cells?:BattleCell[]}}} BattleState
- * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean}} ActionSlot
+ * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,baseLayers:number,settleCount:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean}} ActionSlot
  */
 
 const {
@@ -13,6 +13,16 @@ const {
   summarizeDamageEvents,
   summarizeElementIncreaseEvents
 } = require('./eventSummary.cjs');
+const {
+  DEFAULT_SHAPE_SETTLE_COUNT,
+  resolveShapeDefinition,
+  targetCellsForShape
+} = require('./shapeCatalog.cjs');
+
+function positiveInt(value, fallback = 1) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
 
 /**
  * Build action-slot helpers from battle.cjs dependencies.
@@ -32,11 +42,33 @@ function unitApAvailable(unit) { return Math.max(0, unitApMax(unit) - unitApSpen
  */
 function slotsForUnit(state, unit) {
   const shape = unit.shape || {};
+  const resolvedShape = resolveShapeDefinition(shape.shapeId || shape.shapeCode || shape.id || shape.shapeName);
   const elements = (shape.slotElements && shape.slotElements.length ? shape.slotElements : [unit.element, unit.element, unit.element]).slice(0, shape.slotCount || 3);
+  const baseLayers = positiveInt(shape.baseLayers, 1);
+  const settleCount = positiveInt(shape.settleCount ?? shape.defaultSettleCount ?? resolvedShape?.settleCount, DEFAULT_SHAPE_SETTLE_COUNT);
+  const shapeId = resolvedShape?.id || shape.shapeId || null;
+  const shapeName = shape.shapeName || resolvedShape?.label || '形状01';
+  const hitCells = positiveInt(resolvedShape?.cellCount || shape.hitCells, 1);
   return elements.map((element, i) => {
     const slotId = `${unit.id}:slot${i}`;
     const availableAp = unitApAvailable(unit);
-    return { slotId, index: i, label: `第${i + 1}槽`, element, layers: Number(shape.baseLayers || 1), shapeId: shape.shapeId || null, shapeName: shape.shapeName || '单点', hitCells: Number(shape.hitCells || 1), direction: state.actionDirs[slotId] || state.actionDirs[i] || state.selected?.direction || 'right', used: !!unit.actionSlotsUsed?.[i], apSpent: unitApSpent(unit), availableAp, canUse: !unit.actionSlotsUsed?.[i] && availableAp > 0 && unit.alive && unit.side === 'hero' && state.phase === 'player_turn' };
+    return {
+      slotId,
+      index: i,
+      label: `第${i + 1}槽`,
+      element,
+      layers: baseLayers * settleCount,
+      baseLayers,
+      settleCount,
+      shapeId,
+      shapeName,
+      hitCells,
+      direction: state.actionDirs[slotId] || state.actionDirs[i] || state.selected?.direction || 'right',
+      used: !!unit.actionSlotsUsed?.[i],
+      apSpent: unitApSpent(unit),
+      availableAp,
+      canUse: !unit.actionSlotsUsed?.[i] && availableAp > 0 && unit.alive && unit.side === 'hero' && state.phase === 'player_turn'
+    };
   });
 }
 
@@ -48,14 +80,20 @@ function parseSlotIndex(slotId) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function targetCellsForSlot(state, actor, slot, selectedCell = null) {
-  const start = normalizePosition(actor.position || { r: 0, c: 0 });
+function fallbackLineCells(start, slot) {
   const d = dirDelta(slot.direction);
   const out = [];
   for (let i = 1; i <= Math.max(1, slot.hitCells || 1); i++) {
     const p = { r: start.r + d.dr * i, c: start.c + d.dc * i };
     if (inBoard(p)) out.push(p);
   }
+  return out;
+}
+
+function targetCellsForSlot(state, actor, slot, selectedCell = null) {
+  const start = normalizePosition(actor.position || { r: 0, c: 0 });
+  const shapeCells = slot.shapeId ? targetCellsForShape(start, slot.shapeId, slot.direction, inBoard) : [];
+  const out = shapeCells.length ? shapeCells : fallbackLineCells(start, slot);
   if (selectedCell) {
     const p = normalizePosition(selectedCell);
     return out.some(cell => cell.r === p.r && cell.c === p.c) ? out : [];
@@ -86,7 +124,7 @@ function setActionDirection(state, unitId, slotId, dir) {
     previewCells.length ? `预览${previewCells.length}格` : '',
     previewTargets.length ? `命中${previewTargets.map(t => t.displayName || t.name).join('、')}` : ''
   ]);
-  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, displayName: unit?.displayName, element: unit?.element, slotId: idx, dir: dir || 'right', slotElement: slot?.element, slotLayers: slot?.layers, shapeId: slot?.shapeId, shapeName: slot?.shapeName, previewCellCount: previewCells.length, previewTargetIds: previewTargets.map(t => t.id), text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向改为${dir || 'right'}${summary ? `：${summary}` : ''}。` });
+  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, displayName: unit?.displayName, element: unit?.element, slotId: idx, dir: dir || 'right', slotElement: slot?.element, slotLayers: slot?.layers, slotSettleCount: slot?.settleCount, shapeId: slot?.shapeId, shapeName: slot?.shapeName, previewCellCount: previewCells.length, previewTargetIds: previewTargets.map(t => t.id), text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向改为${dir || 'right'}${summary ? `：${summary}` : ''}。` });
   return true;
 }
 
@@ -118,7 +156,7 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   const effectiveLayers = Math.max(1, Number(slot.layers || 1)) * apUsed;
   const targets = targetsAtCells(state, cells, targetCamp);
   const beforeEventCount = Array.isArray(state.events) ? state.events.length : 0;
-  const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.layers });
+  const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.baseLayers || 1, settleCount: slot.settleCount || DEFAULT_SHAPE_SETTLE_COUNT });
   const targetByCell = new Map(targets.filter(t => t.position).map(t => [`${t.position.r},${t.position.c}`, t]));
   for (const p of cells) {
     const cell = getCell(state, p.r, p.c);
@@ -166,8 +204,9 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   const elementIncreases = summarizeElementIncreaseEvents(actionEvents);
   const targetSummary = targets.length ? `命中${targets.map(t => t.displayName || t.name).join('、')}` : `作用${cells.length}格`;
   const elementSummary = elementIncreases.length ? `元素增加：${elementIncreases.join('，')}` : '';
-  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.layers, effectiveLayers, targetIds: targets.map(t => t.id), damageSummary, elementIncreases, text: `${actor.displayName} 施放第${idx + 1}槽：${joinClauses([
+  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.baseLayers || 1, settleCount: slot.settleCount || DEFAULT_SHAPE_SETTLE_COUNT, effectiveLayers, targetIds: targets.map(t => t.id), damageSummary, elementIncreases, text: `${actor.displayName} 施放第${idx + 1}槽：${joinClauses([
     `${slot.shapeName}/${slot.element}${effectiveLayers}层/AP${apUsed}`,
+    `每格结算${slot.settleCount || DEFAULT_SHAPE_SETTLE_COUNT}次`,
     targetSummary,
     damageSummary.join('，'),
     elementSummary

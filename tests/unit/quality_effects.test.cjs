@@ -12,23 +12,24 @@ function makeRoundState() {
 }
 
 function makeUnitWithQuality(qualityUpgrade, overrides = {}) {
-  return createUnit(Object.assign({
+  const unit = createUnit(Object.assign({
     id: `unit_${qualityUpgrade.id}`,
     petId: `pet_${qualityUpgrade.id}`,
     side: 'hero',
     name: `测试${qualityUpgrade.id}`,
-    quality: qualityUpgrade.quality === 'silver' ? '白银' : qualityUpgrade.quality === 'gold' ? '黄金' : '钻石',
+    quality: '青铜',
     bodySize: '小型',
     maxHp: 20,
     hp: 20,
     atk: 5,
     ap: 3,
+    applyQualityProgression: false,
     shape: { shapeId: '01', slotElements: ['水', '水', '水'], baseLayers: 1 },
     position: { r: 0, c: 0 }
-  }, overrides, {
-    qualityUpgrade,
-    qualityProgression: { quality: qualityUpgrade.quality, shapeSize: 1, upgradeId: qualityUpgrade.id }
-  }));
+  }, overrides));
+  unit.qualityUpgrade = qualityUpgrade;
+  unit.qualityProgression = { quality: qualityUpgrade.quality, shapeSize: 1, upgradeId: qualityUpgrade.id };
+  return unit;
 }
 
 test('quality effect table declares every S/G/D effect as handled', () => {

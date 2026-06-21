@@ -7,6 +7,8 @@
 
 const { makeEmptyElements, ACTIVE_ELEMENTS } = require('./elements.cjs');
 const { buildIndexes } = require('./data.cjs');
+const { applyQualityProgressionToUnit } = require('./qualityProgression.cjs');
+const { assignPetShapeToShapeRow } = require('./battle/shapeCatalog.cjs');
 
 function clone(v) { return JSON.parse(JSON.stringify(v)); }
 function normalizePosition(pos, fallback) {
@@ -39,24 +41,31 @@ function normalizePosition(pos, fallback) {
  * @param {object} opts.position - {r, c} 棋盘位置
  * @param {object} [opts.flags] - 额外标记
  * @param {boolean} [opts.alive] - 存活状态
+ * @param {boolean} [opts.applyQualityProgression] - 是否应用品质成长，默认开启
+ * @param {string} [opts.qualityUpgradeId] - 指定品质升级 ID，不填则根据 petId 稳定抽取
+ * @param {number} [opts.shapeSize] - 形状格数限制：1 / 2 / 3
  * @returns {object} unit 对象
  */
 function createUnit(opts) {
   const side = opts.side || 'hero';
   const camp = opts.camp || (side === 'hero' ? 'player' : 'enemy');
   const hp = opts.hp !== undefined ? opts.hp : (opts.maxHp || 1);
+  const petId = opts.petId || opts.id;
+  const bodySize = opts.bodySize || '中型';
+  const role = opts.role || '单位';
+  const shape = assignPetShapeToShapeRow(opts.shape || null, { petId, bodySize, role });
 
-  return {
+  const unit = {
     id: opts.id,
-    petId: opts.petId || opts.id,
+    petId,
     side,
     camp,
     name: opts.name,
     displayName: opts.displayName || `${side === 'hero' ? '我方' : '敌方'}${opts.name || ''}`,
     element: opts.element || null,        // null = 无元素（复制体）
     quality: opts.quality || '青铜',
-    bodySize: opts.bodySize || '中型',
-    role: opts.role || '单位',
+    bodySize,
+    role,
     effectScore: opts.effectScore || 0,
     maxHp: opts.maxHp || hp,
     hp,
@@ -67,7 +76,7 @@ function createUnit(opts) {
     ap: opts.ap || 3,
     moveRange: opts.moveRange ?? opts.moveAp ?? null,
     mechanics: (opts.mechanics && opts.mechanics.length ? opts.mechanics : ['none']).filter(Boolean),
-    shape: opts.shape || null,
+    shape,
     position: normalizePosition(opts.position, { r: 0, c: 0 }),
     elements: makeEmptyElements(true),   // 兼容 4 元素
     elementPackets: [],
@@ -77,6 +86,13 @@ function createUnit(opts) {
     actionSlotsUsed: {},
     hasAttacked: false
   };
+
+  return applyQualityProgressionToUnit(unit, {
+    enabled: opts.applyQualityProgression !== false,
+    upgradeId: opts.qualityUpgradeId,
+    shapeSize: opts.shapeSize,
+    seed: opts.qualityUpgradeSeed || petId || opts.id || opts.name
+  });
 }
 
 /**
@@ -125,6 +141,10 @@ function makeUnitFromData(state, side, petId, override = {}) {
     moveRange: configuredMoveRange ?? (side === 'hero' ? boardMaxMove : null),
     mechanics: override.mechanics || base.mechanics || pet.mechanics || ['none'],
     shape: shape || null,
+    shapeSize: override.shapeSize,
+    qualityUpgradeId: override.qualityUpgradeId || base.qualityUpgradeId || pet.qualityUpgradeId,
+    qualityUpgradeSeed: override.qualityUpgradeSeed || `${petId}:${side}`,
+    applyQualityProgression: override.applyQualityProgression,
     position: clone(position),
     flags: { sourceTable: 'csv_01', ...(override.flags || {}) }
   });
@@ -162,6 +182,10 @@ function makeTrialUnit(def) {
     moveRange: def.moveRange ?? def.moveAp ?? (def.side === 'hero' ? boardMaxMove : null),
     mechanics: def.mechanics || ['table_driven_trial'],
     shape: def.shape || null,
+    shapeSize: def.shapeSize,
+    qualityUpgradeId: def.qualityUpgradeId,
+    qualityUpgradeSeed: def.qualityUpgradeSeed || def.petId || def.id,
+    applyQualityProgression: def.applyQualityProgression,
     position: clone(def.position),
     flags: { sourceTable: def.flags?.sourceTable || 'trial_csv', sourceRow: def.sourceRow || null, ...(def.flags || {}) }
   });

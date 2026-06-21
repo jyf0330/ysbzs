@@ -5,7 +5,7 @@
  * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, ap?:number, actionApSpent?:number, actionSlotsUsed?:Record<string, boolean>, shape?:Record<string, any>, element?:string, position?:Position, displayName?:string}} BattleUnit
  * @typedef {{r:number,c:number,unitId?:string|null,elements?:Record<string, number>,preview?:Record<string, any>|null,threat?:Record<string, any>|null}} BattleCell
  * @typedef {{phase?:string, selected?:Record<string, any>, actionDirs:Record<string, string>, events?:Array<Record<string, any>>, units?:BattleUnit[], board?:{cells?:BattleCell[]}}} BattleState
- * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean}} ActionSlot
+ * @typedef {{slotId:string,index:number,label:string,element:string,layers:number,baseLayers:number,settleCount:number,shapeId:string|null,shapeName:string,hitCells:number,direction:string,used:boolean,availableAp:number,canUse:boolean,qualityCellModifiers?:Record<string, any>}} ActionSlot
  */
 
 const {
@@ -13,6 +13,27 @@ const {
   summarizeDamageEvents,
   summarizeElementIncreaseEvents
 } = require('./eventSummary.cjs');
+const {
+  DEFAULT_SHAPE_SETTLE_COUNT,
+  resolveShapeDefinition,
+  targetCellsForShape
+} = require('./shapeCatalog.cjs');
+const qualityEffects = require('./qualityEffects.cjs');
+
+function positiveInt(value, fallback = 1) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+function cellKey(p) { return `${Number(p.r)},${Number(p.c)}`; }
+function uniqueUnits(list) {
+  const out = [], seen = new Set();
+  for (const item of list || []) {
+    if (!item || seen.has(item.id)) continue;
+    seen.add(item.id);
+    out.push(item);
+  }
+  return out;
+}
 
 /**
  * Build action-slot helpers from battle.cjs dependencies.
@@ -32,11 +53,33 @@ function unitApAvailable(unit) { return Math.max(0, unitApMax(unit) - unitApSpen
  */
 function slotsForUnit(state, unit) {
   const shape = unit.shape || {};
+  const resolvedShape = resolveShapeDefinition(shape.shapeId || shape.shapeCode || shape.id || shape.shapeName);
   const elements = (shape.slotElements && shape.slotElements.length ? shape.slotElements : [unit.element, unit.element, unit.element]).slice(0, shape.slotCount || 3);
+  const baseLayers = positiveInt(shape.baseLayers, 1);
+  const settleCount = positiveInt(shape.settleCount ?? shape.defaultSettleCount ?? resolvedShape?.settleCount, DEFAULT_SHAPE_SETTLE_COUNT);
+  const shapeId = resolvedShape?.id || shape.shapeId || null;
+  const shapeName = shape.shapeName || resolvedShape?.label || '形状01';
+  const hitCells = positiveInt(resolvedShape?.cellCount || shape.hitCells, 1);
   return elements.map((element, i) => {
     const slotId = `${unit.id}:slot${i}`;
     const availableAp = unitApAvailable(unit);
-    return { slotId, index: i, label: `第${i + 1}槽`, element, layers: Number(shape.baseLayers || 1), shapeId: shape.shapeId || null, shapeName: shape.shapeName || '单点', hitCells: Number(shape.hitCells || 1), direction: state.actionDirs[slotId] || state.actionDirs[i] || state.selected?.direction || 'right', used: !!unit.actionSlotsUsed?.[i], apSpent: unitApSpent(unit), availableAp, canUse: !unit.actionSlotsUsed?.[i] && availableAp > 0 && unit.alive && unit.side === 'hero' && state.phase === 'player_turn' };
+    return {
+      slotId,
+      index: i,
+      label: `第${i + 1}槽`,
+      element,
+      layers: baseLayers * settleCount,
+      baseLayers,
+      settleCount,
+      shapeId,
+      shapeName,
+      hitCells,
+      direction: state.actionDirs[slotId] || state.actionDirs[i] || state.selected?.direction || 'right',
+      used: !!unit.actionSlotsUsed?.[i],
+      apSpent: unitApSpent(unit),
+      availableAp,
+      canUse: !unit.actionSlotsUsed?.[i] && availableAp > 0 && unit.alive && unit.side === 'hero' && state.phase === 'player_turn'
+    };
   });
 }
 
@@ -48,14 +91,21 @@ function parseSlotIndex(slotId) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function targetCellsForSlot(state, actor, slot, selectedCell = null) {
-  const start = normalizePosition(actor.position || { r: 0, c: 0 });
+function fallbackLineCells(start, slot) {
   const d = dirDelta(slot.direction);
   const out = [];
   for (let i = 1; i <= Math.max(1, slot.hitCells || 1); i++) {
     const p = { r: start.r + d.dr * i, c: start.c + d.dc * i };
     if (inBoard(p)) out.push(p);
   }
+  return out;
+}
+
+function targetCellsForSlot(state, actor, slot, selectedCell = null) {
+  const start = normalizePosition(actor.position || { r: 0, c: 0 });
+  const shapeCells = slot.shapeId ? targetCellsForShape(start, slot.shapeId, slot.direction, inBoard) : [];
+  let out = shapeCells.length ? shapeCells : fallbackLineCells(start, slot);
+  out = qualityEffects.mutateActionCells(state, actor, slot, out, { inBoard });
   if (selectedCell) {
     const p = normalizePosition(selectedCell);
     return out.some(cell => cell.r === p.r && cell.c === p.c) ? out : [];
@@ -86,7 +136,7 @@ function setActionDirection(state, unitId, slotId, dir) {
     previewCells.length ? `预览${previewCells.length}格` : '',
     previewTargets.length ? `命中${previewTargets.map(t => t.displayName || t.name).join('、')}` : ''
   ]);
-  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, displayName: unit?.displayName, element: unit?.element, slotId: idx, dir: dir || 'right', slotElement: slot?.element, slotLayers: slot?.layers, shapeId: slot?.shapeId, shapeName: slot?.shapeName, previewCellCount: previewCells.length, previewTargetIds: previewTargets.map(t => t.id), text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向改为${dir || 'right'}${summary ? `：${summary}` : ''}。` });
+  pushEvent(state, 'SET_ACTION_DIRECTION', { unitId: unit?.id, displayName: unit?.displayName, element: unit?.element, slotId: idx, dir: dir || 'right', slotElement: slot?.element, slotLayers: slot?.layers, slotSettleCount: slot?.settleCount, shapeId: slot?.shapeId, shapeName: slot?.shapeName, previewCellCount: previewCells.length, previewTargetIds: previewTargets.map(t => t.id), text: `${unit?.displayName || '单位'} 第${idx + 1}槽方向改为${dir || 'right'}${summary ? `：${summary}` : ''}。` });
   return true;
 }
 
@@ -116,22 +166,37 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   if (requestedAp > availableAp) { pushEvent(state, 'USE_SLOT_BLOCKED', { unitId: actor.id, slotId: idx, requestedAp, availableAp, text: `施放失败：${actor.displayName} AP不足（需要${requestedAp}，剩余${availableAp}）。` }); return false; }
   const apUsed = requestedAp;
   const effectiveLayers = Math.max(1, Number(slot.layers || 1)) * apUsed;
-  const targets = targetsAtCells(state, cells, targetCamp);
   const beforeEventCount = Array.isArray(state.events) ? state.events.length : 0;
-  const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.layers });
-  const targetByCell = new Map(targets.filter(t => t.position).map(t => [`${t.position.r},${t.position.c}`, t]));
-  for (const p of cells) {
+  const appliedSlot = Object.assign({}, slot, { layers: effectiveLayers, apUsed, baseLayers: slot.baseLayers || 1, settleCount: slot.settleCount || DEFAULT_SHAPE_SETTLE_COUNT });
+
+  qualityEffects.applyPreActionQualityEffects(state, actor, appliedSlot, cells, { pushEvent, getCell, damageUnit, inBoard });
+  const rawTargets = targetsAtCells(state, cells, targetCamp);
+  const targetByCell = new Map(rawTargets.filter(t => t.position).map(t => [`${t.position.r},${t.position.c}`, t]));
+  const targetEntries = [];
+
+  for (let cellIndex = 0; cellIndex < cells.length; cellIndex += 1) {
+    const p = cells[cellIndex];
     const cell = getCell(state, p.r, p.c);
     if (!cell) continue;
-    const target = targetByCell.get(`${p.r},${p.c}`);
-    if (target) applyElement(state, actor, target, slot.element, effectiveLayers, { slot: appliedSlot, apUsed });
-    else applyElementToCell(state, actor, cell, slot.element, effectiveLayers);
+    const target = targetByCell.get(cellKey(p));
+    const layers = qualityEffects.qualityElementLayers(actor, appliedSlot, effectiveLayers);
+    const applyCount = qualityEffects.qualityElementApplyCount(actor, appliedSlot, cell);
+    for (let i = 0; i < applyCount; i += 1) {
+      if (target) applyElement(state, actor, target, appliedSlot.element, layers, { slot: appliedSlot, apUsed, source: applyCount > 1 ? 'quality_element_echo' : 'unit_hit_element' });
+      else applyElementToCell(state, actor, cell, appliedSlot.element, layers);
+    }
+    if (target) {
+      targetEntries.push({ target, p, cellIndex });
+      qualityEffects.applyImmediateElementBurst(state, actor, target, appliedSlot, p, { pushEvent, getCell, damageUnit, fireDamage: deps.fireDamage });
+    }
   }
+  qualityEffects.applyCoreAllyCellEffects(state, actor, appliedSlot, cells, { pushEvent, getCell, damageUnit });
+
   // 添加元素后检查火引爆
   for (const p of cells) {
     const cell = getCell(state, p.r, p.c);
     if (!cell) continue;
-    if (slot.element === '火') {
+    if (appliedSlot.element === '火') {
       const result = explodeIfEnemyOnFire(state, cell, actor.id);
       if (result) {
         pushEvent(state, 'FIRE_EXPLODE_AFTER_ATTACK', {
@@ -150,12 +215,23 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
       }
     }
   }
+
+  const orderedEntries = qualityEffects.sortedTargetEntriesForQuality(actor, targetEntries);
+  const orderedTargets = uniqueUnits(orderedEntries.map(x => x.target));
   const actionDamage = Math.max(0, Number(actor.atk ?? effectiveLayers));
   if (actionDamage > 0) {
-    for (const t of targets) {
-      damageUnit(state, actor, t, actionDamage, { element: slot.element, sourceType: 'player_action_slot', slot: appliedSlot, apUsed });
+    for (let i = 0; i < orderedEntries.length; i += 1) {
+      const entry = orderedEntries[i];
+      const target = entry.target;
+      const hpBefore = Number(target.hp || 0);
+      const damage = qualityEffects.qualityActionDamage(state, actor, target, appliedSlot, entry.p, i, orderedEntries, cells, actionDamage);
+      const done = damageUnit(state, actor, target, damage, { element: appliedSlot.element, sourceType: 'player_action_slot', slot: appliedSlot, apUsed });
+      qualityEffects.afterQualityActionHit(state, actor, target, appliedSlot, entry.p, i, orderedEntries, cells, done, { pushEvent, getCell, damageUnit });
+      if (state.phase === 'battle_end' || (hpBefore > 0 && Number(target.hp || 0) <= 0)) continue;
     }
   }
+  qualityEffects.applyPostActionQualityEffects(state, actor, appliedSlot, cells, orderedEntries, { pushEvent, getCell, damageUnit });
+
   actor.actionSlotsUsed = actor.actionSlotsUsed || {};
   actor.actionSlotsUsed[idx] = true;
   actor.actionApSpent = unitApSpent(actor) + apUsed;
@@ -164,10 +240,12 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   const actionEvents = (state.events || []).slice(beforeEventCount);
   const damageSummary = summarizeDamageEvents(actionEvents, id => getUnit(state, id));
   const elementIncreases = summarizeElementIncreaseEvents(actionEvents);
-  const targetSummary = targets.length ? `命中${targets.map(t => t.displayName || t.name).join('、')}` : `作用${cells.length}格`;
+  const targetSummary = orderedTargets.length ? `命中${orderedTargets.map(t => t.displayName || t.name).join('、')}` : `作用${cells.length}格`;
   const elementSummary = elementIncreases.length ? `元素增加：${elementIncreases.join('，')}` : '';
-  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, apUsed, baseLayers: slot.layers, effectiveLayers, targetIds: targets.map(t => t.id), damageSummary, elementIncreases, text: `${actor.displayName} 施放第${idx + 1}槽：${joinClauses([
-    `${slot.shapeName}/${slot.element}${effectiveLayers}层/AP${apUsed}`,
+  pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: idx + 1, shapeId: appliedSlot.shapeId, shapeName: appliedSlot.shapeName, element: appliedSlot.element, cells, apUsed, baseLayers: appliedSlot.baseLayers || 1, settleCount: appliedSlot.settleCount || DEFAULT_SHAPE_SETTLE_COUNT, effectiveLayers, targetIds: orderedTargets.map(t => t.id), qualityUpgradeId: actor.qualityUpgrade?.id || null, qualityUpgradeName: actor.qualityUpgrade?.name || null, damageSummary, elementIncreases, text: `${actor.displayName} 施放第${idx + 1}槽：${joinClauses([
+    `${appliedSlot.shapeName}/${appliedSlot.element}${effectiveLayers}层/AP${apUsed}`,
+    `每格结算${appliedSlot.settleCount || DEFAULT_SHAPE_SETTLE_COUNT}次`,
+    actor.qualityUpgrade ? `品质效果：${actor.qualityUpgrade.name}` : '',
     targetSummary,
     damageSummary.join('，'),
     elementSummary

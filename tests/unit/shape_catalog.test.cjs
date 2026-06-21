@@ -43,8 +43,10 @@ test('pet shape assignment replaces old source shape ids with 01-19 ids', () => 
   assert.match(small.shapeId, /^0[1-4]$/);
   assert.match(medium.shapeId, /^(0[5-9]|1[0-2])$/);
   assert.match(large.shapeId, /^1[3-9]$/);
-  assert.equal(small.sourceShapeId, 'A1');
-  assert.equal(large.sourceShapeId, 'B1');
+  assert.equal(small.sourceShapeId, undefined);
+  assert.equal(large.sourceShapeId, undefined);
+  assert.notEqual(small.shapeName, '单点刺');
+  assert.notEqual(large.shapeName, '横扫三格');
 });
 
 test('every pet-created unit has exactly one new 01-19 shape', () => {

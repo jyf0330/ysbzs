@@ -103,6 +103,9 @@ test('R505 browser UI exposes save/load controls and server exposes save/load en
 
 
 test('R506 mechanic gate identifies pending/data-only mechanics before pets become active rules content', () => {
+  const defaultReport = auditPlayableUnits(createGameState());
+  assert.deepEqual(defaultReport, []);
+
   const fake = { id: 'u_pending', petId: 'pal_001', name: '未实装宠', side: 'hero', alive: true, active: true, mechanics: ['mech_hp_regen_5', 'mech_shield_flat'] };
   const unsupported = unsupportedMechanicsForUnit(fake);
   assert.equal(unsupported.length, 1);

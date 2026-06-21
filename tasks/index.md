@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-22_master-mechanics-quality-followup.md`
 - `tasks/done/2026-06-22_master-quality-shape-sync.md`
 - `tasks/done/2026-06-21_superpowers-workflow-routing.md`
 - `tasks/done/2026-06-20_manual-preview-diff-provenance.md`

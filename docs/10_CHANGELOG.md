@@ -2,6 +2,7 @@
 
 ## 2026-06-22
 
+- 总表机制与默认品质覆盖进入运行时：`REVIEW` 机制占位归一为 `none`，默认队伍创建不再覆盖宠物主表机制，`mech_aura` 归一后的 `mech_scale_with_allies` 已接入回合开始同阵营成长；`10_initial_roster.csv` 新增结构化 `品质覆盖` 列，默认队伍按表成为融焰娘黄金、火绒狐/冲浪鸭/疾风隼白银。
 - 策划总表同步当前品质成长与新 19 形状口径：`xlsx/ysbzs_master.xlsx` 新增 `SHAPE_CATALOG` / `QUALITY_GROWTH` / `QUALITY_UPGRADES`，宠物 `shape_id` 回灌为代码实际使用的 `01-19`；导出链路生成 `27_shape_catalog.csv`、`28_quality_growth.csv`、`29_quality_upgrades.csv`，策划好读版 workbook 增加对应 27/28/29 表。
 - 旧形状测试口径改为显式受控 fixture 或从 `shapeCatalog` 计算正式作用格，避免默认宠物切到新形状后仍按旧 `A1/B1` 相邻格断言；同时清理 `actions.cjs` 中一行无效循环末尾 `continue`，让 `check:jsdoc` 继续通过。
 

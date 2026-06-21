@@ -39,6 +39,8 @@ const TABLE_FILES = Object.freeze({
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
+  REVIEW: 'none',
+  review: 'none',
   mech_poison: 'mech_curse_gold_loss',
   mech_weaken: 'mech_soften_when_hit',
   mech_firm_threshold: 'mech_damage_cap_per_round',
@@ -198,7 +200,9 @@ function splitList(v) {
 function splitMechanics(v) {
   const original = splitList(v || 'none');
   const source = original.length ? original : ['none'];
-  const normalized = source.map(id => LEGACY_MECHANIC_ALIAS[id] || id).filter(Boolean);
+  const mapped = source.map(id => LEGACY_MECHANIC_ALIAS[id] || id).filter(Boolean);
+  const withoutPlaceholders = mapped.length > 1 ? mapped.filter(id => id !== 'none') : mapped;
+  const normalized = withoutPlaceholders.length ? withoutPlaceholders : ['none'];
   return { normalized, original: source };
 }
 
@@ -216,7 +220,7 @@ function parseParams(v) {
   } catch (_) {
     const out = {};
     raw.replace(/[{}]/g, '').split(/[;,，]/).forEach(pair => {
-      const [k, val] = pair.split(':').map(x => x && x.trim());
+      const [k, val] = pair.split(/[:=]/).map(x => x && x.trim());
       if (!k) return;
       const n = toNum(val, null);
       out[k] = n === null ? val : n;
@@ -523,6 +527,9 @@ function normalizeInitialSetup(rows) {
       return {
         slot: toNum(row['槽位'], 0),
         petId: row['宠物ID'],
+        quality: row['品质覆盖'] || null,
+        qualityUpgradeId: row['品质升级ID'] || null,
+        qualityUpgradeSeed: row['品质种子'] || null,
         position: rr === null || cc === null ? null : { r: Math.max(0, rr - 1), c: Math.max(0, cc - 1) },
         note: row['备注']
       };

@@ -107,7 +107,7 @@ const MECHANIC_STATUS = Object.freeze({
   mech_penalty_after_round10: 'pending',
   mech_summon_each_round: 'pending',
   mech_consume_layers_grow: 'pending',
-  mech_scale_with_allies: 'pending',
+  mech_scale_with_allies: 'implemented',
   mech_summon: 'pending'
 });
 
@@ -116,6 +116,8 @@ const SUPPORTED_MECHANICS = new Set(Object.keys(MECHANIC_STATUS));
 function getParam(unit, mech, key, fallback){ return (unit.mechanicParams && unit.mechanicParams[key] !== undefined) ? unit.mechanicParams[key] : (mech.defaultParams && mech.defaultParams[key] !== undefined ? mech.defaultParams[key] : fallback); }
 function eachMechanic(unit, data, cb) { for (const id of (unit.mechanics || ['none'])) { const mech=data.mechanisms.find(m=>m.id===id); if (mech) cb(mech, id); } }
 function pushEvent(state, event){ state.events.push(Object.assign({ step: state.nextStep++, phase: state.phase, round: state.round }, event)); }
+function livingUnits(state){ return (state.units || []).filter(u => u && u.alive !== false && Number(u.hp || 0) > 0); }
+function unitCamp(unit){ return unit?.camp || (unit?.side === 'hero' ? 'player' : unit?.side === 'enemy' ? 'enemy' : unit?.side); }
 function qualityUpgradeId(unit){ return unit?.qualityUpgrade?.id || unit?.qualityProgression?.upgradeId || null; }
 function ensureQualityRuntime(unit){ unit.qualityRuntime = unit.qualityRuntime || { killCount:0, permanentAtk:0, flags:{}, actionSeq:0 }; unit.qualityRuntime.flags = unit.qualityRuntime.flags || {}; return unit.qualityRuntime; }
 function applyQualityRoundStart(state, unit){ const id=qualityUpgradeId(unit); if(!id || !unit || unit.alive===false || Number(unit.hp||0)<=0) return; const rt=ensureQualityRuntime(unit); rt.actionSeq=0; rt.lastChainDamage=0; if(id==='S01'){ const before=Number(unit.shield||0); unit.shield=before+15; pushEvent(state,{type:'QUALITY_SHIELD',hook:'round_start',qualityEffectId:id,unitId:unit.id,text:`${unit.name} 触发护体：护盾${before}→${unit.shield}。`}); }
@@ -126,6 +128,7 @@ function applyQualityRoundStart(state, unit){ const id=qualityUpgradeId(unit); i
 function applyBattleStart(state, unit){ eachMechanic(unit, state.data, (m,id)=>{ if(id==='mech_shield_flat'){ const shield=Number(getParam(unit,m,'shield',6)); unit.shield += shield; pushEvent(state,{type:'MECHANIC_APPLIED', hook:'battle_start', mechanicId:id, unitId:unit.id, text:`${unit.name} 获得${shield}点开场护盾。`}); } }); }
 function applyRoundStart(state, unit){ eachMechanic(unit, state.data, (m,id)=>{ if(id==='mech_shield_regen'||id==='mech_grow_shield_each_round'){ const shield=Number(getParam(unit,m,'shield', id==='mech_grow_shield_each_round'?2:3)); unit.shield += shield; pushEvent(state,{type:'MECHANIC_APPLIED', hook:'round_start', mechanicId:id, unitId:unit.id, text:`${unit.name} 回合开始获得${shield}盾。`}); }
  if(id==='mech_grow_atk_each_round'||id==='mech_enrage_after_round'||id==='mech_delayed_powerup'){ const atk=Number(getParam(unit,m,'atk',1)); if(id==='mech_delayed_powerup' && state.round < Number(getParam(unit,m,'round',3))) return; unit.atk += atk; pushEvent(state,{type:'MECHANIC_APPLIED', hook:'round_start', mechanicId:id, unitId:unit.id, text:`${unit.name} 攻击+${atk}。`}); }
+ if(id==='mech_scale_with_allies'){ const allies=livingUnits(state).filter(u => u.id !== unit.id && unitCamp(u) === unitCamp(unit)); if(!allies.length) return; const atkPer=Number(getParam(unit,m,'atk_per_ally',1)); const shieldPer=Number(getParam(unit,m,'shield_per_ally',1)); const atk=allies.length * atkPer; const shield=allies.length * shieldPer; if(atk) unit.atk += atk; if(shield){ unit.shield += shield; unit.maxShield = Math.max(Number(unit.maxShield || 0), Number(unit.shield || 0)); } pushEvent(state,{type:'MECHANIC_APPLIED', hook:'round_start', mechanicId:id, unitId:unit.id, allyCount:allies.length, atk, shield, text:`${unit.name} 因${allies.length}名同阵营单位获得攻击+${atk}${shield ? `、护盾+${shield}` : ''}。`}); }
  }); applyQualityRoundStart(state, unit); }
 function beforeDamage(state, target, source, damage, ctx={}){ let final=Math.max(0, damage); const logs=[]; eachMechanic(target, state.data, (m,id)=>{ if(final<=0) return; if(id==='mech_armor_flat'){ const armor=Number(getParam(target,m,'armor',2)); final=Math.max(0, final-armor); logs.push(`${target.name} 护甲抵消${armor}。`); }
  if(id==='mech_damage_reduce_pct'){ const rate=Number(getParam(target,m,'rate',0.3)); const min=Number(getParam(target,m,'min_damage',1)); final=Math.max(min, Math.ceil(final*(1-rate))); logs.push(`${target.name} 百分比免伤，伤害降为${final}。`); }

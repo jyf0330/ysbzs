@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { createUnit, makeUnitFromData } = require('../../src/core/unitFactory.cjs');
 const { getQualityUpgradePool } = require('../../src/core/qualityProgression.cjs');
 const { data, buildIndexes } = require('../../src/core/data.cjs');
+const { createGameState } = require('../../src/core/state.cjs');
 
 test('unit factory connects silver gold and diamond quality tiers', () => {
   const cases = [
@@ -49,4 +50,21 @@ test('makeUnitFromData connects all quality overrides through unit factory', () 
   assert.ok(/^S/.test(silver.qualityUpgrade.id));
   assert.ok(/^G/.test(gold.qualityUpgrade.id));
   assert.ok(/^D/.test(diamond.qualityUpgrade.id));
+});
+
+test('createGameState applies structured initial roster quality overrides', () => {
+  const state = createGameState();
+  const heroes = state.units.filter(u => u.side === 'hero');
+  const byPet = new Map(heroes.map(u => [u.petId, u]));
+
+  assert.equal(byPet.get('pal_072').quality, '黄金');
+  assert.equal(byPet.get('pal_072').qualityProgression.quality, 'gold');
+  assert.equal(byPet.get('pal_072').hp, 28);
+  assert.equal(byPet.get('pal_072').atk, 4);
+  assert.deepEqual(byPet.get('pal_072').mechanics, ['mech_scale_with_allies']);
+
+  assert.equal(byPet.get('pal_005').quality, '白银');
+  assert.equal(byPet.get('pal_006').quality, '白银');
+  assert.equal(byPet.get('pal_038').quality, '白银');
+  assert.equal(state.inventory.find(x => x.petId === 'pal_072').quality, '黄金');
 });

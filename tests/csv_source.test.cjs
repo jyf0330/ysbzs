@@ -73,6 +73,7 @@ test('CSV04 改初始阵容 CSV 后，新建状态会换我方开局宠物和站
   const file = resolveCsvFile(dir, '10_initial_roster.csv');
   const rows = parseCsv(fs.readFileSync(file, 'utf8'));
   rows[0]['宠物ID'] = 'pal_001';
+  rows[0]['品质覆盖'] = '黄金';
   rows[0]['行(1-8)'] = '1';
   rows[0]['列(1-8)'] = '8';
   writeCsv(file, rows);
@@ -80,6 +81,8 @@ test('CSV04 改初始阵容 CSV 后，新建状态会换我方开局宠物和站
   const s = createGameState({ data: d });
   const first = s.units.filter(u => u.side === 'hero')[0];
   assert.equal(first.petId, 'pal_001');
+  assert.equal(first.quality, '黄金');
+  assert.equal(first.qualityProgression.quality, 'gold');
   assert.deepEqual(first.position, { r: 0, c: 7 });
 });
 
@@ -87,12 +90,12 @@ test('CSV05 多机制串和旧机制 ID 会自动归一化', () => {
   const dir = tempCsvDir();
   const file = resolveCsvFile(dir, '02_monster_templates.csv');
   const rows = parseCsv(fs.readFileSync(file, 'utf8'));
-  rows[0]['机制ID'] = 'mech_opening_shield,mech_counter,mech_aura';
+  rows[0]['机制ID'] = 'mech_opening_shield,mech_counter,mech_aura,REVIEW';
   writeCsv(file, rows);
   const d = loadGameData({ csvDir: dir });
   const m = d.monsters[0];
   assert.deepEqual(m.mechanics, ['mech_shield_flat', 'mech_counter_damage', 'mech_scale_with_allies']);
-  assert.deepEqual(m.mechanicsOriginal, ['mech_opening_shield', 'mech_counter', 'mech_aura']);
+  assert.deepEqual(m.mechanicsOriginal, ['mech_opening_shield', 'mech_counter', 'mech_aura', 'REVIEW']);
 });
 
 test('CSV06 fallback JSON 路径和无 initialSetup 的默认阵容可用', () => {

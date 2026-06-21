@@ -190,11 +190,14 @@ function makeUnit(state, side, petId, override = {}) {
     : override.position || (side === 'enemy' ? { r: 5, c: 3 } : null);
 
   // 通过 unitFactory 创建，确保字段统一
-  const unit = makeUnitFromData(state, side, petId, Object.assign({}, override, {
+  const factoryOverride = Object.assign({}, override, {
     position: pos,
-    mechanics: normalizeMechanics(override.mechanics || []),
     flags: { ...(override.flags || {}), legacyMakeUnit: true }
-  }));
+  });
+  if (Object.prototype.hasOwnProperty.call(override, 'mechanics')) {
+    factoryOverride.mechanics = normalizeMechanics(override.mechanics);
+  }
+  const unit = makeUnitFromData(state, side, petId, factoryOverride);
   return unit;
 }
 function initialPartyFromData(d) {
@@ -266,9 +269,15 @@ function createGameState(opts = {}) {
     const row = active[i];
     const pid = typeof row === 'string' ? row : row.petId;
     const position = typeof row === 'string' ? defaultHeroPosition(i) : (row.position || defaultHeroPosition(i));
-    const u = makeUnit(state, 'hero', pid, { position });
+    const unitOverride = { position };
+    if (row && typeof row === 'object') {
+      if (row.quality) unitOverride.quality = row.quality;
+      if (row.qualityUpgradeId) unitOverride.qualityUpgradeId = row.qualityUpgradeId;
+      if (row.qualityUpgradeSeed) unitOverride.qualityUpgradeSeed = row.qualityUpgradeSeed;
+    }
+    const u = makeUnit(state, 'hero', pid, unitOverride);
     state.units.push(u);
-    state.inventory.push({ petId: pid, count: 1, level: 1, active: true, instanceId: u.id, slot: row.slot || i + 1 });
+    state.inventory.push({ petId: pid, count: 1, level: 1, active: true, instanceId: u.id, slot: row.slot || i + 1, quality: u.quality });
   }
   for (const u of state.units) applyBattleStart(state, u);
   ensureMultiplayerState(state, { battleId: opts.battleId, mode: opts.mode, playerId: opts.playerId, playerName: opts.playerName, seed: opts.seed, day: state.day });

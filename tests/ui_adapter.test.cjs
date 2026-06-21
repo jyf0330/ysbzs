@@ -1178,6 +1178,7 @@ test('UI27 命中敌人的行动槽同时造成行动伤害并铺完整作用格
   target.hp = 30;
   target.shield = 0;
   target.def = 0;
+  target.mechanics = ['none'];
   state.actionDirs[`${actor.id}:slot0`] = 'right';
   syncBoardUnits(state);
 

@@ -6,9 +6,13 @@ const {
   SHAPE_DEFINITIONS,
   normalizeShapeId,
   resolveShapeDefinition,
+  shapeGroupFromBodySize,
+  assignPetShapeToShapeRow,
   targetCellsForShape
 } = require('../../src/core/battle/shapeCatalog.cjs');
 const { createActionsModule } = require('../../src/core/battle/actions.cjs');
+const { data, buildIndexes } = require('../../src/core/data.cjs');
+const { makeUnitFromData } = require('../../src/core/unitFactory.cjs');
 
 test('19 combat shapes are registered and all cells settle 3 times', () => {
   assert.equal(SHAPE_DEFINITIONS.length, 19);
@@ -19,14 +23,43 @@ test('19 combat shapes are registered and all cells settle 3 times', () => {
   assert.ok(SHAPE_DEFINITIONS.every(x => x.settleCount === DEFAULT_SHAPE_SETTLE_COUNT));
 });
 
-test('shape ids and legacy ids resolve to the new 19-shape catalog', () => {
+test('legacy shape ids are not accepted anymore', () => {
   assert.equal(normalizeShapeId('1'), '01');
   assert.equal(normalizeShapeId('S01'), '01');
   assert.equal(normalizeShapeId('shape_19'), '19');
-  assert.equal(normalizeShapeId('A1'), '01');
-  assert.equal(normalizeShapeId('B1'), '15');
-  assert.equal(normalizeShapeId('T2'), '16');
-  assert.equal(resolveShapeDefinition('横扫三格').id, '15');
+  assert.equal(normalizeShapeId('A1'), null);
+  assert.equal(normalizeShapeId('B1'), null);
+  assert.equal(normalizeShapeId('T1'), null);
+  assert.equal(normalizeShapeId('T2'), null);
+  assert.equal(normalizeShapeId('C1'), null);
+  assert.equal(resolveShapeDefinition('横扫三格'), null);
+});
+
+test('pet shape assignment replaces old source shape ids with 01-19 ids', () => {
+  const small = assignPetShapeToShapeRow({ petId: 'pal_001', shapeId: 'A1', shapeName: '单点刺' }, { petId: 'pal_001', bodySize: '小型', role: '经济' });
+  const medium = assignPetShapeToShapeRow({ petId: 'pal_005', shapeId: 'A1', shapeName: '单点刺' }, { petId: 'pal_005', bodySize: '中型', role: '输出' });
+  const large = assignPetShapeToShapeRow({ petId: 'pal_011', shapeId: 'B1', shapeName: '横扫三格' }, { petId: 'pal_011', bodySize: '大型', role: '治疗' });
+
+  assert.match(small.shapeId, /^0[1-4]$/);
+  assert.match(medium.shapeId, /^(0[5-9]|1[0-2])$/);
+  assert.match(large.shapeId, /^1[3-9]$/);
+  assert.equal(small.sourceShapeId, 'A1');
+  assert.equal(large.sourceShapeId, 'B1');
+});
+
+test('every pet-created unit has exactly one new 01-19 shape', () => {
+  const state = { data, indexes: buildIndexes(data), nextUnit: 1, board: { rows: 8, cols: 8 } };
+  const seen = new Set();
+  for (const pet of data.pets) {
+    const unit = makeUnitFromData(state, 'hero', pet.id, { position: { r: 0, c: 0 } });
+    assert.ok(unit.shape, pet.id);
+    assert.match(unit.shape.shapeId, /^(0[1-9]|1[0-9])$/, pet.id);
+    assert.ok(resolveShapeDefinition(unit.shape.shapeId), pet.id);
+    assert.equal(resolveShapeDefinition(unit.shape.shapeId).group, shapeGroupFromBodySize(unit.bodySize), pet.id);
+    assert.equal(unit.shape.settleCount, 3, pet.id);
+    seen.add(unit.petId);
+  }
+  assert.equal(seen.size, data.pets.length);
 });
 
 test('shape offsets match the provided default-right diagrams', () => {

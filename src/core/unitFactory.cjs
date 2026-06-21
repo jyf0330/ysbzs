@@ -7,6 +7,7 @@
 
 const { makeEmptyElements, ACTIVE_ELEMENTS } = require('./elements.cjs');
 const { buildIndexes } = require('./data.cjs');
+const { applyQualityProgressionToUnit } = require('./qualityProgression.cjs');
 
 function clone(v) { return JSON.parse(JSON.stringify(v)); }
 function normalizePosition(pos, fallback) {
@@ -39,6 +40,9 @@ function normalizePosition(pos, fallback) {
  * @param {object} opts.position - {r, c} 棋盘位置
  * @param {object} [opts.flags] - 额外标记
  * @param {boolean} [opts.alive] - 存活状态
+ * @param {boolean} [opts.applyQualityProgression] - 是否应用品质成长，默认开启
+ * @param {string} [opts.qualityUpgradeId] - 指定品质升级 ID，不填则根据 petId 稳定抽取
+ * @param {number} [opts.shapeSize] - 形状格数限制：1 / 2 / 3
  * @returns {object} unit 对象
  */
 function createUnit(opts) {
@@ -46,7 +50,7 @@ function createUnit(opts) {
   const camp = opts.camp || (side === 'hero' ? 'player' : 'enemy');
   const hp = opts.hp !== undefined ? opts.hp : (opts.maxHp || 1);
 
-  return {
+  const unit = {
     id: opts.id,
     petId: opts.petId || opts.id,
     side,
@@ -77,6 +81,13 @@ function createUnit(opts) {
     actionSlotsUsed: {},
     hasAttacked: false
   };
+
+  return applyQualityProgressionToUnit(unit, {
+    enabled: opts.applyQualityProgression !== false,
+    upgradeId: opts.qualityUpgradeId,
+    shapeSize: opts.shapeSize,
+    seed: opts.qualityUpgradeSeed || opts.petId || opts.id || opts.name
+  });
 }
 
 /**
@@ -125,6 +136,10 @@ function makeUnitFromData(state, side, petId, override = {}) {
     moveRange: configuredMoveRange ?? (side === 'hero' ? boardMaxMove : null),
     mechanics: override.mechanics || base.mechanics || pet.mechanics || ['none'],
     shape: shape || null,
+    shapeSize: override.shapeSize,
+    qualityUpgradeId: override.qualityUpgradeId || base.qualityUpgradeId || pet.qualityUpgradeId,
+    qualityUpgradeSeed: override.qualityUpgradeSeed || `${petId}:${side}`,
+    applyQualityProgression: override.applyQualityProgression,
     position: clone(position),
     flags: { sourceTable: 'csv_01', ...(override.flags || {}) }
   });
@@ -162,6 +177,10 @@ function makeTrialUnit(def) {
     moveRange: def.moveRange ?? def.moveAp ?? (def.side === 'hero' ? boardMaxMove : null),
     mechanics: def.mechanics || ['table_driven_trial'],
     shape: def.shape || null,
+    shapeSize: def.shapeSize,
+    qualityUpgradeId: def.qualityUpgradeId,
+    qualityUpgradeSeed: def.qualityUpgradeSeed || def.petId || def.id,
+    applyQualityProgression: def.applyQualityProgression,
     position: clone(def.position),
     flags: { sourceTable: def.flags?.sourceTable || 'trial_csv', sourceRow: def.sourceRow || null, ...(def.flags || {}) }
   });

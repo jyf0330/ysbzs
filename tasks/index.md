@@ -12,6 +12,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-21_superpowers-workflow-routing.md`
 - `tasks/done/2026-06-20_manual-preview-diff-provenance.md`
 - `tasks/done/2026-06-20_manual-preview-diff-only-display.md`
 - `tasks/done/2026-06-20_trial-hero-boardwide-move.md`
@@ -111,6 +112,6 @@
 
 ## 规则
 
-- ACTIVE 任务最多 1 个。
-- 修改文件前必须先占用 ACTIVE 任务卡。
+- ACTIVE 任务可以有多个；是否允许并行由 `related_files` / `exclusive_files` 文件级写入租约决定。
+- 修改文件前必须先占用或更新 ACTIVE 任务卡，并检查文件级冲突。
 - 任务完成后归档到 `tasks/done/` 并更新本文件。

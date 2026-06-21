@@ -1,0 +1,56 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: 元素背包史 / Daily Route
+        - heading "每日流程" [level=1] [ref=e6]
+        - paragraph [ref=e7]: 读取当天路线中。
+      - navigation "页面导航" [ref=e8]:
+        - link "战斗页面" [ref=e9] [cursor=pointer]:
+          - /url: index.html
+        - button "刷新" [ref=e10] [cursor=pointer]
+        - button "新开一天" [ref=e11] [cursor=pointer]
+    - region "当前状态" [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]: 阶段
+        - strong [ref=e15]: 加载中
+      - generic [ref=e16]:
+        - generic [ref=e17]: 天数
+        - strong [ref=e18]: "-"
+      - generic [ref=e19]:
+        - generic [ref=e20]: 路线进度
+        - strong [ref=e21]: "-"
+      - generic [ref=e22]:
+        - generic [ref=e23]: 金币
+        - strong [ref=e24]: "0"
+      - generic [ref=e25]:
+        - generic [ref=e26]: 构筑核心
+        - strong [ref=e27]: 尚未形成
+      - generic [ref=e28]:
+        - generic [ref=e29]: 下一步
+        - strong [ref=e30]: 读取中
+    - region "流程操作" [ref=e31]:
+      - button "执行下一步" [ref=e32] [cursor=pointer]
+      - button "跑完当天" [ref=e33] [cursor=pointer]
+      - button "完整 Run" [ref=e34] [cursor=pointer]
+      - link "回棋盘操作" [ref=e35] [cursor=pointer]:
+        - /url: index.html
+    - generic [ref=e36]:
+      - generic [ref=e38]:
+        - heading "当天步骤" [level=2] [ref=e39]
+        - generic [ref=e40]: 0/0
+      - generic [ref=e43]:
+        - heading "当前可选项" [level=2] [ref=e44]
+        - generic [ref=e45]: "0"
+      - generic [ref=e48]:
+        - heading "路线历史" [level=2] [ref=e49]
+        - generic [ref=e50]: "0"
+      - generic [ref=e53]:
+        - heading "跨天 Run" [level=2] [ref=e54]
+        - generic [ref=e55]: 0天
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - heading "流程记录" [level=2] [ref=e59]
+        - generic [ref=e60]: "console: -"
+      - generic [ref=e61]: 暂无记录。
+  - generic [ref=e62]: "LOCAL_RUNTIME_ENGINE_MISSING: view"

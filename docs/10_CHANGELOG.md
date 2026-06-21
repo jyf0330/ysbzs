@@ -1,5 +1,10 @@
 # 10_CHANGELOG
 
+## 2026-06-21
+
+- 优化项目 Superpowers / YWH skill 路由：`docs/02_CURRENT_WORKFLOW.md` 现在明确 Superpowers 负责执行纪律、YWH 负责项目适配，`ywh-web-game` / Playwright / game-playtest 只在浏览器 UI 或可见验收阶段加载，避免纯工作流文档任务过早拉入 UI 验收链。
+- 修正任务总览规则口径：`tasks/index.md` 不再写“ACTIVE 任务最多 1 个”，改为多个 ACTIVE 任务按 `related_files` / `exclusive_files` 文件级写入租约判断是否冲突。
+
 ## 2026-06-20
 
 - 移动后的沙盒单位 diff 现在保留受伤来源：`PREVIEW_MANUAL_FLOW.unitDiffs` 会从沙盒 `DAMAGE` 与 `ENEMY_PET_ACTION` 事件回填 `enemyIds` / `threats` / 敌方名称 / 槽位 / 形状来源，右侧详情不再显示 `敌方宠物()` 空来源；默认战斗真实浏览器验证 `疾风隼 R6C3 -> R2C6` 显示 `敌方翠叶鼠(-3,-3) · 合计-6`。

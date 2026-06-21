@@ -280,9 +280,19 @@ report
 
 Always trigger matching skills when available:
 
+### Superpowers / YWH Routing Policy
+
+- `using-superpowers` is the first process check whenever a Superpowers skill may apply.
+- Superpowers owns execution discipline: brainstorming, planning, debugging, TDD, delegation, completion verification, and branch finish.
+- `ywh` / `ywh-game` are project policy adapters: memory pack rules, task cards, changelog, Git handoff, and game-project document gates.
+- `ywh-web-game`, `playwright`, and `game-playtest` are browser evidence adapters. Load them for UI / browser / visible acceptance work, not for generic workflow-doc edits.
+- `task-occupancy` is the first edit gate for any repository file change.
+- `verification-before-completion` is deferred until the agent is about to claim completion, commit, or hand off a finished task.
+
 | Intent | Skills |
 |---|---|
-| Any clear `Goal` that implies edits | `task-occupancy`, `using-superpowers`, `ywh-game`, `ywh-web-game` |
+| Session start or any task where a Superpowers skill may apply | `using-superpowers` |
+| Any clear `Goal` that implies edits | `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`; add `ywh-web-game` only for browser/UI/visible evidence work |
 | Before modifying code, UI, rules, tests, project workflow files, or delivery assets | `task-occupancy` |
 | Implement code, UI, or rules | `task-occupancy`, `executing-plans`, `test-driven-development`, `verification-before-completion`, `ywh-game` |
 | Bug, anomaly, failed test, failed acceptance | `systematic-debugging`, `test-driven-development`, `verification-before-completion` |
@@ -293,8 +303,8 @@ Always trigger matching skills when available:
 | Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
 | UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
 | UI behavior bug, 点不了, 移动不了, 选不中, 状态不对 | `systematic-debugging`, `test-driven-development`, `game-ui-frontend`, `ywh-web-game`, `playwright`, `verification-before-completion` |
-| Docs, CHANGELOG, workflow rules that require edits | `task-occupancy`, `ywh-game`, `verification-before-completion` |
-| `git-c`, finish, pre-commit check | `task-occupancy`, `verification-before-completion`, `ywh-game` |
+| Docs, CHANGELOG, workflow rules that require edits | `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`, `verification-before-completion` |
+| `git-c`, finish, pre-commit check | `task-occupancy`, `verification-before-completion`, `ywh`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
 
 ### Skill Load Discipline
@@ -308,6 +318,7 @@ Do not load every matched skill at once by default.
 默认规则：
 
 - 咨询 / 评估 / 选型 / “是否值得做” → 先加载 `required now`，通常是 `ywh-game` + 1 个最相关领域 skill。
+- 工作流 / CHANGELOG / 任务系统文档变更 → `required now` 是 `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`；`verification-before-completion` 在收尾前加载；不要默认加载浏览器验收 skill。
 - 不改文件、不开浏览器、不宣称完成时，不要默认加载 `playwright`、`game-playtest`、`verification-before-completion`、`test-driven-development`。
 - 一旦任务从咨询态切到实现态、验收态或完成态，再补齐对应 skill。
 - 若多个领域 skill 都可能适用，先选最窄的一组；需要时再增量追加。

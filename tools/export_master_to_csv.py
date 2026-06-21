@@ -29,6 +29,12 @@ GENERATED_FILES = [
     "13_day7_beast_trial.csv",
 ]
 
+MASTER_ONLY_EXPORTS = [
+    ("SHAPE_CATALOG", "27_shape_catalog.csv"),
+    ("QUALITY_GROWTH", "28_quality_growth.csv"),
+    ("QUALITY_UPGRADES", "29_quality_upgrades.csv"),
+]
+
 NS_MAIN = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 NS_PKG_REL = "{http://schemas.openxmlformats.org/package/2006/relationships}"
@@ -210,6 +216,24 @@ def shape_parts(shape_text):
     return parts[0], parts[1] if len(parts) > 1 else ""
 
 
+def shape_class_for_group(group):
+    if group == "one":
+        return "一格形状"
+    if group == "two":
+        return "二格形状"
+    if group == "three":
+        return "三格形状"
+    return ""
+
+
+def generated_sheet_table(master_path, sheet_name):
+    rows = sheet_dicts(master_path, sheet_name)
+    if not rows:
+        return [], []
+    headers = list(rows[0].keys())
+    return rows, headers
+
+
 def generated_tables(master_path, baseline_dir):
     master = {
         "PETS": sheet_dicts(master_path, "PETS"),
@@ -217,6 +241,7 @@ def generated_tables(master_path, baseline_dir):
         "SHOP_ITEMS": sheet_dicts(master_path, "SHOP_ITEMS"),
         "MECHANISMS": sheet_dicts(master_path, "MECHANISMS"),
         "TRIALS": sheet_dicts(master_path, "TRIALS"),
+        "SHAPE_CATALOG": sheet_dicts(master_path, "SHAPE_CATALOG"),
     }
 
     pets_by_id = by_key(master["PETS"], "pet_id")
@@ -232,6 +257,7 @@ def generated_tables(master_path, baseline_dir):
         for r in master["TRIALS"]
         if r.get("trial_id", "")
     }
+    shapes_by_id = by_key(master["SHAPE_CATALOG"], "shape_id")
 
     result = {}
     for filename in GENERATED_FILES:
@@ -314,11 +340,18 @@ def generated_tables(master_path, baseline_dir):
                 if not pet:
                     continue
                 sid, sname = shape_parts(first_non_empty(pet.get("shape_id"), row.get("形状ID")))
+                shape = shapes_by_id.get(sid, {})
                 row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
                 row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
                 row["定位(自动)"] = first_non_empty(pet.get("role"), row.get("定位(自动)"))
                 row["形状ID"] = first_non_empty(sid, row.get("形状ID"))
-                row["形状名"] = first_non_empty(sname, row.get("形状名"))
+                row["形状名"] = first_non_empty(shape.get("label"), sname, row.get("形状名"))
+                row["形状分类"] = first_non_empty(shape_class_for_group(shape.get("group")), row.get("形状分类"))
+                row["命中格数"] = first_non_empty(shape.get("cell_count"), row.get("命中格数"))
+                row["备注"] = first_non_empty(
+                    shape.get("note") and f"新19形状；所有作用格默认结算{shape.get('settle_count', '3')}次。{shape.get('note')}",
+                    row.get("备注")
+                )
 
         elif filename == "13_day7_beast_trial.csv":
             for row in output:
@@ -336,6 +369,11 @@ def generated_tables(master_path, baseline_dir):
                 row["备注"] = first_non_empty(trial.get("note"), row.get("备注"))
 
         result[filename] = (output, headers)
+
+    for sheet_name, filename in MASTER_ONLY_EXPORTS:
+        rows, headers = generated_sheet_table(master_path, sheet_name)
+        if rows and headers:
+            result[filename] = (rows, headers)
     return result
 
 
@@ -379,7 +417,8 @@ def main(argv=None):
 
     copy_baseline_if_needed(baseline_dir, out_dir)
     for filename, (rows, headers) in generated.items():
-        has_bom = (baseline_dir / filename).read_bytes().startswith(b"\xef\xbb\xbf")
+        baseline_file = baseline_dir / filename
+        has_bom = baseline_file.exists() and baseline_file.read_bytes().startswith(b"\xef\xbb\xbf")
         write_csv(out_dir / filename, rows, headers, bom=has_bom)
     print(f"exported {len(generated)} generated CSV tables from {master_path} to {out_dir}")
     return 0

@@ -227,7 +227,6 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
       const damage = qualityEffects.qualityActionDamage(state, actor, target, appliedSlot, entry.p, i, orderedEntries, cells, actionDamage);
       const done = damageUnit(state, actor, target, damage, { element: appliedSlot.element, sourceType: 'player_action_slot', slot: appliedSlot, apUsed });
       qualityEffects.afterQualityActionHit(state, actor, target, appliedSlot, entry.p, i, orderedEntries, cells, done, { pushEvent, getCell, damageUnit });
-      if (state.phase === 'battle_end' || (hpBefore > 0 && Number(target.hp || 0) <= 0)) continue;
     }
   }
   qualityEffects.applyPostActionQualityEffects(state, actor, appliedSlot, cells, orderedEntries, { pushEvent, getCell, damageUnit });

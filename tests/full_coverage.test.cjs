@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { data, validateData, buildIndexes } = require('../src/core/data.cjs');
 const { createGameState } = require('../src/core/state.cjs');
 const battle = require('../src/core/battle.cjs');
+const { targetCellsForShape } = require('../src/core/battle/shapeCatalog.cjs');
 const { createYSBZSUIAdapter, PUBLIC_COMMANDS } = require('../src/uiAdapter.cjs');
 const { renderPlayerReport, renderShopReport } = require('../src/render/textReport.cjs');
 
@@ -70,7 +71,11 @@ test('FC05 玩家手动链路：开始、选择、移动、调方向、施放、
   assert.equal(r.viewModel.heroes.find(h => h.id === hero.id).position.c, 3);
   r = adapter.setActionDirection(hero.id, 0, 'right');
   assert.ok(hasEvent(r, 'SET_ACTION_DIRECTION'));
-  r = adapter.useSlot(hero.id, 0, { r: 6, c: 4 });
+  const movedHero = r.viewModel.heroes.find(h => h.id === hero.id);
+  const slot = movedHero.slots[0];
+  const [target] = targetCellsForShape(movedHero.position, slot.shapeId, slot.direction);
+  assert.ok(target, `${slot.shapeId} should provide a legal slot target`);
+  r = adapter.useSlot(hero.id, 0, target);
   assert.ok(hasEvent(r, 'PLAYER_SELECT_SLOT'));
   r = adapter.endPlayerTurn();
   assert.ok(hasEvent(r, 'PLAYER_TURN_END') || hasEvent(r, 'END_PLAYER_TURN_BLOCKED'));

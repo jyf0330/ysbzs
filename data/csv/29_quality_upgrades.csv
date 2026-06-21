@@ -1,0 +1,69 @@
+upgrade_id,name,quality,category,operation_level,allowed_shape_sizes,effect,design_note,runtime_status
+S01,护体,silver,passive,none,1|2|3,回合开始时，获得 15 点护盾。,,implemented
+S02,自愈,silver,passive,none,1|2|3,回合开始时，恢复自身 20 点生命值。,,implemented
+S03,壮体,silver,passive,none,1|2|3,回合开始时，最大生命值翻倍，但最大生命值最多不超过 30。,,implemented
+S04,元素回响,silver,passive,none,1|2|3,造成元素伤害时，该元素伤害重复结算 1 次。,,implemented
+S05,收尾暴击,silver,passive,none,2|3,本次行动的最后一击必定暴击。,更适合二格、三格、多段结算角色。,implemented
+S06,连击倍增,silver,passive,none,2|3,第一击伤害减半，之后每一击都是前一击的 2 倍。,,implemented
+S07,越战越勇,silver,passive,none,1|2|3,每击杀 5 个怪，永久 +1 攻击力。,,implemented
+S08,本命爆发,silver,passive,none,1|2|3,如果自身携带和自己相同的元素，元素爆发翻倍。,,implemented
+G01,攻守切换,gold,dualMode,low,1|2|3,每回合可在攻/守之间切换。攻形态伤害 +2；守形态回合开始获得 8 护盾。,,implemented
+G02,稳爆切换,gold,dualMode,low,1|2|3,可在稳定/爆发之间切换。稳定形态攻击 +1；爆发形态本回合第一次命中伤害 +4。,,implemented
+G03,金色核心格,gold,empoweredCell,none,1|2|3,每个行动形状中有 1 个金色核心格，核心格命中敌人时伤害 +3。,,implemented
+G04,守护核心格,gold,empoweredCell,none,1|2|3,核心格覆盖友方时，该友方获得 8 护盾。,,implemented
+G05,回春核心格,gold,empoweredCell,none,1|2|3,核心格覆盖友方时，恢复 6 生命。,,implemented
+G06,破敌核心格,gold,empoweredCell,none,1|2|3,核心格命中敌人时，额外造成 2 点破甲伤害。,,implemented
+G07,正向强化,gold,directionBonus,none,1|2|3,形状朝向正前方的最远格伤害 +3。,,implemented
+G08,背向守势,gold,directionBonus,none,1|2|3,形状背后的格子若覆盖友方，该友方获得 10 护盾。,,implemented
+G09,左右借势,gold,directionBonus,none,2|3,形状左右两侧格命中敌人时，各额外造成 1 点伤害。,,implemented
+G10,终点重击,gold,empoweredCell,none,1|2|3,形状最远端格子命中敌人时，伤害 +4。,,implemented
+G11,单挑,gold,empoweredCell,none,1,如果本次形状只命中 1 个敌人，伤害 +5。,,implemented
+G12,点穴,gold,empoweredCell,none,1,命中敌人后，使该敌人下次受到伤害 +3。,,implemented
+G13,隔山打牛,gold,directionBonus,none,1,隔点形状命中时，伤害 +4。,,implemented
+G14,破绽一击,gold,dualMode,low,1,可切换稳击/重击。稳击伤害 +2；重击伤害 +6，但本回合只能结算这一个形状格。,,implemented
+G15,斩首,gold,empoweredCell,none,1,如果目标生命值不高于 8，额外造成 8 点伤害。,,implemented
+G16,追魂点,gold,empoweredCell,none,1,若该格击杀敌人，对最近敌人追加 3 点伤害。,,implemented
+G17,精准印记,gold,manualMark,medium,1,每回合可选择自己 1 个作用格，使其获得印记。该格本回合伤害 +5。,手动选格，数量要少。只给一格英雄比较安全。,implemented
+G18,双点连击,gold,empoweredCell,none,2,如果两个作用格都命中敌人，第二个命中的敌人伤害 +4。,,implemented
+G19,前后夹击,gold,directionBonus,none,2,前后两个格子都命中敌人时，两个敌人各额外受到 2 点伤害。,,implemented
+G20,对角穿心,gold,directionBonus,none,2,对角两格命中时，较远的目标伤害 +4。,,implemented
+G21,一攻一守,gold,dualMode,low,2,两格中靠前格伤害 +2；靠后格若覆盖友方，则该友方获得 8 护盾。,,implemented
+G22,双印择一,gold,manualMark,medium,2,每回合可在两个作用格中选择 1 格加金印。命中敌人伤害 +4；覆盖友方护盾 +8。,二格英雄可少量使用，不能泛滥。,implemented
+G23,连环标记,gold,empoweredCell,none,2,第一个命中的敌人被标记，第二个命中的敌人伤害 +3。,,implemented
+G24,双锋,gold,dualMode,low,2,可切换同伤/主副。同伤为两个格子各 +1 伤害；主副为第一个格子 +4，第二个格子不加成。,,implemented
+G25,三格核心,gold,empoweredCell,none,3,三格形状中固定 1 个核心格，核心格伤害 +3。,,implemented
+G26,横扫压制,gold,empoweredCell,none,3,横扫三格命中 2 个以上敌人时，每个敌人额外受到 1 点伤害。,,implemented
+G27,竖线贯通,gold,directionBonus,none,3,直线三格从近到远结算，第三格伤害 +3。,,implemented
+G28,三点成阵,gold,empoweredCell,none,3,三个作用格都覆盖到单位时，敌人受伤 +2，友方获得 5 护盾。,,implemented
+G29,首尾呼应,gold,directionBonus,none,3,形状第一格和最远格同时命中时，最远格伤害 +4。,,implemented
+G30,三选一金印,gold,manualMark,medium,3,每回合可从三个作用格中选 1 个加金印。该格伤害 +3。,三格本身覆盖大，所以手动强化数值要比一格、二格低。,implemented
+D01,末端延伸,diamond,shapeMutation,none,1|2|3,形状最远端额外延伸 1 格。,,implemented
+D02,起点回扫,diamond,shapeMutation,none,2|3,形状结算后，反方向再结算 1 次，反向伤害 -2。,,implemented
+D03,镜像形状,diamond,shapeMutation,none,1|2,当前形状会向相反方向复制 1 次。,不建议给三格，容易爆表。,implemented
+D04,斜向复制,diamond,shapeMutation,none,1|2,当前形状命中后，在斜向相邻位置额外生成 1 个作用格。,,implemented
+D05,核心扩散,diamond,shapeMutation,none,1,命中目标后，对目标上下左右各造成 1 点溅射伤害。,,implemented
+D06,双端开花,diamond,shapeMutation,none,2,两个作用格的外侧各额外延伸 1 格，但额外格伤害 -2。,,implemented
+D07,三格收束,diamond,shapeMutation,none,3,三格形状如果只命中 1 个敌人，该敌人额外受到 6 点伤害。,,implemented
+D08,三格外放,diamond,shapeMutation,none,3,三格形状命中 2 个以上敌人时，额外对每个目标造成 2 点伤害。,,implemented
+D09,角形补点,diamond,shapeMutation,none,3,L 型三格的缺角位置额外生成 1 个作用格，伤害 -2。,,implemented
+D10,直线贯穿,diamond,shapeMutation,none,3,直线形状末端再贯穿 1 格，额外格伤害 -1。,,implemented
+D11,抢先结算,diamond,settlementMutation,none,1|2|3,该角色总是最先结算。,,implemented
+D12,压轴结算,diamond,settlementMutation,none,1|2|3,该角色总是最后结算，最后一击伤害 +5。,,implemented
+D13,残血追击,diamond,settlementMutation,none,1|2|3,若本次结算后有敌人生命不高于 5，对其追加 5 点伤害。,,implemented
+D14,击杀连锁,diamond,settlementMutation,none,1|2,击杀敌人后，对最近敌人追加 4 点伤害。,,implemented
+D15,破阵启动,diamond,settlementMutation,none,3,若本次命中 3 个单位，立即额外结算一次核心格。,,implemented
+D16,反复敲打,diamond,settlementMutation,none,1,如果只命中 1 个敌人，同一格重复结算 1 次。,,implemented
+D17,二段行动,diamond,settlementMutation,none,1|2|3,本角色先结算一半伤害，所有友方结算后再结算剩余伤害。,有一定理解成本，建议少量使用。,implemented
+D18,元素先爆,diamond,settlementMutation,none,1|2|3,如果本次触发元素爆发，该元素爆发提前到本角色普通伤害前结算。,,implemented
+D19,收割顺序,diamond,settlementMutation,none,1|2|3,结算时优先攻击生命最低的目标。,会改变默认结算逻辑，建议只给少数角色。,implemented
+D20,反向结算,diamond,settlementMutation,none,2|3,形状从最远格开始结算，而不是从近格开始结算。,,implemented
+D21,火痕,diamond,boardTrace,none,1|2|3,形状覆盖过的空格留下火痕 1 回合，敌人站上受到 3 点火伤害。,,implemented
+D22,水痕,diamond,boardTrace,none,1|2|3,覆盖格留下水痕 1 回合，友方站上恢复 5 生命。,,implemented
+D23,风痕,diamond,boardTrace,none,1|2|3,覆盖格留下风痕 1 回合，友方站上时下次伤害 +2。,,implemented
+D24,土痕,diamond,boardTrace,none,1|2|3,覆盖格留下土痕 1 回合，友方站上获得 8 护盾。,,implemented
+D25,金痕,diamond,boardTrace,none,1|2|3,覆盖格留下金痕 1 回合，下一次命中该格敌人的攻击伤害 +2。,,implemented
+D26,木痕,diamond,boardTrace,none,1|2|3,覆盖格留下木痕 1 回合，回合开始时恢复站在上面的友方 4 生命。,,implemented
+D27,佛光,diamond,boardTrace,none,1|2|3,覆盖格留下佛光 1 回合，友方站上恢复 6 生命，敌人站上无效果。,,implemented
+D28,流沙,diamond,boardTrace,none,1|2|3,覆盖格留下流沙 1 回合，敌人站上受到 2 点伤害，并使其下次受伤 +2。,,implemented
+D29,妖印,diamond,boardTrace,none,1|2|3,覆盖格留下妖印 1 回合，敌人站上后被标记，下次受到伤害 +4。,,implemented
+D30,纸符,diamond,boardTrace,none,1|2|3,核心格留下纸符 1 回合，下一次经过该格的作用形状额外结算 1 次。,最有纸上西游特色，但强度较高，建议稀有。,implemented

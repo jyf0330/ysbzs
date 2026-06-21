@@ -61,6 +61,8 @@ test('CB04 startNextRound clears attack movement lock but keeps same-round lock'
   hero.position = { r: 5, c: 2 };
   hero.moveRange = 3;
   hero.shape = Object.assign({}, hero.shape, {
+    shapeId: '01',
+    shapeName: '形状01',
     slotCount: 1,
     slotElements: ['风'],
     hitCells: 1,

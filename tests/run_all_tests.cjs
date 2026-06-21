@@ -586,23 +586,25 @@ test('battle add element goes through elementPackets and triggerQueue on ordinar
   const battle = require('../src/core/battle.cjs');
   const s=createGameState({activePets:['pal_005']});
   s.phase='player_turn'; s.round=1; s.units=s.units.filter(u=>u.side==='hero');
-  const hero=s.units[0]; hero.position={r:1,c:1}; hero.shape=Object.assign({},hero.shape,{hitCells:1,baseLayers:1,slotCount:1,slotElements:['火']});
+  const hero=s.units[0]; hero.position={r:1,c:1}; hero.shape=Object.assign({},hero.shape,{shapeId:'01',shapeName:'形状01',hitCells:1,baseLayers:1,slotCount:1,slotElements:['水']});
   const enemy=makeUnit(s,'enemy','pal_001',{id:'packet_enemy',hp:30,position:{r:1,c:2}}); s.units.push(enemy);
   battle.syncDerivedBoard(s); battle.setActionDirection(s,hero.id,0,'right');
   assert.equal(battle.useActionSlot(s,hero.id,0,null), true);
   const cell=getCell(s,1,2);
-  assert.ok(cell.elementPackets && cell.elementPackets.some(p=>p.element==='火' && p.amount>=1), 'cell should have fire element packet');
-  assert.ok(enemy.elementPackets && enemy.elementPackets.some(p=>p.element==='火' && p.amount>=1), 'unit should have mirrored fire packet');
+  assert.ok(cell.elementPackets && cell.elementPackets.some(p=>p.element==='水' && p.amount>=1), 'cell should have water element packet');
+  assert.ok(enemy.elementPackets && enemy.elementPackets.some(p=>p.element==='水' && p.amount>=1), 'unit should have mirrored water packet');
   assert.ok((s.changes||[]).some(c=>c.type==='TRIGGER_QUEUE_RESOLVE'), 'ordinary battle element add should enter triggerQueue');
 });
 
 test('shape lookup uses shapeId index, not petId-only map',()=>{
   const { buildIndexes } = require('../src/core/data.cjs');
-  const ix=buildIndexes(); assert.ok(ix.shapesByShapeId.has('A1')); assert.ok(ix.shapesByShapeId.has('B1'));
-  const shape=ix.shapesByShapeId.get('B1');
+  const ix=buildIndexes(); assert.ok(ix.shapesByShapeId.has('01')); assert.ok(ix.shapesByShapeId.has('19'));
+  assert.equal(ix.shapesByShapeId.has('A1'), false);
+  assert.equal(ix.shapesByShapeId.has('B1'), false);
+  const shape=ix.shapesByPetId.get('pal_005');
   assert.ok(shape);
-  assert.equal(shape.shapeId,'B1');
-  assert.equal(ix.shapesByPetId.get(shape.petId).shapeId, shape.shapeId);
+  assert.equal(shape.shapeId,'12');
+  assert.equal(ix.shapesByShapeId.get(shape.shapeId).shapeId, shape.shapeId);
   assert.ok(shape.hitCells >= 1);
 });
 

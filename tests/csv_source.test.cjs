@@ -128,9 +128,12 @@ test('CSV08 精简策划总表可无损导出当前核心程序 CSV', () => {
     '03_monster_waves.csv',
     '04_mechanisms.csv',
     '06_shop_rewards.csv',
-    '08_action_shapes.csv'
+    '08_action_shapes.csv',
+    '27_shape_catalog.csv',
+    '28_quality_growth.csv',
+    '29_quality_upgrades.csv'
   ]) {
-    const expectedCsv = fs.readFileSync(path.join(csvDir, name), 'utf8');
+  const expectedCsv = fs.readFileSync(path.join(csvDir, name), 'utf8');
     const actualCsv = fs.readFileSync(path.join(outDir, name), 'utf8');
     assert.equal(actualCsv, expectedCsv, name);
   }
@@ -152,6 +155,9 @@ checks = {
   '01_宠物主表_好读版': 128,
   '03_怪物波次_好读版': 135,
   '06_商店奖励池_好读版': 128,
+  '27_新19战斗形状目录': 20,
+  '28_品质成长数值表': 13,
+  '29_品质升级质变表': 69,
 }
 for sheet, rows in checks.items():
     assert sheet in wb.sheetnames, sheet

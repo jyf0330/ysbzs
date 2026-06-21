@@ -1,5 +1,10 @@
 # 10_CHANGELOG
 
+## 2026-06-22
+
+- 策划总表同步当前品质成长与新 19 形状口径：`xlsx/ysbzs_master.xlsx` 新增 `SHAPE_CATALOG` / `QUALITY_GROWTH` / `QUALITY_UPGRADES`，宠物 `shape_id` 回灌为代码实际使用的 `01-19`；导出链路生成 `27_shape_catalog.csv`、`28_quality_growth.csv`、`29_quality_upgrades.csv`，策划好读版 workbook 增加对应 27/28/29 表。
+- 旧形状测试口径改为显式受控 fixture 或从 `shapeCatalog` 计算正式作用格，避免默认宠物切到新形状后仍按旧 `A1/B1` 相邻格断言；同时清理 `actions.cjs` 中一行无效循环末尾 `continue`，让 `check:jsdoc` 继续通过。
+
 ## 2026-06-21
 
 - 优化项目 Superpowers / YWH skill 路由：`docs/02_CURRENT_WORKFLOW.md` 现在明确 Superpowers 负责执行纪律、YWH 负责项目适配，`ywh-web-game` / Playwright / game-playtest 只在浏览器 UI 或可见验收阶段加载，避免纯工作流文档任务过早拉入 UI 验收链。

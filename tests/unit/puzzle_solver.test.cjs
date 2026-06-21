@@ -17,11 +17,15 @@ function exactState() {
   hero.id = 'hero_fire';
   hero.position = { r: 3, c: 3 };
   hero.moveRange = 0;
-  hero.ap = 3;
+  hero.ap = 1;
   hero.actionApSpent = 0;
   hero.actionSlotsUsed = {};
   hero.hasAttacked = false;
   hero.shape = Object.assign({}, hero.shape, {
+    shapeId: '01',
+    shapeName: '形状01',
+    hitCells: 1,
+    baseLayers: 1,
     slotCount: 1,
     slotElements: ['火']
   });

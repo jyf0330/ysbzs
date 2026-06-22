@@ -1,5 +1,11 @@
 # 10_CHANGELOG
 
+## 2026-06-23
+
+- 页面/核心边界收口：`SELL_UNIT` / `TOGGLE_UNIT_ACTIVE` 改为核心 `inventoryRules` + reducer 命令，`uiAdapter` 只同步选中态等 UI view state；`web/ux-app.js` 退役为标记文件，主战斗页唯一运行入口收口到 `web/js/main.js`。
+- `dailyFlow` ViewModel 现在负责输出路线 `primaryAction` / `autoAction` 与步骤摘要，`web/daily-flow.js` 不再按路线 kind 自行推导固定战、节点生成或跨天命令；`daily-flow.html?runtime=local` 也会先加载本地引擎，方便正式浏览器验收。
+- 玩家商店界面不再暴露冻结/解冻控件：主战斗页和每日流程页只保留购买、刷新、出售、上下阵和离店等玩家入口，冻结核心命令保留为内部规则能力。
+
 ## 2026-06-22
 
 - 记录战斗主界面主风格图 `web/assets/reference_main_style_battle_ui_2026-06-22.jpg`，并新增 `docs/RIGHT_PET_DETAIL_PANEL_PROMPT.md`，把右侧宠物详情面板重设计提示语约束到当前 ViewModel 字段、行动槽、元素层和受击预警数据上。

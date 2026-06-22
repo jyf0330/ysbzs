@@ -81,6 +81,8 @@ test('daily flow is a standalone page using public API surfaces', () => {
   assert.match(html, /id="timeline"/, 'daily flow page should expose a timeline region');
   assert.match(html, /id="choice-list"/, 'daily flow page should expose current route choices');
   assert.match(html, /id="run-list"/, 'daily flow page should expose cross-day run summaries');
+  assert.match(html, /src="js\/local-engine\.js"/, 'daily flow page should support local runtime without importing core from the module');
+  assert.ok(html.indexOf('src="js/local-engine.js"') < html.indexOf('src="daily-flow.js"'), 'daily flow should register the local engine before the module creates a runtime');
   assert.match(html, /src="daily-flow\.js"/, 'daily flow page should load its own script');
   assert.match(css, /\.flow-shell/, 'daily flow page needs dedicated shell styling');
   assert.match(css, /\.timeline/, 'daily flow timeline needs dedicated layout styling');
@@ -98,7 +100,7 @@ test('bottom event log is internally scrollable and follows newest content', () 
   assert.match(css, /\.log-view\{[^}]*max-height:100%/s, 'log view must stay within the footer height');
   assert.match(css, /\.log-view\{[^}]*user-select:text/s, 'bottom event log should allow selecting and copying visible text');
 
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     assert.match(js, /function autoScrollLog/, `${file} should centralize bottom-log auto-scroll behavior`);
     assert.match(js, /log\.scrollTop\s*=\s*log\.scrollHeight/, `${file} should scroll the bottom log to newest content`);
@@ -107,7 +109,7 @@ test('bottom event log is internally scrollable and follows newest content', () 
 });
 
 test('game UI keeps toast notifications fully hidden', () => {
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     const toastBody = js.match(/function toast\([^)]*\) \{([\s\S]*?)\n  \}/);
     assert.ok(toastBody, `${file} should keep a central toast function`);
@@ -130,7 +132,7 @@ test('action blocks sit lower and edit through a local popover instead of the ri
   assert.match(css, /\.right-panel \.detail-card\{[^}]*flex:1 1 auto[^}]*min-height:0/s, 'right detail panel should scroll inside available space');
   assert.match(css, /\.action-popover/, 'action popover needs visible floating-panel styling');
 
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     assert.match(js, /function renderActionPopover/, `${file} should render the local action edit popover`);
     assert.match(js, /positionActionPopover/, `${file} should place the popover beside the selected action block`);
@@ -148,7 +150,7 @@ test('battle UI surfaces shape diagrams and quality attributes', () => {
   assert.match(adapter, /shapeOffsets/, 'ViewModel should expose shape offsets for inspectors and debug text');
   assert.match(adapter, /settleCount/, 'ViewModel should expose shape settle count');
   assert.match(adapter, /qualityUpgrade/, 'ViewModel should expose selected quality upgrade data');
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     assert.match(js, /function renderShapeMini/, `${file} should render a visible shape diagram`);
     assert.match(js, /function renderShapePanel/, `${file} right detail should include a shape section`);
@@ -172,7 +174,7 @@ test('combat layout scripts keep info in right panel without hover detail popups
   assert.doesNotMatch(css, /\.cell-popup/, 'cell popup styling should not remain');
   assert.doesNotMatch(css, /\.tooltip/, 'tooltip styling should not remain');
   assert.doesNotMatch(css, /\[data-tip\]/, 'hover affordance styling should not remain');
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     assert.doesNotMatch(js, /TOOLTIP_DELAY_MS/, `${file} should not keep delayed hover tooltip logic`);
     assert.doesNotMatch(js, /tooltipTimer/, `${file} should not keep hover tooltip timer state`);
@@ -250,14 +252,14 @@ test('empty attack threat detail shows attack threat instead of empty-cell hit d
     actionCount: 1
   };
 
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const text = runThreatDetailText(read(file), emptyAttackThreat);
     assert.equal(text, '敌方翠叶鼠 1次行动块；合计9', `${file} should use threat value for empty attack cells`);
   }
 });
 
 test('clicked cell threat detail stays on current GET_CELL_DETAIL when transaction preview exists', () => {
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     const body = js.match(/function renderCellDetail\(\) \{([\s\S]*?)\n\t  function threatDamageValue/);
     assert.ok(body, `${file} should keep renderCellDetail before threat formatting helpers`);

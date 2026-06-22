@@ -82,47 +82,12 @@ function buildCoreText() {
   if (tags.length) return tags.slice(0, 3).map(x => x.label).join(' / ');
   return vm?.buildCore?.summaryText || '尚未形成';
 }
-function nextSchedule() {
-  return vm?.dailyFlow?.nextSchedule || null;
-}
-function canAdvanceRoutePhase() {
-  return ['init', 'node_resolved', 'battle_end'].includes(vm?.phase);
-}
-function fixedBattleAction() {
-  const schedule = nextSchedule();
-  if (!schedule || schedule.kind !== 'fixed_battle' || !canAdvanceRoutePhase()) return null;
-  const phase = schedule.phaseLabel || schedule.label || '战斗';
-  const label = /终局/.test(`${phase}${schedule.label || ''}`)
-    ? '进入终局战'
-    : (Number(schedule.step || 0) <= 3 ? '进入第一场战斗' : '进入第二场战斗');
-  return { type: 'RUN_ROUTE_FIXED_BATTLE', label, defaultPayload: { scheduleStep: schedule.step } };
-}
-function nodeOptionsAction() {
-  const schedule = nextSchedule();
-  if (!schedule || schedule.kind !== 'node_choice' || !canAdvanceRoutePhase()) return null;
-  return { type: 'GENERATE_NODE_OPTIONS', label: '展开 3 选 1', defaultPayload: { scheduleStep: schedule.step } };
-}
-function nextDayAction() {
-  if (vm?.phase !== 'day_end') return null;
-  const action = (vm?.nextActions || []).find(x => x.type === 'START_NEXT_DAY');
-  if (!action) return null;
-  return { type: 'START_NEXT_DAY', label: action.label || `进入第${Number(vm?.day || 1) + 1}天`, defaultPayload: action.defaultPayload || { day: Number(vm?.day || 1) + 1 } };
-}
 function primaryRouteAction() {
-  if (vm?.phase === 'day_end') return nextDayAction();
-  if (vm?.dailyFlow?.terminal) return null;
-  if ((vm?.dayRoute?.options || []).length || (vm?.rewards || []).length || vm?.phase === 'shop') return null;
-  return fixedBattleAction();
+  return vm?.dailyFlow?.primaryAction || vm?.dailyFlow?.actions?.primary || null;
 }
 function autoRouteAction() {
   if (!vm || busy || autoAdvanceInFlight || vm.dailyFlow?.terminal || vm.phase === 'day_end' || vm.phase === 'shop') return null;
-  if ((vm.dayRoute?.options || []).length || (vm.dayRoute?.battleOptions || []).length) return null;
-  if ((vm.rewards || []).length === 1) {
-    return { type: 'PICK_REWARD', label: '自动领取唯一奖励', defaultPayload: { index: 0 } };
-  }
-  const nodeAction = nodeOptionsAction();
-  if (nodeAction) return nodeAction;
-  return null;
+  return vm?.dailyFlow?.autoAction || vm?.dailyFlow?.actions?.auto || null;
 }
 function autoActionKey(action) {
   return action ? `${vm?.stateVersion || 0}:${action.type}:${JSON.stringify(action.defaultPayload || {})}` : '';
@@ -169,6 +134,7 @@ function statusLabel(status) {
   return { done: '已完成', current: '当前', next: '下一步', pending: '未到达' }[status] || status || '-';
 }
 function kindSummary(step) {
+  if (step.summary) return step.summary;
   if (step.pickedName) return `已选择：${step.pickedName}`;
   if (step.kind === 'node_choice') return '3 选 1，进入成长、商店、奖励或事件节点。';
   if (step.kind === 'battle_choice') return '三选一遭遇。';

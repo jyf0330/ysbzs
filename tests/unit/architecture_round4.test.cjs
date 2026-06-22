@@ -85,7 +85,7 @@ test('R406 roster loop: newly bought pet starts on bench, can be blocked by full
 
 test('R407 UI exposes prep, replay, debug, AP modal and shop event without hover detail surfaces', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web/index.html'), 'utf8');
-  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'web/ux-app.js'), 'utf8');
+  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'web/js/main.js'), 'utf8');
   assert.match(html, /prep-overlay/);
   assert.match(html, /prep-active-list/);
   assert.match(html, /prep-bench-list/);

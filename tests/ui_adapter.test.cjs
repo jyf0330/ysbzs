@@ -53,6 +53,27 @@ test('UI01 适配层只暴露统一公开命令集合', () => {
   for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD','START_NEXT_DAY','RUN_FULL_RUN']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
 });
 
+test('UI01A sell/toggle are reducer-backed core inventory commands, not adapter mutations', () => {
+  const adapterSrc = fs.readFileSync(path.join(__dirname, '..', 'src', 'uiAdapter.cjs'), 'utf8');
+  assert.doesNotMatch(adapterSrc, /case 'SELL_UNIT'/, 'adapter must not own sell state mutations');
+  assert.doesNotMatch(adapterSrc, /case 'TOGGLE_UNIT_ACTIVE'/, 'adapter must not own active roster state mutations');
+
+  const state = createGameState({ gold: 8, activePets: ['pal_001', 'pal_002'] });
+  const activeEntry = state.inventory.find(item => item.active !== false);
+  assert.ok(activeEntry?.instanceId, 'test needs an active inventory entry');
+  const toggled = dispatch(state, { type: 'TOGGLE_UNIT_ACTIVE', instanceId: activeEntry.instanceId });
+  assert.notEqual(toggled, false);
+  assert.ok(state.events.some(event => event.type === 'TOGGLE_UNIT_ACTIVE'));
+  assert.equal(activeEntry.active, false);
+
+  const beforeGold = state.gold;
+  const sold = dispatch(state, { type: 'SELL_UNIT', instanceId: activeEntry.instanceId, petId: activeEntry.petId });
+  assert.notEqual(sold, false);
+  assert.ok(state.gold > beforeGold);
+  assert.ok(state.events.some(event => event.type === 'SELL_UNIT'));
+  assert.equal(state.inventory.some(item => item.instanceId === activeEntry.instanceId), false);
+});
+
 test('UI01B CLEAR_SELECTION clears per-player unit, slot, and cell selection without changing game state', () => {
   const adapter = createYSBZSUIAdapter({ gold: 8, battleId: 'clear_selection' });
   const before = adapter.getViewModel();

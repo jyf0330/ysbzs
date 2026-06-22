@@ -264,6 +264,30 @@ test('daily flow opening exposes Sun Wukong versus Tiger Vanguard with two start
   assert.match(opening.firstWave.summary, /虎先锋.*召唤.*棉悠悠.*捣蛋猫/);
 });
 
+test('daily flow ViewModel owns route primary and auto actions consumed by the page', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'daily-flow-vm-actions' });
+  let vm = adapter.getViewModel('p1');
+
+  assert.equal(vm.dailyFlow.primaryAction, null);
+  assert.equal(vm.dailyFlow.autoAction?.type, 'GENERATE_NODE_OPTIONS');
+  assert.deepEqual(vm.dailyFlow.autoAction.defaultPayload, { scheduleStep: 1 });
+  assert.match(vm.dailyFlow.steps[0].summary, /3 选 1/);
+
+  ({ vm } = resolveNode(adapter));
+  ({ vm } = resolveNode(adapter));
+  assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
+  assert.equal(vm.dailyFlow.primaryAction?.type, 'RUN_ROUTE_FIXED_BATTLE');
+  assert.deepEqual(vm.dailyFlow.primaryAction.defaultPayload, { scheduleStep: 3 });
+  assert.equal(vm.dailyFlow.autoAction, null);
+
+  const js = read('web/daily-flow.js');
+  assert.match(js, /vm\?\.dailyFlow\?\.primaryAction/, 'page should consume primaryAction from ViewModel');
+  assert.match(js, /vm\?\.dailyFlow\?\.autoAction/, 'page should consume autoAction from ViewModel');
+  assert.doesNotMatch(js, /function fixedBattleAction/, 'page must not re-derive fixed battle actions');
+  assert.doesNotMatch(js, /function nodeOptionsAction/, 'page must not re-derive node option actions');
+  assert.doesNotMatch(js, /schedule\.kind\s*===\s*'fixed_battle'/, 'route kind decisions belong in ViewModel');
+});
+
 test('day 1 opening wave is Tiger Vanguard summoning starter pets, not extra heroes', () => {
   const firstWave = data.waves.find(row => row.day === 1 && row.period === '上午' && row.round === 1);
   assert.ok(firstWave, 'day 1 morning round 1 wave should exist');
@@ -293,13 +317,16 @@ test('daily flow page keeps player buttons on public runtime and hides one-click
   assert.match(js, /dailyFlow\?\.opening/, 'daily flow page should read opening info from the public dailyFlow surface');
   assert.match(js, /createGameRuntime/, 'daily flow page should use the public runtime client');
   assert.match(js, /mode:\s*params\.get\('runtime'\)\s*\|\|\s*'http'/, 'daily flow server page should default to HTTP runtime');
+  assert.match(html, /src="js\/local-engine\.js"/, 'daily flow page should load the local engine for runtime=local browser checks');
+  assert.ok(html.indexOf('src="js/local-engine.js"') < html.indexOf('src="daily-flow.js"'), 'daily flow local engine must load before the page module');
   assert.match(js, /runtime\.view\(\)/, 'daily flow page should read /api/view through runtime');
   assert.match(js, /runtime\.action/, 'daily flow page should mutate only through /api/action');
   assert.match(runtimeClient, /x-session-id/, 'runtime client should preserve session-scoped daily flow links');
   assert.match(js, /dailyFlow/, 'daily flow page should render the public dailyFlow surface');
-  assert.match(js, /RUN_ROUTE_FIXED_BATTLE/, 'daily flow page should enter battle through the route command');
-  assert.match(js, /GENERATE_NODE_OPTIONS/, 'daily flow page should generate 3-choice nodes');
-  assert.match(js, /START_NEXT_DAY/, 'daily flow page should enter the next day through a public action');
+  assert.match(js, /vm\?\.dailyFlow\?\.primaryAction/, 'daily flow page should read primary route actions from ViewModel');
+  assert.match(js, /vm\?\.dailyFlow\?\.autoAction/, 'daily flow page should read auto route actions from ViewModel');
+  assert.doesNotMatch(js, /RUN_ROUTE_FIXED_BATTLE/, 'daily flow page should not hardcode route battle commands');
+  assert.doesNotMatch(js, /START_NEXT_DAY/, 'daily flow page should not hardcode next-day route commands');
   assert.match(js, /SELL_UNIT/, 'daily flow shop should expose selling through a public action');
   assert.match(js, /购买宠物/, 'daily flow shop should label buy actions as pet purchases');
   assert.match(js, /出售宠物/, 'daily flow shop should label sell actions as pet sales');

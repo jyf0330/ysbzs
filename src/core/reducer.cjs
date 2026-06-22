@@ -2,6 +2,7 @@ const battle = require('./battle.cjs');
 const shop = require('./shop.cjs');
 const day7 = require('./day7FireTrial.cjs');
 const dayRoute = require('./dayRoute.cjs');
+const inventory = require('./inventoryRules.cjs');
 const { buildReplay } = require('./changeLog.cjs');
 
 function dispatch(state, command) {
@@ -34,6 +35,8 @@ function dispatch(state, command) {
     case 'FREEZE_OFFER': return shop.freezeOffer(state, command.offerId, true);
     case 'UNFREEZE_OFFER': return shop.freezeOffer(state, command.offerId, false);
     case 'BUY_OFFER': return shop.buyOffer(state, command.offerId);
+    case 'SELL_UNIT': return inventory.sellUnit(state, command);
+    case 'TOGGLE_UNIT_ACTIVE': return inventory.toggleUnitActive(state, command);
     case 'APPLY_SHOP_EVENT': return shop.applyShopEvent(state, command.eventId);
     case 'REWARD_OPTIONS': return shop.rewardOptions(state, command.poolId, command.count);
     case 'PICK_REWARD': return shop.pickReward(state, command.index || 0);

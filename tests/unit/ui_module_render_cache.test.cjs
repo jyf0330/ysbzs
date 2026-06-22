@@ -12,6 +12,12 @@ test('UI01 browser app boots through an ES module entry instead of the old scrip
   assert.doesNotMatch(html, /<script\s+src="ux-app\.js"><\/script>/);
 });
 
+test('UI01A legacy ux-app no longer carries a second browser implementation', () => {
+  const legacy = read('web/ux-app.js');
+  assert.match(legacy, /LEGACY_UI_RETIRED/);
+  assert.doesNotMatch(legacy, /function renderBoard|function runCommand|PREVIEW_MANUAL_FLOW|TOGGLE_UNIT_ACTIVE/);
+});
+
 test('UI02 app logic is split into focused ES modules', () => {
   const required = [
     'web/js/main.js',
@@ -40,7 +46,7 @@ test('UI03 render cache prevents unchanged sections from doing full DOM rebuild 
 });
 
 test('UI03A event log renders the full browser-visible history from the first event', () => {
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const main = read(file);
     assert.doesNotMatch(main, /events\.slice\(-22\)/, `${file} should not truncate the event tab to the newest 22 rows`);
     assert.match(main, /events\.map\(e =>/, `${file} should render every ViewModel event row`);
@@ -94,6 +100,13 @@ test('UI03D shop panel renders stall identity and refresh economy status', () =>
   assert.match(main, /offer-source/, 'targeted restock offers should show their source on offer cards');
   assert.match(main, /o\.restock\?\.name/, 'offer cards should read restock provenance from ViewModel');
   assert.match(css, /\.offer-source/, 'offer provenance needs compact readable styling');
+});
+
+test('UI03D2 main shop panel does not expose freeze controls to players', () => {
+  const main = read('web/js/main.js');
+  assert.doesNotMatch(main, /data-freeze-offer/, 'player shop UI should not render freeze buttons');
+  assert.doesNotMatch(main, /FREEZE_OFFER|UNFREEZE_OFFER/, 'player shop UI should not dispatch freeze commands');
+  assert.doesNotMatch(main, />\$\{o\.frozen \? '解冻' : '冻结'\}<\/button>/, 'player shop UI should not label freeze controls');
 });
 
 test('UI03E reward panel renders claimable route battle rewards', () => {

@@ -1,19 +1,18 @@
-const { createGameState, makeUnit } = require('./core/state.cjs');
+const { createGameState } = require('./core/state.cjs');
 const { dispatch: coreDispatch } = require('./core/reducer.cjs');
 const battle = require('./core/battle.cjs');
 const shop = require('./core/shop.cjs');
 const dayRoute = require('./core/dayRoute.cjs');
 const { renderPlayerReport, renderShopReport } = require('./render/textReport.cjs');
 const { pushEvent } = require('./core/events.cjs');
-const { applyBattleStart } = require('./core/mechanics.cjs');
 const { ensureMultiplayerState } = require('./core/multiplayerState.cjs');
 const { normalizeCommandEnvelope, validateCommandAuthority, annotateEvents, commitAcceptedCommand, rejectedCommandResult } = require('./core/commandEnvelope.cjs');
 const { stateHash } = require('./core/stateHash.cjs');
 const { buildSaveDocument, applySaveToState, assertSaveDocument } = require('./storage/saveCodec.cjs');
-const { statusOfMechanic, activationBlockReason } = require('./core/mechanicGate.cjs');
+const { statusOfMechanic } = require('./core/mechanicGate.cjs');
 const { canonicalEventLog } = require('./core/eventProjection.cjs');
 const { buildConstructionSummary } = require('./core/buildSummary.cjs');
-const { MAX_ACTIVE_UNITS, MAX_BENCH_UNITS, shopPurchaseTarget } = require('./core/inventoryRules.cjs');
+const { shopPurchaseTarget } = require('./core/inventoryRules.cjs');
 const { shapeForVM, slotsForVM } = require('./uiAdapterShapeVM.cjs');
 const { buildInventoryVM } = require('./uiAdapterInventoryVM.cjs');
 const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
@@ -217,19 +216,6 @@ function findUnitForInventoryEntry(state, inv) {
   if (!inv) return null;
   return (state.units || []).find(u => u.id === inv.instanceId || u.petId === inv.petId) || null;
 }
-function firstEmptyHeroCell(state) {
-  battle.syncDerivedBoard(state);
-  const preferred = [
-    { r: 6, c: 1 }, { r: 5, c: 1 }, { r: 6, c: 2 }, { r: 5, c: 2 },
-    { r: 4, c: 1 }, { r: 7, c: 1 }, { r: 4, c: 2 }, { r: 7, c: 2 }
-  ];
-  const cells = preferred.concat(state.board.cells.map(c => ({ r: c.r, c: c.c })));
-  for (const p of cells) {
-    const cell = state.board.cells.find(c => c.r === p.r && c.c === p.c);
-    if (cell && !cell.unitId) return p;
-  }
-  return { r: 7, c: 0 };
-}
 function recentEvents(state, n = null) {
   const events = Array.isArray(state.events) ? state.events : [];
   const limit = Number(n);
@@ -372,74 +358,8 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
   };
 }
 function createViewModel(state, playerId = 'p1', playerViewState = makePlayerViewState()) { return buildViewModelForPlayer(state, playerId, playerViewState); }
-function findInventoryEntry(state, petIdOrInstanceId) {
-  if (!petIdOrInstanceId) return null;
-  return state.inventory.find(x => x.instanceId === petIdOrInstanceId)
-    || state.inventory.find(x => x.petId === petIdOrInstanceId && x.active === false)
-    || state.inventory.find(x => x.petId === petIdOrInstanceId || `unit_${x.petId}` === petIdOrInstanceId)
-    || null;
-}
 function runCompatibilityCommand(state, command, viewState = makePlayerViewState()) {
   switch (command.type) {
-    case 'SELL_UNIT': {
-      const petId = command.petId || command.instanceId || command.unitId;
-      const inv = findInventoryEntry(state, petId);
-      if (!inv) { pushEvent(state, 'SELL_UNIT_BLOCKED', { text: `出售失败：找不到单位 ${petId || ''}。` }); return false; }
-      const refund = Math.max(1, Number(inv.level || 1));
-      const before = state.gold;
-      state.gold += refund;
-      inv.count = Math.max(0, Number(inv.count || 1) - 1);
-      const unit = findUnitForInventoryEntry(state, inv);
-      if (unit) { unit.alive = false; unit.active = false; unit.position = null; }
-      if (inv.count <= 0) state.inventory = state.inventory.filter(x => x !== inv);
-      battle.syncDerivedBoard(state);
-      pushEvent(state, 'SELL_UNIT', { petId: inv.petId, instanceId: inv.instanceId || null, refund, goldFrom: before, goldTo: state.gold, text: `出售 ${inv.petId}，金币${before}→${state.gold}。` });
-      return true;
-    }
-    case 'TOGGLE_UNIT_ACTIVE': {
-      const id = command.petId || command.instanceId || command.unitId;
-      const inv = findInventoryEntry(state, id);
-      if (!inv) { pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, text: `切换失败：找不到 ${id || '未知单位'}。` }); return false; }
-      const currentlyActive = inv.active !== false;
-      if (!currentlyActive) {
-        const activeCount = (state.inventory || []).filter(x => x !== inv && x.active !== false).length;
-        if (activeCount >= MAX_ACTIVE_UNITS) {
-          pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, maxActive: MAX_ACTIVE_UNITS, text: `上阵失败：上场位已满 ${MAX_ACTIVE_UNITS}/${MAX_ACTIVE_UNITS}。` });
-          return false;
-        }
-        let unit = findUnitForInventoryEntry(state, inv);
-        if (!unit) unit = makeUnit(state, 'hero', inv.petId, { position: firstEmptyHeroCell(state) });
-        const blockReason = activationBlockReason(unit);
-        if (blockReason) {
-          pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, petId: inv.petId, reason: blockReason, text: `上阵失败：${unit.displayName || unit.name} ${blockReason}。` });
-          return false;
-        }
-        inv.active = true;
-        if (!state.units.includes(unit)) {
-          applyBattleStart(state, unit);
-          state.units.push(unit);
-          inv.instanceId = unit.id;
-        }
-        unit.active = true;
-        unit.alive = true;
-        if (!unit.position) unit.position = firstEmptyHeroCell(state);
-        inv.slot = inv.slot || activeCount + 1;
-      } else {
-        const benchCount = (state.inventory || []).filter(x => x.active === false).length;
-        if (benchCount >= MAX_BENCH_UNITS) {
-          pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, maxBench: MAX_BENCH_UNITS, text: `下阵失败：背包已满 ${MAX_BENCH_UNITS}/${MAX_BENCH_UNITS}。` });
-          return false;
-        }
-        inv.active = false;
-        inv.slot = null;
-        const unit = findUnitForInventoryEntry(state, inv);
-        if (unit) { unit.active = false; unit.alive = false; unit.position = null; }
-        if (viewState.selected && (viewState.selected.unitId === inv.instanceId || viewState.selected.unitId === id)) viewState.selected.unitId = null;
-      }
-      battle.syncDerivedBoard(state);
-      pushEvent(state, 'TOGGLE_UNIT_ACTIVE', { unitId: id, active: inv.active !== false, text: `${inv.active !== false ? '上阵' : '下阵'}：${id || inv.petId}。` });
-      return true;
-    }
     case 'USE_ACTION_SLOT': {
       const unitId = command.unitId || command.heroId || viewState.selected?.unitId || null;
       pushEvent(state, 'USE_ACTION_SLOT', { slotId: command.slotId ?? command.index ?? 0, unitId, text: `UI兼容施放行动槽 ${Number(command.slotId ?? command.index ?? 0) + 1}。` });
@@ -469,6 +389,30 @@ function toPublicEvent(event) {
 }
 function mapPublicEvents(events) {
   return (events || []).map(toPublicEvent);
+}
+function commandUnitRefs(command = {}, result = {}) {
+  return new Set([
+    command.unitId,
+    command.heroId,
+    command.instanceId,
+    command.petId,
+    result.unitId,
+    result.instanceId,
+    result.petId
+  ].filter(Boolean));
+}
+function clearSelectedUnitIfMatched(viewState, ids) {
+  if (!viewState?.selected?.unitId || !ids?.has(viewState.selected.unitId)) return;
+  viewState.selected.unitId = null;
+  viewState.selected.slotId = null;
+}
+function syncViewStateAfterCoreCommand(command, result, viewState) {
+  if (result === false) return;
+  if (command.type === 'SELL_UNIT') {
+    clearSelectedUnitIfMatched(viewState, commandUnitRefs(command, result));
+  } else if (command.type === 'TOGGLE_UNIT_ACTIVE' && result && result.active === false) {
+    clearSelectedUnitIfMatched(viewState, commandUnitRefs(command, result));
+  }
 }
 function runSelectionCommand(state, command, viewState) {
   viewState.selected = viewState.selected || { unitId: null, slotId: null, cell: null, direction: 'right' };
@@ -681,6 +625,7 @@ function createYSBZSUIAdapter(options = {}) {
         let result;
         const compatResult = runCompatibilityCommand(state, command, viewState);
         result = compatResult === undefined ? coreDispatch(state, command) : compatResult;
+        if (compatResult === undefined) syncViewStateAfterCoreCommand(command, result, viewState);
         const events = state.events.filter(e => e.step >= beforeStep);
         annotateEvents(state, events, command);
         const logEntry = commitAcceptedCommand(state, command, beforeHash, result, events);

@@ -5,13 +5,13 @@
 
 
 
-
 ## PAUSED
 
 - 无
 
 ## DONE
 
+- `tasks/done/2026-06-23_page-core-boundary-cleanup.md`
 - `tasks/done/2026-06-22_battle-shape-attribute-readability.md`
 - `tasks/done/2026-06-22_main-style-right-pet-detail-prompt.md`
 - `tasks/done/2026-06-22_master-mechanics-quality-followup.md`

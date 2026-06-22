@@ -1380,7 +1380,7 @@ import { createGameRuntime } from './runtime-client.js';
     }
     if (phase === 'monster_turn' || phase === 'round_end') return `点击“${enemyFlowButtonText(phase)}”继续推进。`;
     if (phase === 'battle_end') return '战斗结束，可以生成奖励或进入商店。';
-    if (phase === 'shop') return '购买、冻结、刷新商品，然后离开商店。';
+    if (phase === 'shop') return '购买、刷新商品，然后离开商店。';
     return '可使用右侧按钮继续流程。';
   }
   function slotKey(info) {
@@ -1529,7 +1529,7 @@ import { createGameRuntime } from './runtime-client.js';
       const sourceHtml = o.restock?.name ? `<span class="offer-source">补货：${esc(o.restock.name)} / ${esc(o.restock.poolId || o.poolId || '-')}</span>` : '';
       return `<div class="offer-card${o.frozen ? ' frozen' : ''}">
       <div class="offer-main"><strong>${esc(o.name)}</strong><span class="${clsForEl(o.element)}">${esc(o.element || '-')} · ${esc(o.role || '-')} · ${esc(o.price)}金${o.frozen ? ' · 已冻结' : ''}</span>${sourceHtml}</div>
-      <div class="offer-actions"><button class="mini-btn buy" data-buy-offer="${esc(o.offerId)}" type="button"${ui.busy || ui.vm.phase !== 'shop' || Number(o.price) > Number(ui.vm.gold || 0) ? ' disabled' : ''}>购买</button><button class="mini-btn freeze" data-freeze-offer="${esc(o.offerId)}" data-frozen="${o.frozen ? '1' : '0'}" type="button"${ui.busy || ui.vm.phase !== 'shop' ? ' disabled' : ''}>${o.frozen ? '解冻' : '冻结'}</button></div>
+      <div class="offer-actions"><button class="mini-btn buy" data-buy-offer="${esc(o.offerId)}" type="button"${ui.busy || ui.vm.phase !== 'shop' || Number(o.price) > Number(ui.vm.gold || 0) ? ' disabled' : ''}>购买</button></div>
     </div>`;
     }).join('');
     $('shop-list').innerHTML = stallHtml + refreshHtml + eventHtml + offerHtml;
@@ -1803,8 +1803,6 @@ import { createGameRuntime } from './runtime-client.js';
       if (shopEvent) { runCommand('APPLY_SHOP_EVENT', { eventId: shopEvent.dataset.shopEvent }); return; }
       const buy = ev.target.closest('[data-buy-offer]');
       if (buy) { runCommand('BUY_OFFER', { offerId: buy.dataset.buyOffer }); return; }
-      const freeze = ev.target.closest('[data-freeze-offer]');
-      if (freeze) runCommand(freeze.dataset.frozen === '1' ? 'UNFREEZE_OFFER' : 'FREEZE_OFFER', { offerId: freeze.dataset.freezeOffer });
     });
     $('log').addEventListener('click', ev => {
       if (ev.target.closest('[data-replay-refresh]')) { ui.replay.events = []; renderReplay(); return; }

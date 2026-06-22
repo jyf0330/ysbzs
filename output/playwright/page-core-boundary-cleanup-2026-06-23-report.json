@@ -1,0 +1,129 @@
+{
+  "ok": true,
+  "urlDaily": "http://127.0.0.1:4173/daily-flow.html?runtime=local&gate=page-core-boundary-cleanup",
+  "urlMain": "http://127.0.0.1:4173/index.html?runtime=local&gate=page-core-boundary-cleanup",
+  "screenshots": [
+    "/Users/ywh/Documents/ysbzs/output/playwright/page-core-boundary-cleanup-2026-06-23-daily-flow.png",
+    "/Users/ywh/Documents/ysbzs/output/playwright/page-core-boundary-cleanup-2026-06-23-main-shop.png"
+  ],
+  "consoleErrors": [],
+  "daily": {
+    "phase": "shop",
+    "nextLabel": "处理商店节点",
+    "choiceCommands": [
+      "BUY_OFFER",
+      "BUY_OFFER",
+      "BUY_OFFER",
+      "BUY_OFFER",
+      "BUY_OFFER",
+      "SELL_UNIT",
+      "SELL_UNIT",
+      "ROLL_SHOP",
+      "APPLY_SHOP_EVENT",
+      "APPLY_SHOP_EVENT",
+      "APPLY_SHOP_EVENT",
+      "APPLY_SHOP_EVENT",
+      "APPLY_SHOP_EVENT",
+      "APPLY_SHOP_EVENT",
+      "EXIT_SHOP"
+    ],
+    "activeCount": "2/4",
+    "benchCount": "0/8",
+    "gold": "2",
+    "consoleLabel": "console: 0",
+    "freezeControls": 0,
+    "freezeTextButtons": [],
+    "recentEvents": [
+      {
+        "type": "NODE_OPTIONS",
+        "text": "第1天节点1：免费刷新 / 宠物奖励 / 夜市商人。"
+      },
+      {
+        "type": "NODE_PICK",
+        "text": "选择节点：夜市商人。"
+      },
+      {
+        "type": "SHOP_ENTER",
+        "text": "进入夜市商人，倾向=通用/夜市，池=night_base，槽位=6，金币3。"
+      },
+      {
+        "type": "SHOP_ROLL",
+        "text": "商店刷新：花费0金币，出现 棉花糖(2)、冲浪鸭(2)、冲浪鸭(2)、喵丝特(2)、捣蛋猫(2)、叶泥泥(2)。"
+      },
+      {
+        "type": "SHOP_BUY",
+        "text": "购买 棉花糖，金币3→1，加入上阵位3。"
+      },
+      {
+        "type": "TOGGLE_UNIT_ACTIVE",
+        "text": "下阵：pal_002。"
+      },
+      {
+        "type": "TOGGLE_UNIT_ACTIVE",
+        "text": "上阵：pal_002。"
+      },
+      {
+        "type": "SELL_UNIT",
+        "text": "出售 pal_002，金币1→2。"
+      }
+    ]
+  },
+  "main": {
+    "phase": "shop",
+    "nextStep": "购买/离店",
+    "shopButtons": [
+      {
+        "text": "触发",
+        "disabled": false
+      },
+      {
+        "text": "触发",
+        "disabled": false
+      },
+      {
+        "text": "触发",
+        "disabled": false
+      },
+      {
+        "text": "触发",
+        "disabled": false
+      },
+      {
+        "text": "触发",
+        "disabled": false
+      },
+      {
+        "text": "触发",
+        "disabled": false
+      },
+      {
+        "text": "购买",
+        "disabled": false
+      },
+      {
+        "text": "购买",
+        "disabled": false
+      },
+      {
+        "text": "购买",
+        "disabled": false
+      },
+      {
+        "text": "购买",
+        "disabled": false
+      },
+      {
+        "text": "购买",
+        "disabled": false
+      },
+      {
+        "text": "购买",
+        "disabled": false
+      }
+    ],
+    "freezeControls": 0,
+    "freezeTextButtons": [],
+    "shopHint": "",
+    "offerCount": 6
+  }
+}

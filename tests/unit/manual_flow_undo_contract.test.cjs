@@ -13,7 +13,7 @@ test('manual enemy-flow buttons expose an undo path backed by runtime save/load'
   assert.match(html, /id="undo-flow-btn"/, 'right manual controls should expose a visible undo button');
   assert.match(css, /#undo-flow-btn/, 'undo button needs dedicated right-panel styling');
 
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     assert.match(js, /undoStack/, `${file} should keep a local undo stack for manual flow commands`);
     assert.match(js, /function runUndoableFlowCommand/, `${file} should route the two enemy-flow buttons through an undoable command helper`);
@@ -29,7 +29,7 @@ test('manual enemy-flow buttons expose an undo path backed by runtime save/load'
 });
 
 test('manual enemy-flow preview comes from transactional public command data', () => {
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     assert.match(js, /PREVIEW_MANUAL_FLOW/, `${file} should request a transactional manual-flow preview`);
     assert.match(js, /manualFlowPreview/, `${file} should cache the projected two-button preview result`);
@@ -65,12 +65,16 @@ test('manual enemy-flow preview comes from transactional public command data', (
 });
 
 test('manual enemy-flow preview avoids blocking refresh and per-cell read dispatches', () => {
+  const adapterSrc = read('src/uiAdapter.cjs');
   const previewSrc = read('src/uiAdapterManualFlowPreview.cjs');
+  assert.match(adapterSrc, /normalized\.type === 'PREVIEW_MANUAL_FLOW'/, 'adapter should route manual preview before normal mutation handling');
   assert.match(previewSrc, /function buildProjectedCellDetails/, 'transaction preview should derive projected cell details in one pass');
+  assert.match(previewSrc, /readOnly:\s*true/, 'manual-flow preview must be returned as a read-only transaction result');
+  assert.match(previewSrc, /restoreFullSnapshotTransaction/, 'manual-flow preview must restore the authoritative snapshot');
   assert.doesNotMatch(previewSrc, /type:\s*'GET_CELL_DETAIL'/, 'transaction preview must not dispatch GET_CELL_DETAIL once per board cell');
   assert.doesNotMatch(previewSrc, /coreDispatch/, 'transaction preview should not depend on reducer dispatch for projected cell details');
 
-  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+  for (const file of ['web/js/main.js']) {
     const js = read(file);
     assert.match(js, /manualFlowPreviewPending/, `${file} should deduplicate concurrent preview refreshes`);
     assert.match(js, /manualFlowPreviewSourceKey/, `${file} should cache preview results by current state key`);

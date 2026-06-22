@@ -88,8 +88,8 @@ test('AO03 event system supports levels and filters without adding nondeterminis
   assert.equal(Object.prototype.hasOwnProperty.call(state.events.at(-1), 'timestamp'), false);
 });
 
-test('AO04 ux-app uses delegated dynamic-list events and does not do a second full render in finally', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'web/ux-app.js'), 'utf8');
+test('AO04 main UI uses delegated dynamic-list events and does not do a second full render in finally', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'web/js/main.js'), 'utf8');
   assert.equal(/qsa\('\.cell'[^\n]+addEventListener/.test(src), false);
   assert.equal(/qsa\('\.hero-card'[^\n]+addEventListener/.test(src), false);
   assert.equal(/qsa\('\[data-slot\]'[^\n]+addEventListener/.test(src), false);

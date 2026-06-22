@@ -1,4 +1,7 @@
-const { syncBoardUnits } = require('./state.cjs');
+const { makeUnit, syncBoardUnits } = require('./state.cjs');
+const { pushEvent } = require('./events.cjs');
+const { applyBattleStart } = require('./mechanics.cjs');
+const { activationBlockReason } = require('./mechanicGate.cjs');
 
 const MAX_ACTIVE_UNITS = 4;
 const MAX_BENCH_UNITS = 8;
@@ -64,6 +67,120 @@ function firstEmptyHeroCell(state) {
   return null;
 }
 
+function findInventoryEntry(state, petIdOrInstanceId) {
+  if (!petIdOrInstanceId) return null;
+  return inventoryEntries(state).find(item => item.instanceId === petIdOrInstanceId)
+    || inventoryEntries(state).find(item => item.petId === petIdOrInstanceId && item.active === false)
+    || inventoryEntries(state).find(item => item.petId === petIdOrInstanceId || `unit_${item.petId}` === petIdOrInstanceId)
+    || null;
+}
+
+function findUnitForInventoryEntry(state, inv) {
+  if (!inv) return null;
+  return (state.units || []).find(unit => unit.id === inv.instanceId || unit.petId === inv.petId) || null;
+}
+
+function sellUnit(state, command = {}) {
+  const id = command.petId || command.instanceId || command.unitId;
+  const inv = findInventoryEntry(state, id);
+  if (!inv) {
+    pushEvent(state, 'SELL_UNIT_BLOCKED', { unitId: id || null, text: `出售失败：找不到单位 ${id || ''}。` });
+    return false;
+  }
+
+  const refund = Math.max(1, Number(inv.level || 1));
+  const before = state.gold;
+  state.gold += refund;
+  inv.count = Math.max(0, Number(inv.count || 1) - 1);
+
+  const unit = findUnitForInventoryEntry(state, inv);
+  if (unit) {
+    unit.alive = false;
+    unit.active = false;
+    unit.position = null;
+  }
+
+  if (inv.count <= 0) state.inventory = inventoryEntries(state).filter(item => item !== inv);
+  syncBoardUnits(state);
+
+  const result = {
+    sold: true,
+    petId: inv.petId,
+    instanceId: inv.instanceId || null,
+    refund,
+    goldFrom: before,
+    goldTo: state.gold
+  };
+  pushEvent(state, 'SELL_UNIT', Object.assign({}, result, {
+    text: `出售 ${inv.petId}，金币${before}→${state.gold}。`
+  }));
+  return result;
+}
+
+function toggleUnitActive(state, command = {}) {
+  const id = command.petId || command.instanceId || command.unitId;
+  const inv = findInventoryEntry(state, id);
+  if (!inv) {
+    pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id || null, text: `切换失败：找不到 ${id || '未知单位'}。` });
+    return false;
+  }
+
+  const currentlyActive = inv.active !== false;
+  if (!currentlyActive) {
+    const currentActive = inventoryEntries(state).filter(item => item !== inv && item.active !== false).length;
+    if (currentActive >= MAX_ACTIVE_UNITS) {
+      pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, maxActive: MAX_ACTIVE_UNITS, text: `上阵失败：上场位已满 ${MAX_ACTIVE_UNITS}/${MAX_ACTIVE_UNITS}。` });
+      return false;
+    }
+
+    let unit = findUnitForInventoryEntry(state, inv);
+    if (!unit) unit = makeUnit(state, 'hero', inv.petId, { position: firstEmptyHeroCell(state) });
+    const blockReason = activationBlockReason(unit);
+    if (blockReason) {
+      pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, petId: inv.petId, reason: blockReason, text: `上阵失败：${unit.displayName || unit.name} ${blockReason}。` });
+      return false;
+    }
+
+    inv.active = true;
+    if (!state.units.includes(unit)) {
+      applyBattleStart(state, unit);
+      state.units.push(unit);
+      inv.instanceId = unit.id;
+    }
+    unit.active = true;
+    unit.alive = true;
+    if (!unit.position) unit.position = firstEmptyHeroCell(state);
+    inv.slot = inv.slot || nextActiveSlot(state);
+  } else {
+    const currentBench = benchCount(state);
+    if (currentBench >= MAX_BENCH_UNITS) {
+      pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, maxBench: MAX_BENCH_UNITS, text: `下阵失败：背包已满 ${MAX_BENCH_UNITS}/${MAX_BENCH_UNITS}。` });
+      return false;
+    }
+
+    inv.active = false;
+    inv.slot = null;
+    const unit = findUnitForInventoryEntry(state, inv);
+    if (unit) {
+      unit.active = false;
+      unit.alive = false;
+      unit.position = null;
+    }
+  }
+
+  syncBoardUnits(state);
+  const result = {
+    unitId: id || inv.instanceId || inv.petId,
+    petId: inv.petId,
+    instanceId: inv.instanceId || null,
+    active: inv.active !== false
+  };
+  pushEvent(state, 'TOGGLE_UNIT_ACTIVE', Object.assign({}, result, {
+    text: `${result.active ? '上阵' : '下阵'}：${id || inv.petId}。`
+  }));
+  return result;
+}
+
 function shopPurchaseTarget(state, petId) {
   const currentActive = activeCount(state);
   const currentBench = benchCount(state);
@@ -104,5 +221,9 @@ module.exports = {
   mergeBenchEntry,
   nextActiveSlot,
   firstEmptyHeroCell,
+  findInventoryEntry,
+  findUnitForInventoryEntry,
+  sellUnit,
+  toggleUnitActive,
   shopPurchaseTarget
 };

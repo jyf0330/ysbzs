@@ -77,6 +77,55 @@ function nextDaySchedule(state) {
     .find(x => Number(x.step) === Number(route.nodeIndex || 0) + 1) || null;
 }
 
+function maxRouteDay(state) {
+  const days = (state.data?.nodeSchedule || [])
+    .filter(row => row.status === '正式')
+    .map(row => Number(row.day || 0))
+    .filter(day => Number.isFinite(day) && day > 0);
+  return days.length ? Math.max(...days) : Number(state.day || 1);
+}
+
+function canAdvanceRoutePhase(state) {
+  return ['init', 'node_resolved', 'battle_end'].includes(state?.phase);
+}
+
+function fixedBattleLabel(row = {}) {
+  const phase = row.phaseLabel || row.label || '战斗';
+  if (/终局/.test(`${phase}${row.label || ''}`)) return '进入终局战';
+  return Number(row.step || 0) <= 3 ? '进入第一场战斗' : '进入第二场战斗';
+}
+
+function buildPrimaryAction(state, nextScheduleRow) {
+  const currentDay = Number(state.day || 1);
+  if (state.phase === 'day_end' && currentDay < maxRouteDay(state)) {
+    return { type: 'START_NEXT_DAY', label: `进入第${currentDay + 1}天`, defaultPayload: { day: currentDay + 1 } };
+  }
+  if (state.dayRoute?.terminal) return null;
+  if ((state.dayRoute?.options || []).length || (state.rewards || []).length || state.phase === 'shop') return null;
+  if (!nextScheduleRow || nextScheduleRow.kind !== 'fixed_battle' || !canAdvanceRoutePhase(state)) return null;
+  return { type: 'RUN_ROUTE_FIXED_BATTLE', label: fixedBattleLabel(nextScheduleRow), defaultPayload: { scheduleStep: Number(nextScheduleRow.step || 0) } };
+}
+
+function buildAutoAction(state, nextScheduleRow) {
+  if (!nextScheduleRow || state.dayRoute?.terminal || state.phase === 'day_end' || state.phase === 'shop') return null;
+  if ((state.dayRoute?.options || []).length || (state.dayRoute?.battleOptions || []).length) return null;
+  if ((state.rewards || []).length === 1) {
+    return { type: 'PICK_REWARD', label: '自动领取唯一奖励', defaultPayload: { index: 0 } };
+  }
+  if (nextScheduleRow.kind === 'node_choice' && canAdvanceRoutePhase(state)) {
+    return { type: 'GENERATE_NODE_OPTIONS', label: '展开 3 选 1', defaultPayload: { scheduleStep: Number(nextScheduleRow.step || 0) } };
+  }
+  return null;
+}
+
+function stepSummary(row = {}, pickedName = null) {
+  if (pickedName) return `已选择：${pickedName}`;
+  if (row.kind === 'node_choice') return '3 选 1，进入成长、商店、奖励或事件节点。';
+  if (row.kind === 'battle_choice') return '三选一遭遇。';
+  if (row.kind === 'fixed_battle') return Number(row.step || 0) <= 3 ? '第一场棋盘战斗，虎先锋首波召唤宠物。' : '第二场棋盘战斗。';
+  return row.note || '路线步骤。';
+}
+
 function buildDailyFlowVM(state) {
   const route = state.dayRoute || { day: state.day || 1, nodeIndex: 0, history: [], pendingRewards: [], claimedRewards: [] };
   const currentStep = Number(route.nodeIndex || 0);
@@ -89,6 +138,7 @@ function buildDailyFlowVM(state) {
     const step = Number(row.step || 0);
     const status = route.terminal || step <= currentStep ? 'done' : activeChoiceStep === step ? 'current' : nextStep === step ? 'next' : 'pending';
     const history = (route.history || []).find(item => Number(item.option?.scheduleStep || item.option?.step || 0) === step) || null;
+    const pickedName = history?.option?.name || history?.option?.phaseLabel || null;
     return {
       step,
       id: row.id || row.scheduleId || row.schedule_id || `day${state.day}_step${step}`,
@@ -98,16 +148,22 @@ function buildDailyFlowVM(state) {
       phaseLabel: row.phaseLabel || row.label || kindLabel(row.kind),
       note: row.note || '',
       status,
-      pickedName: history?.option?.name || history?.option?.phaseLabel || null,
+      pickedName,
+      summary: stepSummary(row, pickedName),
       encounterId: row.encounterId || null
     };
   });
+  const primaryAction = buildPrimaryAction(state, nextScheduleRow);
+  const autoAction = buildAutoAction(state, nextScheduleRow);
   return {
     day: state.day || route.day || 1,
     period: state.period || '',
     currentStep,
     totalSteps: steps.length,
     nextSchedule: clone(nextScheduleRow),
+    primaryAction: primaryAction ? clone(primaryAction) : null,
+    autoAction: autoAction ? clone(autoAction) : null,
+    actions: { primary: primaryAction ? clone(primaryAction) : null, auto: autoAction ? clone(autoAction) : null },
     opening: buildOpeningVM(state, nextScheduleRow || schedule.find(row => row.kind === 'fixed_battle') || null),
     steps,
     history: clone(route.history || []),

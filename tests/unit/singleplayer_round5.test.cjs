@@ -92,7 +92,7 @@ test('R504 AP allocation is consumed by USE_SLOT and affects available AP', () =
 
 test('R505 browser UI exposes save/load controls and server exposes save/load endpoints', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web/index.html'), 'utf8');
-  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'web/ux-app.js'), 'utf8');
+  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'web/js/main.js'), 'utf8');
   const server = fs.readFileSync(path.join(__dirname, '..', '..', 'tools/run_ui_server.cjs'), 'utf8');
   assert.match(html, /save-game-btn/);
   assert.match(html, /load-game-btn/);

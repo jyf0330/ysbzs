@@ -53,7 +53,16 @@ test('makeUnitFromData connects all quality overrides through unit factory', () 
 });
 
 test('createGameState applies structured initial roster quality overrides', () => {
-  const state = createGameState();
+  const customData = JSON.parse(JSON.stringify(data));
+  customData.initialSetup = {
+    playerParty: [
+      { slot: 1, petId: 'pal_072', quality: '黄金', position: { r: 6, c: 1 } },
+      { slot: 2, petId: 'pal_005', quality: '白银', position: { r: 5, c: 1 } },
+      { slot: 3, petId: 'pal_006', quality: '白银', position: { r: 6, c: 2 } },
+      { slot: 4, petId: 'pal_038', quality: '白银', position: { r: 5, c: 2 } }
+    ]
+  };
+  const state = createGameState({ data: customData });
   const heroes = state.units.filter(u => u.side === 'hero');
   const byPet = new Map(heroes.map(u => [u.petId, u]));
 

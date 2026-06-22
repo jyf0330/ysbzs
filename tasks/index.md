@@ -1,8 +1,8 @@
 # 任务总览
-
 ## ACTIVE
 
 - 无
+
 
 
 
@@ -12,7 +12,12 @@
 
 ## DONE
 
+- `tasks/done/2026-06-22_battle-shape-attribute-readability.md`
+- `tasks/done/2026-06-22_main-style-right-pet-detail-prompt.md`
 - `tasks/done/2026-06-22_master-mechanics-quality-followup.md`
+- `tasks/done/2026-06-22_auto-position-overkill.md`
+- `tasks/done/2026-06-22_daily-flow-battle-first-route.md`
+- `tasks/done/2026-06-22_local-engine-shape-sync.md`
 - `tasks/done/2026-06-22_master-quality-shape-sync.md`
 - `tasks/done/2026-06-21_superpowers-workflow-routing.md`
 - `tasks/done/2026-06-20_manual-preview-diff-provenance.md`

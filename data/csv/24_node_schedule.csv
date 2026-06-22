@@ -1,61 +1,61 @@
 schedule_id,day,step,kind,label,pool_id,choice_count,encounter_pool_id,encounter_id,phase_label,status,note
-d01_node_1,1,1,node_choice,清晨节点1,node_pool_d01_growth,3,,,,正式,Day1 前置成长节点
-d01_node_2,1,2,node_choice,清晨节点2,node_pool_d01_growth,3,,,,正式,Day1 前置成长节点
-d01_midday_battle,1,3,battle_choice,中午遭遇选择,,3,enc_pool_d01_midday,,中午战,正式,中午怪物遭遇 3 选 1
-d01_node_4,1,4,node_choice,下午节点1,node_pool_d01_growth,3,,,,正式,中午战后成长节点
-d01_node_5,1,5,node_choice,下午节点2,node_pool_d01_growth,3,,,,正式,中午战后成长节点
-d01_evening_fixed,1,6,fixed_battle,晚上固定战,,,,enc_d01_evening_fixed,晚上战,正式,Day1 晚上固定战
-d02_node_1,2,1,node_choice,清晨节点1,node_pool_d02_growth,3,,,,正式,Day2 流派定向成长节点
-d02_node_2,2,2,node_choice,清晨节点2,node_pool_d02_growth,3,,,,正式,Day2 商人/奖励成长节点
-d02_midday_battle,2,3,battle_choice,中午遭遇选择,,3,enc_pool_d02_midday,,中午战,正式,Day2 中午怪物遭遇 3 选 1
-d02_node_4,2,4,node_choice,下午节点1,node_pool_d02_growth,3,,,,正式,Day2 中午战后成长节点
-d02_node_5,2,5,node_choice,下午节点2,node_pool_d02_growth,3,,,,正式,Day2 晚战前成长节点
-d02_evening_fixed,2,6,fixed_battle,晚上固定战,,,,enc_d02_evening_fixed,晚上战,正式,Day2 晚上固定战
-d03_node_1,3,1,node_choice,清晨节点1,node_pool_d03_growth,3,,,,正式,Day3 白银/流派成长节点
-d03_node_2,3,2,node_choice,清晨节点2,node_pool_d03_growth,3,,,,正式,Day3 商人/奖励成长节点
-d03_midday_battle,3,3,battle_choice,中午遭遇选择,,3,enc_pool_d03_midday,,中午战,正式,Day3 中午怪物遭遇 3 选 1
-d03_node_4,3,4,node_choice,下午节点1,node_pool_d03_growth,3,,,,正式,Day3 中午战后成长节点
-d03_node_5,3,5,node_choice,下午节点2,node_pool_d03_growth,3,,,,正式,Day3 晚战前成长节点
-d03_evening_fixed,3,6,fixed_battle,晚上固定战,,,,enc_d03_evening_fixed,晚上战,正式,Day3 晚上固定战
-d04_node_1,4,1,node_choice,清晨节点1,node_pool_d04_growth,3,,,,正式,Day4 白银成长节点
-d04_node_2,4,2,node_choice,清晨节点2,node_pool_d04_growth,3,,,,正式,Day4 商人/奖励成长节点
-d04_midday_battle,4,3,battle_choice,中午遭遇选择,,3,enc_pool_d04_midday,,中午战,正式,Day4 中午怪物遭遇 3 选 1
-d04_node_4,4,4,node_choice,下午节点1,node_pool_d04_growth,3,,,,正式,Day4 中午战后成长节点
-d04_node_5,4,5,node_choice,下午节点2,node_pool_d04_growth,3,,,,正式,Day4 晚战前成长节点
-d04_evening_fixed,4,6,fixed_battle,晚上固定战,,,,enc_d04_evening_fixed,晚上战,正式,Day4 晚上固定战
-d05_node_1,5,1,node_choice,清晨节点1,node_pool_d05_growth,3,,,,正式,Day5 黄金解锁前成长节点
-d05_node_2,5,2,node_choice,清晨节点2,node_pool_d05_growth,3,,,,正式,Day5 商人/奖励成长节点
-d05_midday_battle,5,3,battle_choice,中午遭遇选择,,3,enc_pool_d05_midday,,中午战,正式,Day5 中午怪物遭遇 3 选 1
-d05_node_4,5,4,node_choice,下午节点1,node_pool_d05_growth,3,,,,正式,Day5 中午战后成长节点
-d05_node_5,5,5,node_choice,下午节点2,node_pool_d05_growth,3,,,,正式,Day5 晚战前成长节点
-d05_evening_fixed,5,6,fixed_battle,晚上固定战,,,,enc_d05_evening_fixed,晚上战,正式,Day5 晚上固定战
-d06_node_1,6,1,node_choice,清晨节点1,node_pool_d06_growth,3,,,,正式,Day6 黄金成长节点
-d06_node_2,6,2,node_choice,清晨节点2,node_pool_d06_growth,3,,,,正式,Day6 高压前成长节点
-d06_midday_battle,6,3,battle_choice,中午遭遇选择,,3,enc_pool_d06_midday,,中午战,正式,Day6 精英遭遇 3 选 1
-d06_node_4,6,4,node_choice,下午节点1,node_pool_d06_growth,3,,,,正式,Day6 中午战后成长节点
-d06_node_5,6,5,node_choice,下午节点2,node_pool_d06_growth,3,,,,正式,Day6 晚战前成长节点
-d06_evening_fixed,6,6,fixed_battle,晚上固定战,,,,enc_d06_evening_fixed,晚上战,正式,Day6 晚上固定战
-d07_node_1,7,1,node_choice,清晨节点1,node_pool_d07_growth,3,,,,正式,Day7 黄金成长节点
-d07_node_2,7,2,node_choice,清晨节点2,node_pool_d07_growth,3,,,,正式,Day7 高压前成长节点
-d07_midday_battle,7,3,battle_choice,中午遭遇选择,,3,enc_pool_d07_midday,,中午战,正式,Day7 精英遭遇 3 选 1
-d07_node_4,7,4,node_choice,下午节点1,node_pool_d07_growth,3,,,,正式,Day7 中午战后成长节点
-d07_node_5,7,5,node_choice,下午节点2,node_pool_d07_growth,3,,,,正式,Day7 晚战前成长节点
-d07_evening_fixed,7,6,fixed_battle,晚上固定战,,,,enc_d07_evening_fixed,晚上战,正式,Day7 晚上固定战
-d08_node_1,8,1,node_choice,清晨节点1,node_pool_d08_growth,3,,,,正式,Day8 黄金成长节点
-d08_node_2,8,2,node_choice,清晨节点2,node_pool_d08_growth,3,,,,正式,Day8 高压前成长节点
-d08_midday_battle,8,3,battle_choice,中午遭遇选择,,3,enc_pool_d08_midday,,中午战,正式,Day8 精英遭遇 3 选 1
-d08_node_4,8,4,node_choice,下午节点1,node_pool_d08_growth,3,,,,正式,Day8 中午战后成长节点
-d08_node_5,8,5,node_choice,下午节点2,node_pool_d08_growth,3,,,,正式,Day8 晚战前成长节点
-d08_evening_fixed,8,6,fixed_battle,晚上固定战,,,,enc_d08_evening_fixed,晚上战,正式,Day8 晚上固定战
-d09_node_1,9,1,node_choice,清晨节点1,node_pool_d09_growth,3,,,,正式,Day9 终局前成长节点
-d09_node_2,9,2,node_choice,清晨节点2,node_pool_d09_growth,3,,,,正式,Day9 Boss 前成长节点
-d09_midday_battle,9,3,battle_choice,中午遭遇选择,,3,enc_pool_d09_midday,,中午战,正式,Day9 精英遭遇 3 选 1
-d09_node_4,9,4,node_choice,下午节点1,node_pool_d09_growth,3,,,,正式,Day9 中午战后成长节点
-d09_node_5,9,5,node_choice,下午节点2,node_pool_d09_growth,3,,,,正式,Day9 晚战前成长节点
-d09_evening_fixed,9,6,fixed_battle,晚上固定战,,,,enc_d09_evening_fixed,晚上战,正式,Day9 晚上固定战
-d10_node_1,10,1,node_choice,清晨节点1,node_pool_d10_growth,3,,,,正式,Day10 终局成长节点
-d10_node_2,10,2,node_choice,清晨节点2,node_pool_d10_growth,3,,,,正式,Day10 Boss 前成长节点
-d10_midday_battle,10,3,battle_choice,中午遭遇选择,,3,enc_pool_d10_midday,,中午战,正式,Day10 Boss 前遭遇 3 选 1
-d10_node_4,10,4,node_choice,下午节点1,node_pool_d10_growth,3,,,,正式,Day10 中午战后成长节点
-d10_node_5,10,5,node_choice,下午节点2,node_pool_d10_growth,3,,,,正式,Day10 终局前成长节点
-d10_final_boss,10,6,fixed_battle,终局Boss战,,,,enc_d10_final_boss,终局战,正式,Day10 终局Boss战
+d01_node_1,1,1,node_choice,事件节点1,node_pool_d01_growth,3,,,,正式,Day1 第1个 3 选 1 事件/节点
+d01_node_2,1,2,node_choice,事件节点2,node_pool_d01_growth,3,,,,正式,Day1 第2个 3 选 1 事件/节点
+d01_morning_fixed,1,3,fixed_battle,第一场战斗,,,,enc_d01_midday_a,上午战,正式,Day1 第1场棋盘战
+d01_node_4,1,4,node_choice,事件节点3,node_pool_d01_growth,3,,,,正式,Day1 第3个 3 选 1 事件/节点
+d01_node_5,1,5,node_choice,事件节点4,node_pool_d01_growth,3,,,,正式,Day1 第4个 3 选 1 事件/节点
+d01_evening_fixed,1,6,fixed_battle,第二场战斗,,,,enc_d01_evening_fixed,晚上战,正式,Day1 第2场棋盘战
+d02_node_1,2,1,node_choice,事件节点1,node_pool_d02_growth,3,,,,正式,Day2 第1个 3 选 1 事件/节点
+d02_node_2,2,2,node_choice,事件节点2,node_pool_d02_growth,3,,,,正式,Day2 第2个 3 选 1 事件/节点
+d02_morning_fixed,2,3,fixed_battle,第一场战斗,,,,enc_d02_midday_a,上午战,正式,Day2 第1场棋盘战
+d02_node_4,2,4,node_choice,事件节点3,node_pool_d02_growth,3,,,,正式,Day2 第3个 3 选 1 事件/节点
+d02_node_5,2,5,node_choice,事件节点4,node_pool_d02_growth,3,,,,正式,Day2 第4个 3 选 1 事件/节点
+d02_evening_fixed,2,6,fixed_battle,第二场战斗,,,,enc_d02_evening_fixed,晚上战,正式,Day2 第2场棋盘战
+d03_node_1,3,1,node_choice,事件节点1,node_pool_d03_growth,3,,,,正式,Day3 第1个 3 选 1 事件/节点
+d03_node_2,3,2,node_choice,事件节点2,node_pool_d03_growth,3,,,,正式,Day3 第2个 3 选 1 事件/节点
+d03_morning_fixed,3,3,fixed_battle,第一场战斗,,,,enc_d03_midday_a,上午战,正式,Day3 第1场棋盘战
+d03_node_4,3,4,node_choice,事件节点3,node_pool_d03_growth,3,,,,正式,Day3 第3个 3 选 1 事件/节点
+d03_node_5,3,5,node_choice,事件节点4,node_pool_d03_growth,3,,,,正式,Day3 第4个 3 选 1 事件/节点
+d03_evening_fixed,3,6,fixed_battle,第二场战斗,,,,enc_d03_evening_fixed,晚上战,正式,Day3 第2场棋盘战
+d04_node_1,4,1,node_choice,事件节点1,node_pool_d04_growth,3,,,,正式,Day4 第1个 3 选 1 事件/节点
+d04_node_2,4,2,node_choice,事件节点2,node_pool_d04_growth,3,,,,正式,Day4 第2个 3 选 1 事件/节点
+d04_morning_fixed,4,3,fixed_battle,第一场战斗,,,,enc_d04_midday_a,上午战,正式,Day4 第1场棋盘战
+d04_node_4,4,4,node_choice,事件节点3,node_pool_d04_growth,3,,,,正式,Day4 第3个 3 选 1 事件/节点
+d04_node_5,4,5,node_choice,事件节点4,node_pool_d04_growth,3,,,,正式,Day4 第4个 3 选 1 事件/节点
+d04_evening_fixed,4,6,fixed_battle,第二场战斗,,,,enc_d04_evening_fixed,晚上战,正式,Day4 第2场棋盘战
+d05_node_1,5,1,node_choice,事件节点1,node_pool_d05_growth,3,,,,正式,Day5 第1个 3 选 1 事件/节点
+d05_node_2,5,2,node_choice,事件节点2,node_pool_d05_growth,3,,,,正式,Day5 第2个 3 选 1 事件/节点
+d05_morning_fixed,5,3,fixed_battle,第一场战斗,,,,enc_d05_midday_a,上午战,正式,Day5 第1场棋盘战
+d05_node_4,5,4,node_choice,事件节点3,node_pool_d05_growth,3,,,,正式,Day5 第3个 3 选 1 事件/节点
+d05_node_5,5,5,node_choice,事件节点4,node_pool_d05_growth,3,,,,正式,Day5 第4个 3 选 1 事件/节点
+d05_evening_fixed,5,6,fixed_battle,第二场战斗,,,,enc_d05_evening_fixed,晚上战,正式,Day5 第2场棋盘战
+d06_node_1,6,1,node_choice,事件节点1,node_pool_d06_growth,3,,,,正式,Day6 第1个 3 选 1 事件/节点
+d06_node_2,6,2,node_choice,事件节点2,node_pool_d06_growth,3,,,,正式,Day6 第2个 3 选 1 事件/节点
+d06_morning_fixed,6,3,fixed_battle,第一场战斗,,,,enc_d06_midday_a,精英战,正式,Day6 第1场棋盘战
+d06_node_4,6,4,node_choice,事件节点3,node_pool_d06_growth,3,,,,正式,Day6 第3个 3 选 1 事件/节点
+d06_node_5,6,5,node_choice,事件节点4,node_pool_d06_growth,3,,,,正式,Day6 第4个 3 选 1 事件/节点
+d06_evening_fixed,6,6,fixed_battle,第二场战斗,,,,enc_d06_evening_fixed,精英固定战,正式,Day6 第2场棋盘战
+d07_node_1,7,1,node_choice,事件节点1,node_pool_d07_growth,3,,,,正式,Day7 第1个 3 选 1 事件/节点
+d07_node_2,7,2,node_choice,事件节点2,node_pool_d07_growth,3,,,,正式,Day7 第2个 3 选 1 事件/节点
+d07_morning_fixed,7,3,fixed_battle,第一场战斗,,,,enc_d07_midday_a,精英战,正式,Day7 第1场棋盘战
+d07_node_4,7,4,node_choice,事件节点3,node_pool_d07_growth,3,,,,正式,Day7 第3个 3 选 1 事件/节点
+d07_node_5,7,5,node_choice,事件节点4,node_pool_d07_growth,3,,,,正式,Day7 第4个 3 选 1 事件/节点
+d07_evening_fixed,7,6,fixed_battle,第二场战斗,,,,enc_d07_evening_fixed,精英固定战,正式,Day7 第2场棋盘战
+d08_node_1,8,1,node_choice,事件节点1,node_pool_d08_growth,3,,,,正式,Day8 第1个 3 选 1 事件/节点
+d08_node_2,8,2,node_choice,事件节点2,node_pool_d08_growth,3,,,,正式,Day8 第2个 3 选 1 事件/节点
+d08_morning_fixed,8,3,fixed_battle,第一场战斗,,,,enc_d08_midday_a,精英战,正式,Day8 第1场棋盘战
+d08_node_4,8,4,node_choice,事件节点3,node_pool_d08_growth,3,,,,正式,Day8 第3个 3 选 1 事件/节点
+d08_node_5,8,5,node_choice,事件节点4,node_pool_d08_growth,3,,,,正式,Day8 第4个 3 选 1 事件/节点
+d08_evening_fixed,8,6,fixed_battle,第二场战斗,,,,enc_d08_evening_fixed,精英固定战,正式,Day8 第2场棋盘战
+d09_node_1,9,1,node_choice,事件节点1,node_pool_d09_growth,3,,,,正式,Day9 第1个 3 选 1 事件/节点
+d09_node_2,9,2,node_choice,事件节点2,node_pool_d09_growth,3,,,,正式,Day9 第2个 3 选 1 事件/节点
+d09_morning_fixed,9,3,fixed_battle,第一场战斗,,,,enc_d09_midday_a,Boss前战,正式,Day9 第1场棋盘战
+d09_node_4,9,4,node_choice,事件节点3,node_pool_d09_growth,3,,,,正式,Day9 第3个 3 选 1 事件/节点
+d09_node_5,9,5,node_choice,事件节点4,node_pool_d09_growth,3,,,,正式,Day9 第4个 3 选 1 事件/节点
+d09_evening_fixed,9,6,fixed_battle,第二场战斗,,,,enc_d09_evening_fixed,Boss前固定战,正式,Day9 第2场棋盘战
+d10_node_1,10,1,node_choice,事件节点1,node_pool_d10_growth,3,,,,正式,Day10 第1个 3 选 1 事件/节点
+d10_node_2,10,2,node_choice,事件节点2,node_pool_d10_growth,3,,,,正式,Day10 第2个 3 选 1 事件/节点
+d10_morning_fixed,10,3,fixed_battle,第一场战斗,,,,enc_d10_midday_a,Boss前战,正式,Day10 第1场棋盘战
+d10_node_4,10,4,node_choice,事件节点3,node_pool_d10_growth,3,,,,正式,Day10 第3个 3 选 1 事件/节点
+d10_node_5,10,5,node_choice,事件节点4,node_pool_d10_growth,3,,,,正式,Day10 第4个 3 选 1 事件/节点
+d10_final_boss,10,6,fixed_battle,终局Boss战,,,,enc_d10_final_boss,终局战,正式,Day10 终局棋盘战

@@ -173,6 +173,7 @@ function addElementToCell(state, actor, cell, element, layers, source = 'element
 function spawnWave(state) {
   const rows = waveRows(state);
   let spawned = 0;
+  const summonerName = state.leaders?.enemy?.displayName || state.leaders?.enemy?.name || '敌方Boss';
   for (const row of rows) {
     const entries = buildWaveSpawnEntries(state, row);
     for (let i = 0; i < entries.length; i += 1) {
@@ -183,7 +184,7 @@ function spawnWave(state) {
       mech.applyBattleStart(state, unit);
       spawned += 1;
       const qualityText = quality ? `${quality}` : (unit.quality || '');
-      pushEvent(state, 'SPAWN_ENEMY', { unitId: unit.id, waveId: row.waveId, petId, petPool: row.petPool, petPoolExpression: row.petPoolExpression, quality: quality || unit.quality, name: unit.name, hp: unit.hp, atk: unit.atk, position, text: `敌方Boss召唤 ${unit.displayName}${qualityText ? `(${qualityText})` : ''} HP${unit.hp}/攻${unit.atk}，位置 R${position.r}C${position.c}。` });
+      pushEvent(state, 'SPAWN_ENEMY', { unitId: unit.id, waveId: row.waveId, petId, petPool: row.petPool, petPoolExpression: row.petPoolExpression, quality: quality || unit.quality, name: unit.name, hp: unit.hp, atk: unit.atk, position, text: `${summonerName}召唤 ${unit.displayName}${qualityText ? `(${qualityText})` : ''} HP${unit.hp}/攻${unit.atk}，位置 R${position.r}C${position.c}。` });
     }
   }
   syncDerivedBoard(state);

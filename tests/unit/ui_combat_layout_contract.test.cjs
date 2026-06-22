@@ -140,6 +140,30 @@ test('action blocks sit lower and edit through a local popover instead of the ri
   }
 });
 
+test('battle UI surfaces shape diagrams and quality attributes', () => {
+  const adapter = `${read('src/uiAdapter.cjs')}\n${read('src/uiAdapterShapeVM.cjs')}`;
+  const css = read('web/ux-app.css');
+
+  assert.match(adapter, /shapeGrid/, 'ViewModel should expose shape grids instead of forcing UI to guess shape geometry');
+  assert.match(adapter, /shapeOffsets/, 'ViewModel should expose shape offsets for inspectors and debug text');
+  assert.match(adapter, /settleCount/, 'ViewModel should expose shape settle count');
+  assert.match(adapter, /qualityUpgrade/, 'ViewModel should expose selected quality upgrade data');
+  for (const file of ['web/js/main.js', 'web/ux-app.js']) {
+    const js = read(file);
+    assert.match(js, /function renderShapeMini/, `${file} should render a visible shape diagram`);
+    assert.match(js, /function renderShapePanel/, `${file} right detail should include a shape section`);
+    assert.match(js, /function qualitySummary/, `${file} should summarize current quality`);
+    assert.match(js, /function heroCardStats/, `${file} active pet cards should use a compact stat subset`);
+    assert.match(js, /hero-shape-line/, `${file} active pet cards should show shape and hit summary`);
+    assert.match(js, /actionBlockTitle/, `${file} action blocks should show shape identity instead of only slot number`);
+    assert.match(js, /detail-quality-panel/, `${file} right detail should show quality effect text`);
+  }
+  assert.match(css, /\.shape-mini/, 'shape diagrams need dedicated styling');
+  assert.match(css, /\.detail-shape-panel/, 'right detail shape panel needs dedicated styling');
+  assert.match(css, /\.hero-shape-line/, 'active pet shape line needs dedicated styling');
+  assert.match(css, /\.detail-quality-panel/, 'quality effect needs dedicated styling');
+});
+
 test('combat layout scripts keep info in right panel without hover detail popups', () => {
   const css = read('web/ux-app.css');
   const html = read('web/index.html');

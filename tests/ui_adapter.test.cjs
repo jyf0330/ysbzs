@@ -50,7 +50,7 @@ function adjacentStandForTarget(state, target) {
 
 test('UI01 适配层只暴露统一公开命令集合', () => {
   for (const type of ['START_BATTLE','MOVE_HERO','AUTO_POSITION_HEROES','SET_ACTION_DIRECTION','USE_SLOT','RUN_PLAYER_ALL_OUT','END_PLAYER_TURN','RUN_MONSTER_TURN','BUILD_PREVIEW','GET_CELL_DETAIL','PREVIEW_MANUAL_FLOW','RUN_BATTLE','ENTER_SHOP','SELL_UNIT','TOGGLE_UNIT_ACTIVE','CLEAR_SELECTION']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
-  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD','RUN_FULL_RUN']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
+  for (const type of ['GENERATE_NODE_OPTIONS','PICK_NODE','GENERATE_BATTLE_OPTIONS','PICK_BATTLE_ENCOUNTER','RUN_ROUTE_FIXED_BATTLE','CLAIM_ROUTE_REWARD','START_NEXT_DAY','RUN_FULL_RUN']) assert.ok(PUBLIC_COMMANDS.includes(type), type);
 });
 
 test('UI01B CLEAR_SELECTION clears per-player unit, slot, and cell selection without changing game state', () => {
@@ -117,6 +117,13 @@ test('UI02 getViewModel 提供 UI 展示所需数据且不暴露核心引用', (
   assert.equal(vm.meta.pets, 127);
   assert.equal(vm.meta.shop, 127);
   assert.ok(vm.heroes.length >= 1);
+  assert.ok(vm.heroes[0].shape.shapeGrid.some(row => row.includes('●') && row.includes('■')), 'hero shape should expose a renderable shape grid');
+  assert.ok(vm.heroes[0].shape.shapeOffsets.length >= 1, 'hero shape should expose offsets for UI inspectors');
+  assert.equal(vm.heroes[0].shape.settleCount, 3, 'hero shape should expose settle count');
+  assert.ok(vm.heroes[0].slots[0].shapeGrid.some(row => row.includes('●') && row.includes('■')), 'action slot should expose shape grid');
+  assert.equal(vm.heroes[0].slots[0].settleCount, 3, 'action slot should expose settle count');
+  assert.ok(vm.heroes[0].qualityProgression, 'hero should expose quality progression data');
+  assert.ok(Object.prototype.hasOwnProperty.call(vm.heroes[0], 'qualityUpgrade'), 'hero should expose the quality upgrade field');
   assert.ok(Array.isArray(vm.nextActions));
   assert.ok(vm.dailyFlow, 'daily flow page should read a public ViewModel surface');
   assert.equal(vm.dailyFlow.day, 1);
@@ -185,6 +192,17 @@ test('UI05 商店进入、刷新、冻结、解冻、购买全部走适配层', 
   assert.ok(hasEvent(buy, 'SHOP_BUY'));
 });
 
+test('UI05B 玩家下一步商店动作不展示冻结入口', () => {
+  const adapter = createYSBZSUIAdapter({ gold: 999 });
+  adapter.enterShop('night_base', 6);
+  const actions = adapter.getViewModel().nextActions.map(action => action.type);
+  assert.ok(actions.includes('BUY_OFFER'), 'shop nextActions should still expose pet buying');
+  assert.ok(actions.includes('SELL_UNIT'), 'shop nextActions should still expose pet selling');
+  assert.ok(actions.includes('EXIT_SHOP'), 'shop nextActions should still expose leaving the shop');
+  assert.ok(!actions.includes('FREEZE_OFFER'), 'shop nextActions should not expose freezing');
+  assert.ok(!actions.includes('UNFREEZE_OFFER'), 'shop nextActions should not expose unfreezing');
+});
+
 test('UI06 商店事件和离店通过适配层', () => {
   const adapter = createYSBZSUIAdapter({ gold: 20 });
   adapter.enterShop('night_base', 6);
@@ -251,7 +269,9 @@ test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   const vm = adapter.runFullPlayerDayFlow();
   const types = new Set(adapter.getEvents().map(e => e.type));
-  for (const t of ['NODE_OPTIONS','NODE_PICK','BATTLE_OPTIONS','BATTLE_PICK','BATTLE_START','BATTLE_END','FIXED_BATTLE_START']) assert.ok(types.has(t), t);
+  for (const t of ['NODE_OPTIONS','NODE_PICK','BATTLE_START','BATTLE_END','FIXED_BATTLE_START']) assert.ok(types.has(t), t);
+  assert.equal(types.has('BATTLE_OPTIONS'), false);
+  assert.equal(types.has('BATTLE_PICK'), false);
   assert.equal(types.has('REWARD_OPTIONS'), true);
   assert.equal(types.has('REWARD_PICK'), true);
   assert.equal(vm.phase, 'day_end');
@@ -275,8 +295,28 @@ test('UI07G RUN_FULL_RUN 通过公开命令跑到 Day10 终局并保留跨天成
   assert.ok(adapter.getTextReport().includes('【跨天成长】'));
 });
 
-test('UI07B Day1 节点选择和中午遭遇选择通过适配层公开命令推进', () => {
+test('UI07H 当天结束后通过公开命令进入下一天', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'ui_next_day' });
+  adapter.runFullPlayerDayFlow();
+  const before = adapter.getViewModel();
+  assert.equal(before.phase, 'day_end');
+  const action = before.nextActions.find(x => x.type === 'START_NEXT_DAY');
+  assert.ok(action, 'day_end should expose START_NEXT_DAY');
+
+  const result = adapter.startNextDay(action.defaultPayload);
+  assert.ok(hasEvent(result, 'START_NEXT_DAY'));
+  assert.equal(result.viewModel.day, 2);
+  assert.equal(result.viewModel.phase, 'init');
+  assert.equal(result.viewModel.dailyFlow.nextSchedule.kind, 'node_choice');
+  assert.equal(result.viewModel.dayRouteRuns.length, 1);
+});
+
+test('UI07B Day1 前两个节点之后第三步进入固定战', () => {
   const adapter = createYSBZSUIAdapter({ day: 1, gold: 20, seed: 'route_ui_test' });
+  const initVm = adapter.getViewModel();
+  assert.equal(initVm.dailyFlow.nextSchedule.kind, 'node_choice');
+  assert.ok(initVm.nextActions.some(action => action.type === 'GENERATE_NODE_OPTIONS'));
+
   const nodeOptions = adapter.generateNodeOptions();
   assert.ok(hasEvent(nodeOptions, 'NODE_OPTIONS'));
   assert.equal(nodeOptions.viewModel.dayRoute.options.length, 3);
@@ -290,16 +330,16 @@ test('UI07B Day1 节点选择和中午遭遇选择通过适配层公开命令推
   const pickedNode = adapter.pickNode(firstNode.optionId);
   assert.ok(hasEvent(pickedNode, 'NODE_PICK'));
   assert.equal(pickedNode.viewModel.dailyFlow.steps[0].status, 'done');
-  const battleOptions = adapter.run('GENERATE_BATTLE_OPTIONS', { scheduleStep: 3 });
-  assert.ok(hasEvent(battleOptions, 'BATTLE_OPTIONS'));
-  assert.equal(battleOptions.viewModel.dayRoute.battleOptions.length, 3);
-  const firstBattle = battleOptions.viewModel.dayRoute.battleOptions[0];
-  assert.equal(firstBattle.choicePreview.kindLabel, '遭遇');
-  assert.ok(firstBattle.choicePreview.summary.includes(firstBattle.phaseLabel));
-  assert.ok(firstBattle.choicePreview.tags.includes('战斗压力'));
-  const pickedBattle = adapter.pickBattleEncounter(battleOptions.viewModel.dayRoute.battleOptions[0].encounterId);
-  assert.ok(hasEvent(pickedBattle, 'BATTLE_PICK'));
-  assert.equal(pickedBattle.viewModel.dayRoute.currentEncounter.phaseLabel, '中午战');
+  const secondNodeOptions = adapter.generateNodeOptions();
+  assert.ok(hasEvent(secondNodeOptions, 'NODE_OPTIONS'));
+  const secondPick = adapter.pickNode(secondNodeOptions.viewModel.dayRoute.options[0].optionId);
+  assert.ok(hasEvent(secondPick, 'NODE_PICK'));
+  assert.equal(secondPick.viewModel.dailyFlow.nextSchedule.kind, 'fixed_battle');
+  const firstBattle = adapter.run('RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 });
+  assert.ok(hasEvent(firstBattle, 'FIXED_BATTLE_START'));
+  assert.equal(firstBattle.viewModel.dayRoute.currentEncounter.encounterId, 'enc_d01_midday_a');
+  assert.equal(firstBattle.viewModel.dayRoute.currentEncounter.phaseLabel, '中午战');
+  assert.equal(firstBattle.viewModel.dailyFlow.nextSchedule.kind, 'node_choice');
 });
 
 test('UI07C 路线商店摊位身份进入 ViewModel', () => {
@@ -350,25 +390,29 @@ test('UI07E 固定战和终局 Boss 通过公开路线命令进入', () => {
   const result = dispatch(state, { type: 'RUN_ROUTE_FIXED_BATTLE' });
   assert.equal(result, true);
   assert.equal(state.phase, 'day_end');
+  assert.equal(state.dayRoute.nodeIndex, 6);
   assert.ok(state.dayRoute.history.some(x => x.kind === 'fixed_battle' && x.option.encounterId === 'enc_d10_final_boss'));
   assert.ok(state.dayRoute.battleOutcomes.some(x => x.kind === 'fixed_battle' && x.encounterId === 'enc_d10_final_boss'));
   assert.ok(state.dayRoute.terminal && state.dayRoute.terminal.kind === 'final_boss');
   assert.ok(state.events.some(e => e.type === 'FIXED_BATTLE_START'));
   assert.ok(state.events.some(e => e.type === 'RUN_TERMINAL'));
+  assert.equal(createViewModel(state).nextActions.some(x => x.type === 'GENERATE_NODE_OPTIONS'), false, 'final battle should complete the terminal day route');
 });
 
 test('UI07F 路线遭遇和固定战暴露战前压力预览', () => {
-  const adapter = createYSBZSUIAdapter({ day: 6, gold: 20, seed: 'pressure-preview' });
-  const optionsResult = adapter.run('GENERATE_BATTLE_OPTIONS', { scheduleStep: 3 });
-  assert.ok(hasEvent(optionsResult, 'BATTLE_OPTIONS'));
-  const firstBattle = optionsResult.viewModel.dayRoute.battleOptions[0];
-  assert.ok(firstBattle.pressurePreview, 'battle option should expose pressure preview');
-  assert.equal(firstBattle.pressurePreview.wavePeriod, firstBattle.wavePeriod);
-  assert.equal(firstBattle.pressurePreview.pressureTier, '高压');
-  assert.ok(firstBattle.pressurePreview.totalThreat > 0);
-  assert.ok(firstBattle.pressurePreview.peakThreat > 0);
-  assert.ok(firstBattle.pressurePreview.totalSpawnCount > 0);
-  assert.match(firstBattle.pressurePreview.rewardText, /精英|奖励/);
+  const state6 = createGameState({ day: 6, gold: 20, seed: 'pressure-preview' });
+  dayRoute.ensureDayRoute(state6);
+  state6.dayRoute.nodeIndex = 2;
+  state6.phase = 'node_resolved';
+  const firstBattleAction = createViewModel(state6).nextActions.find(x => x.type === 'RUN_ROUTE_FIXED_BATTLE');
+  assert.ok(firstBattleAction, 'first fixed battle should be exposed after two daily nodes');
+  const firstBattle = firstBattleAction.defaultPayload.pressurePreview;
+  assert.ok(firstBattle, 'fixed battle action should expose pressure preview');
+  assert.equal(firstBattle.pressureTier, '高压');
+  assert.ok(firstBattle.totalThreat > 0);
+  assert.ok(firstBattle.peakThreat > 0);
+  assert.ok(firstBattle.totalSpawnCount > 0);
+  assert.match(firstBattle.rewardText, /精英|奖励/);
 
   const state = createGameState({ day: 10, gold: 999 });
   dayRoute.ensureDayRoute(state);
@@ -434,10 +478,12 @@ test('UI13 原包兼容命令 sell/toggle/select/slot/dir 全部通过适配层'
   assert.ok(hasEvent(result, 'USE_ACTION_SLOT'));
   result = adapter.run('SET_SLOT_DIR', { slotId: 1, dir: 'down' });
   assert.ok(hasEvent(result, 'SET_SLOT_DIR'));
-  result = adapter.run('TOGGLE_UNIT_ACTIVE', { unitId: 'unit_pal_005' });
+  const inventoryItem = adapter.getViewModel().inventory.items[0];
+  assert.ok(inventoryItem, 'compat test needs an inventory item');
+  result = adapter.run('TOGGLE_UNIT_ACTIVE', { unitId: inventoryItem.instanceId });
   assert.ok(hasEvent(result, 'TOGGLE_UNIT_ACTIVE'));
   const beforeGold = adapter.getViewModel().gold;
-  result = adapter.run('SELL_UNIT', { petId: 'pal_005' });
+  result = adapter.run('SELL_UNIT', { instanceId: inventoryItem.instanceId, petId: inventoryItem.petId });
   assert.ok(hasEvent(result, 'SELL_UNIT'));
   assert.ok(adapter.getViewModel().gold > beforeGold);
   result = adapter.run('SELL_UNIT', { petId: 'not_exists' });
@@ -450,8 +496,10 @@ test('UI14 原包兼容门面方法 sellUnit/toggle/use/select/setDir 覆盖', (
   assert.ok(hasEvent(adapter.selectCell(1, 2), 'SELECT_CELL'));
   assert.ok(hasEvent(adapter.useActionSlot(0), 'USE_ACTION_SLOT'));
   assert.ok(hasEvent(adapter.setSlotDir(0, 'left'), 'SET_SLOT_DIR'));
-  assert.ok(hasEvent(adapter.toggleUnitActive('unit_pal_006'), 'TOGGLE_UNIT_ACTIVE'));
-  assert.ok(hasEvent(adapter.sellUnit('unit_pal_006'), 'SELL_UNIT'));
+  const inventoryItem = adapter.getViewModel().inventory.items[0];
+  assert.ok(inventoryItem, 'compat facade test needs an inventory item');
+  assert.ok(hasEvent(adapter.toggleUnitActive(inventoryItem.instanceId), 'TOGGLE_UNIT_ACTIVE'));
+  assert.ok(hasEvent(adapter.sellUnit(inventoryItem.instanceId), 'SELL_UNIT'));
   assert.ok(hasEvent(adapter.run('SELL_UNIT', {}), 'SELL_UNIT_BLOCKED'));
 });
 
@@ -952,7 +1000,7 @@ test('UI22E 移动后的沙盒单位 diff 保留受伤来源', () => {
   let diff = null;
   let hero = null;
   let chosen = null;
-  const initialAdapter = createYSBZSUIAdapter({ mode: 'solo', battleId: 'move_simulation_diff_provenance_probe' });
+  const initialAdapter = createYSBZSUIAdapter({ mode: 'solo', battleId: 'move_simulation_diff_provenance_probe', activePets: ['pal_038'] });
   initialAdapter.run('START_BATTLE');
   const initialVm = initialAdapter.getViewModel();
   const initialHero = initialVm.heroes.find(unit => unit.name === '疾风隼');
@@ -964,7 +1012,7 @@ test('UI22E 移动后的沙盒单位 diff 保留受伤来源', () => {
     && Math.abs(cell.r - initialHero.position.r) + Math.abs(cell.c - initialHero.position.c) <= range
   ));
   for (const cell of candidates) {
-    const adapter = createYSBZSUIAdapter({ mode: 'solo', battleId: `move_simulation_diff_provenance_${cell.r}_${cell.c}` });
+    const adapter = createYSBZSUIAdapter({ mode: 'solo', battleId: `move_simulation_diff_provenance_${cell.r}_${cell.c}`, activePets: ['pal_038'] });
     adapter.run('START_BATTLE');
     hero = adapter.getViewModel().heroes.find(unit => unit.name === '疾风隼');
     const move = adapter.run('MOVE_HERO', { unitId: hero.id, to: { r: cell.r, c: cell.c } });
@@ -1099,7 +1147,8 @@ test('UI25 施放行动槽日志同时显示怪物受伤和本次元素增加', 
   const state = createGameState({ activePets: ['pal_005'], battleId: 'compact_action_event_log' });
   battle.startBattle(state);
   const actor = state.units.find(u => u.side === 'hero' && u.alive);
-  const target = state.units.find(u => u.side === 'enemy' && u.alive);
+  const target = state.units.find(u => u.side === 'enemy' && u.alive && u.petId === 'pal_001')
+    || state.units.find(u => u.side === 'enemy' && u.alive);
   assert.ok(actor && target, '需要我方和敌方单位');
   for (const other of state.units.filter(u => u.side === 'enemy' && u.id !== target.id)) {
     other.alive = false;

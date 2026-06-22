@@ -13,13 +13,15 @@ const { buildSaveDocument, applySaveToState, assertSaveDocument } = require('./s
 const { statusOfMechanic, activationBlockReason } = require('./core/mechanicGate.cjs');
 const { canonicalEventLog } = require('./core/eventProjection.cjs');
 const { buildConstructionSummary } = require('./core/buildSummary.cjs');
+const { MAX_ACTIVE_UNITS, MAX_BENCH_UNITS, shopPurchaseTarget } = require('./core/inventoryRules.cjs');
+const { shapeForVM, slotsForVM } = require('./uiAdapterShapeVM.cjs');
+const { buildInventoryVM } = require('./uiAdapterInventoryVM.cjs');
 const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
 const { runFullDayCommand, runFullRunCommand, runFullRunFlow } = require('./uiAdapterFlowCommands.cjs');
 const { buildMoveManualFlowPreview, runManualFlowPreviewTransaction } = require('./uiAdapterManualFlowPreview.cjs');
 const { nextDaySchedule, buildDailyFlowVM } = require('./dailyFlowView.cjs');
 const ADAPTER_VERSION = '2026-06-09-command-envelope-local-prediction-ready-round4';
 const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT', 'CLEAR_SELECTION']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
-const MAX_ACTIVE_UNITS = 4;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); } function commandText(command) { return typeof command === 'string' ? command : command.type; } function nextAllOutSlot(vm, blocked = new Set()) {
   for (const hero of vm?.heroes || []) {
@@ -59,21 +61,6 @@ function dataSummary(state) {
     encounterPool: (state.data.encounterPool || []).length
   };
 }
-function slotsForVM(state, unit) {
-  return battle.slotsForUnit(state, unit).map(slot => ({
-    slotId: slot.slotId,
-    index: slot.index,
-    label: slot.label,
-    element: slot.element,
-    layers: slot.layers,
-    shapeId: slot.shapeId,
-    shapeName: slot.shapeName,
-    hitCells: slot.hitCells,
-    direction: slot.direction,
-    used: slot.used,
-    canUse: slot.canUse
-  }));
-}
 function stripUnit(state, unit) {
   return {
     id: unit.id,
@@ -100,17 +87,9 @@ function stripUnit(state, unit) {
     elements: Object.assign({ 火: 0, 水: 0, 风: 0, 土: 0 }, unit.elements || {}),
     mechanics: unit.mechanics || [],
     mechanicStatus: (unit.mechanics || []).map(id => ({ id, status: statusOfMechanic(id) })),
-    shape: unit.shape ? {
-      shapeId: unit.shape.shapeId,
-      shapeName: unit.shape.shapeName,
-      shapeClass: unit.shape.shapeClass,
-      hitCells: unit.shape.hitCells,
-      slotCount: unit.shape.slotCount,
-      slotElements: unit.shape.slotElements,
-      actionType: unit.shape.actionType,
-      skill: unit.shape.skill,
-      note: unit.shape.note
-    } : null,
+    qualityProgression: unit.qualityProgression ? clone(unit.qualityProgression) : null,
+    qualityUpgrade: unit.qualityUpgrade ? clone(unit.qualityUpgrade) : null,
+    shape: shapeForVM(unit.shape),
 	    slots: ['hero', 'enemy'].includes(unit.side) ? slotsForVM(state, unit) : []
 	  };
 	}
@@ -129,6 +108,7 @@ function stripOffer(offer) {
     frozen: !!offer.frozen
   };
 }
+function offerForVM(state, offer) { const out = stripOffer(offer); const target = shopPurchaseTarget(state, offer.petId); const goldEnough = Number(state.gold || 0) >= Number(offer.price || 0); out.buyPlacement = target.ok ? (target.placement === 'merge' ? 'bench' : target.placement) : 'blocked'; out.canBuy = goldEnough && target.ok; out.buyBlockedReason = goldEnough ? (target.text || '') : `金币不足：需要${offer.price}，当前${state.gold || 0}`; return out; }
 function stripReward(reward, index) { return Object.assign({ index }, reward); }
 function makePlayerViewState() {
   return { selected: { unitId: null, slotId: null, cell: null, direction: 'right' }, recentUiEvents: [] };
@@ -226,36 +206,6 @@ function teamPlacementPreviewVM(state, previewGrid = []) {
   };
 }
 
-function inventoryVM(state) {
-  const activeCount = (state.inventory || []).filter(x => x.active !== false).length;
-  const items = (state.inventory || []).map((x, i) => {
-    const pet = state.indexes?.petsById?.get(x.petId) || {};
-    const unit = findUnitForInventoryEntry(state, x);
-    return Object.assign({}, clone(x), {
-      name: x.name || pet.name || x.petId,
-      element: x.element || pet.element || '-',
-      role: x.role || pet.role || pet.定位 || '-',
-      quality: x.quality || pet.quality || '普通',
-      hp: unit ? unit.hp : (pet.hp || null),
-      maxHp: unit ? unit.maxHp : (pet.hp || null),
-      atk: unit ? unit.atk : (pet.atk || null),
-      instanceId: x.instanceId || null,
-      active: x.active !== false,
-      sellValue: Math.max(1, Number(x.level || 1)),
-      mechanics: x.mechanics || pet.mechanics || [],
-      mechanicStatus: (x.mechanics || pet.mechanics || []).map(id => ({ id, status: statusOfMechanic(id) })),
-      canActivate: x.active !== false || activeCount < MAX_ACTIVE_UNITS,
-      index: i
-    });
-  });
-  return {
-    items,
-    active: items.filter(x => x.active !== false),
-    bench: items.filter(x => x.active === false),
-    activeCount: items.filter(x => x.active !== false).length,
-    maxActive: MAX_ACTIVE_UNITS
-  };
-}
 function inventoryEntryForUnit(state, unit) {
   return (state.inventory || []).find(x => x.instanceId === unit.id || x.petId === unit.petId) || null;
 }
@@ -293,13 +243,26 @@ function logGroups(state) {
     shop: state.events.filter(e => /SHOP|REWARD|SELL|TOGGLE|NODE|BATTLE_OPTIONS|BATTLE_PICK|ROUTE_REWARD/.test(e.type)).slice(-40).map(e => e.text || e.type)
   };
 }
+function maxRouteDay(state) {
+  const days = (state.data.nodeSchedule || [])
+    .filter(row => row.status === '正式')
+    .map(row => Number(row.day || 0))
+    .filter(day => Number.isFinite(day) && day > 0);
+  return days.length ? Math.max(...days) : Number(state.day || 1);
+}
 function nextActions(state) {
   const out = [];
-  if (state.dayRoute?.terminal) return out;
   const nextSchedule = nextDaySchedule(state);
+  if (state.dayRoute?.terminal && !nextSchedule) return out;
+  const currentDay = Number(state.day || 1);
+  const finalDay = maxRouteDay(state);
+  if (state.phase === 'day_end' && currentDay < finalDay) out.push({ type: 'START_NEXT_DAY', label: `进入第${currentDay + 1}天`, defaultPayload: { day: currentDay + 1 } });
   if ((state.phase === 'node_resolved' || state.phase === 'init') && nextSchedule?.kind === 'node_choice') out.push({ type: 'GENERATE_NODE_OPTIONS', label: '生成节点候选' });
   if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'battle_choice') out.push({ type: 'GENERATE_BATTLE_OPTIONS', label: '生成中午遭遇' });
-  if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'fixed_battle') out.push({ type: 'RUN_ROUTE_FIXED_BATTLE', label: `进入${nextSchedule.phaseLabel || nextSchedule.label || '固定战'}`, defaultPayload: { scheduleStep: nextSchedule.step, pressurePreview: dayRoute.fixedBattlePressurePreview(state, nextSchedule) } });
+  if ((state.phase === 'node_resolved' || state.phase === 'battle_end' || state.phase === 'init') && nextSchedule?.kind === 'fixed_battle') {
+    const isOpeningBattle = state.phase === 'init' && Number(nextSchedule.step || 0) === 1;
+    out.push({ type: 'RUN_ROUTE_FIXED_BATTLE', label: isOpeningBattle ? '开始开场战斗' : `进入${nextSchedule.phaseLabel || nextSchedule.label || '固定战'}`, defaultPayload: { scheduleStep: nextSchedule.step, pressurePreview: dayRoute.fixedBattlePressurePreview(state, nextSchedule) } });
+  }
   if (state.phase === 'node_choice') for (const option of state.dayRoute?.options || []) out.push({ type: 'PICK_NODE', label: `选择 ${option.name}`, defaultPayload: { optionId: option.optionId } });
   if (state.phase === 'battle_choice') for (const option of state.dayRoute?.battleOptions || []) out.push({ type: 'PICK_BATTLE_ENCOUNTER', label: `选择 ${option.name}`, defaultPayload: { encounterId: option.encounterId } });
   if (state.phase === 'init') out.push({ type: 'START_BATTLE', label: '开始战斗' });
@@ -326,8 +289,11 @@ function nextActions(state) {
   if (state.phase === 'shop') {
     out.push({ type: 'ROLL_SHOP', label: '刷新商店', defaultPayload: { slots: 6 } });
     for (const offer of state.shop.offers || []) {
-      out.push({ type: offer.frozen ? 'UNFREEZE_OFFER' : 'FREEZE_OFFER', label: `${offer.frozen ? '解冻' : '冻结'} ${offer.name}`, defaultPayload: { offerId: offer.offerId } });
-      out.push({ type: 'BUY_OFFER', label: `购买 ${offer.name}`, defaultPayload: { offerId: offer.offerId } });
+      out.push({ type: 'BUY_OFFER', label: `购买宠物 ${offer.name}`, defaultPayload: { offerId: offer.offerId } });
+    }
+    for (const item of state.inventory || []) {
+      const pet = state.indexes?.petsById?.get(item.petId) || {};
+      out.push({ type: 'SELL_UNIT', label: `出售宠物 ${item.name || pet.name || item.petId}`, defaultPayload: { instanceId: item.instanceId, petId: item.petId } });
     }
     for (const evt of shop.availableEvents(state)) out.push({ type: 'APPLY_SHOP_EVENT', label: `商店事件：${evt.name}`, defaultPayload: { eventId: evt.id } });
     out.push({ type: 'EXIT_SHOP', label: '离开商店' });
@@ -343,7 +309,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     player: state.leaders?.player ? stripUnit(state, state.leaders.player) : null,
     enemy: state.leaders?.enemy ? stripUnit(state, state.leaders.enemy) : null
   };
-  const offers = (state.shop.offers || []).map(stripOffer);
+  const offers = (state.shop.offers || []).map(offer => offerForVM(state, offer));
   const rewards = (state.rewards || []).map(stripReward);
   return {
     meta: dataSummary(state),
@@ -373,7 +339,7 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     heroes,
     enemies,
     board,
-    inventory: inventoryVM(state),
+    inventory: buildInventoryVM(state, findUnitForInventoryEntry),
     buildCore: buildConstructionSummary(state),
     relics: clone(state.relics),
     rewards,
@@ -459,7 +425,13 @@ function runCompatibilityCommand(state, command, viewState = makePlayerViewState
         if (!unit.position) unit.position = firstEmptyHeroCell(state);
         inv.slot = inv.slot || activeCount + 1;
       } else {
+        const benchCount = (state.inventory || []).filter(x => x.active === false).length;
+        if (benchCount >= MAX_BENCH_UNITS) {
+          pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, maxBench: MAX_BENCH_UNITS, text: `下阵失败：背包已满 ${MAX_BENCH_UNITS}/${MAX_BENCH_UNITS}。` });
+          return false;
+        }
         inv.active = false;
+        inv.slot = null;
         const unit = findUnitForInventoryEntry(state, inv);
         if (unit) { unit.active = false; unit.alive = false; unit.position = null; }
         if (viewState.selected && (viewState.selected.unitId === inv.instanceId || viewState.selected.unitId === id)) viewState.selected.unitId = null;
@@ -760,6 +732,7 @@ function createYSBZSUIAdapter(options = {}) {
     generateBattleOptions(options = {}) { return this.run('GENERATE_BATTLE_OPTIONS', options); },
     pickBattleEncounter(encounterId) { return this.run('PICK_BATTLE_ENCOUNTER', { encounterId }); },
     claimRouteReward(options = {}) { return this.run('CLAIM_ROUTE_REWARD', options); },
+    startNextDay(options = {}) { return this.run('START_NEXT_DAY', options); },
     rewardOptions(poolId = 'reward_pT1', count = 3) { return this.run('REWARD_OPTIONS', { poolId, count }); },
     pickReward(index = 0) { return this.run('PICK_REWARD', { index }); },
     enterShop(poolId = 'night_base', slots = 6) { return this.run('ENTER_SHOP', { poolId, slots }); },

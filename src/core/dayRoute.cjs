@@ -9,6 +9,31 @@ function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function activeRows(rows, day) {
   return (rows || []).filter(x => x.status === '正式' && Number(x.unlockDay || 1) <= Number(day || 1));
 }
+function normalizeScheduleRows(rows) {
+  const dayRows = (rows || []).slice().sort((a, b) => Number(a.step || 0) - Number(b.step || 0));
+  const nodes = dayRows.filter(row => row.kind === 'node_choice');
+  const fixedBattles = dayRows.filter(row => row.kind === 'fixed_battle');
+  if (nodes.length !== 4 || fixedBattles.length !== 2) return dayRows;
+  const ordered = [];
+  ordered.push(nodes[0], nodes[1]);
+  ordered.push(fixedBattles[0]);
+  ordered.push(nodes[2], nodes[3]);
+  ordered.push(fixedBattles[1]);
+  let nodeLabelIndex = 0;
+  let battleLabelIndex = 0;
+  return ordered.map((row, index) => {
+    const copy = Object.assign({}, row, { step: index + 1 });
+    if (copy.kind === 'node_choice') {
+      nodeLabelIndex += 1;
+      copy.label = `事件节点${nodeLabelIndex}`;
+    } else if (copy.kind === 'fixed_battle') {
+      battleLabelIndex += 1;
+      const isFinalBoss = Number(copy.day || 0) === 10 && /final_boss|终局/.test(`${copy.id || ''}${copy.encounterId || ''}${copy.label || ''}`);
+      copy.label = isFinalBoss ? '终局Boss战' : (battleLabelIndex === 1 ? '第一场战斗' : '第二场战斗');
+    }
+    return copy;
+  });
+}
 function ensureDayRoute(state) {
   if (!state.dayRoute) {
     state.dayRoute = { day: state.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [], claimedRewards: [] };
@@ -22,9 +47,8 @@ function ensureDayRoute(state) {
   return state.dayRoute;
 }
 function scheduleRows(state) {
-  return (state.data.nodeSchedule || [])
-    .filter(x => x.day === state.day && x.status === '正式')
-    .sort((a, b) => Number(a.step) - Number(b.step));
+  return normalizeScheduleRows((state.data.nodeSchedule || [])
+    .filter(x => x.day === state.day && x.status === '正式'));
 }
 function scheduleAt(state, step) {
   return scheduleRows(state).find(x => Number(x.step) === Number(step)) || null;
@@ -32,6 +56,83 @@ function scheduleAt(state, step) {
 function nextSchedule(state) {
   const route = ensureDayRoute(state);
   return scheduleAt(state, Number(route.nodeIndex || 0) + 1);
+}
+function finishDayRoute(state) {
+  const route = ensureDayRoute(state);
+  state.phase = 'day_end';
+  if (!route.dayEnded) {
+    route.dayEnded = true;
+    pushEvent(state, 'DAY_ROUTE_END', { day: state.day, text: `第${state.day}天路线结束。` });
+  }
+  return 'day_end';
+}
+function completeRouteStep(state) {
+  ensureDayRoute(state);
+  if (!nextSchedule(state)) return finishDayRoute(state);
+  state.phase = 'node_resolved';
+  return 'node_resolved';
+}
+function routeReturnPhaseAfterCurrentStep(state) {
+  ensureDayRoute(state);
+  if (!nextSchedule(state)) return 'day_end';
+  return 'node_resolved';
+}
+function maxScheduledDay(state) {
+  const days = (state.data.nodeSchedule || [])
+    .filter(row => row.status === '正式')
+    .map(row => Number(row.day || 0))
+    .filter(day => Number.isFinite(day) && day > 0);
+  return days.length ? Math.max(...days) : Number(state.day || 1);
+}
+function archiveCurrentDayRoute(state) {
+  const route = ensureDayRoute(state);
+  if (!Array.isArray(state.dayRouteRuns)) state.dayRouteRuns = [];
+  if (state.dayRouteRuns.some(run => Number(run.day) === Number(state.day || route.day))) return;
+  state.dayRouteRuns.push({
+    day: Number(state.day || route.day || 1),
+    phase: state.phase,
+    gold: Number(state.gold || 0),
+    nodeIndex: Number(route.nodeIndex || 0),
+    battleIndex: Number(route.battleIndex || 0),
+    history: clone(route.history || []),
+    battleOutcomes: clone(route.battleOutcomes || []),
+    claimedRewards: clone(route.claimedRewards || []),
+    terminal: route.terminal ? clone(route.terminal) : null
+  });
+}
+function resetRouteForDay(state, day) {
+  state.day = day;
+  state.period = '上午';
+  state.round = 0;
+  state.result = null;
+  state.phase = 'init';
+  state.rewards = [];
+  state.shop.offers = [];
+  state.shop.frozen = {};
+  state.shop.rollCount = 0;
+  state.shop.activePool = 'night_base';
+  state.shop.activeStall = null;
+  state.shop.routeReturnPhase = null;
+  state.shop.refreshState = { freeRolls: Number(state.shop.freeRolls || 0), nextDiscount: Number(state.shop.nextDiscount || 0), targetedRestocks: [], effects: [], lastRoll: null };
+  state.dayRoute = { day, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [], claimedRewards: [] };
+  resetBattlefield(state);
+}
+function startNextDay(state, opts = {}) {
+  const currentDay = Number(state.day || 1);
+  const targetDay = Number(opts.day || currentDay + 1);
+  const maxDay = maxScheduledDay(state);
+  if (state.phase !== 'day_end') {
+    pushEvent(state, 'START_NEXT_DAY_BLOCKED', { day: currentDay, text: '进入下一天失败：当天路线还没有结束。' });
+    return false;
+  }
+  if (!Number.isFinite(targetDay) || targetDay <= currentDay || targetDay > maxDay) {
+    pushEvent(state, 'START_NEXT_DAY_BLOCKED', { day: currentDay, targetDay, maxDay, text: `进入下一天失败：目标第${targetDay || '-'}天不可用。` });
+    return false;
+  }
+  archiveCurrentDayRoute(state);
+  resetRouteForDay(state, targetDay);
+  pushEvent(state, 'START_NEXT_DAY', { dayFrom: currentDay, dayTo: targetDay, text: `进入第${targetDay}天。` });
+  return true;
 }
 function firstN(rows, count) {
   return rows.slice().sort((a, b) => Number(b.weight || 0) - Number(a.weight || 0) || String(a.nodeId || a.encounterId).localeCompare(String(b.nodeId || b.encounterId))).slice(0, count);
@@ -218,30 +319,35 @@ function pickNode(state, ref) {
   if (option.nodeType === 'shop') {
     const ok = shop.enterShop(state, option.shopPoolId || 'night_base', Number(option.slots || 6), { stall: option });
     if (ok !== false) {
-      state.shop.routeReturnPhase = 'node_resolved';
+      state.shop.routeReturnPhase = routeReturnPhaseAfterCurrentStep(state);
       const historyItem = route.history[route.history.length - 1];
       if (historyItem) historyItem.stall = clone(state.shop.activeStall);
     }
     return ok;
   }
-  if (option.nodeType === 'reward') { shop.rewardOptions(state, option.rewardPoolId || 'reward_pT1', Number(option.slots || 3)); state.phase = 'reward'; return true; }
+  if (option.nodeType === 'reward') {
+    route.rewardReturnPhase = routeReturnPhaseAfterCurrentStep(state);
+    shop.rewardOptions(state, option.rewardPoolId || 'reward_pT1', Number(option.slots || 3));
+    state.phase = 'reward';
+    return true;
+  }
   if (option.nodeType === 'event') return applyRouteEvent(state, option);
   if (option.nodeType === 'rest') {
     const before = state.gold;
     state.gold += Number(option.value || 1);
-    state.phase = 'node_resolved';
     pushEvent(state, 'NODE_REST', { goldFrom: before, goldTo: state.gold, text: `${option.name}：金币${before}→${state.gold}。` });
+    completeRouteStep(state);
     return true;
   }
-  state.phase = 'node_resolved';
+  completeRouteStep(state);
   return true;
 }
 function applyRouteEvent(state, option) {
   const route = ensureDayRoute(state);
   const event = (state.data.events || []).find(e => e.id === option.eventId);
   if (!event) {
-    state.phase = 'node_resolved';
     pushEvent(state, 'NODE_EVENT_APPLY', { nodeId: option.nodeId, text: `${option.name}：事件占位已结算。` });
+    completeRouteStep(state);
     return true;
   }
   const before = state.gold;
@@ -261,8 +367,8 @@ function applyRouteEvent(state, option) {
     const historyItem = route.history[route.history.length - 1];
     if (historyItem) historyItem.runEffect = clone(runEffect);
   }
-  state.phase = 'node_resolved';
   pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, constructionEffect: constructionEffect ? clone(constructionEffect) : null, prepEffect: prepEffect ? clone(prepEffect) : null, runEffect: runEffect ? clone(runEffect) : null, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
+  completeRouteStep(state);
   return true;
 }
 function generateBattleOptions(state, opts = {}) {
@@ -328,8 +434,7 @@ function runFixedBattle(state, opts = {}) {
   const outcome = runEncounterBattle(state, encounter, { kind: 'fixed_battle' });
   if (isTerminalEncounter(state, encounter)) markRunTerminal(state, encounter, outcome);
   claimAvailableRouteRewards(state);
-  state.phase = 'day_end';
-  pushEvent(state, 'DAY_ROUTE_END', { day: state.day, text: `第${state.day}天路线结束。` });
+  completeRouteStep(state);
   return true;
 }
 function dayExprAllows(expr, day) {
@@ -576,7 +681,7 @@ function runDayRoute(state) {
       if (!options) return false;
       const option = options[(Number(schedule.step || 1) - 1) % options.length] || options[0];
       pickNode(state, option.optionId);
-      if (state.phase === 'shop') { shop.exitShop(state); state.phase = 'node_resolved'; }
+      if (state.phase === 'shop') shop.exitShop(state);
       if (state.phase === 'reward' && state.rewards.length) shop.pickReward(state, 0);
       if (state.phase !== 'day_end' && state.phase !== 'battle_end') state.phase = 'node_resolved';
       continue;
@@ -588,9 +693,13 @@ function runDayRoute(state) {
       claimAvailableRouteRewards(state);
       continue;
     }
-    if (schedule.kind === 'fixed_battle') return runFixedBattle(state);
+    if (schedule.kind === 'fixed_battle') {
+      const ok = runFixedBattle(state);
+      if (!ok || state.phase === 'day_end') return ok;
+      continue;
+    }
   }
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview };
+module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview };

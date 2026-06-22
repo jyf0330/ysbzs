@@ -1,5 +1,8 @@
 const { pushEvent } = require('./events.cjs');
 const { rng, pickWeighted } = require('./rng.cjs');
+const { makeUnit, syncBoardUnits } = require('./state.cjs');
+const { applyBattleStart } = require('./mechanics.cjs');
+const { MAX_BENCH_UNITS, benchCount, mergeBenchEntry, shopPurchaseTarget } = require('./inventoryRules.cjs');
 function clone(value){ return JSON.parse(JSON.stringify(value)); }
 function parseGoldCost(text){ if(!text || text==='无') return 0; const m=String(text).match(/金币\s*-\s*(\d+)/); return m ? Number(m[1]) : 0; }
 function enabledShopItems(state, poolId='night_base'){ return state.data.shop.filter(i => i.status==='启用' && i.unlockDay <= state.day && (i.shopPools||[]).includes(poolId)); }
@@ -42,7 +45,58 @@ function rollShop(state,{poolId=state.shop.activePool||'night_base', slots=6, fr
  const random=rng(`${state.day}:${state.period}:${state.shop.rollCount}:${poolId}:${state.gold}`); const pool=enabledShopItems(state,poolId); const kept=(state.shop.offers||[]).filter(o=>o.frozen); const offers=[...kept]; let slot=0; while(offers.length<slots && pool.length){ const item=pickWeighted(pool, i=>itemWeight(i,poolId), random); if(!item) break; offers.push(buildOffer(state,item,slot++,poolId,{restock})); }
  state.shop.offers=offers; state.shop.rollCount+=1; const discountApplied=Number(state.shop.nextDiscount || 0); state.shop.nextDiscount=0; const refresh=ensureRefreshState(state); refresh.lastRoll={poolId,cost,slots:Number(slots),free:!!free,discountApplied,offerIds:offers.map(o=>o.offerId), petIds:offers.map(o=>o.petId)}; pushEvent(state,'SHOP_ROLL',{poolId,cost,offers:offers.map(o=>o.petId), refreshState:clone(refresh), text:`商店刷新：花费${cost}金币，出现 ${offers.map(o=>`${o.name}(${o.price})`).join('、')}。`}); return true; }
 function freezeOffer(state, offerId, frozen=true){ const offer=state.shop.offers.find(o=>o.offerId===offerId); if(!offer) return false; offer.frozen=frozen; pushEvent(state,frozen?'SHOP_FREEZE':'SHOP_UNFREEZE',{offerId,text:`${frozen?'冻结':'解冻'}商品：${offer.name}。`}); return true; }
-function addInventory(state, petId, meta={}){ let inv=state.inventory.find(x=>x.petId===petId && x.active===false && x.level<3); if(!inv){ state.nextInventory = Number(state.nextInventory || 1); const instanceId=`bench_${petId}_${state.nextInventory++}`; inv={petId,count:1,level:1,active:false,instanceId}; if(meta.acquiredFrom) inv.acquiredFrom=clone(meta.acquiredFrom); state.inventory.push(inv); return {merged:false, level:1, active:false, instanceId, acquiredFrom:inv.acquiredFrom||null}; } inv.count+=1; if(meta.acquiredFrom) inv.acquiredFrom=clone(meta.acquiredFrom); let merged=false; while(inv.count>=2 && inv.level<3){ inv.count-=2; inv.level+=1; inv.count+=1; merged=true; } return {merged, level:inv.level, count:inv.count, active:false, instanceId:inv.instanceId||null, acquiredFrom:inv.acquiredFrom||null}; }
+function inventoryResult(inv, extra={}) {
+ return Object.assign({
+  merged: false,
+  level: inv.level,
+  count: inv.count,
+  active: inv.active !== false,
+  instanceId: inv.instanceId || null,
+  slot: inv.slot || null,
+  quality: inv.quality || null,
+  acquiredFrom: inv.acquiredFrom || null
+ }, extra);
+}
+function mergeInventory(inv, meta={}) {
+ inv.count = Number(inv.count || 1) + 1;
+ if (meta.acquiredFrom) inv.acquiredFrom = clone(meta.acquiredFrom);
+ let merged = false;
+ while (inv.count >= 2 && Number(inv.level || 1) < 3) {
+  inv.count -= 2;
+  inv.level = Number(inv.level || 1) + 1;
+  inv.count += 1;
+  merged = true;
+ }
+ return inventoryResult(inv, { merged, placement: 'bench' });
+}
+function addBenchInventory(state, petId, meta={}) {
+ if (benchCount(state) >= MAX_BENCH_UNITS) return { blocked: true, reason: 'bench_full', active: false, text: `背包已满 ${MAX_BENCH_UNITS}/${MAX_BENCH_UNITS}。` };
+ state.nextInventory = Number(state.nextInventory || 1);
+ const instanceId = `bench_${petId}_${state.nextInventory++}`;
+ const inv = { petId, count: 1, level: 1, active: false, instanceId };
+ if (meta.acquiredFrom) inv.acquiredFrom = clone(meta.acquiredFrom);
+ state.inventory.push(inv);
+ return inventoryResult(inv, { placement: 'bench' });
+}
+function addActiveInventory(state, petId, target, meta={}) {
+ const unit = makeUnit(state, 'hero', petId, { position: target.position });
+ applyBattleStart(state, unit);
+ state.units.push(unit);
+ const inv = { petId, count: 1, level: 1, active: true, instanceId: unit.id, slot: target.slot, quality: unit.quality };
+ if (meta.acquiredFrom) inv.acquiredFrom = clone(meta.acquiredFrom);
+ state.inventory.push(inv);
+ syncBoardUnits(state);
+ return inventoryResult(inv, { placement: 'active' });
+}
+function addInventory(state, petId, meta={}) {
+ const target = meta.preferActive ? (meta.target || shopPurchaseTarget(state, petId)) : null;
+ if (target && !target.ok) return { blocked: true, reason: target.reason, active: false, text: target.text, activeCount: target.activeCount, benchCount: target.benchCount };
+ if (target?.placement === 'active') return addActiveInventory(state, petId, target, meta);
+ if (target?.placement === 'merge' && target.entry) return mergeInventory(target.entry, meta);
+ const mergeTarget = mergeBenchEntry(state, petId);
+ if (mergeTarget) return mergeInventory(mergeTarget, meta);
+ return addBenchInventory(state, petId, meta);
+}
 function acquisitionFromOffer(offer){ return offer?.restock ? { type:'restock_offer', restockId:offer.restock.restockId, eventId:offer.restock.eventId, name:offer.restock.name, source:offer.restock.source, poolId:offer.restock.poolId, tags:offer.restock.tags || [] } : null; }
 function isConstructionDuplicateEvent(e){ return !!e && /复制/.test(`${e.optionText || ''}${e.gainText || ''}`); }
 function isConstructionUpgradeEvent(e){ return !!e && /升阶|升级/.test(`${e.optionText || ''}${e.gainText || ''}${e.name || ''}`); }
@@ -85,7 +139,9 @@ function applyConstructionEvent(state, e, source='shop_event', meta={}) {
 }
 function buyOffer(state, offerId){ const idx=state.shop.offers.findIndex(o=>o.offerId===offerId); if(idx<0){ pushEvent(state,'SHOP_BUY_BLOCKED',{text:`商品不存在：${offerId}`}); return false; }
  const offer=state.shop.offers[idx]; if(state.gold < offer.price){ pushEvent(state,'SHOP_BUY_BLOCKED',{offerId,text:`金币不足，无法购买 ${offer.name}，需要${offer.price}，当前${state.gold}。`}); return false; }
- const before=state.gold; state.gold-=offer.price; const acquiredFrom=acquisitionFromOffer(offer); const inv=addInventory(state,offer.petId,{acquiredFrom}); state.shop.offers.splice(idx,1); pushEvent(state,'SHOP_BUY',{offerId,petId:offer.petId,price:offer.price,goldFrom:before,goldTo:state.gold,inventory:inv,acquiredFrom:inv.acquiredFrom||null,text:`购买 ${offer.name}，金币${before}→${state.gold}${inv.merged?`，同名合成到Lv${inv.level}`:''}${inv.acquiredFrom?.name?`，来源:${inv.acquiredFrom.name}`:''}。`}); return true; }
+ const target=shopPurchaseTarget(state,offer.petId); if(!target.ok){ pushEvent(state,'SHOP_BUY_BLOCKED',{offerId,petId:offer.petId,reason:target.reason,activeCount:target.activeCount,benchCount:target.benchCount,text:target.text}); return false; }
+ const before=state.gold; state.gold-=offer.price; const acquiredFrom=acquisitionFromOffer(offer); const inv=addInventory(state,offer.petId,{acquiredFrom,preferActive:true,target}); if(inv.blocked){ state.gold=before; pushEvent(state,'SHOP_BUY_BLOCKED',{offerId,petId:offer.petId,reason:inv.reason,text:inv.text || `购买失败：没有上阵或背包空位。`}); return false; }
+ state.shop.offers.splice(idx,1); const placementText=inv.placement==='active'?`，加入上阵位${inv.slot || ''}`:(inv.merged?`，背包同名合成到Lv${inv.level}`:`，进入背包`); pushEvent(state,'SHOP_BUY',{offerId,petId:offer.petId,price:offer.price,goldFrom:before,goldTo:state.gold,inventory:inv,acquiredFrom:inv.acquiredFrom||null,text:`购买 ${offer.name}，金币${before}→${state.gold}${placementText}${inv.acquiredFrom?.name?`，来源:${inv.acquiredFrom.name}`:''}。`}); return true; }
 function availableEvents(state){ return state.data.events.filter(e=>e.layer==='shop_phase' && e.status==='正式' && dayExprAllows(e.dayExpr,state.day)); }
 function dayExprAllows(expr, day){ if(!expr) return true; const m=String(expr).match(/D(\d+)\s*-\s*D(\d+)/); if(m) return day>=Number(m[1]) && day<=Number(m[2]); const m2=String(expr).match(/D(\d+)/); return m2 ? day===Number(m2[1]) : true; }
 function applyShopEventModifiers(state, e, source='shop_event') {
@@ -100,6 +156,7 @@ function applyShopEventModifiers(state, e, source='shop_event') {
 function applyShopEvent(state, eventId){ const e=state.data.events.find(x=>x.id===eventId); if(!e) return false; if(isConstructionEvent(e)){ const effect=applyConstructionEvent(state,e,'shop_event'); if(!effect) return false; pushEvent(state,'SHOP_EVENT_APPLY',{eventId,cost:effect.cost,goldFrom:effect.goldFrom,goldTo:effect.goldTo,effect:clone(effect),refreshState:clone(ensureRefreshState(state)),text:`选择商店事件【${e.name}】：${e.optionText}，金币${effect.goldFrom}→${effect.goldTo}。`}); return true; } const cost=parseGoldCost(e.costText); if(state.gold<cost){ pushEvent(state,'SHOP_EVENT_BLOCKED',{eventId,text:`金币不足，无法选择事件 ${e.name}。`}); return false; } const before=state.gold; state.gold-=cost; const effect=applyShopEventModifiers(state,e,'shop_event'); if(e.shopPoolId && /候选|商品位|补货/.test(e.gainText||'')){ const slots=Math.max(3, e.value || 2); const restock={restockId:`restock_${state.day}_${state.nextStep || 0}_${eventId}`, eventId:e.id, name:e.name, source:'shop_event', poolId:e.shopPoolId, tags:stallTags(e.shopPoolId), slots, status:'pending', offerIds:[]}; ensureRefreshState(state).targetedRestocks.push(restock); rollShop(state,{poolId:e.shopPoolId, slots, free:true, restock}); restock.status='applied'; restock.offerIds=(state.shop.offers||[]).filter(o=>o.restock?.restockId===restock.restockId).map(o=>o.offerId); for(const offer of state.shop.offers||[]) if(offer.restock?.restockId===restock.restockId) offer.restock.status='applied'; pushEvent(state,'SHOP_TARGETED_RESTOCK',{poolId:e.shopPoolId, restock:clone(restock), text:`定向补货：${e.name} -> ${e.shopPoolId}，槽位${slots}。`}); } pushEvent(state,'SHOP_EVENT_APPLY',{eventId,cost,goldFrom:before,goldTo:state.gold,effect:effect?clone(effect):null,refreshState:clone(ensureRefreshState(state)),text:`选择商店事件【${e.name}】：${e.optionText}，金币${before}→${state.gold}。`}); return true; }
 function rewardOptions(state, poolId='reward_pT1', count=3){ const pool=state.data.shop.filter(i => i.unlockDay<=state.day && (i.rewardPools||[]).includes(poolId)); const relics=state.data.relics.filter(r=>r.unlockDay<=state.day && r.rewardPoolId===poolId && r.status==='正式'); const random=rng(`reward:${state.day}:${state.period}:${poolId}:${state.round}`); const out=[]; for(let i=0;i<count;i++){ const source = i===count-1 && relics.length ? 'relic' : 'pet'; if(source==='relic'){ const r=pickWeighted(relics,x=>x.weight||1,random); if(r) out.push({type:'relic', id:r.id, name:r.name, poolId}); } else { const it=pickWeighted(pool,x=>x.weights.reward||1,random); if(it) out.push({type:'pet', petId:it.petId, name:it.name, poolId}); } }
  state.rewards=out; pushEvent(state,'REWARD_OPTIONS',{poolId,options:out,text:`奖励候选：${out.map(x=>x.name).join('、')}。`}); return out; }
-function pickReward(state, index=0){ const r=state.rewards[index]; if(!r) return false; if(r.type==='pet') addInventory(state,r.petId); if(r.type==='relic') state.relics.push(r.id); pushEvent(state,'REWARD_PICK',{reward:r,text:`选择奖励：${r.name}。`}); return true; }
-function exitShop(state){ const returnPhase=state.shop.routeReturnPhase || null; delete state.shop.routeReturnPhase; state.phase=returnPhase || 'day_end'; pushEvent(state,'SHOP_EXIT',{stall:state.shop.activeStall||null,text:`离开商店：金币${state.gold}，背包${state.inventory.length}种宠物，遗物${state.relics.length}件。`}); }
+function finishRouteReturn(state, returnPhase){ if(returnPhase==='day_end' && state.dayRoute && !state.dayRoute.dayEnded){ state.dayRoute.dayEnded=true; pushEvent(state,'DAY_ROUTE_END',{day:state.day,text:`第${state.day}天路线结束。`}); } }
+function pickReward(state, index=0){ const r=state.rewards[index]; if(!r) return false; if(r.type==='pet') addInventory(state,r.petId); if(r.type==='relic') state.relics.push(r.id); pushEvent(state,'REWARD_PICK',{reward:r,text:`选择奖励：${r.name}。`}); const returnPhase=state.dayRoute?.rewardReturnPhase || null; if(returnPhase){ delete state.dayRoute.rewardReturnPhase; state.rewards=[]; state.phase=returnPhase; finishRouteReturn(state,returnPhase); } return true; }
+function exitShop(state){ const returnPhase=state.shop.routeReturnPhase || null; delete state.shop.routeReturnPhase; state.phase=returnPhase || 'day_end'; finishRouteReturn(state,returnPhase); pushEvent(state,'SHOP_EXIT',{stall:state.shop.activeStall||null,text:`离开商店：金币${state.gold}，背包${state.inventory.length}种宠物，遗物${state.relics.length}件。`}); }
 module.exports={ enterShop, rollShop, freezeOffer, buyOffer, availableEvents, applyShopEvent, applyShopEventModifiers, applyConstructionEvent, rewardOptions, pickReward, exitShop, enabledShopItems, makeStall, stallTags, ensureRefreshState };

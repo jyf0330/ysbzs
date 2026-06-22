@@ -162,13 +162,14 @@ function normalizeMechanics(list) {
 function makeLeader(side, overrides = {}) {
   const isPlayer = side === 'player';
   const hp = overrides.hp || 80;
+  const defaultName = isPlayer ? '孙悟空' : '虎先锋';
   return {
     id: overrides.id || (isPlayer ? 'player_hero' : 'enemy_boss'),
     type: isPlayer ? 'hero' : 'boss',
     side: isPlayer ? 'hero_leader' : 'boss',
     camp: side,
-    name: overrides.name || (isPlayer ? '我方英雄' : '敌方Boss'),
-    displayName: overrides.displayName || (isPlayer ? '我方英雄' : '敌方Boss'),
+    name: overrides.name || defaultName,
+    displayName: overrides.displayName || defaultName,
     hp,
     maxHp: overrides.maxHp || hp,
     atk: overrides.atk || 0,

@@ -1,37 +1,28 @@
 import { createGameRuntime } from './js/runtime-client.js';
 
 const $ = id => document.getElementById(id);
-const runtime = createGameRuntime({ playerId: 'p1' });
+const params = new URLSearchParams(window.location.search || '');
+const currentPlayerId = () => params.get('playerId') || 'p1';
+const runtime = createGameRuntime({ playerId: currentPlayerId, mode: params.get('runtime') || 'http' });
 const PHASE_TEXT = {
   init: '准备',
-  node_choice: '节点选择',
-  node_resolved: '节点结算',
+  node_choice: '路线选择',
+  node_resolved: '节点完成',
   battle_choice: '遭遇选择',
   player_turn: '玩家回合',
   monster_turn: '怪物行动',
   round_end: '回合结算',
   battle_end: '战斗结束',
-  shop: '商店',
+  shop: '商店节点',
+  reward: '奖励节点',
   day_end: '当天结束'
 };
-const FLOW_TYPES = new Set([
-  'GENERATE_NODE_OPTIONS',
-  'PICK_NODE',
-  'GENERATE_BATTLE_OPTIONS',
-  'PICK_BATTLE_ENCOUNTER',
-  'RUN_ROUTE_FIXED_BATTLE',
-  'CLAIM_ROUTE_REWARD',
-  'REWARD_OPTIONS',
-  'PICK_REWARD',
-  'ENTER_SHOP',
-  'EXIT_SHOP',
-  'RUN_BATTLE',
-  'RUN_FULL_DAY',
-  'RUN_FULL_RUN'
-]);
 
 let vm = null;
 let busy = false;
+let autoAdvanceTimer = null;
+let autoAdvanceBlockedKey = null;
+let autoAdvanceInFlight = false;
 let commandNo = 1;
 let consoleErrors = 0;
 
@@ -45,7 +36,7 @@ function phaseText(phase) { return PHASE_TEXT[phase] || phase || '-'; }
 function toast(text, error = false) {
   const el = $('toast');
   el.textContent = text;
-  el.style.borderLeftColor = error ? '#a84f3e' : '#c8a050';
+  el.style.borderLeftColor = error ? '#a84f3e' : '#2d7f73';
   el.classList.remove('hidden');
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => el.classList.add('hidden'), 2600);
@@ -58,7 +49,7 @@ function makeCommand(type, payload = {}) {
   return Object.assign({
     type,
     commandId: `daily_${String(commandNo++).padStart(6, '0')}`,
-    playerId: 'p1',
+    playerId: currentPlayerId(),
     battleId: vm?.battleId,
     baseStateVersion: vm?.stateVersion ?? 0
   }, payload);
@@ -83,6 +74,7 @@ async function runCommand(type, payload = {}) {
   } finally {
     setBusy(false);
     renderControls();
+    scheduleAutoAdvance();
   }
 }
 function buildCoreText() {
@@ -90,31 +82,97 @@ function buildCoreText() {
   if (tags.length) return tags.slice(0, 3).map(x => x.label).join(' / ');
   return vm?.buildCore?.summaryText || '尚未形成';
 }
-function nextAction(type) {
-  return (vm?.nextActions || []).find(action => action.type === type) || null;
+function nextSchedule() {
+  return vm?.dailyFlow?.nextSchedule || null;
 }
-function nextFlowAction() {
-  return (vm?.nextActions || []).find(action => FLOW_TYPES.has(action.type) && action.type !== 'RUN_FULL_DAY' && action.type !== 'RUN_FULL_RUN') || null;
+function canAdvanceRoutePhase() {
+  return ['init', 'node_resolved', 'battle_end'].includes(vm?.phase);
+}
+function fixedBattleAction() {
+  const schedule = nextSchedule();
+  if (!schedule || schedule.kind !== 'fixed_battle' || !canAdvanceRoutePhase()) return null;
+  const phase = schedule.phaseLabel || schedule.label || '战斗';
+  const label = /终局/.test(`${phase}${schedule.label || ''}`)
+    ? '进入终局战'
+    : (Number(schedule.step || 0) <= 3 ? '进入第一场战斗' : '进入第二场战斗');
+  return { type: 'RUN_ROUTE_FIXED_BATTLE', label, defaultPayload: { scheduleStep: schedule.step } };
+}
+function nodeOptionsAction() {
+  const schedule = nextSchedule();
+  if (!schedule || schedule.kind !== 'node_choice' || !canAdvanceRoutePhase()) return null;
+  return { type: 'GENERATE_NODE_OPTIONS', label: '展开 3 选 1', defaultPayload: { scheduleStep: schedule.step } };
+}
+function nextDayAction() {
+  if (vm?.phase !== 'day_end') return null;
+  const action = (vm?.nextActions || []).find(x => x.type === 'START_NEXT_DAY');
+  if (!action) return null;
+  return { type: 'START_NEXT_DAY', label: action.label || `进入第${Number(vm?.day || 1) + 1}天`, defaultPayload: action.defaultPayload || { day: Number(vm?.day || 1) + 1 } };
+}
+function primaryRouteAction() {
+  if (vm?.phase === 'day_end') return nextDayAction();
+  if (vm?.dailyFlow?.terminal) return null;
+  if ((vm?.dayRoute?.options || []).length || (vm?.rewards || []).length || vm?.phase === 'shop') return null;
+  return fixedBattleAction();
+}
+function autoRouteAction() {
+  if (!vm || busy || autoAdvanceInFlight || vm.dailyFlow?.terminal || vm.phase === 'day_end' || vm.phase === 'shop') return null;
+  if ((vm.dayRoute?.options || []).length || (vm.dayRoute?.battleOptions || []).length) return null;
+  if ((vm.rewards || []).length === 1) {
+    return { type: 'PICK_REWARD', label: '自动领取唯一奖励', defaultPayload: { index: 0 } };
+  }
+  const nodeAction = nodeOptionsAction();
+  if (nodeAction) return nodeAction;
+  return null;
+}
+function autoActionKey(action) {
+  return action ? `${vm?.stateVersion || 0}:${action.type}:${JSON.stringify(action.defaultPayload || {})}` : '';
+}
+function scheduleAutoAdvance() {
+  clearTimeout(autoAdvanceTimer);
+  const action = autoRouteAction();
+  if (!action) return;
+  const key = autoActionKey(action);
+  if (key && key === autoAdvanceBlockedKey) return;
+  autoAdvanceTimer = setTimeout(() => runAutoAdvance(), 180);
+}
+async function runAutoAdvance() {
+  const action = autoRouteAction();
+  if (!action) return;
+  const key = autoActionKey(action);
+  if (key && key === autoAdvanceBlockedKey) return;
+  autoAdvanceInFlight = true;
+  const data = await runCommand(action.type, Object.assign({}, action.defaultPayload || {}));
+  autoAdvanceInFlight = false;
+  if (!data) autoAdvanceBlockedKey = key;
+  else {
+    autoAdvanceBlockedKey = null;
+    scheduleAutoAdvance();
+  }
 }
 function routeLabel() {
   const flow = vm?.dailyFlow || {};
   if (flow.terminal) return `终局 ${flow.terminal.status || ''}`.trim();
-  if (['player_turn','monster_turn','round_end','battle_end'].includes(vm?.phase)) return `战斗 ${vm.round || 0}/${vm.maxRounds || '-'}`;
   return `${flow.currentStep || 0}/${flow.totalSteps || 0}`;
 }
 function nextLabel() {
   if (vm?.terminalSummary) return vm.terminalSummary.nextStepText || '查看终局报告';
-  const action = nextFlowAction() || (vm?.nextActions || [])[0];
-  return action?.label || phaseText(vm?.phase);
+  if ((vm?.dayRoute?.options || []).length) return '选择一个 3 选 1 节点';
+  if ((vm?.rewards || []).length) return '选择一个奖励';
+  if (vm?.phase === 'shop') return '处理商店节点';
+  const action = primaryRouteAction();
+  if (action) return action.label;
+  const auto = autoRouteAction();
+  if (auto) return auto.type === 'GENERATE_NODE_OPTIONS' ? '正在准备 3 选 1' : auto.label;
+  return phaseText(vm?.phase);
 }
 function statusLabel(status) {
   return { done: '已完成', current: '当前', next: '下一步', pending: '未到达' }[status] || status || '-';
 }
 function kindSummary(step) {
   if (step.pickedName) return `已选择：${step.pickedName}`;
-  if (step.kind === 'node_choice') return '三选一成长、商人、奖励或事件节点。';
-  if (step.kind === 'battle_choice') return '三选一遭遇，进入中午路线战斗。';
-  if (step.kind === 'fixed_battle') return '固定路线战斗，结算当天压力。';
+  if (step.kind === 'node_choice') return '3 选 1，进入成长、商店、奖励或事件节点。';
+  if (step.kind === 'battle_choice') return '三选一遭遇。';
+  if (step.kind === 'fixed_battle') return Number(step.step || 0) <= 3 ? '第一场棋盘战斗，虎先锋首波召唤宠物。' : '第二场棋盘战斗。';
   return step.note || '路线步骤。';
 }
 function renderStatus() {
@@ -125,61 +183,141 @@ function renderStatus() {
   $('build-label').textContent = buildCoreText();
   $('build-label').title = vm?.buildCore?.summaryText || '';
   $('next-label').textContent = nextLabel();
-  $('flow-summary').textContent = `第${vm?.dailyFlow?.day || vm?.day || 1}天，${vm?.dailyFlow?.totalSteps || 0} 个路线步骤；当前：${nextLabel()}。`;
+  $('flow-summary').textContent = `第${vm?.dailyFlow?.day || vm?.day || 1}天：3选1 → 3选1 → 战斗 → 3选1 → 3选1 → 战斗。当前：${nextLabel()}。`;
+}
+function renderOpening() {
+  const opening = vm?.dailyFlow?.opening || {};
+  const playerHero = opening.playerHero || vm?.leaders?.player || {};
+  const enemyHero = opening.enemyHero || vm?.leaders?.enemy || {};
+  const playerPets = opening.playerPets || vm?.heroes || [];
+  const firstWave = opening.firstWave || {};
+  const petText = playerPets.map(pet => pet.name || pet.displayName || pet.petId).filter(Boolean).join('、') || '暂无上场宠物';
+  const wavePets = (firstWave.petNames || []).join('、') || '等待波次数据';
+  $('opening-player-hero').textContent = playerHero.name || playerHero.displayName || '我方英雄';
+  $('opening-player-pets').textContent = `携带宠物：${petText}`;
+  $('opening-enemy-hero').textContent = enemyHero.name || enemyHero.displayName || '敌方英雄';
+  $('opening-enemy-wave').textContent = firstWave.summonerName ? `${firstWave.summonerName}持续召唤宠物作战` : '等待敌方波次';
+  $('opening-wave-label').textContent = firstWave.wavePeriod ? `${firstWave.wavePeriod} · 第${firstWave.round || 1}回合` : '首波';
+  $('opening-summon-title').textContent = `${firstWave.summonerName || enemyHero.name || '敌方'}召唤 ${firstWave.spawnCount ?? '-'} 只`;
+  $('opening-summon-summary').textContent = firstWave.summary || `召唤池：${wavePets}`;
 }
 function renderTimeline() {
   const flow = vm?.dailyFlow || {};
   const steps = flow.steps || [];
   $('timeline-count').textContent = `${flow.currentStep || 0}/${flow.totalSteps || steps.length}`;
-  $('timeline').innerHTML = steps.map(step => `<article class="step-card ${esc(step.status)}">
+  $('timeline').innerHTML = steps.map(step => `<article class="step-card ${esc(step.status)} ${esc(step.kind)}">
     <div class="step-top"><strong>${esc(step.step)}</strong><span>${esc(statusLabel(step.status))}</span></div>
     <h3>${esc(step.label || step.phaseLabel)}</h3>
     <p>${esc(step.note || step.kindLabel || '')}</p>
     <div class="picked">${esc(kindSummary(step))}</div>
   </article>`).join('') || '<div class="empty">当前日没有路线日程。</div>';
 }
-function choicePreview(option = {}) {
-  const preview = option.choicePreview || {};
-  const pressure = option.pressurePreview || {};
+function choicePreview(item = {}) {
+  if (item.offerId) return `${item.element || '-'} / ${item.role || '-'} · 价格 ${item.price ?? '-'} 金`;
+  if (item.instanceId || item.petId) return `${item.element || '-'} / ${item.role || '-'} · Lv${item.level || 1} · 出售 ${item.sellValue || 1} 金`;
+  if (item.eventId && item.optionText) return `${item.optionText} · ${item.costText || '无成本'} · ${item.gainText || ''}`;
+  if (item.type === 'pet' || item.type === 'relic') return `${item.type === 'relic' ? '遗物' : '宠物'} · ${item.poolId || ''}`;
+  const preview = item.choicePreview || {};
+  const pressure = item.pressurePreview || {};
   const lines = [
-    preview.summary || option.note || option.phaseLabel || option.name,
+    preview.summary || item.note || item.phaseLabel || item.name,
     pressure.summary ? `压力：${pressure.summary}` : '',
     preview.costText ? `成本：${preview.costText}` : '',
     preview.gainText ? `收益：${preview.gainText}` : ''
   ].filter(Boolean);
   return lines.join(' · ');
 }
-function actionButton(label, type, payload = {}, extra = '') {
-  return `<button class="choice-card ${extra}" data-command="${esc(type)}" data-payload="${esc(JSON.stringify(payload))}" type="button"${busy ? ' disabled' : ''}>
-    <strong>${esc(label)}</strong><span>${esc(type)}</span><p>${esc(choicePreview(payload.option || payload.reward || {}))}</p>
+function actionButton(label, type, payload = {}, extra = '', subtitle = '', options = {}) {
+  const item = payload.option || payload.reward || payload.offer || payload.shopEvent || payload.unit || payload;
+  const disabled = busy || !!options.disabled;
+  return `<button class="choice-card ${extra}" data-command="${esc(type)}" data-payload="${esc(JSON.stringify(payload))}" type="button"${disabled ? ' disabled' : ''}${options.disabledReason ? ` title="${esc(options.disabledReason)}"` : ''}>
+    <strong>${esc(label)}</strong><span>${esc(subtitle)}</span><p>${esc(choicePreview(item))}</p>
   </button>`;
 }
-function renderChoices() {
+function buyDisabledReason(offer = {}) {
+  if (Number(vm?.gold || 0) < Number(offer.price || 0)) return `金币不足：需要${offer.price ?? '-'}，当前${vm?.gold ?? 0}`;
+  if (offer.canBuy === false) return offer.buyBlockedReason || '没有上阵或背包空位';
+  return '';
+}
+function renderNodeChoices(items) {
   const route = vm?.dayRoute || {};
+  for (const option of route.options || []) {
+    items.push(actionButton(option.name || option.nodeId, 'PICK_NODE', { optionId: option.optionId, option }, 'node-choice', option.choicePreview?.kindLabel || '节点'));
+  }
+  for (const option of route.battleOptions || []) {
+    items.push(actionButton(option.name || option.encounterId, 'PICK_BATTLE_ENCOUNTER', { encounterId: option.encounterId, option }, 'battle-choice', option.choicePreview?.kindLabel || '遭遇'));
+  }
+}
+function renderRewardChoices(items) {
+  (vm?.rewards || []).forEach((reward, index) => {
+    items.push(actionButton(reward.name || reward.petName || reward.relicName || `奖励${index + 1}`, 'PICK_REWARD', { index, reward }, 'reward-choice', '奖励'));
+  });
+}
+function renderShopChoices(items) {
+  if (vm?.phase !== 'shop') return;
+  const shop = vm?.shop || {};
+  for (const offer of shop.offers || []) {
+    const reason = buyDisabledReason(offer);
+    const placement = offer.buyPlacement === 'active' ? '进上阵' : offer.buyPlacement === 'bench' ? '进背包' : '无位置';
+    items.push(actionButton(`购买宠物 ${offer.name}`, 'BUY_OFFER', { offerId: offer.offerId, offer }, `shop-choice${reason ? ' locked-choice' : ''}`, `${offer.price ?? '-'} 金 · ${placement}`, { disabled: !!reason, disabledReason: reason }));
+  }
+  const inventory = vm?.inventory || {};
+  const sellItems = [...(inventory.items || [])].sort((a, b) => Number(a.active === true) - Number(b.active === true));
+  for (const unit of sellItems) {
+    items.push(actionButton(`出售宠物 ${unit.name || unit.petId}`, 'SELL_UNIT', { instanceId: unit.instanceId, petId: unit.petId, unit }, 'sell-choice', unit.active ? '上阵' : '背包'));
+  }
+  items.push(actionButton('刷新商店', 'ROLL_SHOP', { slots: shop.activeStall?.slots || 6 }, '', '商店'));
+  for (const shopEvent of shop.events || []) {
+    items.push(actionButton(shopEvent.name, 'APPLY_SHOP_EVENT', { eventId: shopEvent.id, shopEvent }, 'event-choice', '商店事件'));
+  }
+  items.push(actionButton('离开商店节点', 'EXIT_SHOP', {}, 'primary-action', '继续路线'));
+}
+function renderChoices() {
   if (vm?.dailyFlow?.terminal) {
     $('choice-count').textContent = '0';
     $('choice-list').innerHTML = '<div class="empty">终局已结束，没有需要继续处理的路线选项。</div>';
     return;
   }
-  const rewards = vm?.rewards || [];
-  const pending = vm?.dailyFlow?.pendingRewards || route.pendingRewards || [];
   const items = [];
-  for (const option of route.options || []) {
-    items.push(actionButton(option.name || option.nodeId, 'PICK_NODE', { optionId: option.optionId, option }));
-  }
-  for (const option of route.battleOptions || []) {
-    items.push(actionButton(option.name || option.encounterId, 'PICK_BATTLE_ENCOUNTER', { encounterId: option.encounterId, option }));
-  }
-  for (const reward of pending.filter(x => x && !x.claimed)) {
-    items.push(actionButton(`领取 ${reward.rewardPoolId || '路线奖励'}`, 'CLAIM_ROUTE_REWARD', { rewardId: reward.rewardId, rewardIndex: 0, reward }));
-  }
-  rewards.forEach((reward, index) => {
-    items.push(actionButton(reward.name || reward.petName || reward.relicName || `奖励${index + 1}`, 'PICK_REWARD', { index, reward }));
-  });
-  const fixed = nextAction('RUN_ROUTE_FIXED_BATTLE');
-  if (fixed) items.unshift(actionButton(fixed.label || '进入固定战', 'RUN_ROUTE_FIXED_BATTLE', fixed.defaultPayload || {}, 'primary-action'));
+  const action = primaryRouteAction();
+  if (action) items.push(actionButton(action.label, action.type, action.defaultPayload || {}, 'primary-action', '路线'));
+  renderNodeChoices(items);
+  renderRewardChoices(items);
+  renderShopChoices(items);
   $('choice-count').textContent = String(items.length);
-  $('choice-list').innerHTML = items.join('') || '<div class="empty">暂无选择项。可点击“执行下一步”推进到候选生成。</div>';
+  $('choice-list').innerHTML = items.join('') || '<div class="empty">正在进入下一段流程。</div>';
+}
+function inventoryCard(item = {}, active = false) {
+  const id = item.instanceId || item.petId;
+  const moveLabel = active ? '下阵' : '上阵';
+  const canMove = active ? item.canMoveToBench === true : item.canMoveToActive === true;
+  const moveReason = item.moveBlockedReason || (active ? '背包已满' : '上阵已满');
+  const movePayload = esc(JSON.stringify({ instanceId: item.instanceId, petId: item.petId, unit: item }));
+  const move = `<button class="inventory-move" data-command="TOGGLE_UNIT_ACTIVE" data-payload="${movePayload}" type="button"${busy || !canMove ? ' disabled' : ''}${!canMove ? ` title="${esc(moveReason)}"` : ''}>${moveLabel}</button>`;
+  const sale = vm?.phase === 'shop'
+    ? `<button class="inventory-sell" data-command="SELL_UNIT" data-payload="${esc(JSON.stringify({ instanceId: item.instanceId, petId: item.petId, unit: item }))}" type="button"${busy ? ' disabled' : ''}>出售</button>`
+    : '';
+  return `<article class="inventory-card ${active ? 'active' : 'bench'}">
+    <strong>${esc(item.name || item.petId)}</strong>
+    <span>${esc(item.element || '-')} / ${esc(item.role || '-')} · Lv${esc(item.level || 1)}</span>
+    <p>${active ? '上阵' : '背包'} · 售${esc(item.sellValue || 1)}金</p>
+    <div class="inventory-actions">${move}${sale}</div>
+  </article>`;
+}
+function emptySlots(count) {
+  return Array.from({ length: Math.max(0, count) }, () => '<div class="inventory-slot">空位</div>').join('');
+}
+function renderInventory() {
+  const inv = vm?.inventory || { active: [], bench: [], activeCount: 0, benchCount: 0, maxActive: 4, maxBench: 8 };
+  const active = inv.active || [];
+  const bench = inv.bench || [];
+  const maxActive = Number(inv.maxActive || active.length || 0);
+  const maxBench = Number(inv.maxBench || bench.length || 0);
+  $('inventory-count').textContent = `上阵 ${active.length}/${maxActive} · 背包 ${bench.length}/${maxBench}`;
+  $('inventory-active-count').textContent = `${active.length}/${maxActive}`;
+  $('inventory-bench-count').textContent = `${bench.length}/${maxBench}`;
+  $('inventory-active-list').innerHTML = active.map(item => inventoryCard(item, true)).join('') + emptySlots(maxActive - active.length);
+  $('inventory-bench-list').innerHTML = bench.map(item => inventoryCard(item, false)).join('') + emptySlots(maxBench - bench.length);
 }
 function renderHistory() {
   const history = vm?.dailyFlow?.history || [];
@@ -196,7 +334,7 @@ function renderRuns() {
     <strong>D${esc(run.day)}</strong>
     <div><strong>${esc(run.terminal?.name || run.phase || '完成')}</strong><span>金币 ${esc(run.goldBefore ?? '-')} → ${esc(run.goldAfter ?? run.gold ?? '-')} · 历史 ${esc((run.history || []).length)}</span></div>
     <span class="badge">${esc(run.terminal?.status || 'done')}</span>
-  </article>`).join('') || '<div class="empty">还没有跨天 Run 记录。点击“完整 Run”后会显示 Day1-Day10 摘要。</div>';
+  </article>`).join('') || '<div class="empty">跨天摘要会在完整 Run 后显示；玩家日常主线先完成当天。</div>';
 }
 function renderLog(events = []) {
   const recent = events.length ? events : (vm?.events || []).slice(-24);
@@ -207,15 +345,15 @@ function updateConsoleLabel() {
   $('console-label').textContent = `console: ${consoleErrors}`;
 }
 function renderControls() {
-  const next = nextFlowAction();
+  const next = primaryRouteAction();
   $('run-next-btn').disabled = busy || !next;
-  $('run-next-btn').textContent = next ? next.label : '无下一步';
-  $('full-day-btn').disabled = busy || !nextAction('RUN_FULL_DAY');
-  $('full-run-btn').disabled = busy || !nextAction('RUN_FULL_RUN');
+  $('run-next-btn').textContent = next ? next.label : nextLabel();
 }
 function render(events = []) {
   if (!vm) return;
   renderStatus();
+  renderOpening();
+  renderInventory();
   renderTimeline();
   renderChoices();
   renderHistory();
@@ -223,30 +361,38 @@ function render(events = []) {
   renderLog(events);
   renderControls();
   updateConsoleLabel();
-  window.__YSBZS_DAILY_FLOW__ = { lastViewModel: vm, runCommand, loadView };
+  window.__YSBZS_DAILY_FLOW__ = { lastViewModel: vm, runCommand, loadView, primaryRouteAction, isBusy: () => busy };
+  scheduleAutoAdvance();
 }
 function payloadFromButton(btn) {
   try { return JSON.parse(btn.dataset.payload || '{}'); }
   catch (_) { return {}; }
 }
 async function runNext() {
-  const next = nextFlowAction();
+  const next = primaryRouteAction();
   if (!next) return;
   const payload = Object.assign({}, next.defaultPayload || {});
   await runCommand(next.type, payload);
 }
 
 $('refresh-btn').addEventListener('click', () => loadView().catch(err => toast(err.message || String(err), true)));
-$('new-day-btn').addEventListener('click', () => runCommand('NEW_GAME', { day: 1, period: '上午', gold: 8 }));
 $('run-next-btn').addEventListener('click', runNext);
-$('full-day-btn').addEventListener('click', () => runCommand('RUN_FULL_DAY'));
-$('full-run-btn').addEventListener('click', () => runCommand('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: Math.max(999, Number(vm?.gold || 0)) }));
 $('choice-list').addEventListener('click', ev => {
   const btn = ev.target.closest('[data-command]');
   if (!btn) return;
   const payload = payloadFromButton(btn);
   delete payload.option;
   delete payload.reward;
+  delete payload.offer;
+  delete payload.shopEvent;
+  delete payload.unit;
+  runCommand(btn.dataset.command, payload);
+});
+$('inventory-panel').addEventListener('click', ev => {
+  const btn = ev.target.closest('[data-command]');
+  if (!btn) return;
+  const payload = payloadFromButton(btn);
+  delete payload.unit;
   runCommand(btn.dataset.command, payload);
 });
 

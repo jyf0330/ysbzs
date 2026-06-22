@@ -105,15 +105,43 @@ function positionKey(pos) { return `${pos.r},${pos.c}`; }
 
 function cloneElementsFromCell(cell) { return Object.assign(makeEmptyElements(), cell?.elements || {}); }
 
+function estimateHitDamage(actor, slot, target) {
+  const actionRaw = Math.max(0, Number(actor?.atk ?? slot?.layers ?? 0));
+  const layerRaw = Math.max(0, Number(effectiveDamageFromLayers(slot?.layers, target) || 0));
+  const raw = Math.max(actionRaw, layerRaw);
+  return Math.max(0, raw - Number(target?.def || 0));
+}
+
+function estimateDamageAllocation(target, damage, already = 0) {
+  const shield = Math.max(0, Number(target?.shield || 0));
+  const hp = Math.max(0, Number(target?.hp || 0));
+  const applied = Math.max(0, Number(already || 0));
+  const remainingShield = Math.max(0, shield - applied);
+  const remainingHp = Math.max(0, hp - Math.max(0, applied - shield));
+  const final = Math.max(0, Number(damage || 0));
+  const shieldDamage = Math.min(remainingShield, final);
+  const hpDamage = Math.min(remainingHp, Math.max(0, final - shieldDamage));
+  const effective = shieldDamage + hpDamage;
+  return {
+    final,
+    effective,
+    overflow: Math.max(0, final - effective),
+    hpDamage,
+    shieldDamage,
+    killed: remainingHp > 0 && hpDamage >= remainingHp
+  };
+}
+
 function actionCandidateScore(state, actor, slot, cells, targets) {
   let effective = 0, raw = 0, kills = 0, bossDamage = 0, terrainValue = 0, weakenValue = 0;
   for (const t of targets) {
-    const add = effectiveDamageFromLayers(slot.layers, t);
-    raw += add;
-    const eff = Math.min(Number(t.hp || 0), add);
+    const add = estimateHitDamage(actor, slot, t);
+    const allocation = estimateDamageAllocation(t, add);
+    raw += allocation.final;
+    const eff = allocation.effective;
     effective += eff;
     if (t.id === state.leaders?.enemy?.id) bossDamage += eff;
-    if (eff >= Number(t.hp || 0)) kills++;
+    if (allocation.killed) kills++;
   }
   if (!targets.length) {
     for (const p of cells) {
@@ -139,7 +167,7 @@ function actionCandidateScore(state, actor, slot, cells, targets) {
     bossDamage,
     terrainValue,
     weakenValue,
-    score: effective * 10 + kills * 30 + bossDamage * 8 + terrainValue * 2 + weakenValue * 3 - overflow * 3
+    score: effective * 10 + kills * 30 + bossDamage * 8 + terrainValue * 2 + weakenValue * 3 - overflow * 8
   };
 }
 
@@ -205,14 +233,14 @@ function evaluateTeamChoices(state, choices) {
           const target = getUnit(state, tid);
           if (!target) continue;
           const already = targetDamage.get(tid) || 0;
-          const remaining = Math.max(0, Number(target.hp || 0) - already);
-          const raw = effectiveDamageFromLayers(action.layers, target);
-          const eff = Math.min(remaining, raw);
-          const over = Math.max(0, raw - eff);
-          targetDamage.set(tid, already + raw);
+          const raw = estimateHitDamage(actor, action, target);
+          const allocation = estimateDamageAllocation(target, raw, already);
+          const eff = allocation.effective;
+          const over = allocation.overflow;
+          targetDamage.set(tid, already + allocation.final);
           stats.effective += eff;
           stats.overflow += over;
-          if (remaining > 0 && eff >= remaining) stats.kills += 1;
+          if (allocation.killed) stats.kills += 1;
           if (tid === state.leaders?.enemy?.id) stats.bossDamage += eff;
         }
       } else {
@@ -251,7 +279,7 @@ function evaluateTeamChoices(state, choices) {
       weakenBenefit += stats.weakenBenefit;
     }
   }
-  score += effectiveDamage * 10 + kills * 30 + bossDamage * 8 + terrainForms * 20 + terrainStacks * 6 + weakenBenefit * 3 - overflow * 4 - conflictPenalty * 80;
+  score += effectiveDamage * 10 + kills * 30 + bossDamage * 8 + terrainForms * 20 + terrainStacks * 6 + weakenBenefit * 3 - overflow * 8 - conflictPenalty * 80;
   return { score, effectiveDamage, overflow, kills, bossDamage, terrainForms, terrainStacks, weakenBenefit, conflictPenalty, actionStats };
 }
 
@@ -298,7 +326,7 @@ function buildPlayerAutoPlan(state) {
   plan.terrainStacks = evaluation.terrainStacks;
   plan.weakenBenefit = evaluation.weakenBenefit;
   plan.conflictPenalty = evaluation.conflictPenalty;
-  plan.sandbox = { beamWidth, evaluatedPlans, candidateCounts: candidateSets.map(x => x.candidates.length), scoring: { effectiveDamage: 10, kills: 30, bossDamage: 8, terrainForms: 20, terrainStacks: 6, weakenBenefit: 3, overflow: -4, conflict: -80 } };
+  plan.sandbox = { beamWidth, evaluatedPlans, candidateCounts: candidateSets.map(x => x.candidates.length), scoring: { effectiveDamage: 10, kills: 30, bossDamage: 8, terrainForms: 20, terrainStacks: 6, weakenBenefit: 3, overflow: -8, conflict: -80 } };
   plan.summary = `全队沙盒规划：移动${plan.moves.length}步，施放${plan.actions.length}槽，有效伤害${plan.effectiveDamage}，Boss伤害${plan.bossDamage}，预估击杀${plan.kills}，地形成型${plan.terrainForms}，地形叠加${plan.terrainStacks}，削弱${plan.weakenBenefit}，溢出${plan.overflow}`;
   return plan;
 }
@@ -347,7 +375,7 @@ function buildPlayerPositionPlan(state) {
   plan.terrainStacks = evaluation.terrainStacks;
   plan.weakenBenefit = evaluation.weakenBenefit;
   plan.conflictPenalty = evaluation.conflictPenalty;
-  plan.sandbox = { beamWidth, evaluatedPlans, candidateCounts: candidateSets.map(x => x.candidates.length), movedUnitIds: Array.from(movedIds) };
+  plan.sandbox = { beamWidth, evaluatedPlans, candidateCounts: candidateSets.map(x => x.candidates.length), movedUnitIds: Array.from(movedIds), scoring: { effectiveDamage: 10, kills: 30, bossDamage: 8, terrainForms: 20, terrainStacks: 6, weakenBenefit: 3, overflow: -8, conflict: -80 } };
   plan.summary = `智能站位：移动${plan.moves.length}只，预计有效伤害${plan.effectiveDamage}，Boss伤害${plan.bossDamage}，预估击杀${plan.kills}。`;
   return plan;
 }

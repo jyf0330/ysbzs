@@ -1,4 +1,45 @@
-const { loadGameData } = require('./csvData.cjs');
+const { loadGameData: loadCsvGameData } = require('./csvData.cjs');
+
+function normalizeDailyRouteSchedule(rows = []) {
+  const grouped = new Map();
+  for (const row of rows) {
+    const day = Number(row.day || 1);
+    if (!grouped.has(day)) grouped.set(day, []);
+    grouped.get(day).push(row);
+  }
+  const normalized = [];
+  for (const day of Array.from(grouped.keys()).sort((a, b) => a - b)) {
+    const dayRows = grouped.get(day).slice().sort((a, b) => Number(a.step || 0) - Number(b.step || 0));
+    const nodes = dayRows.filter(row => row.kind === 'node_choice');
+    const fixedBattles = dayRows.filter(row => row.kind === 'fixed_battle');
+    if (nodes.length !== 4 || fixedBattles.length !== 2) {
+      normalized.push(...dayRows);
+      continue;
+    }
+    let nodeLabelIndex = 0;
+    let battleLabelIndex = 0;
+    const ordered = [nodes[0], nodes[1], fixedBattles[0], nodes[2], nodes[3], fixedBattles[1]];
+    for (const [index, row] of ordered.entries()) {
+      const copy = Object.assign({}, row, { step: index + 1 });
+      if (copy.kind === 'node_choice') {
+        nodeLabelIndex += 1;
+        copy.label = `事件节点${nodeLabelIndex}`;
+      } else if (copy.kind === 'fixed_battle') {
+        battleLabelIndex += 1;
+        const isFinalBoss = day === 10 && /final_boss|终局/.test(`${copy.id || ''}${copy.encounterId || ''}${copy.label || ''}`);
+        copy.label = isFinalBoss ? '终局Boss战' : (battleLabelIndex === 1 ? '第一场战斗' : '第二场战斗');
+      }
+      normalized.push(copy);
+    }
+  }
+  return normalized;
+}
+
+function loadGameData() {
+  const d = loadCsvGameData();
+  return Object.assign({}, d, { nodeSchedule: normalizeDailyRouteSchedule(d.nodeSchedule || []) });
+}
+
 const data = loadGameData();
 function byId(rows, key='id') { const m = new Map(); for (const r of rows) if (r && r[key]) m.set(r[key], r); return m; }
 function buildIndexes(d = loadGameData()) {

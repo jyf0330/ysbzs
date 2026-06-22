@@ -225,6 +225,65 @@
   function qualityTag(q) {
     return q ? `<span class="quality-tag quality-${esc(q)}">${qualityMark(q)}${esc(q)}</span>` : '';
   }
+  function shapeSource(source = {}) {
+    return source.shape || source || {};
+  }
+  function shapeGridRows(source = {}) {
+    const shape = shapeSource(source);
+    const rows = shape.shapeGrid || shape.grid || [];
+    return Array.isArray(rows) ? rows.filter(Boolean).map(row => String(row)) : [];
+  }
+  function shapeTitle(source = {}) {
+    const shape = shapeSource(source);
+    return shape.shapeName || shape.shapeId || '形状';
+  }
+  function shapeHitText(source = {}) {
+    const shape = shapeSource(source);
+    return `命中${shape.hitCells ?? '-'}格`;
+  }
+  function shapeNoteText(source = {}) {
+    const shape = shapeSource(source);
+    return shape.shapeNote || shape.catalogNote || '';
+  }
+  function shapeElementText(source = {}) {
+    const shape = shapeSource(source);
+    if (Array.isArray(shape.slotElements) && shape.slotElements.length) return shape.slotElements.join('');
+    if (source.element) return `${source.element}${source.layers ?? ''}`;
+    return '-';
+  }
+  function renderShapeMini(source = {}, className = '') {
+    const rows = shapeGridRows(source);
+    if (!rows.length) return `<div class="shape-mini ${esc(className)} empty"><span>${esc(shapeTitle(source))}</span></div>`;
+    return `<div class="shape-mini ${esc(className)}" aria-label="${esc(shapeTitle(source))}形状图">
+      ${rows.map(row => `<div class="shape-mini-row">${Array.from(row).map(ch => {
+        const cls = ch === '●' ? 'origin' : ch === '■' ? 'hit' : 'empty';
+        return `<span class="shape-mini-cell ${cls}">${ch === '.' ? '' : esc(ch)}</span>`;
+      }).join('')}</div>`).join('')}
+    </div>`;
+  }
+  function qualitySummary(unit = {}) {
+    const up = unit.qualityUpgrade || {};
+    if (up.name) return `${unit.quality || '品质'} · ${up.name}`;
+    const prog = unit.qualityProgression || {};
+    if (prog.upgradeId) return `${unit.quality || '品质'} · ${prog.upgradeId}`;
+    return `${unit.quality || '普通'} · 无品质效果`;
+  }
+  function renderShapePanel(source = {}, opts = {}) {
+    const shape = shapeSource(source);
+    const dir = opts.direction || source.direction || shape.direction || 'right';
+    const note = shapeNoteText(source);
+    const settle = shape.settleCount ?? source.settleCount ?? '-';
+    const layer = source.element && source.layers != null ? `${source.element}${source.layers}` : shapeElementText(source);
+    return `<div class="detail-shape-panel">
+      ${renderShapeMini(source, 'large')}
+      <div class="detail-shape-copy">
+        <strong>${esc(shapeTitle(source))}</strong>
+        <span>${esc(shape.shapeClass || '')}${shape.shapeClass ? ' · ' : ''}${esc(shapeHitText(source))} · 结算${esc(settle)}次</span>
+        <span>方向 ${esc(DIR[dir] || dir || '→')} · 层数 ${esc(layer)}</span>
+        ${note ? `<small>${esc(note)}</small>` : ''}
+      </div>
+    </div>`;
+  }
   function compactMechanics(list = []) {
     const valid = list.filter(x => x && x.id !== 'none');
     if (!valid.length) return '机制 无';
@@ -250,6 +309,15 @@
       ['护盾', unit.shield ?? 0],
       ['AP', ap],
       ['移动', unit.moveRange ?? unit.moveAp ?? '-']
+    ];
+  }
+  function heroCardStats(unit = {}) {
+    const ap = unit.availableAp != null ? `${unit.availableAp}/${unit.ap ?? unit.availableAp}` : (unit.ap ?? '-');
+    return [
+      ['HP', `${unit.hp ?? '-'}/${unit.maxHp ?? '-'}`],
+      ['攻', unit.atk ?? 0],
+      ['盾', unit.shield ?? 0],
+      ['AP', ap]
     ];
   }
   function renderStatGrid(stats, className = 'detail-stat-grid') {
@@ -281,6 +349,12 @@
     else if (shape.includes('风')) verb = '风';
     else if (shape.includes('治')) verb = '疗';
     return `${slot.element || ''}${verb}`.slice(0, 4);
+  }
+  function actionBlockTitle(slot = {}) {
+    return slot.shapeName || slot.shapeId || slotShortName(slot);
+  }
+  function actionBlockSubtitle(hero = {}, slot = {}) {
+    return `${hero.name || '-'} · ${slot.element || '-'}${slot.layers ?? ''} · 命${slot.hitCells ?? '-'}`;
   }
   function skillName(unit = {}, slot = null) {
     return slot?.shapeName || unit.shape?.skill || unit.shape?.shapeName || unit.skill || '普通行动';
@@ -634,7 +708,13 @@
               <span class="${clsForEl(h.element)}">${esc(h.element || '-')}</span>
               ${qualityTag(h.quality)}
             </div>
-            ${renderStatGrid(heroBattleStats(h), 'hero-stat-grid')}
+            ${renderStatGrid(heroCardStats(h), 'hero-stat-grid')}
+            <div class="hero-shape-line">
+              <span>${esc(shapeTitle(h))}</span>
+              <span>${esc(shapeHitText(h))}</span>
+              <span>${esc(shapeElementText(h))}</span>
+            </div>
+            <div class="hero-quality-line">${esc(qualitySummary(h))}</div>
             ${dead ? '<em>退场</em>' : ''}
           </div>
         </button>
@@ -1039,7 +1119,8 @@
     ui.apBySlot[apKey] = ap;
     panel.className = 'action-popover';
     panel.setAttribute('aria-hidden', 'false');
-    panel.innerHTML = `<div class="action-popover-title"><strong id="action-popover-title">${esc(slotShortName(s))}</strong><span>${esc(h.name)}</span></div>
+    panel.innerHTML = `<div class="action-popover-title"><strong id="action-popover-title">${esc(actionBlockTitle(s))}</strong><span>${esc(h.name)}</span></div>
+      <div class="action-popover-shape">${renderShapeMini(s, 'tiny')}<span>${esc(shapeHitText(s))} · ${esc(s.element || '-')} ${esc(s.layers ?? '-')}层</span></div>
       <div class="action-popover-meta">方向 ${esc(DIR[s.direction] || s.direction || '→')} · AP ${esc(ap)} / ${esc(maxAp)}</div>
       <div class="detail-ap-row" aria-label="AP 分配">
         ${Array.from({ length: maxAp }, (_, i) => i + 1).map(n => `<button class="ap-choice${n === ap ? ' sel' : ''}" data-ap-choice="${n}" type="button"${locked ? ' disabled' : ''}>${n}</button>`).join('')}
@@ -1083,16 +1164,18 @@
 	        ? ui.cellDetail
 	        : null;
 	    const footCellElements = detailForFootCell?.elements || footCell?.elements || {};
-	    const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(s.label || s.shapeName || '行动块')} · ${esc(s.element || '-')} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
+    const slotList = (unit.slots || []).map((s, i) => `<span class="detail-slot-pill ${s.used ? 'used' : ''}">${esc(i + 1)}. ${esc(actionBlockTitle(s))} · ${esc(s.element || '-')} ${esc(s.layers ?? '-')}层 · ${esc(shapeHitText(s))} ${esc(DIR[s.direction] || s.direction || '→')}</span>`).join('');
 	    const activeSlot = selectedSlotInfo();
 	    const facing = activeSlot?.hero?.id === unit.id ? activeSlot.slot.direction : (ui.vm?.selected?.direction || 'right');
 		    const unitRisk = unit.side === 'hero' ? teamRiskForUnit(unit) : null;
 		    const unitThreat = unit.position ? ((ui.cellDetail && Number(ui.cellDetail.r) === Number(unit.position.r) && Number(ui.cellDetail.c) === Number(unit.position.c) ? ui.cellDetail.threat : null) || cellAt(unit.position.r, unit.position.c)?.threat) : null;
 	    return [
-	      `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><div><strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.element || '-')} · ${esc(unit.quality || '普通')} · ${esc(unit.role || '-')}</small></div></div>`,
-	      renderStatGrid(heroBattleStats(unit)),
-	      `<div class="detail-skill-panel"><strong>技能 ${esc(skillName(unit))}</strong><span>${esc(skillDescription(unit))}</span></div>`,
-	      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
+		      `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(unit.element)}">${esc(unitIcon(unit))}</span><div><strong>${esc(unit.displayName || unit.name)}</strong><small>${esc(unit.element || '-')} · ${esc(unit.quality || '普通')} · ${esc(unit.role || '-')}</small></div></div>`,
+		      renderStatGrid(heroBattleStats(unit)),
+		      renderShapePanel(unit, { direction: facing }),
+		      `<div class="detail-skill-panel"><strong>技能 ${esc(skillName(unit))}</strong><span>${esc(skillDescription(unit))}</span></div>`,
+		      `<div class="detail-quality-panel"><strong>${esc(qualitySummary(unit))}</strong><span>${esc(unit.qualityUpgrade?.effect || unit.qualityProgression?.description || '品质效果已接入运行时。')}</span></div>`,
+		      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
 	      `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
 		      unitRisk ? `<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(unitRisk))}</div>` : (unitThreat ? `<div class="detail-extra threat">⚠ ${esc(threatDetailText(unitThreat))}</div>` : ''),
 	      renderElementLayerRow('单位元素层', unitElements),
@@ -1105,7 +1188,9 @@
     const h = info.hero;
     return `<div class="detail-hero-head"><span class="detail-avatar ${clsForEl(h.element)}">${esc(unitIcon(h))}</span><div><strong>${esc(h.displayName || h.name)}</strong><small>${esc(h.element || '-')} · ${esc(h.quality || '普通')} · ${esc(h.role || '-')}</small></div></div>
       ${renderStatGrid(heroBattleStats(h))}
-      <div class="detail-skill-panel"><strong>当前行动块：${esc(slotShortName(s))}</strong><span>${esc(skillDescription(h, s))}</span></div>
+      ${renderShapePanel(s, { direction: s.direction })}
+      <div class="detail-skill-panel"><strong>当前行动块：${esc(actionBlockTitle(s))}</strong><span>${esc(skillDescription(h, s))}</span></div>
+      <div class="detail-quality-panel"><strong>${esc(qualitySummary(h))}</strong><span>${esc(h.qualityUpgrade?.effect || h.qualityProgression?.description || '品质效果已接入运行时。')}</span></div>
       <div class="detail-state-panel"><span><b>槽位</b>${esc(info.localIndex + 1)}/3</span><span><b>方向</b>${esc(DIR[s.direction] || s.direction || '→')}</span><span><b>状态</b>${s.used ? '已释放' : s.canUse === false ? '不可用' : '可用'}</span></div>`;
   }
 
@@ -1114,9 +1199,9 @@
     const h = info.hero;
     const selected = ui.selectedSlotGlobal === info.globalIndex;
     const locked = ui.vm.phase !== 'player_turn' || !s.canUse || ui.busy;
-    return `<button class="action-block${selected ? ' sel' : ''}${s.used ? ' used' : ''}${locked ? ' locked' : ''}" data-slot="${info.globalIndex}" type="button"${ui.busy ? ' disabled' : ''} aria-label="${esc(`${h.name} ${slotShortName(s)} ${DIR[s.direction] || s.direction || '→'}`)}">
+    return `<button class="action-block${selected ? ' sel' : ''}${s.used ? ' used' : ''}${locked ? ' locked' : ''}" data-slot="${info.globalIndex}" type="button"${ui.busy ? ' disabled' : ''} aria-label="${esc(`${h.name} ${actionBlockTitle(s)} ${DIR[s.direction] || s.direction || '→'}`)}">
       <b class="${clsForEl(s.element)}">${esc(EL_ICON[s.element] || s.element || '·')}</b>
-      <span><strong>${esc(slotShortName(s))}</strong><small>${esc(h.name)}</small></span>
+      <span><strong>${esc(actionBlockTitle(s))}</strong><small>${esc(actionBlockSubtitle(h, s))}</small></span>
       <i>${esc(DIR[s.direction] || s.direction || '→')}</i>
     </button>`;
   }

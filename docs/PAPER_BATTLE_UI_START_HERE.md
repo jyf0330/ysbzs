@@ -6,6 +6,8 @@
 - 样式：`web/paper-battle.css`
 - 数据/操作：`web/paper-battle.js`
 - 参考底图：`web/assets/reference_trace_base.jpeg`
+- 当前主风格图：`web/assets/reference_main_style_battle_ui_2026-06-22.jpg`
+- 右侧宠物详情提示语：`docs/RIGHT_PET_DETAIL_PANEL_PROMPT.md`
 - 验证脚本：`tools/check_paper_battle_ui.cjs`
 
 ## 运行
@@ -60,3 +62,5 @@ PASS paper-battle.html -> live /api/view + /api/action flow
 ## 说明
 
 这版重点是“布局按参考图描线 + 数据/操作走真实 API”。美术素材仍是 CSS/字符占位，后续可替换为 PNG、Spine 或 Godot 资源。
+
+2026-06-22 起，`web/assets/reference_main_style_battle_ui_2026-06-22.jpg` 作为战斗主界面主风格参考。右侧宠物详情面板后续重设计优先按 `docs/RIGHT_PET_DETAIL_PANEL_PROMPT.md`，并继续绑定当前 ViewModel 字段，不把文字或数值画死到背景里。

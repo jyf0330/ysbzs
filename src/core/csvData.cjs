@@ -231,6 +231,43 @@ function parseParams(v) {
 
 function dayPeriod(dayExpr) { return dayExpr || null; }
 
+function normalizeDailyRouteSchedule(rows) {
+  const grouped = new Map();
+  for (const row of rows || []) {
+    const day = Number(row.day || 1);
+    if (!grouped.has(day)) grouped.set(day, []);
+    grouped.get(day).push(row);
+  }
+  const normalized = [];
+  for (const day of Array.from(grouped.keys()).sort((a, b) => a - b)) {
+    const dayRows = grouped.get(day).slice().sort((a, b) => Number(a.step || 0) - Number(b.step || 0));
+    const nodes = dayRows.filter(row => row.kind === 'node_choice');
+    const fixedBattles = dayRows.filter(row => row.kind === 'fixed_battle');
+    if (nodes.length !== 4 || fixedBattles.length !== 2) {
+      normalized.push(...dayRows);
+      continue;
+    }
+    const ordered = [nodes[0], nodes[1], fixedBattles[0], nodes[2], nodes[3], fixedBattles[1]];
+    let nodeLabelIndex = 0;
+    let battleLabelIndex = 0;
+    ordered.forEach((row, index) => {
+      const step = index + 1;
+      const copy = Object.assign({}, row, { step });
+      if (copy.kind === 'node_choice') {
+        nodeLabelIndex += 1;
+        copy.label = `事件节点${nodeLabelIndex}`;
+      }
+      if (copy.kind === 'fixed_battle') {
+        battleLabelIndex += 1;
+        const isFinalBoss = day === 10 && /final_boss|终局/.test(`${copy.id || ''}${copy.encounterId || ''}${copy.label || ''}`);
+        copy.label = isFinalBoss ? '终局Boss战' : (battleLabelIndex === 1 ? '第一场战斗' : '第二场战斗');
+      }
+      normalized.push(copy);
+    });
+  }
+  return normalized;
+}
+
 function normalizeSourceTables(sourceTables, options = {}) {
   const generatedAt = new Date().toISOString().slice(0, 10);
   const pets = (sourceTables.pets || []).map(row => {
@@ -431,7 +468,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
   const elementPacketRules = sourceTables.elementPacketRules || [];
   const elementConversions = sourceTables.elementConversions || [];
   const triggerOrderRules = sourceTables.triggerOrderRules || [];
-  const nodeSchedule = (sourceTables.nodeSchedule || []).map(row => ({
+  const nodeSchedule = normalizeDailyRouteSchedule((sourceTables.nodeSchedule || []).map(row => ({
     id: row.schedule_id || row['排程ID'],
     day: toNum(row.day || row['天数'], 1),
     step: toNum(row.step || row['步骤'], 1),
@@ -444,7 +481,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
     phaseLabel: row.phase_label || row['阶段文案'],
     status: row.status || row['状态'],
     note: row.note || row['备注']
-  })).filter(x => x.id);
+  })).filter(x => x.id));
   const nodePool = (sourceTables.nodePool || []).map(row => ({
     nodeId: row.node_id || row['节点ID'],
     nodePoolId: row.node_pool_id || row['节点池ID'],

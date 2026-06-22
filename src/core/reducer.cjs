@@ -28,6 +28,7 @@ function dispatch(state, command) {
     case 'PICK_BATTLE_ENCOUNTER': return dayRoute.pickBattleEncounter(state, command.encounterId ?? command.optionId ?? command.index);
     case 'RUN_ROUTE_FIXED_BATTLE': return dayRoute.runFixedBattle(state, command);
     case 'CLAIM_ROUTE_REWARD': return dayRoute.claimRouteReward(state, command.rewardId ?? command.encounterId ?? command.index, command);
+    case 'START_NEXT_DAY': return dayRoute.startNextDay(state, command);
     case 'ENTER_SHOP': return shop.enterShop(state, command.poolId, command.slots);
     case 'ROLL_SHOP': return shop.rollShop(state, command);
     case 'FREEZE_OFFER': return shop.freezeOffer(state, command.offerId, true);

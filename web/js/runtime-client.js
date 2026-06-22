@@ -43,11 +43,17 @@ export function resolveApiBase(options = {}) {
 export function createHttpRuntime(options = {}) {
   const apiBase = resolveApiBase(options);
   const playerId = options.playerId || 'p1';
+  const win = getWindow();
+  const params = new URLSearchParams(win?.location?.search || '');
+  const sessionId = options.sessionId || params.get('sessionId') || win?.__YSBZS_SESSION_ID__ || '';
   async function request(pathname, body) {
     const currentPlayerId = getPlayerId(playerId);
+    const headers = { 'x-player-id': currentPlayerId };
+    if (sessionId) headers['x-session-id'] = sessionId;
+    if (body) headers['content-type'] = 'application/json';
     const res = await fetch(endpoint(apiBase, pathname), {
       method: body ? 'POST' : 'GET',
-      headers: body ? { 'content-type': 'application/json', 'x-player-id': currentPlayerId } : { 'x-player-id': currentPlayerId },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
       cache: 'no-store'
     });

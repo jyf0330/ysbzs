@@ -208,6 +208,8 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	    assert.match(js, /合计/, `${file} threat detail should show total incoming damage`);
 	    assert.match(js, /function compactRiskDamageSeries/, `${file} should render incoming slot damage as a compact ordered damage series`);
 	    assert.match(js, /function compactTeamRiskSourceLine/, `${file} should render each enemy source as enemyName(-3,-3) style text`);
+	    assert.match(js, /function renderAttackWarningPopover/, `${file} should render an in-board incoming attack warning popover`);
+	    assert.match(js, /attack-warning-popover/, `${file} should attach the warning popover to risky hero cells`);
 	    assert.doesNotMatch(js, /第\$\{Number\(threat\.slotIndex/, `${file} should not expose verbose slot labels in player-facing incoming risk detail`);
 	    assert.match(js, /受击预警/, `${file} should default the detail panel to incoming damage warnings`);
 	    assert.match(js, /unitRisk \? `<div class="detail-extra threat">/, `${file} should embed incoming warnings inside full unit details`);
@@ -232,6 +234,9 @@ test('combat layout scripts keep info in right panel without hover detail popups
 	  assert.match(css, /\.unit-stat-badge/, 'board unit stat badges need dedicated positioning');
 	  assert.match(css, /\.unit-stat-hp/, 'board unit HP badge needs dedicated styling');
 	  assert.match(css, /\.unit-stat-atk/, 'board unit attack badge needs dedicated styling');
+	  assert.match(css, /\.attack-warning-popover/, 'incoming attack warning popover needs dedicated styling');
+	  assert.match(css, /\.cell\.team-risk:is\(:hover,:focus-visible,\.selected\)\{[^}]*overflow:visible/s, 'warning popover must not be clipped by the board cell');
+	  assert.match(css, /\.cell\.team-risk:is\(:hover,:focus-visible,\.selected\) \.attack-warning-popover/, 'warning popover should appear from real cell hover/focus/selection state');
 	  assert.match(css, /\.cell\.enemy-final-cell/, 'enemy final move cells need dedicated visible styling');
 	  assert.match(css, /\.enemy-final-num/, 'enemy final move marker needs dedicated compact styling');
 	  assert.doesNotMatch(css, /\.cell\.move-risk/, 'empty movement cells should not use damage-risk styling');
@@ -268,6 +273,11 @@ test('clicked cell threat detail stays on current GET_CELL_DETAIL when transacti
       body[1],
       /const threat = currentDetail\?\.threat \|\| cell\?\.threat \|\| detail\?\.threat/,
       `${file} should render current clicked threat before projected transaction threat`
+    );
+    assert.match(
+      body[1],
+      /const detail = currentDetail\?\.unit \? currentDetail : \(projectedDetail \|\| currentDetail\)/,
+      `${file} should keep current clicked unit detail before projected empty cell detail`
     );
   }
 });

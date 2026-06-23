@@ -48,9 +48,16 @@ async function boardUnits(page) {
   })).filter(x => x.unitText));
 }
 
-async function clickCell(page, cell) {
+async function clickCell(page, cell, expectedText = null) {
   await page.locator(`#board [data-r="${cell.r}"][data-c="${cell.c}"]`).click();
-  await page.waitForTimeout(250);
+  await page.waitForFunction(([r, c, text]) => {
+    const detail = window.__YSBZS__?.cellDetail?.();
+    const detailText = document.querySelector('#cell-detail')?.innerText || '';
+    const detailMatchesCell = !detail || (Number(detail.r) === Number(r) && Number(detail.c) === Number(c));
+    return !window.__YSBZS__?.isBusy?.()
+      && detailMatchesCell
+      && (!text || detailText.includes(text));
+  }, [cell.r, cell.c, expectedText]);
   return {
     summary: await page.locator('#detail-summary').innerText(),
     detail: await page.locator('#cell-detail').innerText()
@@ -90,13 +97,13 @@ test('board pet detail updates when switching from enemy back to hero', { timeou
     const heroName = heroCell.unitText.split('\n').at(-1);
     const enemyName = enemyCell.unitText.split('\n').at(-1);
 
-    const firstHero = await clickCell(page, heroCell);
+    const firstHero = await clickCell(page, heroCell, heroName);
     assert.match(firstHero.detail, new RegExp(heroName));
 
-    const enemy = await clickCell(page, enemyCell);
+    const enemy = await clickCell(page, enemyCell, enemyName);
     assert.match(enemy.detail, new RegExp(enemyName));
 
-    const secondHero = await clickCell(page, heroCell);
+    const secondHero = await clickCell(page, heroCell, heroName);
     assert.match(secondHero.detail, new RegExp(heroName));
     assert.doesNotMatch(secondHero.detail, new RegExp(enemyName));
     assert.deepEqual(errors, []);
@@ -128,7 +135,7 @@ test('moving a pet refreshes detail to the new risky cell without losing rich un
     const target = { r: 3, c: 1 };
     assert.equal(await page.locator(`#board [data-r="${target.r}"][data-c="${target.c}"] .unit-token`).count(), 0, 'target risky move cell should start empty');
 
-    await clickCell(page, heroCell);
+    await clickCell(page, heroCell, '融焰娘');
     await page.locator(`#board [data-r="${target.r}"][data-c="${target.c}"]`).click();
     await page.waitForFunction(([r, c]) => {
       const api = window.__YSBZS__;
@@ -151,8 +158,13 @@ test('moving a pet refreshes detail to the new risky cell without losing rich un
     assert.match(moved.detail, /当前状态/);
     assert.match(moved.detail, /单位元素层/);
     assert.match(moved.detail, /脚下元素层/);
-    assert.match(moved.detail, /⚠/);
-    assert.match(moved.detail, /合计-\d+/);
+    await page.waitForFunction(() => document.querySelector('#board .cell.team-risk .attack-warning-popover'));
+    const warningCell = page.locator('#board .cell.team-risk').first();
+    await warningCell.hover();
+    assert.equal(await warningCell.locator('.attack-warning-popover').count(), 1, 'risky hero cell should render an incoming attack warning popover');
+    assert.match(await warningCell.locator('.attack-warning-popover').innerText(), /受击预警|KO预警/);
+    assert.match(await warningCell.locator('.attack-warning-popover').innerText(), /HP/);
+    assert.match(await warningCell.locator('.attack-warning-popover').innerText(), /合计-\d+/);
     assert.deepEqual(errors, []);
   } finally {
     if (browser) await browser.close();

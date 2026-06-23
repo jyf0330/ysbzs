@@ -55,7 +55,7 @@ test('manual enemy-flow preview comes from transactional public command data', (
     assert.doesNotMatch(injuryBody[1], /threats:\s*\[\]/, `${file} must not erase projected injury source details`);
     const detailBody = js.match(/function renderCellDetail\(\) \{([\s\S]*?)\n  \}/);
     assert.ok(detailBody, `${file} should expose renderCellDetail`);
-    assert.match(detailBody[1], /const detail = projectedDetail \|\| currentDetail;/, `${file} should let latest projected detail override current cell detail`);
+    assert.match(detailBody[1], /const detail = currentDetail\?\.unit \? currentDetail : \(projectedDetail \|\| currentDetail\);/, `${file} should keep clicked unit detail while still allowing projected detail for non-unit cells`);
     assert.match(detailBody[1], /const selectedCellUnit = c \? projectedCellUnit\(detail, selectedCell\) : null;/, `${file} should resolve selected unit from projected detail before current VM`);
     const boardBody = js.match(/function renderBoard\(\) \{([\s\S]*?)\n\t  \}/);
     assert.ok(boardBody, `${file} should expose renderBoard`);

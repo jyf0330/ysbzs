@@ -915,17 +915,29 @@ import { createGameRuntime } from './runtime-client.js';
 	      if (unit && unit.id === activePreviewUnitId) classes.push('current-preview-unit');
 	      const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
 	        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
-	      const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || boardUnitName(unit)} 生命 ${unit.hp}/${unit.maxHp} 攻击 ${unit.atk ?? 0}` : `R${cell.r + 1}C${cell.c + 1}`;
-	      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
+      const riskAria = hasIncomingHit ? ` 受击预警 预计伤害 ${teamRisk.damage}${teamRisk.lethal ? ' KO' : ''}` : '';
+      const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || boardUnitName(unit)} 生命 ${unit.hp}/${unit.maxHp} 攻击 ${unit.atk ?? 0}${riskAria}` : `R${cell.r + 1}C${cell.c + 1}`;
+      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
 	        ${elements ? `<div class="element-stack">${elements}</div>` : ''}
 	        ${arrow ? `<span class="preview-arrow ${arrow.isActiveActor ? 'active' : 'past'}">${esc(DIR[arrow.direction] || arrow.direction || '→')}</span>` : ''}
 	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
 	        ${previews.length ? previewBadge(previews) : ''}
         ${hasIncomingHit ? `<span class="team-risk-num">受${esc(teamRisk.damage)}${teamRisk.lethal ? ' KO' : ''}</span>` : ''}
+        ${hasIncomingHit ? renderAttackWarningPopover(teamRisk, unit) : ''}
 	        ${t?.finalMove ? '<span class="enemy-final-num">终</span>' : ''}
 	      </button>`;
 	    }).join('');
 	  }
+  function renderAttackWarningPopover(teamRisk = {}, unit = {}) {
+    const hpFrom = teamRisk.hpFrom ?? unit.hp ?? '-';
+    const hpTo = teamRisk.hpTo ?? Math.max(0, Number(unit.hp ?? 0) - Number(teamRisk.damage || 0));
+    const sourceText = teamRiskDetailText(teamRisk);
+    return `<span class="attack-warning-popover" role="note" aria-label="${esc(`受击预警：${sourceText}`)}">
+      <strong>${teamRisk.lethal ? 'KO预警' : '受击预警'}</strong>
+      <span>伤害 ${esc(compactRiskDamageValue(teamRisk.damage ?? 0))} · HP ${esc(hpFrom)}→${esc(hpTo)}</span>
+      <em>${esc(sourceText)}</em>
+    </span>`;
+  }
 	  function previewBadge(previews = []) {
 	    const primary = previews.find(p => p.isActiveActor) || previews[0];
 	    const damage = previews.reduce((sum, p) => sum + Number(p.predictedDamage || 0), 0);
@@ -1034,7 +1046,7 @@ import { createGameRuntime } from './runtime-client.js';
 	    const c = ui.selectedCell || ui.vm.selected?.cell;
 	    const currentDetail = ui.cellDetail && c && Number(ui.cellDetail.r) === Number(c.r) && Number(ui.cellDetail.c) === Number(c.c) ? ui.cellDetail : null;
 	    const projectedDetail = c && manualFlowPreviewVM() ? previewCellDetailAt(c.r, c.c) : null;
-	    const detail = projectedDetail || currentDetail;
+	    const detail = currentDetail?.unit ? currentDetail : (projectedDetail || currentDetail);
 	    const selectedCell = c ? (previewCellAt(c.r, c.c) || cellAt(c.r, c.c)) : null;
 	    const selectedCellUnit = c ? projectedCellUnit(detail, selectedCell) : null;
 	    const selectedUnitRisk = selectedCellUnit?.side === 'hero' ? teamRiskForUnit(selectedCellUnit) : (currentDetail?.teamRisk || null);

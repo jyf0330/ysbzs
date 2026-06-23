@@ -11,6 +11,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-23_attack-warning-cell-tooltip.md`
 - `tasks/done/2026-06-23_page-core-boundary-cleanup.md`
 - `tasks/done/2026-06-22_battle-shape-attribute-readability.md`
 - `tasks/done/2026-06-22_main-style-right-pet-detail-prompt.md`

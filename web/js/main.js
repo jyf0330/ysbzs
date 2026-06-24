@@ -48,6 +48,15 @@ import { createGameRuntime } from './runtime-client.js';
   const renderCache = createRenderCache();
   const runtime = createGameRuntime({ playerId: () => ui.playerId });
 
+  function dailyFlowHref() {
+    const url = new URL('daily-flow.html', window.location.href);
+    url.search = window.location.search;
+    return `${url.pathname.split('/').pop()}${url.search}`;
+  }
+  function setDailyFlowNavHref() {
+    qsa('a[title="打开每日流程页面"]').forEach(link => { link.href = dailyFlowHref(); });
+  }
+
   function esc(v) {
     return String(v ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
   }
@@ -1701,6 +1710,7 @@ import { createGameRuntime } from './runtime-client.js';
   }
 
   function bind() {
+    setDailyFlowNavHref();
     $('fullscreen-btn')?.addEventListener('click', () => toggleFullscreen());
     $('new-game-btn').addEventListener('click', () => runCommand('NEW_GAME', { day: 1, period: '上午', gold: 8 }));
     $('day7-btn').addEventListener('click', () => runCommand('SETUP_DAY7_FIRE_TRIAL'));

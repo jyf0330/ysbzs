@@ -9,6 +9,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-24_two-day-flow-recording.md`
 - `tasks/done/2026-06-24_master-domain-sheets-export.md`
 - `tasks/done/2026-06-24_master-visible-planner-sheets.md`
 - `tasks/done/2026-06-24_master-all-csv-source.md`

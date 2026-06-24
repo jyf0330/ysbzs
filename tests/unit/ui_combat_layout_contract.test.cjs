@@ -36,9 +36,12 @@ function runThreatDetailText(js, threat) {
 
 test('combat layout exposes full P0/P1/P2 interaction surfaces', () => {
   const html = read('web/index.html');
+  const js = read('web/js/main.js');
   const css = read('web/ux-app.css');
 
   assert.match(html, /href="daily-flow\.html"[\s\S]*>流程</, 'top shell needs an entry to the standalone daily flow page');
+  assert.match(js, /function dailyFlowHref\(/, 'battle page should compute daily-flow href with current query params');
+  assert.match(js, /setDailyFlowNavHref\(/, 'battle page should refresh the flow nav href before player clicks it');
   assert.match(html, /id="active-pet-zone"/, 'left rail should split active pets into their own top zone');
   assert.match(html, /id="action-block-zone"/, 'left rail needs an independent 12 action-block zone');
   assert.match(html, /<h2>行动块<\/h2>/, 'left-bottom zone needs a visible action-block title');

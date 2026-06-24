@@ -2,9 +2,7 @@ const { makeUnit, syncBoardUnits } = require('./state.cjs');
 const { pushEvent } = require('./events.cjs');
 const { applyBattleStart } = require('./mechanics.cjs');
 const { activationBlockReason } = require('./mechanicGate.cjs');
-
-const MAX_ACTIVE_UNITS = 4;
-const MAX_BENCH_UNITS = 8;
+const { MAX_ACTIVE_UNITS, MAX_BENCH_UNITS } = require('./rosterLimits.cjs');
 
 function inventoryEntries(state) {
   return Array.isArray(state?.inventory) ? state.inventory : [];

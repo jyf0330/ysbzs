@@ -1,5 +1,5 @@
 const { statusOfMechanic } = require('./core/mechanicGate.cjs');
-const { MAX_ACTIVE_UNITS, MAX_BENCH_UNITS } = require('./core/inventoryRules.cjs');
+const { MAX_ACTIVE_UNITS, MAX_BENCH_UNITS } = require('./core/rosterLimits.cjs');
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 

@@ -203,6 +203,37 @@ test('daily flow shop purchase uses active slots first, bench second, and blocks
   assert.ok(fullState.events.some(event => event.type === 'SHOP_BUY_BLOCKED' && /没有上阵或背包空位/.test(event.text || '')));
 });
 
+test('daily flow roster keeps battles to four active pets while backpack capacity is larger', () => {
+  assert.equal(MAX_ACTIVE_UNITS, 4);
+  assert.ok(MAX_BENCH_UNITS > 8, 'backpack should not be capped at the old small 8-slot bench');
+
+  const adapter = createYSBZSUIAdapter({
+    day: 1,
+    gold: 999,
+    seed: 'daily-flow-roster-capacity',
+    activePets: ['pal_001', 'pal_002', 'pal_003', 'pal_004', 'pal_005', 'pal_006']
+  });
+  let vm = adapter.getViewModel('p1');
+  assert.equal(vm.inventory.activeCount, MAX_ACTIVE_UNITS);
+  assert.equal(vm.inventory.benchCount, 2);
+  assert.deepEqual(vm.heroes.map(hero => hero.petId), ['pal_001', 'pal_002', 'pal_003', 'pal_004']);
+
+  vm = run(adapter, 'START_BATTLE').viewModel;
+  assert.equal(vm.phase, 'player_turn');
+  assert.equal(vm.heroes.length, MAX_ACTIVE_UNITS, 'battle should only expose active roster pets');
+  assert.equal(vm.inventory.maxBench, MAX_BENCH_UNITS);
+
+  const state = createGameState({ day: 1, gold: 999, seed: 'daily-flow-bench-more-than-eight', activePets: ['pal_001', 'pal_002', 'pal_003', 'pal_004'] });
+  for (let i = 0; i < 8; i += 1) {
+    state.inventory.push({ petId: `pal_block_${i}`, count: 1, level: 1, active: false, instanceId: `bench_block_${i}` });
+  }
+  shopCore.enterShop(state, 'night_base', 6);
+  const offer = state.shop.offers.find(item => Number(item.price || 0) <= Number(state.gold || 0));
+  assert.ok(offer, 'shop should contain an affordable offer');
+  assert.notEqual(shopCore.buyOffer(state, offer.offerId), false, 'the ninth backpack pet should be allowed');
+  assert.ok(state.inventory.filter(item => item.active === false).length >= 9);
+});
+
 test('daily flow inventory lets players manually move pets between active roster and backpack', () => {
   const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'daily-flow-manual-roster', activePets: ['pal_001', 'pal_002', 'pal_003', 'pal_004'] });
   let vm = run(adapter, 'GENERATE_NODE_OPTIONS', { scheduleStep: 1 }).viewModel;

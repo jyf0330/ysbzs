@@ -1,0 +1,44 @@
+# 2026-06-24_roster-active-bench-capacity
+
+- task_id: 2026-06-24_roster-active-bench-capacity
+- type: bugfix
+- status: DONE
+- owner: Codex
+- branch: shared-worktree
+- Goal: 战斗只按上阵阵容结算，上阵区最多 4 个；背包/备战席容量不要沿用过小上阵容量。
+- Scope:
+  - 保留上阵上限 4。
+  - 扩大背包/备战席容量。
+  - 初始状态输入超过 4 个宠物时，只让前 4 个上阵，其余进入背包。
+  - 补核心/adapter 测试。
+- related_files:
+  - `src/core/rosterLimits.cjs`
+  - `src/core/inventoryRules.cjs`
+  - `src/core/state.cjs`
+  - `src/uiAdapterInventoryVM.cjs`
+  - `tests/unit/daily_flow_battle_first_route.test.cjs`
+  - `tasks/doing/2026-06-24_roster-active-bench-capacity.md`
+  - `tasks/index.md`
+- exclusive_files:
+  - `src/core/state.cjs`
+- read_files:
+  - `docs/02_CURRENT_WORKFLOW.md`
+  - `docs/00_AI_START_HERE.md`
+  - `docs/roles/PROGRAMMER_START.md`
+  - `tasks/index.md`
+  - `tasks/README.md`
+- validation:
+  - `node --test tests/unit/daily_flow_battle_first_route.test.cjs`
+  - `npm run check:all`
+- commit_plan:
+  - message: `fix: separate active roster and bench capacity`
+- collaboration:
+  - lead_scope: Codex implements shared roster limits and focused tests.
+  - specialist_input: 无
+  - tester_pass: 无；本轮为核心行为/ViewModel 容量，不改可见布局。
+  - external_ai_input: 无
+  - lead_decision: 以上阵 4 为硬上限，背包容量单独放大，避免战斗单位数被背包容量误导。
+- evidence:
+  - `node --test tests/unit/daily_flow_battle_first_route.test.cjs` 通过；新增用例确认战斗只暴露 4 个上阵宠物，超过 4 的初始宠物进入 bench，且 8 个 bench 后仍可继续购买到背包。
+  - `npm run check:all` 通过；包含 npm test、unit/ui/full/ops/prediction、architecture、csv、dom、ui-connected、jsdoc。
+  - 可见验收：无；本轮未改浏览器布局/文案/可见交互，只改核心容量与 ViewModel 数值。

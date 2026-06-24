@@ -4,6 +4,7 @@ const { ACTIVE_ELEMENTS, COMPAT_ELEMENTS, makeEmptyElements, makeEmptyElementCam
 const { makeUnitFromData } = require('./unitFactory.cjs');
 const { ensureMultiplayerState } = require('./multiplayerState.cjs');
 const { rng } = require('./rng.cjs');
+const { MAX_ACTIVE_UNITS } = require('./rosterLimits.cjs');
 
 const BOARD_ROWS = 8;
 const BOARD_COLS = 8;
@@ -265,17 +266,23 @@ function createGameState(opts = {}) {
     battleTrace: [],
     board: createBoard()
   };
-  const active = opts.activePets ? opts.activePets.map((petId, i) => ({ petId, position: defaultHeroPosition(i), slot: i + 1 })) : initialPartyFromData(loadedData);
-  for (let i = 0; i < active.length; i++) {
-    const row = active[i];
+  const party = opts.activePets ? opts.activePets.map((petId, i) => ({ petId, position: defaultHeroPosition(i), slot: i + 1 })) : initialPartyFromData(loadedData);
+  for (let i = 0; i < party.length; i++) {
+    const row = party[i];
     const pid = typeof row === 'string' ? row : row.petId;
-    const position = typeof row === 'string' ? defaultHeroPosition(i) : (row.position || defaultHeroPosition(i));
-    const unitOverride = { position };
+    const unitOverride = {};
     if (row && typeof row === 'object') {
       if (row.quality) unitOverride.quality = row.quality;
       if (row.qualityUpgradeId) unitOverride.qualityUpgradeId = row.qualityUpgradeId;
       if (row.qualityUpgradeSeed) unitOverride.qualityUpgradeSeed = row.qualityUpgradeSeed;
     }
+    if (i >= MAX_ACTIVE_UNITS) {
+      state.nextInventory = Number(state.nextInventory || 1);
+      state.inventory.push({ petId: pid, count: 1, level: 1, active: false, instanceId: `bench_${pid}_${state.nextInventory++}` });
+      continue;
+    }
+    const position = typeof row === 'string' ? defaultHeroPosition(i) : (row.position || defaultHeroPosition(i));
+    unitOverride.position = position;
     const u = makeUnit(state, 'hero', pid, unitOverride);
     state.units.push(u);
     state.inventory.push({ petId: pid, count: 1, level: 1, active: true, instanceId: u.id, slot: row.slot || i + 1, quality: u.quality });

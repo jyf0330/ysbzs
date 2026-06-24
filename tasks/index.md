@@ -9,6 +9,7 @@
 
 ## DONE
 
+- `tasks/done/2026-06-24_master-visible-planner-sheets.md`
 - `tasks/done/2026-06-24_master-all-csv-source.md`
 - `tasks/done/2026-06-24_daily-flow-manual-battle-entry.md`
 - `tasks/done/2026-06-24_roster-active-bench-capacity.md`

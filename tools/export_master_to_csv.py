@@ -234,6 +234,24 @@ def generated_sheet_table(master_path, sheet_name):
     return rows, headers
 
 
+def csv_sheet_name(filename):
+    return Path(filename).stem
+
+
+def generated_full_csv_sheets(master_path, baseline_dir):
+    with zipfile.ZipFile(master_path) as zf:
+        sheet_names = set(workbook_sheet_paths(zf).keys())
+    result = {}
+    for csv_file in sorted(baseline_dir.glob("*.csv")):
+        sheet_name = csv_sheet_name(csv_file.name)
+        if sheet_name not in sheet_names:
+            continue
+        rows, headers = generated_sheet_table(master_path, sheet_name)
+        if rows and headers:
+            result[csv_file.name] = (rows, headers)
+    return result
+
+
 def generated_tables(master_path, baseline_dir):
     master = {
         "PETS": sheet_dicts(master_path, "PETS"),
@@ -259,8 +277,10 @@ def generated_tables(master_path, baseline_dir):
     }
     shapes_by_id = by_key(master["SHAPE_CATALOG"], "shape_id")
 
-    result = {}
+    result = generated_full_csv_sheets(master_path, baseline_dir)
     for filename in GENERATED_FILES:
+        if filename in result:
+            continue
         rows, headers = read_csv(baseline_dir / filename)
         output = [dict(row) for row in rows]
 
@@ -371,6 +391,8 @@ def generated_tables(master_path, baseline_dir):
         result[filename] = (output, headers)
 
     for sheet_name, filename in MASTER_ONLY_EXPORTS:
+        if filename in result:
+            continue
         rows, headers = generated_sheet_table(master_path, sheet_name)
         if rows and headers:
             result[filename] = (rows, headers)
@@ -402,9 +424,15 @@ def main(argv=None):
         raise SystemExit(f"missing baseline csv dir: {baseline_dir}")
 
     generated = generated_tables(master_path, baseline_dir)
+    baseline_csv_files = sorted(path.name for path in baseline_dir.glob("*.csv"))
+    missing_exports = [filename for filename in baseline_csv_files if filename not in generated]
+    if missing_exports:
+        print("FAIL master workbook missing CSV source sheets:", ", ".join(missing_exports), file=sys.stderr)
+        return 1
     if args.check:
         diffs = []
-        for filename, (rows, headers) in generated.items():
+        for filename in baseline_csv_files:
+            rows, headers = generated[filename]
             expected = csv_text(rows, headers)
             current = (baseline_dir / filename).read_text(encoding="utf-8-sig")
             if expected != current:

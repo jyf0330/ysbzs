@@ -1,5 +1,9 @@
 # 10_CHANGELOG
 
+## 2026-06-24
+
+- 策划总表接管全部运行 CSV 数据源：`xlsx/ysbzs_master.xlsx` 现在包含 `data/csv/*.csv` 的 30 个完整同名 sheet，`tools/export_master_to_csv.py` 会优先从这些完整 sheet 导出，并在任意 CSV 缺少总表来源时失败；`tests/csv_source.test.cjs` 覆盖总表可无损导出全部 CSV，避免遗物、事件、每日路线等数据绕过总表。
+
 ## 2026-06-23
 
 - 页面/核心边界收口：`SELL_UNIT` / `TOGGLE_UNIT_ACTIVE` 改为核心 `inventoryRules` + reducer 命令，`uiAdapter` 只同步选中态等 UI view state；`web/ux-app.js` 退役为标记文件，主战斗页唯一运行入口收口到 `web/js/main.js`。

@@ -28,6 +28,10 @@ function tempCsvDir() {
   return dir;
 }
 
+function allProgramCsvFiles() {
+  return fs.readdirSync(csvDir).filter(name => name.endsWith('.csv')).sort();
+}
+
 test('CSV01 data/csv 真源目录存在且 01-09 表数量完整', () => {
   assert.equal(csvSourceAvailable(csvDir), true);
   const tables = loadSourceTablesFromCsv(csvDir);
@@ -117,7 +121,7 @@ test('CSV07 activePets 字符串覆盖初始阵容', () => {
   assert.equal(heroes[0].petId, 'pal_001');
 });
 
-test('CSV08 精简策划总表可无损导出当前核心程序 CSV', () => {
+test('CSV08 策划总表可无损导出全部程序 CSV', () => {
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ysbzs-master-export-'));
   execFileSync('python3', [
     path.join(root, 'tools', 'export_master_to_csv.py'),
@@ -125,21 +129,24 @@ test('CSV08 精简策划总表可无损导出当前核心程序 CSV', () => {
     '--baseline-dir', csvDir,
     '--out-dir', outDir
   ], { cwd: root, stdio: 'pipe' });
-  for (const name of [
-    '01_pets.csv',
-    '02_monster_templates.csv',
-    '03_monster_waves.csv',
-    '04_mechanisms.csv',
-    '06_shop_rewards.csv',
-    '08_action_shapes.csv',
-    '27_shape_catalog.csv',
-    '28_quality_growth.csv',
-    '29_quality_upgrades.csv'
-  ]) {
-  const expectedCsv = fs.readFileSync(path.join(csvDir, name), 'utf8');
+  for (const name of allProgramCsvFiles()) {
+    const expectedCsv = fs.readFileSync(path.join(csvDir, name), 'utf8');
     const actualCsv = fs.readFileSync(path.join(outDir, name), 'utf8');
     assert.equal(actualCsv, expectedCsv, name);
   }
+});
+
+test('CSV08B 总表必须包含 data/csv 下每张 CSV 的完整同名 sheet', () => {
+  const code = `
+from openpyxl import load_workbook
+import sys
+wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
+csv_files = sys.argv[2:]
+missing = [name[:-4] for name in csv_files if name[:-4] not in wb.sheetnames]
+assert not missing, missing
+wb.close()
+`;
+  execFileSync('python3', ['-c', code, path.join(root, 'xlsx', 'ysbzs_master.xlsx'), ...allProgramCsvFiles()], { cwd: root, stdio: 'pipe' });
 });
 
 test('CSV09 策划好读版 workbook 可从当前 CSV 重建', () => {

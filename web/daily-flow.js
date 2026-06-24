@@ -89,6 +89,17 @@ function autoRouteAction() {
   if (!vm || busy || autoAdvanceInFlight || vm.dailyFlow?.terminal || vm.phase === 'day_end' || vm.phase === 'shop') return null;
   return vm?.dailyFlow?.autoAction || vm?.dailyFlow?.actions?.auto || null;
 }
+function publicRouteAction() {
+  if (!vm || vm.dailyFlow?.terminal || vm.phase === 'shop') return null;
+  return (vm?.nextActions || []).find(action => (
+    action?.type === 'GENERATE_NODE_OPTIONS'
+    || action?.defaultPayload?.scheduleStep != null
+    || action?.defaultPayload?.day != null
+  )) || null;
+}
+function routeActionForNext() {
+  return primaryRouteAction() || autoRouteAction() || publicRouteAction();
+}
 function autoActionKey(action) {
   return action ? `${vm?.stateVersion || 0}:${action.type}:${JSON.stringify(action.defaultPayload || {})}` : '';
 }
@@ -311,7 +322,7 @@ function updateConsoleLabel() {
   $('console-label').textContent = `console: ${consoleErrors}`;
 }
 function renderControls() {
-  const next = primaryRouteAction();
+  const next = routeActionForNext();
   $('run-next-btn').disabled = busy || !next;
   $('run-next-btn').textContent = next ? next.label : nextLabel();
 }
@@ -327,7 +338,7 @@ function render(events = []) {
   renderLog(events);
   renderControls();
   updateConsoleLabel();
-  window.__YSBZS_DAILY_FLOW__ = { lastViewModel: vm, runCommand, loadView, primaryRouteAction, isBusy: () => busy };
+  window.__YSBZS_DAILY_FLOW__ = { lastViewModel: vm, runCommand, loadView, primaryRouteAction, autoRouteAction, publicRouteAction, routeActionForNext, isBusy: () => busy };
   scheduleAutoAdvance();
 }
 function payloadFromButton(btn) {
@@ -335,7 +346,7 @@ function payloadFromButton(btn) {
   catch (_) { return {}; }
 }
 async function runNext() {
-  const next = primaryRouteAction();
+  const next = routeActionForNext();
   if (!next) return;
   const payload = Object.assign({}, next.defaultPayload || {});
   await runCommand(next.type, payload);

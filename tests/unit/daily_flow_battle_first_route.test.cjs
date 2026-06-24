@@ -283,6 +283,9 @@ test('daily flow ViewModel owns route primary and auto actions consumed by the p
   const js = read('web/daily-flow.js');
   assert.match(js, /vm\?\.dailyFlow\?\.primaryAction/, 'page should consume primaryAction from ViewModel');
   assert.match(js, /vm\?\.dailyFlow\?\.autoAction/, 'page should consume autoAction from ViewModel');
+  assert.match(js, /function routeActionForNext\(/, 'page next button should use a single ViewModel action selector');
+  assert.match(js, /primaryRouteAction\(\)\s*\|\|\s*autoRouteAction\(\)/, 'page next button should fall back to autoAction when no primaryAction exists');
+  assert.match(js, /vm\?\.nextActions/, 'page next button should fall back to public nextActions when older dailyFlow action fields are missing');
   assert.doesNotMatch(js, /function fixedBattleAction/, 'page must not re-derive fixed battle actions');
   assert.doesNotMatch(js, /function nodeOptionsAction/, 'page must not re-derive node option actions');
   assert.doesNotMatch(js, /schedule\.kind\s*===\s*'fixed_battle'/, 'route kind decisions belong in ViewModel');

@@ -3,14 +3,13 @@
 
 - 无
 
-
-
 ## PAUSED
 
 - 无
 
 ## DONE
 
+- `tasks/done/2026-06-24_daily-flow-manual-battle-entry.md`
 - `tasks/done/2026-06-24_roster-active-bench-capacity.md`
 - `tasks/done/2026-06-24_daily-flow-next-step-unblock.md`
 - `tasks/done/2026-06-23_attack-warning-cell-tooltip.md`

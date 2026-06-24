@@ -1,0 +1,54 @@
+# 2026-06-24_daily-flow-manual-battle-entry
+
+- task_id: 2026-06-24_daily-flow-manual-battle-entry
+- type: bugfix
+- status: DONE
+- owner: Codex
+- branch: shared-worktree
+- Goal: 每日流程战斗步骤进入正常战斗界面，由玩家走真实棋盘战斗操作，不再一键自动结算。
+- Scope:
+  - 路线固定战/遭遇战入口只启动战斗到 `player_turn`。
+  - 玩家正常战斗命令打到 `battle_end` 后，路线再记录战斗结果并推进步骤。
+  - 每日流程页在战斗阶段提供回到棋盘操作的明确入口。
+  - 补核心/页面契约测试和真实浏览器截图证据。
+- related_files:
+  - `src/core/dayRoute.cjs`
+  - `src/core/reducer.cjs`
+  - `src/dailyFlowView.cjs`
+  - `web/daily-flow.html`
+  - `web/daily-flow.js`
+  - `web/daily-flow.css`
+  - `tests/unit/daily_flow_battle_first_route.test.cjs`
+  - `tests/ui_adapter.test.cjs`
+  - `tasks/doing/2026-06-24_daily-flow-manual-battle-entry.md`
+  - `tasks/index.md`
+  - `output/playwright/`
+- exclusive_files:
+  - `src/core/reducer.cjs`
+  - `web/daily-flow.js`
+  - `tasks/index.md`
+- read_files:
+  - `docs/02_CURRENT_WORKFLOW.md`
+  - `docs/00_AI_START_HERE.md`
+  - `docs/roles/UI_UX_START.md`
+  - `tasks/index.md`
+  - `tasks/README.md`
+- validation:
+  - `node --test tests/unit/daily_flow_battle_first_route.test.cjs`
+  - `npm run check:all`
+  - real browser tester pass with screenshot under `output/playwright/`
+- commit_plan:
+  - message: `fix: enter manual battle from daily flow`
+- collaboration:
+  - lead_scope: Codex owns route battle state, daily flow page entry, tests, and browser evidence.
+  - specialist_input: 无
+  - tester_pass: real browser pass on `http://127.0.0.1:4174/daily-flow.html?runtime=http&sessionId=daily-route-manual-1782266027651`
+  - external_ai_input: 无
+  - lead_decision: Route battle commands become manual battle start commands; route outcome finalizes only after real battle end.
+- evidence:
+  - `node --test tests/unit/daily_flow_battle_first_route.test.cjs` passed.
+  - `npm run check:all` passed.
+  - Real browser tester pass used daily-flow player clicks to reach fixed battle, navigated to `index.html?runtime=http&sessionId=daily-route-manual-1782266027651`, and verified `viewModel.phase === "player_turn"`.
+  - Browser pass verified `dailyFlow.pendingBattle` exists for schedule step 3 and console/page errors were empty.
+  - Screenshot: `output/playwright/daily-flow-manual-battle-entry.png`.
+  - Main-thread screenshot review: battle board, player turn, active units, action blocks, and battle operation buttons are visible; no blank page, obvious overlap, or missing board state.

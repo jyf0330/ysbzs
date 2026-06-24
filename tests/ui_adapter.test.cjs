@@ -410,6 +410,10 @@ test('UI07E 固定战和终局 Boss 通过公开路线命令进入', () => {
 
   const result = dispatch(state, { type: 'RUN_ROUTE_FIXED_BATTLE' });
   assert.equal(result, true);
+  assert.equal(state.phase, 'player_turn');
+
+  const finished = dispatch(state, { type: 'RUN_BATTLE' });
+  assert.ok(finished && finished.win !== undefined);
   assert.equal(state.phase, 'day_end');
   assert.equal(state.dayRoute.nodeIndex, 6);
   assert.ok(state.dayRoute.history.some(x => x.kind === 'fixed_battle' && x.option.encounterId === 'enc_d10_final_boss'));

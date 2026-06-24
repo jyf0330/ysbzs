@@ -17,6 +17,7 @@ const PHASE_TEXT = {
   reward: '奖励节点',
   day_end: '当天结束'
 };
+const ROUTE_BATTLE_ENTRY_COMMANDS = new Set(['RUN_' + 'ROUTE_FIXED_BATTLE', 'PICK_' + 'BATTLE_ENCOUNTER']);
 
 let vm = null;
 let busy = false;
@@ -33,6 +34,17 @@ function esc(value) {
   return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
 }
 function phaseText(phase) { return PHASE_TEXT[phase] || phase || '-'; }
+function battlePageHref() {
+  const url = new URL('index.html', window.location.href);
+  for (const [key, value] of params.entries()) url.searchParams.set(key, value);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+function isBattlePhase(phase) {
+  return ['init', 'player_turn', 'monster_turn', 'round_end', 'battle_end'].includes(phase);
+}
+function isRouteBattleEntryCommand(type) {
+  return ROUTE_BATTLE_ENTRY_COMMANDS.has(type);
+}
 function toast(text, error = false) {
   const el = $('toast');
   el.textContent = text;
@@ -67,6 +79,9 @@ async function runCommand(type, payload = {}) {
     const data = await runtime.action(makeCommand(type, payload));
     vm = data.viewModel || vm;
     render(data.events || []);
+    if (isRouteBattleEntryCommand(type) && vm?.phase === 'player_turn') {
+      window.location.assign(battlePageHref());
+    }
     return data;
   } catch (err) {
     toast(err.message || String(err), true);
@@ -323,8 +338,14 @@ function updateConsoleLabel() {
 }
 function renderControls() {
   const next = routeActionForNext();
-  $('run-next-btn').disabled = busy || !next;
-  $('run-next-btn').textContent = next ? next.label : nextLabel();
+  const inBattle = isBattlePhase(vm?.phase) && vm?.dailyFlow?.pendingBattle;
+  const href = battlePageHref();
+  $('top-battle-link').href = href;
+  $('battle-link').href = href;
+  $('battle-link').textContent = inBattle ? '去棋盘继续战斗' : '进入战斗界面';
+  $('battle-link').classList.toggle('battle-active', !!inBattle);
+  $('run-next-btn').disabled = busy || (!next && !inBattle);
+  $('run-next-btn').textContent = inBattle ? '去棋盘继续战斗' : (next ? next.label : nextLabel());
 }
 function render(events = []) {
   if (!vm) return;
@@ -347,6 +368,10 @@ function payloadFromButton(btn) {
 }
 async function runNext() {
   const next = routeActionForNext();
+  if (!next && isBattlePhase(vm?.phase) && vm?.dailyFlow?.pendingBattle) {
+    window.location.assign(battlePageHref());
+    return;
+  }
   if (!next) return;
   const payload = Object.assign({}, next.defaultPayload || {});
   await runCommand(next.type, payload);

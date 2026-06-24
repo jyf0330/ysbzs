@@ -46,6 +46,10 @@ function ensureDayRoute(state) {
   if (!Array.isArray(state.dayRoute.claimedRewards)) state.dayRoute.claimedRewards = [];
   return state.dayRoute;
 }
+function pendingRouteBattle(state) {
+  const route = ensureDayRoute(state);
+  return route.pendingBattle && route.pendingBattle.encounter ? route.pendingBattle : null;
+}
 function scheduleRows(state) {
   return normalizeScheduleRows((state.data.nodeSchedule || [])
     .filter(x => x.day === state.day && x.status === '正式'));
@@ -410,10 +414,14 @@ function pickBattleEncounter(state, ref) {
   route.history.push({ kind: 'battle_choice', option: clone(option) });
   route.battleOptions = [];
   pushEvent(state, 'BATTLE_PICK', { encounterId: option.encounterId, scheduleStep: route.nodeIndex, text: `选择${option.phaseLabel}：${option.name}。` });
-  return runEncounterBattle(state, option, { kind: 'battle_choice' });
+  return startRouteBattle(state, option, { kind: 'battle_choice', scheduleStep: route.nodeIndex });
 }
 function runFixedBattle(state, opts = {}) {
   const route = ensureDayRoute(state);
+  if (pendingRouteBattle(state)) {
+    pushEvent(state, 'FIXED_BATTLE_BLOCKED', { text: '当前路线战斗尚未结束。' });
+    return false;
+  }
   const schedule = opts.scheduleStep ? scheduleAt(state, opts.scheduleStep) : nextSchedule(state);
   if (!schedule || schedule.kind !== 'fixed_battle') {
     pushEvent(state, 'FIXED_BATTLE_BLOCKED', { text: '当前没有可进入的固定战。' });
@@ -431,10 +439,7 @@ function runFixedBattle(state, opts = {}) {
   route.currentEncounter = clone(encounter);
   route.history.push({ kind: 'fixed_battle', option: clone(encounter) });
   pushEvent(state, 'FIXED_BATTLE_START', { encounterId: encounter.encounterId, scheduleStep: route.nodeIndex, text: `进入${encounter.phaseLabel || schedule.phaseLabel || '固定战'}：${encounter.name || encounter.encounterId}。` });
-  const outcome = runEncounterBattle(state, encounter, { kind: 'fixed_battle' });
-  if (isTerminalEncounter(state, encounter)) markRunTerminal(state, encounter, outcome);
-  claimAvailableRouteRewards(state);
-  completeRouteStep(state);
+  startRouteBattle(state, encounter, { kind: 'fixed_battle', scheduleStep: route.nodeIndex, terminal: isTerminalEncounter(state, encounter) });
   return true;
 }
 function dayExprAllows(expr, day) {
@@ -641,17 +646,50 @@ function claimAvailableRouteRewards(state) {
   }
   return claimed;
 }
-function runEncounterBattle(state, encounter, source = {}) {
+function startRouteBattle(state, encounter, source = {}) {
+  const route = ensureDayRoute(state);
   resetBattlefield(state);
   state.period = encounter.wavePeriod || '上午';
   state.round = 0;
   state.result = null;
   state.phase = 'init';
-  const beforeGold = Number(state.gold || 0);
-  const castleLineFrom = Number(state.castleLine || 0);
-  const economyMultiplierFrom = Number(state.economyMultiplier || 1);
+  route.pendingBattle = {
+    encounter: clone(encounter),
+    source: clone(source),
+    beforeGold: Number(state.gold || 0),
+    castleLineFrom: Number(state.castleLine || 0),
+    economyMultiplierFrom: Number(state.economyMultiplier || 1),
+    battleIndex: Number(route.battleIndex || 0),
+    scheduleStep: Number(source.scheduleStep || route.nodeIndex || 0)
+  };
+  battle.startBattle(state);
+  return true;
+}
+function finalizeRouteBattle(state, result = null) {
+  const route = ensureDayRoute(state);
+  const pending = pendingRouteBattle(state);
+  if (!pending || state.phase !== 'battle_end' || !state.result) return null;
+  delete route.pendingBattle;
+  const encounter = pending.encounter;
+  const battleResult = result || state.result;
+  const source = Object.assign({}, pending.source || {}, {
+    castleLineFrom: pending.castleLineFrom,
+    economyMultiplierFrom: pending.economyMultiplierFrom
+  });
+  const outcome = recordBattleOutcome(state, encounter, battleResult, pending.beforeGold, source);
+  if (pending.source?.terminal) markRunTerminal(state, encounter, outcome);
+  completeRouteStep(state);
+  return outcome;
+}
+function runEncounterBattle(state, encounter, source = {}) {
+  startRouteBattle(state, encounter, source);
   const result = battle.runBattle(state);
-  return recordBattleOutcome(state, encounter, result, beforeGold, Object.assign({}, source, { castleLineFrom, economyMultiplierFrom }));
+  return finalizeRouteBattle(state, result);
+}
+function autoResolvePendingRouteBattle(state) {
+  if (!pendingRouteBattle(state)) return null;
+  const result = battle.runBattle(state);
+  return finalizeRouteBattle(state, result);
 }
 function resetBattlefield(state) {
   state.units = (state.units || []).filter(u => u.side === 'hero' || u.side === 'hero_leader');
@@ -690,16 +728,19 @@ function runDayRoute(state) {
       const options = generateBattleOptions(state);
       if (!options) return false;
       pickBattleEncounter(state, options[0].encounterId);
+      autoResolvePendingRouteBattle(state);
       claimAvailableRouteRewards(state);
       continue;
     }
     if (schedule.kind === 'fixed_battle') {
       const ok = runFixedBattle(state);
       if (!ok || state.phase === 'day_end') return ok;
+      autoResolvePendingRouteBattle(state);
+      claimAvailableRouteRewards(state);
       continue;
     }
   }
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview };
+module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview, finalizeRouteBattle };

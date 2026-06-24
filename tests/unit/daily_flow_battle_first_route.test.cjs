@@ -50,6 +50,12 @@ function resolveShopWithBuySell(adapter) {
   assert.equal(vm.phase, 'node_resolved');
   return { vm, option };
 }
+function resolveFixedBattle(adapter, scheduleStep) {
+  let vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep }).viewModel;
+  assert.equal(vm.phase, 'player_turn');
+  vm = run(adapter, 'RUN_BATTLE').viewModel;
+  return vm;
+}
 
 test('daily route runtime runs two 3-choice events before each fixed battle', () => {
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
@@ -79,7 +85,7 @@ test('daily flow public commands follow node -> node -> battle -> node -> node -
   assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
   assert.equal(vm.dailyFlow.steps[2].status, 'next');
 
-  vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 }).viewModel;
+  vm = resolveFixedBattle(adapter, 3);
   assert.equal(vm.dailyFlow.currentStep, 3);
   assert.equal(vm.dailyFlow.nextSchedule.kind, 'node_choice');
   assert.equal(vm.dailyFlow.steps[3].status, 'next');
@@ -93,9 +99,29 @@ test('daily flow public commands follow node -> node -> battle -> node -> node -
   assert.equal(vm.dailyFlow.currentStep, 5);
   assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
 
-  vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 6 }).viewModel;
+  vm = resolveFixedBattle(adapter, 6);
   assert.equal(vm.phase, 'day_end');
   assert.equal(vm.dailyFlow.currentStep, 6);
+});
+
+test('daily flow fixed battle enters manual battle instead of auto resolving', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'daily-flow-manual-fixed-battle' });
+  let vm = adapter.getViewModel('p1');
+
+  ({ vm } = resolveNode(adapter));
+  ({ vm } = resolveNode(adapter));
+  assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
+
+  const entered = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 });
+  vm = entered.viewModel;
+
+  assert.equal(vm.phase, 'player_turn');
+  assert.equal(vm.dailyFlow.currentStep, 3);
+  assert.equal(vm.dailyFlow.battleOutcomes.length, 0);
+  assert.ok(vm.nextActions.some(action => action.type === 'MOVE_HERO'), 'manual battle should expose normal move controls');
+  assert.ok(vm.nextActions.some(action => action.type === 'USE_SLOT'), 'manual battle should expose normal action-slot controls');
+  assert.ok(entered.events.some(event => event.type === 'BATTLE_START'));
+  assert.equal(entered.events.some(event => event.type === 'BATTLE_END'), false);
 });
 
 test('daily flow exposes real next-day command after completing day 1 route', () => {
@@ -106,10 +132,10 @@ test('daily flow exposes real next-day command after completing day 1 route', ()
 
   ({ vm } = resolveShopWithBuySell(adapter));
   ({ vm } = resolveNode(adapter));
-  vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 }).viewModel;
+  vm = resolveFixedBattle(adapter, 3);
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
-  vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 6 }).viewModel;
+  vm = resolveFixedBattle(adapter, 6);
 
   assert.equal(vm.day, 1);
   assert.equal(vm.phase, 'day_end');
@@ -347,7 +373,9 @@ test('daily flow page keeps player buttons on public runtime and hides one-click
   const runtimeClient = read('web/js/runtime-client.js');
 
   assert.match(html, /id="opening-panel"/, 'daily flow page should reserve a visible opening battlefield panel');
+  assert.match(html, /id="battle-link"/, 'daily flow page should expose a direct battle-page link');
   assert.match(js, /function renderOpening\(/, 'daily flow page should render the opening battlefield from ViewModel');
+  assert.match(js, /function battlePageHref\(/, 'battle-page link should preserve runtime/player/session query params');
   assert.match(js, /dailyFlow\?\.opening/, 'daily flow page should read opening info from the public dailyFlow surface');
   assert.match(js, /createGameRuntime/, 'daily flow page should use the public runtime client');
   assert.match(js, /mode:\s*params\.get\('runtime'\)\s*\|\|\s*'http'/, 'daily flow server page should default to HTTP runtime');

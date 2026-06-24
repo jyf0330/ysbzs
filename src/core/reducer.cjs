@@ -5,24 +5,29 @@ const dayRoute = require('./dayRoute.cjs');
 const inventory = require('./inventoryRules.cjs');
 const { buildReplay } = require('./changeLog.cjs');
 
+function finalizeRouteBattleIfNeeded(state, result) {
+  dayRoute.finalizeRouteBattle(state, result);
+  return result;
+}
+
 function dispatch(state, command) {
   switch (command.type) {
     case 'START_BATTLE': return battle.startBattle(state);
-    case 'START_NEXT_ROUND': return battle.startNextRound(state);
-    case 'AUTO_POSITION_HEROES': return battle.autoPositionHeroes(state);
-    case 'MOVE_HERO': return battle.moveHero(state, command.unitId || command.heroId, command.to || command.cell || { r: command.r, c: command.c });
+    case 'START_NEXT_ROUND': return finalizeRouteBattleIfNeeded(state, battle.startNextRound(state));
+    case 'AUTO_POSITION_HEROES': return finalizeRouteBattleIfNeeded(state, battle.autoPositionHeroes(state));
+    case 'MOVE_HERO': return finalizeRouteBattleIfNeeded(state, battle.moveHero(state, command.unitId || command.heroId, command.to || command.cell || { r: command.r, c: command.c }));
     case 'SELECT_HERO':
     case 'SELECT_UNIT':
     case 'SELECT_CELL':
     case 'SELECT_SLOT': return true;
-    case 'SET_ACTION_DIRECTION': return battle.setActionDirection(state, command.unitId || command.heroId, command.slotId ?? command.index, command.dir || command.direction || 'right');
+    case 'SET_ACTION_DIRECTION': return finalizeRouteBattleIfNeeded(state, battle.setActionDirection(state, command.unitId || command.heroId, command.slotId ?? command.index, command.dir || command.direction || 'right'));
     case 'USE_SLOT':
-    case 'USE_ACTION_SLOT': return battle.useActionSlot(state, command.unitId || command.heroId, command.slotId ?? command.index, command.targetCell || command.cell || (typeof command.r !== 'undefined' ? { r: command.r, c: command.c } : null), command);
-    case 'END_PLAYER_TURN': return battle.endPlayerTurn(state);
-    case 'RUN_MONSTER_TURN': return battle.runMonsterTurn(state);
+    case 'USE_ACTION_SLOT': return finalizeRouteBattleIfNeeded(state, battle.useActionSlot(state, command.unitId || command.heroId, command.slotId ?? command.index, command.targetCell || command.cell || (typeof command.r !== 'undefined' ? { r: command.r, c: command.c } : null), command));
+    case 'END_PLAYER_TURN': return finalizeRouteBattleIfNeeded(state, battle.endPlayerTurn(state));
+    case 'RUN_MONSTER_TURN': return finalizeRouteBattleIfNeeded(state, battle.runMonsterTurn(state));
     case 'BUILD_PREVIEW': return battle.buildPreviewGrid(state, command);
     case 'GET_CELL_DETAIL': return battle.getCellDetail(state, command.r ?? command.row, command.c ?? command.col);
-    case 'RUN_BATTLE': return battle.runBattle(state);
+    case 'RUN_BATTLE': return finalizeRouteBattleIfNeeded(state, battle.runBattle(state));
     case 'GENERATE_NODE_OPTIONS': return dayRoute.generateNodeOptions(state, command);
     case 'PICK_NODE': return dayRoute.pickNode(state, command.optionId ?? command.nodeId ?? command.index);
     case 'GENERATE_BATTLE_OPTIONS': return dayRoute.generateBattleOptions(state, command);

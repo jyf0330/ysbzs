@@ -129,6 +129,7 @@ function stepSummary(row = {}, pickedName = null) {
 function buildDailyFlowVM(state) {
   const route = state.dayRoute || { day: state.day || 1, nodeIndex: 0, history: [], pendingRewards: [], claimedRewards: [] };
   const currentStep = Number(route.nodeIndex || 0);
+  const activeBattleStep = Number(route.pendingBattle?.scheduleStep || 0);
   const activeChoiceStep = Number(route.options?.[0]?.scheduleStep || route.battleOptions?.[0]?.scheduleStep || 0);
   const nextScheduleRow = nextDaySchedule(state);
   const nextStep = Number(nextScheduleRow?.step || 0);
@@ -136,7 +137,9 @@ function buildDailyFlowVM(state) {
   const kindLabel = kind => ({ node_choice: '节点选择', battle_choice: '遭遇选择', fixed_battle: '固定战' }[kind] || kind || '流程');
   const steps = schedule.map(row => {
     const step = Number(row.step || 0);
-    const status = route.terminal || step <= currentStep ? 'done' : activeChoiceStep === step ? 'current' : nextStep === step ? 'next' : 'pending';
+    const status = route.terminal
+      ? 'done'
+      : (activeBattleStep === step ? 'current' : (step <= currentStep ? 'done' : activeChoiceStep === step ? 'current' : nextStep === step ? 'next' : 'pending'));
     const history = (route.history || []).find(item => Number(item.option?.scheduleStep || item.option?.step || 0) === step) || null;
     const pickedName = history?.option?.name || history?.option?.phaseLabel || null;
     return {
@@ -170,6 +173,7 @@ function buildDailyFlowVM(state) {
     battleOutcomes: clone(route.battleOutcomes || []),
     pendingRewards: clone((route.pendingRewards || []).filter(x => x && !x.claimed)),
     claimedRewards: clone(route.claimedRewards || []),
+    pendingBattle: route.pendingBattle ? clone(route.pendingBattle) : null,
     runs: clone(state.dayRouteRuns || []),
     terminal: route.terminal ? clone(route.terminal) : null
   };

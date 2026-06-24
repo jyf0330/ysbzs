@@ -136,19 +136,19 @@ test('CSV08 策划总表可无损导出全部程序 CSV', () => {
   }
 });
 
-test('CSV08B 总表必须包含 data/csv 下每张 CSV 的隐藏完整同名 sheet，且可见策划页不超过 10 张', () => {
+test('CSV08B 总表必须保持 6-10 张策划域表，不允许隐藏同名程序 CSV sheet', () => {
   const code = `
 from openpyxl import load_workbook
 import sys
 wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
-missing = [name[:-4] for name in csv_files if name[:-4] not in wb.sheetnames]
-assert not missing, missing
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
+hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
 assert len(visible) <= 10, visible
 assert set(['README', 'PETS', 'WAVES', 'SHOP_ITEMS', 'MECHANISMS', 'TRIALS']).issubset(set(visible)), visible
-exposed_csv = [name[:-4] for name in csv_files if wb[name[:-4]].sheet_state == 'visible']
-assert not exposed_csv, exposed_csv
+assert not hidden, hidden
+raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
+assert not raw_csv_sheets, raw_csv_sheets
 wb.close()
 `;
   execFileSync('python3', ['-c', code, path.join(root, 'xlsx', 'ysbzs_master.xlsx'), ...allProgramCsvFiles()], { cwd: root, stdio: 'pipe' });

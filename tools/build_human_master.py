@@ -18,6 +18,11 @@ def read_csv(name):
         return list(csv.DictReader(f))
 
 
+def read_csv_rows(name):
+    with (CSV_DIR / name).open("r", encoding="utf-8-sig", newline="") as f:
+        return list(csv.reader(f))
+
+
 def split_pool_count(expr):
     raw = str(expr or "").strip()
     if "-" not in raw:
@@ -65,6 +70,40 @@ def add_sheet(wb, title, headers, rows, widths=None):
             sample = [str(header)] + [str(row.get(header, "")) for row in rows[:30]]
             width = min(max(max(len(s) for s in sample) + 2, 10), 34)
         ws.column_dimensions[get_column_letter(i)].width = width
+    return ws
+
+
+def add_domain_sheet(wb, title, sections):
+    ws = wb.create_sheet(title)
+    section_fill = PatternFill("solid", fgColor="7030A0")
+    header_fill = PatternFill("solid", fgColor="1F4E78")
+    section_font = Font(color="FFFFFF", bold=True)
+    header_font = Font(color="FFFFFF", bold=True)
+    for csv_name, description in sections:
+        ws.append(["#csv", csv_name, description])
+        section_row = ws.max_row
+        for cell in ws[section_row]:
+            cell.fill = section_fill
+            cell.font = section_font
+            cell.alignment = Alignment(vertical="center", wrap_text=True)
+        rows = read_csv_rows(csv_name)
+        if rows:
+            ws.append(rows[0])
+            for cell in ws[ws.max_row]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            for row in rows[1:]:
+                ws.append(row)
+        ws.append([])
+    ws.freeze_panes = "A2"
+    for row in ws.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+    for col_idx in range(1, ws.max_column + 1):
+        sample = [str(ws.cell(r, col_idx).value or "") for r in range(1, min(ws.max_row, 80) + 1)]
+        width = min(max(max((len(s) for s in sample), default=8) + 2, 10), 36)
+        ws.column_dimensions[get_column_letter(col_idx)].width = width
     return ws
 
 
@@ -205,6 +244,41 @@ def main():
         ],
         widths={"trial_id": 22, "row_type": 18, "pet_id": 16, "stat_override": 30, "rule_note": 42, "note": 34},
     )
+
+    add_domain_sheet(wb, "ROUTE", [
+        ("24_node_schedule.csv", "每日路线排程：每天节点/固定战顺序。"),
+        ("25_node_pool.csv", "每日路线节点池：商店、奖励、事件、休整节点候选。"),
+        ("26_encounter_pool.csv", "路线战斗遭遇池：固定战/遭遇到波次时段的映射。"),
+    ])
+
+    add_domain_sheet(wb, "ECONOMY_EVENTS", [
+        ("05_events.csv", "外层事件、商店事件、战斗后事件。"),
+        ("07_relic_blessings.csv", "遗物/祝福奖励池。"),
+        ("10_initial_roster.csv", "开局阵容和站位。"),
+    ])
+
+    add_domain_sheet(wb, "RULES", [
+        ("00_maintenance_guide.csv", "维护入口说明。"),
+        ("09_cross_validation.csv", "跨表校验摘要。"),
+        ("11_hero_domains.csv", "英雄领域与全局领域规则。"),
+        ("12_element_reactions.csv", "元素反应规则。"),
+        ("14_quality_multipliers.csv", "品质倍率。"),
+        ("18_effect_objects.csv", "持续效果对象。"),
+        ("19_triggers.csv", "触发器定义。"),
+        ("20_modifiers.csv", "修饰器定义。"),
+        ("21_element_packet_rules.csv", "元素包规则。"),
+        ("22_element_conversion_rules.csv", "元素转换规则。"),
+        ("23_trigger_order_rules.csv", "触发排序规则。"),
+    ])
+
+    add_domain_sheet(wb, "PROGRESSION_TRIALS", [
+        ("15_summon_trial_questions.csv", "召唤试炼题库。"),
+        ("16_trial_action_plan.csv", "试炼行动脚本。"),
+        ("17_trial_victory_rules.csv", "试炼胜负规则。"),
+        ("27_shape_catalog.csv", "19 个战斗形状目录。"),
+        ("28_quality_growth.csv", "品质成长数值。"),
+        ("29_quality_upgrades.csv", "品质升级质变。"),
+    ])
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUT)

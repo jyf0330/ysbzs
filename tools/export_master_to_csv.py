@@ -35,6 +35,13 @@ MASTER_ONLY_EXPORTS = [
     ("QUALITY_UPGRADES", "29_quality_upgrades.csv"),
 ]
 
+DOMAIN_SECTION_SHEETS = [
+    "ROUTE",
+    "ECONOMY_EVENTS",
+    "RULES",
+    "PROGRESSION_TRIALS",
+]
+
 NS_MAIN = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 NS_PKG_REL = "{http://schemas.openxmlformats.org/package/2006/relationships}"
@@ -234,21 +241,48 @@ def generated_sheet_table(master_path, sheet_name):
     return rows, headers
 
 
-def csv_sheet_name(filename):
-    return Path(filename).stem
+def trim_trailing_empty(values):
+    out = [str(value).strip() for value in values]
+    while out and out[-1] == "":
+        out.pop()
+    return out
 
 
-def generated_full_csv_sheets(master_path, baseline_dir):
-    with zipfile.ZipFile(master_path) as zf:
-        sheet_names = set(workbook_sheet_paths(zf).keys())
+def table_from_rows(rows):
+    if not rows:
+        return [], []
+    headers = trim_trailing_empty(rows[0])
+    width = len(headers)
+    out = []
+    for raw in rows[1:]:
+        raw = trim_trailing_empty(raw)[:width]
+        item = {}
+        for i, header in enumerate(headers):
+            if header:
+                item[header] = raw[i].strip() if i < len(raw) else ""
+        if any(str(v).strip() for v in item.values()):
+            out.append(item)
+    return out, headers
+
+
+def generated_domain_section_tables(master_path):
     result = {}
-    for csv_file in sorted(baseline_dir.glob("*.csv")):
-        sheet_name = csv_sheet_name(csv_file.name)
-        if sheet_name not in sheet_names:
-            continue
-        rows, headers = generated_sheet_table(master_path, sheet_name)
-        if rows and headers:
-            result[csv_file.name] = (rows, headers)
+    for sheet_name in DOMAIN_SECTION_SHEETS:
+        rows = read_sheet_rows(master_path, sheet_name)
+        current_name = ""
+        current_rows = []
+        for row in rows + [["#csv"]]:
+            marker = str(row[0]).strip() if row else ""
+            if marker == "#csv":
+                if current_name:
+                    table_rows, headers = table_from_rows(current_rows)
+                    if headers:
+                        result[current_name] = (table_rows, headers)
+                current_name = str(row[1]).strip() if len(row) > 1 else ""
+                current_rows = []
+                continue
+            if current_name:
+                current_rows.append(row)
     return result
 
 
@@ -275,9 +309,10 @@ def generated_tables(master_path, baseline_dir):
         for r in master["TRIALS"]
         if r.get("trial_id", "")
     }
-    shapes_by_id = by_key(master["SHAPE_CATALOG"], "shape_id")
+    result = generated_domain_section_tables(master_path)
+    shape_rows, _shape_headers = result.get("27_shape_catalog.csv", generated_sheet_table(master_path, "SHAPE_CATALOG"))
+    shapes_by_id = by_key(shape_rows, "shape_id")
 
-    result = generated_full_csv_sheets(master_path, baseline_dir)
     for filename in GENERATED_FILES:
         if filename in result:
             continue

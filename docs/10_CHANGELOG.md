@@ -2,8 +2,7 @@
 
 ## 2026-06-24
 
-- 策划总表接管全部运行 CSV 数据源：`xlsx/ysbzs_master.xlsx` 现在包含 `data/csv/*.csv` 的 30 个完整同名 sheet，`tools/export_master_to_csv.py` 会优先从这些完整 sheet 导出，并在任意 CSV 缺少总表来源时失败；`tests/csv_source.test.cjs` 覆盖总表可无损导出全部 CSV，避免遗物、事件、每日路线等数据绕过总表。
-- 总表保持策划可编辑口径：完整程序 CSV sheet 改为隐藏内部层，用户可见编辑页保留 `README/PETS/WAVES/SHOP_ITEMS/MECHANISMS/TRIALS` 6 张；CSV 测试新增“可见页不超过 10 且 CSV 同名 sheet 不可见”的门禁，避免把程序表暴露成策划负担。
+- 策划总表改为少量域表生成全部程序 CSV：`xlsx/ysbzs_master.xlsx` 只保留 `README/PETS/WAVES/SHOP_ITEMS/MECHANISMS/TRIALS/ROUTE/ECONOMY_EVENTS/RULES/PROGRESSION_TRIALS` 10 张可见策划表，不再包含隐藏同名 CSV sheet；`tools/export_master_to_csv.py` 会从域表 `#csv` 分区和薄策划表生成 `data/csv/*.csv` 的全部程序表，测试覆盖无损导出、无隐藏 sheet、无同名 CSV sheet，避免把 30 多张程序表变成策划维护负担。
 
 ## 2026-06-23
 

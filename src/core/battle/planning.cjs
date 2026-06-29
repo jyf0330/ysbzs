@@ -105,6 +105,20 @@ function positionKey(pos) { return `${pos.r},${pos.c}`; }
 
 function cloneElementsFromCell(cell) { return Object.assign(makeEmptyElements(), cell?.elements || {}); }
 
+function enemyLeaderId(state) {
+  return state.leaders?.enemy?.id || null;
+}
+
+function isEnemyLeaderTarget(state, targetOrId) {
+  const id = typeof targetOrId === 'string' ? targetOrId : targetOrId?.id;
+  return !!id && id === enemyLeaderId(state);
+}
+
+function hasLivingNonBossEnemies(state) {
+  const bossId = enemyLeaderId(state);
+  return living(state, 'enemy').some(target => target.id !== bossId);
+}
+
 function estimateHitDamage(actor, slot, target) {
   const actionRaw = Math.max(0, Number(actor?.atk ?? slot?.layers ?? 0));
   const layerRaw = Math.max(0, Number(effectiveDamageFromLayers(slot?.layers, target) || 0));
@@ -134,13 +148,17 @@ function estimateDamageAllocation(target, damage, already = 0) {
 
 function actionCandidateScore(state, actor, slot, cells, targets) {
   let effective = 0, raw = 0, kills = 0, bossDamage = 0, terrainValue = 0, weakenValue = 0;
+  let bossKilled = false;
   for (const t of targets) {
     const add = estimateHitDamage(actor, slot, t);
     const allocation = estimateDamageAllocation(t, add);
     raw += allocation.final;
     const eff = allocation.effective;
     effective += eff;
-    if (t.id === state.leaders?.enemy?.id) bossDamage += eff;
+    if (isEnemyLeaderTarget(state, t)) {
+      bossDamage += eff;
+      if (allocation.killed) bossKilled = true;
+    }
     if (allocation.killed) kills++;
   }
   if (!targets.length) {
@@ -159,6 +177,9 @@ function actionCandidateScore(state, actor, slot, cells, targets) {
     }
   }
   const overflow = Math.max(0, raw - effective);
+  const nonlethalBossDeprioritized = hasLivingNonBossEnemies(state) && bossDamage > 0 && !bossKilled;
+  const priorityEffective = Math.max(0, effective - (nonlethalBossDeprioritized ? bossDamage : 0));
+  const bossPriorityDamage = nonlethalBossDeprioritized ? 0 : bossDamage;
   return {
     effective,
     raw,
@@ -167,7 +188,7 @@ function actionCandidateScore(state, actor, slot, cells, targets) {
     bossDamage,
     terrainValue,
     weakenValue,
-    score: effective * 10 + kills * 30 + bossDamage * 8 + terrainValue * 2 + weakenValue * 3 - overflow * 8
+    score: priorityEffective * 10 + kills * 30 + bossPriorityDamage * 8 + terrainValue * 2 + weakenValue * 3 - overflow * 8
   };
 }
 
@@ -217,6 +238,7 @@ function evaluateTeamChoices(state, choices) {
   let terrainStacks = 0;
   let weakenBenefit = 0;
   let conflictPenalty = 0;
+  let bossKilled = false;
   for (let ci = 0; ci < choices.length; ci++) {
     const choice = choices[ci];
     const actor = getUnit(state, choice.unitId);
@@ -241,7 +263,10 @@ function evaluateTeamChoices(state, choices) {
           stats.effective += eff;
           stats.overflow += over;
           if (allocation.killed) stats.kills += 1;
-          if (tid === state.leaders?.enemy?.id) stats.bossDamage += eff;
+          if (isEnemyLeaderTarget(state, tid)) {
+            stats.bossDamage += eff;
+            if (allocation.killed) bossKilled = true;
+          }
         }
       } else {
         for (const p of action.cells) {
@@ -279,7 +304,10 @@ function evaluateTeamChoices(state, choices) {
       weakenBenefit += stats.weakenBenefit;
     }
   }
-  score += effectiveDamage * 10 + kills * 30 + bossDamage * 8 + terrainForms * 20 + terrainStacks * 6 + weakenBenefit * 3 - overflow * 8 - conflictPenalty * 80;
+  const nonlethalBossDeprioritized = hasLivingNonBossEnemies(state) && bossDamage > 0 && !bossKilled;
+  const priorityEffectiveDamage = Math.max(0, effectiveDamage - (nonlethalBossDeprioritized ? bossDamage : 0));
+  const bossPriorityDamage = nonlethalBossDeprioritized ? 0 : bossDamage;
+  score += priorityEffectiveDamage * 10 + kills * 30 + bossPriorityDamage * 8 + terrainForms * 20 + terrainStacks * 6 + weakenBenefit * 3 - overflow * 8 - conflictPenalty * 80;
   return { score, effectiveDamage, overflow, kills, bossDamage, terrainForms, terrainStacks, weakenBenefit, conflictPenalty, actionStats };
 }
 

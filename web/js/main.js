@@ -19,6 +19,7 @@ import { createGameRuntime } from './runtime-client.js';
   };
   const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT', 'AUTO_POSITION_HEROES']);
   const UNDOABLE_FLOW_TYPES = new Set(['END_PLAYER_TURN', 'RUN_MONSTER_TURN', 'START_NEXT_ROUND']);
+  const AUTO_PLAYER_FLOW_TYPES = new Set(['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN', 'RUN_MONSTER_TURN', 'START_NEXT_ROUND']);
   const UNDO_STACK_LIMIT = 8;
 
   const ui = {
@@ -496,6 +497,7 @@ import { createGameRuntime } from './runtime-client.js';
     }
   }
   function undoLabelForType(type) {
+    if (type === 'PLAYER_AUTO_TURN_FLOW') return '自动推进回合';
     if (type === 'END_PLAYER_TURN') return '结算并执行敌方宠物行动';
     if (type === 'RUN_MONSTER_TURN') return '执行敌方宠物行动';
     if (type === 'START_NEXT_ROUND') return '进入下一回合';
@@ -525,6 +527,63 @@ import { createGameRuntime } from './runtime-client.js';
   }
   async function runUndoableFlowCommand(type, payload = {}) {
     return runCommand(type, payload, { undoable: UNDOABLE_FLOW_TYPES.has(type) });
+  }
+  function nextAutoPlayerFlowType(previousType) {
+    const phase = ui.vm?.phase;
+    if (phase === 'player_turn' && previousType === 'RUN_PLAYER_ALL_OUT') return 'END_PLAYER_TURN';
+    if (phase === 'monster_turn') return 'RUN_MONSTER_TURN';
+    if (phase === 'round_end' && Number(ui.vm?.round || 0) < Number(ui.vm?.maxRounds || 0)) return 'START_NEXT_ROUND';
+    return null;
+  }
+  function applyFlowCommandResult(type, data) {
+    ui.vm = data?.viewModel || ui.vm;
+    if (type === 'START_BATTLE') ui.prepOpen = false;
+    normalizeSelection();
+    clearStaleManualFlowPreview();
+    if (data?.manualFlowPreview) {
+      const sourceKey = manualFlowPreviewSourceKey();
+      ui.manualFlowPreview = normalizeManualFlowPreviewResult(data.manualFlowPreview, sourceKey);
+      ui.manualFlowPreviewPending = null;
+    }
+  }
+  async function runPlayerAutoTurnFlow(startType, payload = {}) {
+    if (ui.busy) return null;
+    const undoSnapshot = await captureUndoSnapshot('PLAYER_AUTO_TURN_FLOW');
+    ui.busy = true;
+    setBusy(true);
+    const results = [];
+    try {
+      let type = startType;
+      let stepPayload = payload;
+      let guard = 0;
+      while (type && guard < 8) {
+        guard++;
+        const data = await runtime.action(makeCommand(type, stepPayload || {}));
+        results.push(data);
+        applyFlowCommandResult(type, data);
+        if (data?.ok === false || data?.accepted === false) break;
+        type = nextAutoPlayerFlowType(type);
+        stepPayload = {};
+      }
+      if (undoSnapshot && results.some(data => data?.ok !== false)) pushUndoSnapshot(undoSnapshot);
+      renderCache.invalidate();
+      render();
+      if (AUTO_PLAYER_FLOW_TYPES.has(startType)) await refreshSelectedCellDetail();
+      refreshManualFlowPreview();
+      return results[results.length - 1] || null;
+    } catch (err) {
+      toast(err.message || String(err), true);
+      document.body.classList.add('shake');
+      setTimeout(() => document.body.classList.remove('shake'), 300);
+      return null;
+    } finally {
+      ui.busy = false;
+      setBusy(false);
+      if (ui.vm) {
+        renderControls();
+        renderPrepOverlay();
+      }
+    }
   }
   async function undoLastFlowAction() {
     if (ui.busy) return;
@@ -655,7 +714,7 @@ import { createGameRuntime } from './runtime-client.js';
     return first ? first.label : phaseText(vm.phase);
   }
   function playerTurnButtonText(phase) {
-    return phase === 'init' ? '开始战斗' : '结算并执行敌方宠物行动';
+    return phase === 'init' ? '开始战斗' : '结束我方并自动继续';
   }
   function enemyFlowButtonText(phase) {
     return phase === 'round_end' ? '进入下一回合（Boss召唤）' : '执行敌方宠物行动';
@@ -1345,7 +1404,7 @@ import { createGameRuntime } from './runtime-client.js';
 	    if ($('all-out-btn')) {
 	      const hasUsableSlot = slotsFlat().some(x => !x.slot.used && x.slot.canUse !== false);
 	      $('all-out-btn').disabled = ui.busy || phase !== 'player_turn' || !hasUsableSlot;
-	      $('all-out-btn').title = phase === 'player_turn' ? '按左侧行动块顺序释放，不移动、不重新摆位。' : '进入玩家回合后可用。';
+	      $('all-out-btn').title = phase === 'player_turn' ? '按左侧行动块顺序释放，之后自动结算到下一玩家回合。' : '进入玩家回合后可用。';
 	    }
     if ($('auto-position-btn')) {
       $('auto-position-btn').disabled = ui.busy || !hasAutoPositionCandidates();
@@ -1399,7 +1458,7 @@ import { createGameRuntime } from './runtime-client.js';
       if (hero) return `${hero.name} 已选中：点空格移动；点敌人或Boss查看详情；点行动槽进入瞄准。`;
       return '点棋盘上的我方英雄或左侧英雄卡选中，再点空格移动。';
     }
-    if (phase === 'monster_turn' || phase === 'round_end') return `点击“${enemyFlowButtonText(phase)}”继续推进。`;
+    if (phase === 'monster_turn' || phase === 'round_end') return '敌方流程可自动推进；也可以用右侧分步按钮调试。';
     if (phase === 'battle_end') return '战斗结束，可以生成奖励或进入商店。';
     if (phase === 'shop') return '购买、刷新商品，然后离开商店。';
     return '可使用右侧按钮继续流程。';
@@ -1427,24 +1486,9 @@ import { createGameRuntime } from './runtime-client.js';
       toast('没有可释放的行动块。', true);
       return;
     }
-    let count = 0;
-    ui.busy = true;
-    setBusy(true);
-    try {
-      const result = await runAllOutCommand('RUN_PLAYER_ALL_OUT', { apBySlot: ui.apBySlot });
-      count = Number(result?.result?.count || 0);
-    } catch (err) {
-      toast(err.message || String(err), true);
-      document.body.classList.add('shake');
-      setTimeout(() => document.body.classList.remove('shake'), 300);
-    } finally {
-      ui.busy = false;
-      setBusy(false);
-    }
     ui.slotArmed = false;
     renderCache.invalidate();
-    render();
-    toast(`我方全部出击：尝试释放 ${count} 个行动块。`);
+    await runPlayerAutoTurnFlow('RUN_PLAYER_ALL_OUT', { apBySlot: ui.apBySlot });
   }
 
   function renderChoicePreview(option) {
@@ -1716,7 +1760,10 @@ import { createGameRuntime } from './runtime-client.js';
     $('day7-btn').addEventListener('click', () => runCommand('SETUP_DAY7_FIRE_TRIAL'));
     $('save-game-btn')?.addEventListener('click', () => saveGame());
     $('load-game-btn')?.addEventListener('click', () => loadGameFromStorage());
-    $('etb').addEventListener('click', () => runUndoableFlowCommand(ui.vm?.phase === 'init' ? 'START_BATTLE' : 'END_PLAYER_TURN'));
+    $('etb').addEventListener('click', () => {
+      if (ui.vm?.phase === 'init') runUndoableFlowCommand('START_BATTLE');
+      else runPlayerAutoTurnFlow('END_PLAYER_TURN');
+    });
     $('monster-btn').addEventListener('click', () => runUndoableFlowCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'));
     $('undo-flow-btn')?.addEventListener('click', () => undoLastFlowAction());
     $('full-day-btn').addEventListener('click', () => {

@@ -20,10 +20,12 @@ test('manual enemy-flow buttons expose an undo path backed by runtime save/load'
     assert.match(js, /function undoLastFlowAction/, `${file} should expose a single-step undo command`);
     assert.match(js, /runtime\.save\(\)/, `${file} should snapshot through the public runtime save API`);
     assert.match(js, /runtime\.load\(/, `${file} should restore through the public runtime load API`);
+    assert.match(js, /function runPlayerAutoTurnFlow/, `${file} should expose the normal single-player auto turn flow`);
+    assert.match(js, /PLAYER_AUTO_TURN_FLOW/, `${file} auto turn flow should keep one undo snapshot for the composed public-command chain`);
     assert.match(js, /END_PLAYER_TURN/, `${file} undoable flow should include player-turn settlement`);
     assert.match(js, /RUN_MONSTER_TURN/, `${file} undoable flow should include enemy pet action`);
     assert.match(js, /START_NEXT_ROUND/, `${file} undoable flow should include next-round spawn flow`);
-    assert.match(js, /runUndoableFlowCommand\(ui\.vm\?\.phase === 'init' \? 'START_BATTLE' : 'END_PLAYER_TURN'/, `${file} etb should keep start battle direct but make settlement undoable`);
+    assert.match(js, /if \(ui\.vm\?\.phase === 'init'\) runUndoableFlowCommand\('START_BATTLE'\);\s*else runPlayerAutoTurnFlow\('END_PLAYER_TURN'\);/, `${file} etb should keep start battle direct but auto-compose player settlement to the next player turn`);
     assert.match(js, /runUndoableFlowCommand\(ui\.vm\?\.phase === 'round_end' \? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'/, `${file} monster button should make enemy-flow operations undoable`);
   }
 });

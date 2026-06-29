@@ -1,0 +1,53 @@
+# 2026-06-25_daily-flow-battle-link-entry
+
+- task_id: 2026-06-25_daily-flow-battle-link-entry
+- type: bugfix-ui
+- status: DONE
+- owner: Codex
+- branch: shared-worktree
+- Goal: 修复每日流程中“进入战斗界面”链接只跳转、不启动路线战斗，导致玩家点链接后进不到本次路线战斗的问题。
+- Scope:
+  - 固定战或遭遇战入口已可执行时，战斗入口链接必须先走公开路线动作，再进入棋盘页。
+  - 已经处于路线战斗中时，战斗入口继续只导航到棋盘页。
+  - 保持 UI 通过 ViewModel 和 `/api/action`，不在页面重推路线规则。
+- related_files:
+  - `web/daily-flow.js`
+  - `tests/unit/daily_flow_battle_first_route.test.cjs`
+  - `tasks/doing/2026-06-25_daily-flow-battle-link-entry.md`
+  - `tasks/index.md`
+  - `output/playwright/`
+- exclusive_files:
+  - `web/daily-flow.js`
+  - `tasks/index.md`
+- read_files:
+  - `docs/02_CURRENT_WORKFLOW.md`
+  - `docs/00_AI_START_HERE.md`
+  - `docs/roles/UI_UX_START.md`
+  - `tasks/index.md`
+  - `tasks/README.md`
+  - `src/dailyFlowView.cjs`
+  - `src/core/dayRoute.cjs`
+- validation:
+  - RED/GREEN: `node --test tests/unit/daily_flow_battle_first_route.test.cjs`
+  - Full: `npm run check:all`
+  - Browser tester pass: real daily-flow player clicks, screenshot under `output/playwright/`
+- commit_plan:
+  - message: `fix: start route battle from daily flow battle link`
+- collaboration:
+  - lead_scope: Codex owns daily-flow battle link command path, unit/page contract test, and browser evidence.
+  - specialist_input: 无
+  - tester_pass: TEST_SUBTHREAD_UNAVAILABLE; performed independent Playwright tester pass from the formal daily-flow page, with real clicks and screenshot evidence.
+  - external_ai_input: 无
+  - lead_decision: Root cause is a visible battle-page link bypassing the public route battle action; fix the link click path to reuse the same ViewModel action selector as the main next button.
+- evidence:
+  - Root cause repro on `http://127.0.0.1:4191/daily-flow.html?runtime=http&sessionId=link-repro-...&playerId=p1`: after two route choices, clicking `#battle-link` navigated to `index.html` with `phase=node_resolved`, `next=fixed_battle`, `pendingBattle=false`.
+  - RED: `node --test tests/unit/daily_flow_battle_first_route.test.cjs` failed on missing `runBattleEntry`.
+  - GREEN: `node --test tests/unit/daily_flow_battle_first_route.test.cjs` passed 13/13.
+  - Full check: `npm run check:all` passed.
+  - Browser tester pass used daily-flow formal player clicks: first route node, second route node, then clicked `#battle-link` with visible text `进入第一场战斗`.
+  - Browser assertions after link click: `index.html?runtime=http&sessionId=...`, `phase=player_turn`, `round=1`, `heroes=2`, `enemies=2`, `pendingBattle=true`, next actions include `MOVE_HERO` and `USE_SLOT`.
+  - Console/page/request errors: `[]`.
+  - Screenshot: `output/playwright/2026-06-25_daily-flow-battle-link-entry.png`.
+  - Report: `output/playwright/2026-06-25_daily-flow-battle-link-entry.json`.
+  - Main-thread screenshot review: battle board, player turn status, action blocks, player/enemy units, and operation buttons are visible; no blank page, obvious overlap, or missing board state.
+  - Commit status: not committed automatically because the workspace already had unrelated dirty/untracked task/index and artist handoff files before this task.

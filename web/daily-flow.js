@@ -339,11 +339,12 @@ function updateConsoleLabel() {
 function renderControls() {
   const next = routeActionForNext();
   const inBattle = isBattlePhase(vm?.phase) && vm?.dailyFlow?.pendingBattle;
+  const battleEntryReady = next && isRouteBattleEntryCommand(next.type);
   const href = battlePageHref();
   $('top-battle-link').href = href;
   $('battle-link').href = href;
-  $('battle-link').textContent = inBattle ? '去棋盘继续战斗' : '进入战斗界面';
-  $('battle-link').classList.toggle('battle-active', !!inBattle);
+  $('battle-link').textContent = inBattle ? '去棋盘继续战斗' : (battleEntryReady ? next.label : '进入战斗界面');
+  $('battle-link').classList.toggle('battle-active', !!inBattle || !!battleEntryReady);
   $('run-next-btn').disabled = busy || (!next && !inBattle);
   $('run-next-btn').textContent = inBattle ? '去棋盘继续战斗' : (next ? next.label : nextLabel());
 }
@@ -376,9 +377,19 @@ async function runNext() {
   const payload = Object.assign({}, next.defaultPayload || {});
   await runCommand(next.type, payload);
 }
+async function runBattleEntry(ev) {
+  const next = routeActionForNext();
+  if (!next || !isRouteBattleEntryCommand(next.type)) return;
+  ev.preventDefault();
+  if (busy) return;
+  const payload = Object.assign({}, next.defaultPayload || {});
+  await runCommand(next.type, payload);
+}
 
 $('refresh-btn').addEventListener('click', () => loadView().catch(err => toast(err.message || String(err), true)));
 $('run-next-btn').addEventListener('click', runNext);
+$('battle-link').addEventListener('click', runBattleEntry);
+$('top-battle-link').addEventListener('click', runBattleEntry);
 $('choice-list').addEventListener('click', ev => {
   const btn = ev.target.closest('[data-command]');
   if (!btn) return;

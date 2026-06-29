@@ -1,7 +1,7 @@
 # 任务总览
 ## ACTIVE
 
-- 无
+- `tasks/doing/2026-06-28_replay-command-stream.md` — BLOCKED: replay implementation validated; full `check:all` blocked by unrelated workbook CSV08 failure.
 
 ## PAUSED
 
@@ -10,6 +10,8 @@
 ## DONE
 
 - `tasks/done/2026-06-24_two-day-flow-recording.md`
+- `tasks/done/2026-06-25_daily-flow-battle-link-entry.md`
+- `tasks/done/2026-06-24_artist-handoff-zip.md`
 - `tasks/done/2026-06-24_master-domain-sheets-export.md`
 - `tasks/done/2026-06-24_master-visible-planner-sheets.md`
 - `tasks/done/2026-06-24_master-all-csv-source.md`

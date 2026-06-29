@@ -19,6 +19,7 @@ const { PUBLIC_COMMANDS, ACTION_ALIASES } = require('./uiAdapterCommands.cjs');
 const { runFullDayCommand, runFullRunCommand, runFullRunFlow } = require('./uiAdapterFlowCommands.cjs');
 const { buildMoveManualFlowPreview, runManualFlowPreviewTransaction } = require('./uiAdapterManualFlowPreview.cjs');
 const { nextDaySchedule, buildDailyFlowVM } = require('./dailyFlowView.cjs');
+const { sanitizeInitialOptions, recordReplayResult, commandCheckpointFromLogEntry } = require('./core/replayCodec.cjs');
 const ADAPTER_VERSION = '2026-06-09-command-envelope-local-prediction-ready-round4';
 const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT', 'CLEAR_SELECTION']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
 
@@ -448,6 +449,8 @@ function restoreViewStates(viewStates, raw) {
 }
 function createYSBZSUIAdapter(options = {}) {
   const state = ensureMultiplayerState(createGameState(options), options);
+  state.replayInitialOptions = sanitizeInitialOptions(options);
+  state.initialStateHash = stateHash(state);
   const viewStates = new Map();
   const defaultPlayerId = options.playerId || 'p1';
   const includeAuthoritativeState = options.includeAuthoritativeState !== false;
@@ -483,17 +486,42 @@ function createYSBZSUIAdapter(options = {}) {
       }, normalized);
 	      const command = normalizeCommandEnvelope(normalized, state, { playerId: options.playerId, strictVersion: false });
 	      const viewState = viewStateFor(command);
+      const commandBeforeVersion = state.stateVersion || 0;
+      const commandBeforeHash = stateHash(state);
       try {
         validateCommandAuthority(state, command, { strictVersion: !!options.strictVersion, allowDebugCommands: !!options.allowDebugCommands });
       } catch (err) {
         const rejected = rejectedCommandResult(state, command, err);
         rejected.viewModel = viewFor(command);
+        recordReplayResult(state, command, {
+          stateVersion: rejected.viewModel.stateVersion,
+          stateHash: rejected.viewModel.stateHash,
+          beforeVersion: commandBeforeVersion,
+          beforeHash: rejected.viewModel.stateHash,
+          afterVersion: rejected.viewModel.stateVersion,
+          afterHash: rejected.viewModel.stateHash,
+          eventIds: []
+        }, {
+          accepted: false,
+          kind: 'rejected',
+          recordCommandStream: false,
+          error: rejected.error
+        });
         return rejected;
       }
 
       if (UI_SELECTION_COMMANDS.includes(command.type)) {
         const events = mapPublicEvents(runSelectionCommand(state, command, viewState));
         const hash = stateHash(state);
+        recordReplayResult(state, command, {
+          stateVersion: state.stateVersion || 0,
+          stateHash: hash,
+          beforeVersion: state.stateVersion || 0,
+          beforeHash: hash,
+          afterVersion: state.stateVersion || 0,
+          afterHash: hash,
+          eventIds: events.map(e => e.eventId).filter(Boolean)
+        }, { kind: 'ui' });
         return {
           ok: true,
           accepted: true,
@@ -563,6 +591,7 @@ function createYSBZSUIAdapter(options = {}) {
           const events = state.events.filter(e => e.step >= beforeStep);
           annotateEvents(state, events, command);
           const logEntry = commitAcceptedCommand(state, command, beforeHash, { count, attempts, guard }, events);
+          recordReplayResult(state, command, commandCheckpointFromLogEntry(logEntry), { kind: 'flow' });
           const mappedEvents = mapPublicEvents(events);
           return {
             ok: true,
@@ -589,7 +618,8 @@ function createYSBZSUIAdapter(options = {}) {
       }
 
       if (command.type === 'RUN_FULL_DAY') {
-        return runFullDayCommand({
+        const beforeHash = stateHash(state);
+        const response = runFullDayCommand({
           state,
           command,
           options,
@@ -601,10 +631,20 @@ function createYSBZSUIAdapter(options = {}) {
           createSnapshot: playerId => includeAuthoritativeState ? createSnapshot(state, playerId, viewState) : undefined,
           viewFor
         });
+        if (response.accepted) {
+          const logEntry = commitAcceptedCommand(state, command, beforeHash, response.result, response.events || []);
+          recordReplayResult(state, command, commandCheckpointFromLogEntry(logEntry), { kind: 'flow' });
+          response.stateVersion = state.stateVersion;
+          response.stateHash = logEntry.afterHash;
+          response.authoritativeState = maybeSnapshot(command.playerId, viewState);
+          response.viewModel = viewFor(command);
+        }
+        return response;
       }
 
       if (command.type === 'RUN_FULL_RUN') {
-        return runFullRunCommand({
+        const beforeHash = stateHash(state);
+        const response = runFullRunCommand({
           state,
           command,
           options,
@@ -616,6 +656,15 @@ function createYSBZSUIAdapter(options = {}) {
           viewFor,
           runFullRunFlow: opts => this.runFullRunFlow(opts)
         });
+        if (response.accepted) {
+          const logEntry = commitAcceptedCommand(state, command, beforeHash, response.result, response.events || []);
+          recordReplayResult(state, command, commandCheckpointFromLogEntry(logEntry), { kind: 'flow' });
+          response.stateVersion = state.stateVersion;
+          response.stateHash = logEntry.afterHash;
+          response.authoritativeState = maybeSnapshot(command.playerId, viewState);
+          response.viewModel = viewFor(command);
+        }
+        return response;
       }
 
       const rollbackSave = buildSaveDocument(state, { playerId: command.playerId, gameVersion: adapter.version, viewStates: viewStatesToObject(viewStates) });
@@ -629,6 +678,7 @@ function createYSBZSUIAdapter(options = {}) {
         const events = state.events.filter(e => e.step >= beforeStep);
         annotateEvents(state, events, command);
         const logEntry = commitAcceptedCommand(state, command, beforeHash, result, events);
+        recordReplayResult(state, command, commandCheckpointFromLogEntry(logEntry), { kind: 'mutation' });
         const mappedEvents = mapPublicEvents(events);
         const manualFlowPreview = buildMoveManualFlowPreview(adapter, command, result);
         const response = {
@@ -652,6 +702,20 @@ function createYSBZSUIAdapter(options = {}) {
         const rejected = rejectedCommandResult(state, command, err);
         rejected.rolledBack = true;
         rejected.viewModel = viewFor(command);
+        recordReplayResult(state, command, {
+          stateVersion: rejected.viewModel.stateVersion,
+          stateHash: rejected.viewModel.stateHash,
+          beforeVersion: commandBeforeVersion,
+          beforeHash: rejected.viewModel.stateHash,
+          afterVersion: rejected.viewModel.stateVersion,
+          afterHash: rejected.viewModel.stateHash,
+          eventIds: []
+        }, {
+          accepted: false,
+          kind: 'rejected',
+          recordCommandStream: false,
+          error: rejected.error
+        });
         return rejected;
       }
     },

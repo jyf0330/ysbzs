@@ -1,5 +1,10 @@
 # 10_CHANGELOG
 
+## 2026-06-28
+
+- Replay 导出升级为 `ysbzs.replay` 命令流协议：`EXPORT_REPLAY` 现在保留初始 options、玩家公开命令、每步 checkpoint/hash、最终 hash、checksum、旧 battleTrace/changeLog 兼容字段，并提供重建校验 helper；选择类 UI 命令会进入 replay 操作流但不改变权威 state hash，一键完整 Run 作为单条可重演宏命令提交。
+- Replay 协议补齐调试时间线底座：`debugTimeline` 会记录 accepted/rejected 命令、before/after version/hash、事件 id 与拒绝原因；被 `STATE_VERSION_MISMATCH` 等规则拒绝的命令只进入 timeline，不污染 deterministic `commandStream`。
+
 ## 2026-06-24
 
 - 策划总表改为少量域表生成全部程序 CSV：`xlsx/ysbzs_master.xlsx` 只保留 `README/PETS/WAVES/SHOP_ITEMS/MECHANISMS/TRIALS/ROUTE/ECONOMY_EVENTS/RULES/PROGRESSION_TRIALS` 10 张可见策划表，不再包含隐藏同名 CSV sheet；`tools/export_master_to_csv.py` 会从域表 `#csv` 分区和薄策划表生成 `data/csv/*.csv` 的全部程序表，测试覆盖无损导出、无隐藏 sheet、无同名 CSV sheet，避免把 30 多张程序表变成策划维护负担。

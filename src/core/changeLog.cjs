@@ -4,6 +4,7 @@
  * 事实用结构化 change 保存；中文战报只是展示层。
  */
 const { recordBattleEvent } = require('./battleEventProtocol.cjs');
+const { buildReplayDocument } = require('./replayCodec.cjs');
 function clone(v) { return JSON.parse(JSON.stringify(v)); }
 function ensureLogs(state) {
   if (!state.changes) state.changes = [];
@@ -48,22 +49,6 @@ function recordInput(state, input) {
 }
 function buildReplay(state, options = {}) {
   ensureLogs(state);
-  return {
-    replayVersion: 'ysbzs_replay_v2_protocol',
-    dataVersion: state.data?.meta?.generatedAt || state.data?.meta?.sourcePackage || 'unknown',
-    rulesVersion: options.rulesVersion || 'fire_water_wind_v1',
-    seed: state.seed || options.seed || null,
-    day: state.day,
-    period: state.period,
-    result: state.result || null,
-    inputLog: clone(state.inputLog || []),
-    changeLog: clone(state.changes || []),
-    battleTrace: clone(state.battleTrace || []),
-    finalSummary: {
-      phase: state.phase,
-      round: state.round,
-      units: (state.units || []).map(u => ({ id: u.id, petId: u.petId, name: u.name, hp: u.hp, shield: u.shield, alive: u.alive, position: u.position }))
-    }
-  };
+  return buildReplayDocument(state, options);
 }
 module.exports = { ensureLogs, recordChange, recordInput, buildReplay };

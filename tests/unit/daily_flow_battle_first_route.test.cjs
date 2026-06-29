@@ -404,3 +404,13 @@ test('daily flow page keeps player buttons on public runtime and hides one-click
   assert.doesNotMatch(js, /RUN_FULL_DAY|RUN_FULL_RUN/, 'daily flow player page should not dispatch one-click debug run commands');
   assert.doesNotMatch(js, /querySelector\([^)]*src\/core|require\(|uiAdapter\.cjs/, 'daily flow page must not import core or adapter directly');
 });
+
+test('daily flow battle link starts route battle before navigating when an entry action is ready', () => {
+  const js = read('web/daily-flow.js');
+
+  assert.match(js, /function runBattleEntry\(/, 'battle-page link should use a command-aware battle entry handler');
+  assert.match(js, /\$\('battle-link'\)\.addEventListener\('click',\s*runBattleEntry\)/, 'bottom battle link should not bypass the route battle action');
+  assert.match(js, /\$\('top-battle-link'\)\.addEventListener\('click',\s*runBattleEntry\)/, 'top battle link should not bypass the route battle action');
+  assert.match(js, /routeActionForNext\(\)/, 'battle entry handler should reuse the ViewModel route action selector');
+  assert.match(js, /isRouteBattleEntryCommand\(next\.type\)/, 'battle entry handler should only intercept route battle entry commands');
+});

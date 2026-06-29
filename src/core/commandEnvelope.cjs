@@ -1,5 +1,6 @@
 const { stateHash } = require('./stateHash.cjs');
 const { DEFAULT_PLAYER_ID, ensureMultiplayerState, canPlayerControlUnit, inferTeamId } = require('./multiplayerState.cjs');
+const { replayableCommand } = require('./replayCodec.cjs');
 
 const SYSTEM_COMMANDS = new Set([
   'START_BATTLE', 'START_NEXT_ROUND', 'END_PLAYER_TURN', 'RUN_MONSTER_TURN',
@@ -121,6 +122,7 @@ function commitAcceptedCommand(state, command, beforeHash, result, events) {
     beforeHash,
     afterHash,
     accepted: true,
+    command: replayableCommand(command),
     result: result === undefined ? true : clone(result),
     eventIds: (events || []).map(e => e.eventId).filter(Boolean)
   };

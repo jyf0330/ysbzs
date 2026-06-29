@@ -2,6 +2,9 @@
 ## ACTIVE
 
 - `tasks/doing/2026-06-28_replay-command-stream.md` — BLOCKED: replay implementation validated; full `check:all` blocked by unrelated workbook CSV08 failure.
+- `tasks/doing/2026-06-29_live-4173-bundle-rule.md` — BLOCKED: workflow rule committed; task remains open because `tasks/index.md` closeout happened later through git-c maintenance.
+- `tasks/doing/2026-06-29_auto-position-boss-priority.md` — BLOCKED: implementation committed; full `check:all` blocked by unrelated workbook CSV08 failure.
+- `tasks/doing/2026-06-29_auto-enemy-turn-flow.md` — READY_TO_MERGE: implementation committed and browser evidence captured; full `check:all` blocked by unrelated workbook CSV08 failure.
 
 ## PAUSED
 

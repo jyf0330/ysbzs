@@ -463,6 +463,23 @@ body[data-phase="day_end"] .shop-phase-panel{display:none}
 .right-panel #all-out-btn{background:#6f3848;color:#fff4e5;border:1px solid #472331}
 .right-panel #full-day-btn{background:#d5cfbd;color:#514936;border:1px solid #aaa18c}
 .right-panel #full-run-btn{background:#4f7774;color:#f5fffb;border:1px solid #315552}
+.manual-flow-controls[hidden],
+.auto-controls button[hidden]{display:none!important}
+.cell.combat-fx-cast,.cell.combat-fx-enemy-cast,.cell.combat-fx-aim,.cell.combat-fx-hit,.cell.combat-fx-ko{z-index:28;overflow:visible}
+.cell.combat-fx-cast .unit-token{animation:combat-cast .58s ease-out}
+.cell.combat-fx-enemy-cast .unit-token{animation:combat-enemy-cast .58s ease-out}
+.cell.combat-fx-aim:before,.cell.combat-fx-hit:before,.cell.combat-fx-ko:before{content:"";position:absolute;inset:-2px;z-index:10;border-radius:6px;pointer-events:none}
+.cell.combat-fx-aim:before{border:2px solid rgba(255,205,102,.88);box-shadow:0 0 13px rgba(255,205,102,.62);animation:combat-aim .52s ease-out}
+.cell.combat-fx-hit:before{background:rgba(168,79,62,.22);border:2px solid rgba(168,79,62,.9);box-shadow:0 0 16px rgba(168,79,62,.6);animation:combat-hit .72s ease-out}
+.cell.combat-fx-ko:before{background:rgba(70,25,25,.32);border:2px solid rgba(124,26,26,.95);box-shadow:0 0 18px rgba(124,26,26,.74);animation:combat-ko .82s ease-out}
+.combat-damage-pop{position:absolute;left:50%;top:2px;z-index:34;min-width:28px;transform:translateX(-50%);padding:2px 5px;border-radius:999px;background:#2f2118;color:#ffe4b3;border:1px solid rgba(255,228,179,.86);box-shadow:0 4px 10px rgba(47,33,24,.32);font-size:12px;font-weight:900;line-height:1;pointer-events:none;animation:combat-pop 1.05s ease-out forwards}
+.combat-damage-pop.lethal{background:#7e3126;color:#fff1e6;border-color:#ffd1c8}
+@keyframes combat-cast{0%{transform:translateY(0) scale(1)}45%{transform:translateY(-5px) scale(1.07)}100%{transform:translateY(0) scale(1)}}
+@keyframes combat-enemy-cast{0%{transform:translateY(0) scale(1)}45%{transform:translateY(5px) scale(1.07)}100%{transform:translateY(0) scale(1)}}
+@keyframes combat-aim{0%{opacity:0;transform:scale(.72)}45%{opacity:1;transform:scale(1.06)}100%{opacity:0;transform:scale(1.14)}}
+@keyframes combat-hit{0%{opacity:0;transform:scale(.92) rotate(0deg)}35%{opacity:1;transform:scale(1.08) rotate(-2deg)}100%{opacity:0;transform:scale(1.18) rotate(2deg)}}
+@keyframes combat-ko{0%{opacity:0;transform:scale(.88)}35%{opacity:1;transform:scale(1.12)}100%{opacity:0;transform:scale(1.25)}}
+@keyframes combat-pop{0%{opacity:0;transform:translate(-50%,8px) scale(.82)}18%{opacity:1;transform:translate(-50%,-8px) scale(1.08)}100%{opacity:0;transform:translate(-50%,-30px) scale(.92)}}
 
 /* P2 - combat readability: expose shape, layers, and quality without hover-only detail. */
 .hero-shape-line,.hero-quality-line{display:flex;align-items:center;gap:5px;min-width:0;margin-top:3px;color:#5b4630;font-size:10px;line-height:1.15}

@@ -6,12 +6,17 @@ const test = require('node:test');
 const root = path.join(__dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('manual enemy-flow buttons expose an undo path backed by runtime save/load', () => {
+test('normal combat controls show only smart position and all-out while keeping hidden debug flow logic', () => {
   const html = read('web/index.html');
   const css = read('web/ux-app.css');
 
-  assert.match(html, /id="undo-flow-btn"/, 'right manual controls should expose a visible undo button');
+  assert.match(html, /id="auto-position-btn"/, 'normal combat controls should expose smart positioning');
+  assert.match(html, /id="all-out-btn"/, 'normal combat controls should expose player all-out');
+  assert.match(html, /<div class="manual-flow-controls"[^>]*hidden[^>]*>/, 'manual enemy-flow controls should be hidden from the normal game UI');
+  assert.match(html, /id="full-day-btn"[^>]*hidden/, 'full-day debug run should not be visible in the normal game UI');
+  assert.match(html, /id="full-run-btn"[^>]*hidden/, 'full-run debug run should not be visible in the normal game UI');
   assert.match(css, /#undo-flow-btn/, 'undo button needs dedicated right-panel styling');
+  assert.match(css, /\.manual-flow-controls\[hidden\]/, 'hidden debug flow controls need an author-level display override');
 
   for (const file of ['web/js/main.js']) {
     const js = read(file);
@@ -26,7 +31,10 @@ test('manual enemy-flow buttons expose an undo path backed by runtime save/load'
     assert.match(js, /RUN_MONSTER_TURN/, `${file} undoable flow should include enemy pet action`);
     assert.match(js, /START_NEXT_ROUND/, `${file} undoable flow should include next-round spawn flow`);
     assert.match(js, /if \(ui\.vm\?\.phase === 'init'\) runUndoableFlowCommand\('START_BATTLE'\);\s*else runPlayerAutoTurnFlow\('END_PLAYER_TURN'\);/, `${file} etb should keep start battle direct but auto-compose player settlement to the next player turn`);
-    assert.match(js, /runUndoableFlowCommand\(ui\.vm\?\.phase === 'round_end' \? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'/, `${file} monster button should make enemy-flow operations undoable`);
+    assert.match(js, /runUndoableFlowCommand\(ui\.vm\?\.phase === 'round_end' \? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'/, `${file} hidden monster button should keep enemy-flow operations undoable`);
+    assert.match(js, /\$\('auto-position-btn'\)\?\.addEventListener\('click', \(\) => runCommand\('AUTO_POSITION_HEROES'\)\)/, `${file} smart-positioning should remain a normal player button`);
+    assert.match(js, /\$\('all-out-btn'\)\?\.addEventListener\('click', \(\) => runAllOut\(\)\)/, `${file} all-out should remain a normal player button`);
+    assert.match(js, /ui\.busy \|\| phase !== 'player_turn'/, `${file} normal player buttons should be disabled while enemy auto-flow is running and re-enabled on player turns`);
   }
 });
 

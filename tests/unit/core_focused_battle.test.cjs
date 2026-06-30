@@ -79,6 +79,7 @@ test('CB04 startNextRound clears attack movement lock but keeps same-round lock'
   assert.equal(battle.setActionDirection(state, hero.id, 0, 'right'), true);
   assert.equal(battle.useActionSlot(state, hero.id, 0, { r: 5, c: 3 }, { ap: 1 }), true);
   assert.equal(hero.hasAttacked, true);
+  state.teamPlacementPreview = { activeUnitId: hero.id, movedUnitIds: [hero.id] };
   assert.equal(battle.moveHero(state, hero.id, { r: moveTarget.r, c: moveTarget.c }), false);
   assert.match(state.events.at(-1).text, /位置锁定/);
 
@@ -87,5 +88,6 @@ test('CB04 startNextRound clears attack movement lock but keeps same-round lock'
   assert.equal(hero.hasAttacked, false);
   assert.deepEqual(hero.actionSlotsUsed, {});
   assert.equal(hero.actionApSpent, 0);
+  assert.deepEqual(state.teamPlacementPreview, { activeUnitId: null, movedUnitIds: [] });
   assert.equal(battle.moveHero(state, hero.id, { r: moveTarget.r, c: moveTarget.c }), true);
 });

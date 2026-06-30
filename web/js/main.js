@@ -20,6 +20,8 @@ import { createGameRuntime } from './runtime-client.js';
   const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT', 'AUTO_POSITION_HEROES']);
   const UNDOABLE_FLOW_TYPES = new Set(['END_PLAYER_TURN', 'RUN_MONSTER_TURN', 'START_NEXT_ROUND']);
   const AUTO_PLAYER_FLOW_TYPES = new Set(['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN', 'RUN_MONSTER_TURN', 'START_NEXT_ROUND']);
+  const COMBAT_FX_EVENT_TYPES = new Set(['PLAYER_SELECT_SLOT', 'ENEMY_PET_ACTION', 'DAMAGE', 'UNIT_DEAD']);
+  const MAX_COMBAT_FX_STEPS = 18;
   const UNDO_STACK_LIMIT = 8;
 
   const ui = {
@@ -43,7 +45,8 @@ import { createGameRuntime } from './runtime-client.js';
 	    manualAutoLock: false,
 	    undoStack: [],
 	    manualFlowPreview: null,
-	    manualFlowPreviewPending: null
+	    manualFlowPreviewPending: null,
+    combatFxSerial: 0
   };
   Object.assign(ui, sharedUi);
   const renderCache = createRenderCache();
@@ -480,6 +483,7 @@ import { createGameRuntime } from './runtime-client.js';
         ui.manualFlowPreviewPending = null;
       }
       render();
+      startCombatFxFromEvents(data.events || []);
       if (shouldRefreshSelectedCellAfterCommand(type)) await refreshSelectedCellDetail();
       refreshManualFlowPreview();
       return data;
@@ -568,6 +572,7 @@ import { createGameRuntime } from './runtime-client.js';
       if (undoSnapshot && results.some(data => data?.ok !== false)) pushUndoSnapshot(undoSnapshot);
       renderCache.invalidate();
       render();
+      startCombatFxFromEvents(results.flatMap(data => data?.events || []));
       if (AUTO_PLAYER_FLOW_TYPES.has(startType)) await refreshSelectedCellDetail();
       refreshManualFlowPreview();
       return results[results.length - 1] || null;
@@ -679,6 +684,127 @@ import { createGameRuntime } from './runtime-client.js';
   function setBusy(busy) { qsa('button').forEach(btn => btn.disabled = !!busy && !btn.classList.contains('log-tab')); }
   function toast() {
     return;
+  }
+  function prefersReducedMotion() {
+    return typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  function combatFxDelay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function boardCellElement(cell = {}) {
+    const r = Number(cell.r);
+    const c = Number(cell.c);
+    if (!Number.isFinite(r) || !Number.isFinite(c)) return null;
+    return qsa('[data-r][data-c]', $('board') || document).find(el => Number(el.dataset.r) === r && Number(el.dataset.c) === c) || null;
+  }
+  function unitCellElement(unitId) {
+    if (!unitId) return null;
+    return qsa('[data-unit-id]', $('board') || document).find(el => el.dataset.unitId === String(unitId)) || null;
+  }
+  function uniqueElements(items = []) {
+    const seen = new Set();
+    return items.filter(el => {
+      if (!el || seen.has(el)) return false;
+      seen.add(el);
+      return true;
+    });
+  }
+  function transientClass(el, className, duration = 420) {
+    if (!el) return;
+    el.classList.remove(className);
+    void el.offsetWidth;
+    el.classList.add(className);
+    setTimeout(() => el.classList.remove(className), duration);
+  }
+  function spawnCombatFxText(targetEl, text, className = '') {
+    if (!targetEl || !text) return;
+    const node = document.createElement('span');
+    node.className = `combat-damage-pop ${className}`.trim();
+    node.textContent = text;
+    targetEl.appendChild(node);
+    setTimeout(() => node.remove(), 1120);
+  }
+  function combatFxSteps(events = []) {
+    const steps = [];
+    const targetCellsById = new Map();
+    for (const event of events || []) {
+      if (!['PLAYER_SELECT_SLOT', 'ENEMY_PET_ACTION'].includes(event?.type)) continue;
+      const targetIds = Array.isArray(event.targetIds) ? event.targetIds.filter(Boolean) : [];
+      const cells = Array.isArray(event.cells) ? event.cells : [];
+      if (!targetIds.length || !cells.length) continue;
+      for (const targetId of targetIds) targetCellsById.set(targetId, cells);
+    }
+    for (const event of events || []) {
+      if (!COMBAT_FX_EVENT_TYPES.has(event?.type)) continue;
+      if (event.type === 'PLAYER_SELECT_SLOT' || event.type === 'ENEMY_PET_ACTION') {
+        const sourceId = event.actorId || event.unitId || event.sourceId || null;
+        const targetIds = Array.isArray(event.targetIds) ? event.targetIds.filter(Boolean) : [];
+        const cells = Array.isArray(event.cells) ? event.cells : [];
+        if (sourceId || targetIds.length || cells.length) {
+          steps.push({ kind: 'action', sourceId, targetIds, cells, enemy: event.type === 'ENEMY_PET_ACTION' });
+        }
+      } else if (event.type === 'DAMAGE') {
+        const amount = Math.max(0, Number(event.final ?? event.raw ?? 0));
+        if (amount > 0) {
+          steps.push({
+            kind: 'damage',
+            sourceId: event.sourceId || null,
+            targetId: event.targetId || null,
+            cells: targetCellsById.get(event.targetId) || [],
+            amount,
+            lethal: Number(event.hpTo ?? 1) <= 0
+          });
+        }
+      } else if (event.type === 'UNIT_DEAD' && event.unitId) {
+        steps.push({ kind: 'ko', targetId: event.unitId, cells: targetCellsById.get(event.unitId) || [] });
+      }
+      if (steps.length >= MAX_COMBAT_FX_STEPS) break;
+    }
+    return steps;
+  }
+  async function playCombatFxStep(step) {
+    const sourceEl = unitCellElement(step.sourceId);
+    const targetEls = uniqueElements([
+      ...(step.targetIds || []).map(unitCellElement),
+      step.targetId ? unitCellElement(step.targetId) : null,
+      ...(step.cells || []).map(boardCellElement)
+    ]);
+    if (sourceEl) transientClass(sourceEl, step.enemy ? 'combat-fx-enemy-cast' : 'combat-fx-cast', 620);
+    if (step.kind === 'action') {
+      targetEls.forEach(el => transientClass(el, 'combat-fx-aim', 540));
+      await combatFxDelay(targetEls.length ? 220 : 140);
+      return;
+    }
+    if (step.kind === 'damage') {
+      targetEls.forEach(el => {
+        transientClass(el, step.lethal ? 'combat-fx-ko' : 'combat-fx-hit', 760);
+        spawnCombatFxText(el, `-${step.amount}`, step.lethal ? 'lethal' : '');
+      });
+      await combatFxDelay(280);
+      return;
+    }
+    if (step.kind === 'ko') {
+      targetEls.forEach(el => {
+        transientClass(el, 'combat-fx-ko', 860);
+        spawnCombatFxText(el, 'KO', 'lethal');
+      });
+      await combatFxDelay(280);
+    }
+  }
+  async function playCombatFxFromEvents(events = []) {
+    const steps = combatFxSteps(events);
+    if (!steps.length || prefersReducedMotion()) return;
+    const serial = ui.combatFxSerial + 1;
+    ui.combatFxSerial = serial;
+    for (const step of steps) {
+      if (ui.combatFxSerial !== serial) break;
+      await playCombatFxStep(step);
+    }
+  }
+  function startCombatFxFromEvents(events = []) {
+    void playCombatFxFromEvents(events).catch(err => {
+      console.warn('combat fx skipped', err);
+    });
   }
   function normalizeSelection() {
     const vm = ui.vm;
@@ -985,7 +1111,7 @@ import { createGameRuntime } from './runtime-client.js';
 	        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
       const riskAria = hasIncomingHit ? ` 受击预警 预计伤害 ${teamRisk.damage}${teamRisk.lethal ? ' KO' : ''}` : '';
       const aria = unit ? `R${cell.r + 1}C${cell.c + 1} ${unit.displayName || boardUnitName(unit)} 生命 ${unit.hp}/${unit.maxHp} 攻击 ${unit.atk ?? 0}${riskAria}` : `R${cell.r + 1}C${cell.c + 1}`;
-      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}" type="button" aria-label="${esc(aria)}">
+      return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}"${unit ? ` data-unit-id="${esc(unit.id)}"` : ''} type="button" aria-label="${esc(aria)}">
 	        ${elements ? `<div class="element-stack">${elements}</div>` : ''}
 	        ${arrow ? `<span class="preview-arrow ${arrow.isActiveActor ? 'active' : 'past'}">${esc(DIR[arrow.direction] || arrow.direction || '→')}</span>` : ''}
 	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
@@ -1389,18 +1515,24 @@ import { createGameRuntime } from './runtime-client.js';
 
   function renderControls() {
     const phase = ui.vm.phase;
-    $('etb').textContent = playerTurnButtonText(phase);
-    $('etb').disabled = !(phase === 'init' || phase === 'player_turn') || ui.busy;
-    $('monster-btn').textContent = enemyFlowButtonText(phase);
-    $('monster-btn').disabled = !(phase === 'monster_turn' || phase === 'round_end') || ui.busy;
+    if ($('etb')) {
+      $('etb').textContent = playerTurnButtonText(phase);
+      $('etb').disabled = !(phase === 'init' || phase === 'player_turn') || ui.busy;
+    }
+    if ($('monster-btn')) {
+      $('monster-btn').textContent = enemyFlowButtonText(phase);
+      $('monster-btn').disabled = !(phase === 'monster_turn' || phase === 'round_end') || ui.busy;
+    }
     if ($('undo-flow-btn')) {
       const lastUndo = ui.undoStack[ui.undoStack.length - 1] || null;
       $('undo-flow-btn').textContent = lastUndo ? `撤回：${lastUndo.label}` : '撤回结算';
       $('undo-flow-btn').disabled = ui.busy || !lastUndo;
     }
     const fullDayDisabled = ui.busy || ui.manualAutoLock || !['init','battle_end','day_end'].includes(phase);
-    $('full-day-btn').disabled = fullDayDisabled;
-    $('full-day-btn').title = ui.manualAutoLock ? '已手动移动或施放，本场完整自动流程已锁定。' : '';
+    if ($('full-day-btn')) {
+      $('full-day-btn').disabled = fullDayDisabled;
+      $('full-day-btn').title = ui.manualAutoLock ? '已手动移动或施放，本场完整自动流程已锁定。' : '';
+    }
 	    if ($('all-out-btn')) {
 	      const hasUsableSlot = slotsFlat().some(x => !x.slot.used && x.slot.canUse !== false);
 	      $('all-out-btn').disabled = ui.busy || phase !== 'player_turn' || !hasUsableSlot;
@@ -1760,13 +1892,13 @@ import { createGameRuntime } from './runtime-client.js';
     $('day7-btn').addEventListener('click', () => runCommand('SETUP_DAY7_FIRE_TRIAL'));
     $('save-game-btn')?.addEventListener('click', () => saveGame());
     $('load-game-btn')?.addEventListener('click', () => loadGameFromStorage());
-    $('etb').addEventListener('click', () => {
+    $('etb')?.addEventListener('click', () => {
       if (ui.vm?.phase === 'init') runUndoableFlowCommand('START_BATTLE');
       else runPlayerAutoTurnFlow('END_PLAYER_TURN');
     });
-    $('monster-btn').addEventListener('click', () => runUndoableFlowCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'));
+    $('monster-btn')?.addEventListener('click', () => runUndoableFlowCommand(ui.vm?.phase === 'round_end' ? 'START_NEXT_ROUND' : 'RUN_MONSTER_TURN'));
     $('undo-flow-btn')?.addEventListener('click', () => undoLastFlowAction());
-    $('full-day-btn').addEventListener('click', () => {
+    $('full-day-btn')?.addEventListener('click', () => {
       if (ui.manualAutoLock) { toast('已手动操作，本场完整自动流程已锁定。', true); return; }
       runCommand('RUN_FULL_DAY', {}, { autoFlow: true });
     });

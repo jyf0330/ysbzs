@@ -202,11 +202,13 @@ function resetRoundActionState(unit) {
   unit.actionApSpent = 0;
   unit.hasAttacked = false;
 }
+function resetRoundPlacementPreview(state) { state.teamPlacementPreview = { activeUnitId: null, movedUnitIds: [] }; }
 function startBattle(state) {
   state.phase = 'player_turn';
   state.round = 1;
   state.result = null;
   for (const u of state.units) resetRoundActionState(u);
+  resetRoundPlacementPreview(state);
   pushEvent(state, 'BATTLE_START', { day: state.day, period: state.period, text: `第${state.day}天${state.period}战斗开始。进入玩家回合。` });
   applyBattlePrepEffects(state);
   pushEvent(state, 'ROUND_START', { text: `第${state.day}天${state.period}第${state.round}回合开始。` });
@@ -219,6 +221,7 @@ function startNextRound(state) {
   state.round += 1;
   state.phase = 'player_turn';
   for (const u of state.units) if (u.alive) { resetRoundActionState(u); mech.applyRoundStart(state, u); }
+  resetRoundPlacementPreview(state);
   pushEvent(state, 'ROUND_START', { text: `第${state.day}天${state.period}第${state.round}回合开始。` });
   spawnWave(state);
   return true;

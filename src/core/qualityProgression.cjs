@@ -16,6 +16,9 @@
  * - 钻石以形状质变 / 结算质变 / 棋盘留痕为主。
  */
 
+const { rng } = require('./rng.cjs');
+const { ACTIVE_ELEMENTS } = require('./elements.cjs');
+
 const QUALITY_ALIASES = Object.freeze({
   bronze: 'bronze',
   silver: 'silver',
@@ -33,6 +36,26 @@ const QUALITY_LABELS = Object.freeze({
   gold: '黄金',
   diamond: '钻石'
 });
+
+const QUALITY_EVOLUTION_STAGE_POINTS = Object.freeze({
+  bronze_to_silver: 2,
+  silver_to_gold: 3,
+  gold_to_diamond: 4
+});
+
+const QUALITY_EVOLUTION_POINT_TOTALS = Object.freeze({
+  bronze: 0,
+  silver: 2,
+  gold: 5,
+  diamond: 9
+});
+
+const QUALITY_EVOLUTION_POINT_CATEGORIES = Object.freeze([
+  { id: 'hp', label: '生命进化点', description: '增加 5~10 点生命值' },
+  { id: 'attack', label: '攻击进化点', description: '增加 1 点攻击力' },
+  { id: 'defense', label: '防御进化点', description: '增加 1 点防御力' },
+  { id: 'element', label: '元素进化点', description: '本身已有的某个元素槽增加 1 层元素' }
+]);
 
 const QUALITY_GROWTH_RULES = Object.freeze({
   bronze: {
@@ -172,6 +195,96 @@ function qualityLabel(quality) {
   return QUALITY_LABELS[normalizeQuality(quality)];
 }
 
+function qualityExistingCategoryHitProbability(existingCategoryCount) {
+  const count = Math.max(0, Math.min(4, Number(existingCategoryCount || 0)));
+  if (count >= QUALITY_EVOLUTION_POINT_CATEGORIES.length) return 1;
+  if (count <= 0) return 0;
+  return 1 - (0.5 ** count);
+}
+
+function uniqueKnownCategories(categories) {
+  const seen = new Set(Array.isArray(categories) ? categories : []);
+  return QUALITY_EVOLUTION_POINT_CATEGORIES
+    .map(x => x.id)
+    .filter(id => seen.has(id));
+}
+
+function randomUnitInterval(random) {
+  return Math.max(0, Math.min(0.999999999, Number(random() || 0)));
+}
+
+function pickFromList(list, random) {
+  if (!list.length) return null;
+  return list[Math.floor(randomUnitInterval(random) * list.length)] || list[list.length - 1];
+}
+
+function chooseQualityEvolutionPointCategory(previousCategories, random) {
+  const nextRandom = typeof random === 'function' ? random : rng('quality:evolution:category:fallback');
+  const existing = uniqueKnownCategories(previousCategories);
+  const all = QUALITY_EVOLUTION_POINT_CATEGORIES.map(x => x.id);
+  const missing = all.filter(id => !existing.includes(id));
+  if (!existing.length) return pickFromList(all, nextRandom);
+  if (!missing.length) return pickFromList(existing, nextRandom);
+  const hitExisting = randomUnitInterval(nextRandom) < qualityExistingCategoryHitProbability(existing.length);
+  return pickFromList(hitExisting ? existing : missing, nextRandom);
+}
+
+function elementSlotsForEvolution(unit) {
+  const elements = unit?.elements && typeof unit.elements === 'object' ? unit.elements : {};
+  const positive = Object.keys(elements).filter(el => Number(elements[el] || 0) > 0);
+  if (positive.length) return positive.sort();
+  if (unit?.element) return [unit.element];
+  return [...ACTIVE_ELEMENTS];
+}
+
+function buildQualityEvolutionPoints(quality, options = {}) {
+  const normalizedQuality = normalizeQuality(quality);
+  const count = QUALITY_EVOLUTION_POINT_TOTALS[normalizedQuality] || 0;
+  const random = typeof options.random === 'function'
+    ? options.random
+    : rng(`quality:evolution:${normalizedQuality}:${options.seed || ''}`);
+  const previousCategories = [];
+  const points = [];
+  for (let i = 0; i < count; i += 1) {
+    const category = chooseQualityEvolutionPointCategory(previousCategories, random);
+    const meta = QUALITY_EVOLUTION_POINT_CATEGORIES.find(x => x.id === category) || QUALITY_EVOLUTION_POINT_CATEGORIES[0];
+    const point = {
+      index: i + 1,
+      category,
+      label: meta.label,
+      description: meta.description,
+      amount: 1
+    };
+    if (category === 'hp') {
+      point.amount = 5 + Math.floor(randomUnitInterval(random) * 6);
+    } else if (category === 'element') {
+      point.element = pickFromList(elementSlotsForEvolution(options.unit), random);
+    }
+    points.push(point);
+    previousCategories.push(category);
+  }
+  return points;
+}
+
+function summarizeQualityEvolutionPoints(points) {
+  const summary = {
+    hpBonus: 0,
+    attackBonus: 0,
+    defenseBonus: 0,
+    elementLayers: {}
+  };
+  for (const point of Array.isArray(points) ? points : []) {
+    if (!point) continue;
+    if (point.category === 'hp') summary.hpBonus += Number(point.amount || 0);
+    if (point.category === 'attack') summary.attackBonus += 1;
+    if (point.category === 'defense') summary.defenseBonus += 1;
+    if (point.category === 'element' && point.element) {
+      summary.elementLayers[point.element] = (summary.elementLayers[point.element] || 0) + 1;
+    }
+  }
+  return summary;
+}
+
 function shapeSizeFromBodySize(bodySize) {
   const text = String(bodySize || '').trim();
   if (/小|small|一格|1/.test(text)) return 1;
@@ -245,7 +358,19 @@ function applyQualityProgressionToUnit(unit, options = {}) {
 
   const quality = normalizeQuality(unit.quality);
   const shapeSize = normalizeShapeSize(options.shapeSize, shapeSizeFromUnit(unit));
-  const bonus = getQualityStatBonus(quality, shapeSize);
+  const growthMode = options.growthMode === 'evolution_points' ? 'evolution_points' : 'quality_table';
+  const evolutionPoints = growthMode === 'evolution_points'
+    ? buildQualityEvolutionPoints(quality, { seed: options.seed || unit.petId || unit.id || unit.name, unit })
+    : [];
+  const evolutionSummary = summarizeQualityEvolutionPoints(evolutionPoints);
+  const bonus = growthMode === 'evolution_points'
+    ? {
+        hpBonus: evolutionSummary.hpBonus,
+        attackBonus: evolutionSummary.attackBonus,
+        defenseBonus: evolutionSummary.defenseBonus,
+        elementLayers: evolutionSummary.elementLayers
+      }
+    : getQualityStatBonus(quality, shapeSize);
   const upgrade = options.upgradeId
     ? findQualityUpgrade(options.upgradeId)
     : pickDeterministicUpgrade(quality, shapeSize, options.seed || unit.petId || unit.id || unit.name);
@@ -253,13 +378,23 @@ function applyQualityProgressionToUnit(unit, options = {}) {
   unit.maxHp = Number(unit.maxHp || unit.hp || 0) + bonus.hpBonus;
   unit.hp = Number(unit.hp || 0) + bonus.hpBonus;
   unit.atk = Number(unit.atk || 0) + bonus.attackBonus;
+  if (growthMode === 'evolution_points') {
+    unit.def = Number(unit.def || 0) + Number(bonus.defenseBonus || 0);
+    unit.elements = unit.elements && typeof unit.elements === 'object' ? unit.elements : {};
+    for (const [element, amount] of Object.entries(bonus.elementLayers || {})) {
+      unit.elements[element] = Number(unit.elements[element] || 0) + Number(amount || 0);
+    }
+  }
   unit.quality = qualityLabel(quality);
   unit.qualityUpgrade = upgrade;
   unit.qualityProgression = {
+    growthMode,
     quality,
     label: qualityLabel(quality),
     shapeSize,
     statBonus: bonus,
+    evolutionPoints,
+    evolutionSummary,
     upgradeId: upgrade ? upgrade.id : null,
     upgradeName: upgrade ? upgrade.name : null,
     upgradeCategory: upgrade ? upgrade.category : null,
@@ -271,12 +406,19 @@ function applyQualityProgressionToUnit(unit, options = {}) {
 
 module.exports = {
   QUALITY_GROWTH_RULES,
+  QUALITY_EVOLUTION_STAGE_POINTS,
+  QUALITY_EVOLUTION_POINT_TOTALS,
+  QUALITY_EVOLUTION_POINT_CATEGORIES,
   SILVER_BUFFS,
   GOLD_UPGRADES,
   DIAMOND_MUTATIONS,
   ALL_QUALITY_UPGRADES,
   normalizeQuality,
   qualityLabel,
+  qualityExistingCategoryHitProbability,
+  chooseQualityEvolutionPointCategory,
+  buildQualityEvolutionPoints,
+  summarizeQualityEvolutionPoints,
   shapeSizeFromBodySize,
   shapeSizeFromUnit,
   getQualityStatBonus,

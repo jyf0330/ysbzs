@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>元素背包史 · 战斗调试</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="battle-debug.css" />
+</head>
+<body>
+  <main class="debug-shell">
+    <header class="debug-header">
+      <section>
+        <div class="eyebrow">元素背包史 / Battle Debug</div>
+        <h1>战斗节点调试台</h1>
+        <p>固定生成第 1 天前两个事件选择，然后打开第一场战斗入口。</p>
+      </section>
+      <nav aria-label="调试导航">
+        <a id="battle-page-link" href="index.html">打开战斗页</a>
+        <button id="new-session-btn" type="button">新调试会话</button>
+        <button id="refresh-btn" type="button">刷新状态</button>
+      </nav>
+    </header>
+
+    <section class="status-grid" aria-label="当前调试状态">
+      <div><span>阶段</span><strong id="phase-label">加载中</strong></div>
+      <div><span>天数</span><strong id="day-label">-</strong></div>
+      <div><span>路线</span><strong id="route-label">-</strong></div>
+      <div><span>下一步</span><strong id="next-label">读取中</strong></div>
+      <div><span>会话</span><strong id="session-label">-</strong></div>
+    </section>
+
+    <section class="debug-layout">
+      <section class="flow-panel">
+        <div class="panel-head">
+          <h2>调试流程</h2>
+          <span id="save-label">未保存</span>
+        </div>
+        <ol id="step-list" class="step-list" aria-label="调试步骤">
+          <li data-step="1"><b>1</b><span>生成第一个 3 选 1</span></li>
+          <li data-step="2"><b>2</b><span>选择第一个事件</span></li>
+          <li data-step="3"><b>3</b><span>生成第二个 3 选 1</span></li>
+          <li data-step="4"><b>4</b><span>选择第二个事件</span></li>
+          <li data-step="5"><b>5</b><span>保存战斗入口快照</span></li>
+          <li data-step="6"><b>6</b><span>打开主战斗页调试</span></li>
+        </ol>
+        <div class="action-row">
+          <button id="prepare-route-btn" class="primary-action" type="button">准备两事件后战斗入口</button>
+          <button id="enter-battle-btn" class="primary-action danger" type="button" disabled>打开战斗页调试</button>
+          <button id="load-save-btn" type="button">读取调试快照</button>
+        </div>
+      </section>
+
+      <section class="route-panel">
+        <div class="panel-head">
+          <h2>路线状态</h2>
+          <span id="choice-count">0项</span>
+        </div>
+        <div id="route-summary" class="route-summary">等待读取。</div>
+        <div id="choice-list" class="choice-list"></div>
+      </section>
+
+      <section class="battle-panel">
+        <div class="panel-head">
+          <h2>战斗入口</h2>
+          <span id="battle-label">未进入</span>
+        </div>
+        <div class="battle-card">
+          <span>当前遭遇</span>
+          <strong id="encounter-label">-</strong>
+          <p id="encounter-summary">准备快照后可进入战斗页继续调试棋盘。</p>
+        </div>
+        <div class="battle-links">
+          <a id="battle-page-link-secondary" href="index.html">打开战斗页</a>
+        </div>
+      </section>
+    </section>
+
+    <section class="log-panel">
+      <div class="panel-head">
+        <h2>命令日志</h2>
+        <span id="console-label">console: 0</span>
+      </div>
+      <pre id="debug-log">暂无命令。</pre>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+  <script src="js/local-engine.js"></script>
+  <script type="module" src="battle-debug.js"></script>
+</body>
+</html>

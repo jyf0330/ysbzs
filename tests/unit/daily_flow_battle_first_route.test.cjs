@@ -302,7 +302,7 @@ test('daily flow inventory lets players manually move pets between active roster
   assert.equal(up.viewModel.inventory.benchCount, 1);
 });
 
-test('daily flow opening exposes Sun Wukong versus Tiger Vanguard with two starter cats', () => {
+test('daily flow opening exposes Sun Wukong versus Tiger Vanguard with the day 1 starter pool', () => {
   const adapter = createYSBZSUIAdapter({ day: 1, seed: 'daily-flow-opening-roster' });
   const vm = adapter.getViewModel('p1');
   const opening = vm.dailyFlow.opening;
@@ -316,9 +316,9 @@ test('daily flow opening exposes Sun Wukong versus Tiger Vanguard with two start
   assert.ok(vm.nextActions.some(action => action.type === 'GENERATE_NODE_OPTIONS'));
   assert.equal(opening.firstWave.summonerName, '虎先锋');
   assert.equal(opening.firstWave.spawnCount, 2);
-  assert.deepEqual(opening.firstWave.petNames, ['棉悠悠', '捣蛋猫']);
+  assert.deepEqual(opening.firstWave.petNames, ['棉悠悠', '捣蛋猫', '皮皮鸡', '翠叶鼠', '火绒狐']);
   assert.match(opening.summary, /孙悟空.*虎先锋/);
-  assert.match(opening.firstWave.summary, /虎先锋.*召唤.*棉悠悠.*捣蛋猫/);
+  assert.match(opening.firstWave.summary, /虎先锋.*召唤.*棉悠悠.*捣蛋猫.*火绒狐/);
 });
 
 test('daily flow ViewModel owns route primary and auto actions consumed by the page', () => {
@@ -351,7 +351,7 @@ test('daily flow ViewModel owns route primary and auto actions consumed by the p
 test('day 1 opening wave is Tiger Vanguard summoning starter pets, not extra heroes', () => {
   const firstWave = data.waves.find(row => row.day === 1 && row.period === '上午' && row.round === 1);
   assert.ok(firstWave, 'day 1 morning round 1 wave should exist');
-  assert.deepEqual(firstWave.petPool, ['pal_001', 'pal_002']);
+  assert.deepEqual(firstWave.petPool, ['pal_001', 'pal_002', 'pal_003', 'pal_004', 'pal_005']);
   assert.equal(firstWave.spawnCount, 2);
 
   const adapter = createYSBZSUIAdapter({ day: 1, seed: 'daily-flow-opening-wave' });
@@ -362,7 +362,7 @@ test('day 1 opening wave is Tiger Vanguard summoning starter pets, not extra her
   const firstSpawns = vm.events.filter(event => event.type === 'SPAWN_ENEMY').slice(0, 2);
 
   assert.equal(firstSpawns.length, 2);
-  assert.ok(firstSpawns.every(event => ['pal_001', 'pal_002'].includes(event.petId)), 'opening summon should only use starter pet ids');
+  assert.ok(firstSpawns.every(event => firstWave.petPool.includes(event.petId)), 'opening summon should only use starter pet ids');
   assert.ok(firstSpawns.every(event => /虎先锋召唤/.test(event.text || '')), 'spawn text should name the enemy hero as summoner');
   assert.ok(firstSpawns.every(event => event.name !== '虎先锋' && event.name !== '孙悟空'), 'spawned units should stay pet units, not heroes');
 });

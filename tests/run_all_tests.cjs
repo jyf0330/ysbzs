@@ -645,7 +645,7 @@ test('shape lookup uses shapeId index, not petId-only map',()=>{
   assert.equal(ix.shapesByShapeId.has('B1'), false);
   const shape=ix.shapesByPetId.get('pal_005');
   assert.ok(shape);
-  assert.equal(shape.shapeId,'12');
+  assert.equal(shape.shapeId,'05');
   assert.equal(ix.shapesByShapeId.get(shape.shapeId).shapeId, shape.shapeId);
   assert.ok(shape.hitCells >= 1);
 });

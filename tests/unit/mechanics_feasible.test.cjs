@@ -9,12 +9,11 @@ const { applyRoundStart, statusOfMechanic } = (() => {
   return { applyRoundStart: mechanics.applyRoundStart, statusOfMechanic: gate.statusOfMechanic };
 })();
 
-test('REVIEW placeholder mechanics normalize to none and do not enter runtime gate', () => {
+test('redesign pet data no longer ships REVIEW placeholder mechanics', () => {
   const data = loadGameData({ cache: false });
-  const reviewPet = data.pets.find(p => (p.mechanicsOriginal || []).includes('REVIEW'));
-  assert.ok(reviewPet, 'fixture pet with REVIEW exists');
-  assert.deepEqual(reviewPet.mechanics, ['none']);
-  assert.equal(statusOfMechanic(reviewPet.mechanics[0]), 'implemented');
+  const reviewPets = data.pets.filter(p => (p.mechanicsOriginal || []).includes('REVIEW'));
+  assert.deepEqual(reviewPets, []);
+  assert.equal(statusOfMechanic('none'), 'implemented');
 });
 
 test('mech_scale_with_allies uses table params and buffs per living same-camp ally', () => {

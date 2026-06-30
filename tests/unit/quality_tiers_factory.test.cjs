@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { createUnit, makeUnitFromData } = require('../../src/core/unitFactory.cjs');
-const { getQualityUpgradePool } = require('../../src/core/qualityProgression.cjs');
+const { getQualityStatBonus, getQualityUpgradePool } = require('../../src/core/qualityProgression.cjs');
 const { data, buildIndexes } = require('../../src/core/data.cjs');
 const { createGameState } = require('../../src/core/state.cjs');
 
@@ -68,8 +68,11 @@ test('createGameState applies structured initial roster quality overrides', () =
 
   assert.equal(byPet.get('pal_072').quality, '黄金');
   assert.equal(byPet.get('pal_072').qualityProgression.quality, 'gold');
-  assert.equal(byPet.get('pal_072').hp, 28);
-  assert.equal(byPet.get('pal_072').atk, 4);
+  const pal072Base = data.pets.find(p => p.id === 'pal_072');
+  const pal072Shape = data.shapes.find(s => s.petId === 'pal_072');
+  const pal072GoldBonus = getQualityStatBonus('黄金', pal072Shape.hitCells);
+  assert.equal(byPet.get('pal_072').hp, pal072Base.hp + pal072GoldBonus.hpBonus);
+  assert.equal(byPet.get('pal_072').atk, pal072Base.atk + pal072GoldBonus.attackBonus);
   assert.deepEqual(byPet.get('pal_072').mechanics, ['mech_scale_with_allies']);
 
   assert.equal(byPet.get('pal_005').quality, '白银');

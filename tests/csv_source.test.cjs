@@ -136,7 +136,7 @@ test('CSV08 策划总表可无损导出全部程序 CSV', () => {
   }
 });
 
-test('CSV08B 总表必须保持 6-10 张策划域表，不允许隐藏同名程序 CSV sheet', () => {
+test('CSV08B 总表必须保持少量策划域表，不允许隐藏同名程序 CSV sheet', () => {
   const code = `
 from openpyxl import load_workbook
 import sys
@@ -144,8 +144,10 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert len(visible) <= 10, visible
+assert len(visible) <= 12, visible
 assert set(['README', 'PETS', 'WAVES', 'SHOP_ITEMS', 'MECHANISMS', 'TRIALS']).issubset(set(visible)), visible
+assert 'PETS_REDESIGN_V3_19形状' in visible, visible
+assert '宠物数值规则_V3' in visible, visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets

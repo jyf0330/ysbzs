@@ -9,6 +9,7 @@ columns, so a thin workbook can safely drive the current full CSV schema.
 import argparse
 import csv
 import posixpath
+import re
 import shutil
 import sys
 import zipfile
@@ -41,6 +42,8 @@ DOMAIN_SECTION_SHEETS = [
     "RULES",
     "PROGRESSION_TRIALS",
 ]
+
+PETS_REDESIGN_SHEET = "PETS_REDESIGN_V3_19形状"
 
 NS_MAIN = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
@@ -223,6 +226,21 @@ def shape_parts(shape_text):
     return parts[0], parts[1] if len(parts) > 1 else ""
 
 
+def normalize_shape_id(shape_text):
+    raw = str(shape_text or "").strip()
+    if not raw:
+        return ""
+    match = re.search(r"(\d{1,2})", raw)
+    if not match:
+        return raw
+    return f"{int(match.group(1)):02d}"
+
+
+def normalize_shape_text(shape_text):
+    sid = normalize_shape_id(shape_text)
+    return f"{sid} 形状{sid}" if re.fullmatch(r"\d{2}", sid or "") else str(shape_text or "").strip()
+
+
 def shape_class_for_group(group):
     if group == "one":
         return "一格形状"
@@ -231,6 +249,207 @@ def shape_class_for_group(group):
     if group == "three":
         return "三格形状"
     return ""
+
+
+def shape_size_from_shape_id(shape_id):
+    sid = normalize_shape_id(shape_id)
+    if not sid.isdigit():
+        return ""
+    n = int(sid)
+    if n <= 4:
+        return "一格"
+    if n <= 12:
+        return "两格"
+    return "三格"
+
+
+def body_size_text(value, shape_text=""):
+    raw = str(value or "").strip()
+    if raw in {"1", "1.0", "一格", "小型"}:
+        return "一格"
+    if raw in {"2", "2.0", "两格", "中型"}:
+        return "两格"
+    if raw in {"3", "3.0", "三格", "大型"}:
+        return "三格"
+    return shape_size_from_shape_id(shape_text) or raw
+
+
+def to_number(value, fallback=0):
+    try:
+        text = str(value).strip()
+        if text == "":
+            return fallback
+        return float(text)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def format_number(value):
+    n = to_number(value, 0)
+    return str(int(n)) if abs(n - int(n)) < 1e-9 else f"{n:.1f}".rstrip("0").rstrip(".")
+
+
+def panel_score(row):
+    hp = to_number(row.get("HP"), 0)
+    atk = to_number(row.get("攻"), 0)
+    defense = to_number(row.get("防"), 0)
+    shield = to_number(row.get("盾"), 0)
+    action = to_number(row.get("行动"), 0)
+    return hp + 3 * (atk + defense) + 5 * (shield + action)
+
+
+def split_list_text(value):
+    return [x.strip() for x in re.split(r"[,，、]", str(value or "")) if x.strip()]
+
+
+def unique_join(values, sep="、"):
+    out = []
+    seen = set()
+    for value in values:
+        text = str(value or "").strip()
+        if text and text not in seen:
+            out.append(text)
+            seen.add(text)
+    return sep.join(out)
+
+
+def build_pet_tags(pet, old_tags=""):
+    return unique_join([
+        pet.get("element"),
+        pet.get("role"),
+        pet.get("old_role"),
+        *split_list_text(old_tags),
+    ])
+
+
+def build_shop_pools(existing, pet, tier_pool):
+    pools = split_list_text(existing)
+    element = pet.get("element", "")
+    role = pet.get("role", "")
+    old_role = pet.get("old_role", "")
+    if "night_base" not in pools:
+        pools.insert(0, "night_base")
+    additions = []
+    if element:
+        additions.append(f"elem_{element}")
+    if old_role:
+        additions.append(f"role_{old_role}")
+    if role and role != old_role:
+        additions.append(f"role_{role}")
+    if tier_pool:
+        additions.append(f"tier_{tier_pool}")
+    out = []
+    seen = set()
+    for pool in [*pools, *additions]:
+        if pool and pool not in seen:
+            out.append(pool)
+            seen.add(pool)
+    return ", ".join(out)
+
+
+def normalize_pet_id_token(token):
+    raw = str(token or "").strip()
+    if not raw:
+        return ""
+    if raw.startswith("pal_"):
+        return raw
+    if raw.isdigit():
+        return f"pal_{int(raw):03d}"
+    return raw
+
+
+def parse_pet_pool_ids(pool):
+    ids = []
+    for token in split_list_text(pool):
+        if "~" in token:
+            left, right = token.split("~", 1)
+        elif re.fullmatch(r"\d+\s*-\s*\d+", token):
+            left, right = re.split(r"\s*-\s*", token, 1)
+        else:
+            ids.append(normalize_pet_id_token(token))
+            continue
+        if str(left).strip().isdigit() and str(right).strip().isdigit():
+            a, b = int(left), int(right)
+            step = 1 if a <= b else -1
+            ids.extend(f"pal_{n:03d}" for n in range(a, b + step, step))
+        else:
+            ids.extend([normalize_pet_id_token(left), normalize_pet_id_token(right)])
+    return [x for x in ids if x]
+
+
+def parse_quality_weights(raw):
+    parts = [to_number(x, 0) for x in split_list_text(raw)]
+    labels = ["青铜", "白银", "黄金", "钻石"]
+    return {label: parts[i] if i < len(parts) else 0 for i, label in enumerate(labels)}
+
+
+def quality_expected_multiplier(raw):
+    weights = parse_quality_weights(raw)
+    total = sum(max(0, value) for value in weights.values())
+    if total <= 0:
+        return 1
+    multipliers = {"青铜": 1, "白银": 1.5, "黄金": 2, "钻石": 2.5}
+    return sum((max(0, weights[label]) / total) * multipliers[label] for label in multipliers)
+
+
+def update_wave_generated_columns(row, pet_scores):
+    pool, count_text = split_pool_count(row.get("宠物池-数量", ""))
+    pet_ids = parse_pet_pool_ids(pool)
+    scores = [to_number(pet_scores.get(pid), None) for pid in pet_ids]
+    scores = [score for score in scores if score is not None]
+    if not scores:
+        return
+    count = to_number(count_text, 1)
+    avg = sum(scores) / len(scores)
+    quality_mult = quality_expected_multiplier(row.get("品质权重", ""))
+    threat = avg * count * quality_mult
+    if "出怪数(当前计算值)" in row:
+        row["出怪数(当前计算值)"] = format_number(count)
+    if "品质期望倍率(当前计算值)" in row:
+        row["品质期望倍率(当前计算值)"] = format_number(round(quality_mult, 4))
+    if "候选池平均效果分(当前计算值)" in row:
+        row["候选池平均效果分(当前计算值)"] = format_number(round(avg, 1))
+    if "本行威胁(当前计算值)" in row:
+        row["本行威胁(当前计算值)"] = format_number(round(threat, 1))
+    if "威胁计算说明" in row:
+        row["威胁计算说明"] = "本行威胁=候选池平均效果分×出怪数×品质期望倍率；品质权重顺序=青铜,白银,黄金,钻石"
+
+
+def pet_mechanic_score(row, pet):
+    raw = str(pet.get("mechanism_id") or row.get("机制ID") or "").strip()
+    if raw in {"", "none", "REVIEW"}:
+        return 0
+    return to_number(row.get("机制分"), 0)
+
+
+def normalize_redesign_pets(rows):
+    normalized = []
+    for row in rows:
+        pet_id = str(row.get("pet_id", "")).strip()
+        if not pet_id:
+            continue
+        shape_text = normalize_shape_text(row.get("official_shape"))
+        note = unique_join([
+            row.get("design_note"),
+            row.get("v3_change_note"),
+        ], sep="；")
+        normalized.append({
+            "pet_id": pet_id,
+            "name": str(row.get("name", "")).strip(),
+            "element": str(row.get("element", "")).strip(),
+            "tier": str(row.get("tier", "")).strip(),
+            "role": str(row.get("new_role", "")).strip(),
+            "old_role": str(row.get("old_role", "")).strip(),
+            "body_size": body_size_text(row.get("body_size"), shape_text),
+            "hp": format_number(row.get("hp")),
+            "atk": format_number(row.get("atk")),
+            "shield": format_number(row.get("shield")),
+            "action": format_number(row.get("action")),
+            "mechanism_id": first_non_empty(row.get("mechanism_id"), "none"),
+            "shape_id": shape_text,
+            "note": note,
+        })
+    return normalized
 
 
 def generated_sheet_table(master_path, sheet_name):
@@ -287,8 +506,9 @@ def generated_domain_section_tables(master_path):
 
 
 def generated_tables(master_path, baseline_dir):
+    redesign_pets = normalize_redesign_pets(sheet_dicts(master_path, PETS_REDESIGN_SHEET))
     master = {
-        "PETS": sheet_dicts(master_path, "PETS"),
+        "PETS": redesign_pets or sheet_dicts(master_path, "PETS"),
         "WAVES": sheet_dicts(master_path, "WAVES"),
         "SHOP_ITEMS": sheet_dicts(master_path, "SHOP_ITEMS"),
         "MECHANISMS": sheet_dicts(master_path, "MECHANISMS"),
@@ -299,6 +519,17 @@ def generated_tables(master_path, baseline_dir):
     pets_by_id = by_key(master["PETS"], "pet_id")
     shop_by_id = by_key(master["SHOP_ITEMS"], "pet_id")
     mech_by_id = by_key(master["MECHANISMS"], "mechanism_id")
+    baseline_pets, _baseline_pet_headers = read_csv(baseline_dir / "01_pets.csv")
+    baseline_pets_by_id = by_key(baseline_pets, "宠物ID")
+    baseline_monsters, _baseline_monster_headers = read_csv(baseline_dir / "02_monster_templates.csv")
+    baseline_monsters_by_pet = by_key(baseline_monsters, "宠物ID")
+    pet_effect_scores = {}
+    for pet_id, pet in pets_by_id.items():
+        score_row = dict(baseline_pets_by_id.get(pet_id, {}))
+        for field, key in [("HP", "hp"), ("攻", "atk"), ("盾", "shield"), ("行动", "action")]:
+            if pet.get(key) not in (None, ""):
+                score_row[field] = pet.get(key)
+        pet_effect_scores[pet_id] = panel_score(score_row) + pet_mechanic_score(baseline_monsters_by_pet.get(pet_id, {}), pet)
     waves_by_key = {
         (r.get("wave_id", ""), r.get("round", "")): r
         for r in master["WAVES"]
@@ -328,12 +559,15 @@ def generated_tables(master_path, baseline_dir):
                 row["元素"] = first_non_empty(pet.get("element"), row.get("元素"))
                 row["品质"] = first_non_empty(pet.get("tier"), row.get("品质"))
                 row["定位"] = first_non_empty(pet.get("role"), row.get("定位"))
+                row["体型"] = first_non_empty(pet.get("body_size"), row.get("体型"))
                 row["HP"] = first_non_empty(pet.get("hp"), row.get("HP"))
                 row["攻"] = first_non_empty(pet.get("atk"), row.get("攻"))
                 row["盾"] = first_non_empty(pet.get("shield"), row.get("盾"))
                 row["行动"] = first_non_empty(pet.get("action"), row.get("行动"))
                 row["机制ID"] = first_non_empty(pet.get("mechanism_id"), row.get("机制ID"))
                 row["形状"] = first_non_empty(pet.get("shape_id"), row.get("形状"))
+                row["效果分"] = format_number(pet_effect_scores.get(row.get("宠物ID", ""), panel_score(row)))
+                row["标签"] = first_non_empty(build_pet_tags(pet, row.get("标签")), row.get("标签"))
                 row["备注"] = first_non_empty(pet.get("note"), row.get("备注"))
 
         elif filename == "02_monster_templates.csv":
@@ -343,12 +577,15 @@ def generated_tables(master_path, baseline_dir):
                     continue
                 row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
                 row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
+                row["体型(自动)"] = first_non_empty(pet.get("body_size"), row.get("体型(自动)"))
                 row["宠物定位(自动)"] = first_non_empty(pet.get("role"), row.get("宠物定位(自动)"))
                 row["HP"] = first_non_empty(pet.get("hp"), row.get("HP"))
                 row["攻"] = first_non_empty(pet.get("atk"), row.get("攻"))
                 row["盾"] = first_non_empty(pet.get("shield"), row.get("盾"))
                 row["行动"] = first_non_empty(pet.get("action"), row.get("行动"))
                 row["机制ID"] = first_non_empty(pet.get("mechanism_id"), row.get("机制ID"))
+                row["面板分"] = format_number(panel_score(row))
+                row["机制分"] = format_number(pet_mechanic_score(row, pet))
 
         elif filename == "03_monster_waves.csv":
             for row in output:
@@ -363,6 +600,7 @@ def generated_tables(master_path, baseline_dir):
                 row["品质权重"] = first_non_empty(wave.get("quality_weights"), row.get("品质权重"))
                 row["本行威胁(当前计算值)"] = first_non_empty(wave.get("target_threat"), row.get("本行威胁(当前计算值)"))
                 row["填写说明"] = first_non_empty(wave.get("design_goal"), row.get("填写说明"))
+                update_wave_generated_columns(row, pet_effect_scores)
 
         elif filename == "04_mechanisms.csv":
             for row in output:
@@ -380,13 +618,24 @@ def generated_tables(master_path, baseline_dir):
         elif filename == "06_shop_rewards.csv":
             for row in output:
                 shop = shop_by_id.get(row.get("宠物ID", ""))
+                pet = pets_by_id.get(row.get("宠物ID", ""))
+                if pet:
+                    row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
+                    row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
+                    row["品质(自动)"] = first_non_empty(pet.get("tier"), row.get("品质(自动)"))
+                    row["定位(自动)"] = first_non_empty(pet.get("old_role"), pet.get("role"), row.get("定位(自动)"))
+                    row["标签(自动)"] = first_non_empty(build_pet_tags(pet, row.get("标签(自动)")), row.get("标签(自动)"))
                 if not shop:
+                    if pet:
+                        row["商店池(自动)"] = build_shop_pools(row.get("商店池(自动)"), pet, row.get("池档"))
                     continue
                 row["解锁日"] = first_non_empty(shop.get("unlock_day"), row.get("解锁日"))
                 row["池档"] = first_non_empty(shop.get("tier_pool"), row.get("池档"))
                 row["默认价"] = first_non_empty(shop.get("base_price"), row.get("默认价"))
                 row["夜市权重"] = first_non_empty(shop.get("shop_weight"), row.get("夜市权重"))
                 row["奖励权重"] = first_non_empty(shop.get("reward_weight"), row.get("奖励权重"))
+                if pet:
+                    row["商店池(自动)"] = build_shop_pools(row.get("商店池(自动)"), pet, row.get("池档"))
                 row["备注"] = first_non_empty(shop.get("note"), row.get("备注"))
 
         elif filename == "08_action_shapes.csv":
@@ -403,6 +652,7 @@ def generated_tables(master_path, baseline_dir):
                 row["形状名"] = first_non_empty(shape.get("label"), sname, row.get("形状名"))
                 row["形状分类"] = first_non_empty(shape_class_for_group(shape.get("group")), row.get("形状分类"))
                 row["命中格数"] = first_non_empty(shape.get("cell_count"), row.get("命中格数"))
+                row["机制ID"] = first_non_empty(pet.get("mechanism_id"), row.get("机制ID"))
                 row["备注"] = first_non_empty(
                     shape.get("note") and f"新19形状；所有作用格默认结算{shape.get('settle_count', '3')}次。{shape.get('note')}",
                     row.get("备注")
@@ -431,6 +681,9 @@ def generated_tables(master_path, baseline_dir):
         rows, headers = generated_sheet_table(master_path, sheet_name)
         if rows and headers:
             result[filename] = (rows, headers)
+    for baseline_file in sorted(baseline_dir.glob("*.csv")):
+        if baseline_file.name not in result:
+            result[baseline_file.name] = read_csv(baseline_file)
     return result
 
 

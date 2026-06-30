@@ -53,7 +53,7 @@ function addInventoryTags(state, entry, maps) {
   const pet = lookupPet(state, entry.petId);
   const shop = lookupShopItem(state, entry.petId);
   const element = entry.element || pet.element || shop.element || '-';
-  const role = entry.role || pet.role || pet.定位 || shop.role || '-';
+  const role = entry.role || shop.role || pet.role || pet.定位 || '-';
   const tier = publicTier(entry.poolTier || shop.poolTier, entry.quality || pet.quality || shop.quality);
   const weight = tagWeight(entry);
   incCount(maps.elements, element, `${element}系`, weight);

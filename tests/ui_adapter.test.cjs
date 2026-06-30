@@ -624,12 +624,12 @@ test('UI17 棋盘预览伤害按元素成型结算而不是本次层数', () => 
   assert.equal(hit.settlement.layers, 3);
   assert.equal(hit.predictedSettlementDamage, 6, '火2+本次火1达到3层时，应预估Σ(1..3)=6点元素伤害');
   assert.equal(hit.predictedActionDamage, actor.atk, '命中敌人时还应预估普通行动伤害');
-  assert.equal(hit.predictedDamage, 8, '总预览伤害应包含元素结算和普通行动伤害');
+  assert.equal(hit.predictedDamage, 6 + actor.atk, '总预览伤害应包含元素结算和普通行动伤害');
   assert.equal(hit.predictedShieldDamage, 2);
-  assert.equal(hit.predictedHpDamage, 6);
+  assert.equal(hit.predictedHpDamage, 4 + actor.atk);
   assert.equal(hit.predictedShieldFrom, 2);
   assert.equal(hit.predictedShieldTo, 0);
-  assert.equal(hit.predictedHpTo, target.hp - 6);
+  assert.equal(hit.predictedHpTo, target.hp - (4 + actor.atk));
 });
 
 test('UI17B 棋盘预览汇总即将结算的未用行动槽和普通行动伤害', () => {
@@ -643,6 +643,7 @@ test('UI17B 棋盘预览汇总即将结算的未用行动槽和普通行动伤�
 
   actor.position = stand.pos;
   actor.atk = 5;
+  actor.ap = 3;
   actor.shape = Object.assign({}, actor.shape, {
     shapeId: '01',
     shapeName: '形状01',
@@ -792,7 +793,7 @@ test('UI20 候选落点沙盒同时重算我方打敌方预览', () => {
   assert.ok(hit, '候选落点沙盒应命中敌人');
   assert.equal(hit.predictedSettlementDamage, 6);
   assert.equal(hit.predictedActionDamage, actor.atk);
-  assert.equal(hit.predictedDamage, 8);
+  assert.equal(hit.predictedDamage, 6 + actor.atk);
   assert.equal(hit.direction, 'right');
 });
 

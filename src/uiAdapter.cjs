@@ -102,8 +102,21 @@ function stripOffer(offer) {
     name: offer.name,
     element: offer.element,
     role: offer.role,
+    quality: offer.quality || null,
+    bodySize: offer.bodySize || null,
+    attackCells: offer.attackCells ?? null, cells: offer.cells ?? null,
+    shapeId: offer.shapeId || null,
+    shapeName: offer.shapeName || null,
+    shapeClass: offer.shapeClass || null,
+    shapeGrid: offer.shapeGrid ? clone(offer.shapeGrid) : [],
+    shapeOffsets: offer.shapeOffsets ? clone(offer.shapeOffsets) : [],
+    shapeNote: offer.shapeNote || '',
+    hp: offer.hp ?? null, atk: offer.atk ?? null, def: offer.def ?? null,
+    shield: offer.shield ?? null, ap: offer.ap ?? null,
+    tags: offer.tags ? clone(offer.tags) : [],
     poolTier: offer.poolTier,
     poolId: offer.poolId, restock: offer.restock ? clone(offer.restock) : null,
+    basePrice: offer.basePrice ?? offer.price,
     price: offer.price,
     frozen: !!offer.frozen
   };
@@ -266,7 +279,7 @@ function nextActions(state) {
   if (state.phase === 'battle_end') out.push({ type: 'REWARD_OPTIONS', label: '生成奖励候选', defaultPayload: { poolId: 'reward_pT1', count: 3 } });
   for (const pending of state.dayRoute?.pendingRewards || []) if (pending && !pending.claimed) out.push({ type: 'CLAIM_ROUTE_REWARD', label: `领取路线奖励 ${pending.rewardPoolId}`, defaultPayload: { rewardId: pending.rewardId, rewardIndex: 0 } });
   if (state.rewards && state.rewards.length) for (let i = 0; i < state.rewards.length; i++) out.push({ type: 'PICK_REWARD', label: `选择奖励${i + 1}`, defaultPayload: { index: i } });
-  if (state.phase !== 'shop' && state.phase !== 'day_end') out.push({ type: 'ENTER_SHOP', label: '进入夜晚商店', defaultPayload: { poolId: 'night_base', slots: 6 } });
+  if (state.phase !== 'shop' && state.phase !== 'day_end') out.push({ type: 'ENTER_SHOP', label: '进入夜晚商店', defaultPayload: { poolId: 'night_base', slots: 10 } });
   out.push({ type: 'RUN_BATTLE', label: '自动完成战斗' });
   out.push({ type: 'RUN_FULL_DAY', label: '一键完整流程' });
   if (!state.dayRoute?.terminal) out.push({ type: 'RUN_FULL_RUN', label: '一键完整Run', defaultPayload: { fromDay: 1, toDay: 10, gold: Math.max(8, Number(state.gold || 0)) } });
@@ -274,7 +287,9 @@ function nextActions(state) {
   if (state.day7Trial && !state.day7Trial.round1Executed) out.push({ type: 'RUN_DAY7_FIRE_TURN_1', label: '执行第7天第1回合' });
   if (state.day7Trial && state.day7Trial.status !== 'trial_pass') out.push({ type: 'RUN_DAY7_FIRE_TRIAL_ALL', label: '自动执行到试炼通过' });
   if (state.phase === 'shop') {
-    out.push({ type: 'ROLL_SHOP', label: '刷新商店', defaultPayload: { slots: 6 } });
+    const refresh = state.shop.refreshState || {};
+    const refreshCost = Number(refresh.nextRefreshCost ?? (Number(state.shop.freeRolls || 0) > 0 ? 0 : 2));
+    out.push({ type: 'ROLL_SHOP', label: refreshCost > 0 ? `刷新商店（${refreshCost}金）` : '免费刷新商店', defaultPayload: { slots: state.shop.activeStall?.slots || 10 } });
     for (const offer of state.shop.offers || []) {
       out.push({ type: 'BUY_OFFER', label: `购买宠物 ${offer.name}`, defaultPayload: { offerId: offer.offerId } });
     }
@@ -744,7 +759,7 @@ function createYSBZSUIAdapter(options = {}) {
     startNextDay(options = {}) { return this.run('START_NEXT_DAY', options); },
     rewardOptions(poolId = 'reward_pT1', count = 3) { return this.run('REWARD_OPTIONS', { poolId, count }); },
     pickReward(index = 0) { return this.run('PICK_REWARD', { index }); },
-    enterShop(poolId = 'night_base', slots = 6) { return this.run('ENTER_SHOP', { poolId, slots }); },
+    enterShop(poolId = 'night_base', slots = 10) { return this.run('ENTER_SHOP', { poolId, slots }); },
     rollShop(options = {}) { return this.run('ROLL_SHOP', options); },
     freezeOffer(offerId) { return this.run('FREEZE_OFFER', { offerId }); },
     unfreezeOffer(offerId) { return this.run('UNFREEZE_OFFER', { offerId }); },

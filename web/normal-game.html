@@ -14,11 +14,17 @@
         <div class="eyebrow">元素背包史 / Normal Game</div>
         <h1>正常游戏流程</h1>
       </section>
-      <nav class="scene-tabs" aria-label="场景导航">
-        <button type="button" data-jump-scene="route">3 选 1</button>
-        <button type="button" data-jump-scene="shop">商店</button>
-        <button type="button" data-jump-scene="battle">游戏</button>
-      </nav>
+      <section class="run-tools" aria-label="本局工具">
+        <label>
+          <span>Seed</span>
+          <input id="seed-input" type="text" value="normal-seed-001" autocomplete="off" />
+        </label>
+        <button id="save-run-btn" type="button">保存</button>
+        <button id="load-run-btn" type="button">读取</button>
+        <button id="restart-run-btn" type="button">重开本局</button>
+        <button id="seed-check-btn" type="button">规则自测</button>
+        <small id="run-tool-status">未保存</small>
+      </section>
       <section class="status-line" aria-label="当前状态">
         <span>阶段 <strong id="phase-label">加载中</strong></span>
         <span>第 <strong id="day-label">-</strong> 天</span>
@@ -30,8 +36,8 @@
     <section id="route-scene" class="scene route-scene" data-scene-name="route" data-active="true">
       <section class="scene-main">
         <div class="scene-title">
-          <span>Route Choice</span>
-          <h2>3 选 1</h2>
+          <span id="route-node-kicker">3 选 1</span>
+          <h2 id="route-node-title">时间节点 1</h2>
           <p id="route-summary">选择路线、遭遇或奖励。这里是战斗前决策界面。</p>
         </div>
         <div id="route-choice-list" class="choice-grid" aria-label="三选一选项"></div>
@@ -59,14 +65,10 @@
         <div class="scene-title">
           <span>Shop</span>
           <h2>商店</h2>
-          <p id="shop-summary">购买、刷新、出售，整理阵容后继续路线。</p>
+          <p id="shop-summary">购买宠物，整理阵容后继续路线。</p>
         </div>
-        <div class="shop-toolbar">
-          <button id="enter-shop-btn" type="button">进入商店</button>
-          <button id="roll-shop-btn" type="button">刷新商店</button>
-          <button id="exit-shop-btn" type="button">离开商店</button>
-        </div>
-        <div id="shop-choice-list" class="choice-grid" aria-label="商店操作"></div>
+        <div id="shop-choice-list" class="choice-grid" aria-label="商店宠物"></div>
+        <div id="shop-action-list" class="shop-actions" aria-label="商店操作"></div>
       </section>
       <aside class="roster-board" aria-label="商店界面阵容调整">
         <div class="roster-head">
@@ -99,10 +101,8 @@
         </div>
         <div id="battle-board" class="battle-board" aria-label="战斗棋盘"></div>
         <div class="battle-actions">
-          <button id="start-battle-btn" type="button">开始战斗</button>
           <button id="auto-position-btn" type="button">智能调整站位</button>
           <button id="all-out-btn" type="button">我方全部出击</button>
-          <button id="route-return-btn" type="button">回到 3 选 1</button>
         </div>
       </section>
       <aside class="combat-side enemy">

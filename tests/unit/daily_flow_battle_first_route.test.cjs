@@ -311,8 +311,8 @@ test('daily flow opening exposes Sun Wukong versus Tiger Vanguard with the day 1
   assert.equal(vm.leaders.enemy.name, '虎先锋');
   assert.equal(opening.playerHero.name, '孙悟空');
   assert.equal(opening.enemyHero.name, '虎先锋');
-  assert.deepEqual(vm.heroes.map(hero => hero.name), ['捣蛋猫', '捣蛋猫']);
-  assert.deepEqual(opening.playerPets.map(pet => pet.name), ['捣蛋猫', '捣蛋猫']);
+  assert.deepEqual(vm.heroes.map(hero => hero.name), ['捣蛋猫']);
+  assert.deepEqual(opening.playerPets.map(pet => pet.name), ['捣蛋猫']);
   assert.ok(vm.nextActions.some(action => action.type === 'GENERATE_NODE_OPTIONS'));
   assert.equal(opening.firstWave.summonerName, '虎先锋');
   assert.equal(opening.firstWave.spawnCount, 2);

@@ -276,6 +276,12 @@ import { createGameRuntime } from './runtime-client.js';
     if (prog.upgradeId) return `${unit.quality || '品质'} · ${prog.upgradeId}`;
     return `${unit.quality || '普通'} · 无品质效果`;
   }
+  function playerQualityEffectText(unit) {
+    unit = unit || {};
+    const effect = unit.qualityUpgrade?.effect || unit.qualityProgression?.upgradeEffect;
+    if (effect) return effect;
+    return '属性已按当前品质结算。';
+  }
   function renderShapePanel(source = {}, opts = {}) {
     const shape = shapeSource(source);
     const dir = opts.direction || source.direction || shape.direction || 'right';
@@ -1428,7 +1434,7 @@ import { createGameRuntime } from './runtime-client.js';
 	      renderStatGrid(heroBattleStats(unit)),
 	      renderShapePanel(unit, { direction: facing }),
 	      `<div class="detail-skill-panel"><strong>技能 ${esc(skillName(unit))}</strong><span>${esc(skillDescription(unit))}</span></div>`,
-	      `<div class="detail-quality-panel"><strong>${esc(qualitySummary(unit))}</strong><span>${esc(unit.qualityUpgrade?.effect || unit.qualityProgression?.description || '品质效果已接入运行时。')}</span></div>`,
+	      `<div class="detail-quality-panel"><strong>${esc(qualitySummary(unit))}</strong><span>${esc(playerQualityEffectText(unit))}</span></div>`,
 	      `<div class="detail-state-panel"><span><b>当前状态</b>${unit.alive === false ? '退场' : '正常'}</span><span><b>面向方向</b>${esc(DIR[facing] || facing || '→')}</span><span><b>行动形状</b>${esc(slotPlanText(unit))}</span></div>`,
 	      `<div class="detail-plan">${esc(compactMechanics(unit.mechanicStatus || []))}</div>`,
 		      unitRisk ? `<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(unitRisk))}</div>` : (unitThreat ? `<div class="detail-extra threat">⚠ ${esc(threatDetailText(unitThreat))}</div>` : ''),
@@ -1444,7 +1450,7 @@ import { createGameRuntime } from './runtime-client.js';
       ${renderStatGrid(heroBattleStats(h))}
       ${renderShapePanel(s, { direction: s.direction })}
       <div class="detail-skill-panel"><strong>当前行动块：${esc(actionBlockTitle(s))}</strong><span>${esc(skillDescription(h, s))}</span></div>
-      <div class="detail-quality-panel"><strong>${esc(qualitySummary(h))}</strong><span>${esc(h.qualityUpgrade?.effect || h.qualityProgression?.description || '品质效果已接入运行时。')}</span></div>
+      <div class="detail-quality-panel"><strong>${esc(qualitySummary(h))}</strong><span>${esc(playerQualityEffectText(h))}</span></div>
       <div class="detail-state-panel"><span><b>槽位</b>${esc(info.localIndex + 1)}/3</span><span><b>方向</b>${esc(DIR[s.direction] || s.direction || '→')}</span><span><b>状态</b>${s.used ? '已释放' : s.canUse === false ? '不可用' : '可用'}</span></div>`;
   }
 

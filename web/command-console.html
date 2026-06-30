@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>元素背包史 · 命令控制台</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="command-console.css" />
+</head>
+<body>
+  <main class="console-shell">
+    <header class="console-header">
+      <section>
+        <div class="eyebrow">元素背包史 / Command Console</div>
+        <h1>命令控制台</h1>
+        <p>只通过公开 runtime 调用 `/api/view` 与 `/api/action`，用于核对命令表、当前可执行动作和回放/调试输出。</p>
+      </section>
+      <nav aria-label="控制台导航">
+        <a id="battle-page-link" href="index.html">战斗页</a>
+        <a id="debug-page-link" href="battle-debug.html">战斗调试</a>
+        <button id="new-session-btn" type="button">新会话</button>
+        <button id="refresh-btn" type="button">刷新</button>
+      </nav>
+    </header>
+
+    <section class="status-strip" aria-label="当前状态">
+      <div><span>阶段</span><strong id="phase-label">加载中</strong></div>
+      <div><span>回合</span><strong id="round-label">-</strong></div>
+      <div><span>金币</span><strong id="gold-label">-</strong></div>
+      <div><span>版本</span><strong id="version-label">-</strong></div>
+      <div><span>哈希</span><strong id="hash-label">-</strong></div>
+      <div><span>会话</span><strong id="session-label">-</strong></div>
+    </section>
+
+    <section class="console-grid">
+      <section class="command-browser" aria-label="命令列表">
+        <div class="panel-head">
+          <h2>命令表</h2>
+          <span id="command-count">0</span>
+        </div>
+        <div class="toolbar">
+          <input id="command-search" type="search" placeholder="搜索命令 / 中文用途 / alias" autocomplete="off" />
+          <select id="category-filter" aria-label="命令分类">
+            <option value="all">全部分类</option>
+          </select>
+        </div>
+        <div id="current-actions" class="current-actions" aria-label="当前状态可执行动作"></div>
+        <div id="command-list" class="command-list"></div>
+      </section>
+
+      <section class="runner-panel" aria-label="执行命令">
+        <div class="panel-head">
+          <h2>执行</h2>
+          <span id="selected-command-label">未选择</span>
+        </div>
+        <label class="field">
+          <span>命令类型</span>
+          <input id="command-type" type="text" spellcheck="false" placeholder="例如 START_BATTLE" />
+        </label>
+        <label class="field">
+          <span>payload JSON</span>
+          <textarea id="payload-input" spellcheck="false">{}</textarea>
+        </label>
+        <div class="runner-actions">
+          <button id="run-command-btn" class="primary-action" type="button">执行命令</button>
+          <button id="copy-payload-btn" type="button">复制 payload</button>
+          <button id="export-replay-btn" type="button">导出回放</button>
+        </div>
+        <div class="result-box">
+          <div class="panel-head compact">
+            <h3>结果</h3>
+            <span id="result-label">等待执行</span>
+          </div>
+          <pre id="result-output">暂无结果。</pre>
+        </div>
+      </section>
+
+      <section class="inspect-panel" aria-label="状态检查">
+        <div class="panel-head">
+          <h2>状态</h2>
+          <span id="console-label">console: 0</span>
+        </div>
+        <div class="inspect-tabs" role="tablist">
+          <button class="active" data-tab="events" type="button">事件</button>
+          <button data-tab="commands" type="button">命令日志</button>
+          <button data-tab="view" type="button">ViewModel</button>
+        </div>
+        <pre id="inspect-output">正在读取。</pre>
+      </section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+  <script src="js/local-engine.js"></script>
+  <script type="module" src="command-console.js"></script>
+</body>
+</html>

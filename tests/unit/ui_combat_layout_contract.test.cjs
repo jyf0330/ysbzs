@@ -169,6 +169,25 @@ test('battle UI surfaces shape diagrams and quality attributes', () => {
   assert.match(css, /\.detail-quality-panel/, 'quality effect needs dedicated styling');
 });
 
+test('player pet detail shows final stats and hides quality growth breakdown', () => {
+  for (const file of ['web/js/main.js']) {
+    const js = read(file);
+    const detail = extractFunctionSource(js, 'renderUnitDetail');
+    const slotInfo = extractFunctionSource(js, 'renderSlotInfo');
+    const qualityEffect = extractFunctionSource(js, 'playerQualityEffectText');
+
+    assert.match(detail, /renderStatGrid\(heroBattleStats\(unit\)\)/, `${file} should render final battle stats from the already-grown unit`);
+    assert.match(slotInfo, /renderStatGrid\(heroBattleStats\(h\)\)/, `${file} slot detail should render final battle stats from the already-grown unit`);
+    assert.match(qualityEffect, /qualityUpgrade\?\.effect/, `${file} should show current quality effect text`);
+    assert.match(qualityEffect, /qualityProgression\?\.upgradeEffect/, `${file} may use the current upgrade effect mirror`);
+    for (const forbidden of ['evolutionPoints', 'statBonus', 'growthMode', 'description']) {
+      assert.doesNotMatch(detail, new RegExp(forbidden), `${file} player detail must not expose ${forbidden}`);
+      assert.doesNotMatch(slotInfo, new RegExp(forbidden), `${file} slot detail must not expose ${forbidden}`);
+      assert.doesNotMatch(qualityEffect, new RegExp(forbidden), `${file} quality effect helper must not expose ${forbidden}`);
+    }
+  }
+});
+
 test('combat layout scripts keep info in right panel without hover detail popups', () => {
   const css = read('web/ux-app.css');
   const html = read('web/index.html');

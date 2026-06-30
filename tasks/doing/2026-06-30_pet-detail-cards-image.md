@@ -21,6 +21,8 @@ branch: codex/bazaar-day1-day3-route
 - `output/pet-detail-cards-2026-06-30.html`
 - `output/pet-detail-cards-2026-06-30.png`
 - `output/generated/pet-detail-final-style-2026-06-30.png`
+- `output/pet-detail-cards-2026-06-30-v2.html`
+- `output/generated/pet-detail-final-style-2026-06-30-v2.png`
 - `tasks/doing/2026-06-30_pet-detail-cards-image.md`
 
 ## exclusive_files
@@ -47,6 +49,8 @@ branch: codex/bazaar-day1-day3-route
 - pass: Playwright text check found no `castleReduce` / `spaceExplosionBonus` / `healAmpBonus` visible text
 - pass: Lead reviewed final PNG; all three cards are visible, complete, and use Chinese skill names: `守护减伤` / `爆点轰击` / `疗愈增幅`
 - pass: generated final-style art mockup at `output/generated/pet-detail-final-style-2026-06-30.png`; reviewed image uses polished parchment/wood game style and shows only `单位元素层：风3/火3/水3`, without duplicate `脚下元素层`
+- pass: regenerated v2 after pet redesign data import at `output/generated/pet-detail-final-style-2026-06-30-v2.png`; uses current CSV values for 捣蛋猫/火绒狐/冲浪鸭, shows 中文技能 only, and shows only `单位元素层` with no duplicate `脚下元素层`
+- pass: Playwright v2 export/text check found no text overflow and no visible `castleReduce` / `spaceExplosionBonus` / `healAmpBonus` / mechanism-id text
 
 ## commit_plan
 

@@ -17,7 +17,7 @@ function playerIdFromReq(req, url = new URL(req.url, 'http://localhost')) {
 }
 
 function createAdapter(opts = {}) {
-  return createServerAuthorityAdapter({ day: Number(opts.day || 1), period: opts.period || '上午', gold: Number(opts.gold ?? 8), playerId: opts.playerId || 'p1', allowDebugCommands: true });
+  return createServerAuthorityAdapter({ day: Number(opts.day || 1), period: opts.period || '上午', gold: Number(opts.gold ?? 8), seed: opts.seed, playerId: opts.playerId || 'p1', allowDebugCommands: true });
 }
 function sessionIdFromReq(req, url = new URL(req.url, 'http://localhost')) {
   return req.headers['x-session-id'] || url.searchParams.get('sessionId') || DEFAULT_SESSION_ID;

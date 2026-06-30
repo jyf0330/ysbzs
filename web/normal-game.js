@@ -4,6 +4,7 @@ const $ = id => document.getElementById(id);
 const params = new URLSearchParams(window.location.search || '');
 const playerId = params.get('playerId') || 'p1';
 const runtime = createGameRuntime({ playerId, mode: params.get('runtime') || 'http' });
+const NORMAL_GAME_SAVE_KEY = 'ysbzs.normalGame.save.v1';
 const PHASE_TEXT = {
   init: '准备',
   node_choice: '3 选 1',
@@ -17,12 +18,12 @@ const PHASE_TEXT = {
   battle_end: '战斗结束',
   day_end: '当天结束'
 };
-const BATTLE_PHASES = new Set(['init', 'player_turn', 'monster_turn', 'round_end', 'battle_end']);
+const BATTLE_PHASES = new Set(['player_turn', 'monster_turn', 'round_end', 'battle_end']);
 
 let vm = null;
 let busy = false;
 let commandNo = 1;
-let manualScene = '';
+let autoRouteInFlight = false;
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
@@ -54,9 +55,17 @@ function phaseText(phase) {
 
 function routeAction() {
   return vm?.dailyFlow?.primaryAction
-    || vm?.dailyFlow?.autoAction
-    || (vm?.nextActions || []).find(action => action.type === 'GENERATE_NODE_OPTIONS' || action.defaultPayload?.scheduleStep != null)
+    || (vm?.nextActions || []).find(action => action.type !== 'GENERATE_NODE_OPTIONS' && action.defaultPayload?.scheduleStep != null)
     || null;
+}
+
+function routeAutoAction() {
+  if ((vm?.dayRoute?.options || []).length) return null;
+  if (vm?.dailyFlow?.nextSchedule?.kind !== 'node_choice') return null;
+  const action = vm?.dailyFlow?.autoAction
+    || (vm?.nextActions || []).find(item => item.type === 'GENERATE_NODE_OPTIONS')
+    || null;
+  return action?.type === 'GENERATE_NODE_OPTIONS' ? action : null;
 }
 
 function hasRouteChoices() {
@@ -67,7 +76,6 @@ function hasRouteChoices() {
 }
 
 function sceneForPhase() {
-  if (manualScene) return manualScene;
   if (vm?.phase === 'shop') return 'shop';
   if (BATTLE_PHASES.has(vm?.phase) && !hasRouteChoices()) return 'battle';
   return 'route';
@@ -93,10 +101,25 @@ function setBusy(value) {
   document.querySelectorAll('button').forEach(btn => { btn.disabled = value; });
 }
 
+function setToolStatus(text) {
+  const el = $('run-tool-status');
+  if (el) el.textContent = text;
+}
+
+function seedValue() {
+  return ($('seed-input')?.value || '').trim() || 'normal-seed-001';
+}
+
+function setSeedValue(seed) {
+  const el = $('seed-input');
+  if (el && seed) el.value = seed;
+}
+
 async function loadView() {
   const data = await runtime.view();
   vm = data.viewModel;
   render();
+  await autoGenerateRouteChoices();
 }
 
 async function runCommand(type, payload = {}) {
@@ -105,13 +128,109 @@ async function runCommand(type, payload = {}) {
   try {
     const data = await runtime.action(makeCommand(type, payload));
     vm = data.viewModel || vm;
-    manualScene = '';
     render(data.events || []);
+    await autoGenerateRouteChoices();
   } catch (err) {
     toast(err.message || String(err));
   } finally {
     setBusy(false);
     render();
+  }
+}
+
+async function saveRun() {
+  const data = await runtime.save();
+  if (!data?.save) throw new Error('SAVE_EMPTY');
+  window.localStorage?.setItem(NORMAL_GAME_SAVE_KEY, JSON.stringify(data.save));
+  setToolStatus(`已保存 v${data.save.state?.stateVersion ?? vm?.stateVersion ?? 0}`);
+  return data.save;
+}
+
+function savedRunFromStorage() {
+  const raw = window.localStorage?.getItem(NORMAL_GAME_SAVE_KEY);
+  if (!raw) throw new Error('没有可读取的本局存档。');
+  return JSON.parse(raw);
+}
+
+async function loadRun(saveDoc = savedRunFromStorage(), options = {}) {
+  const data = await runtime.load(saveDoc);
+  vm = data.viewModel || vm;
+  render();
+  await autoGenerateRouteChoices();
+  if (!options.silent) setToolStatus(`已读取 v${vm?.stateVersion ?? 0}`);
+  return data;
+}
+
+async function restartRunWithSeed(seed = seedValue(), options = {}) {
+  setSeedValue(seed);
+  const data = await runtime.action(makeCommand('NEW_GAME', {
+    day: 1,
+    period: '上午',
+    gold: 8,
+    seed
+  }));
+  vm = data.viewModel || vm;
+  render(data.events || []);
+  await autoGenerateRouteChoices();
+  if (!options.silent) setToolStatus(`已用 seed ${seed} 重开`);
+  return data;
+}
+
+async function autoGenerateRouteChoices() {
+  const action = routeAutoAction();
+  if (!action || autoRouteInFlight) return;
+  autoRouteInFlight = true;
+  setBusy(true);
+  try {
+    const data = await runtime.action(makeCommand(action.type, action.defaultPayload || {}));
+    vm = data.viewModel || vm;
+    render(data.events || []);
+  } catch (err) {
+    toast(err.message || String(err));
+  } finally {
+    autoRouteInFlight = false;
+    setBusy(false);
+    render();
+  }
+}
+
+function routeChoiceSignature() {
+  return (vm?.dayRoute?.options || []).map(option => ({
+    optionId: option.optionId,
+    nodeId: option.nodeId,
+    name: option.name,
+    nodeType: option.nodeType,
+    preview: option.choicePreview?.summary || ''
+  }));
+}
+
+async function runSeedRuleCheck() {
+  const original = await runtime.save();
+  const seed = seedValue();
+  let passed = false;
+  try {
+    await restartRunWithSeed(seed, { silent: true });
+    const firstHash = vm?.stateHash || '';
+    const firstChoices = routeChoiceSignature();
+    await restartRunWithSeed(seed, { silent: true });
+    const secondHash = vm?.stateHash || '';
+    const secondChoices = routeChoiceSignature();
+    if (firstHash !== secondHash) throw new Error(`同 seed 初始 hash 不一致：${firstHash} != ${secondHash}`);
+    if (JSON.stringify(firstChoices) !== JSON.stringify(secondChoices)) throw new Error('同 seed 的时间节点候选不一致。');
+    if (firstChoices.length !== 3) throw new Error(`时间节点候选数量不是 3：${firstChoices.length}`);
+    passed = true;
+  } finally {
+    if (original?.save) await loadRun(original.save, { silent: true });
+    if (passed) setToolStatus(`规则自测通过：${seed}`);
+  }
+}
+
+async function runSeedRuleCheckFromButton() {
+  try {
+    await runSeedRuleCheck();
+  } catch (err) {
+    setToolStatus(`规则自测失败：${err.message || String(err)}`);
+    toast(err.message || String(err));
   }
 }
 
@@ -136,11 +255,80 @@ function previewText(item = {}) {
   const preview = item.choicePreview || {};
   const pressure = item.pressurePreview || {};
   return [
-    preview.summary || item.note || item.phaseLabel || item.role || item.element || '',
+    preview.summary || item.note || item.phaseLabel || item.element || '',
     pressure.summary ? `压力：${pressure.summary}` : '',
     item.price != null ? `价格 ${item.price} 金` : '',
     item.level ? `Lv${item.level}` : ''
   ].filter(Boolean).join(' · ') || '查看详情后选择。';
+}
+
+function offerCells(offer = {}) {
+  const cells = Number(offer.attackCells || offer.cells || 0);
+  if (cells > 0) return cells;
+  return 1;
+}
+
+function statText(label, value) {
+  return `<span><b>${esc(label)}</b>${esc(value ?? '-')}</span>`;
+}
+
+function bodySizeLabel(value) {
+  const key = String(value || '').trim();
+  if (key === '一格' || key === '1' || key === '小') return '小';
+  if (key === '两格' || key === '二格' || key === '2' || key === '中') return '中';
+  if (key === '三格' || key === '3' || key === '大') return '大';
+  return key || '-';
+}
+
+function attackRangeGrid(offer = {}) {
+  const rows = 3;
+  const cols = 4;
+  const origin = { r: 1, c: 0 };
+  const hits = new Set();
+  const placeHit = (targetR, targetC) => {
+    const r = Math.max(0, Math.min(rows - 1, targetR));
+    const preferred = Math.max(1, Math.min(cols - 1, targetC));
+    const candidates = [preferred, 1, 2, 3];
+    for (const c of candidates) {
+      const key = `${r},${c}`;
+      if (!hits.has(key)) {
+        hits.add(key);
+        return;
+      }
+    }
+  };
+  const offsets = Array.isArray(offer.shapeOffsets) ? offer.shapeOffsets : [];
+  for (const offset of offsets) {
+    const r = origin.r + Number(offset.dr || 0);
+    const c = origin.c + Number(offset.dc || 0);
+    placeHit(r, c);
+  }
+  if (!hits.size) {
+    for (let i = 1; i <= Math.min(cols - 1, offerCells(offer)); i += 1) hits.add(`${origin.r},${i}`);
+  }
+  const cells = [];
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      const isOrigin = r === origin.r && c === origin.c;
+      const isHit = hits.has(`${r},${c}`);
+      cells.push(`<span class="${isOrigin ? 'origin' : isHit ? 'hit' : ''}">${isOrigin ? '●' : isHit ? '■' : ''}</span>`);
+    }
+  }
+  return `<div class="shop-range-wrap">
+    <div class="shop-range-grid" aria-label="${esc(offer.shapeName || '攻击范围')} 3x4">${cells.join('')}</div>
+    <small>${esc(offer.shapeName || '攻击范围')}</small>
+  </div>`;
+}
+
+function routeNodeTitle() {
+  const schedule = vm?.dailyFlow?.nextSchedule;
+  return `时间节点 ${schedule?.step || 1}`;
+}
+
+function routeNodeKicker() {
+  const schedule = vm?.dailyFlow?.nextSchedule;
+  if (!schedule) return '3 选 1';
+  return `${schedule.label || '路线节点'} · 3 选 1`;
 }
 
 function choiceButton(label, type, payload = {}, subtitle = '', lockedReason = '') {
@@ -155,7 +343,10 @@ function choiceButton(label, type, payload = {}, subtitle = '', lockedReason = '
 function renderRouteScene() {
   const items = [];
   const action = routeAction();
-  if (action) items.push(choiceButton(action.label || '生成 3 选 1', action.type, action.defaultPayload || {}, '路线推进'));
+  $('route-node-title').textContent = routeNodeTitle();
+  $('route-node-kicker').textContent = routeNodeKicker();
+  $('route-summary').textContent = vm?.dailyFlow?.nextSchedule?.note || '选择路线、遭遇或奖励。这里是战斗前决策界面。';
+  if (action) items.push(choiceButton(action.label || '继续路线', action.type, action.defaultPayload || {}, '路线推进'));
   for (const option of vm?.dayRoute?.options || []) {
     items.push(choiceButton(option.name || option.nodeId, 'PICK_NODE', { optionId: option.optionId, option }, '节点'));
   }
@@ -166,7 +357,7 @@ function renderRouteScene() {
     items.push(choiceButton(reward.name || reward.petName || reward.relicName || `奖励 ${index + 1}`, 'PICK_REWARD', { index, reward }, '奖励'));
   });
   if (!items.length) {
-    items.push('<article class="empty-card"><strong>等待路线</strong><p>当前没有 3 选 1 项，可以切到游戏界面继续战斗或进入商店。</p></article>');
+    items.push('<article class="empty-card"><strong>读取节点中</strong><p>正在展开当前时间节点的 3 个候选。</p></article>');
   }
   $('route-choice-list').innerHTML = items.join('');
   renderRoster('route');
@@ -176,9 +367,14 @@ function rosterCard(item = {}, active = false) {
   const moveLabel = active ? '下阵' : '上阵';
   const canMove = active ? item.canMoveToBench !== false : item.canMoveToActive !== false;
   const reason = item.moveBlockedReason || (active ? '背包已满' : '上阵已满');
+  const meta = [
+    item.quality || '',
+    item.element || '-',
+    `Lv${item.level || 1}`
+  ].filter(Boolean).join(' · ');
   return `<article class="roster-card ${active ? 'active' : 'bench'}">
     <strong>${esc(item.name || item.petId)}</strong>
-    <span>${esc(item.element || '-')} / ${esc(item.role || '-')} · Lv${esc(item.level || 1)}</span>
+    <span>${esc(meta)}</span>
     <button type="button" data-command="TOGGLE_UNIT_ACTIVE" data-payload="${esc(JSON.stringify({ instanceId: item.instanceId, petId: item.petId, unit: item }))}"${canMove ? '' : ` disabled title="${esc(reason)}"`}>${moveLabel}</button>
   </article>`;
 }
@@ -198,23 +394,60 @@ function buyBlockedReason(offer = {}) {
   return '';
 }
 
+function shopOfferCard(offer = {}) {
+  const placement = offer.buyPlacement === 'active' ? '进上阵' : offer.buyPlacement === 'bench' ? '进背包' : '无位置';
+  const blockedReason = buyBlockedReason(offer);
+  const payload = { offerId: offer.offerId };
+  const stats = [
+    statText('HP', offer.hp),
+    statText('攻', offer.atk),
+    statText('防', offer.def),
+    statText('盾', offer.shield),
+    statText('行动', offer.ap)
+  ].join('');
+  return `<article class="shop-offer-card">
+    <header class="shop-offer-head">
+      <div>
+        <strong>${esc(offer.name || offer.petId || '未知宠物')}</strong>
+        <span>${esc(offer.quality || offer.poolTier || '-')} · ${esc(bodySizeLabel(offer.bodySize))} · 攻击${esc(offerCells(offer))}格 · ${esc(offer.element || '-')}</span>
+      </div>
+    </header>
+    ${attackRangeGrid(offer)}
+    <div class="shop-offer-stats">${stats}</div>
+    <footer class="shop-offer-footer">
+      <span class="shop-offer-price">${esc(offer.price ?? '-')} 金 · ${esc(placement)}</span>
+      <button type="button" data-command="BUY_OFFER" data-payload="${esc(JSON.stringify(payload))}"${blockedReason ? ` disabled title="${esc(blockedReason)}"` : ''}>购买</button>
+    </footer>
+  </article>`;
+}
+
+function refreshCostText(shop = {}) {
+  const cost = Number(shop.refreshState?.nextRefreshCost ?? (Number(shop.freeRolls || 0) > 0 ? 0 : 2));
+  return cost > 0 ? `${cost} 金` : '免费';
+}
+
 function renderShopScene() {
   const shop = vm?.shop || {};
+  const capacity = Number(shop.activeStall?.slots || 10);
+  const petOffers = (shop.offers || []).filter(offer => offer.type === 'pet');
+  const used = petOffers.reduce((sum, offer) => sum + offerCells(offer), 0);
   $('shop-summary').textContent = shop.activeStall?.name
-    ? `${shop.activeStall.name} · ${shop.activeStall.tags?.join(' / ') || '普通摊位'}`
-    : '当前未在商店，可手动进入夜晚商店。';
+    ? `${shop.activeStall.name} · ${shop.activeStall.tags?.join(' / ') || '普通摊位'} · 攻击格 ${used}/${capacity}`
+    : '当前未进入商店节点。';
   const items = [];
-  for (const offer of shop.offers || []) {
-    const placement = offer.buyPlacement === 'active' ? '进上阵' : offer.buyPlacement === 'bench' ? '进背包' : '无位置';
-    items.push(choiceButton(`购买 ${offer.name || offer.petId}`, 'BUY_OFFER', { offerId: offer.offerId, offer }, `${offer.price ?? '-'} 金 · ${placement}`, buyBlockedReason(offer)));
+  const actions = [];
+  for (const offer of petOffers) {
+    items.push(shopOfferCard(offer));
   }
-  for (const shopEvent of shop.events || []) {
-    items.push(choiceButton(shopEvent.name, 'APPLY_SHOP_EVENT', { eventId: shopEvent.id, shopEvent }, '商店事件'));
+  if (vm?.phase === 'shop') {
+    actions.push(choiceButton(`刷新商品 ${refreshCostText(shop)}`, 'ROLL_SHOP', { slots: capacity }, '商店操作'));
+    actions.push(choiceButton('离开商店', 'EXIT_SHOP', {}, '继续路线'));
   }
   for (const unit of vm?.inventory?.items || []) {
-    items.push(choiceButton(`出售 ${unit.name || unit.petId}`, 'SELL_UNIT', { instanceId: unit.instanceId, petId: unit.petId, unit }, unit.active ? '上阵' : '背包'));
+    actions.push(choiceButton(`出售 ${unit.name || unit.petId}`, 'SELL_UNIT', { instanceId: unit.instanceId, petId: unit.petId, unit }, unit.active ? '上阵' : '背包'));
   }
-  $('shop-choice-list').innerHTML = items.join('') || '<article class="empty-card"><strong>商店未开启</strong><p>点击进入商店后会刷新商品。</p></article>';
+  $('shop-choice-list').innerHTML = items.join('') || '<article class="empty-card"><strong>商店未开启</strong><p>进入商店后会刷新宠物。</p></article>';
+  $('shop-action-list').innerHTML = actions.join('');
   renderRoster('shop');
 }
 
@@ -253,7 +486,6 @@ function renderBattleScene(events = []) {
   $('battle-board').innerHTML = out.join('');
   const recent = events.length ? events : (vm?.events || []).slice(-12);
   $('battle-log').textContent = recent.map(event => `[${event.type}] ${event.text || ''}`).join('\n') || '暂无战斗记录。';
-  $('start-battle-btn').disabled = busy || vm?.phase !== 'init';
   $('auto-position-btn').disabled = busy || vm?.phase !== 'player_turn';
   $('all-out-btn').disabled = busy || vm?.phase !== 'player_turn';
 }
@@ -265,7 +497,7 @@ function render(events = []) {
   renderShopScene();
   renderBattleScene(events);
   setScene(sceneForPhase());
-  window.__YSBZS_NORMAL_GAME__ = { lastViewModel: vm, runCommand, loadView, sceneForPhase };
+  window.__YSBZS_NORMAL_GAME__ = { lastViewModel: vm, runCommand, loadView, sceneForPhase, saveRun, loadRun, restartRunWithSeed, runSeedRuleCheck };
 }
 
 function payloadFromButton(btn) {
@@ -274,24 +506,19 @@ function payloadFromButton(btn) {
 }
 
 document.addEventListener('click', ev => {
-  const sceneBtn = ev.target.closest('[data-jump-scene]');
-  if (sceneBtn) {
-    manualScene = sceneBtn.dataset.jumpScene || '';
-    render();
-    return;
-  }
   const commandBtn = ev.target.closest('[data-command]');
   if (commandBtn) {
     runCommand(commandBtn.dataset.command, payloadFromButton(commandBtn));
   }
 });
 
-$('enter-shop-btn').addEventListener('click', () => runCommand('ENTER_SHOP', { poolId: 'night_base', slots: 6 }));
-$('roll-shop-btn').addEventListener('click', () => runCommand('ROLL_SHOP', { slots: vm?.shop?.activeStall?.slots || 6 }));
-$('exit-shop-btn').addEventListener('click', () => runCommand('EXIT_SHOP'));
-$('start-battle-btn').addEventListener('click', () => runCommand('START_BATTLE'));
 $('auto-position-btn').addEventListener('click', () => runCommand('AUTO_POSITION_HEROES'));
 $('all-out-btn').addEventListener('click', () => runCommand('RUN_PLAYER_ALL_OUT'));
-$('route-return-btn').addEventListener('click', () => { manualScene = 'route'; render(); });
 
 loadView().catch(err => toast(err.message || String(err)));
+
+setSeedValue(params.get('seed') || seedValue());
+$('save-run-btn').addEventListener('click', () => saveRun().catch(err => toast(err.message || String(err))));
+$('load-run-btn').addEventListener('click', () => loadRun().catch(err => toast(err.message || String(err))));
+$('restart-run-btn').addEventListener('click', () => restartRunWithSeed().catch(err => toast(err.message || String(err))));
+$('seed-check-btn').addEventListener('click', () => runSeedRuleCheckFromButton());

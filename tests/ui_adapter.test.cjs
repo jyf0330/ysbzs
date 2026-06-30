@@ -544,7 +544,7 @@ test('UI15 战斗追踪导出与回放门面不串命令', () => {
 });
 
 test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物', () => {
-  const adapter = createYSBZSUIAdapter({ gold: 8, battleId: 'team_preview_accumulate' });
+  const adapter = createYSBZSUIAdapter({ gold: 8, battleId: 'team_preview_accumulate', activePets: ['pal_002', 'pal_006'] });
   adapter.startBattle();
 
   const vm0 = adapter.getViewModel();

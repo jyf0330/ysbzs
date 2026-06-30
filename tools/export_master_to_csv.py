@@ -45,6 +45,20 @@ DOMAIN_SECTION_SHEETS = [
 
 PETS_REDESIGN_SHEET = "PETS_REDESIGN_V3_19形状"
 
+SHOP_PRICE_BY_QUALITY = {
+    "青铜": "2",
+    "白银": "4",
+    "黄金": "6",
+    "钻石": "8",
+}
+SHOP_PRICE_BY_TIER_POOL = {
+    "pT1": SHOP_PRICE_BY_QUALITY["青铜"],
+    "pT2": SHOP_PRICE_BY_QUALITY["白银"],
+    "pT3": SHOP_PRICE_BY_QUALITY["黄金"],
+    "pT4": SHOP_PRICE_BY_QUALITY["钻石"],
+}
+LEGACY_PLACEHOLDERS = {"44"}
+
 NS_MAIN = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 NS_PKG_REL = "{http://schemas.openxmlformats.org/package/2006/relationships}"
@@ -174,6 +188,11 @@ def first_non_empty(*values):
         if value is not None and str(value).strip() != "":
             return str(value).strip()
     return ""
+
+
+def blank_legacy_placeholder(value):
+    text = "" if value is None else str(value).strip()
+    return "" if text in LEGACY_PLACEHOLDERS else text
 
 
 def split_pool_count(expr):
@@ -345,6 +364,10 @@ def build_shop_pools(existing, pet, tier_pool):
             out.append(pool)
             seen.add(pool)
     return ", ".join(out)
+
+
+def shop_price_for_quality(quality, tier_pool=""):
+    return SHOP_PRICE_BY_QUALITY.get(str(quality or "").strip()) or SHOP_PRICE_BY_TIER_POOL.get(str(tier_pool or "").strip(), "")
 
 
 def normalize_pet_id_token(token):
@@ -569,6 +592,7 @@ def generated_tables(master_path, baseline_dir):
                 row["效果分"] = format_number(pet_effect_scores.get(row.get("宠物ID", ""), panel_score(row)))
                 row["标签"] = first_non_empty(build_pet_tags(pet, row.get("标签")), row.get("标签"))
                 row["备注"] = first_non_empty(pet.get("note"), row.get("备注"))
+                row["副属"] = blank_legacy_placeholder(row.get("副属"))
 
         elif filename == "02_monster_templates.csv":
             for row in output:
@@ -586,6 +610,8 @@ def generated_tables(master_path, baseline_dir):
                 row["机制ID"] = first_non_empty(pet.get("mechanism_id"), row.get("机制ID"))
                 row["面板分"] = format_number(panel_score(row))
                 row["机制分"] = format_number(pet_mechanic_score(row, pet))
+                for field in ["机制参数", "克制", "推荐日", "备注"]:
+                    row[field] = blank_legacy_placeholder(row.get(field))
 
         elif filename == "03_monster_waves.csv":
             for row in output:
@@ -628,15 +654,23 @@ def generated_tables(master_path, baseline_dir):
                 if not shop:
                     if pet:
                         row["商店池(自动)"] = build_shop_pools(row.get("商店池(自动)"), pet, row.get("池档"))
+                    for field in ["出现条件", "备注"]:
+                        row[field] = blank_legacy_placeholder(row.get(field))
                     continue
                 row["解锁日"] = first_non_empty(shop.get("unlock_day"), row.get("解锁日"))
                 row["池档"] = first_non_empty(shop.get("tier_pool"), row.get("池档"))
                 row["默认价"] = first_non_empty(shop.get("base_price"), row.get("默认价"))
+                public_quality_price = shop_price_for_quality(row.get("品质(自动)"), row.get("池档"))
+                if public_quality_price:
+                    row["默认价"] = public_quality_price
+                    row["价格覆盖"] = public_quality_price
                 row["夜市权重"] = first_non_empty(shop.get("shop_weight"), row.get("夜市权重"))
                 row["奖励权重"] = first_non_empty(shop.get("reward_weight"), row.get("奖励权重"))
                 if pet:
                     row["商店池(自动)"] = build_shop_pools(row.get("商店池(自动)"), pet, row.get("池档"))
                 row["备注"] = first_non_empty(shop.get("note"), row.get("备注"))
+                for field in ["出现条件", "备注"]:
+                    row[field] = blank_legacy_placeholder(row.get(field))
 
         elif filename == "08_action_shapes.csv":
             for row in output:

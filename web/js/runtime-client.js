@@ -78,14 +78,22 @@ export function createLocalRuntime(options = {}) {
   function currentPlayerId() { return getPlayerId(playerId); }
   const existingEngine = options.engine || win?.__YSBZS_LOCAL_ENGINE__ || null;
   const factory = options.engineFactory || win?.__YSBZS_LOCAL_ENGINE_FACTORY__ || null;
-  const engine = existingEngine || (typeof factory === 'function' ? factory(Object.assign({}, options, { playerId: currentPlayerId() })) : null);
+  function createEngine(nextOptions = {}) {
+    if (typeof factory !== 'function') return existingEngine;
+    if (!Object.keys(nextOptions || {}).length) return factory(Object.assign({}, options, { playerId: currentPlayerId() }));
+    return factory(Object.assign({}, options, nextOptions, { playerId: currentPlayerId() }));
+  }
+  let engine = createEngine();
   if (win && engine && !win.__YSBZS_LOCAL_ENGINE__) win.__YSBZS_LOCAL_ENGINE__ = engine;
   const storage = options.storage || win?.localStorage || null;
   const slotKey = options.slotKey || DEFAULT_SAVE_SLOT;
-  async function view() {
+  function viewPayload() {
     if (engine?.view) return engine.view(currentPlayerId());
     if (engine?.getViewModel) return { ok: true, viewModel: engine.getViewModel(currentPlayerId()) };
     engineMissing('view');
+  }
+  async function view() {
+    return viewPayload();
   }
   async function report(mode = 'player') {
     if (engine?.report) return engine.report(mode, currentPlayerId());
@@ -93,6 +101,11 @@ export function createLocalRuntime(options = {}) {
     engineMissing('report');
   }
   async function action(command) {
+    if (command?.type === 'NEW_GAME') {
+      engine = createEngine(command);
+      if (win && engine) win.__YSBZS_LOCAL_ENGINE__ = engine;
+      return Object.assign({ command: 'NEW_GAME' }, viewPayload());
+    }
     if (engine?.action) return engine.action(command);
     if (engine?.run) return engine.run(command);
     engineMissing('action');
@@ -111,6 +124,7 @@ export function createLocalRuntime(options = {}) {
     if (pathname === '/api/view') return view();
     if (pathname.startsWith('/api/report')) return report(new URL(pathname, 'http://local').searchParams.get('mode') || 'player');
     if (pathname === '/api/action') return action(body);
+    if (pathname === '/api/session/new') return action(Object.assign({ type: 'NEW_GAME' }, body || {}));
     if (pathname === '/api/save') {
       const data = await save();
       if (storage && data?.save) storage.setItem(slotKey, JSON.stringify(data.save));

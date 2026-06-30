@@ -127,6 +127,9 @@ function serializableState(state) {
       refreshState: state.shop && state.shop.refreshState ? {
         freeRolls: state.shop.refreshState.freeRolls,
         nextDiscount: state.shop.refreshState.nextDiscount,
+        paidRefreshes: state.shop.refreshState.paidRefreshes || 0,
+        nextPaidRefreshCost: state.shop.refreshState.nextPaidRefreshCost || 2,
+        nextRefreshCost: state.shop.refreshState.nextRefreshCost || 2,
         targetedRestocks: (state.shop.refreshState.targetedRestocks || []).map(x => ({
           restockId: x.restockId,
           eventId: x.eventId,

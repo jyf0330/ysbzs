@@ -3,8 +3,18 @@ const { rng, pickWeighted } = require('./rng.cjs');
 const { makeUnit, syncBoardUnits } = require('./state.cjs');
 const { applyBattleStart } = require('./mechanics.cjs');
 const { MAX_BENCH_UNITS, benchCount, mergeBenchEntry, shopPurchaseTarget } = require('./inventoryRules.cjs');
+const { resolveShapeDefinition } = require('./battle/shapeCatalog.cjs');
 function clone(value){ return JSON.parse(JSON.stringify(value)); }
 function parseGoldCost(text){ if(!text || text==='无') return 0; const m=String(text).match(/金币\s*-\s*(\d+)/); return m ? Number(m[1]) : 0; }
+const DEFAULT_SHOP_GRID_CAPACITY = 10;
+const SHOP_PRICE_PER_ATTACK_CELL = 2;
+function normalizeShopCapacity(value){ const n = Number(value || DEFAULT_SHOP_GRID_CAPACITY); return Number.isFinite(n) && n > 0 ? n : DEFAULT_SHOP_GRID_CAPACITY; }
+function attackCellsForPet(state, petId){ const shape = state.indexes?.shapesByPetId?.get(petId) || {}; const n = Number(shape.hitCells || shape.cellCount || 1); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1; }
+function shapePreviewForPet(state, petId){ const shape = state.indexes?.shapesByPetId?.get(petId) || {}; const def = resolveShapeDefinition(shape.shapeId || shape.id || shape.shapeName); return def ? { shapeGrid:def.grid.slice(), shapeOffsets:def.offsets.map(o=>({dr:o.dr,dc:o.dc})), shapeNote:def.note } : { shapeGrid:[], shapeOffsets:[], shapeNote:shape.note || '' }; }
+function shopItemCells(state, item){ return attackCellsForPet(state, item.petId); }
+function offerCells(offer){ const n = Number(offer.attackCells || offer.cells || 1); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1; }
+function priceForAttackCells(cells){ return Math.max(1, Number(cells || 1)) * SHOP_PRICE_PER_ATTACK_CELL; }
+function paidRefreshCost(paidRefreshes=0){ return 2 ** (Number(paidRefreshes || 0) + 1); }
 function enabledShopItems(state, poolId='night_base'){ return state.data.shop.filter(i => i.status==='启用' && i.unlockDay <= state.day && (i.shopPools||[]).includes(poolId)); }
 function itemWeight(item,poolId){ if(poolId==='night_base') return item.weights.night; if(poolId.startsWith('elem_')) return item.weights.element; if(poolId.startsWith('role_')) return item.weights.role; if(poolId.startsWith('tier_')) return item.weights.tier; return item.weights.night || 1; }
 function stallTags(poolId='night_base') {
@@ -18,32 +28,35 @@ function stallTags(poolId='night_base') {
  return ['通用', '夜市'];
 }
 function ensureRefreshState(state) {
- if (!state.shop.refreshState) state.shop.refreshState = { freeRolls: Number(state.shop.freeRolls || 0), nextDiscount: Number(state.shop.nextDiscount || 0), targetedRestocks: [], effects: [], lastRoll: null };
+ if (!state.shop.refreshState) state.shop.refreshState = { freeRolls: Number(state.shop.freeRolls || 0), nextDiscount: Number(state.shop.nextDiscount || 0), paidRefreshes: 0, nextPaidRefreshCost: 2, nextRefreshCost: Number(state.shop.freeRolls || 0) > 0 ? 0 : 2, targetedRestocks: [], effects: [], lastRoll: null };
  if (!Array.isArray(state.shop.refreshState.targetedRestocks)) state.shop.refreshState.targetedRestocks = [];
  if (!Array.isArray(state.shop.refreshState.effects)) state.shop.refreshState.effects = [];
+ state.shop.refreshState.paidRefreshes = Number(state.shop.refreshState.paidRefreshes || 0);
  state.shop.refreshState.freeRolls = Number(state.shop.freeRolls || 0);
  state.shop.refreshState.nextDiscount = Number(state.shop.nextDiscount || 0);
+ state.shop.refreshState.nextPaidRefreshCost = paidRefreshCost(state.shop.refreshState.paidRefreshes);
+ state.shop.refreshState.nextRefreshCost = state.shop.refreshState.freeRolls > 0 ? 0 : state.shop.refreshState.nextPaidRefreshCost;
  return state.shop.refreshState;
 }
-function makeStall(state, poolId='night_base', slots=6, meta={}) {
+function makeStall(state, poolId='night_base', slots=DEFAULT_SHOP_GRID_CAPACITY, meta={}) {
  return {
   nodeId: meta.nodeId || null,
   name: meta.name || (poolId === 'night_base' ? '夜市商人' : `摊位 ${poolId}`),
   shopPoolId: poolId,
   tags: meta.tags || stallTags(poolId),
-  slots: Number(slots || meta.slots || 6),
+  slots: normalizeShopCapacity(slots || meta.slots),
   unlockDay: Number(meta.unlockDay || state.day || 1),
   priceRule: meta.priceRule || '标准价格',
   note: meta.note || ''
  };
 }
 function offerRestock(restock){ return restock ? { restockId:restock.restockId, eventId:restock.eventId, name:restock.name, source:restock.source, poolId:restock.poolId, tags:restock.tags || [], status:restock.status || 'pending' } : null; }
-function buildOffer(state, item, slot, poolId, meta={}){ const discount = state.shop.nextDiscount || 0; const price = Math.max(0, Math.ceil(item.price * (100-discount)/100)); const offer={ offerId:`offer_${state.day}_${state.period}_${state.shop.rollCount}_${slot}_${item.petId}`, type:'pet', petId:item.petId, name:item.name, element:item.element, role:item.role, poolTier:item.poolTier, poolId, price, frozen:false }; const restock=offerRestock(meta.restock); if(restock) offer.restock=restock; return offer; }
-function enterShop(state, poolId='night_base', slots=6, opts={}){ ensureRefreshState(state); const stall=makeStall(state,poolId,slots,opts.stall||opts); state.phase='shop'; state.shop.activePool=poolId; state.shop.activeStall=stall; state.shop.offers=[]; pushEvent(state,'SHOP_ENTER',{poolId,stall,text:`进入${stall.name}，倾向=${stall.tags.join('/')}，池=${poolId}，槽位=${stall.slots}，金币${state.gold}。`}); rollShop(state,{poolId,slots:stall.slots,free:true}); return true; }
-function rollShop(state,{poolId=state.shop.activePool||'night_base', slots=6, free=false, restock=null}={}){ const cost = free || state.shop.freeRolls>0 ? 0 : 1; if(cost>0 && state.gold < cost) { pushEvent(state,'SHOP_ROLL_BLOCKED',{text:`金币不足，无法刷新。`}); return false; }
- if(cost>0) state.gold-=cost; else if(!free && state.shop.freeRolls>0) state.shop.freeRolls-=1;
- const random=rng(`${state.day}:${state.period}:${state.shop.rollCount}:${poolId}:${state.gold}`); const pool=enabledShopItems(state,poolId); const kept=(state.shop.offers||[]).filter(o=>o.frozen); const offers=[...kept]; let slot=0; while(offers.length<slots && pool.length){ const item=pickWeighted(pool, i=>itemWeight(i,poolId), random); if(!item) break; offers.push(buildOffer(state,item,slot++,poolId,{restock})); }
- state.shop.offers=offers; state.shop.rollCount+=1; const discountApplied=Number(state.shop.nextDiscount || 0); state.shop.nextDiscount=0; const refresh=ensureRefreshState(state); refresh.lastRoll={poolId,cost,slots:Number(slots),free:!!free,discountApplied,offerIds:offers.map(o=>o.offerId), petIds:offers.map(o=>o.petId)}; pushEvent(state,'SHOP_ROLL',{poolId,cost,offers:offers.map(o=>o.petId), refreshState:clone(refresh), text:`商店刷新：花费${cost}金币，出现 ${offers.map(o=>`${o.name}(${o.price})`).join('、')}。`}); return true; }
+function buildOffer(state, item, slot, poolId, meta={}){ const discount = state.shop.nextDiscount || 0; const pet = state.indexes?.petsById?.get(item.petId) || {}; const shape = state.indexes?.shapesByPetId?.get(item.petId) || {}; const shapePreview=shapePreviewForPet(state,item.petId); const bodySize=item.bodySize || pet.size || pet.bodySize || null; const attackCells=attackCellsForPet(state,item.petId); const basePrice=priceForAttackCells(attackCells); const price = Math.max(0, Math.ceil(basePrice * (100-discount)/100)); const offer={ offerId:`offer_${state.day}_${state.period}_${state.shop.rollCount}_${slot}_${item.petId}`, type:'pet', petId:item.petId, name:item.name, element:item.element, role:item.role, quality:item.quality || pet.quality || null, bodySize, attackCells, cells:attackCells, shapeId:shape.shapeId || null, shapeName:shape.shapeName || null, shapeClass:shape.shapeClass || null, shapeGrid:shapePreview.shapeGrid, shapeOffsets:shapePreview.shapeOffsets, shapeNote:shapePreview.shapeNote, hp:pet.hp ?? null, atk:pet.atk ?? null, def:pet.def ?? null, shield:pet.shield ?? null, ap:pet.ap ?? null, tags:item.tags || pet.tags || [], poolTier:item.poolTier, poolId, basePrice, price, frozen:false }; const restock=offerRestock(meta.restock); if(restock) offer.restock=restock; return offer; }
+function enterShop(state, poolId='night_base', slots=DEFAULT_SHOP_GRID_CAPACITY, opts={}){ ensureRefreshState(state); const stall=makeStall(state,poolId,slots,opts.stall||opts); state.phase='shop'; state.shop.activePool=poolId; state.shop.activeStall=stall; state.shop.offers=[]; pushEvent(state,'SHOP_ENTER',{poolId,stall,text:`进入${stall.name}，倾向=${stall.tags.join('/')}，池=${poolId}，格数${stall.slots}，金币${state.gold}。`}); rollShop(state,{poolId,slots:stall.slots,free:true}); return true; }
+function rollShop(state,{poolId=state.shop.activePool||'night_base', slots=DEFAULT_SHOP_GRID_CAPACITY, free=false, restock=null}={}){ const capacity=normalizeShopCapacity(slots); const refresh=ensureRefreshState(state); const useFreeRoll=!free && Number(state.shop.freeRolls || 0)>0; const cost = free || useFreeRoll ? 0 : paidRefreshCost(refresh.paidRefreshes); if(cost>0 && state.gold < cost) { pushEvent(state,'SHOP_ROLL_BLOCKED',{cost,gold:state.gold,nextRefreshCost:cost,text:`金币不足，无法刷新：需要${cost}金币，当前${state.gold}。`}); return false; }
+ if(cost>0){ state.gold-=cost; refresh.paidRefreshes=Number(refresh.paidRefreshes || 0)+1; } else if(useFreeRoll) state.shop.freeRolls-=1;
+ const random=rng(`${state.day}:${state.period}:${state.shop.rollCount}:${poolId}:${state.gold}`); const pool=enabledShopItems(state,poolId); const kept=(state.shop.offers||[]).filter(o=>o.frozen); const offers=[...kept]; let used=offers.reduce((sum,o)=>sum+offerCells(o),0); let slot=offers.length; while(used<capacity && pool.length){ const remaining=capacity-used; const candidates=pool.filter(item=>shopItemCells(state,item)<=remaining); if(!candidates.length) break; const item=pickWeighted(candidates, i=>itemWeight(i,poolId), random); if(!item) break; const offer=buildOffer(state,item,slot++,poolId,{restock}); offers.push(offer); used+=offerCells(offer); }
+ state.shop.offers=offers; state.shop.rollCount+=1; const discountApplied=Number(state.shop.nextDiscount || 0); state.shop.nextDiscount=0; ensureRefreshState(state); refresh.lastRoll={poolId,cost,slots:capacity,gridUsed:used,free:!!free,usedFreeRoll:useFreeRoll,paidRefreshes:refresh.paidRefreshes,nextRefreshCost:refresh.nextRefreshCost,discountApplied,offerIds:offers.map(o=>o.offerId), petIds:offers.map(o=>o.petId)}; pushEvent(state,'SHOP_ROLL',{poolId,cost,slots:capacity,gridUsed:used,paidRefreshes:refresh.paidRefreshes,nextRefreshCost:refresh.nextRefreshCost,offers:offers.map(o=>o.petId), refreshState:clone(refresh), text:`商店刷新：花费${cost}金币，${used}/${capacity}格，出现 ${offers.map(o=>`${o.name}(${o.price})`).join('、')}。`}); return true; }
 function freezeOffer(state, offerId, frozen=true){ const offer=state.shop.offers.find(o=>o.offerId===offerId); if(!offer) return false; offer.frozen=frozen; pushEvent(state,frozen?'SHOP_FREEZE':'SHOP_UNFREEZE',{offerId,text:`${frozen?'冻结':'解冻'}商品：${offer.name}。`}); return true; }
 function inventoryResult(inv, extra={}) {
  return Object.assign({

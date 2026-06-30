@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>元素背包史 · 主入口</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+  <main class="main-hub">
+    <header class="hub-header">
+      <section>
+        <div class="eyebrow">元素背包史 / Main Gate</div>
+        <h1>主入口</h1>
+        <p>这里集中所有可进入页面。按地点进：正常游玩、战斗、调试、命令、流程和谜题工具各走各的入口。</p>
+      </section>
+      <nav aria-label="快速入口">
+        <a href="normal-game.html?runtime=http">开始本局</a>
+        <a href="index.html?runtime=http">战斗页</a>
+        <a href="command-console.html?runtime=http">命令台</a>
+      </nav>
+    </header>
+
+    <section class="world-overview" aria-label="入口说明">
+      <div class="map-panel">
+        <div class="map-title">
+          <span>路线地图</span>
+          <strong>点哪个镇，就进哪个页面</strong>
+        </div>
+        <div class="town-map" aria-hidden="true">
+          <span class="route-line route-line-a"></span>
+          <span class="route-line route-line-b"></span>
+          <span class="route-line route-line-c"></span>
+          <i class="map-node node-a"></i>
+          <i class="map-node node-b"></i>
+          <i class="map-node node-c"></i>
+          <i class="map-node node-d"></i>
+        </div>
+      </div>
+      <aside class="current-build">
+        <span>推荐入口</span>
+        <h2>先从桃源镇进入正常游戏</h2>
+        <p>正常游戏页负责 3 选 1、商店、上阵/下阵和战斗三场景，是现在最接近玩家流程的入口。</p>
+        <a href="normal-game.html?runtime=http">进入桃源镇</a>
+      </aside>
+    </section>
+
+    <section class="town-section" aria-label="游戏入口">
+      <div class="section-head">
+        <span>Play</span>
+        <h2>游戏城镇</h2>
+      </div>
+      <div class="town-grid primary-grid">
+        <a class="town-card large" href="normal-game.html?runtime=http">
+          <span class="town-kicker">正常流程</span>
+          <strong>桃源镇</strong>
+          <p>3 选 1路线、商店、阵容上阵/下阵、战斗场景都从这里自然进入。</p>
+          <em>进入正常游戏</em>
+        </a>
+        <a class="town-card" href="index.html?runtime=http">
+          <span class="town-kicker">正式战斗</span>
+          <strong>演武场</strong>
+          <p>当前重构版战斗页，适合直接调棋盘、行动块、详情面板和战斗按钮。</p>
+          <em>进入战斗页</em>
+        </a>
+        <a class="town-card" href="daily-flow.html?runtime=http">
+          <span class="town-kicker">每日路线</span>
+          <strong>驿站</strong>
+          <p>查看每日流程、路线推进和节点状态，适合检查外层循环。</p>
+          <em>进入流程页</em>
+        </a>
+        <a class="town-card" href="paper-battle.html?runtime=http">
+          <span class="town-kicker">轻量战斗</span>
+          <strong>纸上演武棚</strong>
+          <p>纸面战斗入口，用于轻量验证棋盘与战斗状态。</p>
+          <em>进入纸面战斗</em>
+        </a>
+      </div>
+    </section>
+
+    <section class="town-section" aria-label="调试入口">
+      <div class="section-head">
+        <span>Debug</span>
+        <h2>调试城镇</h2>
+      </div>
+      <div class="town-grid">
+        <a class="town-card" href="battle-debug.html?runtime=http">
+          <span class="town-kicker">路线快照</span>
+          <strong>军机府</strong>
+          <p>一键准备“两事件后战斗入口”，再跳转到正式战斗页继续调棋盘。</p>
+          <em>进入战斗调试</em>
+        </a>
+        <a class="town-card" href="command-console.html?runtime=http">
+          <span class="town-kicker">公开命令</span>
+          <strong>命令阁</strong>
+          <p>查看公开命令表、当前 nextActions、payload、执行结果和 ViewModel。</p>
+          <em>进入命令控制台</em>
+        </a>
+        <a class="town-card" href="puzzle-solver.html?runtime=http">
+          <span class="town-kicker">求解实验</span>
+          <strong>解谜楼</strong>
+          <p>谜题求解器实验台，用于验证局面、搜索方案和测试边界。</p>
+          <em>进入求解器</em>
+        </a>
+        <a class="town-card" href="puzzle-submission.html?runtime=http">
+          <span class="town-kicker">玩家投稿</span>
+          <strong>投稿铺</strong>
+          <p>玩家谜题投稿入口，收集局面、描述和可复现信息。</p>
+          <em>进入投稿页</em>
+        </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

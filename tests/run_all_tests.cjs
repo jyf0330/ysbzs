@@ -8,6 +8,8 @@ const { renderPlayerReport } = require('../src/render/textReport.cjs');
 const { SUPPORTED_MECHANICS } = require('../src/core/mechanics.cjs');
 let tests=[]; function test(name, fn){ tests.push({name, fn}); }
 function hasEvent(state,type){ return state.events.some(e=>e.type===type); }
+function offerCells(offer){ const n=Number(offer.attackCells||offer.cells||1); return Number.isFinite(n) && n>0 ? Math.floor(n) : 1; }
+function shopCellsUsed(state){ return (state.shop.offers||[]).reduce((sum,offer)=>sum+offerCells(offer),0); }
 function nextRouteSchedule(state) {
   dayRoute.ensureDayRoute(state);
   const step = Number(state.dayRoute.nodeIndex || 0) + 1;
@@ -69,12 +71,15 @@ test('battle can run and generate result',()=>{ const s=createGameState(); dispa
 test('battle uses wave rows',()=>{ const s=createGameState(); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(s.events.some(e=>e.type==='SPAWN_ENEMY' && e.petId)); });
 test('player operation events exist',()=>{ const s=createGameState(); dispatch(s,{type:'RUN_BATTLE'}); assert.ok(hasEvent(s,'PLAYER_SELECT_SLOT')); assert.ok(hasEvent(s,'APPLY_ELEMENT')); assert.ok(hasEvent(s,'ELEMENT_SETTLE')); });
 test('damage events include before/after hp and shield',()=>{ const s=createGameState(); dispatch(s,{type:'RUN_BATTLE'}); const d=s.events.find(e=>e.type==='DAMAGE'); assert.ok(d && 'hpFrom' in d && 'hpTo' in d && 'shieldFrom' in d && 'shieldTo' in d); });
-test('shop enter rolls offers',()=>{ const s=createGameState({gold:10}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); assert.equal(s.shop.offers.length,6); assert.ok(hasEvent(s,'SHOP_ROLL')); });
-test('shop freeze survives roll',()=>{ const s=createGameState({gold:10}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); const id=s.shop.offers[0].offerId; const pet=s.shop.offers[0].petId; dispatch(s,{type:'FREEZE_OFFER',offerId:id}); dispatch(s,{type:'ROLL_SHOP',slots:6}); assert.ok(s.shop.offers.some(o=>o.petId===pet && o.frozen)); });
-test('shop buy changes gold and inventory',()=>{ const s=createGameState({gold:999}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); const o=s.shop.offers.find(x=>x.price<=s.gold); assert.ok(o); const g=s.gold; dispatch(s,{type:'BUY_OFFER',offerId:o.offerId}); assert.ok(s.gold<g); assert.ok(hasEvent(s,'SHOP_BUY')); assert.ok(s.inventory.some(i=>i.petId===o.petId)); });
-test('shop blocks unaffordable buy',()=>{ const s=createGameState({gold:0}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); const o=s.shop.offers[0]; dispatch(s,{type:'BUY_OFFER',offerId:o.offerId}); assert.ok(hasEvent(s,'SHOP_BUY_BLOCKED')); });
-test('shop event connects event table',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(hasEvent(s,'SHOP_EVENT_APPLY')); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
-test('element shop event rolls element pool',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
+test('shop enter rolls pet offers within attack-cell capacity and prices by attack cells',()=>{ const s=createGameState({gold:10}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); assert.ok(s.shop.offers.length>0); assert.ok(shopCellsUsed(s)<=10); assert.ok(s.shop.offers.every(o=>o.type==='pet' && o.cells===offerCells(o) && o.price===offerCells(o)*2)); assert.ok(hasEvent(s,'SHOP_ROLL')); });
+test('shop pet offers expose renderable attack range offsets',()=>{ const s=createGameState({gold:10}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); const o=s.shop.offers[0]; assert.ok(Array.isArray(o.shapeOffsets)); assert.ok(o.shapeOffsets.length>=o.attackCells); assert.ok(Array.isArray(o.shapeGrid)); const grid=o.shapeGrid.join(''); assert.ok(grid.includes('●')); assert.ok(grid.includes('■')); });
+test('shop freeze survives roll',()=>{ const s=createGameState({gold:10}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); const id=s.shop.offers[0].offerId; const pet=s.shop.offers[0].petId; dispatch(s,{type:'FREEZE_OFFER',offerId:id}); dispatch(s,{type:'ROLL_SHOP',slots:10}); assert.ok(shopCellsUsed(s)<=10); assert.ok(s.shop.offers.some(o=>o.petId===pet && o.frozen)); });
+test('shop paid refresh cost doubles from 2 to 16',()=>{ const s=createGameState({gold:100}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); assert.equal(s.shop.refreshState.nextRefreshCost,2); const costs=[]; for(const expected of [2,4,8,16]){ const before=s.gold; dispatch(s,{type:'ROLL_SHOP',slots:10}); const last=s.shop.refreshState.lastRoll; costs.push(last.cost); assert.equal(last.cost,expected); assert.equal(before-s.gold,expected); } assert.deepEqual(costs,[2,4,8,16]); assert.equal(s.shop.refreshState.paidRefreshes,4); assert.equal(s.shop.refreshState.nextRefreshCost,32); });
+test('shop free refresh does not advance paid refresh cost',()=>{ const s=createGameState({gold:20}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); s.shop.freeRolls=1; dispatch(s,{type:'ROLL_SHOP',slots:10}); assert.equal(s.shop.refreshState.lastRoll.cost,0); assert.equal(s.shop.refreshState.paidRefreshes,0); assert.equal(s.shop.refreshState.nextRefreshCost,2); dispatch(s,{type:'ROLL_SHOP',slots:10}); assert.equal(s.shop.refreshState.lastRoll.cost,2); assert.equal(s.shop.refreshState.nextRefreshCost,4); });
+test('shop buy changes gold and inventory',()=>{ const s=createGameState({gold:999}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); const o=s.shop.offers.find(x=>x.price<=s.gold); assert.ok(o); const g=s.gold; dispatch(s,{type:'BUY_OFFER',offerId:o.offerId}); assert.ok(s.gold<g); assert.ok(hasEvent(s,'SHOP_BUY')); assert.ok(s.inventory.some(i=>i.petId===o.petId)); });
+test('shop blocks unaffordable buy',()=>{ const s=createGameState({gold:0}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); const o=s.shop.offers[0]; dispatch(s,{type:'BUY_OFFER',offerId:o.offerId}); assert.ok(hasEvent(s,'SHOP_BUY_BLOCKED')); });
+test('shop event connects event table',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(hasEvent(s,'SHOP_EVENT_APPLY')); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
+test('element shop event rolls element pool',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:10}); dispatch(s,{type:'APPLY_SHOP_EVENT',eventId:'evt_shop_fire'}); assert.ok(s.events.some(e=>e.type==='SHOP_ROLL' && e.poolId==='elem_火')); });
 test('shop refresh controls store free roll, discount, and targeted restock state',()=>{
   const s=createGameState({day:1,gold:20});
   dispatch(s,{type:'ENTER_SHOP',poolId:'night_base',slots:6});
@@ -125,9 +130,10 @@ test('route shop node enters a named stall with tags and filtered offers',()=>{
   assert.equal(s.shop.activeStall.name,'火系补货商人');
   assert.deepEqual(s.shop.activeStall.tags,['元素','火']);
   assert.equal(s.shop.activeStall.shopPoolId,'elem_火');
-  assert.equal(s.shop.activeStall.slots,3);
+  assert.equal(s.shop.activeStall.slots,10);
   assert.equal(s.shop.activeStall.unlockDay,1);
   assert.ok(s.shop.offers.length > 0);
+  assert.ok(shopCellsUsed(s)<=10);
   assert.ok(s.shop.offers.every(o=>o.poolId==='elem_火' && o.element==='火'));
   assert.ok(s.dayRoute.history.some(x=>x.stall && x.stall.nodeId==='node_shop_fire'));
   assert.ok(s.events.some(e=>e.type==='SHOP_ENTER' && e.stall && e.stall.name==='火系补货商人'));

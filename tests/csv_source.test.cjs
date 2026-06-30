@@ -57,6 +57,36 @@ test('CSV02 程序优先从 CSV 重建 normalized data 并通过跨表校验', (
   assert.equal(v.ok, true, v.issues.join('\n'));
 });
 
+test('CSV02B 商店价格按公开品质价目生成', () => {
+  const rows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '06_shop_rewards.csv'), 'utf8'));
+  const priceByQuality = { '青铜': 2, '白银': 4, '黄金': 6 };
+  for (const row of rows) {
+    const expectedPrice = priceByQuality[row['品质(自动)']];
+    if (!expectedPrice) continue;
+    assert.equal(Number(row['默认价']), expectedPrice, `${row['宠物ID']} default price`);
+    assert.equal(Number(row['价格覆盖']), expectedPrice, `${row['宠物ID']} override price`);
+  }
+  const exporter = fs.readFileSync(path.join(root, 'tools', 'export_master_to_csv.py'), 'utf8');
+  assert.match(exporter, /"钻石": "8"/);
+});
+
+test('CSV02C 宠物重设计导出不保留旧表 44 占位值', () => {
+  const checks = [
+    ['01_pets.csv', ['副属']],
+    ['02_monster_templates.csv', ['机制参数', '克制', '推荐日', '备注']],
+    ['06_shop_rewards.csv', ['出现条件', '备注']],
+  ];
+  for (const [file, fields] of checks) {
+    const rows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, file), 'utf8'));
+    for (const row of rows) {
+      const label = row['宠物ID'] || row['名称(自动)'] || file;
+      for (const field of fields) {
+        assert.notEqual(String(row[field] || '').trim(), '44', `${file} ${label} ${field}`);
+      }
+    }
+  }
+});
+
 test('CSV03 改宠物 CSV 后，重新 loadGameData 会反映新数值', () => {
   const dir = tempCsvDir();
   const file = resolveCsvFile(dir, '01_pets.csv');

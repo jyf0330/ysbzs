@@ -2,7 +2,7 @@
 
 task_id: 2026-06-30_pet-detail-final-stats
 type: ui-detail
-status: BLOCKED
+status: READY_TO_MERGE
 owner: Codex
 branch: codex/bazaar-day1-day3-route
 
@@ -45,19 +45,24 @@ branch: codex/bazaar-day1-day3-route
 
 ## validation
 
-- blocked before implementation: `web/js/main.js` is currently owned by existing ACTIVE / READY_TO_MERGE tasks, including `2026-06-29_auto-enemy-turn-flow` as `exclusive_files`, plus `2026-06-30_attack-event-animation` and `2026-06-30_round-placement-preview-reset` as related files.
-- blocked before implementation: `web/js/local-engine.js` is also dirty and owned by multiple existing tasks.
-- not run: code tests and 4173 browser verification, because implementation is blocked by file-level leases.
+- note: implementation continued after explicit user confirmation `do`, despite overlapping dirty UI task groups in the shared worktree.
+- pass: `node --input-type=module --check < web/js/main.js`
+- pass: `node --test tests/unit/ui_combat_layout_contract.test.cjs`
+- pass: `git diff --check -- web/js/main.js tests/unit/ui_combat_layout_contract.test.cjs tasks/doing/2026-06-30_pet-detail-final-stats.md`
+- pass: `node tools/build_local_engine_bundle.cjs`
+- pass: `node tests/run_all_tests.cjs` (64/64)
+- pass: 4173 real browser flow through formal visible controls at `http://127.0.0.1:4173/?runtime=http&sessionId=pet-detail-final-stats-1782783337729`: clicked `#prep-open-btn`, `#prep-ready-btn`, then clicked board hero cell `R7C2` / `hero_pal_002_1`; detail panel showed final HP / attack / defense / shield / AP / move stats and no `evolutionPoints`, `statBonus`, `growthMode`, `进化点`, `生命进化点`, `攻击进化点`, `防御进化点`, `白银到黄金`, or `黄金到钻石`; console/page errors 0.
+- screenshot reviewed by Lead: `/Users/ywh/Documents/ysbzs/output/playwright/pet-detail-final-stats-4173-2026-06-30T01-35-37-729Z.png`; right detail panel shows final stat grid and current quality line without visible growth-breakdown clutter.
 
 ## commit_plan
 
 - message: `fix(ui): show final pet stats in detail panel`
-- auto_commit: blocked by file-level lease conflicts and unrelated dirty worktree.
+- auto_commit: blocked by existing overlapping dirty READY_TO_MERGE UI task groups and shared `web/js/main.js` / `web/js/local-engine.js` ownership; leave for git-c / Lead grouping.
 
 ## collaboration
 
 - lead_scope: Right-side pet detail data presentation only.
 - specialist_input: 无
-- tester_pass: blocked before implementation.
+- tester_pass: 4173 real browser pass through official prep and board-click flow; screenshot `/Users/ywh/Documents/ysbzs/output/playwright/pet-detail-final-stats-4173-2026-06-30T01-35-37-729Z.png`; DOM text assertions matched; console/page errors 0.
 - external_ai_input: 无
-- lead_decision: Do not modify `web/js/main.js` until existing UI task groups are committed/merged or user explicitly reassigns the same-file ownership. The intended product rule is final-value-only player detail, with growth breakdown restricted to debug tooling.
+- lead_decision: Player-facing pet detail now uses final unit stats and a narrow `playerQualityEffectText()` helper that only reads current quality effect text. It does not read growth-process fields such as `qualityProgression.statBonus`, `evolutionPoints`, `growthMode`, or descriptive breakdowns; those belong in debug tooling.

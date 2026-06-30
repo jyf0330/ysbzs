@@ -21,7 +21,7 @@ function resetRouteForDay(state, day) {
   state.shop.offers = [];
   state.shop.activePool = 'night_base';
   state.shop.activeStall = null;
-  state.shop.refreshState = { freeRolls: state.shop.freeRolls || 0, nextDiscount: state.shop.nextDiscount || 0, targetedRestocks: [], effects: [], lastRoll: null };
+  state.shop.refreshState = { freeRolls: state.shop.freeRolls || 0, nextDiscount: state.shop.nextDiscount || 0, paidRefreshes: 0, nextPaidRefreshCost: 2, nextRefreshCost: Number(state.shop.freeRolls || 0) > 0 ? 0 : 2, targetedRestocks: [], effects: [], lastRoll: null };
 }
 
 function compactBuildCore(summary) {

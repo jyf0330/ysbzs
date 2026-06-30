@@ -117,7 +117,7 @@ function resetRouteForDay(state, day) {
   state.shop.activePool = 'night_base';
   state.shop.activeStall = null;
   state.shop.routeReturnPhase = null;
-  state.shop.refreshState = { freeRolls: Number(state.shop.freeRolls || 0), nextDiscount: Number(state.shop.nextDiscount || 0), targetedRestocks: [], effects: [], lastRoll: null };
+  state.shop.refreshState = { freeRolls: Number(state.shop.freeRolls || 0), nextDiscount: Number(state.shop.nextDiscount || 0), paidRefreshes: 0, nextPaidRefreshCost: 2, nextRefreshCost: Number(state.shop.freeRolls || 0) > 0 ? 0 : 2, targetedRestocks: [], effects: [], lastRoll: null };
   state.dayRoute = { day, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [], battleOutcomes: [], pendingRewards: [], claimedRewards: [] };
   resetBattlefield(state);
 }
@@ -168,9 +168,9 @@ function buildNodeChoicePreview(state, node) {
     const tags = shop.stallTags(node.shopPoolId || 'night_base');
     return {
       kindLabel: '摊位',
-      summary: `${node.name}：${tags.join('/')}商品倾向，${Number(node.slots || 6)}个商品位。`,
+      summary: `${node.name}：${tags.join('/')}宠物倾向，10格容量。`,
       costText: '进店免费',
-      gainText: `${Number(node.slots || 6)}个候选`,
+      gainText: '10格宠物',
       tags
     };
   }
@@ -321,7 +321,7 @@ function pickNode(state, ref) {
   route.options = [];
   pushEvent(state, 'NODE_PICK', { nodeId: option.nodeId, nodeType: option.nodeType, scheduleStep: route.nodeIndex, text: `选择节点：${option.name}。` });
   if (option.nodeType === 'shop') {
-    const ok = shop.enterShop(state, option.shopPoolId || 'night_base', Number(option.slots || 6), { stall: option });
+    const ok = shop.enterShop(state, option.shopPoolId || 'night_base', 10, { stall: Object.assign({}, option, { slots: 10 }) });
     if (ok !== false) {
       state.shop.routeReturnPhase = routeReturnPhaseAfterCurrentStep(state);
       const historyItem = route.history[route.history.length - 1];

@@ -1,0 +1,72 @@
+:root{
+  color-scheme:light;
+  --ink:#25231e;
+  --muted:#6b6253;
+  --paper:#f4ead7;
+  --paper-strong:#fff9ed;
+  --line:#8d7758;
+  --green:#506f48;
+  --blue:#315f77;
+  --red:#884348;
+  --gold:#b38636;
+  --ground:#b8aa82;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#24231d;color:var(--ink);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+a{color:inherit;text-decoration:none}
+.main-hub{min-height:100vh;padding:18px;background:linear-gradient(135deg,#efe2c5 0%,#c8b47d 48%,#879b78 100%)}
+.hub-header,.map-panel,.current-build,.town-section{border:1px solid var(--line);background:rgba(244,234,215,.92);box-shadow:inset 0 0 0 1px rgba(255,249,237,.72)}
+.hub-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:18px}
+.eyebrow{font-size:12px;font-weight:900;letter-spacing:2px;color:#785932}
+h1,h2,p{margin:0}
+h1{margin-top:4px;font-size:34px;line-height:1.08}
+.hub-header p{max-width:760px;margin-top:8px;color:var(--muted);line-height:1.45}
+.hub-header nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.hub-header nav a,.current-build a{min-height:36px;padding:9px 12px;border:1px solid var(--line);background:var(--paper-strong);font-weight:900}
+.hub-header nav a:first-child,.current-build a{background:var(--green);border-color:#3d5937;color:#fff9ed}
+.world-overview{display:grid;grid-template-columns:minmax(420px,1.4fr) minmax(300px,.7fr);gap:12px;margin-top:12px}
+.map-panel,.current-build{min-width:0;padding:14px}
+.map-title{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.map-title span,.current-build span,.section-head span,.town-kicker{font-size:12px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:1px}
+.map-title strong{font-size:18px}
+.town-map{position:relative;min-height:230px;margin-top:12px;background:
+  linear-gradient(90deg,rgba(141,119,88,.22) 1px,transparent 1px),
+  linear-gradient(0deg,rgba(141,119,88,.18) 1px,transparent 1px),
+  #eee0c4;
+  background-size:42px 42px;border:1px solid rgba(141,119,88,.48);overflow:hidden}
+.town-map:before{content:"";position:absolute;left:6%;right:6%;top:52%;height:26px;background:rgba(80,111,72,.22);border-top:1px solid rgba(80,111,72,.35);border-bottom:1px solid rgba(80,111,72,.35);transform:rotate(-5deg)}
+.route-line{position:absolute;height:4px;background:#8d7758;transform-origin:left center}
+.route-line-a{left:18%;top:58%;width:34%;transform:rotate(-16deg)}
+.route-line-b{left:48%;top:42%;width:30%;transform:rotate(18deg)}
+.route-line-c{left:52%;top:67%;width:24%;transform:rotate(-26deg)}
+.map-node{position:absolute;width:34px;height:34px;border:3px solid var(--paper-strong);background:var(--blue);box-shadow:0 0 0 2px rgba(49,95,119,.35)}
+.node-a{left:15%;top:52%;background:var(--green)}
+.node-b{left:47%;top:34%;background:var(--gold)}
+.node-c{left:76%;top:51%;background:var(--red)}
+.node-d{left:55%;top:71%;background:var(--blue)}
+.current-build{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.current-build h2{font-size:24px;line-height:1.18}
+.current-build p{color:var(--muted);line-height:1.45}
+.town-section{margin-top:12px;padding:14px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:10px}
+.section-head h2{font-size:22px}
+.town-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.primary-grid{grid-template-columns:1.2fr 1fr 1fr 1fr}
+.town-card{display:grid;grid-template-rows:auto auto 1fr auto;gap:7px;min-height:180px;padding:13px;background:var(--paper-strong);border:1px solid rgba(141,119,88,.45);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.town-card:hover,.town-card:focus-visible{transform:translateY(-2px);border-color:var(--blue);box-shadow:0 10px 22px rgba(37,35,30,.15);outline:none}
+.town-card.large{background:#f9f2df;border-color:#6d8a59}
+.town-card strong{font-size:22px;line-height:1.1}
+.town-card p{color:var(--muted);line-height:1.4}
+.town-card em{font-style:normal;font-weight:900;color:var(--blue)}
+@media (max-width:1080px){
+  .hub-header,.world-overview{grid-template-columns:1fr;display:grid}
+  .hub-header nav{justify-content:flex-start}
+  .town-grid,.primary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .main-hub{padding:10px}
+  h1{font-size:28px}
+  .town-grid,.primary-grid{grid-template-columns:1fr}
+  .world-overview{grid-template-columns:1fr}
+  .town-map{min-height:180px}
+}

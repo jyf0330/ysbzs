@@ -35,7 +35,8 @@ const TABLE_FILES = Object.freeze({
   triggerOrderRules: '23_trigger_order_rules.csv',
   nodeSchedule: '24_node_schedule.csv',
   nodePool: '25_node_pool.csv',
-  encounterPool: '26_encounter_pool.csv'
+  encounterPool: '26_encounter_pool.csv',
+  shopStores: '30_shop_stores.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
@@ -407,6 +408,18 @@ function normalizeSourceTables(sourceTables, options = {}) {
     note: row['备注']
   })).filter(x => x.petId);
 
+  const shopStores = (sourceTables.shopStores || []).map(row => ({
+    id: row.shop_store_id || row['商品店ID'],
+    name: row.name || row['商品店名'],
+    storeType: row.store_type || row['店铺类型'],
+    tags: splitList(row.tags || row['标签']),
+    defaultSlots: toNum(row.default_slots || row['默认容量'], 10),
+    unlockDay: toNum(row.unlock_day || row['解锁日'], 1),
+    priceRule: row.price_rule || row['价格规则'],
+    status: row.status || row['状态'],
+    note: row.note || row['备注']
+  })).filter(x => x.id);
+
   const relics = (sourceTables.relics || []).map(row => {
     const mech = splitMechanics(row['机制ID']);
     return {
@@ -527,6 +540,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
     mechanisms,
     events,
     shop,
+    shopStores,
     relics,
     shapes,
     validation: sourceTables.validation || [],
@@ -604,7 +618,8 @@ function loadSourceTablesFromCsv(csvDir = DEFAULT_CSV_DIR) {
     triggerOrderRules: rows(TABLE_FILES.triggerOrderRules),
     nodeSchedule: rows(TABLE_FILES.nodeSchedule),
     nodePool: rows(TABLE_FILES.nodePool),
-    encounterPool: rows(TABLE_FILES.encounterPool)
+    encounterPool: rows(TABLE_FILES.encounterPool),
+    shopStores: rows(TABLE_FILES.shopStores)
   };
 }
 

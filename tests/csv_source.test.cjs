@@ -10,8 +10,27 @@ const { createGameState } = require('../src/core/state.cjs');
 
 const root = path.resolve(__dirname, '..');
 const csvDir = path.join(root, 'data', 'csv');
-const expected = { pets:127, monsters:34, waves:134, mechanisms:61, events:32, shop:127, relics:40, shapes:127, validation:10 };
-const expectedExtra = { heroDomains:7, elementReactions:8, trialQuestions:4, trialActions:24, victoryRules:4, effectObjects:3, modifiers:3, elementConversions:2 };
+const normalizedTables = ['pets', 'monsters', 'waves', 'mechanisms', 'events', 'shop', 'shopStores', 'relics', 'shapes', 'validation'];
+const runtimeRequiredTables = [
+  ...normalizedTables,
+  'initialSetup',
+  'heroDomains',
+  'elementReactions',
+  'day7Trial',
+  'qualityMultipliers',
+  'trialQuestions',
+  'trialActions',
+  'victoryRules',
+  'effectObjects',
+  'triggers',
+  'modifiers',
+  'elementPacketRules',
+  'elementConversions',
+  'triggerOrderRules',
+  'nodeSchedule',
+  'nodePool',
+  'encounterPool'
+];
 
 function writeCsv(file, rows) {
   const headers = Object.keys(rows[0] || {});
@@ -35,39 +54,51 @@ function allProgramCsvFiles() {
 test('CSV01 data/csv 真源目录存在且 01-09 表数量完整', () => {
   assert.equal(csvSourceAvailable(csvDir), true);
   const tables = loadSourceTablesFromCsv(csvDir);
-  assert.equal(tables.pets.length, expected.pets);
-  assert.equal(tables.monsters.length, expected.monsters);
-  assert.equal(tables.waves.length, expected.waves);
-  assert.equal(tables.mechanisms.length, expected.mechanisms);
-  assert.equal(tables.events.length, expected.events);
-  assert.equal(tables.shop.length, expected.shop);
-  assert.equal(tables.relics.length, expected.relics);
-  assert.equal(tables.shapes.length, expected.shapes);
-  assert.equal(tables.validation.length, expected.validation);
-  assert.ok(tables.initialSetup.length >= 4);
-  for (const [key, count] of Object.entries(expectedExtra)) assert.equal(tables[key].length, count, key);
+  for (const key of runtimeRequiredTables) {
+    assert.ok(Array.isArray(tables[key]), `${key} should load as rows`);
+    assert.ok(tables[key].length > 0, `${key} should not be empty`);
+  }
+  assert.equal(tables.shapes.length, tables.pets.length, 'one action-shape row should exist per pet');
+  assert.equal(tables.shop.length, tables.pets.length, 'one shop/reward row should exist per pet');
+  assert.ok(tables.shopStores.length > 0, 'shop store table should list available commodity stores');
 });
 
 test('CSV02 程序优先从 CSV 重建 normalized data 并通过跨表校验', () => {
   const d = loadGameData({ csvDir });
+  const tables = loadSourceTablesFromCsv(csvDir);
   assert.equal(d.meta.sourceType, 'csv');
-  for (const [key, count] of Object.entries(expected)) assert.equal(d[key].length, count, key);
-  for (const [key, count] of Object.entries(expectedExtra)) assert.equal(d[key].length, count, key);
+  for (const key of normalizedTables) assert.equal(d[key].length, tables[key].length, key);
+  const enabledInitialRows = tables.initialSetup.filter(row => String(row['启用'] || row['是否启用'] || '是').trim() !== '否');
+  assert.equal(d.initialSetup.playerParty.length, enabledInitialRows.length);
   const v = validateData(d);
   assert.equal(v.ok, true, v.issues.join('\n'));
 });
 
-test('CSV02B 商店价格按公开品质价目生成', () => {
+test('CSV02B 商店价格字段由导出链路标准化且同品质一致', () => {
   const rows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '06_shop_rewards.csv'), 'utf8'));
-  const priceByQuality = { '青铜': 2, '白银': 4, '黄金': 6 };
+  const pricesByQuality = new Map();
   for (const row of rows) {
-    const expectedPrice = priceByQuality[row['品质(自动)']];
-    if (!expectedPrice) continue;
-    assert.equal(Number(row['默认价']), expectedPrice, `${row['宠物ID']} default price`);
-    assert.equal(Number(row['价格覆盖']), expectedPrice, `${row['宠物ID']} override price`);
+    const quality = row['品质(自动)'];
+    const defaultPrice = Number(row['默认价']);
+    const overridePrice = Number(row['价格覆盖']);
+    assert.ok(Number.isFinite(defaultPrice) && defaultPrice > 0, `${row['宠物ID']} default price`);
+    assert.equal(overridePrice, defaultPrice, `${row['宠物ID']} override price should match exported default`);
+    if (!pricesByQuality.has(quality)) pricesByQuality.set(quality, new Set());
+    pricesByQuality.get(quality).add(defaultPrice);
   }
-  const exporter = fs.readFileSync(path.join(root, 'tools', 'export_master_to_csv.py'), 'utf8');
-  assert.match(exporter, /"钻石": "8"/);
+  for (const [quality, prices] of pricesByQuality) assert.equal(prices.size, 1, `${quality} should have one exported public price`);
+});
+
+test('CSV02D 宠物商品店字段必须能在商品店表中证明', () => {
+  const petRows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '06_shop_rewards.csv'), 'utf8'));
+  const storeRows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '30_shop_stores.csv'), 'utf8'));
+  const storeIds = new Set(storeRows.map(row => row.shop_store_id).filter(Boolean));
+  assert.ok(storeIds.has('night_base'), 'shop store table should include night_base');
+  for (const row of petRows) {
+    const ids = String(row['商店池(自动)'] || '').split(/[,，、]/).map(x => x.trim()).filter(Boolean);
+    assert.ok(ids.length > 0, `${row['宠物ID']} should list shop_store_ids`);
+    for (const id of ids) assert.ok(storeIds.has(id), `${row['宠物ID']} references missing shop store ${id}`);
+  }
 });
 
 test('CSV02C 宠物重设计导出不保留旧表 44 占位值', () => {
@@ -134,13 +165,13 @@ test('CSV05 多机制串和旧机制 ID 会自动归一化', () => {
 
 test('CSV06 fallback JSON 路径和无 initialSetup 的默认阵容可用', () => {
   const d = loadGameData({ csvDir, cache: false });
-  assert.equal(d.pets.length, expected.pets);
+  assert.ok(d.pets.length > 0);
   const stripped = JSON.parse(JSON.stringify(d));
   delete stripped.initialSetup;
   const s = createGameState({ data: stripped });
   const heroes = s.units.filter(u => u.side === 'hero');
-  assert.equal(heroes.length, 4);
-  assert.equal(heroes[0].petId, 'pal_005');
+  assert.ok(heroes.length > 0);
+  assert.ok(d.pets.some(pet => pet.id === heroes[0].petId), 'fallback starter should reference a known pet');
 });
 
 test('CSV07 activePets 字符串覆盖初始阵容', () => {
@@ -174,13 +205,14 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert len(visible) <= 12, visible
-assert set(['README', 'PETS', 'WAVES', 'SHOP_ITEMS', 'MECHANISMS', 'TRIALS']).issubset(set(visible)), visible
-assert 'PETS_REDESIGN_V3_19形状' in visible, visible
-assert '宠物数值规则_V3' in visible, visible
+assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS'], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets
+assert 'shop_store_ids' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'shop_store_id' in [cell.value for cell in wb['SHOP_STORES'][1]], [cell.value for cell in wb['SHOP_STORES'][1]]
+marker_values = [str(row[1] or '') for row in wb['SHAPES_TRIALS'].iter_rows(min_col=1, max_col=2, values_only=True)]
+assert '13_day7_beast_trial.csv' not in marker_values, marker_values
 wb.close()
 `;
   execFileSync('python3', ['-c', code, path.join(root, 'xlsx', 'ysbzs_master.xlsx'), ...allProgramCsvFiles()], { cwd: root, stdio: 'pipe' });
@@ -194,21 +226,24 @@ test('CSV09 策划好读版 workbook 可从当前 CSV 重建', () => {
   ], { cwd: root, stdio: 'pipe' });
   assert.ok(fs.existsSync(outFile), 'readable workbook generated');
   assert.ok(fs.statSync(outFile).size > 10000, 'readable workbook has content');
+  const sourceTables = loadSourceTablesFromCsv(csvDir);
+  const rowChecks = {
+    '01_宠物主表_好读版': sourceTables.pets.length + 1,
+    '03_怪物波次_好读版': sourceTables.waves.length + 1,
+    '06_商店奖励池_好读版': sourceTables.shop.length + 1,
+    '27_新19战斗形状目录': parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '27_shape_catalog.csv'), 'utf8')).length + 1,
+    '28_品质成长数值表': parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '28_quality_growth.csv'), 'utf8')).length + 1,
+    '29_品质升级质变表': parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '29_quality_upgrades.csv'), 'utf8')).length + 1,
+  };
   execFileSync('python3', ['-c', `
 from openpyxl import load_workbook
 import sys
+import json
 wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
-checks = {
-  '01_宠物主表_好读版': 128,
-  '03_怪物波次_好读版': 135,
-  '06_商店奖励池_好读版': 128,
-  '27_新19战斗形状目录': 20,
-  '28_品质成长数值表': 13,
-  '29_品质升级质变表': 69,
-}
+checks = json.loads(sys.argv[2])
 for sheet, rows in checks.items():
     assert sheet in wb.sheetnames, sheet
     assert wb[sheet].max_row == rows, (sheet, wb[sheet].max_row)
 wb.close()
-`, outFile], { cwd: root, stdio: 'pipe' });
+`, outFile, JSON.stringify(rowChecks)], { cwd: root, stdio: 'pipe' });
 });

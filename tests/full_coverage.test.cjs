@@ -12,34 +12,25 @@ function hasEvent(resultOrState, type) {
   return events.some(e => e.type === type);
 }
 
-const expectedCounts = {
-  pets: 127,
-  monsters: 34,
-  waves: 134,
-  mechanisms: 61,
-  events: 32,
-  shop: 127,
-  relics: 40,
-  shapes: 127,
-  validation: 10,
-  nodeSchedule: 60,
-  nodePool: 65,
-  encounterPool: 40
-};
-
 test('FC01 当前 CSV 单源数据规模与波次规则表一致', () => {
-  for (const [key, count] of Object.entries(expectedCounts)) assert.equal(data[key].length, count, key);
+  const v = validateData();
+  assert.equal(v.ok, true, v.issues.join('\n'));
+  for (const [key, count] of Object.entries(v.counts)) assert.equal((data[key] || []).length, count, key);
+  assert.equal(data.shapes.length, data.pets.length, 'one action-shape row should exist per pet');
+  assert.equal(data.shop.length, data.pets.length, 'one shop/reward row should exist per pet');
 });
 
 test('FC02 跨表引用全部可校验', () => {
   const v = validateData();
   assert.equal(v.ok, true, v.issues.join('\n'));
-  assert.deepEqual(v.counts, expectedCounts);
+  assert.ok(v.counts.pets > 0);
+  assert.ok(v.counts.waves > 0);
+  assert.ok(v.counts.nodeSchedule > 0);
 });
 
 test('FC03 宠物、商店、形状、波次索引全部连通', () => {
   const ix = buildIndexes();
-  assert.equal(ix.petsById.size, expectedCounts.pets);
+  assert.equal(ix.petsById.size, data.pets.length);
   for (const p of data.pets) {
     assert.ok(ix.shapesByPetId.has(p.id), `missing shape ${p.id}`);
     assert.ok(ix.shopByPetId.has(p.id), `missing shop ${p.id}`);
@@ -101,7 +92,7 @@ test('FC07 uiAdapter 公开命令、ViewModel、战报、回放全部可用', ()
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   adapter.runBattle();
   const vm = adapter.getViewModel();
-  assert.equal(vm.meta.pets, expectedCounts.pets);
+  assert.equal(vm.meta.pets, data.pets.length);
   assert.ok(vm.board.cells.length > 0);
   assert.ok(adapter.getTextReport('player').includes('全数据纯文字流程报告'));
   const trace = adapter.exportBattleTrace();

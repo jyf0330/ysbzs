@@ -21,9 +21,10 @@ console.log('source rows:', JSON.stringify({
   monsters: tables.monsters.length,
   waves: tables.waves.length,
   mechanisms: tables.mechanisms.length,
-  events: tables.events.length,
-  shop: tables.shop.length,
-  relics: tables.relics.length,
+	  events: tables.events.length,
+	  shop: tables.shop.length,
+	  shopStores: tables.shopStores.length,
+	  relics: tables.relics.length,
   shapes: tables.shapes.length,
   validation: tables.validation.length,
   initialSetup: tables.initialSetup.length

@@ -31,12 +31,15 @@ GENERATED_FILES = [
 ]
 
 MASTER_ONLY_EXPORTS = [
+    ("SHOP_STORES", "30_shop_stores.csv"),
     ("SHAPE_CATALOG", "27_shape_catalog.csv"),
     ("QUALITY_GROWTH", "28_quality_growth.csv"),
     ("QUALITY_UPGRADES", "29_quality_upgrades.csv"),
 ]
 
 DOMAIN_SECTION_SHEETS = [
+    "MECHANICS_QUALITY",
+    "SHAPES_TRIALS",
     "ROUTE",
     "ECONOMY_EVENTS",
     "RULES",
@@ -58,6 +61,7 @@ SHOP_PRICE_BY_TIER_POOL = {
     "pT4": SHOP_PRICE_BY_QUALITY["钻石"],
 }
 LEGACY_PLACEHOLDERS = {"44"}
+ROLE_TAGS = {"经济", "坦克", "治疗", "输出", "控制", "机动", "召唤", "防御", "牵制"}
 
 NS_MAIN = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
@@ -188,6 +192,12 @@ def first_non_empty(*values):
         if value is not None and str(value).strip() != "":
             return str(value).strip()
     return ""
+
+
+def sheet_value(row, key, fallback="", allow_blank=False):
+    if allow_blank and key in row:
+        return "" if row.get(key) is None else str(row.get(key)).strip()
+    return first_non_empty(row.get(key), fallback)
 
 
 def blank_legacy_placeholder(value):
@@ -333,16 +343,24 @@ def unique_join(values, sep="、"):
 
 
 def build_pet_tags(pet, old_tags=""):
+    old_tag_parts = split_list_text(old_tags)
+    if "role" in pet and not str(pet.get("role") or "").strip():
+        old_tag_parts = [tag for tag in old_tag_parts if tag not in ROLE_TAGS]
     return unique_join([
         pet.get("element"),
         pet.get("role"),
         pet.get("old_role"),
-        *split_list_text(old_tags),
+        *old_tag_parts,
     ])
 
 
 def build_shop_pools(existing, pet, tier_pool):
+    explicit = split_list_text(pet.get("shop_store_ids"))
+    if explicit:
+        return ", ".join(unique_preserve(explicit))
     pools = split_list_text(existing)
+    if "role" in pet and not str(pet.get("role") or "").strip():
+        pools = [pool for pool in pools if not pool.startswith("role_")]
     element = pet.get("element", "")
     role = pet.get("role", "")
     old_role = pet.get("old_role", "")
@@ -364,6 +382,17 @@ def build_shop_pools(existing, pet, tier_pool):
             out.append(pool)
             seen.add(pool)
     return ", ".join(out)
+
+
+def unique_preserve(values):
+    out = []
+    seen = set()
+    for value in values:
+        text = str(value or "").strip()
+        if text and text not in seen:
+            out.append(text)
+            seen.add(text)
+    return out
 
 
 def shop_price_for_quality(quality, tier_pool=""):
@@ -468,7 +497,8 @@ def normalize_redesign_pets(rows):
             "atk": format_number(row.get("atk")),
             "shield": format_number(row.get("shield")),
             "action": format_number(row.get("action")),
-            "mechanism_id": first_non_empty(row.get("mechanism_id"), "none"),
+            "cell_count": format_number(row.get("cell_count")),
+            "mechanism_id": first_non_empty(row.get("mechanism_id")),
             "shape_id": shape_text,
             "note": note,
         })
@@ -530,6 +560,7 @@ def generated_domain_section_tables(master_path):
 
 def generated_tables(master_path, baseline_dir):
     redesign_pets = normalize_redesign_pets(sheet_dicts(master_path, PETS_REDESIGN_SHEET))
+    domain_sections = generated_domain_section_tables(master_path)
     master = {
         "PETS": redesign_pets or sheet_dicts(master_path, "PETS"),
         "WAVES": sheet_dicts(master_path, "WAVES"),
@@ -563,7 +594,7 @@ def generated_tables(master_path, baseline_dir):
         for r in master["TRIALS"]
         if r.get("trial_id", "")
     }
-    result = generated_domain_section_tables(master_path)
+    result = domain_sections
     shape_rows, _shape_headers = result.get("27_shape_catalog.csv", generated_sheet_table(master_path, "SHAPE_CATALOG"))
     shapes_by_id = by_key(shape_rows, "shape_id")
 
@@ -581,13 +612,13 @@ def generated_tables(master_path, baseline_dir):
                 row["名称"] = first_non_empty(pet.get("name"), row.get("名称"))
                 row["元素"] = first_non_empty(pet.get("element"), row.get("元素"))
                 row["品质"] = first_non_empty(pet.get("tier"), row.get("品质"))
-                row["定位"] = first_non_empty(pet.get("role"), row.get("定位"))
+                row["定位"] = sheet_value(pet, "role", row.get("定位"), allow_blank=True)
                 row["体型"] = first_non_empty(pet.get("body_size"), row.get("体型"))
                 row["HP"] = first_non_empty(pet.get("hp"), row.get("HP"))
                 row["攻"] = first_non_empty(pet.get("atk"), row.get("攻"))
                 row["盾"] = first_non_empty(pet.get("shield"), row.get("盾"))
                 row["行动"] = first_non_empty(pet.get("action"), row.get("行动"))
-                row["机制ID"] = first_non_empty(pet.get("mechanism_id"), row.get("机制ID"))
+                row["机制ID"] = sheet_value(pet, "mechanism_id", row.get("机制ID"), allow_blank=True)
                 row["形状"] = first_non_empty(pet.get("shape_id"), row.get("形状"))
                 row["效果分"] = format_number(pet_effect_scores.get(row.get("宠物ID", ""), panel_score(row)))
                 row["标签"] = first_non_empty(build_pet_tags(pet, row.get("标签")), row.get("标签"))
@@ -602,12 +633,12 @@ def generated_tables(master_path, baseline_dir):
                 row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
                 row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
                 row["体型(自动)"] = first_non_empty(pet.get("body_size"), row.get("体型(自动)"))
-                row["宠物定位(自动)"] = first_non_empty(pet.get("role"), row.get("宠物定位(自动)"))
+                row["宠物定位(自动)"] = sheet_value(pet, "role", row.get("宠物定位(自动)"), allow_blank=True)
                 row["HP"] = first_non_empty(pet.get("hp"), row.get("HP"))
                 row["攻"] = first_non_empty(pet.get("atk"), row.get("攻"))
                 row["盾"] = first_non_empty(pet.get("shield"), row.get("盾"))
                 row["行动"] = first_non_empty(pet.get("action"), row.get("行动"))
-                row["机制ID"] = first_non_empty(pet.get("mechanism_id"), row.get("机制ID"))
+                row["机制ID"] = sheet_value(pet, "mechanism_id", row.get("机制ID"), allow_blank=True)
                 row["面板分"] = format_number(panel_score(row))
                 row["机制分"] = format_number(pet_mechanic_score(row, pet))
                 for field in ["机制参数", "克制", "推荐日", "备注"]:
@@ -649,7 +680,7 @@ def generated_tables(master_path, baseline_dir):
                     row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
                     row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
                     row["品质(自动)"] = first_non_empty(pet.get("tier"), row.get("品质(自动)"))
-                    row["定位(自动)"] = first_non_empty(pet.get("old_role"), pet.get("role"), row.get("定位(自动)"))
+                    row["定位(自动)"] = sheet_value(pet, "role", row.get("定位(自动)"), allow_blank=True)
                     row["标签(自动)"] = first_non_empty(build_pet_tags(pet, row.get("标签(自动)")), row.get("标签(自动)"))
                 if not shop:
                     if pet:
@@ -681,12 +712,12 @@ def generated_tables(master_path, baseline_dir):
                 shape = shapes_by_id.get(sid, {})
                 row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
                 row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
-                row["定位(自动)"] = first_non_empty(pet.get("role"), row.get("定位(自动)"))
+                row["定位(自动)"] = sheet_value(pet, "role", row.get("定位(自动)"), allow_blank=True)
                 row["形状ID"] = first_non_empty(sid, row.get("形状ID"))
                 row["形状名"] = first_non_empty(shape.get("label"), sname, row.get("形状名"))
                 row["形状分类"] = first_non_empty(shape_class_for_group(shape.get("group")), row.get("形状分类"))
                 row["命中格数"] = first_non_empty(shape.get("cell_count"), row.get("命中格数"))
-                row["机制ID"] = first_non_empty(pet.get("mechanism_id"), row.get("机制ID"))
+                row["机制ID"] = sheet_value(pet, "mechanism_id", row.get("机制ID"), allow_blank=True)
                 row["备注"] = first_non_empty(
                     shape.get("note") and f"新19形状；所有作用格默认结算{shape.get('settle_count', '3')}次。{shape.get('note')}",
                     row.get("备注")

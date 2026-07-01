@@ -33,21 +33,6 @@ def split_pool_count(expr):
     return raw, ""
 
 
-def trial_position(row):
-    rr = str(row.get("行(1-8)", "")).strip()
-    cc = str(row.get("列(1-8)", "")).strip()
-    return f"{rr},{cc}" if rr or cc else ""
-
-
-def stat_override(row):
-    parts = []
-    for key in ["HP", "攻", "防", "盾", "行动"]:
-        value = str(row.get(key, "")).strip()
-        if value:
-            parts.append(f"{key}={value}")
-    return ";".join(parts)
-
-
 def add_sheet(wb, title, headers, rows, widths=None):
     ws = wb.create_sheet(title)
     ws.append(headers)
@@ -111,8 +96,8 @@ def main():
     pets = read_csv("01_pets.csv")
     waves = read_csv("03_monster_waves.csv")
     shop = read_csv("06_shop_rewards.csv")
-    mechanisms = read_csv("04_mechanisms.csv")
-    trials = read_csv("13_day7_beast_trial.csv")
+    shop_stores = read_csv("30_shop_stores.csv")
+    shop_by_pet = {r.get("宠物ID", ""): r for r in shop}
 
     wb = Workbook()
     default = wb.active
@@ -121,10 +106,12 @@ def main():
     readme = wb.create_sheet("README")
     readme_rows = [
         ("用途", "这是人类策划入口；程序完整数据仍输出到 data/csv/*.csv。"),
-        ("日常维护", "优先改 PETS / WAVES / SHOP_ITEMS / MECHANISMS / TRIALS 里的人工字段。"),
+        ("日常维护", "优先改 PETS / SHOP_STORES / WAVES / SHOP_ITEMS；机制、品质、形状、试炼在合并分区表里维护。"),
+        ("工作表", "README / PETS / SHOP_STORES / WAVES / SHOP_ITEMS / MECHANICS_QUALITY / SHAPES_TRIALS，共 7 张可见表。"),
         ("导出", "npm run data:export"),
         ("校验", "npm run check:csv"),
-        ("边界", "自动列、程序冗余列、16-23 规则展开表不放进日常主表。"),
+        ("价格规则", "商店公开价按品质统一导出：青铜=2、白银=4、黄金=6、钻石=8。"),
+        ("边界", "自动列、程序冗余列不放进日常主表；需要完整好读版时运行 npm run data:workbook。"),
     ]
     readme.append(["项目", "说明"])
     for row in readme_rows:
@@ -139,7 +126,7 @@ def main():
     add_sheet(
         wb,
         "PETS",
-        ["pet_id", "name", "element", "tier", "role", "hp", "atk", "shield", "action", "mechanism_id", "shape_id", "note"],
+        ["pet_id", "name", "element", "tier", "role", "shop_store_ids", "hp", "atk", "shield", "action", "mechanism_id", "shape_id", "note"],
         [
             {
                 "pet_id": r.get("宠物ID", ""),
@@ -147,6 +134,7 @@ def main():
                 "element": r.get("元素", ""),
                 "tier": r.get("品质", ""),
                 "role": r.get("定位", ""),
+                "shop_store_ids": shop_by_pet.get(r.get("宠物ID", ""), {}).get("商店池(自动)", ""),
                 "hp": r.get("HP", ""),
                 "atk": r.get("攻", ""),
                 "shield": r.get("盾", ""),
@@ -157,13 +145,34 @@ def main():
             }
             for r in pets
         ],
-        widths={"pet_id": 12, "mechanism_id": 26, "shape_id": 18, "note": 26},
+        widths={"pet_id": 12, "shop_store_ids": 38, "mechanism_id": 26, "shape_id": 18, "note": 26},
+    )
+
+    add_sheet(
+        wb,
+        "SHOP_STORES",
+        ["shop_store_id", "name", "store_type", "tags", "default_slots", "unlock_day", "price_rule", "status", "note"],
+        [
+            {
+                "shop_store_id": r.get("shop_store_id", ""),
+                "name": r.get("name", ""),
+                "store_type": r.get("store_type", ""),
+                "tags": r.get("tags", ""),
+                "default_slots": r.get("default_slots", ""),
+                "unlock_day": r.get("unlock_day", ""),
+                "price_rule": r.get("price_rule", ""),
+                "status": r.get("status", ""),
+                "note": r.get("note", ""),
+            }
+            for r in shop_stores
+        ],
+        widths={"shop_store_id": 22, "tags": 22, "price_rule": 14, "note": 34},
     )
 
     add_sheet(
         wb,
         "WAVES",
-        ["wave_id", "day", "period", "round", "enemy_pool", "count", "quality_weights", "target_threat", "design_goal", "fail_penalty", "reward_note", "note"],
+        ["wave_id", "day", "period", "round", "enemy_pool", "count", "quality_weights", "target_threat", "design_goal"],
         [
             {
                 "wave_id": r.get("波次ID", ""),
@@ -175,9 +184,6 @@ def main():
                 "quality_weights": r.get("品质权重", ""),
                 "target_threat": r.get("本行威胁(当前计算值)", ""),
                 "design_goal": r.get("填写说明", ""),
-                "fail_penalty": "",
-                "reward_note": "",
-                "note": "",
             }
             for r in waves
         ],
@@ -187,97 +193,32 @@ def main():
     add_sheet(
         wb,
         "SHOP_ITEMS",
-        ["pet_id", "unlock_day", "tier_pool", "base_price", "shop_weight", "reward_weight", "role_tag", "note"],
+        ["pet_id", "unlock_day", "tier_pool", "shop_weight", "reward_weight", "note"],
         [
             {
                 "pet_id": r.get("宠物ID", ""),
                 "unlock_day": r.get("解锁日", ""),
                 "tier_pool": r.get("池档", ""),
-                "base_price": r.get("默认价", ""),
                 "shop_weight": r.get("夜市权重", ""),
                 "reward_weight": r.get("奖励权重", ""),
-                "role_tag": r.get("定位(自动)", ""),
                 "note": r.get("备注", ""),
             }
             for r in shop
         ],
-        widths={"pet_id": 12, "role_tag": 16, "note": 28},
+        widths={"pet_id": 12, "note": 28},
     )
 
-    add_sheet(
-        wb,
-        "MECHANISMS",
-        ["mechanism_id", "name", "category", "trigger", "effect_summary", "score", "status", "note"],
-        [
-            {
-                "mechanism_id": r.get("机制ID", ""),
-                "name": r.get("机制名", ""),
-                "category": r.get("分类", ""),
-                "trigger": r.get("触发", ""),
-                "effect_summary": r.get("效果", ""),
-                "score": r.get("机制分", ""),
-                "status": r.get("接入状态", ""),
-                "note": r.get("备注", ""),
-            }
-            for r in mechanisms
-        ],
-        widths={"mechanism_id": 28, "effect_summary": 44, "note": 32},
-    )
-
-    add_sheet(
-        wb,
-        "TRIALS",
-        ["trial_id", "row_type", "unit_side", "pet_id", "quality_override", "position", "stat_override", "rule_note", "note"],
-        [
-            {
-                "trial_id": r.get("配置ID", ""),
-                "row_type": r.get("类型", ""),
-                "unit_side": r.get("阵营", ""),
-                "pet_id": r.get("宠物ID", ""),
-                "quality_override": r.get("品质覆盖", ""),
-                "position": trial_position(r),
-                "stat_override": stat_override(r),
-                "rule_note": r.get("关键规则", ""),
-                "note": r.get("备注", ""),
-            }
-            for r in trials
-        ],
-        widths={"trial_id": 22, "row_type": 18, "pet_id": 16, "stat_override": 30, "rule_note": 42, "note": 34},
-    )
-
-    add_domain_sheet(wb, "ROUTE", [
-        ("24_node_schedule.csv", "每日路线排程：每天节点/固定战顺序。"),
-        ("25_node_pool.csv", "每日路线节点池：商店、奖励、事件、休整节点候选。"),
-        ("26_encounter_pool.csv", "路线战斗遭遇池：固定战/遭遇到波次时段的映射。"),
+    add_domain_sheet(wb, "MECHANICS_QUALITY", [
+        ("04_mechanisms.csv", "机制注册表：机制 ID、触发、效果、接入状态。"),
+        ("28_quality_growth.csv", "品质成长数值。"),
+        ("29_quality_upgrades.csv", "品质升级质变。"),
     ])
 
-    add_domain_sheet(wb, "ECONOMY_EVENTS", [
-        ("05_events.csv", "外层事件、商店事件、战斗后事件。"),
-        ("07_relic_blessings.csv", "遗物/祝福奖励池。"),
-        ("10_initial_roster.csv", "开局阵容和站位。"),
-    ])
-
-    add_domain_sheet(wb, "RULES", [
-        ("00_maintenance_guide.csv", "维护入口说明。"),
-        ("09_cross_validation.csv", "跨表校验摘要。"),
-        ("11_hero_domains.csv", "英雄领域与全局领域规则。"),
-        ("12_element_reactions.csv", "元素反应规则。"),
-        ("14_quality_multipliers.csv", "品质倍率。"),
-        ("18_effect_objects.csv", "持续效果对象。"),
-        ("19_triggers.csv", "触发器定义。"),
-        ("20_modifiers.csv", "修饰器定义。"),
-        ("21_element_packet_rules.csv", "元素包规则。"),
-        ("22_element_conversion_rules.csv", "元素转换规则。"),
-        ("23_trigger_order_rules.csv", "触发排序规则。"),
-    ])
-
-    add_domain_sheet(wb, "PROGRESSION_TRIALS", [
+    add_domain_sheet(wb, "SHAPES_TRIALS", [
+        ("27_shape_catalog.csv", "19 个战斗形状目录；offsets/grid 会影响运行时攻击范围和 UI 展示。"),
         ("15_summon_trial_questions.csv", "召唤试炼题库。"),
         ("16_trial_action_plan.csv", "试炼行动脚本。"),
         ("17_trial_victory_rules.csv", "试炼胜负规则。"),
-        ("27_shape_catalog.csv", "19 个战斗形状目录。"),
-        ("28_quality_growth.csv", "品质成长数值。"),
-        ("29_quality_upgrades.csv", "品质升级质变。"),
     ])
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

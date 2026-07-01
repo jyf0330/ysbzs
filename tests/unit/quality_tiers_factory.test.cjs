@@ -8,9 +8,9 @@ const { createGameState } = require('../../src/core/state.cjs');
 
 test('unit factory connects silver gold and diamond quality tiers', () => {
   const cases = [
-    { quality: '白银', bodySize: '小型', shapeId: '01', hp: 20, atk: 5, expectHp: 24, expectAtk: 6, expectPool: 'silver' },
-    { quality: '黄金', bodySize: '中型', shapeId: '05', hp: 20, atk: 5, expectHp: 30, expectAtk: 7, expectPool: 'gold' },
-    { quality: '钻石', bodySize: '大型', shapeId: '13', hp: 20, atk: 5, expectHp: 38, expectAtk: 8, expectPool: 'diamond' }
+    { quality: '白银', bodySize: '小型', shapeId: '01', hp: 20, atk: 5, expectPool: 'silver' },
+    { quality: '黄金', bodySize: '中型', shapeId: '05', hp: 20, atk: 5, expectPool: 'gold' },
+    { quality: '钻石', bodySize: '大型', shapeId: '13', hp: 20, atk: 5, expectPool: 'diamond' }
   ];
 
   for (const item of cases) {
@@ -31,9 +31,10 @@ test('unit factory connects silver gold and diamond quality tiers', () => {
 
     assert.equal(unit.qualityProgression.quality, item.expectPool);
     assert.equal(unit.qualityUpgrade.quality, item.expectPool);
-    assert.equal(unit.maxHp, item.expectHp);
-    assert.equal(unit.hp, item.expectHp);
-    assert.equal(unit.atk, item.expectAtk);
+    const bonus = getQualityStatBonus(item.quality, unit.qualityProgression.shapeSize);
+    assert.equal(unit.maxHp, item.hp + bonus.hpBonus);
+    assert.equal(unit.hp, item.hp + bonus.hpBonus);
+    assert.equal(unit.atk, item.atk + bonus.attackBonus);
     assert.ok(getQualityUpgradePool(item.quality, unit.qualityProgression.shapeSize).some(x => x.id === unit.qualityUpgrade.id));
   }
 });

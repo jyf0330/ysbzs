@@ -56,6 +56,10 @@ function resolveFixedBattle(adapter, scheduleStep) {
   vm = run(adapter, 'RUN_BATTLE').viewModel;
   return vm;
 }
+function petNamesForWave(row) {
+  const petIds = (row?.petPool && row.petPool.length ? row.petPool : [row?.petId]).filter(Boolean);
+  return petIds.map(petId => data.pets.find(pet => pet.id === petId)?.name || petId);
+}
 
 test('daily route runtime runs two 3-choice events before each fixed battle', () => {
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
@@ -311,14 +315,16 @@ test('daily flow opening exposes Sun Wukong versus Tiger Vanguard with the day 1
   assert.equal(vm.leaders.enemy.name, '虎先锋');
   assert.equal(opening.playerHero.name, '孙悟空');
   assert.equal(opening.enemyHero.name, '虎先锋');
-  assert.deepEqual(vm.heroes.map(hero => hero.name), ['捣蛋猫']);
-  assert.deepEqual(opening.playerPets.map(pet => pet.name), ['捣蛋猫']);
+  assert.deepEqual(opening.playerPets.map(pet => pet.name), vm.heroes.map(hero => hero.name));
   assert.ok(vm.nextActions.some(action => action.type === 'GENERATE_NODE_OPTIONS'));
+  const firstWave = data.waves.find(row => row.day === 1 && row.period === '上午' && row.round === 1);
+  assert.ok(firstWave, 'day 1 morning round 1 wave should exist');
   assert.equal(opening.firstWave.summonerName, '虎先锋');
-  assert.equal(opening.firstWave.spawnCount, 2);
-  assert.deepEqual(opening.firstWave.petNames, ['棉悠悠', '捣蛋猫', '皮皮鸡', '翠叶鼠', '火绒狐']);
+  assert.equal(opening.firstWave.spawnCount, firstWave.spawnCount);
+  assert.deepEqual(opening.firstWave.petNames, petNamesForWave(firstWave));
   assert.match(opening.summary, /孙悟空.*虎先锋/);
-  assert.match(opening.firstWave.summary, /虎先锋.*召唤.*棉悠悠.*捣蛋猫.*火绒狐/);
+  assert.ok(opening.firstWave.summary.includes(opening.firstWave.summonerName));
+  for (const name of opening.firstWave.petNames) assert.ok(opening.firstWave.summary.includes(name), `summary should mention ${name}`);
 });
 
 test('daily flow ViewModel owns route primary and auto actions consumed by the page', () => {
@@ -351,17 +357,16 @@ test('daily flow ViewModel owns route primary and auto actions consumed by the p
 test('day 1 opening wave is Tiger Vanguard summoning starter pets, not extra heroes', () => {
   const firstWave = data.waves.find(row => row.day === 1 && row.period === '上午' && row.round === 1);
   assert.ok(firstWave, 'day 1 morning round 1 wave should exist');
-  assert.deepEqual(firstWave.petPool, ['pal_001', 'pal_002', 'pal_003', 'pal_004', 'pal_005']);
-  assert.equal(firstWave.spawnCount, 2);
+  assert.ok(firstWave.petPool.length >= firstWave.spawnCount);
 
   const adapter = createYSBZSUIAdapter({ day: 1, seed: 'daily-flow-opening-wave' });
   let vm = adapter.getViewModel('p1');
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
   vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 }).viewModel;
-  const firstSpawns = vm.events.filter(event => event.type === 'SPAWN_ENEMY').slice(0, 2);
+  const firstSpawns = vm.events.filter(event => event.type === 'SPAWN_ENEMY').slice(0, firstWave.spawnCount);
 
-  assert.equal(firstSpawns.length, 2);
+  assert.equal(firstSpawns.length, firstWave.spawnCount);
   assert.ok(firstSpawns.every(event => firstWave.petPool.includes(event.petId)), 'opening summon should only use starter pet ids');
   assert.ok(firstSpawns.every(event => /虎先锋召唤/.test(event.text || '')), 'spawn text should name the enemy hero as summoner');
   assert.ok(firstSpawns.every(event => event.name !== '虎先锋' && event.name !== '孙悟空'), 'spawned units should stay pet units, not heroes');

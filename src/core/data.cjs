@@ -49,12 +49,14 @@ function buildIndexes(d = loadGameData()) {
   const shapesByPetId = byId(d.shapes, 'petId');
   const shapesByShapeId = byId(d.shapes, 'shapeId');
   const shopByPetId = byId(d.shop, 'petId');
+  const shopStoresById = byId(d.shopStores || [], 'id');
   const relicsById = byId(d.relics, 'id');
   const shopPools = new Map();
   const rewardPools = new Map();
   const nodePools = new Map();
   const encountersById = byId(d.encounterPool || [], 'encounterId');
   const encounterPools = new Map();
+  for (const store of d.shopStores || []) if (store.id && !shopPools.has(store.id)) shopPools.set(store.id, []);
   for (const item of d.shop) {
     for (const p of item.shopPools || []) { if (!shopPools.has(p)) shopPools.set(p, []); shopPools.get(p).push(item); }
     for (const p of item.rewardPools || []) { if (!rewardPools.has(p)) rewardPools.set(p, []); rewardPools.get(p).push(item); }
@@ -73,7 +75,7 @@ function buildIndexes(d = loadGameData()) {
   for (const enc of d.encounterPool || []) {
     if (enc.encounterPoolId) { if (!encounterPools.has(enc.encounterPoolId)) encounterPools.set(enc.encounterPoolId, []); encounterPools.get(enc.encounterPoolId).push(enc); }
   }
-  return { petsById, monstersByPetId, mechanicsById, shapesByPetId, shapesByShapeId, shopByPetId, relicsById, shopPools, rewardPools, nodePools, encountersById, encounterPools };
+  return { petsById, monstersByPetId, mechanicsById, shapesByPetId, shapesByShapeId, shopByPetId, shopStoresById, relicsById, shopPools, rewardPools, nodePools, encountersById, encounterPools };
 }
 function listMechanics(ids) { return (ids || ['none']).filter(Boolean); }
 function validateData(d = loadGameData()) {
@@ -88,9 +90,14 @@ function validateData(d = loadGameData()) {
       if (!ix.petsById.has(petId)) issues.push(`wave ${w.waveId} missing pet ${petId}`);
     }
   }
-  for (const e of d.events) { if (e.petId && !ix.petsById.has(e.petId)) issues.push(`event ${e.id} missing pet ${e.petId}`); for (const id of listMechanics(e.mechanics)) if(!hasMech(id)) issues.push(`event ${e.id} missing mechanic ${id}`); if(e.shopPoolId && !ix.shopPools.has(e.shopPoolId)) issues.push(`event ${e.id} missing shop pool ${e.shopPoolId}`); if(e.rewardPoolId && !ix.rewardPools.has(e.rewardPoolId)) issues.push(`event ${e.id} missing reward pool ${e.rewardPoolId}`); }
-  for (const s of d.shop) { if (!ix.petsById.has(s.petId)) issues.push(`shop missing pet ${s.petId}`); if (!s.shopPools || s.shopPools.length === 0) issues.push(`shop ${s.petId} has no shop pools`); if (!s.rewardPools || s.rewardPools.length === 0) issues.push(`shop ${s.petId} has no reward pools`); }
-  for (const r of d.relics) { if (r.petId && !ix.petsById.has(r.petId)) issues.push(`relic ${r.id} missing pet ${r.petId}`); for (const id of listMechanics(r.mechanics)) if(!hasMech(id)) issues.push(`relic ${r.id} missing mechanic ${id}`); if(r.shopPoolId && !ix.shopPools.has(r.shopPoolId)) issues.push(`relic ${r.id} missing shop pool ${r.shopPoolId}`); if(r.rewardPoolId && !ix.rewardPools.has(r.rewardPoolId)) issues.push(`relic ${r.id} missing reward pool ${r.rewardPoolId}`); }
+  for (const store of d.shopStores || []) {
+    if (!store.id) issues.push('shop store missing id');
+    if (store.id && !store.name) issues.push(`shop store ${store.id} missing name`);
+  }
+  const hasShopStore = id => !id || (ix.shopStoresById.size ? ix.shopStoresById.has(id) : ix.shopPools.has(id));
+  for (const e of d.events) { if (e.petId && !ix.petsById.has(e.petId)) issues.push(`event ${e.id} missing pet ${e.petId}`); for (const id of listMechanics(e.mechanics)) if(!hasMech(id)) issues.push(`event ${e.id} missing mechanic ${id}`); if(e.shopPoolId && !hasShopStore(e.shopPoolId)) issues.push(`event ${e.id} missing shop store ${e.shopPoolId}`); if(e.rewardPoolId && !ix.rewardPools.has(e.rewardPoolId)) issues.push(`event ${e.id} missing reward pool ${e.rewardPoolId}`); }
+  for (const s of d.shop) { if (!ix.petsById.has(s.petId)) issues.push(`shop missing pet ${s.petId}`); if (!s.shopPools || s.shopPools.length === 0) issues.push(`shop ${s.petId} has no shop stores`); for (const id of s.shopPools || []) if (!hasShopStore(id)) issues.push(`shop ${s.petId} missing shop store ${id}`); if (!s.rewardPools || s.rewardPools.length === 0) issues.push(`shop ${s.petId} has no reward pools`); }
+  for (const r of d.relics) { if (r.petId && !ix.petsById.has(r.petId)) issues.push(`relic ${r.id} missing pet ${r.petId}`); for (const id of listMechanics(r.mechanics)) if(!hasMech(id)) issues.push(`relic ${r.id} missing mechanic ${id}`); if(r.shopPoolId && !hasShopStore(r.shopPoolId)) issues.push(`relic ${r.id} missing shop store ${r.shopPoolId}`); if(r.rewardPoolId && !ix.rewardPools.has(r.rewardPoolId)) issues.push(`relic ${r.id} missing reward pool ${r.rewardPoolId}`); }
   for (const s of d.shapes) { if (!ix.petsById.has(s.petId)) issues.push(`shape missing pet ${s.petId}`); for (const id of listMechanics(s.mechanics)) if(!hasMech(id)) issues.push(`shape ${s.petId} missing mechanic ${id}`); }
   for (const row of d.nodeSchedule || []) {
     if (row.kind === 'node_choice' && !ix.nodePools.has(row.poolId)) issues.push(`node schedule ${row.id} missing node pool ${row.poolId}`);
@@ -98,10 +105,10 @@ function validateData(d = loadGameData()) {
     if (row.kind === 'fixed_battle' && !ix.encountersById.has(row.encounterId)) issues.push(`node schedule ${row.id} missing encounter ${row.encounterId}`);
   }
   for (const node of d.nodePool || []) {
-    if (node.shopPoolId && !ix.shopPools.has(node.shopPoolId)) issues.push(`node ${node.nodeId} missing shop pool ${node.shopPoolId}`);
+    if (node.shopPoolId && !hasShopStore(node.shopPoolId)) issues.push(`node ${node.nodeId} missing shop store ${node.shopPoolId}`);
     if (node.rewardPoolId && !ix.rewardPools.has(node.rewardPoolId)) issues.push(`node ${node.nodeId} missing reward pool ${node.rewardPoolId}`);
     if (node.eventId && !d.events.some(e => e.id === node.eventId)) issues.push(`node ${node.nodeId} missing event ${node.eventId}`);
   }
-  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length }};
+  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length }};
 }
 module.exports = { data, loadGameData, buildIndexes, validateData };

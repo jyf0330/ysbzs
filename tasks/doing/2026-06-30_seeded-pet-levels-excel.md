@@ -23,6 +23,17 @@ branch: codex/bazaar-day1-day3-route
 - `tasks/doing/2026-06-30_seeded-pet-levels-excel.md`
 - `outputs/seeded-pet-levels-20260630/ysbzs_seeded_pet_levels.xlsx`
 - `outputs/seeded-pet-levels-20260630/ysbzs_seeded_pet_levels_start_silver.xlsx`
+- `outputs/seeded-pet-levels-20260630/verification.json`
+- `outputs/seeded-pet-levels-20260630/verification_start_silver.json`
+- `outputs/seeded-pet-levels-20260630/配置说明.png`
+- `outputs/seeded-pet-levels-20260630/全品质快照.png`
+- `outputs/seeded-pet-levels-20260630/进化点明细.png`
+- `outputs/seeded-pet-levels-20260630/宠物基础.png`
+- `outputs/seeded-pet-levels-20260630/规则表.png`
+- `outputs/seeded-pet-levels-20260630/start_silver_配置说明.png`
+- `outputs/seeded-pet-levels-20260630/start_silver_品质快照.png`
+- `outputs/seeded-pet-levels-20260630/start_silver_进化点明细.png`
+- `outputs/seeded-pet-levels-20260630/start_silver_规则表.png`
 
 ## exclusive_files
 
@@ -55,6 +66,7 @@ branch: codex/bazaar-day1-day3-route
 - pass follow-up: start-silver workbook keeps 2032 evolution point detail rows for existing 白银 points plus later 黄金/钻石 cumulative points.
 - pass follow-up: direct xlsx internal text scan found 0 `青铜` hits.
 - pass follow-up: rendered and reviewed `start_silver_配置说明.png` and `start_silver_品质快照.png`; first visible rows start at 白银 and do not show lower-quality rows.
+- pass follow-up: committed rendered preview PNGs and verification JSON alongside the workbook artifacts.
 
 ## commit_plan
 

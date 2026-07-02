@@ -22,9 +22,7 @@ function safeLabel(label) {
   return String(label || 'timing').replace(/[^a-zA-Z0-9_.-]/g, '_');
 }
 
-function cloneJson(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+const { deepClone: cloneJson } = require('./core/utils.cjs');
 
 function canPersistToFile() {
   return !!(

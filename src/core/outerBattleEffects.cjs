@@ -2,7 +2,7 @@ const { pushEvent } = require('./events.cjs');
 const { recordChange } = require('./changeLog.cjs');
 const { computeModifiedValue } = require('./modifierEngine.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./utils.cjs');
 
 function ensureBattlePrepEffects(state) {
   if (!Array.isArray(state.battlePrepEffects)) state.battlePrepEffects = [];

@@ -52,9 +52,7 @@ const COMMAND_EXCLUDE_KEYS = new Set([
   'viewModel'
 ]);
 
-function clone(value) {
-  return value == null ? value : JSON.parse(JSON.stringify(value));
-}
+const { deepClone: clone } = require('./utils.cjs');
 
 function jsonSafe(value, excludeKeys = new Set()) {
   if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) return value;

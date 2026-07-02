@@ -38,7 +38,7 @@ const { pushEvent } = require('./events.cjs');
 
 // ========== 辅助 ==========
 
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 function toNum(v, fallback = 0) {
   if (v === undefined || v === null || v === '') return fallback;
   const n = Number(String(v).replace(/,/g, '').trim());

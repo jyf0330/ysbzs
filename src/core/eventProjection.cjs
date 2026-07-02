@@ -1,6 +1,6 @@
 const BATTLE_EVENT_RE = /BATTLE|ROUND|PLAYER|MONSTER|DAMAGE|ELEMENT|SPAWN|MOVE|DEAD|DAY7|TRIAL|PACKET|MODIFIER|REPLACEMENT|CONVERT|CATALYST|SHOP|REWARD|SELL|TOGGLE|USE_SLOT|ACTION/;
 
-function clone(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./utils.cjs');
 function eventKey(event) { return event && (event.eventId || `legacy_${event.step}_${event.type}_${event.text || ''}`); }
 function uniqueEvents(events = []) {
   const seen = new Set();

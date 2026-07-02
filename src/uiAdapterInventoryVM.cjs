@@ -1,7 +1,10 @@
 const { statusOfMechanic } = require('./core/mechanicGate.cjs');
 const { MAX_ACTIVE_UNITS, MAX_BENCH_UNITS } = require('./core/rosterLimits.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./core/utils.cjs');
+function sellValueForQuality(quality) {
+  return { 青铜: 2, 白银: 4, 黄金: 6, 钻石: 8 }[quality] || 1;
+}
 
 function buildInventoryVM(state, findUnitForInventoryEntry) {
   const activeCount = (state.inventory || []).filter(x => x.active !== false).length;
@@ -25,7 +28,7 @@ function buildInventoryVM(state, findUnitForInventoryEntry) {
       atk: unit ? unit.atk : (pet.atk || null),
       instanceId: x.instanceId || null,
       active,
-      sellValue: Math.max(1, Number(x.level || 1)),
+      sellValue: sellValueForQuality(x.quality || pet.quality),
       mechanics: x.mechanics || pet.mechanics || [],
       mechanicStatus: (x.mechanics || pet.mechanics || []).map(id => ({ id, status: statusOfMechanic(id) })),
       canActivate: active || canMoveToActive,

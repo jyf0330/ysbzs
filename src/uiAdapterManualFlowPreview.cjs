@@ -5,7 +5,7 @@ const { stateHash } = require('./core/stateHash.cjs');
 const { buildSaveDocument, applySaveToState } = require('./storage/saveCodec.cjs');
 const { createTimingLog } = require('./performanceTiming.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./core/utils.cjs');
 function cloneOrNull(value) { return value == null ? null : clone(value); }
 
 function projectedCamp(unit = {}) {

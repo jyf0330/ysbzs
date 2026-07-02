@@ -2,7 +2,7 @@
 const battle = require('./battle.cjs');
 const { getCell, normalizePosition, BOARD_ROWS, BOARD_COLS } = require('./state.cjs');
 
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 function adjacentPositions(p) { return [{r:p.r-1,c:p.c},{r:p.r+1,c:p.c},{r:p.r,c:p.c-1},{r:p.r,c:p.c+1}].filter(x => x.r>=0&&x.c>=0&&x.r<BOARD_ROWS&&x.c<BOARD_COLS); }
 function canStandAt(state, actor, p) {
   const cell = getCell(state, p.r, p.c);

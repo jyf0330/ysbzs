@@ -4,7 +4,7 @@
  * 事件真正执行前先改写事件；例如风转火、下个元素翻倍。
  */
 const { recordChange } = require('./changeLog.cjs');
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 function collectReplacementEffects(holder, trigger) {
   const out = [];
   for (const packet of holder?.elementPackets || []) {

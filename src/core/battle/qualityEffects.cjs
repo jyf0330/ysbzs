@@ -15,7 +15,7 @@ const QUALITY_EFFECT_IDS = Object.freeze([
 function upgrade(unit) { return unit?.qualityUpgrade || null; }
 function upgradeId(unit) { return upgrade(unit)?.id || unit?.qualityProgression?.upgradeId || null; }
 function posKey(p) { return `${Number(p.r)},${Number(p.c)}`; }
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('../utils.cjs');
 function livingUnit(unit) { return !!unit && unit.alive !== false && Number(unit.hp || 0) > 0; }
 function unitCamp(unit) { return unit?.camp || (unit?.side === 'hero' ? 'player' : 'enemy'); }
 function isAlly(actor, unit) { return actor && unit && unitCamp(actor) === unitCamp(unit); }

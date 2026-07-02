@@ -2,10 +2,10 @@ const { createGameState } = require('../core/state.cjs');
 const dayRoute = require('../core/dayRoute.cjs');
 const { buildConstructionSummary } = require('../core/buildSummary.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('../core/utils.cjs');
 
 function runFullDayScenario(opts = {}) {
-  const state = createGameState({ day: opts.day || 1, period: opts.period || '上午', gold: opts.gold ?? 3, seed: opts.seed, battleId: opts.battleId });
+  const state = createGameState({ day: opts.day || 1, period: opts.period || '上午', gold: opts.gold ?? 3, seed: opts.seed, battleId: opts.battleId, playerLeader: opts.playerLeader });
   dayRoute.runDayRoute(state);
   return state;
 }
@@ -51,7 +51,7 @@ function constructionSnapshot(state, before = null) {
 function runDayRangeScenario(opts = {}) {
   const fromDay = Number(opts.fromDay || 1);
   const toDay = Number(opts.toDay || fromDay);
-  const state = createGameState({ day: fromDay, period: '上午', gold: opts.gold ?? 3, seed: opts.seed, battleId: opts.battleId });
+  const state = createGameState({ day: fromDay, period: '上午', gold: opts.gold ?? 3, seed: opts.seed, battleId: opts.battleId, playerLeader: opts.playerLeader });
   state.dayRouteRuns = [];
   for (let day = fromDay; day <= toDay; day += 1) {
     resetRouteForDay(state, day);

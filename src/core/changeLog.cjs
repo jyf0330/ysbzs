@@ -5,7 +5,7 @@
  */
 const { recordBattleEvent } = require('./battleEventProtocol.cjs');
 const { buildReplayDocument } = require('./replayCodec.cjs');
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 function ensureLogs(state) {
   if (!state.changes) state.changes = [];
   if (!state.changeLog) state.changeLog = state.changes;

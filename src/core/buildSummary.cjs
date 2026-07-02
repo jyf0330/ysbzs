@@ -1,4 +1,4 @@
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./utils.cjs');
 
 function incCount(map, key, label, amount = 1) {
   if (!key || key === '-') return;

@@ -23,7 +23,7 @@ const { sanitizeInitialOptions, recordReplayResult, commandCheckpointFromLogEntr
 const ADAPTER_VERSION = '2026-06-09-command-envelope-local-prediction-ready-round4';
 const UI_SELECTION_COMMANDS = Object.freeze(['SELECT_HERO', 'SELECT_UNIT', 'SELECT_CELL', 'SELECT_SLOT', 'CLEAR_SELECTION']); const READ_ONLY_COMMANDS = Object.freeze(['BUILD_PREVIEW', 'GET_CELL_DETAIL', 'EXPORT_BATTLE_TRACE', 'REPLAY_BATTLE_TRACE', 'EXPORT_REPLAY']);
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); } function commandText(command) { return typeof command === 'string' ? command : command.type; } function nextAllOutSlot(vm, blocked = new Set()) {
+const { deepClone: clone } = require('./core/utils.cjs'); function commandText(command) { return typeof command === 'string' ? command : command.type; } function nextAllOutSlot(vm, blocked = new Set()) {
   for (const hero of vm?.heroes || []) {
     for (let slotId = 0; slotId < (hero.slots || []).length; slotId++) {
       const slot = hero.slots[slotId];

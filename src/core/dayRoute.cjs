@@ -5,7 +5,7 @@ const { syncBoardUnits } = require('./state.cjs');
 const { queueBattlePrepEffectFromEvent } = require('./outerBattleEffects.cjs');
 const { queueOuterRunEffectFromEvent, applyRouteBattleOutcomeEffects } = require('./outerRunEffects.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./utils.cjs');
 function activeRows(rows, day) {
   return (rows || []).filter(x => x.status === '正式' && Number(x.unlockDay || 1) <= Number(day || 1));
 }
@@ -144,6 +144,12 @@ function firstN(rows, count) {
 function publicTierLabel(poolId) {
   const tier = String(poolId || '').replace(/^reward_/, '').replace(/^tier_/, '');
   return { pT1: '青铜', pT2: '白银', pT3: '黄金', pT4: '钻石', elite: '精英' }[tier] || tier || null;
+}
+function routeChoiceSeedContext(dayOrState, stepOrOption, nodeId = null) {
+  const day = typeof dayOrState === 'object' ? Number(dayOrState?.day || 1) : Number(dayOrState || 1);
+  const step = typeof stepOrOption === 'object' ? Number(stepOrOption?.scheduleStep || 0) : Number(stepOrOption || 0);
+  const id = typeof stepOrOption === 'object' ? (stepOrOption.nodeId || stepOrOption.optionId || stepOrOption.rewardId || stepOrOption.encounterId || nodeId || 'option') : (nodeId || 'option');
+  return `route:${day}:${step}:${id}`;
 }
 function eventForNode(state, node) {
   return (state.data.events || []).find(e => e.id === node.eventId) || null;
@@ -321,7 +327,7 @@ function pickNode(state, ref) {
   route.options = [];
   pushEvent(state, 'NODE_PICK', { nodeId: option.nodeId, nodeType: option.nodeType, scheduleStep: route.nodeIndex, text: `选择节点：${option.name}。` });
   if (option.nodeType === 'shop') {
-    const ok = shop.enterShop(state, option.shopPoolId || 'night_base', 10, { stall: Object.assign({}, option, { slots: 10 }) });
+    const ok = shop.enterShop(state, option.shopPoolId || 'night_base', 10, { stall: Object.assign({}, option, { slots: 10 }), seedContext: routeChoiceSeedContext(state, option) });
     if (ok !== false) {
       state.shop.routeReturnPhase = routeReturnPhaseAfterCurrentStep(state);
       const historyItem = route.history[route.history.length - 1];
@@ -331,7 +337,7 @@ function pickNode(state, ref) {
   }
   if (option.nodeType === 'reward') {
     route.rewardReturnPhase = routeReturnPhaseAfterCurrentStep(state);
-    shop.rewardOptions(state, option.rewardPoolId || 'reward_pT1', Number(option.slots || 3));
+    shop.rewardOptions(state, option.rewardPoolId || 'reward_pT1', Number(option.slots || 3), { seedContext: routeChoiceSeedContext(state, option) });
     state.phase = 'reward';
     return true;
   }
@@ -455,6 +461,10 @@ function isPressureEncounter(encounter) {
 function isTerminalEncounter(state, encounter) {
   return Number(state.day || 1) >= 10 && /Boss|终局/.test(`${encounter?.name || ''}${encounter?.phaseLabel || ''}${encounter?.note || ''}`);
 }
+function playerHeroDead(state) {
+  const leader = state.leaders?.player;
+  return !leader || leader.alive === false || Number(leader.hp || 0) <= 0;
+}
 function markRunTerminal(state, encounter, outcome) {
   const route = ensureDayRoute(state);
   const terminal = {
@@ -471,6 +481,26 @@ function markRunTerminal(state, encounter, outcome) {
   pushEvent(state, 'RUN_TERMINAL', {
     terminal: clone(terminal),
     text: `外层终局：第${terminal.day}天${terminal.name} ${terminal.status}，结果=${terminal.resultCode}，评级=${terminal.grade}。`
+  });
+  return terminal;
+}
+function markPlayerHeroDeathTerminal(state, encounter, outcome) {
+  const route = ensureDayRoute(state);
+  const terminal = {
+    day: Number(state.day || 1),
+    kind: 'player_hero_dead',
+    status: 'defeat',
+    encounterId: encounter.encounterId || null,
+    name: encounter.name || encounter.encounterId || '路线战斗',
+    resultCode: outcome ? outcome.resultCode : 'LOSE',
+    grade: outcome ? outcome.grade : 'D',
+    battleIndex: outcome ? outcome.battleIndex : Number(route.battleIndex || 0)
+  };
+  route.terminal = terminal;
+  state.phase = 'game_over';
+  pushEvent(state, 'RUN_TERMINAL', {
+    terminal: clone(terminal),
+    text: `外层终局：玩家英雄死亡，止步第${terminal.day}天${terminal.name}。`
   });
   return terminal;
 }
@@ -495,7 +525,11 @@ function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId, 
         castleLineFrom: Number.isFinite(Number(source.castleLineFrom)) ? Number(source.castleLineFrom) : Number(state.castleLine || 0),
         castleLineTo: Number(state.castleLine || 0),
         economyMultiplierFrom: Number.isFinite(Number(source.economyMultiplierFrom)) ? Number(source.economyMultiplierFrom) : Number(state.economyMultiplier || 1),
-        economyMultiplierTo: Number(state.economyMultiplier || 1)
+        economyMultiplierTo: Number(state.economyMultiplier || 1),
+        playerHeroHpFrom: Number.isFinite(Number(result.playerHeroHpFrom)) ? Number(result.playerHeroHpFrom) : Number(source.playerHeroHpFrom ?? state.leaders?.player?.hp ?? 0),
+        playerHeroHpTo: Number.isFinite(Number(result.playerHeroHpTo)) ? Number(result.playerHeroHpTo) : Number(state.leaders?.player?.hp ?? 0),
+        playerHeroHpPenalty: Number(result.playerHeroHpPenalty || 0),
+        gameOver: !!result.gameOver
       }]
     };
   }
@@ -551,6 +585,10 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
     goldTo: state.gold,
     goldBaseDelta: Number(state.gold || 0) - Number(beforeGold || 0),
     goldDelta: Number(state.gold || 0) - Number(beforeGold || 0),
+    playerHeroHpFrom: Number.isFinite(Number(result?.playerHeroHpFrom)) ? Number(result.playerHeroHpFrom) : Number(source.playerHeroHpFrom ?? state.leaders?.player?.hp ?? 0),
+    playerHeroHpTo: Number.isFinite(Number(result?.playerHeroHpTo)) ? Number(result.playerHeroHpTo) : Number(state.leaders?.player?.hp ?? 0),
+    playerHeroHpPenalty: Number(result?.playerHeroHpPenalty || 0),
+    gameOver: !!result?.gameOver,
     baseRewardPoolId,
     rewardPoolId,
     rewardEligible: !!result?.win,
@@ -579,7 +617,7 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
   }
   for (const event of outcome.postBattleEvents) {
     const text = event.eventId === 'evt_battle_fail'
-      ? `失败惩罚：${outcome.name} 未清场，防线 ${event.castleLineFrom}→${event.castleLineTo}，经济倍率 ${event.economyMultiplierFrom}→${event.economyMultiplierTo}。`
+      ? `失败惩罚：${outcome.name} 未清场，英雄HP ${event.playerHeroHpFrom}→${event.playerHeroHpTo}${event.gameOver ? '，游戏结束' : ''}。`
       : (event.eventId === 'evt_battle_bonus'
         ? `五回合高奖：${outcome.name} 快速清场，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`
         : `精英奖励：${outcome.name} 胜利，奖励池 ${event.rewardPoolFrom}→${event.rewardPoolTo}。`);
@@ -611,7 +649,7 @@ function claimRouteReward(state, ref, opts = {}) {
     pushEvent(state, 'ROUTE_REWARD_BLOCKED', { text: '没有可领取的路线战斗奖励。' });
     return false;
   }
-  const rewardOptions = shop.rewardOptions(state, pending.rewardPoolId, Number(opts.count || 3));
+  const rewardOptions = shop.rewardOptions(state, pending.rewardPoolId, Number(opts.count || 3), { seedContext: routeChoiceSeedContext(state, pending.battleIndex || 0, pending.rewardId || pending.encounterId || 'route_reward') });
   const requestedIndex = Number(opts.rewardIndex || 0);
   const rewardIndex = rewardOptions[requestedIndex] ? requestedIndex : 0;
   const selected = rewardOptions[rewardIndex] || null;
@@ -659,6 +697,7 @@ function startRouteBattle(state, encounter, source = {}) {
     beforeGold: Number(state.gold || 0),
     castleLineFrom: Number(state.castleLine || 0),
     economyMultiplierFrom: Number(state.economyMultiplier || 1),
+    playerHeroHpFrom: Number(state.leaders?.player?.hp || 0),
     battleIndex: Number(route.battleIndex || 0),
     scheduleStep: Number(source.scheduleStep || route.nodeIndex || 0)
   };
@@ -674,10 +713,15 @@ function finalizeRouteBattle(state, result = null) {
   const battleResult = result || state.result;
   const source = Object.assign({}, pending.source || {}, {
     castleLineFrom: pending.castleLineFrom,
-    economyMultiplierFrom: pending.economyMultiplierFrom
+    economyMultiplierFrom: pending.economyMultiplierFrom,
+    playerHeroHpFrom: pending.playerHeroHpFrom
   });
   const outcome = recordBattleOutcome(state, encounter, battleResult, pending.beforeGold, source);
   if (pending.source?.terminal) markRunTerminal(state, encounter, outcome);
+  if (battleResult.gameOver || playerHeroDead(state)) {
+    markPlayerHeroDeathTerminal(state, encounter, outcome);
+    return outcome;
+  }
   completeRouteStep(state);
   return outcome;
 }
@@ -694,8 +738,13 @@ function autoResolvePendingRouteBattle(state) {
 function resetBattlefield(state) {
   state.units = (state.units || []).filter(u => u.side === 'hero' || u.side === 'hero_leader');
   for (const leader of [state.leaders?.player, state.leaders?.enemy].filter(Boolean)) {
-    leader.hp = leader.maxHp || leader.hp || 80;
-    leader.alive = true;
+    if (leader === state.leaders?.enemy) {
+      leader.hp = leader.maxHp || leader.hp || 80;
+      leader.alive = true;
+    } else {
+      leader.hp = Math.max(0, Number(leader.hp ?? leader.maxHp ?? 80));
+      leader.alive = leader.hp > 0;
+    }
     leader.shield = 0;
     leader.roundDamageTaken = 0;
   }
@@ -711,7 +760,7 @@ function resetBattlefield(state) {
 function runDayRoute(state) {
   ensureDayRoute(state);
   let guard = 0;
-  while (state.phase !== 'day_end' && guard++ < 20) {
+  while (state.phase !== 'day_end' && state.phase !== 'game_over' && guard++ < 20) {
     const schedule = nextSchedule(state);
     if (!schedule) { state.phase = 'day_end'; break; }
     if (schedule.kind === 'node_choice') {
@@ -719,6 +768,7 @@ function runDayRoute(state) {
       if (!options) return false;
       const option = options[(Number(schedule.step || 1) - 1) % options.length] || options[0];
       pickNode(state, option.optionId);
+      if (state.phase === 'game_over') return false;
       if (state.phase === 'shop') shop.exitShop(state);
       if (state.phase === 'reward' && state.rewards.length) shop.pickReward(state, 0);
       if (state.phase !== 'day_end' && state.phase !== 'battle_end') state.phase = 'node_resolved';
@@ -729,6 +779,7 @@ function runDayRoute(state) {
       if (!options) return false;
       pickBattleEncounter(state, options[0].encounterId);
       autoResolvePendingRouteBattle(state);
+      if (state.phase === 'game_over') return false;
       claimAvailableRouteRewards(state);
       continue;
     }
@@ -736,6 +787,7 @@ function runDayRoute(state) {
       const ok = runFixedBattle(state);
       if (!ok || state.phase === 'day_end') return ok;
       autoResolvePendingRouteBattle(state);
+      if (state.phase === 'game_over') return false;
       claimAvailableRouteRewards(state);
       continue;
     }
@@ -743,4 +795,4 @@ function runDayRoute(state) {
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview, finalizeRouteBattle };
+module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview, finalizeRouteBattle, routeChoiceSeedContext };

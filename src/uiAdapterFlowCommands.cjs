@@ -5,7 +5,7 @@ const { stateHash } = require('./core/stateHash.cjs');
 const { buildSaveDocument, applySaveToState } = require('./storage/saveCodec.cjs');
 const { runDayRangeScenario } = require('./scenarios/fullDay.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./core/utils.cjs');
 
 function replaceStateContents(target, source, options = {}) {
   for (const key of Object.keys(target)) delete target[key];
@@ -51,7 +51,8 @@ function runFullRunFlow({ state, options, defaultPlayerId, getViewModel, opts = 
     toDay: Number(opts.toDay || 10),
     gold: opts.gold ?? Math.max(8, Number(state.gold || 0)),
     seed: opts.seed || options.seed,
-    battleId: opts.battleId || state.battleId
+    battleId: opts.battleId || state.battleId,
+    playerLeader: opts.playerLeader
   });
   replaceStateContents(state, scenario, options);
   return getViewModel(opts.playerId || defaultPlayerId);
@@ -67,6 +68,7 @@ function runFullRunCommand(ctx) {
       gold: command.gold,
       seed: command.seed,
       battleId: command.battleId,
+      playerLeader: command.playerLeader,
       playerId: command.playerId
     });
     const events = mapPublicEvents(state.events || []);

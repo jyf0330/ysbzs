@@ -1,6 +1,6 @@
 const { pushEvent } = require('./events.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./utils.cjs');
 
 function ensureOuterRunEffects(state) {
   if (!Array.isArray(state.outerRunEffects)) state.outerRunEffects = [];

@@ -10,7 +10,7 @@ const { buildIndexes } = require('./data.cjs');
 const { applyQualityProgressionToUnit } = require('./qualityProgression.cjs');
 const { assignPetShapeToShapeRow } = require('./battle/shapeCatalog.cjs');
 
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 function normalizePosition(pos, fallback) {
   if (!pos) return clone(fallback || { r: 0, c: 0 });
   if (pos.r !== undefined && pos.c !== undefined) return { r: Number(pos.r), c: Number(pos.c) };

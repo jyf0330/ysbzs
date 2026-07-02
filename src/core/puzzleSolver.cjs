@@ -1,9 +1,7 @@
 const battle = require('./battle.cjs');
 const { stateHash } = require('./stateHash.cjs');
 
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+const { deepClone: clone } = require('./utils.cjs');
 
 function livingEnemies(state) {
   return (state.units || []).filter(u => u.side === 'enemy' && u.alive !== false && Number(u.hp || 0) > 0);

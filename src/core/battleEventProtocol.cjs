@@ -3,7 +3,7 @@
  *
  * 结构化事件是事实；text 只是展示层。不要在 text 里反推规则。
  */
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 function nextBattleEventId(state) {
   const n = state.nextBattleEvent || 1;
   state.nextBattleEvent = n + 1;

@@ -1,6 +1,6 @@
 const dayRoute = require('./core/dayRoute.cjs');
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./core/utils.cjs');
 function unitSummary(unit) {
   if (!unit) return null;
   return {

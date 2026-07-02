@@ -11,7 +11,7 @@ const BOARD_COLS = 8;
 const ELEMENTS = COMPAT_ELEMENTS;  // 保留土兼容，但主流程走 ACTIVE_ELEMENTS
 
 function cellKey(r, c) { return `${Number(r)},${Number(c)}`; }
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./utils.cjs');
 function normalizePosition(position, fallback = { r: 0, c: 0 }) {
   if (!position) return clone(fallback);
   if (typeof position.r !== 'undefined' || typeof position.c !== 'undefined') return { r: Number(position.r ?? fallback.r), c: Number(position.c ?? fallback.c) };
@@ -90,6 +90,64 @@ function placeUnit(state, unit, position) {
   unit.position = p;
   syncBoardUnits(state);
   return p;
+}
+function leftBottomHeroDeploymentCells(state = null) {
+  const rows = Number(state?.board?.rows || BOARD_ROWS);
+  const cols = Number(state?.board?.cols || BOARD_COLS);
+  const out = [];
+  for (let r = Math.max(0, rows - 3); r < rows; r += 1) {
+    for (let c = 0; c < Math.min(cols, 3); c += 1) out.push({ r, c });
+  }
+  return out;
+}
+function occupiedPositionKeys(state) {
+  const keys = new Set();
+  for (const unit of state?.units || []) {
+    if (!unit || unit.alive === false || !unit.position) continue;
+    const p = normalizePosition(unit.position);
+    keys.add(cellKey(p.r, p.c));
+  }
+  for (const leader of leaderList(state)) {
+    if (!leader || leader.alive === false || !leader.position || Number(leader.hp || 0) <= 0) continue;
+    const p = normalizePosition(leader.position);
+    keys.add(cellKey(p.r, p.c));
+  }
+  return keys;
+}
+function seededOrder(state, positions, context = 'hero_deploy') {
+  const seed = state?.rngState?.seed || state?.battleId || 'ysbzs-local';
+  const random = rng(`hero_deploy:${seed}:${state?.day || 1}:${state?.period || '上午'}:${context}`);
+  const out = positions.map(p => ({ r: p.r, c: p.c }));
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    const tmp = out[i];
+    out[i] = out[j];
+    out[j] = tmp;
+  }
+  return out;
+}
+function heroDeploymentPositions(state, count = MAX_ACTIVE_UNITS, context = 'initial_party') {
+  ensureBoard(state);
+  const occupied = occupiedPositionKeys(state);
+  const seen = new Set(occupied);
+  const preferred = seededOrder(state, leftBottomHeroDeploymentCells(state), context)
+    .filter(p => !occupied.has(cellKey(p.r, p.c)));
+  const out = [];
+  for (const point of preferred) {
+    const key = cellKey(point.r, point.c);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(point);
+    if (out.length >= count) return out;
+  }
+  for (const cell of state.board.cells || []) {
+    const key = cellKey(cell.r, cell.c);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ r: cell.r, c: cell.c });
+    if (out.length >= count) return out;
+  }
+  return out;
 }
 function defaultHeroPosition(index) {
   const rows = [5, 4, 6, 3, 2, 7, 1, 0];
@@ -266,7 +324,8 @@ function createGameState(opts = {}) {
     battleTrace: [],
     board: createBoard()
   };
-  const party = opts.activePets ? opts.activePets.map((petId, i) => ({ petId, position: defaultHeroPosition(i), slot: i + 1 })) : initialPartyFromData(loadedData);
+  const party = opts.activePets ? opts.activePets.map((petId, i) => ({ petId, slot: i + 1 })) : initialPartyFromData(loadedData);
+  const deploymentPositions = heroDeploymentPositions(state, Math.min(party.length, MAX_ACTIVE_UNITS), 'initial_party');
   for (let i = 0; i < party.length; i++) {
     const row = party[i];
     const pid = typeof row === 'string' ? row : row.petId;
@@ -278,18 +337,19 @@ function createGameState(opts = {}) {
     }
     if (i >= MAX_ACTIVE_UNITS) {
       state.nextInventory = Number(state.nextInventory || 1);
-      state.inventory.push({ petId: pid, count: 1, level: 1, active: false, instanceId: `bench_${pid}_${state.nextInventory++}` });
+      const pet = indexes.petsById.get(pid) || {};
+      state.inventory.push({ petId: pid, count: 1, active: false, instanceId: `bench_${pid}_${state.nextInventory++}`, quality: unitOverride.quality || pet.quality || '青铜' });
       continue;
     }
-    const position = typeof row === 'string' ? defaultHeroPosition(i) : (row.position || defaultHeroPosition(i));
+    const position = typeof row === 'string' ? (deploymentPositions[i] || defaultHeroPosition(i)) : (row.position || deploymentPositions[i] || defaultHeroPosition(i));
     unitOverride.position = position;
     const u = makeUnit(state, 'hero', pid, unitOverride);
     state.units.push(u);
-    state.inventory.push({ petId: pid, count: 1, level: 1, active: true, instanceId: u.id, slot: row.slot || i + 1, quality: u.quality });
+    state.inventory.push({ petId: pid, count: 1, active: true, instanceId: u.id, slot: row.slot || i + 1, quality: u.quality });
   }
   for (const u of state.units) applyBattleStart(state, u);
   ensureMultiplayerState(state, { battleId: opts.battleId, mode: opts.mode, playerId: opts.playerId, playerName: opts.playerName, seed: opts.seed, day: state.day });
   syncBoardUnits(state);
   return state;
 }
-module.exports = { createGameState, makeUnit, createBoard, ensureBoard, getCell, syncBoardUnits, placeUnit, isCellEmpty, normalizePosition, positionFromWaveRule, defaultEnemyPosition, cellKey, ELEMENTS, BOARD_ROWS, BOARD_COLS, makeEmptyElements, makeEmptyElementCamps, makeEmptyTerrain, makeLeader };
+module.exports = { createGameState, makeUnit, createBoard, ensureBoard, getCell, syncBoardUnits, placeUnit, isCellEmpty, normalizePosition, positionFromWaveRule, defaultEnemyPosition, heroDeploymentPositions, cellKey, ELEMENTS, BOARD_ROWS, BOARD_COLS, makeEmptyElements, makeEmptyElementCamps, makeEmptyTerrain, makeLeader };

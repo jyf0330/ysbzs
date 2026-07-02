@@ -13,7 +13,7 @@ const DEBUG_OR_HOST_COMMANDS = new Set([
 ]);
 const UNIT_COMMANDS = new Set(['MOVE_HERO', 'USE_SLOT', 'USE_ACTION_SLOT', 'SET_ACTION_DIRECTION', 'SET_SLOT_DIR', 'SELECT_UNIT', 'SELECT_HERO', 'SELL_UNIT', 'TOGGLE_UNIT_ACTIVE']);
 
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 function nextCommandId(state) {
   const n = Number(state.nextCommand || 1);
   state.nextCommand = n + 1;

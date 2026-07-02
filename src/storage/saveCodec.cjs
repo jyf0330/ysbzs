@@ -1,9 +1,7 @@
 const SAVE_SCHEMA_VERSION = 1;
 const SYSTEM_KEYS = new Set(['data', 'indexes', 'viewModel', 'dataSummary']);
 
-function clone(value) {
-  return value == null ? value : JSON.parse(JSON.stringify(value));
-}
+const { deepClone: clone } = require('../core/utils.cjs');
 
 function stable(value) {
   if (Array.isArray(value)) return value.map(stable);
@@ -28,6 +26,15 @@ function checksum(value) {
 function extractPlayableState(state) {
   const raw = clone(state || {});
   for (const key of SYSTEM_KEYS) delete raw[key];
+  if (raw.board && Array.isArray(raw.board.cells)) {
+    raw.board.cells = raw.board.cells.map(cell => {
+      const out = Object.assign({}, cell);
+      delete out.preview;
+      delete out.previews;
+      delete out.threat;
+      return out;
+    });
+  }
   return raw;
 }
 

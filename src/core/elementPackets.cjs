@@ -6,7 +6,7 @@
  */
 const { recordChange } = require('./changeLog.cjs');
 const { applyReplacementEffects } = require('./replacementEffects.cjs');
-function clone(v) { return JSON.parse(JSON.stringify(v)); }
+const { deepClone: clone } = require('./utils.cjs');
 const COMPAT_ELEMENTS = ['火', '水', '风', '土'];
 function makeEmptyElements() { const o = {}; for (const el of COMPAT_ELEMENTS) o[el] = 0; return o; }
 

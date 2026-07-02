@@ -181,7 +181,7 @@ test('Day1 full day route runs two nodes, fixed battle, two nodes, fixed battle'
   assert.equal(s.dayRoute.nodeIndex,6);
 });
 test('Day1-Day10 route can run continuously and records daily route history',()=>{
-  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999});
+  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999,playerLeader:{hp:999,maxHp:999}});
   assert.equal(s.day,10);
   assert.equal(s.phase,'day_end');
   assert.equal(s.dayRouteRuns.length,10);
@@ -201,7 +201,7 @@ test('Day1-Day10 route can run continuously and records daily route history',()=
   }
 });
 test('Day1-Day10 route battle outcomes write back result, economy, and reward eligibility',()=>{
-  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999});
+  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999,playerLeader:{hp:999,maxHp:999}});
   assert.equal(s.dayRouteRuns.length,10);
   for (const run of s.dayRouteRuns) {
     assert.equal(run.battleOutcomes.length,2, `day ${run.day} should record both battle outcomes`);
@@ -217,7 +217,7 @@ test('Day1-Day10 route battle outcomes write back result, economy, and reward el
   assert.ok(s.events.some(e=>e.type==='ROUTE_BATTLE_OUTCOME'));
 });
 test('Day1-Day10 route records economy and construction growth snapshots',()=>{
-  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999});
+  const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999,playerLeader:{hp:999,maxHp:999}});
   assert.equal(s.dayRouteRuns.length,10);
   for (const run of s.dayRouteRuns) {
     assert.ok(run.economy, `day ${run.day} should expose economy snapshot`);
@@ -249,9 +249,9 @@ test('route battle loss writes fail penalty post-battle event into run pressure'
   const beforeGold=s.gold;
   const castleLineFrom=s.castleLine;
   const economyMultiplierFrom=s.economyMultiplier;
-  s.castleLine-=1;
-  s.economyMultiplier*=0.9;
-  dayRoute.recordBattleOutcome(s,{encounterId:'enc_fail_test', name:'失败压力测试', phaseLabel:'中午战'},{code:'LOSE', win:false, grade:'D'}, beforeGold, {kind:'battle_choice', castleLineFrom, economyMultiplierFrom});
+  const playerHeroHpFrom=s.leaders.player.hp;
+  s.leaders.player.hp-=10;
+  dayRoute.recordBattleOutcome(s,{encounterId:'enc_fail_test', name:'失败压力测试', phaseLabel:'中午战'},{code:'LOSE', win:false, grade:'D', defeatReason:'party_wipe', playerHeroHpFrom, playerHeroHpTo:s.leaders.player.hp, playerHeroHpPenalty:10}, beforeGold, {kind:'battle_choice', castleLineFrom, economyMultiplierFrom, playerHeroHpFrom});
   const outcome=s.dayRoute.battleOutcomes[0];
   assert.equal(outcome.rewardPoolId,'reward_none');
   assert.equal(outcome.rewardEligible,false);
@@ -262,11 +262,15 @@ test('route battle loss writes fail penalty post-battle event into run pressure'
   assert.equal(failEvent.castleLineTo,s.castleLine);
   assert.equal(failEvent.economyMultiplierFrom,economyMultiplierFrom);
   assert.equal(failEvent.economyMultiplierTo,s.economyMultiplier);
+  assert.equal(failEvent.playerHeroHpFrom,playerHeroHpFrom);
+  assert.equal(failEvent.playerHeroHpTo,s.leaders.player.hp);
+  assert.equal(failEvent.playerHeroHpPenalty,10);
   assert.ok(s.dayRoute.history.some(x=>x.outcome && x.outcome.postBattleEvents.some(e=>e.eventId==='evt_battle_fail')));
   assert.ok(s.events.some(e=>e.type==='ROUTE_POST_BATTLE_EVENT_APPLY' && e.eventId==='evt_battle_fail'));
   const vm=createViewModel(s);
-  assert.equal(vm.castleLine,9);
-  assert.equal(vm.economyMultiplier,0.9);
+  assert.equal(vm.leaders.player.hp,70);
+  assert.equal(vm.castleLine,10);
+  assert.equal(vm.economyMultiplier,1);
   assert.ok(renderPlayerReport(s).includes('失败惩罚'));
 });
 test('route fast clear win writes high reward post-battle event into pending reward',()=>{
@@ -445,7 +449,7 @@ test('route duplicate event copies an owned pet into construction state',()=>{
   assert.ok(createViewModel(s).inventory.bench.some(x=>x.petId==='pal_005' && x.active===false));
   assert.ok(renderPlayerReport(s).includes('同名复制'));
 });
-test('route upgrade event raises an owned pet level through construction state',()=>{
+test('route upgrade event raises an owned pet quality through construction state',()=>{
   const { createViewModel } = require('../src/uiAdapter.cjs');
   const event=data.events.find(e=>e.id==='evt_upgrade_offer');
   assert.ok(event, 'upgrade event should exist');
@@ -457,21 +461,21 @@ test('route upgrade event raises an owned pet level through construction state',
   dispatch(s,{type:'PICK_NODE', nodeId:'node_d04_event_upgrade'});
   assert.equal(s.gold,beforeGold-6);
   const upgraded=s.inventory.find(x=>x.petId==='pal_005' && x.active!==false);
-  assert.equal(upgraded.level,2);
+  assert.equal(upgraded.quality,'白银');
   const history=s.dayRoute.history.find(x=>x.constructionEffect && x.constructionEffect.eventId==='evt_upgrade_offer');
   assert.ok(history);
   assert.equal(history.constructionEffect.type,'upgrade_pet');
-  assert.equal(history.constructionEffect.levelFrom,1);
-  assert.equal(history.constructionEffect.levelTo,2);
+  assert.equal(history.constructionEffect.qualityFrom,'青铜');
+  assert.equal(history.constructionEffect.qualityTo,'白银');
   assert.ok(s.events.some(e=>e.type==='CONSTRUCTION_EVENT_APPLY' && e.eventId==='evt_upgrade_offer'));
-  assert.ok(createViewModel(s).inventory.active.some(x=>x.petId==='pal_005' && x.level===2));
+  assert.ok(createViewModel(s).inventory.active.some(x=>x.petId==='pal_005' && x.quality==='白银'));
   assert.ok(renderPlayerReport(s).includes('升阶机会'));
 
   const shopState=createGameState({day:4,gold:20,activePets:['pal_005']});
   dispatch(shopState,{type:'ENTER_SHOP',poolId:'night_base',slots:3});
   dispatch(shopState,{type:'APPLY_SHOP_EVENT',eventId:'evt_upgrade_offer'});
   assert.equal(shopState.gold,14);
-  assert.equal(shopState.inventory.find(x=>x.petId==='pal_005').level,2);
+  assert.equal(shopState.inventory.find(x=>x.petId==='pal_005').quality,'白银');
   assert.ok(shopState.events.some(e=>e.type==='SHOP_EVENT_APPLY' && e.eventId==='evt_upgrade_offer'));
 });
 test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });

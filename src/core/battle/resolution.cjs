@@ -109,7 +109,7 @@ function damageUnit(state, source, target, amount, ctx = {}) {
     pushEvent(state, 'UNIT_DEAD', { unitId: target.id, name: target.name, text: `${target.displayName || target.name} HP${hpBefore}→0，死亡。` });
     mech.onDeath(state, target, source);
     if (target.id === state.leaders?.enemy?.id) finishBattle(state, true);
-    if (target.id === state.leaders?.player?.id) finishBattle(state, false);
+    if (target.id === state.leaders?.player?.id) finishBattle(state, false, { reason: 'player_hero_dead' });
   }
   syncDerivedBoard(state);
   return shieldAbsorb + final;

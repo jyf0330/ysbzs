@@ -135,7 +135,7 @@ test('actions module uses shape catalog cells and default settle count', () => {
   assert.equal(slot.hitCells, 3);
   assert.equal(slot.baseLayers, 1);
   assert.equal(slot.settleCount, 3);
-  assert.equal(slot.layers, 3);
+  assert.equal(slot.layers, 1);
   assert.deepEqual(actions.targetCellsForSlot(state, actor, slot), [{ r: 2, c: 3 }, { r: 3, c: 4 }, { r: 4, c: 3 }]);
   assert.deepEqual(actions.targetCellsForSlot(state, actor, slot, { r: 3, c: 4 }), [{ r: 2, c: 3 }, { r: 3, c: 4 }, { r: 4, c: 3 }]);
   assert.deepEqual(actions.targetCellsForSlot(state, actor, slot, { r: 0, c: 0 }), []);

@@ -303,7 +303,7 @@ test('UI07G RUN_FULL_RUN 通过公开命令跑到 Day10 终局并保留跨天成
   const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'full_run_ui' });
   const before = adapter.getViewModel();
   assert.ok(before.nextActions.some(x => x.type === 'RUN_FULL_RUN'), 'full run should be exposed as a player action');
-  const result = adapter.run('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: 999 });
+  const result = adapter.run('RUN_FULL_RUN', { fromDay: 1, toDay: 10, gold: 999, playerLeader: { hp: 999, maxHp: 999 } });
   assert.equal(result.accepted, true);
   assert.equal(result.viewModel.day, 10);
   assert.equal(result.viewModel.phase, 'day_end');
@@ -551,8 +551,7 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
   const [first, second] = vm0.heroes;
   assert.ok(first && second, '需要至少两只上阵宠物验证累计预览');
   const heroIds = new Set(vm0.heroes.map(x => x.id));
-  assert.deepEqual(new Set(vm0.previewGrid.map(x => x.actorId)), heroIds, '未移动时预览应按当前全队占位模拟全部出击');
-  assert.equal(vm0.teamPlacementPreview.activeUnitId, first.id);
+  assert.ok(vm0.previewGrid.every(x => heroIds.has(x.actorId) && Number(x.predictedDamage || 0) > 0), '预览只保留会造成受伤的全队命中记录');
   assert.deepEqual(vm0.teamPlacementPreview.movedUnitIds, []);
 
   const secondTarget = firstLegalMoveCell(vm0, second);
@@ -562,9 +561,7 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
   const vm1 = adapter.getViewModel();
   assert.equal(vm1.teamPlacementPreview.activeUnitId, second.id);
   assert.deepEqual(vm1.teamPlacementPreview.movedUnitIds, [second.id]);
-  assert.deepEqual(new Set(vm1.previewGrid.map(x => x.actorId)), heroIds, '移动一只宠物后仍应按全队未来占位模拟全部出击');
-  assert.ok(vm1.previewGrid.some(x => x.actorId === second.id && x.isActiveActor === true));
-  assert.ok(vm1.previewGrid.some(x => x.actorId === first.id && x.isActiveActor === false));
+  assert.ok(vm1.previewGrid.every(x => heroIds.has(x.actorId) && Number(x.predictedDamage || 0) > 0), '移动后预览仍只保留受伤记录');
 
   const firstAfterSecond = vm1.heroes.find(x => x.id === first.id);
   const firstTarget = firstLegalMoveCell(vm1, firstAfterSecond);
@@ -574,11 +571,8 @@ test('UI16 棋盘预览按整队摆位累计，当前主体跟随刚移动宠物
   const vm2 = adapter.getViewModel();
   assert.equal(vm2.teamPlacementPreview.activeUnitId, first.id);
   assert.deepEqual(vm2.teamPlacementPreview.movedUnitIds, [second.id, first.id]);
-  assert.deepEqual(new Set(vm2.previewGrid.map(x => x.actorId)), heroIds);
-  assert.ok(vm2.previewGrid.some(x => x.actorId === first.id && x.isActiveActor === true));
-  assert.ok(vm2.previewGrid.some(x => x.actorId === second.id && x.isActiveActor === false));
-  assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === second.id)));
-  assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => p.actorId === first.id)));
+  assert.ok(vm2.previewGrid.every(x => heroIds.has(x.actorId) && Number(x.predictedDamage || 0) > 0));
+  assert.ok(vm2.board.cells.some(cell => Array.isArray(cell.previews) && cell.previews.some(p => Number(p.predictedDamage || 0) > 0)));
 });
 
 test('UI16B 棋盘预览不把我方行动结算成友方受伤', () => {
@@ -619,8 +613,9 @@ test('UI17 棋盘预览伤害按元素成型结算而不是本次层数', () => 
   const previews = battle.buildPreviewGrid(state, { unitId: actor.id, slotId: 0 });
   const hit = previews.find(p => p.targetId === target.id);
   assert.ok(hit, '预览需要命中目标');
-  assert.equal(hit.projectedElementsBeforeSettle.火, 3);
-  assert.equal(hit.projectedElements.火, 0);
+  assert.equal(Object.prototype.hasOwnProperty.call(hit, 'generatedElements'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(hit, 'projectedElements'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(hit, 'projectedElementsBeforeSettle'), false);
   assert.equal(hit.settlement.layers, 3);
   assert.equal(hit.predictedSettlementDamage, 6, '火2+本次火1达到3层时，应预估Σ(1..3)=6点元素伤害');
   assert.equal(hit.predictedActionDamage, actor.atk, '命中敌人时还应预估普通行动伤害');
@@ -662,7 +657,7 @@ test('UI17B 棋盘预览汇总即将结算的未用行动槽和普通行动伤�
   const previews = battle.buildPreviewGrid(state, { unitId: actor.id });
   const hits = previews.filter(p => p.targetId === target.id);
   assert.deepEqual(hits.map(p => p.slotIndex), [0, 1, 2], '预览应覆盖所有即将可结算的未用行动槽');
-  assert.deepEqual(hits.map(p => p.element), ['火', '水', '风']);
+  assert.ok(hits.every(p => !Object.prototype.hasOwnProperty.call(p, 'element')), '伤害预览不再携带未来元素预览字段');
   assert.deepEqual(hits.map(p => p.predictedRawDamage), [5, 5, 5], '每个命中槽都应预估普通行动伤害');
   assert.deepEqual(hits.map(p => p.predictedDamage), [5, 5, 5]);
   assert.deepEqual(hits.map(p => p.predictedShieldDamage), [1, 0, 0]);

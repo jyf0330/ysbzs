@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const { createGameState, makeUnit, syncBoardUnits } = require('../src/core/state.cjs');
 const battle = require('../src/core/battle.cjs');
+const dayRoute = require('../src/core/dayRoute.cjs');
 const { createYSBZSUIAdapter } = require('../src/uiAdapter.cjs');
 
 function eventCount(state, type) {
@@ -180,4 +181,61 @@ test('LB09 element settlement is linear: 3 layers deal 3 damage, not triangular 
   assert.equal(target.hp, 7);
   const damage = state.events.find(e => e.type === 'ELEMENT_SETTLE' && e.targetId === target.id);
   assert.equal(damage.damage, 3);
+});
+
+test('LB10 party wipe ends the battle and damages player hero by 10 HP', () => {
+  const state = createGameState({ activePets: ['pal_005'] });
+  state.phase = 'player_turn';
+  state.round = 1;
+  state.leaders.player.hp = 15;
+  state.leaders.player.maxHp = 80;
+  for (const unit of state.units.filter(u => u.side === 'hero')) {
+    unit.hp = 0;
+    unit.alive = false;
+  }
+  state.units.push(makeUnit(state, 'enemy', 'pal_001', { id: 'wipe_guard', hp: 10, atk: 0, position: { r: 1, c: 6 } }));
+  battle.syncDerivedBoard(state);
+
+  assert.ok(battle.endPlayerTurn(state, { skipMonster: true }));
+
+  assert.equal(state.phase, 'battle_end');
+  assert.equal(state.result.code, 'LOSE');
+  assert.equal(state.result.defeatReason, 'party_wipe');
+  assert.equal(state.leaders.player.hp, 5);
+  assert.equal(state.leaders.player.alive, true);
+  assert.ok(state.events.some(e => e.type === 'BATTLE_FAIL_PENALTY' && e.playerHeroHpFrom === 15 && e.playerHeroHpTo === 5));
+});
+
+test('LB11 route party wipe advances when hero survives and game-over when hero dies', () => {
+  const aliveState = createGameState({ day: 1, activePets: ['pal_005'] });
+  dayRoute.ensureDayRoute(aliveState);
+  assert.equal(dayRoute.runFixedBattle(aliveState, { scheduleStep: 3 }), true);
+  aliveState.leaders.player.hp = 15;
+  for (const unit of aliveState.units.filter(u => u.side === 'hero')) {
+    unit.hp = 0;
+    unit.alive = false;
+  }
+  assert.ok(battle.endPlayerTurn(aliveState, { skipMonster: true }));
+  const aliveOutcome = dayRoute.finalizeRouteBattle(aliveState);
+  assert.ok(aliveOutcome);
+  assert.equal(aliveState.phase, 'node_resolved');
+  assert.equal(aliveState.leaders.player.hp, 5);
+  assert.equal(aliveState.dayRoute.terminal, undefined);
+
+  const deadState = createGameState({ day: 1, activePets: ['pal_005'] });
+  dayRoute.ensureDayRoute(deadState);
+  assert.equal(dayRoute.runFixedBattle(deadState, { scheduleStep: 3 }), true);
+  deadState.leaders.player.hp = 10;
+  for (const unit of deadState.units.filter(u => u.side === 'hero')) {
+    unit.hp = 0;
+    unit.alive = false;
+  }
+  assert.ok(battle.endPlayerTurn(deadState, { skipMonster: true }));
+  const deadOutcome = dayRoute.finalizeRouteBattle(deadState);
+  assert.ok(deadOutcome);
+  assert.equal(deadState.phase, 'game_over');
+  assert.equal(deadState.leaders.player.hp, 0);
+  assert.equal(deadState.leaders.player.alive, false);
+  assert.equal(deadState.dayRoute.terminal.status, 'defeat');
+  assert.equal(deadState.dayRoute.terminal.kind, 'player_hero_dead');
 });

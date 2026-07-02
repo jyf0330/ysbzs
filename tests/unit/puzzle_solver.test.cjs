@@ -33,7 +33,7 @@ function exactState() {
   state.units = [hero];
   const enemy = makeUnitFromData(state, 'enemy', 'pal_001', {
     id: 'enemy_target',
-    hp: 6,
+    hp: 3,
     shield: 0,
     position: { r: 3, c: 4 },
     mechanics: ['none']

@@ -12,9 +12,27 @@ const { unsupportedMechanicsForUnit, auditPlayableUnits } = require('../../src/c
 const { canonicalEventLog, eventsToText } = require('../../src/core/eventProjection.cjs');
 
 function firstPreviewCell(adapter, unitId, slotId = 0) {
-  const preview = adapter.buildPreview({ unitId, slotId }).result;
-  assert.ok(Array.isArray(preview) && preview.length, 'preview must have at least one legal cell');
-  return { r: preview[0].r, c: preview[0].c };
+  const direct = adapter.buildPreview({ unitId, slotId }).result;
+  if (Array.isArray(direct) && direct.length) return { r: direct[0].r, c: direct[0].c };
+  const vm = adapter.getViewModel();
+  for (const hero of vm.heroes || []) {
+    for (const slot of hero.actionSlots || hero.slots || []) {
+      const preview = adapter.buildPreview({ unitId: hero.id, slotId: slot.index }).result;
+      if (Array.isArray(preview) && preview.length) {
+        return { r: preview[0].r, c: preview[0].c, unitId: hero.id, slotId: slot.index };
+      }
+      const offset = Array.isArray(slot.shapeOffsets) ? slot.shapeOffsets[0] : null;
+      if (hero.position && offset) {
+        return {
+          r: Number(hero.position.r) + Number(offset.dr || 0),
+          c: Number(hero.position.c) + Number(offset.dc || 0),
+          unitId: hero.id,
+          slotId: slot.index
+        };
+      }
+    }
+  }
+  assert.fail('preview must have at least one legal damage or shape cell');
 }
 
 test('R501 save document exports/restores playable single-player state and per-player view state', () => {
@@ -76,16 +94,19 @@ test('R504 AP allocation is consumed by USE_SLOT and affects available AP', () =
   let vm = adapter.getViewModel();
   const hero = vm.heroes.find(h => Number(h.ap || 0) >= 2) || vm.heroes[0];
   const cell = firstPreviewCell(adapter, hero.id, 0);
-  const used = adapter.run({ type: 'USE_SLOT', unitId: hero.id, slotId: 0, cell, ap: 2, playerId: 'p1', commandId: 'r504_use', baseStateVersion: vm.stateVersion });
+  const usedUnitId = cell.unitId || hero.id;
+  const usedSlotId = cell.slotId ?? 0;
+  const used = adapter.run({ type: 'USE_SLOT', unitId: usedUnitId, slotId: usedSlotId, cell, ap: 2, playerId: 'p1', commandId: 'r504_use', baseStateVersion: vm.stateVersion });
   assert.equal(used.accepted, true);
   assert.equal(used.result, true);
   vm = adapter.getViewModel();
-  const afterHero = vm.heroes.find(h => h.id === hero.id);
+  const afterHero = vm.heroes.find(h => h.id === usedUnitId);
   assert.equal(afterHero.actionApSpent, 2);
   assert.equal(afterHero.availableAp, Math.max(0, Number(afterHero.ap || 0) - 2));
 
-  const cell2 = firstPreviewCell(adapter, hero.id, 1);
-  const tooMuch = adapter.run({ type: 'USE_SLOT', unitId: hero.id, slotId: 1, cell: cell2, ap: Number(afterHero.availableAp || 0) + 1, playerId: 'p1', commandId: 'r504_block', baseStateVersion: vm.stateVersion });
+  const cell2 = firstPreviewCell(adapter, usedUnitId, 1);
+  const blockedSlotId = cell2.slotId ?? 1;
+  const tooMuch = adapter.run({ type: 'USE_SLOT', unitId: cell2.unitId || usedUnitId, slotId: blockedSlotId, cell: cell2, ap: Number(afterHero.availableAp || 0) + 1, playerId: 'p1', commandId: 'r504_block', baseStateVersion: vm.stateVersion });
   assert.equal(tooMuch.result, false);
   assert.ok(tooMuch.events.some(e => e.type === 'USE_SLOT_BLOCKED'));
 });

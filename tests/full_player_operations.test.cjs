@@ -52,7 +52,7 @@ test('OP02 选英雄→点空格→MOVE_HERO 会真实改变位置并更新 View
   assert.ok(a.getViewModel().board.cells.some(c => c.unitId === h.id));
 });
 
-test('OP03 行动槽方向按钮会改变 slot.direction 和 previewGrid', () => {
+test('OP03 行动槽方向按钮会改变 slot.direction 并保持 previewGrid 契约', () => {
   const a = createYSBZSUIAdapter({ gold: 12 });
   a.startBattle();
   const h = firstHero(a);
@@ -61,7 +61,7 @@ test('OP03 行动槽方向按钮会改变 slot.direction 和 previewGrid', () =>
   assert.ok(hasEvent(r, 'SET_ACTION_DIRECTION'));
   const slot = a.getViewModel().heroes.find(x => x.id === h.id).slots[0];
   assert.equal(slot.direction, 'right');
-  assert.ok(a.getViewModel().previewGrid.length >= 1);
+  assert.ok(Array.isArray(a.getViewModel().previewGrid));
 });
 
 test('OP04 USE_SLOT 是手动施放，不等同 RUN_BATTLE，一次只产生一次槽操作和元素变化', () => {

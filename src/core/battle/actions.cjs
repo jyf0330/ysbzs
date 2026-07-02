@@ -68,7 +68,7 @@ function slotsForUnit(state, unit) {
       index: i,
       label: `第${i + 1}槽`,
       element,
-      layers: baseLayers * settleCount,
+      layers: baseLayers,
       baseLayers,
       settleCount,
       shapeId,

@@ -11,6 +11,7 @@ const { createActionsModule } = require('./battle/actions.cjs');
 const { createPlanningModule } = require('./battle/planning.cjs');
 const { createPreviewModule } = require('./battle/preview.cjs');
 const { createResolutionModule } = require('./battle/resolution.cjs');
+const { createLifecycleModule } = require('./battle/lifecycle.cjs');
 const { summarizeDamageEvents } = require('./battle/eventSummary.cjs');
 
 let boardUnitAt, canStandAt, allStandCells, moveHero, moveUnitGeneral;
@@ -18,8 +19,9 @@ let slotsForUnit, parseSlotIndex, targetCellsForSlot, targetsAtCells, unitsAtCel
 let targetCellsForSlotFrom, firstLineDirection, pathToward, chooseEnemyAttackPlan, positionKey, cloneElementsFromCell, actionCandidateScore, generateActorCandidates, evaluateTeamChoices, buildPlayerAutoPlan, buildPlayerPositionPlan, computeMonsterIntent, buildThreatGrid, buildTeamRiskGrid, buildMoveRiskGrid;
 let buildPreviewGrid, clearPreviewAndThreat, syncDerivedBoard, getCellDetail;
 let applyElement, applyElementToCell, triggerTerrainOnEnter, damageUnit, settleElements;
+let playerPartyWiped, finishBattle;
 
-function clone(value) { return JSON.parse(JSON.stringify(value)); }
+const { deepClone: clone } = require('./utils.cjs');
 function living(state, side) { return state.units.filter(u => u.side === side && u.alive && u.hp > 0); }
 function leaders(state) { return state.leaders ? [state.leaders.player, state.leaders.enemy].filter(Boolean) : []; }
 function livingLeader(state, camp) {
@@ -80,6 +82,13 @@ function combatTargets(state, camp) {
   if (leader) out.push(leader);
   return out;
 }
+({ playerPartyWiped, finishBattle } = createLifecycleModule({
+  pushEvent,
+  mech,
+  clone,
+  living,
+  livingLeader
+}));
 function ensureElements(obj) {
   if (!obj.elements) obj.elements = makeEmptyElements();
   for (const el of ELEMENTS) if (typeof obj.elements[el] !== 'number') obj.elements[el] = 0;
@@ -328,6 +337,9 @@ function runMonsterTurn(state) {
     if (state.phase === 'battle_end') break;
   }
   syncDerivedBoard(state);
+  if (state.phase !== 'battle_end' && (playerPartyWiped(state) || livingLeader(state, 'player') === null)) {
+    finishBattle(state, false, { reason: livingLeader(state, 'player') === null ? 'player_hero_dead' : 'party_wipe' });
+  }
   return acted;
 }
 function endPlayerTurn(state, opts = {}) {
@@ -336,6 +348,8 @@ function endPlayerTurn(state, opts = {}) {
   settleElements(state);
   if (state.phase === 'battle_end') return true;
   if (livingLeader(state, 'enemy') === null) return finishBattle(state, true);
+  if (livingLeader(state, 'player') === null) return finishBattle(state, false, { reason: 'player_hero_dead' });
+  if (playerPartyWiped(state)) return finishBattle(state, false, { reason: 'party_wipe' });
   if (!living(state, 'enemy').length) {
     state.phase = 'round_end';
     pushEvent(state, 'ROUND_CLEAR', { text: `第${state.round}回合怪物清空。` });
@@ -343,7 +357,8 @@ function endPlayerTurn(state, opts = {}) {
   }
   if (!opts.skipMonster) runMonsterTurn(state);
   if (state.phase === 'battle_end') return true;
-  if (!living(state, 'hero').length || livingLeader(state, 'player') === null) return finishBattle(state, false);
+  if (livingLeader(state, 'player') === null) return finishBattle(state, false, { reason: 'player_hero_dead' });
+  if (playerPartyWiped(state)) return finishBattle(state, false, { reason: 'party_wipe' });
   state.phase = 'round_end';
   return true;
 }
@@ -355,32 +370,11 @@ function runRound(state) {
   runMonsterTurn(state);
   return false;
 }
-function finishBattle(state, win) {
-  if (state.phase === 'battle_end' && state.result) return state.result;
-  const result = { win, code: win ? (state.round <= 5 ? 'WIN_FAST' : 'WIN') : 'LOSE', grade: win ? (state.round <= 5 ? 'S' : 'A') : 'D', gold: win ? (state.round <= 5 ? 6 : 4) : 1 };
-  mech.battleEndMechanics(state, result);
-  if (!win) { state.castleLine -= 1; state.economyMultiplier *= 0.9; pushEvent(state, 'BATTLE_FAIL_PENALTY', { text: '战斗失败：我方英雄防线-1，经济倍率x0.9。' }); }
-  state.gold += result.gold;
-  state.result = result;
-  state.phase = 'battle_end';
-  pushEvent(state, 'BATTLE_END', { result: result.code, grade: result.grade, gold: result.gold, text: `战斗结束：${result.code}，评级${result.grade}，金币+${result.gold}。` });
-  {
-    const existingTrace = Array.isArray(state.battleTrace) ? state.battleTrace.slice() : [];
-    const legacyTrace = state.events.filter(e => /BATTLE|ROUND|PLAYER|MONSTER|DAMAGE|ELEMENT|SPAWN|MOVE|DEAD/.test(e.type)).map(e => clone(e));
-    const seen = new Set(existingTrace.map(e => e.eventId || `legacy_${e.step}_${e.type}`));
-    state.battleTrace = existingTrace.concat(legacyTrace.filter(e => {
-      const key = e.eventId || `legacy_${e.step}_${e.type}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }));
-  }
-  return result;
-}
 function runBattle(state) {
   if (state.phase !== 'init') {
     // 自动战斗从当前状态继续，不清空玩家已做的细颗粒操作。
     if (state.phase === 'player_turn') endPlayerTurn(state);
+    if (state.phase === 'battle_end') return state.result;
   }
   if (state.round === 0 || state.phase === 'init') startBattle(state);
   let cleared = livingLeader(state, 'enemy') === null;
@@ -391,11 +385,12 @@ function runBattle(state) {
     if (livingLeader(state, 'enemy') === null) { cleared = true; break; }
     runMonsterTurn(state);
     if (state.phase === 'battle_end') return state.result;
-    if (!living(state, 'hero').length || livingLeader(state, 'player') === null) { cleared = false; break; }
+    if (livingLeader(state, 'player') === null) return finishBattle(state, false, { reason: 'player_hero_dead' });
+    if (playerPartyWiped(state)) return finishBattle(state, false, { reason: 'party_wipe' });
     if (state.round >= state.maxRounds) break;
     state.phase = 'round_end';
   }
-  return finishBattle(state, cleared);
+  return finishBattle(state, cleared, { reason: cleared ? 'victory' : 'max_rounds' });
 }
 
 ({ boardUnitAt, canStandAt, allStandCells, moveHero, moveUnitGeneral } = createPositionModule({

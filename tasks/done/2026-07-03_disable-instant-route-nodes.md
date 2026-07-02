@@ -13,6 +13,7 @@ related_files:
 - `tests/unit/route_node_pool_status.test.cjs`
 - `tests/unit/seeded_route_options.test.cjs`
 - `tests/run_all_tests.cjs`
+- `tests/ui_adapter.test.cjs`
 - `web/js/local-engine.js`
 - `tasks/done/2026-07-03_disable-instant-route-nodes.md`
 
@@ -28,6 +29,9 @@ write_scopes:
   mode: direct
 - file: `tests/run_all_tests.cjs`
   scope: route event tests decoupled from disabled official node pool via explicit test fixtures
+  mode: direct
+- file: `tests/ui_adapter.test.cjs`
+  scope: UI07B official route-node expectation updated from free-refresh event to shop/reward surfaces
   mode: direct
 - file: `web/js/local-engine.js`
   scope: generated local browser bundle refreshed from current worktree snapshot
@@ -50,6 +54,7 @@ validation:
 - pass: `node --test tests/unit/daily_flow_battle_first_route.test.cjs`
 - pass: `node --test tests/unit/route_node_pool_status.test.cjs tests/unit/seeded_route_options.test.cjs tests/unit/daily_flow_battle_first_route.test.cjs`
 - pass: `node tests/run_all_tests.cjs` (67/67)
+- pass: `node --test tests/ui_adapter.test.cjs`
 - pass: `node tools/build_local_engine_bundle.cjs`
 - pass: `node tools/build_local_engine_bundle.cjs && node --check web/js/local-engine.js`
 - pass: `node --test tests/unit/seed_episode_preview.test.cjs`

@@ -342,7 +342,8 @@ test('UI07B Day1 前两个节点之后第三步进入固定战', () => {
   assert.ok(hasEvent(nodeOptions, 'NODE_OPTIONS'));
   assert.equal(nodeOptions.viewModel.dayRoute.options.length, 3);
   assert.equal(nodeOptions.viewModel.dailyFlow.steps[0].status, 'current');
-  const firstNode = nodeOptions.viewModel.dayRoute.options[0];
+  const firstNode = nodeOptions.viewModel.dayRoute.options.find(option => option.nodeId === 'node_event_free_roll');
+  assert.ok(firstNode, 'seeded node choices should include the free-refresh event for this route test seed');
   assert.equal(firstNode.choicePreview.kindLabel, '事件');
   assert.ok(firstNode.choicePreview.summary.includes('免费刷新'));
   assert.ok(firstNode.choicePreview.gainText.includes('免费刷新+1'));

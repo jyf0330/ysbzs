@@ -4,7 +4,7 @@ const path = require('path');
 const { loadGameData } = require('../src/core/csvData.cjs');
 const { rng, pickWeighted } = require('../src/core/rng.cjs');
 const { selectPetIdsForWave, pickQualityForWave } = require('../src/core/waveRules.cjs');
-const { routeChoiceSeedContext } = require('../src/core/dayRoute.cjs');
+const { routeChoiceSeedContext, seededRouteOptions } = require('../src/core/dayRoute.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const DEFAULT_OUT_DIR = path.join(ROOT, 'outputs', 'seed-episode-preview-20260702');
@@ -227,7 +227,7 @@ function buildSeedPreview(data, seed, days = DEFAULT_DAYS) {
     for (const schedule of scheduleRows(data, day)) {
       if (schedule.kind === 'node_choice') {
         const candidates = activeRows(data.nodePool, day).filter(x => x.nodePoolId === schedule.poolId);
-        const options = firstN(candidates, Number(schedule.choiceCount || 3));
+        const options = seededRouteOptions(candidates, Number(schedule.choiceCount || 3), seed, schedule, 'node');
         options.forEach((option, index) => {
           const sources = sourcesForNodeOption(data, seed, day, schedule, option, index + 1);
           sources.forEach(source => petSources.push(Object.assign({
@@ -261,7 +261,7 @@ function buildSeedPreview(data, seed, days = DEFAULT_DAYS) {
       }
       if (schedule.kind === 'battle_choice') {
         const candidates = activeRows(data.encounterPool, day).filter(x => x.encounterPoolId === schedule.encounterPoolId);
-        const options = firstN(candidates, Number(schedule.choiceCount || 3));
+        const options = seededRouteOptions(candidates, Number(schedule.choiceCount || 3), seed, schedule, 'encounter');
         options.forEach((encounter, index) => {
           const battle = battlePreview(data, seed, day, schedule, encounter);
           battles.push(Object.assign({ seed, day, step: schedule.step, optionIndex: index + 1, encounterId: encounter.encounterId, encounterName: encounter.name }, battle));
@@ -333,7 +333,7 @@ function buildEpisodePreview(options = {}) {
       seeds,
       days,
       boundary: 'seed-generated preview snapshot for planning/balancing; not formal runtime storage',
-      algorithm: 'route and encounter choices use the current core top-weight candidate rule; route shop/reward sources and battle waves use the same seed contexts as core runtime'
+      algorithm: 'route and encounter choices use core seeded weighted sampling without replacement; route shop/reward sources and battle waves use the same seed contexts as core runtime'
     },
     previews,
     tables: { steps, petSources, battles }
@@ -399,7 +399,7 @@ function renderReadme(payload) {
     + `- seed_episode_pet_sources.csv：每个节点选项可能给到的宠物来源，包含商店和奖励。\n`
     + `- seed_episode_battle_enemies.csv：每场战斗按 seed 展开的敌人/品质/波次。\n\n`
     + `## 当前实现口径\n\n`
-    + `节点、遭遇、商店、奖励和波次都从当前 data/csv 归一化数据读取。路线和遭遇候选沿用当前核心前 N 规则；路线商店、路线奖励和战斗波次使用与核心 runtime 相同的 seed 上下文，方便提前看同一个 seed 在正式游玩入口会出现什么。\n`;
+    + `节点、遭遇、商店、奖励和波次都从当前 data/csv 归一化数据读取。路线和遭遇候选使用当前核心 seed 加权不放回抽样规则；路线商店、路线奖励和战斗波次使用与核心 runtime 相同的 seed 上下文，方便提前看同一个 seed 在正式游玩入口会出现什么。\n`;
 }
 
 function parseArgs(argv) {

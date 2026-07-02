@@ -4,6 +4,7 @@ const { pushEvent } = require('./events.cjs');
 const { syncBoardUnits } = require('./state.cjs');
 const { queueBattlePrepEffectFromEvent } = require('./outerBattleEffects.cjs');
 const { queueOuterRunEffectFromEvent, applyRouteBattleOutcomeEffects } = require('./outerRunEffects.cjs');
+const { rng, pickWeighted } = require('./rng.cjs');
 
 const { deepClone: clone } = require('./utils.cjs');
 function activeRows(rows, day) {
@@ -138,8 +139,34 @@ function startNextDay(state, opts = {}) {
   pushEvent(state, 'START_NEXT_DAY', { dayFrom: currentDay, dayTo: targetDay, text: `进入第${targetDay}天。` });
   return true;
 }
-function firstN(rows, count) {
-  return rows.slice().sort((a, b) => Number(b.weight || 0) - Number(a.weight || 0) || String(a.nodeId || a.encounterId).localeCompare(String(b.nodeId || b.encounterId))).slice(0, count);
+function routeOptionId(row) {
+  return String(row?.nodeId || row?.encounterId || row?.id || row?.name || '');
+}
+function routeOptionWeight(row) {
+  const n = Number(row?.weight ?? 1);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+function routeOptionSeed(stateOrSeed, schedule = {}, kind = 'node') {
+  const seed = typeof stateOrSeed === 'object'
+    ? (stateOrSeed?.rngState?.seed || stateOrSeed?.battleId || 'ysbzs-local')
+    : (stateOrSeed || 'ysbzs-local');
+  const day = typeof stateOrSeed === 'object' ? Number(stateOrSeed?.day || schedule.day || 1) : Number(schedule.day || 1);
+  const step = Number(schedule.step || 0);
+  const poolId = schedule.poolId || schedule.encounterPoolId || 'pool';
+  return `route:${kind}:${seed}:${day}:${step}:${poolId}`;
+}
+function seededRouteOptions(rows, count, stateOrSeed, schedule = {}, kind = 'node') {
+  const limit = Math.max(0, Number(count || 0));
+  const pool = rows.slice().sort((a, b) => routeOptionId(a).localeCompare(routeOptionId(b)));
+  const random = rng(routeOptionSeed(stateOrSeed, schedule, kind));
+  const out = [];
+  while (pool.length && out.length < limit) {
+    const picked = pickWeighted(pool, routeOptionWeight, random);
+    if (!picked) break;
+    out.push(picked);
+    pool.splice(pool.indexOf(picked), 1);
+  }
+  return out;
 }
 function publicTierLabel(poolId) {
   const tier = String(poolId || '').replace(/^reward_/, '').replace(/^tier_/, '');
@@ -291,7 +318,7 @@ function generateNodeOptions(state, opts = {}) {
   }
   const count = Number(opts.count || schedule.choiceCount || 3);
   const candidates = activeRows(state.data.nodePool, state.day).filter(x => x.nodePoolId === schedule.poolId);
-  const options = firstN(candidates, count).map((node, index) => ({
+  const options = seededRouteOptions(candidates, count, state, schedule, 'node').map((node, index) => ({
     optionId: `node_${schedule.step}_${index + 1}_${node.nodeId}`,
     scheduleId: schedule.id,
     scheduleStep: schedule.step,
@@ -390,7 +417,7 @@ function generateBattleOptions(state, opts = {}) {
   }
   const count = Number(opts.count || schedule.choiceCount || 3);
   const candidates = activeRows(state.data.encounterPool, state.day).filter(x => x.encounterPoolId === schedule.encounterPoolId);
-  const options = firstN(candidates, count).map((enc, index) => ({
+  const options = seededRouteOptions(candidates, count, state, schedule, 'encounter').map((enc, index) => ({
     optionId: `enc_${schedule.step}_${index + 1}_${enc.encounterId}`,
     scheduleId: schedule.id,
     scheduleStep: schedule.step,
@@ -795,4 +822,4 @@ function runDayRoute(state) {
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview, finalizeRouteBattle, routeChoiceSeedContext };
+module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview, finalizeRouteBattle, routeChoiceSeedContext, seededRouteOptions, routeOptionSeed };

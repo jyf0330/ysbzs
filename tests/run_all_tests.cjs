@@ -111,7 +111,7 @@ test('route event node changes the same shop refresh state',()=>{
 test('reward options can include pet/relic and pick reward',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'REWARD_OPTIONS',poolId:'reward_pT1',count:3}); assert.equal(s.rewards.length,3); dispatch(s,{type:'PICK_REWARD',index:0}); assert.ok(hasEvent(s,'REWARD_PICK')); });
 test('node shop returns to day route while manual shop still exits to day_end',()=>{
   const routed=createGameState({day:1,gold:999});
-  openFirstRouteNodeOptions(routed);
+  openFirstRouteNodeOptions(routed,{count:6});
   dispatch(routed,{type:'PICK_NODE',nodeId:'node_shop_basic'});
   assert.equal(routed.phase,'shop');
   dispatch(routed,{type:'EXIT_SHOP'});

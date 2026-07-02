@@ -157,15 +157,15 @@ test('daily flow exposes real next-day command after completing day 1 route', ()
   assert.equal(vm.dayRouteRuns[0].day, 1);
 });
 
-test('day 1 route shop is affordable in the default player economy', () => {
-  const adapter = createYSBZSUIAdapter({ day: 1, seed: 'daily-flow-affordable-shop' });
+test('day 1 route shop is affordable when the seed rolls a basic shop in the default player economy', () => {
+  const adapter = createYSBZSUIAdapter({ day: 1, seed: 'find-shop-0' });
   let vm = adapter.getViewModel('p1');
   assert.ok(vm.gold > 0, 'opening economy should leave the player with spendable gold before the first event');
   const activeBefore = vm.inventory.activeCount;
 
   vm = run(adapter, 'GENERATE_NODE_OPTIONS', { scheduleStep: 1 }).viewModel;
   const shopNode = vm.dayRoute.options.find(option => option.nodeType === 'shop');
-  assert.ok(shopNode, 'default day 1 first 3-choice set should include a shop node');
+  assert.ok(shopNode, 'this seed should include a shop node in the first day 1 3-choice set');
 
   vm = run(adapter, 'PICK_NODE', { optionId: shopNode.optionId }).viewModel;
   assert.equal(vm.phase, 'shop');
@@ -212,7 +212,7 @@ test('daily flow shop purchase uses active slots first, bench second, and blocks
   assert.equal(buy.viewModel.inventory.activeCount, 3);
   assert.equal(buy.viewModel.inventory.benchCount, 0);
 
-  const benchAdapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'daily-flow-buy-bench', activePets: ['pal_001', 'pal_002', 'pal_003', 'pal_004'] });
+  const benchAdapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'ysbzs-local-2', activePets: ['pal_001', 'pal_002', 'pal_003', 'pal_004'] });
   vm = openShop(benchAdapter);
   assert.equal(vm.inventory.activeCount, MAX_ACTIVE_UNITS);
   offer = firstAffordable(vm);

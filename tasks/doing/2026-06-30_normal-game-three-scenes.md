@@ -18,11 +18,13 @@ branch: codex/bazaar-day1-day3-route
 - 商店界面负责购买、刷新、出售、离开商店，并显示可上阵/下阵阵容区。
 - 商店宠物商品必须显示公开详情：品质、小/中/大体型、元素、攻击格、价格和基础战斗属性；商品卡购买按钮仍走公开 `BUY_OFFER` 命令。
 - 宠物定位/role 是内部数据，只用于池、权重、调试或内部 ViewModel，不在正常玩家页展示。
+- 正常玩家页的宠物卡不能只显示名字：上阵/背包卡必须显示结构化宠物详情，商店卡必须显示玩家可理解的公开摘要、属性和形状说明。
 - 商店只卖宠物；商店格数是宠物攻击命中格容量，命中 1/2/3 格累计总量 10 格，不是 10 个商品按钮；商品价格按攻击格数挂钩，1格=2金、2格=4金、3格=6金。
 - 商店宠物详情必须显示 3×4 攻击范围小网格：宠物固定在第 2 行第 1 格，攻击范围按公开形状偏移标出。
 - 商店付费刷新价格按次数递增：第一次 2 金，第二次 4 金，第三次 8 金，第四次 16 金；进店首刷和免费刷新不推进付费序列。
 - 游戏/战斗界面负责棋盘、战斗按钮、敌我状态和战斗记录，不承载商店与大背包整理。
 - 当前存档落在战斗玩家回合时，战斗棋盘必须允许正常玩家调整宠物站位：点击我方宠物选中，再点击空格通过公开 `MOVE_HERO` 移动。
+- 上阵宠物数量必须等于 active 阵容数量；初始 activePets 与整备/购买上阵都应按 seed 稳定分配到左下 3x3 出生区。
 - 不改 `web/js/main.js`、不改 `web/ux-app.css`、不改 `web/index.html`；涉及浏览器运行的核心/adapter 改动后必须刷新 `web/js/local-engine.js`。
 
 ## related_files
@@ -32,6 +34,7 @@ branch: codex/bazaar-day1-day3-route
 - `web/normal-game.js`
 - `src/core/shop.cjs`
 - `src/core/state.cjs`
+- `src/core/inventoryRules.cjs`
 - `src/core/dayRoute.cjs`
 - `src/core/stateHash.cjs`
 - `src/uiAdapter.cjs`
@@ -66,6 +69,11 @@ branch: codex/bazaar-day1-day3-route
 
 ## validation
 
+- pass after normal pet detail expansion: `node --input-type=module --check < web/normal-game.js`
+- pass after normal pet detail expansion: `node --test tests/unit/normal_game_three_scenes.test.cjs` (6/6)
+- pass after normal pet detail expansion: `git diff --check -- web/normal-game.js web/normal-game.css tests/unit/normal_game_three_scenes.test.cjs`
+- pass after normal pet detail expansion: 4173 real browser flow at `http://127.0.0.1:4173/normal-game.html?runtime=http&sessionId=normal-pet-details-1783003088096&seed=normal-seed-check`: clicked the normal route choice `夜市商人`, reached the active shop scene, verified 4 shop pet cards with HP/攻击/防御/护盾/行动, attack-range grids and attack-range notes; verified active roster card with 品质/元素/HP/攻击/出售/状态; visible scene had no `Lv`, internal positioning labels, or shape ids like `形状08/11/13`; console/page errors = 0.
+- screenshot reviewed by Lead after normal pet detail expansion: `/Users/ywh/Documents/ysbzs/output/playwright/normal-game-pet-details-4173.png`; screenshot shows shop pet cards and roster cards with readable public details and no obvious overlap or missing stat rows.
 - RED confirmed for normal-player button budget: `node --test tests/unit/normal_game_three_scenes.test.cjs` failed because normal-game still showed Seed / restart / rule-check as top-level toolbar controls and did not hide formal-page debug chrome in the embedded battle page.
 - pass after normal-player button budget: `node --test tests/unit/normal_game_three_scenes.test.cjs` (5/5).
 - pass after normal-player button budget: `node --input-type=module --check < web/normal-game.js`.
@@ -108,6 +116,13 @@ branch: codex/bazaar-day1-day3-route
 - pass after paid refresh cost sequence: `node --check src/core/state.cjs`
 - pass after paid refresh cost sequence: `node --check src/core/dayRoute.cjs && node --check src/core/stateHash.cjs && node --check src/scenarios/fullDay.cjs && node --check src/uiAdapter.cjs`
 - pass after paid refresh cost sequence: `node --input-type=module --check < web/normal-game.js`
+- pass after active-pet seed deployment fix: `node --check src/core/state.cjs`
+- pass after active-pet seed deployment fix: `node --check src/core/inventoryRules.cjs`
+- pass after active-pet seed deployment fix: `node --test tests/unit/normal_game_three_scenes.test.cjs` (6/6);新增合同覆盖 4 个 `activePets` 会生成 4 个上阵单位、位置不重叠、都在左下 3x3、不会覆盖玩家英雄、同 seed 稳定、不同 seed 改变站位；下阵宠物重新上阵也走同一出生区。
+- pass after active-pet seed deployment fix: `node tests/run_all_tests.cjs` (67/67)
+- pass after active-pet seed deployment fix: 4173 `runtime=http` normal-game real browser flow opened `http://127.0.0.1:4173/normal-game.html?runtime=http&sessionId=pet-deploy-seed-1783002465417&seed=pet-deploy-seed-ui`, clicked normal page public command buttons to battle scene; embedded formal battle page rendered 64 board cells; console/page errors = 0; screenshot `/Users/ywh/Documents/ysbzs/output/playwright/normal-game-pet-deploy-seed-4173.png`.
+- screenshot reviewed by Lead after active-pet seed deployment fix: `/Users/ywh/Documents/ysbzs/output/playwright/normal-game-pet-deploy-seed-4173.png`; page shows normal-game battle scene with embedded formal 8x8 board, no obvious overlap/missing board. This default route naturally reached 1 active pet plus player hero, so 4-active correctness is covered by the reducer/core contract test rather than a constructed browser state.
+- note after active-pet seed deployment fix: `LIVE_4173_NOT_REFRESHED`; `web/js/local-engine.js` rebuild was not run because that generated file is already listed by multiple unarchived task cards. The 4173 browser evidence above used `runtime=http`, where the server reads current source modules.
 - pass after paid refresh cost sequence: `node --test tests/unit/normal_game_three_scenes.test.cjs` (4/4)
 - pass after paid refresh cost sequence: `node tests/run_all_tests.cjs` (66/66)
 - pass after paid refresh cost sequence: `git diff --check -- src/core/shop.cjs src/core/state.cjs src/core/dayRoute.cjs src/core/stateHash.cjs src/scenarios/fullDay.cjs src/uiAdapter.cjs web/normal-game.js tests/unit/normal_game_three_scenes.test.cjs tests/run_all_tests.cjs tasks/doing/2026-06-30_normal-game-three-scenes.md`

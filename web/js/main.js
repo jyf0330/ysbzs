@@ -22,6 +22,8 @@ import { createGameRuntime } from './runtime-client.js';
   const AUTO_PLAYER_FLOW_TYPES = new Set(['RUN_PLAYER_ALL_OUT', 'END_PLAYER_TURN', 'RUN_MONSTER_TURN', 'START_NEXT_ROUND']);
   const COMBAT_FX_EVENT_TYPES = new Set(['PLAYER_SELECT_SLOT', 'ENEMY_PET_ACTION', 'DAMAGE', 'UNIT_DEAD']);
   const MAX_COMBAT_FX_STEPS = 18;
+  const COMBAT_FX_SETTLE_MS = 900;
+  const MOVE_ANIMATION_MIN_MS = 680;
   const UNDO_STACK_LIMIT = 8;
 
   const ui = {
@@ -46,6 +48,7 @@ import { createGameRuntime } from './runtime-client.js';
 	    undoStack: [],
 	    manualFlowPreview: null,
 	    manualFlowPreviewPending: null,
+    moveAnimation: null,
     combatFxSerial: 0
   };
   Object.assign(ui, sharedUi);
@@ -463,6 +466,7 @@ import { createGameRuntime } from './runtime-client.js';
   async function runCommand(type, payload = {}, options = {}) {
     if (ui.busy) return;
     let undoSnapshot = null;
+    const previousVm = ui.vm;
     if (options.undoable && UNDOABLE_FLOW_TYPES.has(type)) undoSnapshot = await captureUndoSnapshot(type);
     if (!options.autoFlow && MANUAL_LOCK_TYPES.has(type)) ui.manualAutoLock = true;
     if (type === 'NEW_GAME') {
@@ -488,8 +492,12 @@ import { createGameRuntime } from './runtime-client.js';
         ui.manualFlowPreview = normalizeManualFlowPreviewResult(data.manualFlowPreview, sourceKey);
         ui.manualFlowPreviewPending = null;
       }
-      render();
-      startCombatFxFromEvents(data.events || []);
+      if (typeof options.beforeCommandRender === 'function') await options.beforeCommandRender(data);
+      const delayedBattleResult = await revealBattleResultAfterCombatFx(previousVm, ui.vm, data.events || []);
+      if (!delayedBattleResult) {
+        render();
+        startCombatFxFromEvents(data.events || []);
+      }
       if (shouldRefreshSelectedCellAfterCommand(type)) await refreshSelectedCellDetail();
       refreshManualFlowPreview();
       return data;
@@ -559,6 +567,7 @@ import { createGameRuntime } from './runtime-client.js';
   async function runPlayerAutoTurnFlow(startType, payload = {}) {
     if (ui.busy) return null;
     const undoSnapshot = await captureUndoSnapshot('PLAYER_AUTO_TURN_FLOW');
+    const previousVm = ui.vm;
     ui.busy = true;
     setBusy(true);
     const results = [];
@@ -577,8 +586,12 @@ import { createGameRuntime } from './runtime-client.js';
       }
       if (undoSnapshot && results.some(data => data?.ok !== false)) pushUndoSnapshot(undoSnapshot);
       renderCache.invalidate();
-      render();
-      startCombatFxFromEvents(results.flatMap(data => data?.events || []));
+      const events = results.flatMap(data => data?.events || []);
+      const delayedBattleResult = await revealBattleResultAfterCombatFx(previousVm, ui.vm, events);
+      if (!delayedBattleResult) {
+        render();
+        startCombatFxFromEvents(events);
+      }
       if (AUTO_PLAYER_FLOW_TYPES.has(startType)) await refreshSelectedCellDetail();
       refreshManualFlowPreview();
       return results[results.length - 1] || null;
@@ -697,6 +710,7 @@ import { createGameRuntime } from './runtime-client.js';
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
   function combatFxDelay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function delay(ms) { return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms) || 0))); }
   function boardCellElement(cell = {}) {
     const r = Number(cell.r);
     const c = Number(cell.c);
@@ -806,11 +820,101 @@ import { createGameRuntime } from './runtime-client.js';
       if (ui.combatFxSerial !== serial) break;
       await playCombatFxStep(step);
     }
+    if (ui.combatFxSerial === serial) await combatFxDelay(COMBAT_FX_SETTLE_MS);
   }
   function startCombatFxFromEvents(events = []) {
     void playCombatFxFromEvents(events).catch(err => {
       console.warn('combat fx skipped', err);
     });
+  }
+  function petMoveDurationMs() {
+    return prefersReducedMotion() ? 0 : MOVE_ANIMATION_MIN_MS;
+  }
+  function petMoveAnimationStyle(animation = {}, cellSize = 49) {
+    const gap = 2;
+    const dx = (Number(animation.to?.c ?? 0) - Number(animation.from?.c ?? 0)) * (cellSize + gap);
+    const dy = (Number(animation.to?.r ?? 0) - Number(animation.from?.r ?? 0)) * (cellSize + gap);
+    return ` style="--move-dx:${dx}px;--move-dy:${dy}px;--move-duration:${Number(animation.durationMs || 0)}ms"`;
+  }
+  function startPetMoveAnimation(unit = {}, to = {}) {
+    if (!unit?.id || !unit.position) return null;
+    const durationMs = petMoveDurationMs();
+    const animation = {
+      id: `${unit.id}:${Date.now()}`,
+      unitId: unit.id,
+      from: { r: Number(unit.position.r), c: Number(unit.position.c) },
+      to: { r: Number(to.r), c: Number(to.c) },
+      durationMs,
+      startedAt: Date.now()
+    };
+    ui.moveAnimation = animation;
+    ui.manualFlowPreview = null;
+    ui.manualFlowPreviewPending = null;
+    renderCache.invalidate('board');
+    renderCache.invalidate('cellDetail');
+    render();
+    return animation;
+  }
+  function isCurrentPetMoveAnimation(animation) {
+    return !!animation && ui.moveAnimation?.id === animation.id;
+  }
+  function finishPetMoveAnimation(animation) {
+    if (!isCurrentPetMoveAnimation(animation)) return;
+    ui.moveAnimation = null;
+    renderCache.invalidate('board');
+    renderCache.invalidate('cellDetail');
+  }
+  async function waitForPetMoveAnimation(animation) {
+    if (!animation) return;
+    const elapsed = Date.now() - Number(animation.startedAt || Date.now());
+    await delay(Math.max(0, Number(animation.durationMs || 0) - elapsed));
+  }
+  async function runMoveHeroWithAnimation(hero, to) {
+    const animation = startPetMoveAnimation(hero, to);
+    try {
+      await runCommand('MOVE_HERO', { unitId: hero.id, to }, {
+        beforeCommandRender: async () => {
+          await waitForPetMoveAnimation(animation);
+          finishPetMoveAnimation(animation);
+        }
+      });
+    } finally {
+      if (isCurrentPetMoveAnimation(animation)) {
+        finishPetMoveAnimation(animation);
+        render();
+      }
+    }
+  }
+  function shouldDelayBattleResultForCombatFx(data = {}) {
+    const events = data.events || [];
+    return data?.viewModel?.phase === 'battle_end'
+      && combatFxSteps(events).length > 0
+      && !prefersReducedMotion();
+  }
+  async function revealBattleResultAfterCombatFx(previousVm, finalVm, events = []) {
+    if (!shouldDelayBattleResultForCombatFx({ viewModel: finalVm, events }) || !previousVm || !finalVm) return false;
+    const finalSelection = {
+      selectedUnitId: ui.selectedUnitId,
+      selectedSlotGlobal: ui.selectedSlotGlobal,
+      selectedSlot: ui.selectedSlot,
+      selectedCell: ui.selectedCell,
+      cellDetail: ui.cellDetail
+    };
+    ui.vm = previousVm;
+    ui.manualFlowPreview = null;
+    ui.manualFlowPreviewPending = null;
+    normalizeSelection();
+    clearStaleManualFlowPreview();
+    renderCache.invalidate();
+    render();
+    await playCombatFxFromEvents(events);
+    ui.vm = finalVm;
+    Object.assign(ui, finalSelection);
+    normalizeSelection();
+    clearStaleManualFlowPreview();
+    renderCache.invalidate();
+    render();
+    return true;
   }
   function normalizeSelection() {
     const vm = ui.vm;
@@ -1076,6 +1180,7 @@ import { createGameRuntime } from './runtime-client.js';
     const boardInjuries = projected ? projectedInjuries() : teamRiskGridSource();
     const teamRiskMap = new Map(boardInjuries.map(x => [`${x.r},${x.c}`, x]));
     const activePreviewUnitId = ui.vm.teamPlacementPreview?.activeUnitId || previewSource[0]?.actorId || null;
+    const moving = ui.moveAnimation;
     const previewKeys = new Set(previewSource.map(x => `${x.r},${x.c}`));
     const previewMap = new Map(previewSource.map(x => [`${x.r},${x.c}`, x]));
     const previewGroups = new Map();
@@ -1113,6 +1218,8 @@ import { createGameRuntime } from './runtime-client.js';
 	      if (unit?.side === 'hero' || unit?.side === 'hero_leader') classes.push('hero-cell');
 	      if (unit && unit.id === ui.selectedUnitId) classes.push('selected-unit');
 	      if (unit && unit.id === activePreviewUnitId) classes.push('current-preview-unit');
+      if (moving && key === cellKey(moving.from.r, moving.from.c)) classes.push('move-animation-from');
+      if (moving && key === cellKey(moving.to.r, moving.to.c)) classes.push('move-animation-to');
 	      const elements = Object.entries(cell.elements || {}).filter(([, n]) => Number(n) > 0)
 	        .map(([el, n]) => `<span class="element-badge ${clsForEl(el)}">${esc(el)}${esc(n)}</span>`).join('');
       const riskAria = hasIncomingHit ? ` 受击预警 预计伤害 ${teamRisk.damage}${teamRisk.lethal ? ' KO' : ''}` : '';
@@ -1120,24 +1227,13 @@ import { createGameRuntime } from './runtime-client.js';
       return `<button class="${classes.join(' ')}" data-r="${cell.r}" data-c="${cell.c}"${unit ? ` data-unit-id="${esc(unit.id)}"` : ''} type="button" aria-label="${esc(aria)}">
 	        ${elements ? `<div class="element-stack">${elements}</div>` : ''}
 	        ${arrow ? `<span class="preview-arrow ${arrow.isActiveActor ? 'active' : 'past'}">${esc(DIR[arrow.direction] || arrow.direction || '→')}</span>` : ''}
-	        ${unit ? unitToken(unit, activePreviewUnitId) : '<span class="empty-dot">·</span>'}
+	        ${unit ? unitToken(unit, activePreviewUnitId, moving, cellSize) : '<span class="empty-dot">·</span>'}
 	        ${previews.length ? previewBadge(previews) : ''}
         ${hasIncomingHit ? `<span class="team-risk-num">受${esc(teamRisk.damage)}${teamRisk.lethal ? ' KO' : ''}</span>` : ''}
-        ${hasIncomingHit ? renderAttackWarningPopover(teamRisk, unit) : ''}
 	        ${t?.finalMove ? '<span class="enemy-final-num">终</span>' : ''}
 	      </button>`;
 	    }).join('');
 	  }
-  function renderAttackWarningPopover(teamRisk = {}, unit = {}) {
-    const hpFrom = teamRisk.hpFrom ?? unit.hp ?? '-';
-    const hpTo = teamRisk.hpTo ?? Math.max(0, Number(unit.hp ?? 0) - Number(teamRisk.damage || 0));
-    const sourceText = teamRiskDetailText(teamRisk);
-    return `<span class="attack-warning-popover" role="note" aria-label="${esc(`受击预警：${sourceText}`)}">
-      <strong>${teamRisk.lethal ? 'KO预警' : '受击预警'}</strong>
-      <span>伤害 ${esc(compactRiskDamageValue(teamRisk.damage ?? 0))} · HP ${esc(hpFrom)}→${esc(hpTo)}</span>
-      <em>${esc(sourceText)}</em>
-    </span>`;
-  }
 	  function previewBadge(previews = []) {
 	    const primary = previews.find(p => p.isActiveActor) || previews[0];
 	    const damage = previews.reduce((sum, p) => sum + Number(p.predictedDamage || 0), 0);
@@ -1147,11 +1243,13 @@ import { createGameRuntime } from './runtime-client.js';
 	    const text = damage > 0 ? `伤${damage} ${layerText}` : layerText || `预${primary?.layers ?? '+'}`;
 	    return `<span class="preview-num ${primary?.isActiveActor ? 'active' : 'past'}">${esc(text)}</span>`;
 	  }
-	  function unitToken(unit, activePreviewUnitId = null) {
+	  function unitToken(unit, activePreviewUnitId = null, moving = null, cellSize = 49) {
 	    const side = unit.side === 'hero' ? 'hero' : unit.side === 'boss' ? 'boss leader' : unit.side === 'hero_leader' ? 'hero leader' : 'enemy';
 	    const name = boardUnitShortName(unit);
 	    const active = unit.id === ui.selectedUnitId || unit.id === activePreviewUnitId ? ' is-active' : '';
-	    return `<div class="unit-token ${side}${active}">
+      const movingClass = moving?.unitId === unit.id ? ' move-animating' : '';
+      const movingStyle = moving?.unitId === unit.id ? petMoveAnimationStyle(moving, cellSize) : '';
+	    return `<div class="unit-token ${side}${active}${movingClass}"${movingStyle}>
 	      <span class="unit-stat-badge unit-stat-hp" aria-label="生命 ${esc(Math.max(0, unit.hp ?? 0))}">♥${esc(Math.max(0, unit.hp ?? 0))}</span>
 	      <span class="unit-stat-badge unit-stat-atk" aria-label="攻击 ${esc(unit.atk ?? 0)}">⚔${esc(unit.atk ?? 0)}</span>
 	      <span class="unit-token-name">${esc(name)}</span>
@@ -1201,7 +1299,7 @@ import { createGameRuntime } from './runtime-client.js';
     const canMoveSelectedHero = ui.vm?.phase === 'player_turn' && hero && !ui.slotArmed && legalMoveTargets(hero).has(moveKey);
     if (canMoveSelectedHero) {
       await waitForUiIdle();
-      await runCommand('MOVE_HERO', { unitId: hero.id, to: { r, c } });
+      await runMoveHeroWithAnimation(hero, { r, c });
       return;
     }
     if (ui.vm?.phase === 'player_turn' && unitPositionLocked(hero) && !ui.slotArmed && cell && !cell.unitId) {
@@ -1305,7 +1403,7 @@ import { createGameRuntime } from './runtime-client.js';
 		    const threat = currentDetail?.threat || cell?.threat || detail?.threat;
 		    const teamRisk = detail?.teamRisk || cell?.teamRisk || (unit?.side === 'hero' ? teamRiskForUnit(unit) : null);
 		    if (preview) {
-		      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${p.hitEnemy ? `伤${p.predictedDamage}` : `铺${p.element}${p.layers}`}`).join('；');
+		      const previewLines = previews.filter(Boolean).map(p => `${p.isActiveActor ? '当前' : '保留'} ${p.actorName || p.actorId} ${DIR[p.direction] || p.direction || '→'} ${Number(p.predictedDamage || 0) > 0 ? `伤${p.predictedDamage}` : '无伤害'}`).join('；');
 		      parts.push(`<div class="detail-extra">⚡ ${esc(previewLines)}</div>`);
 		    }
 		    if (teamRisk) parts.push(`<div class="detail-extra threat">⚠ ${esc(teamRiskDetailText(teamRisk))}</div>`);

@@ -71,6 +71,9 @@ test('normal game page splits route shop and battle into three scenes', () => {
   assert.match(js, /function shopOfferCard/, 'shop scene should render pet offers as detail cards');
   assert.match(js, /function offerCells/, 'shop scene should account for pet attack cells');
   assert.match(js, /function bodySizeLabel/, 'shop cards should map internal body-size values to public labels');
+  assert.match(js, /function petSummaryLine/, 'pet cards should use one shared summary line');
+  assert.match(js, /function petDetailGrid/, 'pet cards should render structured detail rows instead of only names');
+  assert.match(js, /function petDetailNote/, 'pet cards should expose shape or mechanic notes when available');
   assert.match(js, /function attackRangeGrid/, 'shop pet cards should render a compact attack-range grid');
   assert.match(js, /const rows = 3/, 'shop attack-range grid should use three rows');
   assert.match(js, /const cols = 4/, 'shop attack-range grid should use four columns');
@@ -81,12 +84,18 @@ test('normal game page splits route shop and battle into three scenes', () => {
   assert.match(js, /攻击\$\{esc\(offerCells\(offer\)\)\}格/, 'shop cards should read attack cells from the public offer ViewModel');
   assert.match(js, /bodySizeLabel\(offer\.bodySize\)/, 'shop cards should display public body size labels');
   assert.doesNotMatch(js, /item\.role|offer\.role/, 'normal player page must not display internal pet role/positioning');
+  assert.doesNotMatch(js, /Lv\$\{|`Lv|Lv\{/, 'normal player page should not show the removed pet level concept');
   assert.match(js, /offer\.hp/, 'shop cards should display offer HP');
   assert.match(js, /offer\.atk/, 'shop cards should display offer attack');
   assert.match(js, /offer\.def/, 'shop cards should display offer defense');
+  assert.match(js, /statText\('攻击', offer\.atk\)/, 'shop cards should use a full attack label');
+  assert.match(js, /statText\('防御', offer\.def\)/, 'shop cards should use a full defense label');
+  assert.match(js, /statText\('护盾', offer\.shield\)/, 'shop cards should use a full shield label');
   assert.match(css, /\.shop-offer-card/, 'shop offers need a dedicated card layout');
   assert.match(css, /\.shop-range-grid/, 'shop cards should style the attack-range mini grid');
   assert.match(css, /\.shop-offer-stats/, 'shop offers should style stat details');
+  assert.match(css, /\.pet-detail-grid/, 'pet roster and shop cards should style structured details');
+  assert.match(css, /\.pet-detail-note/, 'pet roster and shop cards should style longer detail notes');
   assert.match(html, /id="formal-battle-frame"/, 'normal battle scene should embed the formal battle page');
   assert.match(html, /id="formal-battle-link"[\s\S]*hidden/, 'formal battle direct link should exist but stay hidden for normal players');
   assert.match(js, /function battlePageHref/, 'normal battle scene should build a formal battle page href');
@@ -130,6 +139,50 @@ test('normal game loaded battle state can still move the selected pet through pu
   const movedHero = moved.viewModel.heroes.find(unit => unit.id === hero.id);
 
   assert.deepEqual(movedHero.position, { r: empty.r, c: empty.c }, 'loaded battle should move the selected pet after save/load restore');
+});
+
+test('normal game deploys every active pet into seed-stable left-bottom cells', () => {
+  const { createGameState } = require('../../src/core/state.cjs');
+  const { toggleUnitActive } = require('../../src/core/inventoryRules.cjs');
+  const pets = ['pal_001', 'pal_002', 'pal_003', 'pal_004'];
+  const inDeployZone = position => position
+    && position.r >= 5
+    && position.r <= 7
+    && position.c >= 0
+    && position.c <= 2;
+
+  const state = createGameState({ day: 1, gold: 8, seed: 'normal-four-active', activePets: pets });
+  const heroes = state.units.filter(unit => unit.side === 'hero' && unit.alive !== false);
+  const positions = heroes.map(unit => unit.position);
+
+  assert.equal(heroes.length, pets.length, 'active pet count should match deployed unit count');
+  assert.equal(state.inventory.filter(item => item.active !== false).length, pets.length, 'inventory should keep all four pets active');
+  assert.equal(new Set(positions.map(position => `${position.r},${position.c}`)).size, pets.length, 'active pets should not overlap');
+  assert.ok(positions.every(inDeployZone), 'active pets should start inside the left-bottom 3x3 deployment zone');
+  assert.ok(!positions.some(position => position.r === state.leaders.player.position.r && position.c === state.leaders.player.position.c), 'pets should not cover the player hero cell');
+
+  const sameSeed = createGameState({ day: 1, gold: 8, seed: 'normal-four-active', activePets: pets });
+  assert.deepEqual(
+    sameSeed.units.filter(unit => unit.side === 'hero').map(unit => unit.position),
+    positions,
+    'same seed should keep the same active-pet deployment'
+  );
+
+  const otherSeed = createGameState({ day: 1, gold: 8, seed: 'normal-four-active-other', activePets: pets });
+  assert.notDeepEqual(
+    otherSeed.units.filter(unit => unit.side === 'hero').map(unit => unit.position),
+    positions,
+    'different seeds should be able to produce a different deployment order'
+  );
+
+  const benchState = createGameState({ day: 1, gold: 8, seed: 'normal-toggle-active', activePets: ['pal_001', 'pal_002'] });
+  benchState.nextInventory = 1;
+  benchState.inventory.push({ petId: 'pal_003', count: 1, level: 1, active: false, instanceId: 'bench_pal_003_test' });
+  const activated = toggleUnitActive(benchState, { instanceId: 'bench_pal_003_test' });
+  const activatedUnit = benchState.units.find(unit => unit.id === activated.instanceId);
+
+  assert.equal(benchState.inventory.filter(item => item.active !== false).length, 3, 'bench pet should become a third active pet');
+  assert.ok(inDeployZone(activatedUnit.position), 'activated bench pet should use the same deployment zone');
 });
 
 test('normal game seeded save contract is deterministic and server new-game accepts seed', () => {

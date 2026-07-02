@@ -158,13 +158,12 @@ test('moving a pet refreshes detail to the new risky cell without losing rich un
     assert.match(moved.detail, /当前状态/);
     assert.match(moved.detail, /单位元素层/);
     assert.match(moved.detail, /脚下元素层/);
-    await page.waitForFunction(() => document.querySelector('#board .cell.team-risk .attack-warning-popover'));
+    await page.waitForFunction(() => document.querySelector('#board .cell.team-risk .team-risk-num'));
     const warningCell = page.locator('#board .cell.team-risk').first();
     await warningCell.hover();
-    assert.equal(await warningCell.locator('.attack-warning-popover').count(), 1, 'risky hero cell should render an incoming attack warning popover');
-    assert.match(await warningCell.locator('.attack-warning-popover').innerText(), /受击预警|KO预警/);
-    assert.match(await warningCell.locator('.attack-warning-popover').innerText(), /HP/);
-    assert.match(await warningCell.locator('.attack-warning-popover').innerText(), /合计-\d+/);
+    assert.equal(await warningCell.locator('.team-risk-num').count(), 1, 'risky hero cell should keep the compact incoming damage marker');
+    assert.match(await warningCell.locator('.team-risk-num').innerText(), /受\d+|受\d+ KO/);
+    assert.equal(await warningCell.locator('.attack-warning-popover').count(), 0, 'risky hero cell should not render an incoming attack warning popover');
     assert.deepEqual(errors, []);
   } finally {
     if (browser) await browser.close();

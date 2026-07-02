@@ -258,7 +258,7 @@ function previewText(item = {}) {
     preview.summary || item.note || item.phaseLabel || item.element || '',
     pressure.summary ? `压力：${pressure.summary}` : '',
     item.price != null ? `价格 ${item.price} 金` : '',
-    item.level ? `Lv${item.level}` : ''
+    item.quality ? `品质 ${item.quality}` : ''
   ].filter(Boolean).join(' · ') || '查看详情后选择。';
 }
 
@@ -278,6 +278,37 @@ function bodySizeLabel(value) {
   if (key === '两格' || key === '二格' || key === '2' || key === '中') return '中';
   if (key === '三格' || key === '3' || key === '大') return '大';
   return key || '-';
+}
+
+function petSummaryLine(item = {}) {
+  return [
+    item.quality || '',
+    item.element || '-',
+    item.bodySize ? bodySizeLabel(item.bodySize) : '',
+    item.attackCells || item.cells ? `攻击${offerCells(item)}格` : ''
+  ].filter(Boolean).join(' · ');
+}
+
+function petDetailGrid(item = {}, options = {}) {
+  const rows = [
+    ['品质', item.quality || '-'],
+    ['元素', item.element || '-'],
+    ['HP', item.maxHp ? `${item.hp ?? item.maxHp}/${item.maxHp}` : (item.hp ?? '-')],
+    ['攻击', item.atk ?? '-']
+  ];
+  if (item.def != null) rows.push(['防御', item.def]);
+  if (item.shield != null) rows.push(['护盾', item.shield]);
+  if (item.ap != null) rows.push(['行动', item.ap]);
+  if (options.sellValue && item.sellValue != null) rows.push(['出售', `${item.sellValue}金`]);
+  if (options.placement) rows.push(['状态', options.placement]);
+  return `<dl class="pet-detail-grid">${rows.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>`;
+}
+
+function petDetailNote(item = {}) {
+  const parts = [
+    item.shapeNote ? `攻击范围：${item.shapeNote}` : ''
+  ].filter(Boolean);
+  return parts.length ? `<p class="pet-detail-note">${esc(parts.join(' · '))}</p>` : '';
 }
 
 function attackRangeGrid(offer = {}) {
@@ -315,8 +346,8 @@ function attackRangeGrid(offer = {}) {
     }
   }
   return `<div class="shop-range-wrap">
-    <div class="shop-range-grid" aria-label="${esc(offer.shapeName || '攻击范围')} 3x4">${cells.join('')}</div>
-    <small>${esc(offer.shapeName || '攻击范围')}</small>
+    <div class="shop-range-grid" aria-label="${esc(offer.shapeNote || '攻击范围')} 3x4">${cells.join('')}</div>
+    <small>攻击范围</small>
   </div>`;
 }
 
@@ -367,14 +398,14 @@ function rosterCard(item = {}, active = false) {
   const moveLabel = active ? '下阵' : '上阵';
   const canMove = active ? item.canMoveToBench !== false : item.canMoveToActive !== false;
   const reason = item.moveBlockedReason || (active ? '背包已满' : '上阵已满');
-  const meta = [
-    item.quality || '',
-    item.element || '-',
-    `Lv${item.level || 1}`
-  ].filter(Boolean).join(' · ');
+  const meta = petSummaryLine(item);
   return `<article class="roster-card ${active ? 'active' : 'bench'}">
-    <strong>${esc(item.name || item.petId)}</strong>
-    <span>${esc(meta)}</span>
+    <header>
+      <strong>${esc(item.name || item.petId)}</strong>
+      <span>${esc(meta)}</span>
+    </header>
+    ${petDetailGrid(item, { sellValue: true, placement: active ? '上阵中' : '背包' })}
+    ${petDetailNote(item)}
     <button type="button" data-command="TOGGLE_UNIT_ACTIVE" data-payload="${esc(JSON.stringify({ instanceId: item.instanceId, petId: item.petId, unit: item }))}"${canMove ? '' : ` disabled title="${esc(reason)}"`}>${moveLabel}</button>
   </article>`;
 }
@@ -398,22 +429,30 @@ function shopOfferCard(offer = {}) {
   const placement = offer.buyPlacement === 'active' ? '进上阵' : offer.buyPlacement === 'bench' ? '进背包' : '无位置';
   const blockedReason = buyBlockedReason(offer);
   const payload = { offerId: offer.offerId };
+  const attackCellsText = `攻击${esc(offerCells(offer))}格`;
+  const meta = [
+    offer.quality || '',
+    offer.element || '-',
+    offer.bodySize ? bodySizeLabel(offer.bodySize) : '',
+    attackCellsText
+  ].filter(Boolean).join(' · ');
   const stats = [
     statText('HP', offer.hp),
-    statText('攻', offer.atk),
-    statText('防', offer.def),
-    statText('盾', offer.shield),
+    statText('攻击', offer.atk),
+    statText('防御', offer.def),
+    statText('护盾', offer.shield),
     statText('行动', offer.ap)
   ].join('');
   return `<article class="shop-offer-card">
-    <header class="shop-offer-head">
-      <div>
-        <strong>${esc(offer.name || offer.petId || '未知宠物')}</strong>
-        <span>${esc(offer.quality || offer.poolTier || '-')} · ${esc(bodySizeLabel(offer.bodySize))} · 攻击${esc(offerCells(offer))}格 · ${esc(offer.element || '-')}</span>
-      </div>
-    </header>
+        <header class="shop-offer-head">
+          <div>
+            <strong>${esc(offer.name || offer.petId || '未知宠物')}</strong>
+            <span>${esc(meta || offer.poolTier || '-')}</span>
+          </div>
+        </header>
     ${attackRangeGrid(offer)}
     <div class="shop-offer-stats">${stats}</div>
+    ${petDetailNote(offer)}
     <footer class="shop-offer-footer">
       <span class="shop-offer-price">${esc(offer.price ?? '-')} 金 · ${esc(placement)}</span>
       <button type="button" data-command="BUY_OFFER" data-payload="${esc(JSON.stringify(payload))}"${blockedReason ? ` disabled title="${esc(blockedReason)}"` : ''}>购买</button>

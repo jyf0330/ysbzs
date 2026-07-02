@@ -12,6 +12,7 @@
 ## ACTIVE_IMPL
 
 - `tasks/doing/2026-07-02_animated-pet-move.md` — UI feedback: 宠物移动动画仍在实现；涉及 `web/js/main.js` / `web/ux-app.css`。
+- `tasks/doing/2026-07-03_disable-instant-route-nodes.md` — data: 禁用即时结算路线节点，保留商店/奖励闭环节点。
 - `tasks/doing/2026-07-02_pet-merge-quality-upgrade.md` — bugfix: 同名宠物合成改为品质推进；涉及核心库存/合成规则。
 
 ## READY_TO_MERGE
@@ -21,7 +22,6 @@
 - `tasks/doing/2026-06-30_battle-debug-route-page.md` — UI tool: 独立战斗调试入口页。
 - `tasks/doing/2026-06-30_command-console-page.md` — UI tool: 独立命令控制台页。
 - `tasks/doing/2026-06-30_main-page-hub.md` — UI navigation: 主入口大厅页。
-- `tasks/doing/2026-06-30_normal-game-three-scenes.md` — UI structure: 正常游戏 3选1 / 商店 / 战斗三场景。
 - `tasks/doing/2026-06-30_pet-detail-cards-image.md` — asset: 宠物中文详情图。
 - `tasks/doing/2026-06-30_pet-detail-final-stats.md` — UI detail: 棋盘详情面板只显示最终战斗属性。
 - `tasks/doing/2026-06-30_pets-redesign-v3-data-source.md` — data pipeline: 宠物重设计数据源接入。

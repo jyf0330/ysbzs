@@ -1,6 +1,6 @@
 # 任务系统
 
-本目录用于在多 AI/多任务环境中占用文件级写入租约，避免不同任务同时改同一文件，同时允许多个 AI 在互不重叠的文件范围内并行推进。
+本目录用于在多 AI/多任务环境中记录写入租约。高风险文件用 `exclusive_files` 独占；普通同文件改动用 `write_scopes` 拆到函数、选择器、测试块或文档章节，允许多个 AI 在不碰同一语义接口的前提下并行推进。
 
 ## 目录
 
@@ -28,7 +28,7 @@
 2. 运行 `git status --short --untracked-files=all`。
 3. 读取 `tasks/index.md`、`tasks/doing/*.md`、`tasks/paused/*.md`。
 4. 创建或更新 `tasks/doing/当前任务.md`，写清任务卡必填字段。
-5. 检查本轮要改文件是否与其他任务卡 `related_files` / `exclusive_files` 重叠。
+5. 检查本轮要改文件是否与其他任务卡 `exclusive_files` 重叠；若只与 `related_files` 重叠，继续比较 `write_scopes`。
 6. 检查 dirty/staged 文件是否能归属到当前任务或其他任务卡；不能归属且会影响提交边界时，触发 `FILE_CONFLICT_STOP`。
 
 任务卡必填字段：
@@ -40,12 +40,15 @@
 - `branch` 或 `worktree`: 当前分支或工作区；不适用时写 `shared-worktree`。
 - `Goal`
 - `Scope`
-- `related_files`: 当前任务可写文件租约。
+- `related_files`: 当前任务可能写入的文件集合，用于提交归属和粗略检索，不等于整文件独占。
+- `write_scopes`: 文件内真实写入范围。至少写清 file、scope、mode；scope 写到函数/导出对象/CSS selector/测试 describe 或 fixture/文档章节/生成物分区。
+- `shared_file_policy`: 当 `related_files` 与其他任务重叠时，说明为什么可以并行、如何合并、谁做最终验证。
 - `exclusive_files`: 高风险共享文件；同一时刻只允许一个 ACTIVE 任务占用。没有时写 `无`。
 - `read_files`: 只读参考文件；不形成写入租约。
 - `validation`
 - `commit_plan`
 - `collaboration`: Lead / Specialist / Tester / External AI 输入和决策摘要。
+- `merge_owner`: 同一文件由多个 AI 贡献时，负责最终 patch 合并、验证和提交的 Lead；没有同文件并行时可省略。
 
 高风险共享文件示例：
 
@@ -61,31 +64,51 @@
 - `tasks/index.md`
 - `docs/10_CHANGELOG.md`
 
-这些文件不是永久禁止并行，而是默认需要显式独占；如果多个任务都要改，Lead 必须先拆分顺序或合并任务边界。
+这些文件不是永久禁止并行，但默认需要显式独占；如果多个任务都要改，Lead 必须先拆分顺序、改为 `patch_only` / 独立 worktree，或合并任务边界。
+
+`write_scopes` 的 `mode` 取值：
+
+- `direct`: 可以在共享 worktree 直接修改，但必须和其他任务的 `write_scopes` 不重叠。
+- `patch_only`: Worker 只输出 patch/建议，不直接写源文件；由 Lead 合并。
+- `worktree`: Worker 在独立 worktree/branch 修改，Lead 后续 cherry-pick 或手工合并。
+
+同文件并行允许的典型边界：
+
+- 同一 JS 文件的不同函数或不同导出对象。
+- 同一 CSS 文件的不同 selector 区域。
+- 同一测试文件的不同 `describe` 块或 fixture。
+- 同一文档的不同章节。
+
+同文件仍必须停下或合并为单任务的边界：
+
+- 同一个函数、reducer 分支、公开 ViewModel 字段、CSV/export 合同、状态 schema、事件 payload 或 action command。
+- 一个任务会改变另一个任务的验证前提。
+- 多个任务都要写同一个生成物，且生成输入不同或顺序不可交换。
 
 ## FILE_CONFLICT_STOP
 
 出现以下任一情况必须暂停，输出冲突报告并等待用户拍板：
 
-- 本轮要改文件与其他 ACTIVE / PAUSED 任务卡 `related_files` 重叠。
 - 本轮要改文件与其他 ACTIVE 任务卡 `exclusive_files` 重叠。
+- 本轮要改文件只与其他 ACTIVE / PAUSED 任务卡 `related_files` 重叠，但任一方缺少 `write_scopes` / `shared_file_policy`，或 scope 边界不清。
+- 本轮 `write_scopes` 与其他任务重叠，或指向同一语义接口。
 - 本轮任务需要改高风险共享文件，但没有在任务卡 `exclusive_files` 中声明。
 - 工作区脏文件无法归属到当前任务，且会影响本轮提交边界。
 - 暂存区已有不属于当前任务的文件。
 - `tasks/index.md` 与真实 `tasks/doing/` / `tasks/paused/` / `tasks/done/` 目录不一致，且本轮要依赖它做提交边界判断。
 - 多个 AI 对同一任务卡的 `owner` / `related_files` / `exclusive_files` 记录不一致。
 
-不再因为 `tasks/doing/` 中存在其他 ACTIVE 任务而自动停止；只有文件租约、独占文件、dirty/staged 边界或任务卡记录冲突时才停止。
+不再因为 `tasks/doing/` 中存在其他 ACTIVE 任务或普通 `related_files` 重叠而自动停止；只有独占文件、`write_scopes`、同一语义接口、dirty/staged 边界或任务卡记录冲突时才停止。
 
 ## 并行协作规则
 
-Lead 可以拆出多个 `ACTIVE_IMPL` 任务，只要它们的 `related_files` 和 `exclusive_files` 不重叠。
+Lead 可以拆出多个 `ACTIVE_IMPL` 任务。`exclusive_files` 不得重叠；普通 `related_files` 可以重叠，但必须有不重叠的 `write_scopes` 和明确的 `shared_file_policy`。
 
-- 实现 AI 只写自己任务卡的 `related_files`。
+- 实现 AI 只写自己任务卡的 `related_files` 中声明的 `write_scopes`。
 - Specialist 默认只读；若需要写文件，必须成为独立任务卡或由 Lead 明确加入当前任务 `related_files`。
 - Tester Pass 只写 `output/playwright/` 和任务卡证据；不得改实现文件。
 - External AI 不直接提交，不直接改主线任务卡；Lead 必须复核并筛选其输出。
-- 共享接口变更必须先占用对应 `exclusive_files`，并在 `Scope` 中写清下游影响。
+- 共享接口变更必须先占用对应 `exclusive_files` 或把相关任务合并到同一个 Lead 下，并在 `Scope` 中写清下游影响。
 - 如果一个任务完成后会影响另一个任务的验证，后者在 `merge_order` 或 `collaboration` 中记录依赖顺序。
 
 ## 收尾
@@ -123,14 +146,14 @@ Phase 1 诊断：
 
 Phase 2 分类：
 
-- `Task Groups`: 可唯一归属到某个任务卡 `related_files` 的文件组。
+- `Task Groups`: 可唯一归属到某个任务卡 `related_files` 的文件组，或同一文件中可按 `write_scopes` 拆分的 patch 组。
 - `Ignore Group`: 明显垃圾文件或已 gitignore 文件。
 - `Leftovers Group`: 有效项目文件但暂时无法归属，低风险，可单独提交或等待用户确认。
-- `Blocked Group`: 高风险共享文件冲突、多个任务同时声称拥有、暂存区混杂、验证缺失或 UI 证据缺失。
+- `Blocked Group`: 高风险共享文件冲突、多个任务同时声称同一 `write_scope`、同文件 patch 无法安全拆分、暂存区混杂、验证缺失或 UI 证据缺失。
 
 Phase 3 执行：
 
-1. 每个 `Task Group` 单独验证、精确暂存、单独提交。
+1. 每个 `Task Group` 单独验证、精确暂存、单独提交；同一文件中只属于当前任务的 hunk 用 `git add -p` 或等价精确暂存。
 2. 每个提交只能包含一个任务的文件。
 3. UI / 棋盘 / 可见反馈任务必须先满足提交前可见验收门禁。
 4. `tasks/index.md` 和 `docs/10_CHANGELOG.md` 可以作为收口文件加入对应任务提交；如果包含多个任务内容，Lead 必须拆成多个精确补丁或单独做 workflow / changelog maintenance commit。

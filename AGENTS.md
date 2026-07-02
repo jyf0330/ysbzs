@@ -40,11 +40,11 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 多任务并行管理参见 `tasks/` 目录：
 - `tasks/index.md` — 当前任务总览与断线恢复入口
 - `tasks/README.md` — 任务系统细则与 FILE_CONFLICT_STOP 硬规则
-- `tasks/doing/` — 当前 ACTIVE 任务（可多个；以文件级写入租约判冲突）
+- `tasks/doing/` — 当前 ACTIVE 任务（可多个；高风险文件独占，普通同文件按 `write_scopes` 判冲突）
 - `tasks/paused/` — 暂停任务
 - `tasks/done/` — 已完成任务
 
-每次开始任务或修改文件前，先读 `tasks/index.md`、`tasks/README.md` 和任务卡，按 `related_files` / `exclusive_files` 检查冲突。
+每次开始任务或修改文件前，先读 `tasks/index.md`、`tasks/README.md` 和任务卡，按 `exclusive_files`、`write_scopes`、`shared_file_policy` 和 dirty/staged 边界检查冲突。
 
 ## 自动提交规则
 
@@ -54,7 +54,7 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 1. 任务卡已记录（有 `task_id` / `commit_plan`）
 2. 测试全部通过（`node tests/run_all_tests.cjs` 无失败）
 3. 暂存区文件全部归属当前任务 `related_files`
-4. 无 FILE_CONFLICT_STOP 触发
+4. 无 FILE_CONFLICT_STOP 触发；普通同文件重叠已用 `write_scopes` 证明不碰同一函数、选择器、测试块、文档段落或语义接口
 5. 提交信息按任务卡 `commit_plan` 格式
 6. 若涉及 UI / 棋盘 / 可见预览 / 交互反馈：已完成提交前可见验收门禁，任务卡记录测试子线程或等价独立测试流程、截图路径、DOM/状态断言、console error 结果，以及主线程对截图的复核结论
 
@@ -76,7 +76,7 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 
 ## 核心纪律
 
-- 一个任务只允许一个 AI 修改同一代码文件。
+- 多个 AI 可以修改同一代码文件的不同 `write_scopes`；同一语义接口、同一函数/导出、同一 CSS selector、同一测试块或高风险 `exclusive_files` 仍只能由一个 owner/Lead 合并。
 - 代码改动默认走 TDD。
 - 外部 AI 建议不是项目规则，以代码/目录/任务卡/正式文档/用户指令为准。
 - 旧文档在 `docs/archive/`，不作为当前规则来源。

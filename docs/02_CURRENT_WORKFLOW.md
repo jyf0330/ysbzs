@@ -27,8 +27,8 @@ Do not pause unless a High-Risk Exception applies.
 1. git status --short                           # 检查 dirty
 2. read tasks/index.md                          # 读任务总览
 3. read tasks/doing/*.md tasks/paused/*.md      # 读任务卡
-4. create/update current task card              # 声明 owner/status/related_files/exclusive_files
-5. check file-level lease overlap               # FILE_CONFLICT_STOP
+4. create/update current task card              # 声明 owner/status/related_files/write_scopes/exclusive_files
+5. check exclusive/write-scope overlap          # FILE_CONFLICT_STOP
 6. 无冲突 → 推进；有冲突 → 暂停输出报告
 ```
 
@@ -36,7 +36,7 @@ Do not pause unless a High-Risk Exception applies.
 
 ```text
 read entry docs -> classify -> check tasks/ + git status ->
-reserve file-level task lease -> resolve conflicts -> plan -> execute -> verify (node test.js) ->
+reserve task lease and write scopes -> resolve conflicts -> plan -> execute -> verify (node test.js) ->
 if visible change -> visual QA subthread gate ->
 update docs -> if auto-commit conditions met -> commit
 ```
@@ -77,20 +77,42 @@ implementation thread finishes code/tests
 
 | 角色 | 责任 | 允许写入 |
 |---|---|---|
-| Lead Agent | 创建/更新任务卡、决定范围、分配文件级租约、整合外部意见、运行最终验证、提交或输出 Commit Plan | 当前任务 `related_files` / `exclusive_files` |
+| Lead Agent | 创建/更新任务卡、决定范围、分配文件和 `write_scopes`、整合外部意见、运行最终验证、提交或输出 Commit Plan | 当前任务 `related_files` / `write_scopes` / `exclusive_files` |
 | Specialist Agent | 只做窄域审查、方案对照、代码风险点或测试建议；结论必须可被 Lead 复核 | 默认只读，除非 Lead 在任务卡中明确分配文件 |
 | Tester Pass | 独立真实入口验收，保存截图，记录操作步骤、DOM/ViewModel/state/console 证据 | `output/playwright/` 与任务卡证据；不改实现文件 |
 | External AI | 外部建议、草案、灵感来源 | 不直接写仓库；必须由 Lead 按项目规则筛选 |
 
 ### 并行任务模型
 
-`tasks/doing/` 允许多个 ACTIVE 任务卡。并行是否合法不再由“是否已有 ACTIVE”决定，而由文件级租约决定：
+`tasks/doing/` 允许多个 ACTIVE 任务卡。并行是否合法不再由“是否已有 ACTIVE”或“是否同一个文件”单独决定，而由独占文件、写入范围和提交边界决定：
 
-- `related_files`: 当前任务可写文件。
+- `related_files`: 当前任务可能写入的文件集合；用于提交归属和粗略检索，不再天然等于整文件独占。
+- `write_scopes`: 当前任务在文件内的真实写入范围，写到函数、导出对象、CSS selector、测试 `describe`/fixture、文档章节、生成物分区等粒度。
+- `shared_file_policy`: 当 `related_files` 与其他任务重叠时，说明为什么可以并行、如何合并、谁负责最终验证。
 - `exclusive_files`: 高风险共享文件，同一时刻只能被一个 ACTIVE 任务占用。
 - `read_files`: 只读参考文件，不形成写入租约。
 - `owner`: 当前任务的负责 AI / 线程 / worker。
 - `branch` / `worktree`: 当前分支或工作区；共享工作区写 `shared-worktree`。
+- `merge_owner`: 当同一文件由多个 AI 贡献时，负责最终 patch 合并、冲突判断、验证和提交的 Lead。
+
+`write_scopes` 模式：
+
+- `direct`: 可以在共享 worktree 直接修改，但必须和其他任务的 `write_scopes` 不重叠。
+- `patch_only`: Worker 只输出 patch/建议，不直接写源文件；由 Lead 手工合并。
+- `worktree`: Worker 在独立 worktree/branch 修改，Lead 后续 cherry-pick 或手工合并。
+
+同文件并行默认允许的例子：
+
+- 同一 JS 文件中互不调用的两个函数或两个导出对象。
+- 同一 CSS 文件中互不覆盖的 selector 区域。
+- 同一测试文件中不同 `describe` 块或不同 fixture。
+- 同一文档中不同章节。
+
+同文件仍必须暂停或合并为单任务的例子：
+
+- 同一个函数、reducer 分支、公开 ViewModel 字段、CSV/export 合同、状态 schema、事件 payload 或 action command。
+- 一个改动会改变另一个任务正在验证的语义接口。
+- 多个任务都要重建同一个生成物，并且生成输入不同或顺序不可交换。
 
 任务状态：
 
@@ -113,7 +135,7 @@ implementation thread finishes code/tests
 - UI、棋盘、可见预览、交互反馈、布局、文案可读性：必须有 `Tester Pass` 或测试子线程证据。
 - 大范围规则、架构、经济/数值、跨模块改动：优先派 `Specialist Agent` 做只读审查，再由 Lead 落地。
 - 用户给出外部 AI 建议包：Lead 必须先做适配审查，不能直接照搬。
-- `git-c` 或多任务收口：Lead 先按任务卡分组；必要时让 Specialist 做只读归属审查。
+- `git-c` 或多任务收口：Lead 先按任务卡和 `write_scopes` 分组；必要时让 Specialist 做只读归属审查。
 
 ### 协作交接格式
 
@@ -130,11 +152,13 @@ collaboration:
 
 ### 冲突处理
 
-1. 任意 AI 发现目标文件与其他任务卡 `related_files` 或 `exclusive_files` 重叠，立即触发 `FILE_CONFLICT_STOP`。
-2. Specialist 与 External AI 的意见不能覆盖项目规则；只能作为 Lead 的输入。
-3. Tester Pass 如果发现截图、DOM、ViewModel、状态或 console 不匹配，Lead 必须回到实现或输出 blocked，不得自动提交。
-4. 多 AI 之间不互相转交提交权；只有 Lead 执行精确暂存、提交和任务归档。
-5. 不再因为 `tasks/doing/` 里存在其他 ACTIVE 任务而自动停止；只有文件租约、独占文件、dirty/staged 边界或任务卡记录冲突才停止。
+1. 任意 AI 发现目标文件与其他 ACTIVE 任务 `exclusive_files` 重叠，立即触发 `FILE_CONFLICT_STOP`。
+2. 目标文件只与其他任务 `related_files` 重叠时，不直接停止；必须比较 `write_scopes`。范围不重叠且 `shared_file_policy` 写清合并方式时可以继续。
+3. `write_scopes` 缺失、重叠、指向同一语义接口，或多个 AI 对 scope 边界理解不一致时，触发 `FILE_CONFLICT_STOP`。
+4. Specialist 与 External AI 的意见不能覆盖项目规则；只能作为 Lead 的输入。
+5. Tester Pass 如果发现截图、DOM、ViewModel、状态或 console 不匹配，Lead 必须回到实现或输出 blocked，不得自动提交。
+6. 多 AI 之间不互相转交提交权；只有 Lead 执行精确暂存、提交和任务归档。
+7. 不再因为 `tasks/doing/` 里存在其他 ACTIVE 任务或普通 `related_files` 重叠而自动停止；只有独占文件、写入范围、同一语义接口、dirty/staged 边界或任务卡记录冲突才停止。
 
 ### External AI CLI Runner
 
@@ -210,8 +234,8 @@ read project entry -> read task cards -> analyze current state -> output plan / 
 ### 定位
 
 - 允许工作区同时存在多个任务的未提交改动。
-- 按任务边界自动拆成多个 commit，**每个 commit 只属于一个任务**。
-- 多个 `tasks/doing/` 任务可以并行存在；`git-c` 必须按 `related_files` / `exclusive_files` 分组收口。
+- 按任务边界自动拆成多个 commit，**每个 commit 只属于一个任务**；同一物理文件若包含多个任务的改动，必须按 patch/scope 精确拆分，不能整文件暂存。
+- 多个 `tasks/doing/` 任务可以并行存在；`git-c` 必须按 `related_files` / `write_scopes` / `exclusive_files` 分组收口。
 - 无法归属的文件：自动忽略垃圾文件 → 低风险 leftovers 集合提交 → 高风险 blocked 暂停。
 - **禁止** `git add .` / `git add -A`，只精确暂存。
 
@@ -226,16 +250,16 @@ Phase 1 诊断:
 
 Phase 2 分类:
   生成 Commit Plan，分四类:
-    Task Groups     — 可归属到任务卡的文件组
+    Task Groups     — 可归属到任务卡的文件组或同文件 patch/scope 组
     Ignore Group    — 明显垃圾文件 (已 gitignore 或建议加入)
     Leftovers Group — 有效项目文件但无法归属，低风险
-    Blocked Group   — 高风险/冲突/无法自动处理/多任务声称同一文件
+    Blocked Group   — 高风险/冲突/无法自动处理/多任务声称同一 write_scope
   输出 Commit Plan。
   如果存在 Blocked Group -> 暂停，等待用户拍板。
 
 Phase 3 执行:
   for each Task Group:
-    git add <group files>   (精确暂存，禁止 git add .)
+    git add <group files> 或 git add -p <file>   (精确暂存，禁止 git add .)
     verify git diff --cached --stat
     run validation command  (如 node test.js)
     git commit

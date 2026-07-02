@@ -10,7 +10,7 @@ Use this file as project-level routing instructions.
 | `diff` | 只读分析，出 diff 不动代码 | 见本节 |
 | <目标> `策划` | 只做方案/规则/文档，不改代码 | 见本节 |
 | <目标> `diff` | 同上只读模式 | 见本节 |
-| `git-c` | 批量收口提交 | 见本节 |
+| `git-c` | 全工作区任务感知收口提交 | 见本节 |
 | `同步内容` | 表格同步 | 见本节 |
 
 ## Goal
@@ -21,14 +21,20 @@ Do not require words like "start", "continue", or "execute".
 Do not ask for step-by-step approval.
 Do not pause unless a High-Risk Exception applies.
 
+先判断任务形态：
+
+- 只读查询、源码定位、流程审计、`diff` / `策划`、简单命令检查：不创建任务卡，不改文件，直接回答或输出方案。
+- 要修改仓库文件、项目规则、数据、生成物或交付资产：创建或更新任务卡。
+- 已有同一玩家目标/同一交付面的任务卡时，优先复用并扩展该卡的 `write_scopes`，不要为每个小修新开一张卡。
+
 启动前必须：
 
 ```text
 1. git status --short                           # 检查 dirty
 2. read tasks/index.md                          # 读任务总览
 3. read tasks/doing/*.md tasks/paused/*.md      # 读任务卡
-4. create/update current task card              # 声明 owner/status/related_files/write_scopes/exclusive_files
-5. check exclusive/write-scope overlap          # FILE_CONFLICT_STOP
+4. if editing: create/update thin task card     # 声明 owner/status/related_files/write_scopes/exclusive_files
+5. if editing: check exclusive/write-scope overlap
 6. 无冲突 → 推进；有冲突 → 暂停输出报告
 ```
 
@@ -36,10 +42,14 @@ Do not pause unless a High-Risk Exception applies.
 
 ```text
 read entry docs -> classify -> check tasks/ + git status ->
-reserve task lease and write scopes -> resolve conflicts -> plan -> execute -> verify (node test.js) ->
+reserve task lease and write scopes -> resolve conflicts -> plan -> execute -> run current task validation ->
 if visible change -> visual QA subthread gate ->
 update docs -> if auto-commit conditions met -> commit
 ```
+
+任务卡只作为写入租约和交付记录。开工时保持薄卡，先写最小字段：`task_id`、`status`、`owner`、`Goal`、`related_files`、`write_scopes`、`exclusive_files`、`validation`、`commit_plan`。验证证据、浏览器截图、外部 AI 结论和详细复盘只在完成相应步骤后追加。
+
+当 `tasks/doing/` 中 READY_TO_MERGE / BLOCKED 明显堆积、`tasks/index.md` 与真实目录不一致，或新任务会继续碰共享 UI/core 文件时，优先刷新 index 并做 `git-c` / Lead 收口；不要继续用新任务卡掩盖旧 dirty 边界。
 
 **详细执行规则（Goal 默认执行、不机械执行、核心层/显示层分离、模块拆分、四层棋盘格）见 `docs/00_AI_START_HERE.md` →「Goal 执行规则」章节。**
 
@@ -94,6 +104,7 @@ implementation thread finishes code/tests
 - `owner`: 当前任务的负责 AI / 线程 / worker。
 - `branch` / `worktree`: 当前分支或工作区；共享工作区写 `shared-worktree`。
 - `merge_owner`: 当同一文件由多个 AI 贡献时，负责最终 patch 合并、冲突判断、验证和提交的 Lead。
+- `tasks/index.md`: 维护索引，不属于普通功能任务的独占实现文件。任何 Lead 在开工、收口或 `git-c` 时都可以按真实 `tasks/doing` / `tasks/paused` / `tasks/done` 刷新它；旧任务卡若把它列入 `exclusive_files`，视为过期写法，不得阻止索引维护。
 
 `write_scopes` 模式：
 
@@ -227,16 +238,19 @@ read project entry -> read task cards -> analyze current state -> output plan / 
 
 ## git-c
 
-`git-c = 任务感知的多任务批量收口提交器`
+`git-c = 全工作区任务感知收口提交器`
 
 如果用户说 `git-c`，进入批量收口模式。
 
 ### 定位
 
-- 允许工作区同时存在多个任务的未提交改动。
+- 目标不是“提交一部分能归属的文件”，而是把当前工作区全部收口：执行完成后 `git status --short --untracked-files=all` 必须干净，相关 commit 必须已经推送到当前分支的 upstream。
+- 允许工作区同时存在多个任务的未提交改动，但不能把模糊边界当成留下 dirty 的理由。
 - 按任务边界自动拆成多个 commit，**每个 commit 只属于一个任务**；同一物理文件若包含多个任务的改动，必须按 patch/scope 精确拆分，不能整文件暂存。
 - 多个 `tasks/doing/` 任务可以并行存在；`git-c` 必须按 `related_files` / `write_scopes` / `exclusive_files` 分组收口。
-- 无法归属的文件：自动忽略垃圾文件 → 低风险 leftovers 集合提交 → 高风险 blocked 暂停。
+- 模糊边界文件：能判断多少归属信息就记录多少；无法唯一归属时建立 `git-c fuzzy/leftovers` 收口提交或 cleanup 提交，提交说明必须写清可能来源、证据、风险和后续复核点。
+- 明显垃圾文件：能安全删除就删除，应该忽略就补 `.gitignore`，有交付价值就作为 artifact 提交；不得仅因为“不属于任务卡”就留在工作区。
+- 只有秘密/token、破坏性删除、大型未知二进制、无法解决的合并冲突、无远端/认证/网络导致无法 push 这类真实外部阻塞，才允许最后不是 clean+pushed；最终报告必须写明具体 blocker 和剩余文件。
 - **禁止** `git add .` / `git add -A`，只精确暂存。
 
 ### 流程
@@ -249,24 +263,28 @@ Phase 1 诊断:
   read docs/10_CHANGELOG.md  (辅助判断)
 
 Phase 2 分类:
-  生成 Commit Plan，分四类:
+  生成 Commit Plan，分五类:
     Task Groups     — 可归属到任务卡的文件组或同文件 patch/scope 组
-    Ignore Group    — 明显垃圾文件 (已 gitignore 或建议加入)
-    Leftovers Group — 有效项目文件但无法归属，低风险
-    Blocked Group   — 高风险/冲突/无法自动处理/多任务声称同一 write_scope
-  输出 Commit Plan。
-  如果存在 Blocked Group -> 暂停，等待用户拍板。
+    Fuzzy Groups    — 有效项目文件但边界模糊，按可得证据做 best-effort 收口提交
+    Cleanup Group   — 明显垃圾、临时文件、应 gitignore 的文件，删除或 gitignore/cleanup commit
+    Blocker Group   — 秘密/token、未知大型二进制、无法解决冲突、无法 push 等真实阻塞
+    Push Target     — 当前分支/upstream/remote，不存在时先创建或明确 blocker
+  输出 Commit Plan；除 Blocker Group 外不得暂停等待用户确认。
 
 Phase 3 执行:
   for each Task Group:
     git add <group files> 或 git add -p <file>   (精确暂存，禁止 git add .)
     verify git diff --cached --stat
-    run validation command  (如 node test.js)
+    run current task validation command
     git commit
     update task card (done_at, commit_id)
-  gitignore maintenance commit  (如有需要)
-  Leftovers commit  (低风险可集合提交)
+  for each Fuzzy/Cleanup Group:
+    commit best-effort metadata or cleanup/gitignore change
+    commit message/body records uncertainty and follow-up review points
   update tasks/index.md
+  git status --short --untracked-files=all must be empty
+  git push current branch/upstream
+  verify pushed branch and final clean status
 ```
 
 **详细规则（文件分类判断、Ignore/Leftovers/Blocked 标准、Commit Plan 模板等）见 `tasks/README.md` → 「git-c 集成细则」章节。**
@@ -278,8 +296,8 @@ If the user says `同步内容`, enter table-sync mode.
 先执行任务冲突检查：
 
 1. 读取 `tasks/index.md`。
-2. 读取 `tasks/doing/` 和 `tasks/paused/` 下所有任务卡的 `related_files`。
-3. 检查同步内容要修改的文件是否属于其他任务卡。
+2. 读取 `tasks/doing/` 和 `tasks/paused/` 下所有任务卡的 `exclusive_files`、`related_files`、`write_scopes`。
+3. 检查同步内容要修改的文件是否与其他任务卡的 `exclusive_files`、`write_scopes` 或同一语义接口冲突。
 4. 检查是否与 dirty 文件冲突，触发 `FILE_CONFLICT_STOP` 条件。
 5. 有冲突 → 暂停并输出冲突报告，不执行同步。
 6. 无冲突才继续同步。
@@ -302,7 +320,7 @@ report
 
 ## Skill Routing
 
-Always trigger matching skills when available:
+Use skills as routing gates, not as a second copy of project rules.
 
 ### Superpowers / YWH Routing Policy
 
@@ -318,7 +336,7 @@ Always trigger matching skills when available:
 | Session start or any task where a Superpowers skill may apply | `using-superpowers` |
 | Any clear `Goal` that implies edits | `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`; add `ywh-web-game` only for browser/UI/visible evidence work |
 | Before modifying code, UI, rules, tests, project workflow files, or delivery assets | `task-occupancy` |
-| Implement code, UI, or rules | `task-occupancy`, `executing-plans`, `test-driven-development`, `verification-before-completion`, `ywh-game` |
+| Implement code, UI, or rules | `task-occupancy`, then the narrow implementation/debugging skill needed by the task; `verification-before-completion` before claiming done |
 | Bug, anomaly, failed test, failed acceptance | `systematic-debugging`, `test-driven-development`, `verification-before-completion` |
 | Existing plan, task card, executable GDD | `executing-plans`, `subagent-driven-development`, `verification-before-completion` |
 | Unclear goal, exploration, standalone `diff` | `brainstorming`, `writing-plans`, `ywh-game` |
@@ -327,7 +345,7 @@ Always trigger matching skills when available:
 | Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
 | UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
 | UI behavior bug, 点不了, 移动不了, 选不中, 状态不对 | `systematic-debugging`, `test-driven-development`, `game-ui-frontend`, `ywh-web-game`, `playwright`, `verification-before-completion` |
-| Docs, CHANGELOG, workflow rules that require edits | `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`, `verification-before-completion` |
+| Docs, CHANGELOG, workflow rules that require edits | `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`; `verification-before-completion` before claiming done |
 | `git-c`, finish, pre-commit check | `task-occupancy`, `verification-before-completion`, `ywh`, `ywh-game` |
 | Read-only review or workflow audit | `ywh-game` |
 
@@ -347,12 +365,9 @@ Do not load every matched skill at once by default.
 - 一旦任务从咨询态切到实现态、验收态或完成态，再补齐对应 skill。
 - 若多个领域 skill 都可能适用，先选最窄的一组；需要时再增量追加。
 
-### Skill Invocation Requirement
+### Required Receipts
 
-When a row in the Skill Routing table matches the current task, the agent must
-invoke the matching Skill tool before answering, planning, or editing files.
-
-Before editing files for any matched task, write a short Skill Receipt:
+Before editing files for a task that has a hard skill gate, write a short Skill Receipt:
 
 ```text
 本轮命中 skill：<skill names>
@@ -363,11 +378,12 @@ For UI/UX, HUD, board-click, or visible interaction work, this receipt is a hard
 gate. Do not edit UI files until `game-ui-frontend` or `frontend-skill` and
 `ywh-web-game` have been read or explicitly marked `UNAVAILABLE`.
 
-For any task that will edit files, `task-occupancy` is the first gate:
+For any task that will edit repository files, `task-occupancy` is the first gate:
 
 ```text
 read workflow/task docs -> git status ->
-create/update ACTIVE task card -> reserve related_files/exclusive_files ->
+if editing: create/update thin ACTIVE task card ->
+reserve related_files/write_scopes/exclusive_files ->
 check overlap / dirty files -> edit -> verify ->
 visible changes: testing subthread screenshot gate ->
 archive task card -> commit if conditions allow
@@ -376,19 +392,22 @@ archive task card -> commit if conditions allow
 If the task system is required but `tasks/` is missing, create the minimal
 `tasks/index.md`, `tasks/README.md`, `tasks/doing/`, `tasks/paused/`, and
 `tasks/done/` structure before editing. If another ACTIVE task owns the same
-`related_files` / `exclusive_files`, stop with `FILE_CONFLICT_STOP` unless the
-user explicitly continues or merges that task.
+`exclusive_files`, or the same `write_scopes` / semantic interface, stop with
+`FILE_CONFLICT_STOP` unless the user explicitly continues or merges that task.
 
-If the agent cannot invoke a listed skill because the current AI tool does not
-expose it, the skill is missing, the user explicitly excludes it, or the task
-is a trivial one-command check, the final report must include one of:
+Do not create task cards for read-only answers, exact source lookup, standalone `diff` / `策划`, or trivial one-command checks. Those turns should leave `tasks/` untouched.
+
+For normal consultation, read-only review, narrow lookup, or a trivial one-command check, do not load a broad stack of skills just because keywords overlap. Use the smallest relevant skill set and continue.
+
+If a hard-gate skill cannot be invoked because the current AI tool does not
+expose it, the skill is missing, or the user explicitly excludes it, the final report must include one of:
 
 - `SKIPPED <skill-name>: <reason>`
 - `UNAVAILABLE <skill-name>: <reason>`
 
 For Claude/DeepSeek sessions, `cys` appends a routing reminder at startup, but
 this file remains the project-level source of truth. The model choice does not
-change this rule.
+change the hard gates above.
 
 ## Missing Skills
 
@@ -407,18 +426,18 @@ Codex note:
 
 | 用途 | 文件 |
 |---|---|
-| 任务总览与断线恢复 | `tasks/index.md` |
+| 任务总览与断线恢复；维护索引，不是普通任务独占文件 | `tasks/index.md` |
 | 任务系统细则（含 FILE_CONFLICT_STOP、git-c 集成） | `tasks/README.md` |
 | 当前 ACTIVE 任务卡 | `tasks/doing/` 中，可有多个 |
 | PAUSED 任务卡 | `tasks/paused/` 中 |
 | 批量收口提交细则 | `tasks/README.md` → 「git-c 集成细则」 |
 | Goal 执行规则、核心层分离、模块拆分 | `docs/00_AI_START_HERE.md` → 「Goal 执行规则」 |
 
-每次开始任务或修改文件前，必须先读取 `tasks/index.md` 检查任务状态和文件冲突。`git-c` 必须先读任务卡再分组提交。以「策划」或 `diff` 结尾的指令进入只读/策划模式，不改代码。
+每次开始要修改文件的任务前，必须先读取 `tasks/index.md` 检查任务状态和文件冲突。只读查询不创建任务卡。`git-c` 必须先读任务卡再分组提交。以「策划」或 `diff` 结尾的指令进入只读/策划模式，不改代码。
 
 ## 冲突硬停规则
 
-如果检测到当前任务要修改的文件与其他任务卡中的 `related_files` / `exclusive_files` 重叠，或工作区脏文件无法归属当前任务，必须：
+如果检测到当前任务要修改的文件与其他任务卡中的 `exclusive_files` 重叠、`write_scopes` / 同一语义接口重叠，或工作区脏文件无法归属当前任务，必须：
 
 1. **立即暂停**，不得继续修改或提交
 2. 输出冲突报告

@@ -1,5 +1,11 @@
 # 10_CHANGELOG
 
+## 2026-07-03
+
+- 收紧任务卡使用规则：只读查询、`diff`、`策划` 和简单命令检查不创建任务卡；真正修改仓库文件时才创建或更新薄任务卡，开工只声明写入租约和验证计划，证据在执行后追加。
+- `tasks/index.md` 改为维护索引，不再作为普通功能任务的独占实现文件；任何 Lead 在开工、收口或 `git-c` 时都可以按真实 `tasks/doing` / `tasks/paused` / `tasks/done` 刷新它。当前索引已刷新为真实 `ACTIVE_IMPL` / `READY_TO_MERGE` / `BLOCKED` 分组，并移除冗长历史 done 清单。
+- 明确 READY_TO_MERGE / BLOCKED 堆积时应优先 `git-c` 或 Lead 收口，避免继续开新卡掩盖共享 UI/core/bundle dirty 边界；`web/js/local-engine.js` 仍按生成物规则处理，源码影响浏览器行为时必须 rebuild 并记录快照归属。
+
 ## 2026-06-28
 
 - Replay 导出升级为 `ysbzs.replay` 命令流协议：`EXPORT_REPLAY` 现在保留初始 options、玩家公开命令、每步 checkpoint/hash、最终 hash、checksum、旧 battleTrace/changeLog 兼容字段，并提供重建校验 helper；选择类 UI 命令会进入 replay 操作流但不改变权威 state hash，一键完整 Run 作为单条可重演宏命令提交。

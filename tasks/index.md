@@ -1,10 +1,49 @@
 # 任务总览
-## ACTIVE
 
-- `tasks/doing/2026-06-28_replay-command-stream.md` — BLOCKED: replay implementation validated; full `check:all` blocked by unrelated workbook CSV08 failure.
-- `tasks/doing/2026-06-29_live-4173-bundle-rule.md` — BLOCKED: workflow rule committed; task remains open because `tasks/index.md` closeout happened later through git-c maintenance.
-- `tasks/doing/2026-06-29_auto-position-boss-priority.md` — BLOCKED: implementation committed; full `check:all` blocked by unrelated workbook CSV08 failure.
-- `tasks/doing/2026-06-29_auto-enemy-turn-flow.md` — READY_TO_MERGE: implementation committed and browser evidence captured; full `check:all` blocked by unrelated workbook CSV08 failure.
+最后刷新：2026-07-03，由 `2026-07-02_write-scope-task-cards` 维护。
+
+## 使用规则
+
+- 只读查询、源码定位、`diff`、`策划`、简单命令检查不创建任务卡。
+- 修改仓库文件前才创建或更新薄任务卡，先声明 `related_files` / `write_scopes` / `exclusive_files`。
+- `tasks/index.md` 是维护索引，不属于普通功能任务的独占文件；开工、收口或 `git-c` 时都可以按真实目录刷新。
+- `READY_TO_MERGE` 不应长期停在 `doing/`；继续新共享 UI/core 改动前，优先做 `git-c` 或 Lead 收口。
+
+## ACTIVE_IMPL
+
+- `tasks/doing/2026-07-02_animated-pet-move.md` — UI feedback: 宠物移动动画仍在实现；涉及 `web/js/main.js` / `web/ux-app.css`。
+- `tasks/doing/2026-07-02_pet-merge-quality-upgrade.md` — bugfix: 同名宠物合成改为品质推进；涉及核心库存/合成规则。
+
+## READY_TO_MERGE
+
+- `tasks/doing/2026-06-29_auto-enemy-turn-flow.md` — UI flow: 我方出击后自动推进敌方行动。
+- `tasks/doing/2026-06-30_attack-event-animation.md` — UI feedback: 战斗攻击/伤害/KO 动画反馈。
+- `tasks/doing/2026-06-30_battle-debug-route-page.md` — UI tool: 独立战斗调试入口页。
+- `tasks/doing/2026-06-30_command-console-page.md` — UI tool: 独立命令控制台页。
+- `tasks/doing/2026-06-30_main-page-hub.md` — UI navigation: 主入口大厅页。
+- `tasks/doing/2026-06-30_normal-game-three-scenes.md` — UI structure: 正常游戏 3选1 / 商店 / 战斗三场景。
+- `tasks/doing/2026-06-30_pet-detail-cards-image.md` — asset: 宠物中文详情图。
+- `tasks/doing/2026-06-30_pet-detail-final-stats.md` — UI detail: 棋盘详情面板只显示最终战斗属性。
+- `tasks/doing/2026-06-30_pets-redesign-v3-data-source.md` — data pipeline: 宠物重设计数据源接入。
+- `tasks/doing/2026-06-30_quality-evolution-point-rng.md` — rules: 品质成长随机进化点。
+- `tasks/doing/2026-06-30_round-placement-preview-reset.md` — bugfix: 新回合智能站位可用性。
+- `tasks/doing/2026-06-30_seeded-pet-levels-excel.md` — data artifact: seed 全品质成长 Excel。
+- `tasks/doing/2026-07-01_data-source-split-audit.md` — data audit: 未接入数据集中与核对。
+- `tasks/doing/2026-07-01_runtime-json-data-report.md` — data tooling: runtime JSON / SQLite / HTML 审核页。
+- `tasks/doing/2026-07-02_real-click-flow-audit.md` — browser tester pass: 正常游戏真人点击巡检。
+- `tasks/doing/2026-07-02_remove-pet-injury-popover.md` — UI feedback: 移除宠物受伤 hover 浮窗。
+- `tasks/doing/2026-07-02_seed-episode-preview.md` — data tooling: 3 个 seed 的整集预览表。
+- `tasks/doing/2026-07-02_settings-unification-cleanup.md` — docs cleanup: 删除旧口径生成说明。
+- `tasks/doing/2026-07-02_write-scope-task-cards.md` — workflow: 任务卡/write_scope/index/git-c 规则优化。
+
+## BLOCKED
+
+- `tasks/doing/2026-06-28_replay-command-stream.md` — replay feature: 已验证实现，完整 `check:all` 被无关 CSV08 workbook 问题阻断。
+- `tasks/doing/2026-06-29_auto-position-boss-priority.md` — bugfix: 已验证实现，完整 `check:all` 被无关 CSV08 workbook 问题阻断。
+- `tasks/doing/2026-06-29_live-4173-bundle-rule.md` — workflow: 4173 bundle 规则已写入；等待收口归档。
+- `tasks/doing/2026-07-02_action-slot-element-layers.md` — bugfix: 行动槽元素层数；需要和当前 bundle/dirty 边界统一收口。
+- `tasks/doing/2026-07-02_party-wipe-hero-hp.md` — bugfix: 团灭扣英雄 HP；被核心/bundle/shared dirty 边界阻断。
+- `tasks/doing/2026-07-02_preview-dead-target-element-spread.md` — bugfix: 预览不展示未来铺元素；被 bundle/shared dirty 边界阻断。
 
 ## PAUSED
 
@@ -12,124 +51,4 @@
 
 ## DONE
 
-- `tasks/done/2026-06-24_two-day-flow-recording.md`
-- `tasks/done/2026-06-25_daily-flow-battle-link-entry.md`
-- `tasks/done/2026-06-24_artist-handoff-zip.md`
-- `tasks/done/2026-06-24_master-domain-sheets-export.md`
-- `tasks/done/2026-06-24_master-visible-planner-sheets.md`
-- `tasks/done/2026-06-24_master-all-csv-source.md`
-- `tasks/done/2026-06-24_daily-flow-manual-battle-entry.md`
-- `tasks/done/2026-06-24_roster-active-bench-capacity.md`
-- `tasks/done/2026-06-24_daily-flow-next-step-unblock.md`
-- `tasks/done/2026-06-23_attack-warning-cell-tooltip.md`
-- `tasks/done/2026-06-23_page-core-boundary-cleanup.md`
-- `tasks/done/2026-06-22_battle-shape-attribute-readability.md`
-- `tasks/done/2026-06-22_main-style-right-pet-detail-prompt.md`
-- `tasks/done/2026-06-22_master-mechanics-quality-followup.md`
-- `tasks/done/2026-06-22_auto-position-overkill.md`
-- `tasks/done/2026-06-22_daily-flow-battle-first-route.md`
-- `tasks/done/2026-06-22_local-engine-shape-sync.md`
-- `tasks/done/2026-06-22_master-quality-shape-sync.md`
-- `tasks/done/2026-06-21_superpowers-workflow-routing.md`
-- `tasks/done/2026-06-20_manual-preview-diff-provenance.md`
-- `tasks/done/2026-06-20_manual-preview-diff-only-display.md`
-- `tasks/done/2026-06-20_trial-hero-boardwide-move.md`
-- `tasks/done/2026-06-19_structured-performance-timing.md`
-- `tasks/done/2026-06-19_move-simulation-diff-preview.md`
-- `tasks/done/2026-06-19_player-pet-injury-display.md`
-- `tasks/done/2026-06-19_manual-flow-preview-performance.md`
-- `tasks/done/2026-06-19_move-risk-sandbox-formal-move.md`
-- `tasks/done/2026-06-19_team-risk-intent-source-fix.md`
-- `tasks/done/2026-06-19_movement-risk-log-wording.md`
-- `tasks/done/2026-06-19_move-board-overlays-left-up.md`
-- `tasks/done/2026-06-19_pet-detail-selection-refresh.md`
-- `tasks/done/2026-06-19_all-out-preview-sandbox.md`
-- `tasks/done/2026-06-19_enemy-spawn-yaml-position.md`
-- `tasks/done/2026-06-19_parallel-ai-file-lock-workflow.md`
-- `tasks/done/2026-06-19_battle-resolution-preview.md`
-- `tasks/done/2026-06-19_paper-battle-live-ui.md`
-- `tasks/done/2026-06-18_remove-element-packet-splitting.md`
-- `tasks/done/2026-06-18_reset-action-lock-next-round.md`
-- `tasks/done/2026-06-18_hide-move-targets-after-action.md`
-- `tasks/done/2026-06-18_clear-stale-target-on-slot-aim.md`
-- `tasks/done/2026-06-18_action-slot-damage-and-element-spread.md`
-- `tasks/done/2026-06-18_formal-ui-evidence-rule.md`
-- `tasks/done/2026-06-18_action-log-damage-element-summary.md`
-- `tasks/done/2026-06-18_compact-action-event-log.md`
-- `tasks/done/2026-06-18_full-browser-event-log.md`
-- `tasks/done/2026-06-18_public-event-payloads.md`
-- `tasks/done/2026-06-18_puzzle-solver-page.md`
-- `tasks/done/2026-06-18_pure-singleplayer-runtime.md`
-- `tasks/done/2026-06-18_puzzle-solver-generator.md`
-- `tasks/done/2026-06-18_daily-flow-page.md`
-- `tasks/done/2026-06-17_cell-detail-preview-source.md`
-- `tasks/done/2026-06-17_ai-collaboration-workflow.md`
-- `tasks/done/2026-06-15_restock-purchase-build-source.md`
-- `tasks/done/2026-06-15_targeted-restock-offer-provenance.md`
-- `tasks/done/2026-06-15_terminal-run-summary-ui.md`
-- `tasks/done/2026-06-15_full-run-browser-entry.md`
-- `tasks/done/2026-06-15_day-range-growth-snapshots.md`
-- `tasks/done/2026-06-15_trigger-object-readable-report.md`
-- `tasks/done/2026-06-15_object-registry-fire-trap-trigger.md`
-- `tasks/done/2026-06-15_route-battle-pressure-preview.md`
-- `tasks/done/2026-06-15_route-fixed-battle-entry.md`
-- `tasks/done/2026-06-15_route-pending-reward-ui.md`
-- `tasks/done/2026-06-15_shop-stall-status-panel.md`
-- `tasks/done/2026-06-15_route-choice-consequence-preview.md`
-- `tasks/done/2026-06-15_outer-build-core-statusbar.md`
-- `tasks/done/2026-06-15_outer-build-core-summary.md`
-- `tasks/done/2026-06-15_outer-run-terminal-state.md`
-- `tasks/done/2026-06-15_outer-trap-modifier-evidence.md`
-- `tasks/done/2026-06-15_outer-fast-clear-reward-event.md`
-- `tasks/done/2026-06-15_outer-upgrade-offer-event.md`
-- `tasks/done/2026-06-15_outer-battle-fail-penalty-event.md`
-- `tasks/done/2026-06-15_outer-duplicate-pet-event.md`
-- `tasks/done/2026-06-15_outer-elite-reward-pool.md`
-- `tasks/done/2026-06-15_outer-curse-gold-risk-effect.md`
-- `tasks/done/2026-06-15_outer-trap-bonus-effect.md`
-- `tasks/done/2026-06-15_outer-prebattle-shield-effect.md`
-- `tasks/done/2026-06-15_day1-day10-route-skeleton.md`
-- `tasks/done/2026-06-15_shop-refresh-control-state.md`
-- `tasks/done/2026-06-15_route-shop-stall-identity.md`
-- `tasks/done/2026-06-15_route-pending-reward-claim.md`
-- `tasks/done/2026-06-15_route-battle-outcome-reward.md`
-- `tasks/done/2026-06-15_day1-day3-bazaar-route.md`
-- `tasks/done/2026-06-15_bazaar-outer-loop-acceptance-standard.md`
-- `tasks/done/2026-06-12_day1-bazaar-node-flow.md`
-- `tasks/done/2026-06-12_disable-board-hover-preview.md`
-- `tasks/done/2026-06-12_all-out-two-round-browser-flow.md`
-- `tasks/done/2026-06-12_enemy-threat-preview-hit-only.md`
-- `tasks/done/2026-06-12_enemy-threat-preview-declutter.md`
-- `tasks/done/2026-06-12_enemy-pet-preview-still-wrong.md`
-- `tasks/done/2026-06-12_enemy-pet-visible-damage-preview.md`
-- `tasks/done/2026-06-12_visual-qa-before-commit-workflow.md`
-- `tasks/done/2026-06-12_enemy-pet-damage-preview.md`
-- `tasks/done/2026-06-12_enemy-pet-action-ai.md`
-- `tasks/done/2026-06-11_full-board-sandbox-placement-preview.md`
-- `tasks/done/2026-06-11_sandbox-team-placement-preview.md`
-- `tasks/done/2026-06-11_team-risk-preview-recompute.md`
-- `tasks/done/2026-06-11_move-target-risk-preview.md`
-- `tasks/done/2026-06-11_preview-damage-sandbox.md`
-- `tasks/done/2026-06-11_puzzle_submission_page.md`
-- `tasks/done/2026-06-11_puzzle_submission_tool_spec.md`
-- `tasks/done/2026-06-11_board-unit-numeric-badges.md`
-- `tasks/done/2026-06-11_singleplayer-runtime-mode.md`
-- `tasks/done/2026-06-11_workflow-consult-skill-routing.md`
-- `tasks/done/2026-06-10_team-placement-preview.md`
-- `tasks/done/2026-06-10_ui-hide-unit-native-title.md`
-- `tasks/done/2026-06-10_ui-hide-all-toasts.md`
-- `tasks/done/2026-06-09_ui-action-block-popover-detail-space.md`
-- `tasks/done/2026-06-09_ui-bottom-log-scroll.md`
-- `tasks/done/2026-06-09_ui-remove-hover-detail.md`
-- `tasks/done/2026-06-09_ui-left-action-zone-detail-panel.md`
-- `tasks/done/2026-06-09_ui-fullscreen-button.md`
-- `tasks/done/2026-06-09_ui-combat-layout-density-pass.md`
-- `tasks/done/2026-06-09_ui-combat-layout-publication-split.md`
-- `tasks/done/2026-06-09_task-occupancy-skill.md`
-- `tasks/done/2026-06-09_ui-combat-layout-full-p0-p1-p2.md`
-
-## 规则
-
-- ACTIVE 任务可以有多个；是否允许并行由 `related_files` / `exclusive_files` 文件级写入租约决定。
-- 修改文件前必须先占用或更新 ACTIVE 任务卡，并检查文件级冲突。
-- 任务完成后归档到 `tasks/done/` 并更新本文件。
+见 `tasks/done/`。旧归档任务不在本索引全文展开，避免 index 成为长历史清单；需要审计时以目录真实文件为准。

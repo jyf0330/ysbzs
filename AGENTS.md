@@ -48,31 +48,11 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 
 ## 自动提交规则
 
-凡涉及代码或功能行为的修改，完成验证后默认进入自动提交检查；满足下列条件时必须精确暂存当前任务文件并自行提交，不再另行询问用户。
-
-当任务满足以下**所有**条件时，AI 应自行提交，**不需要请示用户**：
-1. 任务卡已记录（有 `task_id` / `commit_plan`）
-2. 测试全部通过（`node tests/run_all_tests.cjs` 无失败）
-3. 暂存区文件全部归属当前任务 `related_files`
-4. 无 FILE_CONFLICT_STOP 触发；普通同文件重叠已用 `write_scopes` 证明不碰同一函数、选择器、测试块、文档段落或语义接口
-5. 提交信息按任务卡 `commit_plan` 格式
-6. 若涉及 UI / 棋盘 / 可见预览 / 交互反馈：已完成提交前可见验收门禁，任务卡记录测试子线程或等价独立测试流程、截图路径、DOM/状态断言、console error 结果，以及主线程对截图的复核结论
-
-不满足任一条件 → 输出 Commit Plan 让用户确认。
+自动提交、精确暂存和 Commit Plan 细则以 `docs/02_CURRENT_WORKFLOW.md` 与 `tasks/README.md` 为准。AGENTS 只保留入口规则，不复制完整提交条件。
 
 ## 提交前可见验收门禁
 
-任何 UI、棋盘、可见预览、交互反馈、布局、文案可读性相关改动，在进入自动提交检查前，必须按以下顺序执行：
-
-1. 实现线程完成代码、单元测试和基础验证。
-2. 如果改动会影响浏览器端行为（包括 `src/core/**`、`src/uiAdapter*.cjs`、`web/js/**`、`web/ux-app.js`、`web/index.html` 等会被本地 runtime 使用的代码），必须先运行 `node tools/build_local_engine_bundle.cjs`，确保 `web/js/local-engine.js` 包含最新源码；否则 `http://127.0.0.1:4173/` 仍可能跑旧 bundle，不得宣称 live 页面已生效。
-3. `http://127.0.0.1:4173/` 是用户默认验收端口。每次浏览器端行为改动后，必须在该端口刷新/必要时重启 `tools/run_ui_server.cjs`，通过正式玩家入口复测；只跑源码单测或 adapter smoke 不等于用户端口已生效。
-4. 如果 `web/js/local-engine.js` 或 4173 服务重启被其他 ACTIVE 任务租约阻塞，必须在任务卡和最终回复中明确写 `LIVE_4173_NOT_REFRESHED`，不能把源码测试通过说成页面已修好。
-5. 派独立测试子线程在真实浏览器里操作页面执行验收；如果当前工具没有可用子线程，必须开启一个独立的 tester pass，并在任务卡记录 `TEST_SUBTHREAD_UNAVAILABLE` 及替代验证命令。
-6. 测试线程必须通过真实玩家入口验证：按钮点击、棋盘点击、hover、结束回合、dispatch 或 `autoExecuteTurn`。`/api/action`、DOM / ViewModel 断言只能作为辅助证据，不能单独替代真实浏览器操作；直接调用内部函数只能补单元测试，不能充当玩家链路验收。
-7. 测试线程必须保存真实浏览器截图到 `output/playwright/` 或任务卡指定路径，并同时记录操作步骤、关键 DOM / ViewModel / 状态断言和 console error 结果。
-8. 主线程必须查看截图，确认截图中的关键可见效果“感觉正确”、没有明显遮挡/错位/缺失/错误数值，再进入暂存和提交。
-9. 缺少 bundle 刷新、缺少 4173 live 端口验收、缺少截图、截图未复核、console 有新增 error、DOM/状态断言不匹配，均不得自动提交。
+UI、棋盘、可见预览、交互反馈、布局、文案可读性相关改动，提交前必须按 `docs/02_CURRENT_WORKFLOW.md` 的可见验收门禁执行。浏览器端行为改动必须按 `docs/00_AI_START_HERE.md` 刷新 `web/js/local-engine.js` 并在 `http://127.0.0.1:4173/` 复测；这里不再重复全文，避免规则漂移。
 
 ## 核心纪律
 
@@ -94,8 +74,8 @@ AI 入口薄文件。项目总入口是 `docs/00_AI_START_HERE.md`。
 
 ## 常用命令
 
-- 验证：`node tests/run_all_tests.cjs`
-- 浏览器端生效：`node tools/build_local_engine_bundle.cjs` 后刷新/复测 `http://127.0.0.1:4173/`
+- 验证：以 `docs/00_AI_START_HERE.md` 和当前任务卡 `validation` 为准
+- 浏览器端生效：`node tools/build_local_engine_bundle.cjs` 后刷新/复测 `http://127.0.0.1:4173/`；源码影响浏览器行为时必须 build，不能因 `web/js/local-engine.js` 生成文件租约跳过。
 - 状态：`git status --short --untracked-files=all`
 - 安全看差异（自动跑测试后出 diff）：`git d`（alias → `.githooks/pre-diff`）
 - 总入口：`docs/00_AI_START_HERE.md`

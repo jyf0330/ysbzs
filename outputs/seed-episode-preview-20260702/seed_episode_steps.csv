@@ -1,0 +1,421 @@
+seed,day,step,kind,label,optionIndex,choiceId,choiceName,poolId,nodeType,weight,petSourceSummary,battleSummary,note
+ysbzs-local,1,1,node_choice,事件节点1,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local,1,1,node_choice,事件节点1,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,露娜蒂(青铜)、冲浪鸭(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,1,1,node_choice,事件节点1,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,新叶猿(青铜)、玉藻狐(青铜)、棉花糖(青铜)、灌木羊(青铜)、燎火鹿(青铜)、翠叶鼠(青铜),,进入基础夜市商店
+ysbzs-local,1,2,node_choice,事件节点2,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local,1,2,node_choice,事件节点2,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,瞅什魔(青铜)、瞅什魔(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,1,2,node_choice,事件节点2,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,露娜蒂(青铜)、啼卡尔(青铜)、燎火鹿(青铜)、瞅什魔(青铜),,进入基础夜市商店
+ysbzs-local,1,3,fixed_battle,第一场战斗,1,enc_d01_midday_a,中午遭遇A,,battle,100,,上午 5回合 20只：棉悠悠(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、翠叶鼠(白银)、捣蛋猫(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、翠叶鼠(钻石) 等20个,映射当前上午波次
+ysbzs-local,1,4,node_choice,事件节点3,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local,1,4,node_choice,事件节点3,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,灌木羊(青铜)、皮皮鸡(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,1,4,node_choice,事件节点3,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,伏特喵(青铜)、新叶猿(青铜)、波娜兔(青铜)、草莽猪(青铜)、棉悠悠(青铜),,进入基础夜市商店
+ysbzs-local,1,5,node_choice,事件节点4,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local,1,5,node_choice,事件节点4,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,企丸丸(青铜)、燎火鹿(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,1,5,node_choice,事件节点4,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,灌木羊(青铜)、灌木羊(青铜)、棉悠悠(青铜)、叶泥泥(青铜)、玉藻狐(青铜)、捣蛋猫(青铜),,进入基础夜市商店
+ysbzs-local,1,6,fixed_battle,第二场战斗,1,enc_d01_evening_fixed,晚上固定战,,battle,100,,下午 5回合 20只：棉悠悠(青铜)、翠叶鼠(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜) 等20个,映射当前下午波次
+ysbzs-local,2,1,node_choice,事件节点1,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local,2,1,node_choice,事件节点1,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,露娜蒂(青铜)、叶胖达(青铜)、叶泥泥(青铜)、勾魂鱿(青铜),,进入坦克标签摊位
+ysbzs-local,2,1,node_choice,事件节点1,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,喵丝特(青铜)、火绒狐(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,2,2,node_choice,事件节点2,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local,2,2,node_choice,事件节点2,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,叶泥泥(青铜)、露娜蒂(青铜)、草莽猪(青铜)、露娜蒂(青铜),,进入坦克标签摊位
+ysbzs-local,2,2,node_choice,事件节点2,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,瞅什魔(青铜)、皮皮鸡(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,2,3,fixed_battle,第一场战斗,1,enc_d02_midday_a,第二天中午遭遇A,,battle,100,,上午 5回合 20只：火绒狐(白银)、皮皮鸡(白银)、皮皮鸡(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、皮皮鸡(白银)、棉悠悠(青铜)、火绒狐(青铜)、火绒狐(青铜) 等20个,映射 Day2 上午波次
+ysbzs-local,2,4,node_choice,事件节点3,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local,2,4,node_choice,事件节点3,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,遁地鼠(青铜)、勾魂鱿(青铜)、遁地鼠(青铜)、瞅什魔(青铜),,进入坦克标签摊位
+ysbzs-local,2,4,node_choice,事件节点3,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,棉悠悠(青铜)、壶小象(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,2,5,node_choice,事件节点4,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local,2,5,node_choice,事件节点4,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,啼卡尔(青铜)、啼卡尔(青铜)、叶泥泥(青铜),,进入坦克标签摊位
+ysbzs-local,2,5,node_choice,事件节点4,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,叶泥泥(青铜)、炸蛋鸟(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local,2,6,fixed_battle,第二场战斗,1,enc_d02_evening_fixed,第二天晚上固定战,,battle,100,,下午 5回合 23只：皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜) 等23个,映射 Day2 下午波次
+ysbzs-local,3,1,node_choice,事件节点1,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,雷冥鸟(白银)、狱焰王(白银)、滑水蛇(白银)、碧海龙(白银)、天擒鸟(白银)、女皇蜂(白银)、毛掸儿(白银),,进入 pT2 标签摊位
+ysbzs-local,3,1,node_choice,事件节点1,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,毛掸儿(白银)、融焰娘(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,3,1,node_choice,事件节点1,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,熔岩兽(白银)、熔岩兽(白银)、火麒麟(白银)、焰煌(白银),,进入火元素强化摊位
+ysbzs-local,3,2,node_choice,事件节点2,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,吹雪狐(白银)、紫霞鹿(白银)、朋克蜥(白银)、狱焰王(白银)、水灵龙(白银)、碧海龙(白银),,进入 pT2 标签摊位
+ysbzs-local,3,2,node_choice,事件节点2,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,严冬鹿(白银)、碎岩龟(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,3,2,node_choice,事件节点2,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,融焰娘(白银)、狱阎王(白银)、焰煌(白银)、火绒狐(青铜)、融焰娘(白银),,进入火元素强化摊位
+ysbzs-local,3,3,fixed_battle,第一场战斗,1,enc_d03_midday_a,第三天中午遭遇A,,battle,100,,上午 5回合 20只：皮皮鸡(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、火绒狐(青铜) 等20个,映射 Day3 上午波次
+ysbzs-local,3,4,node_choice,事件节点3,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,美露帕(白银)、天羽龙(白银)、浪刃武士(白银)、熔岩兽(白银)、笑魇猫(白银)、暗巫猫(白银),,进入 pT2 标签摊位
+ysbzs-local,3,4,node_choice,事件节点3,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,毛掸儿(白银)、燧火鸟(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,3,4,node_choice,事件节点3,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,火灵儿(白银)、狱焰王(白银)、焰煌(白银)、融焰娘(白银)、火灵儿(白银)、浪刃武士(白银),,进入火元素强化摊位
+ysbzs-local,3,5,node_choice,事件节点4,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,暗巫猫(白银)、毛掸儿(白银)、浪刃武士(白银)、霜歌龙(白银)、雷冠龙(白银)、寒霜兽(白银),,进入 pT2 标签摊位
+ysbzs-local,3,5,node_choice,事件节点4,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,烽歌龙(白银)、焰巫狐(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,3,5,node_choice,事件节点4,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,熔岩兽(白银)、炽焰牛(白银)、燎火鹿(青铜)、燎火鹿(青铜)、火麒麟(白银)、火麒麟(白银),,进入火元素强化摊位
+ysbzs-local,3,6,fixed_battle,第二场战斗,1,enc_d03_evening_fixed,第三天晚上固定战,,battle,100,,下午 5回合 20只：棉悠悠(白银)、火绒狐(青铜)、皮皮鸡(白银)、翠叶鼠(白银)、捣蛋猫(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜) 等20个,映射 Day3 下午波次
+ysbzs-local,4,1,node_choice,事件节点1,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,水灵龙(白银)、雷角马(白银)、火麒麟(白银)、暗巫猫(白银)、羽箭射手(白银)、吹雪狐(白银)、铠格力斯(白银)、水灵儿(白银)、雷鸣童子(白银),,进入 pT2 标签摊位
+ysbzs-local,4,1,node_choice,事件节点1,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,骑士蜂(白银)、绿苔绒怪(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,4,1,node_choice,事件节点1,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,薇莉塔(白银)、迅雷鸟(白银)、紫霞鹿(白银)、玉藻狐(青铜)、骑士蜂(白银),,进入风元素定向摊位
+ysbzs-local,4,2,node_choice,事件节点2,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,笑魇猫(白银)、焰煌(白银)、铁拳猿(白银)、趴趴鲶(白银)、铠格力斯(白银)、精灵龙(白银)、踏春兔(白银),,进入 pT2 标签摊位
+ysbzs-local,4,2,node_choice,事件节点2,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,毛掸儿(白银)、水灵龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,4,2,node_choice,事件节点2,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,雷冠龙(白银)、君王美露帕(白银)、电棘鼠(青铜)、波娜兔(青铜)、笑魇猫(白银),,进入风元素定向摊位
+ysbzs-local,4,3,fixed_battle,第一场战斗,1,enc_d04_midday_a,第四天中午遭遇A,,battle,100,,上午 5回合 20只：棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(白银)、棉悠悠(青铜)、皮皮鸡(青铜) 等20个,映射 Day4 上午波次
+ysbzs-local,4,4,node_choice,事件节点3,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,浪刃武士(白银)、天羽龙(白银)、炎魔羊(白银)、雪猛犸(白银)、毛老爹(白银),,进入 pT2 标签摊位
+ysbzs-local,4,4,node_choice,事件节点3,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,天擒鸟(白银)、博爱蜥(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,4,4,node_choice,事件节点3,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,连理龙(白银)、羽箭射手(白银)、绿苔绒怪(白银)、雷冠龙(白银)、叶胖达(青铜)、皮皮鸡(青铜)、铁拳猿(白银),,进入风元素定向摊位
+ysbzs-local,4,5,node_choice,事件节点4,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,寒霜兽(白银)、噬魂兽(白银)、毛老爹(白银)、铁拳猿(白银)、炎魔羊(白银)、花丽娜(白银),,进入 pT2 标签摊位
+ysbzs-local,4,5,node_choice,事件节点4,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,霹雳犬(白银)、暗巫猫(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,4,5,node_choice,事件节点4,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,君王美露帕(白银)、皮皮鸡(青铜)、笑魇猫(白银)、捣蛋猫(青铜)、雷冠龙(白银)、天擒鸟(白银)、翠叶鼠(青铜)、笑魇猫(白银),,进入风元素定向摊位
+ysbzs-local,4,6,fixed_battle,第二场战斗,1,enc_d04_evening_fixed,第四天晚上固定战,,battle,100,,下午 5回合 23只：皮皮鸡(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(白银)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(白银)、捣蛋猫(青铜)、捣蛋猫(白银)、翠叶鼠(青铜) 等23个,映射 Day4 下午波次
+ysbzs-local,5,1,node_choice,事件节点1,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,焰煌(白银)、疾旋鼬(白银)、派克龙(白银)、猫蝠怪(白银)、薇莉塔(白银),,进入 pT2 标签摊位
+ysbzs-local,5,1,node_choice,事件节点1,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,毛掸儿(白银)、苍焰狼(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,5,1,node_choice,事件节点1,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,鲁米儿(青铜)、鲁米儿(青铜)、佩克龙(白银)、企丸丸(青铜)、白绒雪怪(白银),,进入水元素定向摊位
+ysbzs-local,5,2,node_choice,事件节点2,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,月镰魔(白银)、碎岩龟(白银)、苍焰狼(白银)、森猛犸(白银)、炽焰牛(白银),,进入 pT2 标签摊位
+ysbzs-local,5,2,node_choice,事件节点2,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,碧海龙(白银)、魔渊龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,5,2,node_choice,事件节点2,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,冲浪鸭(青铜)、佩克龙(白银)、碧海龙(白银)、覆海龙(黄金)、毛老爹(白银),,进入水元素定向摊位
+ysbzs-local,5,3,fixed_battle,第一场战斗,1,enc_d05_midday_a,第五天中午遭遇A,,battle,100,,上午 5回合 31只：火绒狐(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、皮皮鸡(白银)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜) 等31个,映射 Day5 上午波次
+ysbzs-local,5,4,node_choice,事件节点3,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,融焰娘(白银)、狱焰王(白银)、白绒雪怪(白银)、铠格力斯(白银)、严冬鹿(白银)、花冠龙(白银)、雷鸣童子(白银),,进入 pT2 标签摊位
+ysbzs-local,5,4,node_choice,事件节点3,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,滑水蛇(白银)、水灵龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,5,4,node_choice,事件节点3,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,雪猛犸(白银)、碧海龙(白银)、冲浪鸭(青铜)、鲨小子(青铜)、吹雪狐(白银),,进入水元素定向摊位
+ysbzs-local,5,5,node_choice,事件节点4,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,炎魔羊(白银)、连理龙(白银)、朋克蜥(白银)、碎岩龟(白银)、美露帕(白银)、毛老爹(白银)、姬小兔(白银),,进入 pT2 标签摊位
+ysbzs-local,5,5,node_choice,事件节点4,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,白绒雪怪(白银)、碧海龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local,5,5,node_choice,事件节点4,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,疾旋鼬(白银)、企丸王(青铜)、吹雪狐(白银)、壶小象(青铜)、白绒雪怪(白银)、毛掸儿(白银),,进入水元素定向摊位
+ysbzs-local,5,6,fixed_battle,第二场战斗,1,enc_d05_evening_fixed,第五天晚上固定战,,battle,100,,下午 5回合 26只：翠叶鼠(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、翠叶鼠(白银)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜) 等26个,映射 Day5 下午波次
+ysbzs-local,6,1,node_choice,事件节点1,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,混沌骑士(黄金)、冥铠蝎(黄金)、黑月女王(黄金)、圣光骑士(黄金)、清雀(黄金)、阿努比斯(黄金),,进入 pT3 标签摊位
+ysbzs-local,6,1,node_choice,事件节点1,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,唤夜兽(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,6,1,node_choice,事件节点1,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,燎火鹿(青铜)、炽焰牛(白银)、焰煌(白银)、狱焰王(白银)、火麒麟(白银),,进入输出标签摊位
+ysbzs-local,6,2,node_choice,事件节点2,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,唤冬兽(黄金)、唤夜兽(黄金)、阿努比斯(黄金)、阿努比斯(黄金)、圣光骑士(黄金)、黑月女王(黄金),,进入 pT3 标签摊位
+ysbzs-local,6,2,node_choice,事件节点2,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,混沌骑士(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,6,2,node_choice,事件节点2,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,燎火鹿(青铜)、焰巫狐(白银)、炎魔羊(白银)、焰巫狐(白银)、火麒麟(白银)、浪刃武士(白银),,进入输出标签摊位
+ysbzs-local,6,3,fixed_battle,第一场战斗,1,enc_d06_midday_a,第六天精英遭遇A,,battle,100,,上午 5回合 27只：翠叶鼠(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、棉悠悠(青铜) 等27个,Day6 精英压力上午波次
+ysbzs-local,6,4,node_choice,事件节点3,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,覆海龙(黄金)、混沌骑士(黄金)、黑月女王(黄金)、冥铠蝎(黄金)、暴电熊(黄金)、唤冬兽(黄金),,进入 pT3 标签摊位
+ysbzs-local,6,4,node_choice,事件节点3,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,空涡龙(黄金)、黑月女王(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,6,4,node_choice,事件节点3,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,焰煌(白银)、燎火鹿(青铜)、燎火鹿(青铜)、阿努比斯(黄金)、炎魔羊(白银),,进入输出标签摊位
+ysbzs-local,6,5,node_choice,事件节点4,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,唤夜兽(黄金)、暴电熊(黄金)、圣光骑士(黄金)、清雀(黄金)、清雀(黄金)、空涡龙(黄金),,进入 pT3 标签摊位
+ysbzs-local,6,5,node_choice,事件节点4,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,冥铠蝎(黄金)、覆海龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,6,5,node_choice,事件节点4,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,焰煌(白银)、炎魔羊(白银)、焰煌(白银)、焰巫狐(白银),,进入输出标签摊位
+ysbzs-local,6,6,fixed_battle,第二场战斗,1,enc_d06_evening_fixed,第六天晚上精英固定战,,battle,100,,下午 5回合 29只：翠叶鼠(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、皮皮鸡(白银)、火绒狐(青铜)、捣蛋猫(青铜)、棉悠悠(青铜) 等29个,映射 Day6 下午精英波次
+ysbzs-local,7,1,node_choice,事件节点1,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,唤夜兽(黄金)、阿努比斯(黄金)、异构格里芬(黄金)、阿努比斯(黄金)、混沌骑士(黄金)、唤冬兽(黄金),,进入 pT3 标签摊位
+ysbzs-local,7,1,node_choice,事件节点1,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,冥铠蝎(黄金)、清雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,7,1,node_choice,事件节点1,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,冥铠蝎(黄金)、新叶猿(青铜)、冰棘兽(白银)、魔渊龙(白银)、碎岩龟(白银),,进入坦克标签摊位
+ysbzs-local,7,2,node_choice,事件节点2,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,圣光骑士(黄金)、朱雀(黄金)、唤夜兽(黄金)、腾炎龙(黄金)、百合女王(黄金),,进入 pT3 标签摊位
+ysbzs-local,7,2,node_choice,事件节点2,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,朱雀(黄金)、圣光骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,7,2,node_choice,事件节点2,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,流沙蛇(白银)、朋克蜥(白银)、草莽猪(青铜)、圣光骑士(黄金)、铠格力斯(白银)、铁拳猿(白银),,进入坦克标签摊位
+ysbzs-local,7,3,fixed_battle,第一场战斗,1,enc_d07_midday_a,第七天精英遭遇A,,battle,100,,上午 5回合 25只：皮皮鸡(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、火绒狐(青铜) 等25个,Day7 精英压力上午波次
+ysbzs-local,7,4,node_choice,事件节点3,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,覆海龙(黄金)、腾炎龙(黄金)、腾炎龙(黄金)、阿努比斯(黄金)、异构格里芬(黄金),,进入 pT3 标签摊位
+ysbzs-local,7,4,node_choice,事件节点3,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,腾炎龙(黄金)、朱雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,7,4,node_choice,事件节点3,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,朋克蜥(白银)、啼卡尔(青铜)、冰帝美露帕(白银)、遁地鼠(青铜)、草莽猪(青铜)、黑鸦隐士(白银),,进入坦克标签摊位
+ysbzs-local,7,5,node_choice,事件节点4,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,阿努比斯(黄金)、唤夜兽(黄金)、混沌骑士(黄金)、百合女王(黄金)、覆海龙(黄金)、阿努比斯(黄金),,进入 pT3 标签摊位
+ysbzs-local,7,5,node_choice,事件节点4,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,覆海龙(黄金)、朱雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,7,5,node_choice,事件节点4,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,月镰魔(白银)、遁地鼠(青铜)、叶泥泥(青铜)、瞅什魔(青铜),,进入坦克标签摊位
+ysbzs-local,7,6,fixed_battle,第二场战斗,1,enc_d07_evening_fixed,第七天晚上精英固定战,,battle,100,,下午 5回合 32只：火绒狐(白银)、翠叶鼠(青铜)、棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜) 等32个,映射 Day7 下午精英波次
+ysbzs-local,8,1,node_choice,事件节点1,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,覆海龙(黄金)、圣光骑士(黄金)、清雀(黄金)、荷鲁斯(黄金)、圣光骑士(黄金),,进入 pT3 标签摊位
+ysbzs-local,8,1,node_choice,事件节点1,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,唤冬兽(黄金)、覆海龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,8,1,node_choice,事件节点1,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,喵丝特(青铜)、君王美露帕(白银)、棉花糖(青铜)、米露菲(青铜)、君王美露帕(白银),,进入经济标签摊位
+ysbzs-local,8,2,node_choice,事件节点2,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,圣光骑士(黄金)、波鲁杰克斯(黄金)、黑月女王(黄金)、暴电熊(黄金)、百合女王(黄金)、唤夜兽(黄金),,进入 pT3 标签摊位
+ysbzs-local,8,2,node_choice,事件节点2,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,异构格里芬(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,8,2,node_choice,事件节点2,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,波霸牛(青铜)、棉花糖(青铜)、棉花糖(青铜)、米露菲(青铜)、喵丝特(青铜),,进入经济标签摊位
+ysbzs-local,8,3,fixed_battle,第一场战斗,1,enc_d08_midday_a,第八天精英遭遇A,,battle,100,,上午 5回合 32只：皮皮鸡(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、火绒狐(青铜)、皮皮鸡(青铜) 等32个,Day8 精英压力上午波次
+ysbzs-local,8,4,node_choice,事件节点3,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,暴电熊(黄金)、唤冬兽(黄金)、空涡龙(黄金)、圣光骑士(黄金)、百合女王(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local,8,4,node_choice,事件节点3,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,唤夜兽(黄金)、冥铠蝎(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,8,4,node_choice,事件节点3,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,棉花糖(青铜)、波霸牛(青铜)、喵丝特(青铜)、波霸牛(青铜)、美露帕(白银),,进入经济标签摊位
+ysbzs-local,8,5,node_choice,事件节点4,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,空涡龙(黄金)、异构格里芬(黄金)、冥铠蝎(黄金)、混沌骑士(黄金)、荷鲁斯(黄金)、空涡龙(黄金),,进入 pT3 标签摊位
+ysbzs-local,8,5,node_choice,事件节点4,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,波鲁杰克斯(黄金)、空涡龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,8,5,node_choice,事件节点4,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,君王美露帕(白银)、波霸牛(青铜)、棉花糖(青铜)、波霸牛(青铜)、美露帕(白银),,进入经济标签摊位
+ysbzs-local,8,6,fixed_battle,第二场战斗,1,enc_d08_evening_fixed,第八天晚上精英固定战,,battle,100,,下午 5回合 32只：火绒狐(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜) 等32个,映射 Day8 下午精英波次
+ysbzs-local,9,1,node_choice,事件节点1,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,荷鲁斯(黄金)、波鲁杰克斯(黄金)、覆海龙(黄金)、混沌骑士(黄金)、黑月女王(黄金)、百合女王(黄金),,进入 pT3 标签摊位
+ysbzs-local,9,1,node_choice,事件节点1,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,异构格里芬(黄金)、波鲁杰克斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,9,1,node_choice,事件节点1,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,融焰娘(白银)、花冠龙(白银)、秘斯媞雅(白银)、融焰娘(白银)、融焰娘(白银)、秘斯媞雅(白银)、灌木羊(青铜)、花冠龙(白银),,进入召唤标签摊位
+ysbzs-local,9,2,node_choice,事件节点2,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,圣光骑士(黄金)、朱雀(黄金)、清雀(黄金)、荷鲁斯(黄金)、百合女王(黄金)、圣光骑士(黄金),,进入 pT3 标签摊位
+ysbzs-local,9,2,node_choice,事件节点2,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,圣光骑士(黄金)、百合女王(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,9,2,node_choice,事件节点2,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,秘斯媞雅(白银)、精灵龙(白银)、秘斯媞雅(白银)、灌木羊(青铜)、花冠龙(白银)、精灵龙(白银)、秘斯媞雅(白银),,进入召唤标签摊位
+ysbzs-local,9,3,fixed_battle,第一场战斗,1,enc_d09_midday_a,第九天Boss前遭遇A,,battle,100,,上午 5回合 32只：翠叶鼠(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(白银)、棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(白银)、火绒狐(青铜)、棉悠悠(青铜) 等32个,Day9 Boss 前上午波次
+ysbzs-local,9,4,node_choice,事件节点3,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,荷鲁斯(黄金)、冥铠蝎(黄金)、波鲁杰克斯(黄金)、黑月女王(黄金)、混沌骑士(黄金)、黑月女王(黄金)、黑月女王(黄金),,进入 pT3 标签摊位
+ysbzs-local,9,4,node_choice,事件节点3,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,清雀(黄金)、朱雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,9,4,node_choice,事件节点3,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,连理龙(白银)、花冠龙(白银)、花冠龙(白银)、灌木羊(青铜)、精灵龙(白银)、融焰娘(白银),,进入召唤标签摊位
+ysbzs-local,9,5,node_choice,事件节点4,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,荷鲁斯(黄金)、荷鲁斯(黄金)、荷鲁斯(黄金)、圣光骑士(黄金)、圣光骑士(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local,9,5,node_choice,事件节点4,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,唤夜兽(黄金)、荷鲁斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,9,5,node_choice,事件节点4,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,骑士蜂(白银)、秘斯媞雅(白银)、秘斯媞雅(白银)、连理龙(白银)、秘斯媞雅(白银)、融焰娘(白银)、连理龙(白银),,进入召唤标签摊位
+ysbzs-local,9,6,fixed_battle,第二场战斗,1,enc_d09_evening_fixed,第九天晚上Boss前固定战,,battle,100,,下午 5回合 34只：棉悠悠(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、火绒狐(青铜) 等34个,映射 Day9 下午 Boss 前波次
+ysbzs-local,10,1,node_choice,事件节点1,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,冥铠蝎(黄金)、阿努比斯(黄金)、荷鲁斯(黄金)、唤夜兽(黄金)、暴电熊(黄金)、波鲁杰克斯(黄金)、唤冬兽(黄金),,进入 pT3 标签摊位
+ysbzs-local,10,1,node_choice,事件节点1,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,空涡龙(黄金)、圣光骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,10,1,node_choice,事件节点1,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,狱阎王(白银)、燎火鹿(青铜)、焰巫狐(白银)、燎火鹿(青铜)、炽焰牛(白银),,进入输出标签摊位
+ysbzs-local,10,2,node_choice,事件节点2,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,暴电熊(黄金)、唤冬兽(黄金)、唤夜兽(黄金)、唤冬兽(黄金)、朱雀(黄金)、异构格里芬(黄金)、清雀(黄金),,进入 pT3 标签摊位
+ysbzs-local,10,2,node_choice,事件节点2,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,空涡龙(黄金)、朱雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,10,2,node_choice,事件节点2,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,焰煌(白银)、炎魔羊(白银)、浪刃武士(白银)、狱焰王(白银)、火麒麟(白银),,进入输出标签摊位
+ysbzs-local,10,3,fixed_battle,第一场战斗,1,enc_d10_midday_a,第十天Boss前遭遇A,,battle,100,,上午 5回合 38只：捣蛋猫(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、火绒狐(青铜) 等38个,Day10 Boss 前上午波次
+ysbzs-local,10,4,node_choice,事件节点3,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,唤夜兽(黄金)、覆海龙(黄金)、异构格里芬(黄金)、唤夜兽(黄金)、波鲁杰克斯(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local,10,4,node_choice,事件节点3,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,阿努比斯(黄金)、百合女王(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,10,4,node_choice,事件节点3,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,狱阎王(白银)、火麒麟(白银)、焰巫狐(白银)、苍焰狼(白银)、焰巫狐(白银),,进入输出标签摊位
+ysbzs-local,10,5,node_choice,事件节点4,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,圣光骑士(黄金)、荷鲁斯(黄金)、阿努比斯(黄金)、圣光骑士(黄金)、覆海龙(黄金),,进入 pT3 标签摊位
+ysbzs-local,10,5,node_choice,事件节点4,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,异构格里芬(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local,10,5,node_choice,事件节点4,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,狱焰王(白银)、火灵儿(白银)、狱焰王(白银)、炎魔羊(白银)、火灵儿(白银),,进入输出标签摊位
+ysbzs-local,10,6,fixed_battle,终局Boss战,1,enc_d10_final_boss,第十天终局Boss,,battle,100,,下午 5回合 41只：皮皮鸡(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜) 等41个,Day10 终局 Boss 压力
+ysbzs-local-2,1,1,node_choice,事件节点1,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-2,1,1,node_choice,事件节点1,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,波霸牛(青铜)、露娜蒂(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,1,1,node_choice,事件节点1,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,火绒狐(青铜)、棉花糖(青铜)、企丸丸(青铜)、壶小象(青铜)、露娜蒂(青铜),,进入基础夜市商店
+ysbzs-local-2,1,2,node_choice,事件节点2,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-2,1,2,node_choice,事件节点2,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,冲浪鸭(青铜)、冲浪鸭(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,1,2,node_choice,事件节点2,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,寐魔(青铜)、燎火鹿(青铜)、炸蛋鸟(青铜)、鲁米儿(青铜)、灌木羊(青铜),,进入基础夜市商店
+ysbzs-local-2,1,3,fixed_battle,第一场战斗,1,enc_d01_midday_a,中午遭遇A,,battle,100,,上午 5回合 20只：翠叶鼠(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、棉悠悠(白银)、皮皮鸡(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜) 等20个,映射当前上午波次
+ysbzs-local-2,1,4,node_choice,事件节点3,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-2,1,4,node_choice,事件节点3,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,鲁米儿(青铜)、啼卡尔(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,1,4,node_choice,事件节点3,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,露娜蒂(青铜)、玉藻狐(青铜)、波娜兔(青铜)、棉花糖(青铜)、皮皮鸡(青铜),,进入基础夜市商店
+ysbzs-local-2,1,5,node_choice,事件节点4,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-2,1,5,node_choice,事件节点4,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,棉花糖(青铜)、瞅什魔(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,1,5,node_choice,事件节点4,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,灌木羊(青铜)、猎狼(青铜)、伏特喵(青铜)、波娜兔(青铜)、炸蛋鸟(青铜),,进入基础夜市商店
+ysbzs-local-2,1,6,fixed_battle,第二场战斗,1,enc_d01_evening_fixed,晚上固定战,,battle,100,,下午 5回合 20只：翠叶鼠(青铜)、皮皮鸡(白银)、火绒狐(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、捣蛋猫(白银)、棉悠悠(白银)、棉悠悠(青铜) 等20个,映射当前下午波次
+ysbzs-local-2,2,1,node_choice,事件节点1,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-2,2,1,node_choice,事件节点1,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,叶泥泥(青铜)、遁地鼠(青铜)、瞅什魔(青铜)、勾魂鱿(青铜),,进入坦克标签摊位
+ysbzs-local-2,2,1,node_choice,事件节点1,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,遁地鼠(青铜)、寐魔(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,2,2,node_choice,事件节点2,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-2,2,2,node_choice,事件节点2,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,草莽猪(青铜)、寐魔(青铜)、寐魔(青铜)、吊缚灵(青铜),,进入坦克标签摊位
+ysbzs-local-2,2,2,node_choice,事件节点2,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,灌木羊(青铜)、波霸牛(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,2,3,fixed_battle,第一场战斗,1,enc_d02_midday_a,第二天中午遭遇A,,battle,100,,上午 5回合 20只：捣蛋猫(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、捣蛋猫(白银)、火绒狐(青铜)、棉悠悠(青铜)、捣蛋猫(钻石) 等20个,映射 Day2 上午波次
+ysbzs-local-2,2,4,node_choice,事件节点3,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-2,2,4,node_choice,事件节点3,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,遁地鼠(青铜)、露娜蒂(青铜)、寐魔(青铜)、寐魔(青铜),,进入坦克标签摊位
+ysbzs-local-2,2,4,node_choice,事件节点3,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,燎火鹿(青铜)、叶胖达(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,2,5,node_choice,事件节点4,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-2,2,5,node_choice,事件节点4,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,叶泥泥(青铜)、叶胖达(青铜)、露娜蒂(青铜)、叶泥泥(青铜),,进入坦克标签摊位
+ysbzs-local-2,2,5,node_choice,事件节点4,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,喵丝特(青铜)、喵丝特(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-2,2,6,fixed_battle,第二场战斗,1,enc_d02_evening_fixed,第二天晚上固定战,,battle,100,,下午 5回合 23只：皮皮鸡(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、皮皮鸡(青铜) 等23个,映射 Day2 下午波次
+ysbzs-local-2,3,1,node_choice,事件节点1,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,月镰魔(白银)、雷鸣童子(白银)、铁拳猿(白银)、魔渊龙(白银)、碎岩龟(白银)、铠格力斯(白银),,进入 pT2 标签摊位
+ysbzs-local-2,3,1,node_choice,事件节点1,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,火灵儿(白银)、炽焰牛(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,3,1,node_choice,事件节点1,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,苍焰狼(白银)、苍焰狼(白银)、烽歌龙(白银)、燧火鸟(白银)、焰巫狐(白银),,进入火元素强化摊位
+ysbzs-local-2,3,2,node_choice,事件节点2,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,毛掸儿(白银)、暗巫猫(白银)、吹雪狐(白银)、朋克蜥(白银)、苍焰狼(白银)、精灵龙(白银)、云海鹿(白银)、云海鹿(白银),,进入 pT2 标签摊位
+ysbzs-local-2,3,2,node_choice,事件节点2,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,天擒鸟(白银)、夜幕魔蝠(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,3,2,node_choice,事件节点2,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,焰巫狐(白银)、燎火鹿(青铜)、炽焰牛(白银)、烽歌龙(白银)、融焰娘(白银)、燎火鹿(青铜),,进入火元素强化摊位
+ysbzs-local-2,3,3,fixed_battle,第一场战斗,1,enc_d03_midday_a,第三天中午遭遇A,,battle,100,,上午 5回合 20只：皮皮鸡(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、棉悠悠(白银)、翠叶鼠(青铜) 等20个,映射 Day3 上午波次
+ysbzs-local-2,3,4,node_choice,事件节点3,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,紫霞鹿(白银)、薇莉塔(白银)、趴趴鲶(白银)、连理龙(白银)、铁拳猿(白银)、紫霞鹿(白银)、天羽龙(白银),,进入 pT2 标签摊位
+ysbzs-local-2,3,4,node_choice,事件节点3,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,夜幕魔蝠(白银)、碎岩龟(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,3,4,node_choice,事件节点3,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,狱阎王(白银)、火绒狐(青铜)、苍焰狼(白银)、火绒狐(青铜)、浪刃武士(白银),,进入火元素强化摊位
+ysbzs-local-2,3,5,node_choice,事件节点4,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,绿苔绒怪(白银)、铁拳猿(白银)、噬魂兽(白银)、熔岩兽(白银)、噬魂兽(白银)、浪刃武士(白银),,进入 pT2 标签摊位
+ysbzs-local-2,3,5,node_choice,事件节点4,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,寒霜兽(白银)、苍焰狼(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,3,5,node_choice,事件节点4,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,炎魔羊(白银)、火绒狐(青铜)、焰巫狐(白银)、燧火鸟(白银)、火灵儿(白银)、炽焰牛(白银),,进入火元素强化摊位
+ysbzs-local-2,3,6,fixed_battle,第二场战斗,1,enc_d03_evening_fixed,第三天晚上固定战,,battle,100,,下午 5回合 20只：火绒狐(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜) 等20个,映射 Day3 下午波次
+ysbzs-local-2,4,1,node_choice,事件节点1,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,冰帝美露帕(白银)、精灵龙(白银)、滑水蛇(白银)、魔渊龙(白银)、君王美露帕(白银)、黑鸦隐士(白银),,进入 pT2 标签摊位
+ysbzs-local-2,4,1,node_choice,事件节点1,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,佩克龙(白银)、火灵儿(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,4,1,node_choice,事件节点1,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,派克龙(白银)、翠叶鼠(青铜)、捣蛋猫(青铜)、美露帕(白银)、雷角马(白银)、电棘鼠(青铜)、花冠龙(白银),,进入风元素定向摊位
+ysbzs-local-2,4,2,node_choice,事件节点2,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,羽箭射手(白银)、姬小兔(白银)、水灵龙(白银)、魔渊龙(白银)、雷角马(白银)、毛掸儿(白银)、朋克蜥(白银),,进入 pT2 标签摊位
+ysbzs-local-2,4,2,node_choice,事件节点2,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,焰巫狐(白银)、毛老爹(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,4,2,node_choice,事件节点2,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,天擒鸟(白银)、笑魇猫(白银)、君王美露帕(白银)、博爱蜥(白银)、绿苔绒怪(白银)、荆棘魔仙(青铜)、铁拳猿(白银),,进入风元素定向摊位
+ysbzs-local-2,4,3,fixed_battle,第一场战斗,1,enc_d04_midday_a,第四天中午遭遇A,,battle,100,,上午 5回合 20只：捣蛋猫(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜) 等20个,映射 Day4 上午波次
+ysbzs-local-2,4,4,node_choice,事件节点3,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,碧海龙(白银)、冰帝美露帕(白银)、幻悦蝶(白银)、火灵儿(白银)、铠格力斯(白银)、紫霞鹿(白银)、疾风隼(白银)、苍焰狼(白银),,进入 pT2 标签摊位
+ysbzs-local-2,4,4,node_choice,事件节点3,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,白绒雪怪(白银)、美露帕(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,4,4,node_choice,事件节点3,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,棉花糖(青铜)、君王美露帕(白银)、笑魇猫(白银)、灌木羊(青铜)、荆棘魔仙(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜),,进入风元素定向摊位
+ysbzs-local-2,4,5,node_choice,事件节点4,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,精灵龙(白银)、派克龙(白银)、朋克蜥(白银)、美露帕(白银)、碎岩龟(白银)、毛掸儿(白银)、铁拳猿(白银),,进入 pT2 标签摊位
+ysbzs-local-2,4,5,node_choice,事件节点4,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,迅雷鸟(白银)、流沙蛇(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,4,5,node_choice,事件节点4,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,花冠龙(白银)、猎狼(青铜)、叶胖达(青铜)、踏春兔(白银)、云海鹿(白银)、疾风隼(白银)、灌木羊(青铜),,进入风元素定向摊位
+ysbzs-local-2,4,6,fixed_battle,第二场战斗,1,enc_d04_evening_fixed,第四天晚上固定战,,battle,100,,下午 5回合 23只：火绒狐(白银)、翠叶鼠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜) 等23个,映射 Day4 下午波次
+ysbzs-local-2,5,1,node_choice,事件节点1,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,火麒麟(白银)、迅雷鸟(白银)、花丽娜(白银)、燧火鸟(白银)、雷冥鸟(白银)、花丽娜(白银)、羽箭射手(白银),,进入 pT2 标签摊位
+ysbzs-local-2,5,1,node_choice,事件节点1,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,铁拳猿(白银)、秘斯媞雅(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,5,1,node_choice,事件节点1,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,企丸丸(青铜)、寒霜兽(白银)、冰棘兽(白银)、冰棘兽(白银)、水灵儿(白银),,进入水元素定向摊位
+ysbzs-local-2,5,2,node_choice,事件节点2,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,精灵龙(白银)、猫蝠怪(白银)、白绒雪怪(白银)、熔岩兽(白银)、焰巫狐(白银),,进入 pT2 标签摊位
+ysbzs-local-2,5,2,node_choice,事件节点2,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,幻悦蝶(白银)、炎魔羊(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,5,2,node_choice,事件节点2,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,佩克龙(白银)、碧海龙(白银)、吹雪狐(白银)、水灵儿(白银)、冰棘兽(白银)、冰帝美露帕(白银),,进入水元素定向摊位
+ysbzs-local-2,5,3,fixed_battle,第一场战斗,1,enc_d05_midday_a,第五天中午遭遇A,,battle,100,,上午 5回合 31只：捣蛋猫(青铜)、翠叶鼠(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(白银)、棉悠悠(青铜)、火绒狐(青铜) 等31个,映射 Day5 上午波次
+ysbzs-local-2,5,4,node_choice,事件节点3,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,黑鸦隐士(白银)、女皇蜂(白银)、暗巫猫(白银)、冰棘兽(白银)、花冠龙(白银)、雷冠龙(白银)、融焰娘(白银),,进入 pT2 标签摊位
+ysbzs-local-2,5,4,node_choice,事件节点3,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,雪猛犸(白银)、笑魇猫(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,5,4,node_choice,事件节点3,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,鲁米儿(青铜)、壶小象(青铜)、寒霜兽(白银)、鲁米儿(青铜),,进入水元素定向摊位
+ysbzs-local-2,5,5,node_choice,事件节点4,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,云海鹿(白银)、幻悦蝶(白银)、火麒麟(白银)、雷冠龙(白银)、姬小兔(白银)、雷鸣童子(白银)、火麒麟(白银)、踏春兔(白银)、踏春兔(白银),,进入 pT2 标签摊位
+ysbzs-local-2,5,5,node_choice,事件节点4,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,薇莉塔(白银)、烽歌龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-2,5,5,node_choice,事件节点4,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,冲浪鸭(青铜)、壶小象(青铜)、鲨小子(青铜)、霜歌龙(白银)、毛掸儿(白银),,进入水元素定向摊位
+ysbzs-local-2,5,6,fixed_battle,第二场战斗,1,enc_d05_evening_fixed,第五天晚上固定战,,battle,100,,下午 5回合 26只：皮皮鸡(青铜)、棉悠悠(白银)、捣蛋猫(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、火绒狐(青铜) 等26个,映射 Day5 下午波次
+ysbzs-local-2,6,1,node_choice,事件节点1,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,波鲁杰克斯(黄金)、荷鲁斯(黄金)、黑月女王(黄金)、荷鲁斯(黄金)、腾炎龙(黄金)、唤冬兽(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,6,1,node_choice,事件节点1,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,唤冬兽(黄金)、唤冬兽(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,6,1,node_choice,事件节点1,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,炽焰牛(白银)、苍焰狼(白银)、浪刃武士(白银)、腾炎龙(黄金)、狱焰王(白银),,进入输出标签摊位
+ysbzs-local-2,6,2,node_choice,事件节点2,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,荷鲁斯(黄金)、朱雀(黄金)、暴电熊(黄金)、唤夜兽(黄金)、覆海龙(黄金)、覆海龙(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,6,2,node_choice,事件节点2,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,阿努比斯(黄金)、黑月女王(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,6,2,node_choice,事件节点2,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,燎火鹿(青铜)、狱阎王(白银)、火灵儿(白银)、燎火鹿(青铜)、浪刃武士(白银)、浪刃武士(白银),,进入输出标签摊位
+ysbzs-local-2,6,3,fixed_battle,第一场战斗,1,enc_d06_midday_a,第六天精英遭遇A,,battle,100,,上午 5回合 27只：皮皮鸡(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(白银)、皮皮鸡(青铜)、火绒狐(青铜) 等27个,Day6 精英压力上午波次
+ysbzs-local-2,6,4,node_choice,事件节点3,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,清雀(黄金)、冥铠蝎(黄金)、异构格里芬(黄金)、圣光骑士(黄金)、朱雀(黄金)、冥铠蝎(黄金)、空涡龙(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,6,4,node_choice,事件节点3,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,百合女王(黄金)、异构格里芬(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,6,4,node_choice,事件节点3,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,苍焰狼(白银)、浪刃武士(白银)、燎火鹿(青铜)、燎火鹿(青铜)、阿努比斯(黄金)、炎魔羊(白银),,进入输出标签摊位
+ysbzs-local-2,6,5,node_choice,事件节点4,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,冥铠蝎(黄金)、圣光骑士(黄金)、圣光骑士(黄金)、空涡龙(黄金)、冥铠蝎(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,6,5,node_choice,事件节点4,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,唤冬兽(黄金)、混沌骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,6,5,node_choice,事件节点4,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,狱阎王(白银)、燎火鹿(青铜)、浪刃武士(白银)、狱阎王(白银)、阿努比斯(黄金),,进入输出标签摊位
+ysbzs-local-2,6,6,fixed_battle,第二场战斗,1,enc_d06_evening_fixed,第六天晚上精英固定战,,battle,100,,下午 5回合 29只：火绒狐(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、火绒狐(青铜) 等29个,映射 Day6 下午精英波次
+ysbzs-local-2,7,1,node_choice,事件节点1,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,朱雀(黄金)、腾炎龙(黄金)、异构格里芬(黄金)、圣光骑士(黄金)、阿努比斯(黄金)、百合女王(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,7,1,node_choice,事件节点1,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,圣光骑士(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,7,1,node_choice,事件节点1,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,叶泥泥(青铜)、白绒雪怪(白银)、碎岩龟(白银)、月镰魔(白银)、朋克蜥(白银)、铠格力斯(白银),,进入坦克标签摊位
+ysbzs-local-2,7,2,node_choice,事件节点2,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,清雀(黄金)、异构格里芬(黄金)、黑月女王(黄金)、阿努比斯(黄金)、朱雀(黄金)、腾炎龙(黄金)、覆海龙(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,7,2,node_choice,事件节点2,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,荷鲁斯(黄金)、唤夜兽(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,7,2,node_choice,事件节点2,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,月镰魔(白银)、姬小兔(白银)、寒霜兽(白银)、新叶猿(青铜)、冰帝美露帕(白银)、白绒雪怪(白银),,进入坦克标签摊位
+ysbzs-local-2,7,3,fixed_battle,第一场战斗,1,enc_d07_midday_a,第七天精英遭遇A,,battle,100,,上午 5回合 25只：皮皮鸡(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、棉悠悠(青铜) 等25个,Day7 精英压力上午波次
+ysbzs-local-2,7,4,node_choice,事件节点3,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,朱雀(黄金)、唤冬兽(黄金)、腾炎龙(黄金)、波鲁杰克斯(黄金)、百合女王(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,7,4,node_choice,事件节点3,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,空涡龙(黄金)、阿努比斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,7,4,node_choice,事件节点3,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,寐魔(青铜)、黑鸦隐士(白银)、吊缚灵(青铜)、啼卡尔(青铜)、冥铠蝎(黄金),,进入坦克标签摊位
+ysbzs-local-2,7,5,node_choice,事件节点4,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,唤冬兽(黄金)、百合女王(黄金)、腾炎龙(黄金)、阿努比斯(黄金)、唤夜兽(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,7,5,node_choice,事件节点4,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,异构格里芬(黄金)、唤冬兽(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,7,5,node_choice,事件节点4,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,姬小兔(白银)、噬魂兽(白银)、吊缚灵(青铜)、猫蝠怪(白银)、啼卡尔(青铜),,进入坦克标签摊位
+ysbzs-local-2,7,6,fixed_battle,第二场战斗,1,enc_d07_evening_fixed,第七天晚上精英固定战,,battle,100,,下午 5回合 32只：皮皮鸡(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜) 等32个,映射 Day7 下午精英波次
+ysbzs-local-2,8,1,node_choice,事件节点1,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,暴电熊(黄金)、荷鲁斯(黄金)、空涡龙(黄金)、荷鲁斯(黄金)、唤夜兽(黄金)、空涡龙(黄金)、百合女王(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,8,1,node_choice,事件节点1,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,腾炎龙(黄金)、波鲁杰克斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,8,1,node_choice,事件节点1,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,喵丝特(青铜)、君王美露帕(白银)、喵丝特(青铜)、玉藻狐(青铜)、美露帕(白银),,进入经济标签摊位
+ysbzs-local-2,8,2,node_choice,事件节点2,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,波鲁杰克斯(黄金)、冥铠蝎(黄金)、冥铠蝎(黄金)、暴电熊(黄金)、朱雀(黄金)、荷鲁斯(黄金)、荷鲁斯(黄金)、异构格里芬(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,8,2,node_choice,事件节点2,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,百合女王(黄金)、覆海龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,8,2,node_choice,事件节点2,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,棉花糖(青铜)、棉花糖(青铜)、棉花糖(青铜)、棉花糖(青铜)、君王美露帕(白银)、喵丝特(青铜)、喵丝特(青铜),,进入经济标签摊位
+ysbzs-local-2,8,3,fixed_battle,第一场战斗,1,enc_d08_midday_a,第八天精英遭遇A,,battle,100,,上午 5回合 32只：火绒狐(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、捣蛋猫(青铜) 等32个,Day8 精英压力上午波次
+ysbzs-local-2,8,4,node_choice,事件节点3,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,圣光骑士(黄金)、暴电熊(黄金)、腾炎龙(黄金)、阿努比斯(黄金)、波鲁杰克斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,8,4,node_choice,事件节点3,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,异构格里芬(黄金)、波鲁杰克斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,8,4,node_choice,事件节点3,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,君王美露帕(白银)、玉藻狐(青铜)、君王美露帕(白银)、米露菲(青铜),,进入经济标签摊位
+ysbzs-local-2,8,5,node_choice,事件节点4,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,荷鲁斯(黄金)、唤冬兽(黄金)、空涡龙(黄金)、阿努比斯(黄金)、波鲁杰克斯(黄金)、黑月女王(黄金)、异构格里芬(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,8,5,node_choice,事件节点4,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,清雀(黄金)、混沌骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,8,5,node_choice,事件节点4,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,美露帕(白银)、棉花糖(青铜)、棉花糖(青铜)、波霸牛(青铜)、玉藻狐(青铜)、棉花糖(青铜),,进入经济标签摊位
+ysbzs-local-2,8,6,fixed_battle,第二场战斗,1,enc_d08_evening_fixed,第八天晚上精英固定战,,battle,100,,下午 5回合 32只：翠叶鼠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜) 等32个,映射 Day8 下午精英波次
+ysbzs-local-2,9,1,node_choice,事件节点1,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,覆海龙(黄金)、百合女王(黄金)、腾炎龙(黄金)、波鲁杰克斯(黄金)、异构格里芬(黄金)、异构格里芬(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,9,1,node_choice,事件节点1,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,圣光骑士(黄金)、圣光骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,9,1,node_choice,事件节点1,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,秘斯媞雅(白银)、灌木羊(青铜)、连理龙(白银)、骑士蜂(白银)、花冠龙(白银)、连理龙(白银),,进入召唤标签摊位
+ysbzs-local-2,9,2,node_choice,事件节点2,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,圣光骑士(黄金)、波鲁杰克斯(黄金)、波鲁杰克斯(黄金)、暴电熊(黄金)、暴电熊(黄金)、暴电熊(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,9,2,node_choice,事件节点2,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,混沌骑士(黄金)、混沌骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,9,2,node_choice,事件节点2,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,精灵龙(白银)、花冠龙(白银)、连理龙(白银)、精灵龙(白银)、精灵龙(白银),,进入召唤标签摊位
+ysbzs-local-2,9,3,fixed_battle,第一场战斗,1,enc_d09_midday_a,第九天Boss前遭遇A,,battle,100,,上午 5回合 32只：火绒狐(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(青铜) 等32个,Day9 Boss 前上午波次
+ysbzs-local-2,9,4,node_choice,事件节点3,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,空涡龙(黄金)、腾炎龙(黄金)、腾炎龙(黄金)、阿努比斯(黄金)、冥铠蝎(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,9,4,node_choice,事件节点3,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,唤冬兽(黄金)、朱雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,9,4,node_choice,事件节点3,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,连理龙(白银)、融焰娘(白银)、灌木羊(青铜)、花冠龙(白银)、骑士蜂(白银)、连理龙(白银),,进入召唤标签摊位
+ysbzs-local-2,9,5,node_choice,事件节点4,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,阿努比斯(黄金)、腾炎龙(黄金)、朱雀(黄金)、黑月女王(黄金)、百合女王(黄金)、暴电熊(黄金)、清雀(黄金)、荷鲁斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,9,5,node_choice,事件节点4,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,波鲁杰克斯(黄金)、暴电熊(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,9,5,node_choice,事件节点4,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,精灵龙(白银)、秘斯媞雅(白银)、花冠龙(白银)、连理龙(白银)、秘斯媞雅(白银)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-2,9,6,fixed_battle,第二场战斗,1,enc_d09_evening_fixed,第九天晚上Boss前固定战,,battle,100,,下午 5回合 34只：棉悠悠(青铜)、翠叶鼠(青铜)、翠叶鼠(钻石)、捣蛋猫(青铜)、棉悠悠(青铜)、翠叶鼠(钻石)、捣蛋猫(青铜)、棉悠悠(青铜)、火绒狐(白银)、皮皮鸡(白银) 等34个,映射 Day9 下午 Boss 前波次
+ysbzs-local-2,10,1,node_choice,事件节点1,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,唤夜兽(黄金)、阿努比斯(黄金)、黑月女王(黄金)、空涡龙(黄金)、空涡龙(黄金)、朱雀(黄金)、冥铠蝎(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,10,1,node_choice,事件节点1,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,荷鲁斯(黄金)、唤冬兽(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,10,1,node_choice,事件节点1,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,燎火鹿(青铜)、狱阎王(白银)、燎火鹿(青铜)、火麒麟(白银)、炎魔羊(白银),,进入输出标签摊位
+ysbzs-local-2,10,2,node_choice,事件节点2,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,空涡龙(黄金)、黑月女王(黄金)、异构格里芬(黄金)、空涡龙(黄金)、阿努比斯(黄金)、暴电熊(黄金)、清雀(黄金)、朱雀(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,10,2,node_choice,事件节点2,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,阿努比斯(黄金)、阿努比斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,10,2,node_choice,事件节点2,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,焰巫狐(白银)、火灵儿(白银)、炎魔羊(白银)、火麒麟(白银)、浪刃武士(白银)、火灵儿(白银)、火麒麟(白银)、浪刃武士(白银),,进入输出标签摊位
+ysbzs-local-2,10,3,fixed_battle,第一场战斗,1,enc_d10_midday_a,第十天Boss前遭遇A,,battle,100,,上午 5回合 38只：火绒狐(白银)、翠叶鼠(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、翠叶鼠(青铜) 等38个,Day10 Boss 前上午波次
+ysbzs-local-2,10,4,node_choice,事件节点3,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,百合女王(黄金)、腾炎龙(黄金)、覆海龙(黄金)、唤夜兽(黄金)、暴电熊(黄金)、暴电熊(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,10,4,node_choice,事件节点3,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,混沌骑士(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,10,4,node_choice,事件节点3,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,焰煌(白银)、腾炎龙(黄金)、苍焰狼(白银)、浪刃武士(白银)、炽焰牛(白银),,进入输出标签摊位
+ysbzs-local-2,10,5,node_choice,事件节点4,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,空涡龙(黄金)、唤夜兽(黄金)、空涡龙(黄金)、空涡龙(黄金)、唤夜兽(黄金),,进入 pT3 标签摊位
+ysbzs-local-2,10,5,node_choice,事件节点4,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,混沌骑士(黄金)、混沌骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-2,10,5,node_choice,事件节点4,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,炎魔羊(白银)、火麒麟(白银)、狱焰王(白银)、燎火鹿(青铜)、浪刃武士(白银)、火灵儿(白银),,进入输出标签摊位
+ysbzs-local-2,10,6,fixed_battle,终局Boss战,1,enc_d10_final_boss,第十天终局Boss,,battle,100,,下午 5回合 41只：捣蛋猫(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、火绒狐(青铜) 等41个,Day10 终局 Boss 压力
+ysbzs-local-3,1,1,node_choice,事件节点1,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-3,1,1,node_choice,事件节点1,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,猎狼(青铜)、波娜兔(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,1,1,node_choice,事件节点1,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,棉悠悠(青铜)、玉藻狐(青铜)、壶小象(青铜)、灌木羊(青铜)、鲁米儿(青铜),,进入基础夜市商店
+ysbzs-local-3,1,2,node_choice,事件节点2,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-3,1,2,node_choice,事件节点2,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,波娜兔(青铜)、鲁米儿(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,1,2,node_choice,事件节点2,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,露娜蒂(青铜)、玉藻狐(青铜)、棉悠悠(青铜)、鲁米儿(青铜)、喵丝特(青铜),,进入基础夜市商店
+ysbzs-local-3,1,3,fixed_battle,第一场战斗,1,enc_d01_midday_a,中午遭遇A,,battle,100,,上午 5回合 20只：棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(白银)、棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、火绒狐(青铜) 等20个,映射当前上午波次
+ysbzs-local-3,1,4,node_choice,事件节点3,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-3,1,4,node_choice,事件节点3,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,捣蛋猫(青铜)、吊缚灵(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,1,4,node_choice,事件节点3,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,冲浪鸭(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、猎狼(青铜)、壶小象(青铜)、翠叶鼠(青铜),,进入基础夜市商店
+ysbzs-local-3,1,5,node_choice,事件节点4,1,node_event_free_roll,免费刷新,node_pool_d01_growth,event,100,,,获得一次免费刷新
+ysbzs-local-3,1,5,node_choice,事件节点4,2,node_reward_pet,宠物奖励,node_pool_d01_growth,reward,90,草莽猪(青铜)、米露菲(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,1,5,node_choice,事件节点4,3,node_shop_basic,夜市商人,node_pool_d01_growth,shop,80,企丸丸(青铜)、吊缚灵(青铜)、伏特喵(青铜)、波娜兔(青铜)、皮皮鸡(青铜),,进入基础夜市商店
+ysbzs-local-3,1,6,fixed_battle,第二场战斗,1,enc_d01_evening_fixed,晚上固定战,,battle,100,,下午 5回合 20只：火绒狐(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜) 等20个,映射当前下午波次
+ysbzs-local-3,2,1,node_choice,事件节点1,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-3,2,1,node_choice,事件节点1,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,寐魔(青铜)、遁地鼠(青铜)、露娜蒂(青铜)、勾魂鱿(青铜),,进入坦克标签摊位
+ysbzs-local-3,2,1,node_choice,事件节点1,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,冲浪鸭(青铜)、冲浪鸭(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,2,2,node_choice,事件节点2,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-3,2,2,node_choice,事件节点2,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,新叶猿(青铜)、寐魔(青铜)、勾魂鱿(青铜)、瞅什魔(青铜),,进入坦克标签摊位
+ysbzs-local-3,2,2,node_choice,事件节点2,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,伏特喵(青铜)、新叶猿(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,2,3,fixed_battle,第一场战斗,1,enc_d02_midday_a,第二天中午遭遇A,,battle,100,,上午 5回合 20只：火绒狐(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、火绒狐(青铜)、皮皮鸡(钻石)、捣蛋猫(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、棉悠悠(青铜)、火绒狐(青铜) 等20个,映射 Day2 上午波次
+ysbzs-local-3,2,4,node_choice,事件节点3,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-3,2,4,node_choice,事件节点3,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,啼卡尔(青铜)、瞅什魔(青铜)、草莽猪(青铜)、遁地鼠(青铜),,进入坦克标签摊位
+ysbzs-local-3,2,4,node_choice,事件节点3,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,新叶猿(青铜)、皮皮鸡(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,2,5,node_choice,事件节点4,1,node_d02_role_summon,召唤摊位,node_pool_d02_growth,shop,100,灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-3,2,5,node_choice,事件节点4,2,node_d02_role_tank,前排摊位,node_pool_d02_growth,shop,90,叶泥泥(青铜)、露娜蒂(青铜)、新叶猿(青铜)、瞅什魔(青铜),,进入坦克标签摊位
+ysbzs-local-3,2,5,node_choice,事件节点4,3,node_d02_reward_pet,宠物奖励,node_pool_d02_growth,reward,80,草莽猪(青铜)、翠叶鼠(青铜),,生成 3 个 pT1 奖励候选
+ysbzs-local-3,2,6,fixed_battle,第二场战斗,1,enc_d02_evening_fixed,第二天晚上固定战,,battle,100,,下午 5回合 23只：捣蛋猫(青铜)、火绒狐(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(白银) 等23个,映射 Day2 下午波次
+ysbzs-local-3,3,1,node_choice,事件节点1,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,铁拳猿(白银)、毛掸儿(白银)、炽焰牛(白银)、连理龙(白银)、焰巫狐(白银)、寒霜兽(白银),,进入 pT2 标签摊位
+ysbzs-local-3,3,1,node_choice,事件节点1,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,白绒雪怪(白银)、雷角马(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,3,1,node_choice,事件节点1,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,融焰娘(白银)、苍焰狼(白银)、燧火鸟(白银)、浪刃武士(白银)、火灵儿(白银)、浪刃武士(白银)、炎魔羊(白银),,进入火元素强化摊位
+ysbzs-local-3,3,2,node_choice,事件节点2,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,白绒雪怪(白银)、姬小兔(白银)、骑士蜂(白银)、炽焰牛(白银)、水灵儿(白银)、月镰魔(白银)、美露帕(白银)、吹雪狐(白银),,进入 pT2 标签摊位
+ysbzs-local-3,3,2,node_choice,事件节点2,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,疾风隼(白银)、水灵儿(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,3,2,node_choice,事件节点2,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,火绒狐(青铜)、燧火鸟(白银)、狱焰王(白银)、炽焰牛(白银)、烽歌龙(白银),,进入火元素强化摊位
+ysbzs-local-3,3,3,fixed_battle,第一场战斗,1,enc_d03_midday_a,第三天中午遭遇A,,battle,100,,上午 5回合 20只：棉悠悠(青铜)、皮皮鸡(白银)、皮皮鸡(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、皮皮鸡(白银) 等20个,映射 Day3 上午波次
+ysbzs-local-3,3,4,node_choice,事件节点3,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,雷冠龙(白银)、迅雷鸟(白银)、花丽娜(白银)、美露帕(白银)、笑魇猫(白银)、炽焰牛(白银)、水灵儿(白银),,进入 pT2 标签摊位
+ysbzs-local-3,3,4,node_choice,事件节点3,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,天擒鸟(白银)、猫蝠怪(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,3,4,node_choice,事件节点3,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,狱焰王(白银)、融焰娘(白银)、浪刃武士(白银)、狱阎王(白银)、苍焰狼(白银),,进入火元素强化摊位
+ysbzs-local-3,3,5,node_choice,事件节点4,1,node_d03_tier2_shop,白银预备商人,node_pool_d03_growth,shop,100,滑水蛇(白银)、雪猛犸(白银)、猫蝠怪(白银)、冰帝美露帕(白银)、绿苔绒怪(白银)、霹雳犬(白银)、雷角马(白银),,进入 pT2 标签摊位
+ysbzs-local-3,3,5,node_choice,事件节点4,2,node_d03_reward_tier2,白银奖励,node_pool_d03_growth,reward,90,火灵儿(白银)、烽歌龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,3,5,node_choice,事件节点4,3,node_d03_fire_shop,火系强化商人,node_pool_d03_growth,shop,80,燧火鸟(白银)、炽焰牛(白银)、狱阎王(白银)、焰巫狐(白银)、烽歌龙(白银),,进入火元素强化摊位
+ysbzs-local-3,3,6,fixed_battle,第二场战斗,1,enc_d03_evening_fixed,第三天晚上固定战,,battle,100,,下午 5回合 20只：捣蛋猫(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、捣蛋猫(白银)、皮皮鸡(青铜)、火绒狐(白银)、翠叶鼠(青铜)、皮皮鸡(青铜) 等20个,映射 Day3 下午波次
+ysbzs-local-3,4,1,node_choice,事件节点1,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,冰帝美露帕(白银)、花冠龙(白银)、霜歌龙(白银)、紫霞鹿(白银)、夜幕魔蝠(白银)、暗巫猫(白银),,进入 pT2 标签摊位
+ysbzs-local-3,4,1,node_choice,事件节点1,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,女皇蜂(白银)、苍焰狼(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,4,1,node_choice,事件节点1,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,骑士蜂(白银)、电棘鼠(青铜)、波娜兔(青铜)、铁拳猿(白银)、灌木羊(青铜)、棉花糖(青铜),,进入风元素定向摊位
+ysbzs-local-3,4,2,node_choice,事件节点2,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,趴趴鲶(白银)、疾旋鼬(白银)、铠格力斯(白银)、燧火鸟(白银)、精灵龙(白银)、炽焰牛(白银)、薇莉塔(白银),,进入 pT2 标签摊位
+ysbzs-local-3,4,2,node_choice,事件节点2,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,迅雷鸟(白银)、女皇蜂(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,4,2,node_choice,事件节点2,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,连理龙(白银)、天羽龙(白银)、迅雷鸟(白银)、棉花糖(青铜)、美露帕(白银),,进入风元素定向摊位
+ysbzs-local-3,4,3,fixed_battle,第一场战斗,1,enc_d04_midday_a,第四天中午遭遇A,,battle,100,,上午 5回合 20只：棉悠悠(青铜)、火绒狐(白银)、翠叶鼠(青铜)、皮皮鸡(钻石)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(白银)、皮皮鸡(青铜)、火绒狐(青铜)、捣蛋猫(青铜) 等20个,映射 Day4 上午波次
+ysbzs-local-3,4,4,node_choice,事件节点3,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,苍焰狼(白银)、趴趴鲶(白银)、夜幕魔蝠(白银)、薇莉塔(白银)、花冠龙(白银)、水灵儿(白银),,进入 pT2 标签摊位
+ysbzs-local-3,4,4,node_choice,事件节点3,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,秘斯媞雅(白银)、霜歌龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,4,4,node_choice,事件节点3,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,雷鸣童子(白银)、疾风隼(白银)、薇莉塔(白银)、棉花糖(青铜)、新叶猿(青铜)、骑士蜂(白银)、捣蛋猫(青铜)、幻悦蝶(白银),,进入风元素定向摊位
+ysbzs-local-3,4,5,node_choice,事件节点4,1,node_d04_tier2_shop,白银商会,node_pool_d04_growth,shop,100,狱焰王(白银)、精灵龙(白银)、君王美露帕(白银)、噬魂兽(白银)、严冬鹿(白银),,进入 pT2 标签摊位
+ysbzs-local-3,4,5,node_choice,事件节点4,2,node_d04_reward_tier2,白银奖励,node_pool_d04_growth,reward,90,秘斯媞雅(白银)、霹雳犬(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,4,5,node_choice,事件节点4,3,node_d04_wind_shop,风系补货商人,node_pool_d04_growth,shop,80,玉藻狐(青铜)、骑士蜂(白银)、雷角马(白银)、云海鹿(白银)、伏特喵(青铜)、棉花糖(青铜),,进入风元素定向摊位
+ysbzs-local-3,4,6,fixed_battle,第二场战斗,1,enc_d04_evening_fixed,第四天晚上固定战,,battle,100,,下午 5回合 23只：捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、棉悠悠(青铜)、捣蛋猫(青铜) 等23个,映射 Day4 下午波次
+ysbzs-local-3,5,1,node_choice,事件节点1,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,疾旋鼬(白银)、月镰魔(白银)、笑魇猫(白银)、毛老爹(白银)、严冬鹿(白银)、趴趴鲶(白银)、苍焰狼(白银),,进入 pT2 标签摊位
+ysbzs-local-3,5,1,node_choice,事件节点1,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,冰帝美露帕(白银)、严冬鹿(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,5,1,node_choice,事件节点1,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,霜歌龙(白银)、碧海龙(白银)、碧海龙(白银)、鲨小子(青铜)、鲨小子(青铜),,进入水元素定向摊位
+ysbzs-local-3,5,2,node_choice,事件节点2,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,云海鹿(白银)、连理龙(白银)、熔岩兽(白银)、融焰娘(白银)、熔岩兽(白银),,进入 pT2 标签摊位
+ysbzs-local-3,5,2,node_choice,事件节点2,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,噬魂兽(白银)、碎岩龟(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,5,2,node_choice,事件节点2,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,白绒雪怪(白银)、霜歌龙(白银)、冰棘兽(白银)、吹雪狐(白银)、寒霜兽(白银)、毛掸儿(白银),,进入水元素定向摊位
+ysbzs-local-3,5,3,fixed_battle,第一场战斗,1,enc_d05_midday_a,第五天中午遭遇A,,battle,100,,上午 5回合 31只：捣蛋猫(青铜)、皮皮鸡(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、棉悠悠(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜) 等31个,映射 Day5 上午波次
+ysbzs-local-3,5,4,node_choice,事件节点3,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,狱焰王(白银)、森猛犸(白银)、霜歌龙(白银)、派克龙(白银),,进入 pT2 标签摊位
+ysbzs-local-3,5,4,node_choice,事件节点3,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,流沙蛇(白银)、精灵龙(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,5,4,node_choice,事件节点3,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,冲浪鸭(青铜)、水灵儿(白银)、严冬鹿(白银)、企丸王(青铜)、企丸丸(青铜)、冲浪鸭(青铜),,进入水元素定向摊位
+ysbzs-local-3,5,5,node_choice,事件节点4,1,node_d05_tier2_shop,白银精选商会,node_pool_d05_growth,shop,100,森猛犸(白银)、趴趴鲶(白银)、浪刃武士(白银)、炽焰牛(白银)、霹雳犬(白银)、绿苔绒怪(白银)、吹雪狐(白银)、云海鹿(白银),,进入 pT2 标签摊位
+ysbzs-local-3,5,5,node_choice,事件节点4,2,node_d05_reward_tier2,白银精选奖励,node_pool_d05_growth,reward,90,滑水蛇(白银)、苍焰狼(白银),,生成 3 个 pT2 奖励候选
+ysbzs-local-3,5,5,node_choice,事件节点4,3,node_d05_water_shop,水系治疗商人,node_pool_d05_growth,shop,80,严冬鹿(白银)、企丸丸(青铜)、唤冬兽(黄金)、严冬鹿(白银)、霜歌龙(白银)、鲨小子(青铜),,进入水元素定向摊位
+ysbzs-local-3,5,6,fixed_battle,第二场战斗,1,enc_d05_evening_fixed,第五天晚上固定战,,battle,100,,下午 5回合 26只：棉悠悠(白银)、翠叶鼠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜) 等26个,映射 Day5 下午波次
+ysbzs-local-3,6,1,node_choice,事件节点1,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,唤冬兽(黄金)、冥铠蝎(黄金)、冥铠蝎(黄金)、波鲁杰克斯(黄金)、异构格里芬(黄金)、唤夜兽(黄金)、阿努比斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,6,1,node_choice,事件节点1,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,异构格里芬(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,6,1,node_choice,事件节点1,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,焰煌(白银)、火灵儿(白银)、阿努比斯(黄金)、浪刃武士(白银)、火麒麟(白银)、苍焰狼(白银)、阿努比斯(黄金),,进入输出标签摊位
+ysbzs-local-3,6,2,node_choice,事件节点2,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,黑月女王(黄金)、阿努比斯(黄金)、唤冬兽(黄金)、黑月女王(黄金)、腾炎龙(黄金)、异构格里芬(黄金)、黑月女王(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,6,2,node_choice,事件节点2,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,圣光骑士(黄金)、阿努比斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,6,2,node_choice,事件节点2,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,狱阎王(白银)、燎火鹿(青铜)、阿努比斯(黄金)、火麒麟(白银)、炽焰牛(白银)、火麒麟(白银)、火麒麟(白银),,进入输出标签摊位
+ysbzs-local-3,6,3,fixed_battle,第一场战斗,1,enc_d06_midday_a,第六天精英遭遇A,,battle,100,,上午 5回合 27只：棉悠悠(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、捣蛋猫(青铜)、棉悠悠(白银)、捣蛋猫(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜) 等27个,Day6 精英压力上午波次
+ysbzs-local-3,6,4,node_choice,事件节点3,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,暴电熊(黄金)、空涡龙(黄金)、清雀(黄金)、圣光骑士(黄金)、百合女王(黄金)、黑月女王(黄金)、阿努比斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,6,4,node_choice,事件节点3,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,阿努比斯(黄金)、清雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,6,4,node_choice,事件节点3,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,焰巫狐(白银)、火灵儿(白银)、炎魔羊(白银)、狱焰王(白银)、阿努比斯(黄金)、火麒麟(白银),,进入输出标签摊位
+ysbzs-local-3,6,5,node_choice,事件节点4,1,node_d06_tier3_shop,黄金商会,node_pool_d06_growth,shop,100,腾炎龙(黄金)、朱雀(黄金)、波鲁杰克斯(黄金)、唤冬兽(黄金)、黑月女王(黄金)、暴电熊(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,6,5,node_choice,事件节点4,2,node_d06_reward_tier3,黄金奖励,node_pool_d06_growth,reward,90,唤夜兽(黄金)、阿努比斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,6,5,node_choice,事件节点4,3,node_d06_output_shop,输出补强商人,node_pool_d06_growth,shop,80,火麒麟(白银)、炽焰牛(白银)、炎魔羊(白银)、焰煌(白银)、火麒麟(白银)、阿努比斯(黄金)、火灵儿(白银),,进入输出标签摊位
+ysbzs-local-3,6,6,fixed_battle,第二场战斗,1,enc_d06_evening_fixed,第六天晚上精英固定战,,battle,100,,下午 5回合 29只：皮皮鸡(青铜)、火绒狐(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、棉悠悠(青铜)、皮皮鸡(青铜) 等29个,映射 Day6 下午精英波次
+ysbzs-local-3,7,1,node_choice,事件节点1,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,空涡龙(黄金)、冥铠蝎(黄金)、百合女王(黄金)、阿努比斯(黄金)、异构格里芬(黄金)、黑月女王(黄金)、荷鲁斯(黄金)、朱雀(黄金)、冥铠蝎(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,7,1,node_choice,事件节点1,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,波鲁杰克斯(黄金)、唤夜兽(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,7,1,node_choice,事件节点1,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,勾魂鱿(青铜)、熔岩兽(白银)、森猛犸(白银)、碎岩龟(白银),,进入坦克标签摊位
+ysbzs-local-3,7,2,node_choice,事件节点2,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,冥铠蝎(黄金)、百合女王(黄金)、空涡龙(黄金)、唤冬兽(黄金)、唤冬兽(黄金)、阿努比斯(黄金)、冥铠蝎(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,7,2,node_choice,事件节点2,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,圣光骑士(黄金)、黑月女王(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,7,2,node_choice,事件节点2,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,铁拳猿(白银)、佩克龙(白银)、叶泥泥(青铜)、流沙蛇(白银)、白绒雪怪(白银),,进入坦克标签摊位
+ysbzs-local-3,7,3,fixed_battle,第一场战斗,1,enc_d07_midday_a,第七天精英遭遇A,,battle,100,,上午 5回合 25只：皮皮鸡(青铜)、火绒狐(青铜)、翠叶鼠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、翠叶鼠(青铜)、棉悠悠(青铜) 等25个,Day7 精英压力上午波次
+ysbzs-local-3,7,4,node_choice,事件节点3,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,朱雀(黄金)、混沌骑士(黄金)、清雀(黄金)、异构格里芬(黄金)、百合女王(黄金)、阿努比斯(黄金)、百合女王(黄金)、荷鲁斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,7,4,node_choice,事件节点3,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,唤冬兽(黄金)、圣光骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,7,4,node_choice,事件节点3,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,遁地鼠(青铜)、绿苔绒怪(白银)、新叶猿(青铜)、佩克龙(白银)、吊缚灵(青铜),,进入坦克标签摊位
+ysbzs-local-3,7,5,node_choice,事件节点4,1,node_d07_tier3_shop,黄金精选商会,node_pool_d07_growth,shop,100,波鲁杰克斯(黄金)、腾炎龙(黄金)、波鲁杰克斯(黄金)、暴电熊(黄金)、黑月女王(黄金)、暴电熊(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,7,5,node_choice,事件节点4,2,node_d07_reward_tier3,黄金精选奖励,node_pool_d07_growth,reward,90,朱雀(黄金)、波鲁杰克斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,7,5,node_choice,事件节点4,3,node_d07_tank_shop,前排补强商人,node_pool_d07_growth,shop,80,姬小兔(白银)、遁地鼠(青铜)、遁地鼠(青铜)、遁地鼠(青铜)、魔渊龙(白银),,进入坦克标签摊位
+ysbzs-local-3,7,6,fixed_battle,第二场战斗,1,enc_d07_evening_fixed,第七天晚上精英固定战,,battle,100,,下午 5回合 32只：捣蛋猫(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜) 等32个,映射 Day7 下午精英波次
+ysbzs-local-3,8,1,node_choice,事件节点1,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,腾炎龙(黄金)、冥铠蝎(黄金)、圣光骑士(黄金)、黑月女王(黄金)、唤冬兽(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,8,1,node_choice,事件节点1,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,覆海龙(黄金)、空涡龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,8,1,node_choice,事件节点1,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,喵丝特(青铜)、玉藻狐(青铜)、米露菲(青铜)、君王美露帕(白银),,进入经济标签摊位
+ysbzs-local-3,8,2,node_choice,事件节点2,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,百合女王(黄金)、阿努比斯(黄金)、唤冬兽(黄金)、黑月女王(黄金)、波鲁杰克斯(黄金)、唤夜兽(黄金)、清雀(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,8,2,node_choice,事件节点2,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,朱雀(黄金)、空涡龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,8,2,node_choice,事件节点2,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,喵丝特(青铜)、玉藻狐(青铜)、玉藻狐(青铜)、棉花糖(青铜)、美露帕(白银),,进入经济标签摊位
+ysbzs-local-3,8,3,fixed_battle,第一场战斗,1,enc_d08_midday_a,第八天精英遭遇A,,battle,100,,上午 5回合 32只：棉悠悠(青铜)、翠叶鼠(青铜)、火绒狐(白银)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(白银)、皮皮鸡(青铜)、翠叶鼠(青铜)、捣蛋猫(青铜)、火绒狐(青铜) 等32个,Day8 精英压力上午波次
+ysbzs-local-3,8,4,node_choice,事件节点3,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,唤夜兽(黄金)、空涡龙(黄金)、圣光骑士(黄金)、异构格里芬(黄金)、空涡龙(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,8,4,node_choice,事件节点3,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,空涡龙(黄金)、阿努比斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,8,4,node_choice,事件节点3,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,喵丝特(青铜)、美露帕(白银)、米露菲(青铜)、米露菲(青铜)、美露帕(白银),,进入经济标签摊位
+ysbzs-local-3,8,5,node_choice,事件节点4,1,node_d08_tier3_shop,黄金连锁商会,node_pool_d08_growth,shop,100,混沌骑士(黄金)、清雀(黄金)、空涡龙(黄金)、覆海龙(黄金)、荷鲁斯(黄金)、荷鲁斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,8,5,node_choice,事件节点4,2,node_d08_reward_tier3,黄金连锁奖励,node_pool_d08_growth,reward,90,覆海龙(黄金)、唤冬兽(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,8,5,node_choice,事件节点4,3,node_d08_economy_shop,经济补强商人,node_pool_d08_growth,shop,80,玉藻狐(青铜)、波霸牛(青铜)、玉藻狐(青铜)、棉花糖(青铜),,进入经济标签摊位
+ysbzs-local-3,8,6,fixed_battle,第二场战斗,1,enc_d08_evening_fixed,第八天晚上精英固定战,,battle,100,,下午 5回合 32只：捣蛋猫(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、皮皮鸡(青铜)、翠叶鼠(青铜)、火绒狐(青铜)、棉悠悠(青铜) 等32个,映射 Day8 下午精英波次
+ysbzs-local-3,9,1,node_choice,事件节点1,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,暴电熊(黄金)、暴电熊(黄金)、百合女王(黄金)、空涡龙(黄金)、百合女王(黄金)、混沌骑士(黄金)、荷鲁斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,9,1,node_choice,事件节点1,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,唤冬兽(黄金)、圣光骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,9,1,node_choice,事件节点1,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,灌木羊(青铜)、融焰娘(白银)、秘斯媞雅(白银)、精灵龙(白银)、灌木羊(青铜)、灌木羊(青铜)、秘斯媞雅(白银)、灌木羊(青铜)、灌木羊(青铜),,进入召唤标签摊位
+ysbzs-local-3,9,2,node_choice,事件节点2,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,阿努比斯(黄金)、空涡龙(黄金)、黑月女王(黄金)、异构格里芬(黄金)、黑月女王(黄金)、清雀(黄金)、波鲁杰克斯(黄金)、清雀(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,9,2,node_choice,事件节点2,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,唤夜兽(黄金)、百合女王(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,9,2,node_choice,事件节点2,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,灌木羊(青铜)、连理龙(白银)、花冠龙(白银)、连理龙(白银)、灌木羊(青铜)、花冠龙(白银),,进入召唤标签摊位
+ysbzs-local-3,9,3,fixed_battle,第一场战斗,1,enc_d09_midday_a,第九天Boss前遭遇A,,battle,100,,上午 5回合 32只：棉悠悠(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、翠叶鼠(白银)、火绒狐(青铜)、棉悠悠(青铜)、翠叶鼠(白银)、火绒狐(青铜)、火绒狐(青铜)、翠叶鼠(青铜) 等32个,Day9 Boss 前上午波次
+ysbzs-local-3,9,4,node_choice,事件节点3,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,圣光骑士(黄金)、异构格里芬(黄金)、清雀(黄金)、腾炎龙(黄金)、百合女王(黄金)、荷鲁斯(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,9,4,node_choice,事件节点3,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,黑月女王(黄金)、百合女王(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,9,4,node_choice,事件节点3,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,秘斯媞雅(白银)、连理龙(白银)、连理龙(白银)、骑士蜂(白银)、灌木羊(青铜)、秘斯媞雅(白银)、融焰娘(白银),,进入召唤标签摊位
+ysbzs-local-3,9,5,node_choice,事件节点4,1,node_d09_tier3_shop,终局前黄金商会,node_pool_d09_growth,shop,100,唤冬兽(黄金)、冥铠蝎(黄金)、圣光骑士(黄金)、异构格里芬(黄金)、空涡龙(黄金)、冥铠蝎(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,9,5,node_choice,事件节点4,2,node_d09_reward_tier3,终局前黄金奖励,node_pool_d09_growth,reward,90,暴电熊(黄金)、阿努比斯(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,9,5,node_choice,事件节点4,3,node_d09_summon_shop,召唤终局商人,node_pool_d09_growth,shop,80,灌木羊(青铜)、连理龙(白银)、精灵龙(白银)、骑士蜂(白银)、连理龙(白银)、秘斯媞雅(白银),,进入召唤标签摊位
+ysbzs-local-3,9,6,fixed_battle,第二场战斗,1,enc_d09_evening_fixed,第九天晚上Boss前固定战,,battle,100,,下午 5回合 34只：翠叶鼠(青铜)、捣蛋猫(白银)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、捣蛋猫(青铜) 等34个,映射 Day9 下午 Boss 前波次
+ysbzs-local-3,10,1,node_choice,事件节点1,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,清雀(黄金)、清雀(黄金)、混沌骑士(黄金)、百合女王(黄金)、异构格里芬(黄金)、空涡龙(黄金)、黑月女王(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,10,1,node_choice,事件节点1,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,百合女王(黄金)、腾炎龙(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,10,1,node_choice,事件节点1,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,阿努比斯(黄金)、燎火鹿(青铜)、苍焰狼(白银)、狱焰王(白银)、浪刃武士(白银)、浪刃武士(白银),,进入输出标签摊位
+ysbzs-local-3,10,2,node_choice,事件节点2,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,异构格里芬(黄金)、暴电熊(黄金)、腾炎龙(黄金)、荷鲁斯(黄金)、波鲁杰克斯(黄金)、空涡龙(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,10,2,node_choice,事件节点2,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,异构格里芬(黄金)、清雀(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,10,2,node_choice,事件节点2,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,苍焰狼(白银)、燎火鹿(青铜)、狱阎王(白银)、狱焰王(白银),,进入输出标签摊位
+ysbzs-local-3,10,3,fixed_battle,第一场战斗,1,enc_d10_midday_a,第十天Boss前遭遇A,,battle,100,,上午 5回合 38只：火绒狐(青铜)、捣蛋猫(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、棉悠悠(青铜)、皮皮鸡(青铜)、火绒狐(青铜)、火绒狐(青铜)、捣蛋猫(青铜) 等38个,Day10 Boss 前上午波次
+ysbzs-local-3,10,4,node_choice,事件节点3,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,阿努比斯(黄金)、阿努比斯(黄金)、唤夜兽(黄金)、阿努比斯(黄金)、空涡龙(黄金)、唤冬兽(黄金)、异构格里芬(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,10,4,node_choice,事件节点3,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,唤夜兽(黄金)、混沌骑士(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,10,4,node_choice,事件节点3,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,火灵儿(白银)、炎魔羊(白银)、火麒麟(白银)、火麒麟(白银)、焰巫狐(白银)、狱阎王(白银),,进入输出标签摊位
+ysbzs-local-3,10,5,node_choice,事件节点4,1,node_d10_tier3_shop,终局黄金商会,node_pool_d10_growth,shop,100,朱雀(黄金)、朱雀(黄金)、腾炎龙(黄金)、空涡龙(黄金)、黑月女王(黄金)、空涡龙(黄金),,进入 pT3 标签摊位
+ysbzs-local-3,10,5,node_choice,事件节点4,2,node_d10_reward_tier3,终局黄金奖励,node_pool_d10_growth,reward,90,阿努比斯(黄金)、唤夜兽(黄金),,生成 3 个 pT3 奖励候选
+ysbzs-local-3,10,5,node_choice,事件节点4,3,node_d10_output_shop,终局输出商人,node_pool_d10_growth,shop,80,燎火鹿(青铜)、炎魔羊(白银)、焰巫狐(白银)、火灵儿(白银)、火麒麟(白银)、焰巫狐(白银),,进入输出标签摊位
+ysbzs-local-3,10,6,fixed_battle,终局Boss战,1,enc_d10_final_boss,第十天终局Boss,,battle,100,,下午 5回合 41只：捣蛋猫(白银)、火绒狐(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜)、捣蛋猫(青铜)、皮皮鸡(青铜)、棉悠悠(青铜) 等41个,Day10 终局 Boss 压力

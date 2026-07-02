@@ -451,43 +451,54 @@ function renderShopScene() {
   renderRoster('shop');
 }
 
-function unitChip(unit = {}) {
-  const hp = unit.hp != null ? `HP ${unit.hp}/${unit.maxHp || unit.hp}` : '';
-  return `<article class="unit-chip"><strong>${esc(unit.displayName || unit.name || unit.id)}</strong><span>${esc(hp)} · 攻 ${esc(unit.atk ?? '-')}</span></article>`;
+function battlePageHref() {
+  const url = new URL('index.html', window.location.href);
+  url.searchParams.set('runtime', params.get('runtime') || 'http');
+  url.searchParams.set('normalMode', '1');
+  if (params.get('sessionId')) url.searchParams.set('sessionId', params.get('sessionId'));
+  if (params.get('playerId')) url.searchParams.set('playerId', params.get('playerId'));
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
-function renderBattleScene(events = []) {
-  const cells = vm?.board?.cells || [];
-  const heroUnits = [vm?.leaders?.player, ...(vm?.heroes || [])].filter(Boolean);
-  const rawEnemyUnits = [vm?.leaders?.enemy, ...(vm?.enemies || [])].filter(Boolean);
-  const enemyUnits = rawEnemyUnits.length ? rawEnemyUnits : cells
-    .filter(cell => cell.unitSide === 'enemy' && cell.unitId)
-    .map(cell => ({ id: cell.unitId, displayName: cell.unitName, side: 'enemy' }));
-  const unitById = new Map([...heroUnits, ...enemyUnits].map(unit => [unit.id, unit]));
-  $('battle-hero-list').innerHTML = heroUnits.map(unitChip).join('') || '<article class="empty-card"><strong>暂无我方单位</strong></article>';
-  $('battle-enemy-list').innerHTML = enemyUnits.map(unitChip).join('') || '<article class="empty-card"><strong>暂无敌方单位</strong></article>';
-  const byKey = new Map(cells.map(cell => [`${cell.r},${cell.c}`, cell]));
-  const out = [];
-  for (let r = 0; r < 8; r += 1) {
-    for (let c = 0; c < 8; c += 1) {
-      const cell = byKey.get(`${r},${c}`) || { r, c };
-      const unit = cell.unit || cell.occupant || unitById.get(cell.unitId) || (cell.unitId ? {
-        id: cell.unitId,
-        displayName: cell.unitName,
-        side: cell.unitSide
-      } : null);
-      const side = unit?.side === 'enemy' || cell.unitSide === 'enemy' ? 'enemy' : unit ? 'hero' : '';
-      out.push(`<div class="board-cell ${unit ? 'has-unit' : ''} ${side}">
-        <span class="cell-pos">${r},${c}</span>
-        ${unit ? `<span class="cell-unit">${esc(unit.displayName || unit.name || unit.id)}<br>HP ${esc(unit.hp ?? '-')}</span>` : ''}
-      </div>`);
+function applyFormalBattlePlayerMode(frame) {
+  const doc = frame?.contentDocument;
+  if (!doc || doc.getElementById('normal-player-hide-debug')) return;
+  const style = doc.createElement('style');
+  style.id = 'normal-player-hide-debug';
+  style.textContent = `
+    .brand-actions a,
+    #new-game-btn,
+    #day7-btn,
+    #save-game-btn,
+    #load-game-btn,
+    #shop-phase-panel {
+      display: none !important;
     }
+    .brand-actions {
+      right: 10px !important;
+    }
+    .board-actions {
+      grid-template-columns: auto !important;
+      justify-content: end !important;
+    }
+  `;
+  doc.head.appendChild(style);
+  doc.querySelectorAll('.log-tab').forEach(tab => {
+    if (/回放|调试/.test(tab.textContent || '')) tab.style.display = 'none';
+  });
+}
+
+function renderBattleScene(active = false) {
+  const href = battlePageHref();
+  const link = $('formal-battle-link');
+  const frame = $('formal-battle-frame');
+  link.href = href;
+  if (!frame.dataset.playerModeBound) {
+    frame.dataset.playerModeBound = 'true';
+    frame.addEventListener('load', () => applyFormalBattlePlayerMode(frame));
   }
-  $('battle-board').innerHTML = out.join('');
-  const recent = events.length ? events : (vm?.events || []).slice(-12);
-  $('battle-log').textContent = recent.map(event => `[${event.type}] ${event.text || ''}`).join('\n') || '暂无战斗记录。';
-  $('auto-position-btn').disabled = busy || vm?.phase !== 'player_turn';
-  $('all-out-btn').disabled = busy || vm?.phase !== 'player_turn';
+  if (active && frame.getAttribute('src') !== href) frame.setAttribute('src', href);
+  if (active) applyFormalBattlePlayerMode(frame);
 }
 
 function render(events = []) {
@@ -495,8 +506,9 @@ function render(events = []) {
   renderStatus();
   renderRouteScene();
   renderShopScene();
-  renderBattleScene(events);
-  setScene(sceneForPhase());
+  const scene = sceneForPhase();
+  renderBattleScene(scene === 'battle');
+  setScene(scene);
   window.__YSBZS_NORMAL_GAME__ = { lastViewModel: vm, runCommand, loadView, sceneForPhase, saveRun, loadRun, restartRunWithSeed, runSeedRuleCheck };
 }
 
@@ -511,9 +523,6 @@ document.addEventListener('click', ev => {
     runCommand(commandBtn.dataset.command, payloadFromButton(commandBtn));
   }
 });
-
-$('auto-position-btn').addEventListener('click', () => runCommand('AUTO_POSITION_HEROES'));
-$('all-out-btn').addEventListener('click', () => runCommand('RUN_PLAYER_ALL_OUT'));
 
 loadView().catch(err => toast(err.message || String(err)));
 

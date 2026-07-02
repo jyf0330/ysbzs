@@ -15,14 +15,19 @@
         <h1>正常游戏流程</h1>
       </section>
       <section class="run-tools" aria-label="本局工具">
-        <label>
-          <span>Seed</span>
-          <input id="seed-input" type="text" value="normal-seed-001" autocomplete="off" />
-        </label>
         <button id="save-run-btn" type="button">保存</button>
         <button id="load-run-btn" type="button">读取</button>
-        <button id="restart-run-btn" type="button">重开本局</button>
-        <button id="seed-check-btn" type="button">规则自测</button>
+        <details class="advanced-tools">
+          <summary id="advanced-tools-toggle">菜单</summary>
+          <div class="advanced-tools-panel">
+            <label>
+              <span>Seed</span>
+              <input id="seed-input" type="text" value="normal-seed-001" autocomplete="off" />
+            </label>
+            <button id="restart-run-btn" type="button">重开本局</button>
+            <button id="seed-check-btn" type="button">规则自测</button>
+          </div>
+        </details>
         <small id="run-tool-status">未保存</small>
       </section>
       <section class="status-line" aria-label="当前状态">
@@ -89,27 +94,15 @@
     </section>
 
     <section id="battle-scene" class="scene battle-scene" data-scene-name="battle" data-active="false">
-      <aside class="combat-side">
-        <h2>我方</h2>
-        <div id="battle-hero-list" class="combat-list"></div>
-      </aside>
       <section class="battle-core">
         <div class="scene-title compact">
           <span>Battle</span>
-          <h2>游戏界面</h2>
-          <p>这里只保留棋盘、回合按钮和战斗反馈。</p>
+          <h2>正式战斗页</h2>
+          <p>当前战斗使用演武场正式界面；路线、商店和存档仍由正常流程页管理。</p>
         </div>
-        <div id="battle-board" class="battle-board" aria-label="战斗棋盘"></div>
-        <div class="battle-actions">
-          <button id="auto-position-btn" type="button">智能调整站位</button>
-          <button id="all-out-btn" type="button">我方全部出击</button>
-        </div>
+        <iframe id="formal-battle-frame" class="formal-battle-frame" title="正式战斗页"></iframe>
+        <a id="formal-battle-link" class="formal-battle-link" href="index.html?runtime=http" hidden>在正式战斗页打开</a>
       </section>
-      <aside class="combat-side enemy">
-        <h2>敌方</h2>
-        <div id="battle-enemy-list" class="combat-list"></div>
-        <pre id="battle-log" class="battle-log">暂无战斗记录。</pre>
-      </aside>
     </section>
   </main>
 

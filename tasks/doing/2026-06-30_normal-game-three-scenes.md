@@ -22,6 +22,7 @@ branch: codex/bazaar-day1-day3-route
 - 商店宠物详情必须显示 3×4 攻击范围小网格：宠物固定在第 2 行第 1 格，攻击范围按公开形状偏移标出。
 - 商店付费刷新价格按次数递增：第一次 2 金，第二次 4 金，第三次 8 金，第四次 16 金；进店首刷和免费刷新不推进付费序列。
 - 游戏/战斗界面负责棋盘、战斗按钮、敌我状态和战斗记录，不承载商店与大背包整理。
+- 当前存档落在战斗玩家回合时，战斗棋盘必须允许正常玩家调整宠物站位：点击我方宠物选中，再点击空格通过公开 `MOVE_HERO` 移动。
 - 不改 `web/js/main.js`、不改 `web/ux-app.css`、不改 `web/index.html`；涉及浏览器运行的核心/adapter 改动后必须刷新 `web/js/local-engine.js`。
 
 ## related_files
@@ -65,6 +66,30 @@ branch: codex/bazaar-day1-day3-route
 
 ## validation
 
+- RED confirmed for normal-player button budget: `node --test tests/unit/normal_game_three_scenes.test.cjs` failed because normal-game still showed Seed / restart / rule-check as top-level toolbar controls and did not hide formal-page debug chrome in the embedded battle page.
+- pass after normal-player button budget: `node --test tests/unit/normal_game_three_scenes.test.cjs` (5/5).
+- pass after normal-player button budget: `node --input-type=module --check < web/normal-game.js`.
+- pass after normal-player button budget: `git diff --check -- web/normal-game.html web/normal-game.css web/normal-game.js tests/unit/normal_game_three_scenes.test.cjs tasks/doing/2026-06-30_normal-game-three-scenes.md`.
+- pass after normal-player button budget: `node tests/run_all_tests.cjs` (67/67).
+- pass after normal-player button budget: `npm run check:all`.
+- pass after normal-player button budget: 4173 real browser flow at `http://127.0.0.1:4173/normal-game.html?runtime=http&sessionId=normal-hide-buttons-1783000768921&seed=normal-hide-buttons`: opened normal flow, clicked route choices to battle scene, verified top-level visible tools are exactly `保存 / 读取 / 菜单`; `#seed-input` is hidden before opening menu; embedded formal page hides `new-game-btn`, `day7-btn`, formal save/load, brand links, `shop-phase-panel`, replay/debug tabs; fullscreen and `我方全部出击` remain visible; board cells = 64; console/page errors = 0.
+- screenshot reviewed by Lead after normal-player button budget: `/Users/ywh/Documents/ysbzs/output/playwright/normal-game-hide-buttons-4173.png`; screenshot shows the normal flow battle screen with only the expected outer three buttons, formal board and core combat buttons visible, and no obvious overlap or missing battle state.
+- RED confirmed for formal battle handoff: `node --test tests/unit/normal_game_three_scenes.test.cjs` failed because the normal battle scene still rendered its own lightweight `battle-board` instead of embedding the formal battle page.
+- pass after formal battle handoff: `node --test tests/unit/normal_game_three_scenes.test.cjs` (5/5).
+- pass after formal battle handoff: `node --input-type=module --check < web/normal-game.js`.
+- pass after formal battle handoff: `git diff --check -- web/normal-game.html web/normal-game.css web/normal-game.js tests/unit/normal_game_three_scenes.test.cjs`.
+- pass after formal battle handoff: `node tests/run_all_tests.cjs` (67/67).
+- pass after formal battle handoff: `npm run check:all`.
+- pass after formal battle handoff: 4173 real browser flow at `http://127.0.0.1:4173/normal-game.html?runtime=http&sessionId=normal-formal-battle-1783000186663&seed=normal-formal-battle`: clicked route choices through the normal player page until battle scene; `#formal-battle-frame` loaded `/index.html?runtime=http&sessionId=normal-formal-battle-1783000186663`, not `paper-battle.html`; iframe formal page title `棋盘战斗交互重构版`; formal board cells = 64; console/page errors = 0.
+- screenshot reviewed by Lead after formal battle handoff: `/Users/ywh/Documents/ysbzs/output/playwright/normal-game-formal-battle-frame-4173.png`; screenshot shows the normal flow page hosting the formal battle page, visible 8x8 board, formal action controls, direct formal-page link, and no obvious overlap or missing state.
+- supersedes current-save pet positioning page-level handler: normal-game no longer owns a second `onBattleCellClick` / lightweight board implementation; loaded battle positioning now belongs to the embedded formal `index.html` battle page on the same HTTP session.
+- RED confirmed for current-save pet positioning: `node --test tests/unit/normal_game_three_scenes.test.cjs` failed because `web/normal-game.js` had no `onBattleCellClick` battle-board positioning handler.
+- pass after current-save pet positioning: `node --test tests/unit/normal_game_three_scenes.test.cjs` (5/5).
+- pass after current-save pet positioning: `node --input-type=module --check < web/normal-game.js`.
+- pass after current-save pet positioning: `node tests/run_all_tests.cjs` (67/67).
+- pass after current-save pet positioning: `git diff --check -- web/normal-game.js web/normal-game.css tests/unit/normal_game_three_scenes.test.cjs tasks/doing/2026-06-30_normal-game-three-scenes.md`.
+- pass after current-save pet positioning: 4173 real browser flow at `http://127.0.0.1:4173/normal-game.html?runtime=http&sessionId=local&cacheBust=positioning3`: current saved `player_turn` state opened the battle scene, clicked a visible player pet, clicked a movable empty board cell, and `hero_pal_002_1` moved from `R1C3` to `R0C0` through public `SELECT_UNIT` / `MOVE_HERO`; Boss cell rendered with enemy class; console errors/page errors = 0.
+- screenshot reviewed by Lead after current-save pet positioning: `/Users/ywh/Documents/ysbzs/output/playwright/normal-game-current-save-positioning-4173.png`; selected/movable board states are visible, moved pet is on `0,0`, enemy/Boss cells remain visually distinct, no obvious overlap or missing controls.
 - pass after internal pet positioning cleanup: `node --input-type=module --check < web/normal-game.js`
 - pass after internal pet positioning cleanup: `node --test tests/unit/normal_game_three_scenes.test.cjs` (4/4)
 - pass after internal pet positioning cleanup: `node tests/run_all_tests.cjs` (67/67)

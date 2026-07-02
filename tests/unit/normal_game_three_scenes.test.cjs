@@ -10,6 +10,7 @@ test('normal game page splits route shop and battle into three scenes', () => {
   const html = read('web/normal-game.html');
   const css = read('web/normal-game.css');
   const js = read('web/normal-game.js');
+  const runToolsHtml = html.match(/<section class="run-tools"[\s\S]*?<\/section>/)?.[0] || '';
 
   assert.match(html, /<title>元素背包史 · 正常游戏<\/title>/, 'page should have its own normal-game title');
   assert.match(html, /id="route-scene"/, 'page needs a 3-choice route scene');
@@ -27,6 +28,12 @@ test('normal game page splits route shop and battle into three scenes', () => {
   assert.match(html, /id="load-run-btn"/, 'normal page should expose load saved run');
   assert.match(html, /id="restart-run-btn"/, 'normal page should expose restart current run with seed');
   assert.match(html, /id="seed-check-btn"/, 'normal page should expose a seeded rule check entry');
+  assert.match(html, /class="advanced-tools"/, 'debug and repeatability tools should live behind a collapsed menu');
+  assert.match(html, /id="advanced-tools-toggle"/, 'normal page should expose only one advanced menu button');
+  assert.ok(html.indexOf('id="advanced-tools-toggle"') < html.indexOf('id="seed-input"'), 'seed controls should be behind the menu summary');
+  assert.match(runToolsHtml, /id="save-run-btn"[\s\S]*id="load-run-btn"[\s\S]*<details class="advanced-tools"/, 'top-level run tools should be save, load, and menu');
+  assert.ok(runToolsHtml.indexOf('<details class="advanced-tools"') < runToolsHtml.indexOf('id="restart-run-btn"'), 'restart should be inside the advanced menu');
+  assert.ok(runToolsHtml.indexOf('<details class="advanced-tools"') < runToolsHtml.indexOf('id="seed-check-btn"'), 'rule check should be inside the advanced menu');
   assert.match(html, /src="js\/local-engine\.js"/, 'page should support local runtime');
   assert.ok(html.indexOf('src="js/local-engine.js"') < html.indexOf('src="normal-game.js"'), 'local engine must load before page module');
   assert.doesNotMatch(html, /data-jump-scene/, 'normal player page should not expose manual scene-jump controls');
@@ -37,7 +44,9 @@ test('normal game page splits route shop and battle into three scenes', () => {
   assert.match(css, /\.scene\[data-active="true"\]/, 'scenes should use an explicit active state');
   assert.match(css, /\.roster-board/, 'route/shop roster areas need dedicated layout');
   assert.match(css, /\.run-tools/, 'normal page should style player save/load/restart tools');
-  assert.match(css, /\.battle-board/, 'battle scene needs a dedicated board layout');
+  assert.match(css, /\.advanced-tools/, 'normal page should style the collapsed advanced menu');
+  assert.match(css, /\.advanced-tools\[open\]/, 'advanced menu should have an explicit open state');
+  assert.match(css, /\.formal-battle-frame/, 'battle scene should style the embedded formal battle page');
   assert.doesNotMatch(css, /\.scene-tabs|\.shop-toolbar/, 'normal player styles should not include console control bars');
 
   assert.match(js, /createGameRuntime/, 'normal page should use shared runtime client');
@@ -78,15 +87,49 @@ test('normal game page splits route shop and battle into three scenes', () => {
   assert.match(css, /\.shop-offer-card/, 'shop offers need a dedicated card layout');
   assert.match(css, /\.shop-range-grid/, 'shop cards should style the attack-range mini grid');
   assert.match(css, /\.shop-offer-stats/, 'shop offers should style stat details');
-  assert.match(js, /function renderBattleScene/, 'normal page should render the battle scene');
+  assert.match(html, /id="formal-battle-frame"/, 'normal battle scene should embed the formal battle page');
+  assert.match(html, /id="formal-battle-link"[\s\S]*hidden/, 'formal battle direct link should exist but stay hidden for normal players');
+  assert.match(js, /function battlePageHref/, 'normal battle scene should build a formal battle page href');
+  assert.match(js, /new URL\('index\.html'/, 'battle handoff should target the formal battle page');
+  assert.match(js, /formal-battle-frame/, 'normal page should mount the formal battle page iframe');
+  assert.match(js, /formal-battle-link/, 'normal page should keep a direct formal battle link');
+  assert.match(js, /function applyFormalBattlePlayerMode/, 'normal flow should hide debug-only controls inside the embedded formal battle page');
+  assert.match(js, /normal-player-hide-debug/, 'embedded battle page should receive a stable injected style id');
+  assert.match(js, /shop-phase-panel/, 'normal mode should hide formal-page manual route/shop debug controls');
+  assert.match(js, /new-game-btn/, 'normal mode should hide formal-page new-day debug controls');
+  assert.match(js, /day7-btn/, 'normal mode should hide formal-page day7 debug controls');
+  assert.match(js, /回放\|调试/, 'normal mode should hide replay and debug log tabs');
+  assert.doesNotMatch(html, /id="battle-board"/, 'normal page should not ship a second lightweight battle board');
+  assert.doesNotMatch(js, /function onBattleCellClick|function boardUnitSide|MOVE_HERO/, 'normal page should not duplicate formal battle interactions');
   assert.match(js, /TOGGLE_UNIT_ACTIVE/, 'route/shop roster should expose public active roster toggles');
   assert.match(js, /上阵/, 'roster cards should show an active action');
   assert.match(js, /下阵/, 'roster cards should show a bench action');
   assert.match(js, /PICK_NODE/, 'route scene should support node 3-choice picks');
   assert.match(js, /BUY_OFFER/, 'shop scene should support buying offers');
   assert.doesNotMatch(js, /APPLY_SHOP_EVENT/, 'normal shop goods should not show shop events as sellable entries');
-  assert.match(js, /RUN_PLAYER_ALL_OUT/, 'battle scene should support the normal player action flow');
+  assert.doesNotMatch(js, /RUN_PLAYER_ALL_OUT|AUTO_POSITION_HEROES/, 'normal page should not duplicate formal battle action buttons');
   assert.doesNotMatch(js, /require\(|src\/core|uiAdapter\.cjs|dispatch\(/, 'normal page must not import core or adapter directly');
+});
+
+test('normal game loaded battle state can still move the selected pet through public commands', () => {
+  const { createYSBZSUIAdapter } = require('../../src/uiAdapter.cjs');
+  const adapter = createYSBZSUIAdapter({ day: 1, gold: 8, seed: 'normal-loaded-positioning', activePets: ['pal_002', 'pal_013'] });
+  adapter.startBattle();
+  const saved = adapter.exportSave('p1', { sessionId: 'normal-loaded-positioning-save' });
+  const loaded = createYSBZSUIAdapter({ day: 1, gold: 1, seed: 'other-seed' });
+  loaded.importSave(saved, 'p1');
+  const vm = loaded.getViewModel('p1');
+  const hero = vm.heroes[0];
+  const empty = vm.board.cells.find(cell => !cell.unitId && Math.abs(cell.r - hero.position.r) + Math.abs(cell.c - hero.position.c) <= Number(hero.moveRange || hero.ap || 1));
+
+  assert.ok(hero, 'loaded battle should expose an active player pet');
+  assert.ok(empty, 'loaded battle should expose a legal empty move target');
+
+  loaded.run({ type: 'SELECT_UNIT', unitId: hero.id, playerId: 'p1' });
+  const moved = loaded.run({ type: 'MOVE_HERO', unitId: hero.id, r: empty.r, c: empty.c, playerId: 'p1' });
+  const movedHero = moved.viewModel.heroes.find(unit => unit.id === hero.id);
+
+  assert.deepEqual(movedHero.position, { r: empty.r, c: empty.c }, 'loaded battle should move the selected pet after save/load restore');
 });
 
 test('normal game seeded save contract is deterministic and server new-game accepts seed', () => {

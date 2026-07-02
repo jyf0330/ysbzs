@@ -1,4 +1,4 @@
-const { makeUnit, syncBoardUnits } = require('./state.cjs');
+const { makeUnit, syncBoardUnits, heroDeploymentPositions } = require('./state.cjs');
 const { pushEvent } = require('./events.cjs');
 const { applyBattleStart } = require('./mechanics.cjs');
 const { activationBlockReason } = require('./mechanicGate.cjs');
@@ -38,10 +38,7 @@ function nextActiveSlot(state) {
 
 function firstEmptyHeroCell(state) {
   syncBoardUnits(state);
-  const preferred = [
-    { r: 6, c: 1 }, { r: 5, c: 1 }, { r: 6, c: 2 }, { r: 5, c: 2 },
-    { r: 4, c: 1 }, { r: 7, c: 1 }, { r: 4, c: 2 }, { r: 7, c: 2 }
-  ];
+  const preferred = heroDeploymentPositions(state, MAX_ACTIVE_UNITS, 'active_roster');
   const seen = new Set();
   const candidates = [];
   for (const point of preferred) {
@@ -77,6 +74,9 @@ function findUnitForInventoryEntry(state, inv) {
   if (!inv) return null;
   return (state.units || []).find(unit => unit.id === inv.instanceId || unit.petId === inv.petId) || null;
 }
+function sellValueForQuality(quality) {
+  return { 青铜: 2, 白银: 4, 黄金: 6, 钻石: 8 }[quality] || 1;
+}
 
 function sellUnit(state, command = {}) {
   const id = command.petId || command.instanceId || command.unitId;
@@ -86,7 +86,7 @@ function sellUnit(state, command = {}) {
     return false;
   }
 
-  const refund = Math.max(1, Number(inv.level || 1));
+  const refund = sellValueForQuality(inv.quality);
   const before = state.gold;
   state.gold += refund;
   inv.count = Math.max(0, Number(inv.count || 1) - 1);
@@ -132,7 +132,7 @@ function toggleUnitActive(state, command = {}) {
     }
 
     let unit = findUnitForInventoryEntry(state, inv);
-    if (!unit) unit = makeUnit(state, 'hero', inv.petId, { position: firstEmptyHeroCell(state) });
+    if (!unit) unit = makeUnit(state, 'hero', inv.petId, { position: firstEmptyHeroCell(state), quality: inv.quality });
     const blockReason = activationBlockReason(unit);
     if (blockReason) {
       pushEvent(state, 'TOGGLE_UNIT_ACTIVE_BLOCKED', { unitId: id, petId: inv.petId, reason: blockReason, text: `上阵失败：${unit.displayName || unit.name} ${blockReason}。` });

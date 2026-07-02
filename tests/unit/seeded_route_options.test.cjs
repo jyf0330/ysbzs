@@ -4,8 +4,31 @@ const assert = require('node:assert/strict');
 const { loadGameData } = require('../../src/core/data.cjs');
 const { createYSBZSUIAdapter } = require('../../src/uiAdapter.cjs');
 
+function dataWithNodeChoice() {
+  const data = loadGameData();
+  data.nodeSchedule = (data.nodeSchedule || []).concat([{
+    id: 'seeded_node_choice_schedule',
+    day: 98,
+    step: 1,
+    kind: 'node_choice',
+    label: 'Seeded Node Choice',
+    phaseLabel: '测试节点',
+    poolId: 'node_pool_seeded_route_test',
+    choiceCount: 3,
+    status: '正式'
+  }]);
+  data.nodePool = (data.nodePool || []).concat([
+    { nodeId: 'node_seeded_a', nodePoolId: 'node_pool_seeded_route_test', name: 'Seeded A', nodeType: 'shop', weight: 100, unlockDay: 1, shopPoolId: 'night_base', status: '正式' },
+    { nodeId: 'node_seeded_b', nodePoolId: 'node_pool_seeded_route_test', name: 'Seeded B', nodeType: 'reward', weight: 90, unlockDay: 1, rewardPoolId: 'reward_pT1', status: '正式' },
+    { nodeId: 'node_seeded_c', nodePoolId: 'node_pool_seeded_route_test', name: 'Seeded C', nodeType: 'shop', weight: 80, unlockDay: 1, shopPoolId: 'elem_火', status: '正式' },
+    { nodeId: 'node_seeded_d', nodePoolId: 'node_pool_seeded_route_test', name: 'Seeded D', nodeType: 'reward', weight: 70, unlockDay: 1, rewardPoolId: 'reward_pT1', status: '正式' },
+    { nodeId: 'node_seeded_e', nodePoolId: 'node_pool_seeded_route_test', name: 'Seeded E', nodeType: 'shop', weight: 60, unlockDay: 1, shopPoolId: 'elem_水', status: '正式' }
+  ]);
+  return data;
+}
+
 function nodeChoiceIds(seed, payload = {}) {
-  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed });
+  const adapter = createYSBZSUIAdapter({ day: 98, gold: 999, seed, data: dataWithNodeChoice() });
   const result = adapter.generateNodeOptions(Object.assign({ scheduleStep: 1 }, payload));
   assert.equal(result.accepted, true);
   return result.viewModel.dayRoute.options.map(option => option.nodeId);

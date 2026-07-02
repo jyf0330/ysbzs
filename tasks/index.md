@@ -12,7 +12,6 @@
 ## ACTIVE_IMPL
 
 - `tasks/doing/2026-07-02_animated-pet-move.md` — UI feedback: 宠物移动动画仍在实现；涉及 `web/js/main.js` / `web/ux-app.css`。
-- `tasks/doing/2026-07-03_disable-instant-route-nodes.md` — data: 禁用即时结算路线节点，保留商店/奖励闭环节点。
 - `tasks/doing/2026-07-02_pet-merge-quality-upgrade.md` — bugfix: 同名宠物合成改为品质推进；涉及核心库存/合成规则。
 
 ## READY_TO_MERGE

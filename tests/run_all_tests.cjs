@@ -26,6 +26,12 @@ function openFirstRouteNodeOptions(state, opts = {}) {
   enterCurrentRouteNodeStep(state);
   return dispatch(state, { type: 'GENERATE_NODE_OPTIONS', count: opts.count });
 }
+function enableRouteNodeForTest(state, nodeId) {
+  const node = state.data.nodePool.find(x => x.nodeId === nodeId);
+  assert.ok(node, `${nodeId} should exist in node pool`);
+  node.status = '正式';
+  return node;
+}
 function resolveCurrentRouteNode(state, opts = {}) {
   enterCurrentRouteNodeStep(state);
   const options = dispatch(state, { type: 'GENERATE_NODE_OPTIONS', count: opts.count || 6 }) || [];
@@ -100,13 +106,11 @@ test('shop refresh controls store free roll, discount, and targeted restock stat
   assert.ok(s.events.some(e=>e.type==='SHOP_TARGETED_RESTOCK' && e.poolId==='elem_火'));
   assert.ok(renderPlayerReport(s).includes('定向补货'));
 });
-test('route event node changes the same shop refresh state',()=>{
+test('active route node pool excludes instant event/rest nodes',()=>{
   const s=createGameState({day:1,gold:20});
-  openFirstRouteNodeOptions(s);
-  dispatch(s,{type:'PICK_NODE',nodeId:'node_event_free_roll'});
-  assert.equal(s.shop.freeRolls,1);
-  assert.equal(s.shop.refreshState.freeRolls,1);
-  assert.ok(s.shop.refreshState.effects.some(x=>x.eventId==='evt_free_roll' && x.source==='route_event'));
+  const activeNodes = s.data.nodePool.filter(node => node.status === '正式');
+  assert.ok(activeNodes.length > 0);
+  assert.ok(activeNodes.every(node => ['shop','reward'].includes(node.nodeType)));
 });
 test('reward options can include pet/relic and pick reward',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'REWARD_OPTIONS',poolId:'reward_pT1',count:3}); assert.equal(s.rewards.length,3); dispatch(s,{type:'PICK_REWARD',index:0}); assert.ok(hasEvent(s,'REWARD_PICK')); });
 test('node shop returns to day route while manual shop still exits to day_end',()=>{
@@ -317,6 +321,7 @@ test('route pending battle reward can be claimed into construction through reduc
 test('route pre-battle shield event becomes next battle core effect and report evidence',()=>{
   const { createViewModel } = require('../src/uiAdapter.cjs');
   const s=createGameState({day:4,gold:20});
+  enableRouteNodeForTest(s,'node_d04_event_shield');
   openFirstRouteNodeOptions(s,{count:6});
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_shield_bless'), 'Day4 route should expose shield blessing event');
   dispatch(s,{type:'PICK_NODE', nodeId:'node_d04_event_shield'});
@@ -336,6 +341,7 @@ test('route trap bonus event arms next battle fire trap modifier and consumes on
   const { buildModuleManifest } = require('../src/core/moduleManifest.cjs');
   const { buildTraceFromChanges } = require('../src/core/explainTrace.cjs');
   const s=createGameState({day:5,gold:20});
+  enableRouteNodeForTest(s,'node_d05_event_trap');
   openFirstRouteNodeOptions(s,{count:7});
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_trap_bonus'), 'Day5 route should expose trap bonus event');
   dispatch(s,{type:'PICK_NODE', nodeId:'node_d05_event_trap'});
@@ -379,6 +385,7 @@ test('route trap bonus event arms next battle fire trap modifier and consumes on
 test('route curse gold event grants immediate gold and discounts next route battle payout',()=>{
   const { createViewModel } = require('../src/uiAdapter.cjs');
   const s=createGameState({day:6,gold:20});
+  enableRouteNodeForTest(s,'node_d06_event_curse_gold');
   openFirstRouteNodeOptions(s,{count:7});
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_curse_gold'), 'Day6 route should expose curse gold risk event');
   const beforeEventGold=s.gold;
@@ -433,6 +440,7 @@ test('route duplicate event copies an owned pet into construction state',()=>{
   assert.ok(event, 'duplicate event should exist');
   assert.equal(event.status,'正式');
   const s=createGameState({day:3,gold:20,activePets:['pal_005']});
+  enableRouteNodeForTest(s,'node_d03_event_duplicate');
   openFirstRouteNodeOptions(s,{count:7});
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_duplicate'), 'Day3 route should expose duplicate merchant');
   const beforeInventory=s.inventory.length;
@@ -455,6 +463,7 @@ test('route upgrade event raises an owned pet quality through construction state
   assert.ok(event, 'upgrade event should exist');
   assert.equal(event.status,'正式');
   const s=createGameState({day:4,gold:20,activePets:['pal_005']});
+  enableRouteNodeForTest(s,'node_d04_event_upgrade');
   openFirstRouteNodeOptions(s,{count:8});
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_upgrade_offer'), 'Day4 route should expose upgrade merchant');
   const beforeGold=s.gold;

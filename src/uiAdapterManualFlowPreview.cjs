@@ -119,7 +119,8 @@ function damageThreatFromEvent(event = {}, action = null, unitsById = new Map())
   const shieldDamage = Math.max(0, Number(event.shieldFrom ?? 0) - Number(event.shieldTo ?? 0));
   const hpDamage = Math.max(0, Number(event.hpFrom ?? 0) - Number(event.hpTo ?? 0));
   const finalDamage = Math.max(0, Number(event.final ?? event.damage ?? 0));
-  const damage = finalDamage || hpDamage + shieldDamage;
+  const realizedDamage = hpDamage + shieldDamage;
+  const damage = realizedDamage || finalDamage;
   if (damage <= 0) return null;
   const enemyId = event.sourceId || action?.unitId || null;
   const enemyName = sourceNameForDamage(event, action, unitsById);
@@ -301,4 +302,8 @@ function runManualFlowPreviewTransaction(ctx, rawCommand) {
   }
 }
 
-module.exports = { buildMoveManualFlowPreview, runManualFlowPreviewTransaction };
+module.exports = {
+  buildMoveManualFlowPreview,
+  runManualFlowPreviewTransaction,
+  __test__: { damageThreatFromEvent }
+};

@@ -50,6 +50,7 @@ test('normal game page splits route shop and battle into three scenes', () => {
   assert.doesNotMatch(css, /\.scene-tabs|\.shop-toolbar/, 'normal player styles should not include console control bars');
 
   assert.match(js, /createGameRuntime/, 'normal page should use shared runtime client');
+  assert.match(js, /createGameRuntime\(\{ playerId, mode: params\.get\('runtime'\) \|\| 'local' \}\)/, 'normal page should default to the local single-player runtime');
   assert.match(js, /runtime\.view\(\)/, 'normal page should read through /api/view');
   assert.match(js, /runtime\.action/, 'normal page should mutate only through /api/action');
   assert.match(js, /runtime\.save\(\)/, 'normal page should save through runtime save');
@@ -100,6 +101,16 @@ test('normal game page splits route shop and battle into three scenes', () => {
   assert.match(html, /id="formal-battle-link"[\s\S]*hidden/, 'formal battle direct link should exist but stay hidden for normal players');
   assert.match(js, /function battlePageHref/, 'normal battle scene should build a formal battle page href');
   assert.match(js, /new URL\('index\.html'/, 'battle handoff should target the formal battle page');
+  assert.match(js, /url\.searchParams\.set\('runtime', params\.get\('runtime'\) \|\| 'local'\)/, 'formal battle handoff should keep local runtime as the default');
+  assert.match(js, /function syncLocalBattleFrame/, 'local normal game should save the current run before handing off to the formal battle iframe');
+  assert.match(js, /FORMAL_BATTLE_SAVE_KEY/, 'local handoff should use the formal page local save slot');
+  assert.match(js, /loadGameFromStorage\(\)/, 'formal battle iframe should load the handed-off local save through its public page API');
+  assert.match(js, /let activeSessionId = params\.get\('sessionId'\) \|\| ''/, 'normal page should track the current HTTP session id even when URL has no sessionId');
+  assert.match(js, /function rememberSessionId/, 'normal page should remember the session id returned by /api/view or /api/action');
+  assert.match(js, /rememberSessionId\(data\)/, 'normal page should update the session id from runtime responses');
+  assert.match(js, /activeSessionId\) url\.searchParams\.set\('sessionId', activeSessionId\)/, 'embedded battle page must receive the live normal-game session id');
+  assert.match(js, /function battleFrameKey/, 'normal page should derive a battle frame key from the current route battle state');
+  assert.match(js, /url\.searchParams\.set\('battleState', battleFrameKey\(\)\)/, 'embedded battle page URL should change when a new time-point battle starts');
   assert.match(js, /formal-battle-frame/, 'normal page should mount the formal battle page iframe');
   assert.match(js, /formal-battle-link/, 'normal page should keep a direct formal battle link');
   assert.match(js, /function applyFormalBattlePlayerMode/, 'normal flow should hide debug-only controls inside the embedded formal battle page');
@@ -183,6 +194,73 @@ test('normal game deploys every active pet into seed-stable left-bottom cells', 
 
   assert.equal(benchState.inventory.filter(item => item.active !== false).length, 3, 'bench pet should become a third active pet');
   assert.ok(inDeployZone(activatedUnit.position), 'activated bench pet should use the same deployment zone');
+});
+
+test('route battle entry is deterministic by seed and current time point', () => {
+  const { createYSBZSUIAdapter } = require('../../src/uiAdapter.cjs');
+
+  function runUntilRouteBattleEntry(adapter) {
+    for (let step = 0; step < 20; step += 1) {
+      const vm = adapter.getViewModel();
+      const routeBattle = vm.nextActions.find(item => item.type === 'RUN_ROUTE_FIXED_BATTLE');
+      if (routeBattle) return routeBattle;
+      const generateNodes = vm.nextActions.find(item => item.type === 'GENERATE_NODE_OPTIONS');
+      if (generateNodes) {
+        adapter.run(generateNodes.type, generateNodes.defaultPayload);
+        continue;
+      }
+      if ((vm.dayRoute?.options || []).length) {
+        adapter.pickNode(vm.dayRoute.options[0].optionId);
+        continue;
+      }
+      if (vm.phase === 'shop') {
+        adapter.run('EXIT_SHOP');
+        continue;
+      }
+      if ((vm.rewards || []).length) {
+        adapter.run('PICK_REWARD', { index: 0 });
+        continue;
+      }
+      const generateBattles = vm.nextActions.find(item => item.type === 'GENERATE_BATTLE_OPTIONS');
+      if (generateBattles) {
+        adapter.run(generateBattles.type, generateBattles.defaultPayload);
+        continue;
+      }
+      if ((vm.dayRoute?.battleOptions || []).length) {
+        adapter.pickBattleEncounter(vm.dayRoute.battleOptions[0].encounterId);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  function runRouteBattle(seed) {
+    const adapter = createYSBZSUIAdapter({ day: 1, gold: 8, seed, activePets: ['pal_001', 'pal_002'] });
+    const action = runUntilRouteBattleEntry(adapter);
+    assert.ok(action, 'current route should expose a time-point battle entry after player choices');
+    adapter.run(action.type, action.defaultPayload);
+    const vm = adapter.getViewModel();
+    return {
+      phase: vm.phase,
+      period: vm.period,
+      scheduleStep: vm.dayRoute.pendingBattle?.scheduleStep,
+      enemies: vm.enemies.map(unit => ({
+        petId: unit.petId,
+        quality: unit.quality,
+        position: unit.position,
+        hp: unit.hp,
+        atk: unit.atk
+      })),
+      ownedPets: vm.inventory.active.map(unit => ({ petId: unit.petId, active: unit.active !== false }))
+    };
+  }
+
+  assert.deepEqual(
+    runRouteBattle('normal-time-battle-seed'),
+    runRouteBattle('normal-time-battle-seed'),
+    'same seed and same time point should generate the same battle enemies from player-owned state'
+  );
+  assert.equal(runRouteBattle('normal-time-battle-seed').phase, 'player_turn', 'route battle should enter player turn through the current time-point command');
 });
 
 test('normal game seeded save contract is deterministic and server new-game accepts seed', () => {

@@ -3,8 +3,9 @@ import { createGameRuntime } from './js/runtime-client.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(window.location.search || '');
 const playerId = params.get('playerId') || 'p1';
-const runtime = createGameRuntime({ playerId, mode: params.get('runtime') || 'http' });
+const runtime = createGameRuntime({ playerId, mode: params.get('runtime') || 'local' });
 const NORMAL_GAME_SAVE_KEY = 'ysbzs.normalGame.save.v1';
+const FORMAL_BATTLE_SAVE_KEY = 'ysbzs.save.slot1';
 const PHASE_TEXT = {
   init: '准备',
   node_choice: '3 选 1',
@@ -24,6 +25,7 @@ let vm = null;
 let busy = false;
 let commandNo = 1;
 let autoRouteInFlight = false;
+let activeSessionId = params.get('sessionId') || '';
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
@@ -115,8 +117,13 @@ function setSeedValue(seed) {
   if (el && seed) el.value = seed;
 }
 
+function rememberSessionId(data) {
+  if (data?.sessionId) activeSessionId = String(data.sessionId);
+}
+
 async function loadView() {
   const data = await runtime.view();
+  rememberSessionId(data);
   vm = data.viewModel;
   render();
   await autoGenerateRouteChoices();
@@ -127,6 +134,7 @@ async function runCommand(type, payload = {}) {
   setBusy(true);
   try {
     const data = await runtime.action(makeCommand(type, payload));
+    rememberSessionId(data);
     vm = data.viewModel || vm;
     render(data.events || []);
     await autoGenerateRouteChoices();
@@ -140,6 +148,7 @@ async function runCommand(type, payload = {}) {
 
 async function saveRun() {
   const data = await runtime.save();
+  rememberSessionId(data);
   if (!data?.save) throw new Error('SAVE_EMPTY');
   window.localStorage?.setItem(NORMAL_GAME_SAVE_KEY, JSON.stringify(data.save));
   setToolStatus(`已保存 v${data.save.state?.stateVersion ?? vm?.stateVersion ?? 0}`);
@@ -154,6 +163,7 @@ function savedRunFromStorage() {
 
 async function loadRun(saveDoc = savedRunFromStorage(), options = {}) {
   const data = await runtime.load(saveDoc);
+  rememberSessionId(data);
   vm = data.viewModel || vm;
   render();
   await autoGenerateRouteChoices();
@@ -169,6 +179,7 @@ async function restartRunWithSeed(seed = seedValue(), options = {}) {
     gold: 8,
     seed
   }));
+  rememberSessionId(data);
   vm = data.viewModel || vm;
   render(data.events || []);
   await autoGenerateRouteChoices();
@@ -183,6 +194,7 @@ async function autoGenerateRouteChoices() {
   setBusy(true);
   try {
     const data = await runtime.action(makeCommand(action.type, action.defaultPayload || {}));
+    rememberSessionId(data);
     vm = data.viewModel || vm;
     render(data.events || []);
   } catch (err) {
@@ -490,13 +502,52 @@ function renderShopScene() {
   renderRoster('shop');
 }
 
+function battleFrameKey() {
+  const pending = vm?.dayRoute?.pendingBattle || {};
+  const encounter = pending.encounter || vm?.dayRoute?.currentEncounter || {};
+  return [
+    vm?.battleId || '',
+    vm?.stateVersion ?? 0,
+    pending.scheduleStep || encounter.scheduleStep || vm?.dayRoute?.nodeIndex || '',
+    encounter.encounterId || '',
+    vm?.period || ''
+  ].join(':');
+}
+
 function battlePageHref() {
   const url = new URL('index.html', window.location.href);
-  url.searchParams.set('runtime', params.get('runtime') || 'http');
+  url.searchParams.set('runtime', params.get('runtime') || 'local');
   url.searchParams.set('normalMode', '1');
-  if (params.get('sessionId')) url.searchParams.set('sessionId', params.get('sessionId'));
+  if (activeSessionId) url.searchParams.set('sessionId', activeSessionId);
+  url.searchParams.set('battleState', battleFrameKey());
   if (params.get('playerId')) url.searchParams.set('playerId', params.get('playerId'));
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function hydrateFormalBattleFrame(frame, attempt = 0) {
+  applyFormalBattlePlayerMode(frame);
+  if (runtime.kind !== 'local') return;
+  const api = frame?.contentWindow?.__YSBZS__;
+  if (api?.loadGameFromStorage) {
+    api.loadGameFromStorage();
+    return;
+  }
+  if (attempt < 40) setTimeout(() => hydrateFormalBattleFrame(frame, attempt + 1), 50);
+}
+
+async function syncLocalBattleFrame(frame, href, key) {
+  if (runtime.kind !== 'local') return false;
+  if (frame.dataset.localBattleSyncKey === key && frame.getAttribute('src') === href) return true;
+  frame.dataset.localBattleSyncKey = key;
+  try {
+    const data = await runtime.save();
+    if (data?.save) window.localStorage?.setItem(FORMAL_BATTLE_SAVE_KEY, JSON.stringify(data.save));
+    if (frame.getAttribute('src') !== href) frame.setAttribute('src', href);
+    else hydrateFormalBattleFrame(frame);
+  } catch (err) {
+    toast(err.message || String(err));
+  }
+  return true;
 }
 
 function applyFormalBattlePlayerMode(frame) {
@@ -534,9 +585,10 @@ function renderBattleScene(active = false) {
   link.href = href;
   if (!frame.dataset.playerModeBound) {
     frame.dataset.playerModeBound = 'true';
-    frame.addEventListener('load', () => applyFormalBattlePlayerMode(frame));
+    frame.addEventListener('load', () => hydrateFormalBattleFrame(frame));
   }
-  if (active && frame.getAttribute('src') !== href) frame.setAttribute('src', href);
+  if (active && runtime.kind === 'local') syncLocalBattleFrame(frame, href, battleFrameKey());
+  else if (active && frame.getAttribute('src') !== href) frame.setAttribute('src', href);
   if (active) applyFormalBattlePlayerMode(frame);
 }
 

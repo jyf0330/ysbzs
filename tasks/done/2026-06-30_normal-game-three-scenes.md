@@ -2,7 +2,7 @@
 
 task_id: 2026-06-30_normal-game-three-scenes
 type: ui-structure
-status: READY_TO_MERGE
+status: DONE
 owner: Codex
 branch: codex/bazaar-day1-day3-route
 
@@ -52,6 +52,19 @@ branch: codex/bazaar-day1-day3-route
 ## overlap_note
 
 - `src/uiAdapter.cjs` is also listed by existing replay / battle-debug / formal UI task cards; this follow-up records the overlap and remains non-auto-commit.
+- 2026-07-03 follow-up: 用户要求进入战斗时不能落回旧战斗场景；每个时间点的遭遇/开场战斗必须按当前时间点和同一 seed 稳定生成，只保留玩家拥有状态。This pass narrows writes to normal-game local/http handoff and deterministic route-battle contract tests.
+
+## write_scopes
+
+- file: `web/normal-game.js`
+  scope: default local runtime, local save handoff into formal battle iframe, HTTP session id capture, and battle iframe href refresh only
+  mode: direct
+- file: `tests/unit/normal_game_three_scenes.test.cjs`
+  scope: normal battle session handoff and deterministic route battle contracts
+  mode: direct
+- file: `tasks/doing/2026-06-30_normal-game-three-scenes.md`
+  scope: this follow-up status, write scopes, validation evidence
+  mode: direct
 
 ## read_files
 
@@ -69,6 +82,22 @@ branch: codex/bazaar-day1-day3-route
 
 ## validation
 
+- RED confirmed for time-point battle iframe refresh: `node --test tests/unit/normal_game_three_scenes.test.cjs` failed because `web/normal-game.js` did not track the server-returned `sessionId` and did not derive a `battleFrameKey` / `battleState` URL param for the embedded battle page.
+- RED confirmed for single-player runtime regression: `node --test tests/unit/normal_game_three_scenes.test.cjs` failed because `web/normal-game.js` still defaulted normal-game and the embedded formal battle page to `runtime=http` instead of local single-player runtime, and had no local save handoff into the iframe.
+- pass after local single-player handoff: `node --test tests/unit/normal_game_three_scenes.test.cjs` (7/7). Contract now requires default local runtime, formal iframe default local runtime, local save handoff through `ysbzs.save.slot1`, and iframe load through the formal page's public `loadGameFromStorage()` API.
+- pass after local single-player handoff: `node --input-type=module --check < web/normal-game.js`
+- pass after local single-player handoff: `node tests/run_all_tests.cjs` (67/67)
+- pass after local single-player handoff: `npm run check:all`
+- pass after local single-player handoff: default 4173 local browser flow at `http://127.0.0.1:4173/normal-game.html?seed=normal-local-handoff-live` with no `runtime=http`: clicked visible advanced menu `重开本局`, selected node choices `夜市商人`, `离开商店`, `免费刷新`, clicked route battle entry; iframe `src` was `/index.html?runtime=local&normalMode=1&battleState=battle_01_local:6:3:enc_d01_midday_a:上午`; parent and iframe ViewModel both had `phase=player_turn`, `period=上午`, `stateVersion=6`, `pendingBattle.scheduleStep=3`, enemies=`棉悠悠:青铜@1,5` and `火绒狐:青铜@1,6`; board cells=64, unit cells=5; console/page errors=0.
+- screenshot reviewed by Lead after local single-player handoff: `/Users/ywh/Documents/ysbzs/output/playwright/normal-local-handoff-1783019109122.png`; normal page enters the formal battle iframe through local runtime, with matching generated enemy pets and no obvious missing board state.
+- note after local single-player handoff: no `web/js/main.js` edit was made because it is occupied by another ACTIVE task; the handoff uses its existing public page API. No `web/js/local-engine.js` rebuild was run because this pass only changed direct `web/normal-game.js` and tests, not core/adapter bundle inputs.
+- pass after time-point battle iframe refresh: `node --test tests/unit/normal_game_three_scenes.test.cjs` (7/7). New contract covers current-session iframe handoff and same-seed/current-time-point route battle determinism through public route commands.
+- pass after time-point battle iframe refresh: `node --input-type=module --check < web/normal-game.js`
+- pass after time-point battle iframe refresh: `node tests/run_all_tests.cjs` (67/67)
+- pass after time-point battle iframe refresh: `npm run check:all`
+- pass after time-point battle iframe refresh: 4173 real browser flow at `http://127.0.0.1:4173/normal-game.html?runtime=http&sessionId=normal-time-battle-1783018568308&seed=normal-time-battle-live`: clicked visible advanced menu `重开本局`, selected time-node choices `免费刷新` twice, clicked visible route battle entry `进入第一场战斗`; iframe `src` included `sessionId=normal-time-battle-1783018568308` and `battleState=battle_01_normal-time-battle-live:5:3:enc_d01_midday_a:上午`; ViewModel `phase=player_turn`, `period=上午`, `pendingBattle.scheduleStep=3`; board cells=64, unit cells=5, generated enemies=`捣蛋猫:青铜@1,6` and `棉悠悠:青铜@1,7`; console/page errors=0.
+- screenshot reviewed by Lead after time-point battle iframe refresh: `/Users/ywh/Documents/ysbzs/output/playwright/normal-timepoint-battle-clean-normal-time-battle-clean-1783018597593.png`; normal page hosts the formal battle iframe for the current route battle, generated enemy pets are visible, and there is no obvious overlap or missing board state.
+- note after time-point battle iframe refresh: no `web/js/local-engine.js` rebuild was needed because this pass changes direct `web/normal-game.js` page code only; core battle generation already resets battlefield and spawns enemies from current route time point / seed.
 - pass after normal pet detail expansion: `node --input-type=module --check < web/normal-game.js`
 - pass after normal pet detail expansion: `node --test tests/unit/normal_game_three_scenes.test.cjs` (6/6)
 - pass after normal pet detail expansion: `git diff --check -- web/normal-game.js web/normal-game.css tests/unit/normal_game_three_scenes.test.cjs`

@@ -2,26 +2,11 @@
 
 当前界面是三栏布局：左英雄，中棋盘，右行动槽/控制，底部日志。
 
-## Skill Gate
+## 执行门禁
 
-界面、交互、HUD、棋盘点击、按钮、布局、可读性任务，改文件前必须先读并回执：
-
-- `game-ui-frontend`
-- `frontend-skill`
-- `ywh-web-game`
-- `playwright` 或 `game-playtest`
-
-如果是“点不了、移动不了、选不中、状态不对”等可观察行为异常，还必须走：
-
-- `systematic-debugging`
-- `test-driven-development`
-
-回执格式：
-
-```text
-本轮命中 skill：<skill names>
-已读取：docs/roles/UI_UX_START.md, <SKILL.md names>
-```
+- 界面、交互、HUD、棋盘点击、按钮、布局、可读性任务，改文件前先读本文件和任务系统规则，创建或更新任务卡并检查写入冲突。
+- “点不了、移动不了、选不中、状态不对”等可观察行为异常，先复现和定位根因，再按 TDD 补失败用例、实现修复并回归。
+- 可见改动必须走正式玩家入口和真实浏览器验收，保留截图、console 与状态证据。
 
 交互主线：选英雄 → 点空格移动 / 点目标格查看 → 选槽 → 调方向 → 施放 → 结束回合。
 

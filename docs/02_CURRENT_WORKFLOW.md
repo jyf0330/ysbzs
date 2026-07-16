@@ -218,7 +218,7 @@ Use patch-style diffs when useful.
 Run:
 
 ```text
-classify task -> trigger planning skills -> propose diff -> report
+classify task -> inspect relevant rules -> propose diff -> report
 ```
 
 ## 策划
@@ -317,108 +317,6 @@ update task cards                         # 归入对应任务 / 新建表格同
 update tasks/index.md
 report
 ```
-
-## Skill Routing
-
-Use skills as routing gates, not as a second copy of project rules.
-
-### Superpowers / YWH Routing Policy
-
-- `using-superpowers` is the first process check whenever a Superpowers skill may apply.
-- Superpowers owns execution discipline: brainstorming, planning, debugging, TDD, delegation, completion verification, and branch finish.
-- `ywh` / `ywh-game` are project policy adapters: memory pack rules, task cards, changelog, Git handoff, and game-project document gates.
-- `ywh-web-game`, `playwright`, and `game-playtest` are browser evidence adapters. Load them for UI / browser / visible acceptance work, not for generic workflow-doc edits.
-- `task-occupancy` is the first edit gate for any repository file change.
-- `verification-before-completion` is deferred until the agent is about to claim completion, commit, or hand off a finished task.
-
-| Intent | Skills |
-|---|---|
-| Session start or any task where a Superpowers skill may apply | `using-superpowers` |
-| Any clear `Goal` that implies edits | `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`; add `ywh-web-game` only for browser/UI/visible evidence work |
-| Before modifying code, UI, rules, tests, project workflow files, or delivery assets | `task-occupancy` |
-| Implement code, UI, or rules | `task-occupancy`, then the narrow implementation/debugging skill needed by the task; `verification-before-completion` before claiming done |
-| Bug, anomaly, failed test, failed acceptance | `systematic-debugging`, `test-driven-development`, `verification-before-completion` |
-| Existing plan, task card, executable GDD | `executing-plans`, `subagent-driven-development`, `verification-before-completion` |
-| Unclear goal, exploration, standalone `diff` | `brainstorming`, `writing-plans`, `ywh-game` |
-| Consultation, architecture evaluation, engine/tool choice, “要不要做 / 值不值得做” | `ywh-game` + 1 个最相关领域 skill；先不要默认加载实现/验收 skill |
-| Numbers, rules, levels, systems | `brainstorming`, `writing-plans`, `balance-check`, `ywh-game` |
-| Browser UI, H5, Canvas, E2E | `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
-| UI/UX, interface, 界面, 交互, HUD, 棋盘点击, 按钮, 布局, 可读性 | `game-ui-frontend`, `frontend-skill`, `ywh-web-game`, `playwright`, `game-playtest`, `verification-before-completion`; before commit run 提交前可见验收门禁 |
-| UI behavior bug, 点不了, 移动不了, 选不中, 状态不对 | `systematic-debugging`, `test-driven-development`, `game-ui-frontend`, `ywh-web-game`, `playwright`, `verification-before-completion` |
-| Docs, CHANGELOG, workflow rules that require edits | `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`; `verification-before-completion` before claiming done |
-| `git-c`, finish, pre-commit check | `task-occupancy`, `verification-before-completion`, `ywh`, `ywh-game` |
-| Read-only review or workflow audit | `ywh-game` |
-
-### Skill Load Discipline
-
-Do not load every matched skill at once by default.
-
-- `required now`: 当前阶段立刻决定方法或边界的 skill，先读这些。
-- `supporting`: 只有当主 skill 明显不够时再补读。
-- `deferred`: 只有任务进入实现、浏览器取证、测试修复或完成宣称阶段才加载。
-
-默认规则：
-
-- 咨询 / 评估 / 选型 / “是否值得做” → 先加载 `required now`，通常是 `ywh-game` + 1 个最相关领域 skill。
-- 工作流 / CHANGELOG / 任务系统文档变更 → `required now` 是 `using-superpowers`, `task-occupancy`, `ywh`, `ywh-game`；`verification-before-completion` 在收尾前加载；不要默认加载浏览器验收 skill。
-- 不改文件、不开浏览器、不宣称完成时，不要默认加载 `playwright`、`game-playtest`、`verification-before-completion`、`test-driven-development`。
-- 一旦任务从咨询态切到实现态、验收态或完成态，再补齐对应 skill。
-- 若多个领域 skill 都可能适用，先选最窄的一组；需要时再增量追加。
-
-### Required Receipts
-
-Before editing files for a task that has a hard skill gate, write a short Skill Receipt:
-
-```text
-本轮命中 skill：<skill names>
-已读取：<project entry / role entry / SKILL.md names>
-```
-
-For UI/UX, HUD, board-click, or visible interaction work, this receipt is a hard
-gate. Do not edit UI files until `game-ui-frontend` or `frontend-skill` and
-`ywh-web-game` have been read or explicitly marked `UNAVAILABLE`.
-
-For any task that will edit repository files, `task-occupancy` is the first gate:
-
-```text
-read workflow/task docs -> git status ->
-if editing: create/update thin ACTIVE task card ->
-reserve related_files/write_scopes/exclusive_files ->
-check overlap / dirty files -> edit -> verify ->
-visible changes: testing subthread screenshot gate ->
-archive task card -> commit if conditions allow
-```
-
-If the task system is required but `tasks/` is missing, create the minimal
-`tasks/index.md`, `tasks/README.md`, `tasks/doing/`, `tasks/paused/`, and
-`tasks/done/` structure before editing. If another ACTIVE task owns the same
-`exclusive_files`, or the same `write_scopes` / semantic interface, stop with
-`FILE_CONFLICT_STOP` unless the user explicitly continues or merges that task.
-
-Do not create task cards for read-only answers, exact source lookup, standalone `diff` / `策划`, or trivial one-command checks. Those turns should leave `tasks/` untouched.
-
-For normal consultation, read-only review, narrow lookup, or a trivial one-command check, do not load a broad stack of skills just because keywords overlap. Use the smallest relevant skill set and continue.
-
-If a hard-gate skill cannot be invoked because the current AI tool does not
-expose it, the skill is missing, or the user explicitly excludes it, the final report must include one of:
-
-- `SKIPPED <skill-name>: <reason>`
-- `UNAVAILABLE <skill-name>: <reason>`
-
-For Claude/DeepSeek sessions, `cys` appends a routing reminder at startup, but
-this file remains the project-level source of truth. The model choice does not
-change the hard gates above.
-
-## Missing Skills
-
-If a matching skill is unavailable, write `UNAVAILABLE`.
-Do not pretend the skill was used.
-Continue with this file's rules.
-Do not edit another tool's skill directory.
-
-Codex note:
-
-- Before writing `UNAVAILABLE` for a Superpowers skill, check both `~/.codex/skills/<skill-name>/SKILL.md` and `~/.codex/skills/superpowers/skills/<skill-name>/SKILL.md`.
 
 ## 任务系统入口
 

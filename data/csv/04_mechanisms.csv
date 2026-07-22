@@ -42,14 +42,14 @@ M39,mech_summon_after_kill,击杀召唤,召唤/成长,宠物/怪物,after_kill,�
 M40,mech_hatch_after_rounds,孵化倒计时,召唤/倒计时,怪物/事件,round_end,倒计时归零,rounds=3; summon=mon_elite_egg,若未提前击破，孵化成更强单位。,{unit} 孵化完成。,8,高,正式,待接入,0,1,1,1,非常适合事件怪/蛋。
 M41,mech_fire_ignite_bonus,火层增伤,元素/火,宠物/怪物,element_damage,火层结算,per_layer=1,火元素层结算额外增伤。,火焰增强，额外造成 {bonus} 伤害。,5,中,正式,可接入,1,1,0,0,火系基础词条。
 M42,mech_water_heal_on_layer,水层治疗,元素/水,宠物,after_element_apply,施加水层,heal_per_layer=1,施加水层时治疗友方。,水流治疗 {heal} 点。,5,中,正式,待接入,1,0,0,0,水系基础词条。
-M43,mech_wind_push_on_hit,风系推拉,元素/风,宠物/怪物,after_hit,风元素命中,distance=1,命中后推开/拉动目标。,风力推动目标 {distance} 格。,6,中,正式,待接入,1,1,0,0,需移动规则。
-M44,mech_earth_shield_on_layer,土层护盾,元素/土,宠物,after_element_apply,施加土层,shield_per_layer=2,施加土层获得护盾。,土元素提供 {shield} 点护盾。,5,中,正式,待接入,1,0,0,0,土系基础词条。
+M43,mech_wind_push_on_hit,元素推拉,元素/通用,宠物/怪物,after_hit,任意元素命中,distance=1,命中后推开/拉动目标。,{element}元素推动目标 {distance} 格。,6,中,正式,待接入,1,1,0,0,兼容旧机制ID；适配九系与双属性。
+M44,mech_earth_shield_on_layer,元素层护盾,元素/通用,宠物,after_element_apply,施加任意元素层,shield_per_layer=2,施加元素层获得护盾。,{element}元素提供 {shield} 点护盾。,5,中,正式,待接入,1,0,0,0,兼容旧机制ID；适配九系与双属性。
 M45,mech_multi_element_bonus,多元素共鸣,元素/多元素,宠物/怪物,element_settle,同格多元素>=2,bonus=3,同格多元素结算额外效果。,多元素共鸣，额外造成 {bonus}。,7,高,正式,待接入,1,1,0,0,别过早削弱。
 M46,mech_trap_stack_trigger,陷阱叠加触发,元素/陷阱,宠物/怪物,on_enter_cell,进入陷阱格,trigger_all=true,踩入格子时触发该格所有元素陷阱。,{unit} 踩中陷阱，触发全部元素。,7,高,正式,待接入,1,1,0,1,对应已定陷阱叠加规则。
 M47,mech_fire_cross_detonate_diamond,火魔十字引爆,元素/火,钻石火魔,element_explode,火魔钻石且在场/背包,shape=cross5,火引爆改为十字五格。,火魔引爆十字区域。,10,高,正式,待接入,1,0,0,0,仅钻石火魔，不得默认全局启用。
 M48,mech_water_cleanse_debuff,水系净化,元素/水,宠物,round_start,友方有负面状态,cleanse=1,移除负面状态。,水流净化了 {count} 个负面状态。,6,中,正式,待接入,1,0,0,0,状态系统后接。
-M49,mech_wind_slow_ap,风系减行动,元素/风,宠物/怪物,after_hit,风元素命中,ap_delta=-1,降低目标行动力或本回合AP。,风压降低目标行动力。,6,中,正式,待接入,1,1,0,0,牵制机制。
-M50,mech_earth_block_cell,土系阻挡,元素/土,宠物/怪物,after_element_apply,目标格可阻挡,duration=1; hp=6,土元素形成阻挡地块。,土墙阻挡路径。,7,高,正式,待接入,1,1,0,0,需地形/单位层分离。
+M49,mech_wind_slow_ap,元素减行动,元素/通用,宠物/怪物,after_hit,任意元素命中,ap_delta=-1,降低目标行动力或本回合AP。,{element}元素降低目标行动力。,6,中,正式,待接入,1,1,0,0,兼容旧机制ID；适配九系与双属性。
+M50,mech_earth_block_cell,元素阻挡,元素/通用,宠物/怪物,after_element_apply,目标格可阻挡,duration=1; hp=6,任意元素形成阻挡地块。,元素地块阻挡路径。,7,高,正式,待接入,1,1,0,0,兼容旧机制ID；适配九系与双属性。
 M51,mech_curse_gold_loss,金币诅咒,诅咒/经济,事件/怪物,battle_end,单位存活或事件选择,gold=-2,减少金币。,诅咒生效，金币 {gold}。,4,中,正式,待接入,0,1,1,1,事件和失败惩罚可复用。
 M52,mech_reduce_reward_if_alive,存活减奖,诅咒/奖励,波次/怪物,battle_end,特定怪物未击杀,reward_pct=-0.2,降低奖励倍率。,敌人未清，奖励降低。,5,中,正式,待接入,0,1,1,1,波次用。
 M53,mech_castle_line_damage,城堡扣线,波次/失败,波次/怪物,battle_fail,战斗失败或怪物越线,castle_hp=-1,扣城堡线。,城堡受到 {damage} 点损害。,5,中,正式,可接入,0,1,1,1,10回合失败核心。

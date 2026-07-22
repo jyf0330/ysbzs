@@ -23,7 +23,7 @@
 - `tasks/doing/2026-06-30_main-page-hub.md` — UI navigation: 主入口大厅页。
 - `tasks/doing/2026-06-30_pet-detail-cards-image.md` — asset: 宠物中文详情图。
 - `tasks/doing/2026-06-30_pet-detail-final-stats.md` — UI detail: 棋盘详情面板只显示最终战斗属性。
-- `tasks/doing/2026-06-30_pets-redesign-v3-data-source.md` — data pipeline: 宠物重设计数据源接入。
+- `tasks/done/2026-06-30_pets-redesign-v3-data-source.md` — data pipeline: 宠物重设计、九系双属性、商品店表和七张策划工作表已完成并释放总表租约。
 - `tasks/doing/2026-06-30_quality-evolution-point-rng.md` — rules: 品质成长随机进化点。
 - `tasks/doing/2026-06-30_round-placement-preview-reset.md` — bugfix: 新回合智能站位可用性。
 - `tasks/doing/2026-06-30_seeded-pet-levels-excel.md` — data artifact: seed 全品质成长 Excel。

@@ -2,9 +2,10 @@
 
 task_id: 2026-06-30_pets-redesign-v3-data-source
 type: data-pipeline
-status: READY_TO_MERGE
+status: DONE
 owner: Codex
 branch: codex/bazaar-day1-day3-route
+done_at: 2026-07-22
 
 ## Goal
 
@@ -27,10 +28,12 @@ branch: codex/bazaar-day1-day3-route
 - follow-up: 用户确认 `PETS` 前 7 个宠物是设计基准；本轮按该基准先重平衡后续 5 个宠物 `pal_008`-`pal_012`，保留名字、元素、定位、机制和形状，只修正异常基础数值。
 - follow-up: 重新设计前 7 个宠物前，先清空 `pal_001`-`pal_007` 的可见定位，并把机制统一重置为无机制 `none`，形成重新定位的空白底稿。
 - follow-up: 按用户确认的策划模型新增“所有商品店表”：宠物/商品行只用逗号字段声明可进入哪些商品店，商品店自身独立成表，一行一个店铺/摊位。
+- follow-up: 恢复帕鲁九系 `无/火/水/草/雷/冰/地/暗/龙` 与双属性；现有 `副属` 中的原始属性作为迁移依据，宠物、行动槽、商品行、元素商店和 runtime database 同步生成，不再压缩为火/水/风/土。
 
 ## related_files
 
 - `xlsx/ysbzs_master.xlsx`
+- `outputs/multi-element-20260721/ysbzs_master.xlsx`
 - `tools/export_master_to_csv.py`
 - `src/core/csvData.cjs`
 - `src/core/data.cjs`
@@ -40,11 +43,18 @@ branch: codex/bazaar-day1-day3-route
 - `data/csv/06_shop_rewards.csv`
 - `data/csv/08_action_shapes.csv`
 - `data/csv/30_shop_stores.csv`
+- `data/csv/04_mechanisms.csv`
+- `data/csv/05_events.csv`
+- `data/csv/07_relic_blessings.csv`
+- `data/csv/19_triggers.csv`
+- `data/csv/22_element_conversion_rules.csv`
+- `data/csv/25_node_pool.csv`
 - `data/csv/10_initial_roster.csv`
 - `tools/build_human_master.py`
 - `tools/check_csv_data.cjs`
 - `src/core/buildSummary.cjs`
 - `tests/run_all_tests.cjs`
+- `tests/unit/action_slot_element_layers.test.cjs`
 - `tests/csv_source.test.cjs`
 - `tests/full_coverage.test.cjs`
 - `tests/day7_fire_trial.test.cjs`
@@ -137,6 +147,11 @@ branch: codex/bazaar-day1-day3-route
 - pass follow-up: `node tests/run_all_tests.cjs` (67/67)
 - pass follow-up: `node --test tests/ui_adapter.test.cjs` (48/48)
 - pass follow-up: `npm run check:all`
+- pass nine-element follow-up: planner workbook and CSV export now use `无/火/水/草/雷/冰/地/暗/龙`; 127 pets include 23 dual-affinity rows and 37 total stores including nine non-empty element stores.
+- pass nine-element follow-up: `npm run data:export`, `npm run data:export:check`, `npm run check:csv`, `node tests/run_all_tests.cjs` (67/67), and `node --test tests/unit/action_slot_element_layers.test.cjs` (3/3).
+- pass nine-element follow-up: `node tools/build_local_engine_bundle.cjs` and `npm run check:ui-connected`; live 4173 page shows the migrated neutral starter and three neutral action slots with no browser console errors.
+- pass nine-element follow-up: rendered and visually reviewed all seven planner sheets; deliverable copy is `outputs/multi-element-20260721/ysbzs_master.xlsx`.
+- blocked nine-element follow-up: full `npm run check:all` reaches unit tests but fails in pre-existing untracked `tests/unit/manual_flow_preview_lethal_diff.test.cjs` (`diff.after.hp` expected 0, actual 6), owned by the separate manual-flow preview task; this data task did not edit that file.
 - pass follow-up: workbook `PETS` and `PETS_REDESIGN_V3_19形状` now replace visible `mechanism_id` with `cell_count`; sample rows `pal_001=1`, `pal_005=2`.
 - pass follow-up: exporter keeps runtime `机制ID` from baseline CSV when planner sheets no longer expose `mechanism_id`, so mechanism wiring is not erased by the planner-facing column change.
 - pass follow-up: `python3 -m py_compile tools/export_master_to_csv.py`
@@ -194,8 +209,17 @@ branch: codex/bazaar-day1-day3-route
 
 ## commit_plan
 
-- message: `data: adopt pets redesign v3 sheet`
-- auto_commit: blocked by unrelated untracked seeded-pet-levels artifact task and shared generated `web/js/local-engine.js` ownership across existing READY_TO_MERGE UI/core task groups; use precise staging only after git-c / Lead grouping.
+- message: `data: complete pets redesign v3 source`
+- precise staging: only this task's workbook, generated CSV, exporters, data assertions, task-only generated browser bundle, deliverable workbook copy, task card, and index hunk.
+- shared dirty files and unrelated untracked tasks remain outside this commit.
+
+## closeout_validation
+
+- PASS: artifact-tool imported and rendered all seven planner sheets (`README`, `PETS`, `SHOP_STORES`, `WAVES`, `SHOP_ITEMS`, `MECHANICS_QUALITY`, `SHAPES_TRIALS`); no formula-error matches.
+- PASS: current workspace `npm run data:export:check`, `npm run check:csv`, `node tests/run_all_tests.cjs` (67/67), and `node --test tests/unit/action_slot_element_layers.test.cjs` (3/3).
+- PASS: isolated detached worktree containing only this task's files rebuilt `web/js/local-engine.js`, passed `npm run data:export:check`, and passed complete `npm run check:all`.
+- NOTE: the shared workspace's complete check still sees the separate untracked `manual_flow_preview_lethal_diff.test.cjs`; isolated verification proves that failure is outside this task boundary.
+- RELEASED: all `exclusive_files` listed above are released after this task commit.
 
 ## collaboration
 

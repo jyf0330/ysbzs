@@ -62,6 +62,8 @@ SHOP_PRICE_BY_TIER_POOL = {
 }
 LEGACY_PLACEHOLDERS = {"44"}
 ROLE_TAGS = {"经济", "坦克", "治疗", "输出", "控制", "机动", "召唤", "防御", "牵制"}
+PAL_ELEMENTS = ["无", "火", "水", "草", "雷", "冰", "地", "暗", "龙"]
+LEGACY_ELEMENT_MAP = {"风": "无", "土": "地"}
 
 NS_MAIN = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
@@ -342,12 +344,24 @@ def unique_join(values, sep="、"):
     return sep.join(out)
 
 
+def pet_elements(pet):
+    primary = split_list_text(pet.get("element"))
+    secondary = split_list_text(pet.get("secondary_element"))
+    values = [*primary, *secondary]
+    out = []
+    for value in values:
+        canonical = LEGACY_ELEMENT_MAP.get(value, value)
+        if canonical in PAL_ELEMENTS and canonical not in out:
+            out.append(canonical)
+    return out or ["无"]
+
+
 def build_pet_tags(pet, old_tags=""):
     old_tag_parts = split_list_text(old_tags)
     if "role" in pet and not str(pet.get("role") or "").strip():
         old_tag_parts = [tag for tag in old_tag_parts if tag not in ROLE_TAGS]
     return unique_join([
-        pet.get("element"),
+        *pet_elements(pet),
         pet.get("role"),
         pet.get("old_role"),
         *old_tag_parts,
@@ -361,13 +375,13 @@ def build_shop_pools(existing, pet, tier_pool):
     pools = split_list_text(existing)
     if "role" in pet and not str(pet.get("role") or "").strip():
         pools = [pool for pool in pools if not pool.startswith("role_")]
-    element = pet.get("element", "")
+    elements = pet_elements(pet)
     role = pet.get("role", "")
     old_role = pet.get("old_role", "")
     if "night_base" not in pools:
         pools.insert(0, "night_base")
     additions = []
-    if element:
+    for element in elements:
         additions.append(f"elem_{element}")
     if old_role:
         additions.append(f"role_{old_role}")
@@ -610,7 +624,8 @@ def generated_tables(master_path, baseline_dir):
                 if not pet:
                     continue
                 row["名称"] = first_non_empty(pet.get("name"), row.get("名称"))
-                row["元素"] = first_non_empty(pet.get("element"), row.get("元素"))
+                elements = pet_elements(pet)
+                row["元素"] = elements[0]
                 row["品质"] = first_non_empty(pet.get("tier"), row.get("品质"))
                 row["定位"] = sheet_value(pet, "role", row.get("定位"), allow_blank=True)
                 row["体型"] = first_non_empty(pet.get("body_size"), row.get("体型"))
@@ -623,7 +638,7 @@ def generated_tables(master_path, baseline_dir):
                 row["效果分"] = format_number(pet_effect_scores.get(row.get("宠物ID", ""), panel_score(row)))
                 row["标签"] = first_non_empty(build_pet_tags(pet, row.get("标签")), row.get("标签"))
                 row["备注"] = first_non_empty(pet.get("note"), row.get("备注"))
-                row["副属"] = blank_legacy_placeholder(row.get("副属"))
+                row["副属"] = "、".join(elements[1:])
 
         elif filename == "02_monster_templates.csv":
             for row in output:
@@ -631,7 +646,7 @@ def generated_tables(master_path, baseline_dir):
                 if not pet:
                     continue
                 row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
-                row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
+                row["元素(自动)"] = pet_elements(pet)[0]
                 row["体型(自动)"] = first_non_empty(pet.get("body_size"), row.get("体型(自动)"))
                 row["宠物定位(自动)"] = sheet_value(pet, "role", row.get("宠物定位(自动)"), allow_blank=True)
                 row["HP"] = first_non_empty(pet.get("hp"), row.get("HP"))
@@ -678,7 +693,7 @@ def generated_tables(master_path, baseline_dir):
                 pet = pets_by_id.get(row.get("宠物ID", ""))
                 if pet:
                     row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
-                    row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
+                    row["元素(自动)"] = pet_elements(pet)[0]
                     row["品质(自动)"] = first_non_empty(pet.get("tier"), row.get("品质(自动)"))
                     row["定位(自动)"] = sheet_value(pet, "role", row.get("定位(自动)"), allow_blank=True)
                     row["标签(自动)"] = first_non_empty(build_pet_tags(pet, row.get("标签(自动)")), row.get("标签(自动)"))
@@ -711,7 +726,11 @@ def generated_tables(master_path, baseline_dir):
                 sid, sname = shape_parts(first_non_empty(pet.get("shape_id"), row.get("形状ID")))
                 shape = shapes_by_id.get(sid, {})
                 row["名称(自动)"] = first_non_empty(pet.get("name"), row.get("名称(自动)"))
-                row["元素(自动)"] = first_non_empty(pet.get("element"), row.get("元素(自动)"))
+                elements = pet_elements(pet)
+                row["元素(自动)"] = elements[0]
+                slot_count = max(1, int(first_non_empty(row.get("槽数"), "3")))
+                for slot_index in range(1, min(3, slot_count) + 1):
+                    row[f"槽{slot_index}元素"] = elements[(slot_index - 1) % len(elements)]
                 row["定位(自动)"] = sheet_value(pet, "role", row.get("定位(自动)"), allow_blank=True)
                 row["形状ID"] = first_non_empty(sid, row.get("形状ID"))
                 row["形状名"] = first_non_empty(shape.get("label"), sname, row.get("形状名"))

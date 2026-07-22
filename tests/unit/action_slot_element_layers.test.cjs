@@ -35,7 +35,7 @@ test('普通宠物三槽同格只累计 3 层元素，不把形状结算次数�
   }
 
   const targetCell = getCell(state, 7, 2);
-  assert.equal(targetCell.elements.风, 3);
+  assert.equal(targetCell.elements.无, 3);
 });
 
 test('捣蛋猫打捣蛋猫的行动预览只记录即时行动伤害，不提前混入回合末元素结算', () => {

@@ -20,11 +20,11 @@ node_d03_event_discount,node_pool_d03_growth,折扣摊位,event,60,3,night_base,
 node_d03_rest_gold,node_pool_d03_growth,休整补给,rest,50,3,,,,,3,禁用,直接获得金币
 node_d04_tier2_shop,node_pool_d04_growth,白银商会,shop,100,4,tier_pT2,,,4,,正式,进入 pT2 标签摊位
 node_d04_reward_tier2,node_pool_d04_growth,白银奖励,reward,90,4,,reward_pT2,,3,,正式,生成 3 个 pT2 奖励候选
-node_d04_wind_shop,node_pool_d04_growth,风系补货商人,shop,80,4,elem_风,,,4,,正式,进入风元素定向摊位
+node_d04_wind_shop,node_pool_d04_growth,雷系补货商人,shop,80,4,elem_雷,,,4,,正式,进入雷元素定向摊位（兼容旧节点ID）
 node_d04_event_upgrade,node_pool_d04_growth,升阶机会商人,event,76,4,special_merchant,reward_pT3,evt_upgrade_offer,,1,禁用,提升一个已拥有宠物等级
 node_d04_event_shield,node_pool_d04_growth,战前护盾祝福,event,75,4,role_坦克,reward_tank,evt_shield_bless,,2,禁用,下一场战斗我方获得护盾
 node_d04_control_shop,node_pool_d04_growth,控制补强商人,shop,70,4,role_控制,,,4,,正式,进入控制标签摊位
-node_d04_event_wind,node_pool_d04_growth,风系补货事件,event,60,4,elem_风,reward_pT2,evt_shop_wind,,2,禁用,刷新风系商品位
+node_d04_event_wind,node_pool_d04_growth,雷系补货事件,event,60,4,elem_雷,reward_pT2,evt_shop_wind,,2,禁用,刷新雷系商品位（兼容旧节点ID）
 node_d04_rest_gold,node_pool_d04_growth,休整补给,rest,50,4,,,,,3,禁用,直接获得金币
 node_d05_tier2_shop,node_pool_d05_growth,白银精选商会,shop,100,5,tier_pT2,,,5,,正式,进入 pT2 标签摊位
 node_d05_reward_tier2,node_pool_d05_growth,白银精选奖励,reward,90,5,,reward_pT2,,3,,正式,生成 3 个 pT2 奖励候选
@@ -43,14 +43,14 @@ node_d06_rest_gold,node_pool_d06_growth,精英战前休整,rest,50,6,,,,,4,禁�
 node_d07_tier3_shop,node_pool_d07_growth,黄金精选商会,shop,100,7,tier_pT3,,,5,,正式,进入 pT3 标签摊位
 node_d07_reward_tier3,node_pool_d07_growth,黄金精选奖励,reward,90,7,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选
 node_d07_tank_shop,node_pool_d07_growth,前排补强商人,shop,80,7,role_坦克,,,5,,正式,进入坦克标签摊位
-node_d07_earth_shop,node_pool_d07_growth,土系防线商人,shop,70,7,elem_土,,,5,,正式,进入土元素定向摊位
+node_d07_earth_shop,node_pool_d07_growth,地系防线商人,shop,70,7,elem_地,,,5,,正式,进入地元素定向摊位（兼容旧节点ID）
 node_d07_event_tank,node_pool_d07_growth,前排补强事件,event,60,7,role_坦克,reward_pT3,evt_role_tank,,2,禁用,获得前排补强机会
 node_d07_rest_gold,node_pool_d07_growth,精英战前休整,rest,50,7,,,,,4,禁用,直接获得金币
 node_d08_tier3_shop,node_pool_d08_growth,黄金连锁商会,shop,100,8,tier_pT3,,,6,,正式,进入 pT3 标签摊位
 node_d08_reward_tier3,node_pool_d08_growth,黄金连锁奖励,reward,90,8,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选
 node_d08_economy_shop,node_pool_d08_growth,经济补强商人,shop,80,8,role_经济,,,5,,正式,进入经济标签摊位
-node_d08_wind_shop,node_pool_d08_growth,风系连锁商人,shop,70,8,elem_风,,,5,,正式,进入风元素定向摊位
-node_d08_event_wind,node_pool_d08_growth,风系连锁事件,event,60,8,elem_风,reward_pT3,evt_shop_wind,,2,禁用,刷新风系商品位
+node_d08_wind_shop,node_pool_d08_growth,雷系连锁商人,shop,70,8,elem_雷,,,5,,正式,进入雷元素定向摊位（兼容旧节点ID）
+node_d08_event_wind,node_pool_d08_growth,雷系连锁事件,event,60,8,elem_雷,reward_pT3,evt_shop_wind,,2,禁用,刷新雷系商品位（兼容旧节点ID）
 node_d08_rest_gold,node_pool_d08_growth,精英战前休整,rest,50,8,,,,,4,禁用,直接获得金币
 node_d09_tier3_shop,node_pool_d09_growth,终局前黄金商会,shop,100,9,tier_pT3,,,6,,正式,进入 pT3 标签摊位
 node_d09_reward_tier3,node_pool_d09_growth,终局前黄金奖励,reward,90,9,,reward_pT3,,3,,正式,生成 3 个 pT3 奖励候选

@@ -131,7 +131,7 @@ def main():
             {
                 "pet_id": r.get("宠物ID", ""),
                 "name": r.get("名称", ""),
-                "element": r.get("元素", ""),
+                "element": "、".join([x for x in [r.get("元素", ""), r.get("副属", "")] if x]),
                 "tier": r.get("品质", ""),
                 "role": r.get("定位", ""),
                 "shop_store_ids": shop_by_pet.get(r.get("宠物ID", ""), {}).get("商店池(自动)", ""),

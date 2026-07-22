@@ -12,6 +12,7 @@ Scope:
 - 新增离线导出工具，读取当前 `loadGameData()` 正规数据路径。
 - 将预览表与当前核心 runtime 对齐：路线/遭遇候选沿用核心当前前 N 规则，商店/奖励/波次使用与核心一致的 seed 上下文。
 - 输出 JSON/CSV/Markdown 表到 `outputs/seed-episode-preview-20260702/`。
+- follow-up: 用户要求“做”策划可读全游戏流程文档；本轮在同一导出工具中新增按 seed / day / step 排版的 Markdown 流程文档。
 - 改核心路线进入商店/奖励时的 seed context，以及商店/奖励 RNG key；不刷新 `web/js/local-engine.js`。
 - `src/core/dayRoute.cjs` 和 `src/core/shop.cjs` 与其他 ACTIVE 任务存在文件租约重叠；用户在确认差异后明确要求继续做。本任务不自动提交，等待后续 git-c/Lead 统一收口。
 - 不更新 `tasks/index.md`，因为当前被旧 replay 任务独占且目录状态已经由多个 ACTIVE 任务管理。
@@ -25,6 +26,7 @@ related_files:
 - `outputs/seed-episode-preview-20260702/seed_episode_steps.csv`
 - `outputs/seed-episode-preview-20260702/seed_episode_pet_sources.csv`
 - `outputs/seed-episode-preview-20260702/seed_episode_battle_enemies.csv`
+- `outputs/seed-episode-preview-20260702/seed_episode_planner_flow.md`
 - `outputs/seed-episode-preview-20260702/README.md`
 - `tasks/doing/2026-07-02_seed-episode-preview.md`
 
@@ -49,15 +51,18 @@ read_files:
 
 validation:
 - pass: `node --check src/core/shop.cjs && node --check src/core/dayRoute.cjs && node --check tools/build_seed_episode_preview.cjs`
-- pass: `node --test tests/unit/seed_episode_preview.test.cjs` (7/7; includes actual adapter route/shop/reward parity checks)
-- pass: `node tools/build_seed_episode_preview.cjs`; generated 3 seeds with `steps=420`, `petSources=1629`, `battles=1635`.
-- pass: output files exist under `outputs/seed-episode-preview-20260702/`: `seed_episode_preview.json`, `seed_episode_steps.csv`, `seed_episode_pet_sources.csv`, `seed_episode_battle_enemies.csv`, `README.md`.
+- pass: `node --check tools/build_seed_episode_preview.cjs`
+- pass: `node --test tests/unit/seed_episode_preview.test.cjs` (8/8; includes actual adapter route/shop/reward parity checks and planner-readable Markdown checks)
+- pass: `node tools/build_seed_episode_preview.cjs`; generated 3 seeds with `steps=420`, `petSources=1763`, `battles=1635`.
+- pass: output files exist under `outputs/seed-episode-preview-20260702/`: `seed_episode_preview.json`, `seed_episode_steps.csv`, `seed_episode_pet_sources.csv`, `seed_episode_battle_enemies.csv`, `seed_episode_planner_flow.md`, `README.md`.
 - pass: sampled first rows show node 3选1 candidates, shop/reward pet sources, and fixed battle enemy rows with seed-derived qualities.
+- pass: `rg -n ",event,|,rest,|\\| event \\||\\| rest \\|" outputs/seed-episode-preview-20260702/seed_episode_steps.csv outputs/seed-episode-preview-20260702/seed_episode_planner_flow.md` returns no matches; planner flow follows current disabled enter/exit node logic.
 - pass: `node --test tests/unit/daily_flow_battle_first_route.test.cjs` (13/13)
 - pass: `node --test tests/unit/normal_game_three_scenes.test.cjs` (6/6)
 - pass: `node --test tests/ui_adapter.test.cjs --test-name-pattern "商店|奖励|route|节点|UI05|UI06"` (48/48)
 - pass: `git diff --check -- src/core/dayRoute.cjs src/core/shop.cjs tools/build_seed_episode_preview.cjs tests/unit/seed_episode_preview.test.cjs tasks/doing/2026-07-02_seed-episode-preview.md outputs/seed-episode-preview-20260702/README.md outputs/seed-episode-preview-20260702/seed_episode_preview.json outputs/seed-episode-preview-20260702/seed_episode_steps.csv outputs/seed-episode-preview-20260702/seed_episode_pet_sources.csv outputs/seed-episode-preview-20260702/seed_episode_battle_enemies.csv`
-- blocked: `LIVE_4173_NOT_REFRESHED`; this pass changes browser-reachable core behavior but does not rebuild `web/js/local-engine.js` because that generated file is already occupied by multiple unarchived task cards.
+- pass: `git diff --check -- tools/build_seed_episode_preview.cjs tests/unit/seed_episode_preview.test.cjs tasks/doing/2026-07-02_seed-episode-preview.md outputs/seed-episode-preview-20260702/README.md outputs/seed-episode-preview-20260702/seed_episode_preview.json outputs/seed-episode-preview-20260702/seed_episode_steps.csv outputs/seed-episode-preview-20260702/seed_episode_pet_sources.csv outputs/seed-episode-preview-20260702/seed_episode_battle_enemies.csv outputs/seed-episode-preview-20260702/seed_episode_planner_flow.md`
+- not required: 4173/browser validation; 2026-07-03 follow-up only changes offline seed preview export/doc artifact and does not change browser runtime behavior.
 
 commit_plan:
 - message: `data: export seed episode preview tables`

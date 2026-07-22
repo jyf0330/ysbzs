@@ -1,5 +1,7 @@
 // @ts-check
 
+const { compactPositionLabel } = require('./eventSummary.cjs');
+
 /**
  * @typedef {{r:number,c:number}} Position
  * @typedef {{id:string, side?:string, camp?:string, alive?:boolean, hp?:number, shield?:number, def?:number, name?:string, displayName?:string, position?:Position}} BattleUnit
@@ -214,7 +216,7 @@ function createPreviewModule(deps) {
 	        settlement,
 	        triggersElementLink,
 	        elementLinks: linkElements,
-	        text: `${actor.name}${slot.label}${slot.element}${slot.layers}层 ${slot.direction} → R${p.r}C${p.c}${target ? ` ${target.displayName || target.name}` : ''}`
+	        text: `${actor.name}${slot.label}${slot.element}${slot.layers}层 ${slot.direction} → ${compactPositionLabel(p)}${target ? ` ${target.displayName || target.name}` : ''}`
 	        });
 	      });
 	    }

@@ -1,0 +1,2670 @@
+---
+task_id: 2026-07-03_godot-singleplayer-remake
+status: ACTIVE_IMPL
+owner: Codex
+branch: shared-worktree
+---
+
+## Goal
+
+Build a Godot singleplayer version that follows the current ysbzs player flow as closely as possible, starting with a playable vertical slice for route choice, pet-only shop, and 8x8 battle.
+
+## Scope
+
+- Keep the current ysbzs browser/core dirty work untouched.
+- Implement the Godot work in `/Users/ywh/Documents/godot`.
+- Preserve the Godot rule that PSD assets are only visual references; runtime UI/state live in Godot scenes and scripts.
+- First slice focuses on a real runnable Godot scene, not a static mockup.
+
+## related_files
+
+- `/Users/ywh/Documents/godot/project.godot`
+- `/Users/ywh/Documents/godot/scenes/game/ysbzs_singleplayer.tscn`
+- `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd`
+- `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd`
+- `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json`
+- `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`
+- `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd`
+- `/Users/ywh/Documents/godot/scripts/test/dump_core_io.gd`
+- `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd`
+- `/Users/ywh/Documents/godot/tools/compare_ysbzs_core_io.cjs`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route_event.png`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_reward.png`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle_end.png`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_day_end.png`
+- `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_trace.png`
+- `/Users/ywh/Documents/godot/output/core_io_golden_diff.json`
+- `/Users/ywh/Documents/godot/output/core_io_golden_diff.md`
+- `data/csv/05_events.csv`
+- `data/csv/06_shop_rewards.csv`
+- `data/csv/07_relic_blessings.csv`
+- `data/csv/08_action_shapes.csv`
+- `data/csv/24_node_schedule.csv`
+- `data/csv/25_node_pool.csv`
+- `data/csv/26_encounter_pool.csv`
+- `data/csv/27_shape_catalog.csv`
+- `data/csv/28_quality_growth.csv`
+- `data/csv/29_quality_upgrades.csv`
+- `data/csv/30_shop_stores.csv`
+- `tasks/doing/2026-07-03_godot-singleplayer-remake.md`
+- `tasks/index.md`
+
+## write_scopes
+
+- `tasks/index.md`: ACTIVE_IMPL list entry for this Godot task only.
+- `tasks/doing/2026-07-03_godot-singleplayer-remake.md`: full task card.
+- `/Users/ywh/Documents/godot/project.godot`: application metadata and `run/main_scene`.
+- `/Users/ywh/Documents/godot/scenes/game/ysbzs_singleplayer.tscn`: new root scene only.
+- `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd`: new Godot UI/controller script only.
+- `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd`: Godot state/rules script for this singleplayer slice only.
+- `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`: new CSV-to-Godot JSON exporter only.
+- `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json`: generated Godot data snapshot only.
+- `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd`: new smoke validation script only.
+- `/Users/ywh/Documents/godot/scripts/test/dump_core_io.gd`: Godot core I/O golden-diff dump script only.
+- `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd`: new screenshot validation script only.
+- `/Users/ywh/Documents/godot/tools/compare_ysbzs_core_io.cjs`: cross-project ysbzs/Godot core I/O golden-diff runner only.
+- `/Users/ywh/Documents/godot/output/`: generated screenshot and golden-diff evidence only.
+- `data/csv/05_events.csv`: read-only source for Godot route/shop/post-battle event export.
+- `data/csv/06_shop_rewards.csv`: read-only source for Godot shop and reward pool export.
+- `data/csv/07_relic_blessings.csv`: read-only source for Godot relic reward export.
+- `data/csv/03_monster_waves.csv`: read-only source for Godot battle wave export.
+- `data/csv/08_action_shapes.csv`: read-only source for Godot action slot element/layer export.
+- `data/csv/24_node_schedule.csv`: read-only source for Godot route schedule export.
+- `data/csv/25_node_pool.csv`: read-only source for Godot route node option export.
+- `data/csv/26_encounter_pool.csv`: read-only source for Godot encounter export.
+- `data/csv/27_shape_catalog.csv`: read-only source for Godot battle shape offsets and settle count export.
+- `data/csv/28_quality_growth.csv`: read-only source for Godot quality stat growth export.
+- `data/csv/29_quality_upgrades.csv`: read-only source for Godot quality upgrade/effect export.
+- `data/csv/30_shop_stores.csv`: read-only source for Godot shop stall metadata export.
+
+## shared_file_policy
+
+- This task does not touch existing ysbzs core, web UI, CSV, workbook, or bundle files.
+- `/Users/ywh/Documents/godot` is a separate Godot repository with its own untracked UI conversion baseline; new game files use `scenes/game/` and `scripts/game/` to avoid overwriting the existing `scenes/ui/battle_main_mockup.tscn`.
+
+## exclusive_files
+
+- `/Users/ywh/Documents/godot/scenes/game/ysbzs_singleplayer.tscn`
+- `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd`
+- `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd`
+- `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`
+- `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json`
+
+## read_files
+
+- `AGENTS.md`
+- `docs/02_CURRENT_WORKFLOW.md`
+- `docs/00_AI_START_HERE.md`
+- `docs/roles/PROGRAMMER_START.md`
+- `tasks/index.md`
+- `tasks/README.md`
+- `/Users/ywh/Documents/godot/AGENTS.md`
+- `/Users/ywh/Documents/godot/docs/PSD_TO_GODOT_UI_RULES.md`
+- `/Users/ywh/Documents/godot/docs/ARTIST_UI_DELIVERY_SPEC.md`
+- `/Users/ywh/.codex/skills/ywh-game/SKILL.md`
+- `/Users/ywh/.codex/skills/ywh-web-game/SKILL.md`
+- `/Users/ywh/.codex/skills/task-occupancy/SKILL.md`
+- `/Users/ywh/.codex/skills/game-engines/SKILL.md`
+
+## validation
+
+- `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`
+- `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`
+- `godot --headless --path /Users/ywh/Documents/godot --quit`
+- `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`
+
+## core_task_queue
+
+按用户 2026-07-05 最新指令，本队列先聚焦核心层，不把界面显示当作当前推进重点。后续实现按本清单顺序推进；如果发现浏览器源规则或 CSV 真相源与本清单冲突，先更新本清单再继续。
+
+### A. 数据边界与临时内容剔除
+
+- [x] A1. 剔除 Day7 / trial / seed 类临时机制，不进入正式 Godot parity 实现；保留 `mechanism_status` 可追踪状态。
+- [x] A2. 剔除临时构筑补强事件，不进入正式经济事件导出。
+- [x] A3. 普通战斗波次使用怪物模板，不继承临时宠物 clone 行动字段。
+- [x] A4. 审计 `WEB_MECHANIC_STATUS` 中剩余 `excluded_non_formal` 条目，拆成“正式后续实现候选”和“永久非正式/调试残留”两类。
+
+### B. 核心状态与命令协议
+
+- [x] B1. Godot 状态层提供浏览器风格 `stateVersion` / `stateHash` / `nextActions`。
+- [x] B2. 可变更玩家命令进入 deterministic `command_log`，只读命令不污染版本号和回放流。
+- [x] B3. stale `baseStateVersion` 命令拒绝并写入 debug timeline。
+- [x] B4. 把所有玩家可变更命令过一遍 strict-version 覆盖，补缺失的 stale-command smoke。
+- [x] B5. 统一 public command alias 清单，确保 Godot 只保留正式玩家流 alias，删除临时 trial alias。
+
+### C. 路线、奖励与商店核心流
+
+- [x] C1. CSV route schedule / node pool / encounter pool 驱动路线选择。
+- [x] C2. route reward / battle reward / relic reward 走正式奖励池。
+- [x] C3. shop store / shop item / shop event 走正式商店池和刷新规则。
+- [x] C4. route event / pre-battle event 支持金币成本、外部构筑效果和战前效果。
+- [x] C5. 审计奖励池 fallback：记录何时从空池回退，避免静默吞掉策划数据缺口。
+- [x] C6. 审计商店种子上下文：固定路线节点、手动进店、刷新、冻结的 RNG 口径必须稳定可复放。
+
+### D. 战斗核心、棋盘与结算
+
+- [x] D1. 8x8 棋盘、单位部署、移动、行动槽、元素层、预览、敌方回合可跑通。
+- [x] D2. 正式机制表导出的 61 个机制均归类为 covered，并有 smoke 覆盖。
+- [x] D3. 68 个正式品质升级均有直接或行为 smoke 覆盖。
+- [x] D4. 审计战斗失败路径：团灭、城堡线、最大回合、经济衰减、奖励惩罚的结果字段必须与浏览器口径一致。
+- [x] D5. 审计 all-out / manual-flow / preview 三者是否共享同一伤害与元素结算路径，避免第二套战斗逻辑。
+- [x] D6. 审计召唤物、陷阱、脏格、阻挡格等衍生单位/格子在 save/replay/hash 里的稳定性。
+
+### E. 存档、回放与战报
+
+- [x] E1. Godot 保存文档使用浏览器风格 `ysbzs.save` schema、checksum、state payload。
+- [x] E2. Godot replay 使用 command stream、checkpoints、debug timeline、checksum。
+- [x] E3. battle trace 可从真实 command/replay 事件导出。
+- [x] E4. 对 load/save 后的 route/shop/battle/reward/day_end 关键阶段做 round-trip smoke。
+- [x] E5. 对 replay verify 覆盖失败样例：checksum mismatch、checkpoint mismatch、unsupported schema/version。
+
+### F. 验收与收口
+
+- [x] F1. `smoke_singleplayer.gd` 覆盖核心规则和玩家公共命令。
+- [x] F2. `capture_singleplayer.gd` 覆盖场景仍可启动，防止核心改动打崩入口。
+- [x] F3. 每完成一个核心任务，追加 RED/GREEN 证据到本任务卡。
+- [x] F4. 每轮收尾运行当前任务 validation；不提交，除非用户明确要求或进入 `git-c` 收口。
+
+### G. Godot / ysbzs 核心输入输出契约
+
+- [x] G1. Godot 状态层提供 ysbzs adapter 风格命令响应对象，不只返回 bool。
+- [x] G2. Godot snapshot 提供 viewModel 字段映射，保留现有字段并补齐 ysbzs 命名别名。
+- [x] G3. Godot 棋盘格输出补齐 `r/c/key/unitId/unitSide` 等浏览器核心字段别名。
+- [x] G4. Godot save/replay/export 类只读命令走结构化响应，且不污染 stateVersion、stateHash、command_log。
+- [x] G5. stale/rejected 命令返回 ysbzs 风格拒绝响应，包含 error、viewModel、stateVersion、stateHash。
+
+### H. Godot / ysbzs golden diff
+
+- [x] H1. 建立可重复的 ysbzs JS core 响应 dump，不改 ysbzs core 真相源。
+- [x] H2. 建立可重复的 Godot core 响应 dump，覆盖同一批公共命令。
+- [x] H3. 对 accepted / rejected / readOnly / ephemeral / stateVersion 推进 / viewModel 关键字段 / save-replay schema 做 golden diff。
+- [x] H4. 输出机器可读 JSON 和人类可读 Markdown 报告，明确 pass 项与已知语义差异。
+- [x] H5. 将 golden diff 纳入当前任务 validation 证据。
+
+## validation_evidence
+
+- 2026-07-07 Godot / ysbzs golden diff:
+  - Scope: add cross-project golden diff verification only; keep `/Users/ywh/Documents/ysbzs` core files read-only.
+  - TDD RED: `node /Users/ywh/Documents/godot/tools/compare_ysbzs_core_io.cjs` first failed with `MODULE_NOT_FOUND`, proving the golden-diff verification entry did not exist.
+  - Added `/Users/ywh/Documents/godot/scripts/test/dump_core_io.gd` to run the Godot core through the same public command categories: stale `START_BATTLE`, accepted `START_BATTLE`, ephemeral `SELECT_UNIT`, read-only `EXPORT_REPLAY`, and save export.
+  - Added `/Users/ywh/Documents/godot/tools/compare_ysbzs_core_io.cjs` to run ysbzs `createServerAuthorityAdapter` and the Godot dump, then compare response shape, command normalization, command envelope type, state hash format, viewModel key coverage, board cell aliases, stale rejection, version-stability rules, replay schema, and save aliases.
+  - Report output: `/Users/ywh/Documents/godot/output/core_io_golden_diff.json` and `/Users/ywh/Documents/godot/output/core_io_golden_diff.md`.
+  - Golden diff result: `CORE_IO_GOLDEN_DIFF_PASS`, 128/128 contract checks passed, 0 contract failures, 4 known semantic deltas recorded.
+  - Known deltas intentionally kept visible: ysbzs initial phase `init` vs Godot initial phase `route`; ysbzs fixture gold `8` vs Godot coins `16`; ysbzs battle phase `player_turn` vs Godot phase `battle`; battle `nextActionTypes` differ because Godot exposes singleplayer action controls while ysbzs still exposes the browser battle command set including legacy/debug actions.
+  - ysbzs test result: `node --test tests/ui_adapter.test.cjs` passed 48/48.
+  - Godot test result: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` passed (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/dump_core_io.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`roster=1`, `shop_offers=10`, `waves=134`, `schedule=60`, `node_pool=65`, `encounters=40`, `shop_items=127`, `shop_stores=32`, `events=16`, `shapes=19`, `action_shapes=127`, `mechanisms=61`, `quality_growth=12`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed after export: `node /Users/ywh/Documents/godot/tools/compare_ysbzs_core_io.cjs` (`CORE_IO_GOLDEN_DIFF_PASS`).
+
+- 2026-07-07 Godot / ysbzs core I/O contract parity:
+  - Scope: keep `/Users/ywh/Documents/ysbzs` browser/core files read-only; implement adapter-shaped input/output compatibility in `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` and smoke coverage only.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed at `res://scripts/test/smoke_singleplayer.gd:138` with `Invalid call. Nonexistent function 'run_command' in base 'RefCounted (YsbzsState)'`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `run_command(action)` while preserving the existing bool-returning `dispatch(action)` API. The response includes `ok`, `accepted`, `command`, `commandEnvelope`, `stateVersion`, `stateHash`, `result`, `events`, `trace`, `viewModel`, plus `ephemeral` / `readOnly` flags where applicable.
+  - `snapshot()` now includes a `viewModel` projection with ysbzs-style `gold`, `round`, `period`, `dayRoute`, `shop`, `heroes`, `enemies`, `selected`, `nextActions`, `battleTrace`, and command-log aliases, without removing the existing Godot fields.
+  - Board cells now keep existing `x/y/unit_id/side/name` fields and add `r/c/key/unitId/unitSide/unitName` aliases for browser-core consumers.
+  - Save payloads now include `gold`, `round`, `period`, `castleLine`, and `economyMultiplier` aliases beside existing Godot fields, and `load_document()` accepts those aliases.
+  - Smoke coverage now asserts accepted, read-only, ephemeral, and stale/rejected adapter responses; replay export response immutability; board field aliases; selected unit mapping; and save aliases.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`roster=1`, `shop_offers=10`, `waves=134`, `schedule=60`, `node_pool=65`, `encounters=40`, `shop_items=127`, `shop_stores=32`, `events=16`, `shapes=19`, `action_shapes=127`, `mechanisms=61`, `quality_growth=12`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Note: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` fails because the dummy renderer returns empty viewport captures; this matches a render-mode limitation, not core I/O behavior.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/event/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Passed after export and capture: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+
+- 2026-07-07 Godot remaining recommended parity slice:
+  - Scope: continue recommended Godot remake work only; do not reintroduce Day7 trial, temporary seed/trial mechanics, temporary construction events, player-facing full-run automation buttons, or Web debug/console pages.
+  - Current slice: improve battleTrace semantic parity by adding real combat damage events to Godot battle trace output, so exported battle trace is not limited to accepted command checkpoints.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed because exported battle trace events did not include a semantic `DAMAGE_APPLIED` event from real combat, and the new actor/target/damage/protocol assertions all failed.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now records `DAMAGE_APPLIED` battle-trace events from `_deal_damage(...)`, including actor/target refs, raw/final/shield/HP damage, HP/shield before-after fields, structured change payloads, tags, text, and a browser-style protocol line.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now drives `START_BATTLE` -> public `SELECT_UNIT` / `SELECT_CELL` -> `EXPORT_BATTLE_TRACE` and asserts the semantic damage event is present without using internal combat shortcuts.
+  - Incidental validation fixes: parse check exposed bad indentation in `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` reward rendering and `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` reset setup; both were corrected so the project can run the current smoke/capture suite.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`roster=1`, `shop_offers=10`, `waves=134`, `schedule=60`, `node_pool=65`, `encounters=40`, `shop_items=127`, `shop_stores=32`, `events=16`, `shapes=19`, `action_shapes=127`, `mechanisms=61`, `quality_growth=12`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/event/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+
+- 2026-07-06 Godot core queue completion: B5/C5/C6/D4/D5/D6/E4/E5/F3/F4:
+  - Core-layer B5: `snapshot().command_protocol` now publishes `public_aliases`, `removed_trial_aliases`, and `automation_aliases`; smoke asserts removed temporary trial aliases (`setupDay7FireTrial`, `runDay7FireTurn1`, `runDay7FireTrialAll`) stay rejected and absent from public aliases.
+  - Core-layer C5: battle reward fallback now records explicit audit rows in `reward_fallback_audit` and `battle_result.reward_fallback_audit`, including requested pool, resolved pool, seed context, and `requested_pool_empty` reason.
+  - Core-layer C6: shop rolls now record deterministic `shop_seed_audit` entries with route/manual mode, seed context, concrete RNG seed, frozen kept offers, generated offers, and counter before/after values; smoke asserts freeze does not advance RNG and refresh does.
+  - Core-layer D4: battle loss results now expose `failure_audit` for party wipe and max-round failure, including hero HP, castle line, economy multiplier, reward eligibility, and game-over fields.
+  - Core-layer D5: `combat_resolution_protocol` documents the shared mutation/projection contract for all-out, manual-flow preview, and build-preview; smoke asserts manual-flow rolls back and all-out includes the preview-projected damage path.
+  - Core-layer D6: summon, trap, dirty-cell, and earth-block derived units/cells now have save/load/hash round-trip smoke coverage.
+  - Core-layer E4: route, shop, battle, reward, and day_end phases now have `save_document` -> `load_document` round-trip smoke coverage for phase, stateVersion, and stateHash.
+  - Core-layer E5: replay verification now has negative smoke coverage for checksum mismatch, checkpoint mismatch, invalid schema, unsupported schemaVersion, and unsupported replayVersion.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed on missing `shop_seed_audit`; after implementation, it passed with `SMOKE_SINGLEPLAYER_OK`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`mechanisms=61`, `events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+
+- 2026-07-05 Godot strict-version command protocol coverage:
+  - Core-layer B4: Godot state snapshots now expose `command_protocol.strict_version_actions`, `command_protocol.view_state_actions`, and `command_protocol.aliases` so public command protocol coverage is auditable from the state layer.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed because `command_protocol` did not exist in `snapshot()`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now has one authoritative `VIEW_STATE_ACTIONS` list and one `STRICT_VERSION_ACTIONS` list; `_is_view_state_action()` uses the shared view list, and `snapshot()` publishes both lists.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now asserts all expected mutating public commands are listed for strict-version coverage, all view/read-only commands are separate, and every strict command rejects stale `baseStateVersion` before mutating `stateVersion`, `stateHash`, or `command_log`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`mechanisms=61`, `events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+
+- 2026-07-05 Godot core task queue + non-formal mechanism follow-up groups:
+  - Task-file planning: added `core_task_queue` to this task card so core-layer work is tracked in-file before implementation. The queue separates data pruning, command protocol, route/shop/reward, battle settlement, save/replay, and validation.
+  - Core-layer A4: remaining `excluded_non_formal` mechanism-status rows are now classified with `godot_followup_group` instead of being a single opaque bucket.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed because `godot_followup_group` was missing from `mechanism_status`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now writes per-id and aggregate `godot_followup_group` values: `future_formal_candidate` for the 27 remaining non-formal pending rows, `temporary_or_debug_leftover` for the 13 temporary seed/trial rows, `covered` for covered formal rows, and `needs_review` for any future unknown bucket.
+  - `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` was regenerated; formal gameplay export counts remain unchanged (`mechanisms=61`, `events=16`, `quality_upgrades=68`).
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now asserts aggregate follow-up counts and spot-checks `mech_water_slow` as `future_formal_candidate` and `mech_fire_trap` as `temporary_or_debug_leftover`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`mechanisms=61`, `events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+
+- 2026-07-05 Godot temporary seed/trial mechanism pruning:
+  - Core-layer correction: `mech_water_heal_seed`, `mech_wind_seed`, and `mech_trial_right_top_random` were still classified as generic non-formal leftovers, even though the current Godot mainline should treat seed/trial crop-style rows as temporary content excluded from one-to-one core parity work.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed on those three mechanism ids and the aggregate `excluded_temporary_trial` / `excluded_non_formal` counts.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies those three ids as `excluded_temporary_trial` instead of `excluded_non_formal`.
+  - `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` was regenerated; formal exported mechanisms remain `61`, events remain `16`, and quality upgrades remain `68`, so this does not reintroduce temporary gameplay data.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now asserts the three seed/trial rows are excluded as temporary and the aggregate counts are `excluded_temporary_trial=13`, `excluded_non_formal=27`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`mechanisms=61`, `events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+
+- 2026-07-05 Godot battle-trace export real-UI button:
+  - Player-flow gap: Godot state already supported browser-style `EXPORT_BATTLE_TRACE`, but the singleplayer scene did not expose a visible player button for exporting a battle report / battle trace file.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: scene renders named battle trace export button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now writes `user://ysbzs_singleplayer_battle_trace.json` through `save_battle_trace_to_user()`, using the existing `_export_battle_trace_events()` protocol.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a top-toolbar `ExportBattleTraceButton` with visible text `导出战报` and calls the state export API through the UI callback.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now presses `ExportBattleTraceButton` and asserts the export log is written through the real scene button.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now gates the route screenshot on the visible `导出战报` button.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` shows `保存`, `读档`, `导出回放`, and `导出战报` in the top toolbar with no obvious overlap.
+
+- 2026-07-05 Godot replay export real-UI button:
+  - Player-flow gap: Godot state already supported browser-style replay documents and `save_replay_to_user()`, but the singleplayer scene did not expose a visible player button for exporting a replay.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: scene renders named replay export button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a top-toolbar `ExportReplayButton` with visible text `导出回放` and calls `state.save_replay_to_user()` through the UI callback.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now presses `ExportReplayButton` and asserts the replay export log is written through the real scene button.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` shows the top toolbar with `保存`, `读档`, and `导出回放` without visible overlap.
+
+- 2026-07-05 Godot battle wave-id player-copy cleanup:
+  - Player-facing gap: the battle page header still exposed raw wave ids such as `wave_d01_morning`, even though battle-end copy already mapped result/reward/wave ids to player-facing Chinese labels.
+  - TDD RED: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` first failed with `battle capture exposes raw id 'wave_d01_morning'` in the battle header.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders the active battle wave through the existing `_display_text(...)` mapping, so the battle page shows `第1天上午波次` instead of the raw CSV wave id.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now asserts battle capture has no `wave_d01_morning` / `Wave_d01_morning` and does contain `第1天上午波次`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` shows `战斗第 1 回合 第1天上午波次 敌人 2` with no obvious overlap or raw wave id.
+
+- 2026-07-05 Godot formal quality-id direct smoke coverage:
+  - Parity gap: `data/csv/29_quality_upgrades.csv` had formal implemented quality rows that were covered only indirectly or by shared code paths; direct smoke text search showed missing ids `S02`, `S03`, `S05`, `G05`, `G06`, `G07`, `G10`, `G15`, `G25`, `G26`, `D07`, and `D08`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now names and validates those formal quality ids through public battle commands: `startBattle`, `SELECT_UNIT`, `SELECT_CELL`, and `END_PLAYER_TURN`.
+  - Added coverage includes S02 self-heal, S03 max-HP growth, S05 last-hit double damage, G05 core-cell ally heal, G06/G07/G10/G15/G25/G26 damage rules, and D07/D08 three-cell diamond damage rules.
+  - No production gameplay code was changed for this slice; current Godot state logic already satisfied the new direct smoke coverage after the tests were added.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: static CSV/test coverage check (`QUALITY_DIRECT_ID_COVERAGE_MISSING 0` for all 68 formal quality upgrade ids).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`, `quality_upgrades=68`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+  - Screenshot review: refreshed battle and trace captures are nonblank and readable, with no obvious layout regression from the test-only coverage slice.
+
+- 2026-07-05 Godot route-event gold-cost parity:
+  - Player-flow gap: `护盾祝福` / `陷阱商人` route-event buttons showed visible `金币-2` CSV cost, but the Godot route-event command path only queued battle-prep effects and did not pay the displayed gold cost.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: pre-battle route-event button pays the visible CSV gold cost through UI callback`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now parses `金币-N` route-event costs before applying route-event effects, rejects the event without advancing when gold is insufficient, and deducts the cost before queuing the battle-prep / route effect.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now presses `RouteEventButton_evt_shield_bless` from a 10-gold Day 3 route fixture and asserts coins become 8 through the real UI callback.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route_event.png` still shows the route-event buttons with visible `金币-2` cost and no obvious overlap.
+
+- 2026-07-05 Godot pre-battle route-event real-UI button:
+  - Player-flow gap: formal `pre_battle` events such as `护盾祝福` / `陷阱商人` were supported through public `APPLY_ROUTE_EVENT` command smoke, but the route scene only exposed `layer=event` route-event buttons and left battle-prep events without a visible player button.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: route scene renders named formal pre-battle event button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now includes formal `layer=pre_battle` rows in `route_events`, so route `next_actions` and the route UI expose them alongside outer-run route events.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a Day 3 route fixture, presses `RouteEventButton_evt_shield_bless`, and asserts a `battle_prep` route effect plus queued-effect log update through the UI callback.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now checks the route-event screenshot contains `护盾祝福` and a visible `RouteEventButton_evt_shield_bless`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route_event.png` shows `陷阱商人`, `护盾祝福`, and `贪婪诅咒` in the Day 3 route-event panel with no obvious overlap.
+
+- 2026-07-05 Godot route-event real-UI button:
+  - Player-flow gap: Godot state already supported formal `APPLY_ROUTE_EVENT` and command-level smoke covered `evt_curse_gold`, but the route scene did not expose a visible player button for formal route events.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: route scene renders named formal route-event button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes available formal `layer=event` rows as `route_events`, counts them in `data_counts.route_events`, and publishes `APPLY_ROUTE_EVENT` in route `next_actions`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a `RouteEventGrid` with stable `RouteEventButton_<event id>` buttons and dispatches `APPLY_ROUTE_EVENT` through the UI callback.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a Day 3 route fixture, presses `RouteEventButton_evt_curse_gold`, and asserts CSV gold, queued outer-run effect, and route-event log update through the UI callback.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now saves `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route_event.png` and checks the visible `贪婪诅咒` button.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed the route/reward/shop/battle/trace/end/terminal screenshots plus `ysbzs_singleplayer_route_event.png`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route_event.png` shows the Day 3 route-event panel with `贪婪诅咒` / `奖励-10%`, visible roster controls, and no obvious overlap.
+
+- 2026-07-05 Godot board-move real-UI smoke:
+  - Player-flow gap: `SELECT_CELL`/`MOVE_HERO` had state-command coverage, but the smoke did not press a visible player cell and then a visible adjacent empty board cell to verify normal battle movement through Godot UI.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now selects `pal_002` by pressing its rendered `Cell_<x>_<y>` button, presses a rendered adjacent empty cell button, and asserts position, AP spend, and movement log all update through the UI callback.
+  - No production code change was required for this slice; existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` already dispatches `SELECT_CELL` from board cell buttons and `ysbzs_state.gd` resolves movement through `move_selected`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` still shows the battle toolbar, selected action panel, and board without visible overlap.
+
+- 2026-07-05 Godot auto-position real-UI button:
+  - Player-flow gap: `AUTO_POSITION_HEROES` had state-command coverage and battle logic, but the Godot battle toolbar did not expose a visible player button for smart positioning.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: battle scene renders named auto-position button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders `AutoPositionButton` in the battle toolbar with visible text `智能站位` and dispatches `AUTO_POSITION_HEROES` through the UI callback.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now presses `AutoPositionButton` in a real battle scene and asserts the selected pet moves into attack range without spending battle AP.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now expects three battle toolbar actions and explicitly checks the auto-position button in the graphical capture.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` shows `智能站位`, `我方全部出击`, and `结束回合` in the battle toolbar without visible overlap.
+
+- 2026-07-05 Godot relic reward/shop-event real-UI smoke:
+  - Player-flow gap: relic pickup and targeted shop restock had public command coverage, but the Godot smoke did not press their visible scene buttons.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now presses `RewardButton_<relic reward id>` and asserts the relic enters `relics`, updates `build_core.relic_count`, exposes the relic construction tag, and writes the pickup log through the UI callback.
+  - The same smoke now presses `ShopEventButton_evt_shop_fire` and asserts the active shop pool switches to `elem_火` with visible fire-element offers generated through the UI callback.
+  - No production code change was required for this slice; existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` callbacks already dispatch `PICK_REWARD` and `APPLY_SHOP_EVENT` correctly.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_reward.png` shows pet and relic reward buttons; latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` shows the targeted shop event grid and fire-shop offers without visible layout regression.
+
+- 2026-07-05 Godot sell-unit real-UI smoke:
+  - Player-flow gap: roster sell behavior had public command coverage and a visible `出售` button, but smoke only checked the button label and did not press it through the Godot scene UI.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a fresh roster, presses `SellUnit_pal_002`, and asserts the pet is removed from roster, coins increase, and the sale log is written through the UI callback.
+  - No production code change was required for this slice; existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` already dispatches `SELL_UNIT` from the sell button.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` still shows the roster `下阵` / `出售` controls, shop offers, refresh controls, and shop event grid without visible layout regression.
+
+- 2026-07-05 Godot shop-refresh/all-out real-UI smoke:
+  - Player-flow gap: `刷新商店` and `我方全部出击` had public command support and visible buttons, but smoke did not press those buttons through the Godot scene UI.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now presses `ShopEventButton_evt_free_roll`, then `RollShopButton`, and asserts the free refresh is consumed plus the refresh log is written through the UI callback.
+  - The same smoke now starts a battle with an in-range enemy, presses `AllOutButton`, and asserts target HP decreases and AP is spent through the UI callback before continuing to the visible end-turn button.
+  - No production code change was required for this slice; existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` callbacks already dispatch `ROLL_SHOP` and `RUN_PLAYER_ALL_OUT` correctly.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` and `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` show the refresh/shop controls and all-out/end-turn battle controls without visible layout regression.
+
+- 2026-07-05 Godot route-card real-UI smoke:
+  - Player-flow gap: shop and fixed-battle route transitions had command coverage, but smoke still reached those phases through internal commands instead of visible route cards.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now presses `RouteButton_node_shop_basic`, asserts shop phase/offers and mounted shop controls; then drives to the fixed battle route step, presses the generated `RouteButton_<id>`, and asserts battle phase, CSV encounter id, and mounted battle toolbar.
+  - No production code change was required for this slice; existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` route-card callbacks already dispatch `CHOOSE_ROUTE` correctly.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png`, `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png`, and `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` show the route cards, formal shop UI, and battle toolbar without visible layout regression; shop screenshot still has no visible temporary construction filler event.
+
+- 2026-07-05 Godot temporary event pruning:
+  - Player/data gap: Day7 trial mechanisms were already excluded from Godot parity, but CSV placeholder events `evt_mix_17`-`evt_mix_32` still exported into Godot economy data with visible temporary copy such as `获得临时构筑补强17`.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed on event count, `evt_mix_17` presence, and `临时构筑补强` text in exported economy events.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now exports only formal `05_events.csv` rows and skips temporary construction filler text at the Godot data boundary, without modifying the source CSV.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now asserts the Godot snapshot has 16 formal events, no `evt_mix_17`, and no temporary construction filler text.
+  - `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` was regenerated and now reports `events=16`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` (`events=16`).
+  - Passed: JSON spot-check confirmed `evt_mix_17=False` and `temporary_text=False`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` shows formal shop event buttons such as elemental restock and no visible temporary construction filler event.
+
+- 2026-07-05 Godot battle action real-UI smoke:
+  - Player-flow gap: selected action-slot behavior had state-command coverage and render coverage, but smoke did not complete the actual Godot button chain from board-cell selection through action-slot use.
+  - RED/fixture correction: the first real-UI attempt failed because it hardcoded `Cell_3_6`; the current battle placement puts `pal_002` on the cell derived from the runtime snapshot, so the smoke now finds the player cell by unit coordinates.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now starts a real battle, places a target, clicks the player unit board cell, presses `ActionSlot_1`, `ActionDirection_Right`, `ActionAp_2`, and `ActionUseSelected`, then asserts target HP decreases, AP drops to 1, and the combat log records the selected slot.
+  - No production code change was required for this slice; the existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` cell/action callbacks and `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` action-slot command handling already satisfied the player chain once the test used the actual battle placement.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` shows the selected pet panel, action slots, direction buttons, AP buttons, and `施放当前槽` without visible layout regression.
+
+- 2026-07-05 Godot battle-end continue real-UI smoke:
+  - Player-flow gap: battle-end continue had public command/capture coverage, but the visible continue button had no stable node name and smoke did not press it through UI.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: battle-end scene renders named continue button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now names the battle-end continue button `ContinueAfterBattleButton` while preserving the visible Chinese label.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now reaches `battle_end` from route reward -> fixed battle, renders the scene, presses `ContinueAfterBattleButton`, and asserts the UI callback opens the reward phase.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle_end.png` shows the visible `继续` button and no layout regression.
+
+- 2026-07-05 Godot save/load real-UI smoke:
+  - Player-flow gap: save/load was covered at state-command level, but the visible singleplayer toolbar buttons were not pressed through the Godot scene UI.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a real shop phase, verifies `SaveButton` / `LoadButton`, presses `SaveButton`, exits the shop through `ExitShopButton`, presses `LoadButton`, and asserts the saved shop phase plus `stateVersion` are restored through the UI callbacks.
+  - No production code change was required for this slice; the existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` toolbar callbacks and `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` save/load implementation already satisfied the player chain.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` shows the visible `保存` / `读档` toolbar buttons, `离开商店`, shop offers, and shop events without visible layout regression.
+
+- 2026-07-04 Godot shop offer real-UI smoke:
+  - Player-flow gap: shop purchase/freeze behavior had public command coverage, but the visible offer buttons still used older `Buy_<id>` / `Freeze_<id>` node names and smoke did not press the actual offer buttons through the UI.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: shop scene renders named freeze-offer button` and `Smoke failed: shop scene renders named buy-offer button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now names offer buttons as `BuyOfferButton_<offer_id>` and `FreezeOfferButton_<offer_id>` while preserving visible Chinese labels.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a real shop phase, takes the first current snapshot offer id, presses the freeze and buy buttons, and asserts the UI callbacks dispatch `FREEZE_OFFER` and `BUY_OFFER` by checking frozen/sold offer state.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` still shows visible `购买` / `锁定` offer controls, shop events, and roster controls without visible layout regression.
+
+- 2026-07-04 Godot shop event real-UI smoke:
+  - Player-flow gap: shop events had public command coverage, but the visible event buttons still used the older `ShopEvent_<id>` node names and smoke did not press a real event button through the UI.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: shop scene renders named free-roll event button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now names shop event buttons as `ShopEventButton_<event_id>` while preserving the visible Chinese labels.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a real shop phase, verifies `ShopEventButton_evt_free_roll`, presses it, and asserts the UI callback dispatches `APPLY_SHOP_EVENT` by checking `shop_refresh.free_rolls`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` still shows the real shop UI with visible shop event buttons, `离开商店` / `刷新商店`, offers, and roster controls without visible layout regression.
+
+- 2026-07-04 Godot roster card real-UI smoke:
+  - Player-flow gap: roster card actions had public command coverage, but the visible `下阵` / `出售` buttons had no stable node names and smoke did not press them through the UI.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: roster card renders named active-toggle button` and `Smoke failed: roster card renders named sell button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now names roster buttons as `ToggleActive_<pet_id>` and `SellUnit_<pet_id>` while preserving the visible Chinese labels.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders the route roster, verifies `ToggleActive_pal_002` / `SellUnit_pal_002`, presses `ToggleActive_pal_002`, and asserts the pet moves to the backpack through the UI callback.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` still shows the initial roster card with visible `下阵` / `出售` controls and no layout regression.
+
+- 2026-07-04 Godot route-to-reward real-UI smoke:
+  - Player-flow gap: route/reward behavior had public command coverage, but smoke did not press the actual route card and reward card buttons as a player would.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders the route scene, presses `RouteButton_node_reward_pet`, verifies the scene enters `reward`, finds the first generated `RewardButton_*`, presses it, and verifies the UI callback returns to `route`.
+  - The existing `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` route/reward callbacks already satisfied this real-UI chain, so no production change was needed for this slice.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_reward.png` shows the normal player reward page with three selectable reward cards and no visible raw reward-pool ids.
+
+- 2026-07-04 Godot battle toolbar real-UI smoke:
+  - Player-flow gap: battle toolbar actions were visible but did not have stable node names for real-button smoke coverage.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: battle scene renders named all-out button` and `Smoke failed: battle scene renders named end-turn button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now names the battle toolbar buttons `AllOutButton` and `EndTurnButton` while preserving the visible Chinese labels.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a real battle phase, verifies both named battle buttons, presses `EndTurnButton`, and asserts the UI callback reaches the public `END_PLAYER_TURN` flow by checking the battle log.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` still shows only `我方全部出击` and `结束回合` in the battle toolbar, with no debug escape button.
+
+- 2026-07-04 Godot shop exit real-UI smoke:
+  - Player-flow gap: shop exit had player-facing copy but no stable UI node for real-button smoke coverage, and smoke did not press the actual shop exit button.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed with `Smoke failed: shop scene renders named exit-shop button`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now names the shop toolbar buttons `ExitShopButton` and `RollShopButton` while preserving the visible Chinese labels.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now renders a real shop phase, finds `ExitShopButton`, presses it, and asserts the state returns to `route` through the public `EXIT_SHOP` UI callback.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` still shows the real shop UI with `离开商店` / `刷新商店`, visible offers, roster, and shop events.
+
+- 2026-07-04 Godot normal-flow toolbar cleanup:
+  - Removed the battle-page debug escape action: battle toolbar now renders only `我方全部出击` and `结束回合`, with no `返回路线` jump-out button.
+  - Shop toolbar now uses player-facing `离开商店` and dispatches public `EXIT_SHOP` instead of the legacy/debug `BACK_TO_ROUTE` UI path.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now captures a real shop phase before purchase, finds the current shop route node from `route_options`, verifies `离开商店`, and asserts battle toolbar action count is exactly 2.
+  - Capture fixture no longer hardcodes `node_shop_basic` or assumes buying a duplicate pet must create a second roster card.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Visual evidence refreshed: `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` shows real shop UI with `离开商店` / `刷新商店`; `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` shows only the two battle actions.
+
+- 2026-07-04 Godot shop page shelf-copy cleanup:
+  - Player-facing gap: the shop page still exposed data/table wording in the subtitle (`夜市基础货架 · 货架 6 格`) even after route/reward copy cleanup.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` first failed on shop text containing `基础货架`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders shop availability as player-facing copy (`本次可购买 6 件商品。购买后进入背包，可带入战斗。`) while preserving `active_shop_pool` for rules/data.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now asserts shop capture has no `night_base` / `基础货架` / `货架 ` visible text.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, screenshots refreshed).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` shows `本次可购买 6 件商品。购买后进入背包，可带入战斗。` and no visible shelf/pool terminology in the shop subtitle.
+- 2026-07-04 Godot battle-end reward-copy cleanup:
+  - Player-facing gap: battle-end still exposed reward-pool/fallback wording (`战斗奖励：基础奖励池（速胜奖励池 暂无候选，已回退）`) and battle logs still wrote reward pool transitions.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` first failed on battle-end text containing `奖励池`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders battle-end reward status as player-facing reward availability (`继续后从奖励中选择 1 个`) and explains missed fast-win bonus without pool/fallback jargon.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now logs post-battle reward adjustment and follow-up reward selection without raw pool IDs, pool labels, fallback text, or `候选`.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now asserts battle-end capture has no `奖励池` / `暂无候选` / `已回退` / `候选` in addition to raw reward/wave IDs.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, screenshots refreshed).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle_end.png` shows `战斗奖励：继续后从奖励中选择 1 个。速胜加奖本次未触发。` and no visible reward-pool/fallback terminology.
+- 2026-07-04 Godot route/reward player-copy cleanup:
+  - Player-facing gap: route cards and reward pages still exposed table/source wording such as `奖励池 基础奖励池`, `商店池 夜市基础货架`, and reward-card pool labels.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` first failed on the route card text `奖励池 基础奖励池，生成 3 个候选。`; after route-card cleanup, stricter reward capture checks failed on the reward prompt/card/log text that still contained `奖励池`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders route options as player-facing actions (`从 3 个奖励中选择 1 个加入本局`, `浏览 6 件商品`) and reward cards as reward-use hints instead of pool labels.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now logs route shop/reward selection with player-facing wording rather than raw pool/candidate generation text.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now asserts route capture has no `数据快照` / `CSV 快照` / `奖励池` / `商店池` / `夜市基础货架`, and reward capture has no `reward_pT1` / `奖励池`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, screenshots refreshed).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` shows player-facing route cards with no pool/source copy; latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_reward.png` shows reward cards and logs with normal player wording and no visible reward-pool labels.
+- 2026-07-04 Godot route page debug-copy cleanup:
+  - Player-facing gap: the Godot route page still displayed debug/data-source wording (`数据快照：路线...` and `读取 ysbzs CSV 快照`) on the main player route screen.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` first failed with `route capture exposes raw id '数据快照'`; after replacing the route line, the stricter gate failed again on `CSV 快照` in the initial battle log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a player-facing route prompt instead of CSV/data-count totals on the route screen.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now initializes the route log with player-facing wording (`进入时间节点 1，选择当前路线节点。`).
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now asserts route capture text does not contain `数据快照` or `CSV 快照`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, screenshots refreshed).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` shows the route prompt `选择一个路线节点推进旅程...` and the log `进入时间节点 1，选择当前路线节点。`, with no visible debug data-count line or CSV snapshot wording.
+- 2026-07-04 Godot shop capture/replay offer selection:
+  - Parity gap: Godot screenshot capture and replay smoke still treated `shop_001` as the purchasable shop offer, despite the current route/shop snapshot being seed/data-driven and the prior project rule that shop smoke must read the actual exported offer.
+  - TDD RED: static gate `rg -n 'shop_001' /Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd /Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first found hardcoded purchase/inputLog assertions in both scripts.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now chooses the first unsold affordable offer from `state.snapshot().shop_offers` before dispatching `BUY_OFFER`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now uses the same current-snapshot offer id for replay-command coverage and asserts inputLog preserves that actual raw public payload.
+  - Passed: static gate now prints `OK: no hardcoded shop_001`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, screenshots refreshed).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` remains nonblank and shows the bought current-snapshot offer as `已售罄`, with the purchased roster card and controls still visible in the shop viewport.
+- 2026-07-04 Godot shop viewport roster visibility:
+  - Player-facing gap: the current graphical shop screenshot is saved at `1080x1010`; the shop page still used a high-screen layout, so after buying a pet the right-side roster panel clipped the purchased/upgraded roster cards and controls below the visible viewport.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` first failed on the old layout with `Roster_pal_002 rect y=939.0..1071.0 capture_height=1010`, then the stricter `ShopRosterScroll` visible-region gate failed with `Roster_pal_002 rect y=681.0..813.0 visible_bottom=735.0 capture_height=1010`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now gives the shop roster side its own `ShopRosterScroll`, renders roster/build information before shop events, and hides the bottom battle-log block on shop pages so the actual purchasable shop + roster area gets the available vertical space.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now verifies the shop capture has at least two roster cards after the purchase path and that those cards fit inside the right-side roster scroll viewport, not just inside the raw image height.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` is nonblank and visibly shows both active roster cards plus their `下阵` / `出售` controls inside the shop viewport; shop events remain reachable below in the roster scroll area.
+- 2026-07-04 Godot normal-wave temporary clone cleanup:
+  - Player-facing gap: after Day7 trial cleanup, normal Godot battle waves still interpreted `03_monster_waves.csv` numeric pools like `1,2,3,4,5-2` as player pet ids `pal_001..pal_005`, so formal battles could spawn temporary pet-like enemies such as `捣蛋猫` and inherit player action fields (`action_type` / `skill` / `shape` / `range`).
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `wave_d01_morning` round 1 slot 2 was still `捣蛋猫` instead of monster-template slot 2 `炽焰牛`, and normal wave enemies still inherited player action fields.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now parses monster-wave pools separately from pet/shop pools: numeric wave tokens resolve against `02_monster_templates.csv` row order, explicit `pal_XXX` tokens still resolve by monster template id, and monster templates are built from monster-template fields instead of copying full player pet rows.
+  - Re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json`; `wave_d01_morning` round 1 now exports `棉悠悠` / `炽焰牛`, and normal wave enemies have zero inherited player action fields.
+  - Passed: `python3 -m py_compile /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and visibly shows `受到威胁：炽焰牛 威胁6`, confirming normal battle threat source now comes from the monster template wave rather than a temporary pet clone.
+- 2026-07-04 Godot enemy threat UI:
+  - Player-facing gap: Godot snapshots already exposed browser-style `GET_CELL_DETAIL` threat data and board-cell `threat` payloads, but the Godot board and selected-unit panel did not show enemy threat information to the player.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because a threatened player cell did not render `威胁6` in the board cell text / tooltip; a second red check then failed because the selected battle panel did not render `SelectedThreatSummary`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now reads board-cell `threat` payloads in the UI layer, renders `威胁N` on threatened cells, adds threat tooltip text, highlights threatened cells with a warm warning border, and shows `受到威胁：... 威胁N` for the selected unit when its current cell is threatened.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now forces the battle capture into a visible threat fixture and fails before saving if `SelectedThreatSummary` or threatened-cell text is missing.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and visibly shows `受到威胁：捣蛋猫 威胁6` above the action preview and quality controls, without obvious text overlap.
+- 2026-07-04 Godot selected-action preview summary:
+  - Player-facing gap: Godot state already produced browser-style board preview rows and cell tooltips, but the selected battle panel did not summarize the current action's AP, direction, element layers, target, and predicted damage in a readable player-facing line.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because the main battle scene did not render `ActionPreviewSummary`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders `ActionPreviewSummary` from current board preview rows for the selected actor, showing slot, direction, AP, element layers, target names, predicted damage, shield damage, and HP damage without mutating state.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now sets the battle capture into a real selected-action preview fixture and fails if `ActionPreviewSummary` is missing before saving the screenshot.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and visibly shows `预览：第1槽 右 AP2 · 风2层 · 棉悠悠 伤害6（盾0 HP6）` above the quality mode buttons, without obvious text overlap.
+- 2026-07-04 Godot battle UI quality controls:
+  - Player-facing gap: Godot state already exposed `SET_QUALITY_MODE` / `SET_QUALITY_MARK` in battle `next_actions`, but the selected battle panel still only rendered slot, direction, AP, and use controls, so players could not use quality choices from the actual Godot UI.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because the main scene did not render `QualityMode_Guard`; mark UI coverage then required `selected_action_cells` so empty/current action cells can render `QualityMarkCell_*` buttons instead of relying only on damage-preview board cells.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `selected_action_cells` in snapshots for the selected battle unit/action slot.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders `QualityModeActions` and `QualityMarkActions` from public `next_actions` plus selected action cells; button presses dispatch `SET_QUALITY_MODE` and `SET_QUALITY_MARK` through the same public state path.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now forces the battle capture into a G01 quality-mode fixture and fails if `QualityMode_Guard` is missing before saving the screenshot.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and visibly shows the selected-unit panel with `品质攻✓` / `品质守` quality-mode buttons, battle controls, board, and units without obvious overlap.
+- 2026-07-04 BUILD_PREVIEW quality mode/mark parity:
+  - Player-facing gap: after G01/G24 mode commands and G30 mark commands were implemented, `BUILD_PREVIEW` still used only the old base preview damage and ignored the player's explicit quality mode/mark choice, so the UI-facing preview could disagree with the public combat command result.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because G01 attack mode did not add +2 preview damage, G24 same-damage mode did not add +1 to both preview targets, and G30 marked-cell preview did not add +3 to the marked target.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now computes non-mutating quality preview damage for the public preview path, preserving the existing preview base-damage contract while applying mode/mark deltas for G01/G02/G14/G17/G22/G24/G30 and simple core/target-count deltas for G03/G25/G26.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 G01 attack/guard mode command parity:
+  - Browser/data authority: `data/csv/29_quality_upgrades.csv` row `G01 攻守切换` is `dualMode`: the player can switch between attack and guard; attack mode gives damage +2, while guard mode grants 8 shield at round start.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because selected G01 units did not expose `SET_QUALITY_MODE`, the public mode command was rejected, public guard mode did not grant round-start shield, and guard mode still inherited the attack-mode damage bonus.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now includes G01 in the public quality-mode command path, accepts `攻` / `攻击` and `守` / `防守` aliases, stores explicit player choices with `quality_runtime.mode_explicit`, applies attack mode as +2 damage, applies guard mode as no attack bonus plus 8 shield at round start, and preserves the old low-HP automatic guard fallback when the player has not explicitly chosen a mode.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 G24 dual-mode command parity:
+  - Browser/data authority: `data/csv/29_quality_upgrades.csv` row `G24 双锋` is `dualMode`: the player can switch between `同伤` and `主副`; same-damage mode gives both covered targets +1 damage, while main-sub mode gives the first target +4 and leaves the second target at base damage.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because selected G24 units did not expose `SET_QUALITY_MODE`, the public mode command was rejected, and the same-damage branch could not be selected.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now includes G24 in the public quality-mode command path, accepts `同` / `同伤` and `主` / `主副` aliases, stores the selected mode in `quality_runtime.mode`, applies same-damage mode as +1 to each covered target, and preserves main-sub behavior as +4 to the first hit only.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 G22/G30 manual mark command parity:
+  - Browser/data authority: `data/csv/29_quality_upgrades.csv` rows `G22 双印择一` and `G30 三选一金印` are `manualMark`: the player chooses one covered action cell each round; G22 gives the chosen enemy cell +4 damage or chosen ally cell +8 shield, while G30 gives the chosen enemy cell +3 damage.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because selected G22/G30 units did not expose `SET_QUALITY_MARK`, the public mark command was rejected, G22 still used the old first/core-cell damage and shield behavior, and G30 still used fixed-core damage.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now treats G17/G22/G30 as public mark-capable quality upgrades, keeps action-cell validation through the selected action slot, stores the chosen cell in `quality_runtime.marked_cell`, applies G22 +4 damage / +8 ally shield only to the explicitly marked cell when one exists, and applies G30 +3 only to the explicitly marked cell while preserving old fixed-core fallbacks when no explicit mark exists.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 G17 quality mark command parity:
+  - Browser/data authority: `data/csv/29_quality_upgrades.csv` row `G17 精准印记` is `manualMark`: each round the player can choose one own action cell, and that marked cell gains +5 damage for the round.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because selected G17 units did not expose `SET_QUALITY_MARK`, the public mark command was rejected, and G17 still applied the old automatic core/single-cell +5 instead of respecting a player-marked action cell.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts public `SET_QUALITY_MARK` / `setQualityMark`, exposes it through battle `next_actions` for selected G17 units, validates that the requested cell is inside the current action slot's covered cells, stores the mark in `quality_runtime.marked_cell`, resets it with per-turn action-slot reset, and applies +5 only to the marked target cell when an explicit mark exists while preserving the old core/single-cell fallback for unmarked compatibility.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 G14 quality mode command parity:
+  - Browser/data authority: `data/csv/29_quality_upgrades.csv` row `G14 破绽一击` describes a switchable `dualMode` effect: `稳击` damage +2, `重击` damage +6, and heavy mode can only settle the selected shape cell.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because selected G14 units did not expose `SET_QUALITY_MODE`, the public mode command was rejected, stable mode still used the old +6 behavior, and heavy mode still settled the full multi-cell shape.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now includes G14 in the public quality-mode command path, accepts `稳` / `稳击` / `重` / `重击` aliases, stores the selected mode in `quality_runtime.mode`, applies stable mode as +2 per hit, applies heavy mode as +6, and narrows heavy-mode attack settlement to the player-clicked target cell.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 G02 quality mode command parity:
+  - Browser/data authority: `data/csv/29_quality_upgrades.csv` describes `G02 稳爆切换` as a switchable stable/burst quality effect rather than a purely automatic hit-index bonus.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because selected G02 units did not expose `SET_QUALITY_MODE`, the public command was rejected, stable mode could not apply +1 to every hit, and burst mode still inherited the old later-hit +1.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts public `SET_QUALITY_MODE` / `setQualityMode`, exposes it through battle `next_actions` for selected G02 units, stores the chosen mode in `quality_runtime.mode`, applies `稳` as +1 per hit, applies `爆` as +4 on the first hit only, and preserves the old automatic G02 behavior when no mode was explicitly set.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 formal mechanism completion and non-formal cleanup:
+  - Source split: `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` previously reported `pending=34`; CSV cross-check showed only 4 were formal `04_mechanisms.csv` rows (`mech_consume_layers_grow`, `mech_summon_each_round`, `mech_penalty_after_round10`, `mech_elite_reward_bonus`) and the other 30 were non-formal Web mechanic-status leftovers.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because the 4 formal rows were pending, non-formal leftovers still occupied the pending bucket, element-consume growth did not change attack or clear carrier-cell layers, each-round summon did not spawn/log through public monster turn, and elite reward did not record/log `elite_chest`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies all 61 formal mechanisms as `covered`, preserves the 10 temporary trial exclusions as `excluded_temporary_trial`, and classifies the 30 non-formal Web leftovers as `excluded_non_formal` instead of mainline pending work.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now supports `mech_consume_layers_grow`, `mech_summon_each_round`, and `mech_elite_reward_bonus`; `mech_penalty_after_round10` is covered by the existing browser-style max-round failure lifecycle.
+  - Re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=61`, `excluded_temporary_trial=10`, `excluded_non_formal=30`, and no `pending` rows; formal exported rows with non-covered status are empty.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_countdown_pressure / mech_reduce_reward_if_alive / mech_trap_stack_trigger behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` rows `M56`, `M52`, and `M46` mark these as formal mechanisms with `round_start`, `battle_end`, and `on_enter_cell` triggers.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_countdown_pressure`, `mech_reduce_reward_if_alive`, and `mech_trap_stack_trigger` were not Godot-covered; the round-5 pressure spawn, alive-enemy reward penalty, and enter-cell all-element trap settlement did not produce the expected behavior/log/evidence.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now spawns a pressure reinforcement at CSV `round=5`, applies a visible alive-enemy battle-end reward reduction using `reward_pct=-0.2`, and triggers all element trap layers when a carrier steps into the trapped cell.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies all three as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=57`, `excluded_temporary_trial=10`, `pending=34`, and no `event_flow_or_data_only` bucket.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_fire_cross_detonate_diamond behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M47` marks `mech_fire_cross_detonate_diamond` as formal, `trigger=element_explode`, `condition=火魔钻石且在场/背包`, and `default_params=shape=cross5`, meaning a diamond fire unit should turn fire explosion into a cross-5 detonation.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_fire_cross_detonate_diamond` remained `event_flow_or_data_only`, a public `SELECT_UNIT` / `SELECT_CELL` fire3 explosion only damaged the center target, did not damage horizontal/vertical cross neighbors, and did not write `火魔引爆十字区域`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now detects a diamond fire unit with `mech_fire_cross_detonate_diamond` during the existing after-attack fire3 explosion path, expands the detonation cells to center plus four orthogonal cells, applies the same fire explosion damage to opposing units in that cross, clears the original fire layer, and logs `火魔引爆十字区域`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_fire_cross_detonate_diamond` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=54`, `event_flow_or_data_only=3`, and `mech_fire_cross_detonate_diamond.godot_behavior_status=covered`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_hatch_after_rounds behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M40` marks `mech_hatch_after_rounds` as formal, `trigger=round_end`, `condition=倒计时归零`, and `default_params=rounds=3; summon=mon_elite_egg`, meaning a surviving countdown unit should hatch after 3 round-end ticks.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_hatch_after_rounds` remained `event_flow_or_data_only`, a monster with the mechanism did not hatch after three public `END_PLAYER_TURN` commands, did not become stronger, and did not write `孵化完成`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now ticks enemy round-end mechanisms after enemy actions, tracks `hatchTicks`, and when the configured countdown reaches 3 marks the unit `hatched`, records `hatch_summon_id`, increases max HP / HP / attack, and logs `孵化完成`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_hatch_after_rounds` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=53`, `event_flow_or_data_only=4`, and `mech_hatch_after_rounds.godot_behavior_status=covered`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_economy_decay_on_fail behavior parity:
+  - Browser/data authority: `src/core/battle/lifecycle.cjs` applies the browser failure economy penalty as `economyMultiplier *= 0.9` for max-round failure, while `data/csv/04_mechanisms.csv` row `M54` carries the formal mechanism identity `mech_economy_decay_on_fail`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_economy_decay_on_fail` remained `event_flow_or_data_only` even though the public max-round `END_PLAYER_TURN` flow already reduces `economyMultiplier`.
+  - Existing behavior coverage: public `END_PLAYER_TURN` at round 10 enters a visible loss result, reduces `economyMultiplier` by 10%, records `economyMultiplierFrom` / `economyMultiplierTo` in the battle result and post-battle failure event, and keeps the browser-style failure log visible.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_economy_decay_on_fail` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=52`, `event_flow_or_data_only=5`, and `mech_economy_decay_on_fail.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 mech_castle_line_damage behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M53` marks `mech_castle_line_damage` as formal, `trigger=battle_fail`, `condition=战斗失败或怪物越线`, and `default_params=castle_hp=-1`, matching the existing Godot max-round failure behavior.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_castle_line_damage` remained `event_flow_or_data_only` even though the public max-round `END_PLAYER_TURN` flow already reduces `castleLine`.
+  - Existing behavior coverage: public `END_PLAYER_TURN` at round 10 enters a visible loss result, keeps hero HP unchanged, reduces `castleLine` by 1, records `castleLineFrom` / `castleLineTo` in the post-battle failure event, and returns to the route after continue if non-terminal.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_castle_line_damage` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=51`, `event_flow_or_data_only=6`, and `mech_castle_line_damage.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 mech_multi_element_bonus behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M45` marks `mech_multi_element_bonus` as formal, `trigger=element_settle`, `condition=同格多元素>=2`, and `default_params=bonus=3`, meaning a threshold element settlement on a cell with another active element should add 3 extra damage.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_multi_element_bonus` was still not Godot-covered, a public `END_PLAYER_TURN` threshold settlement did not deal the extra 3 damage versus a same-fixture control, and did not write `多元素共鸣`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_multi_element_bonus` inside the existing threshold element settlement path, counts active same-cell element types before clearing the settled element, applies CSV `bonus=3`, and logs `多元素共鸣`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_multi_element_bonus` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=50`, `event_flow_or_data_only=7`, and `mech_multi_element_bonus.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_summon_wall behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M36` marks `mech_summon_wall` as formal, `trigger=after_action`, `condition=指定格可放置`, and `default_params=hp=8; duration=2`, meaning an acting unit should create a blocking obstacle with 8 HP and 2-round duration.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_summon_wall` was still `event_flow_or_data_only`, a public `SELECT_UNIT` / `SELECT_CELL` action did not create a blocking unit, did not apply `hp=8` / `duration=2`, and did not write `召唤障碍`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_summon_wall` from the existing after-action hook, finds the first adjacent empty cell, creates a real same-side blocking unit with `role=障碍`, `is_wall=true`, CSV `hp=8`, CSV `wall_duration=2`, and logs `召唤障碍`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_summon_wall` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=49`, `event_flow_or_data_only=8`, and `mech_summon_wall.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_guard_taunt behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M09` marks `mech_guard_taunt` as formal, `trigger=target_select`, `condition=敌方选择目标时`, and `default_params=range=1`, meaning a nearby enemy should prioritize attacking the taunting unit.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_guard_taunt` was still `event_flow_or_data_only`, a public `END_PLAYER_TURN` enemy action attacked the ordinary nearby target instead of the taunting guard, and did not write a visible `嘲讽` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_guard_taunt` inside the enemy target-selection path, uses CSV `range=1`, redirects nearby enemies to the taunting unit before nearest-target fallback, and logs the target-selection redirect.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_guard_taunt` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=48`, `event_flow_or_data_only=9`, and `mech_guard_taunt.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_water_cleanse_debuff behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M48` marks `mech_water_cleanse_debuff` as formal, `trigger=round_start`, `condition=友方有负面状态`, and `default_params=cleanse=1`, meaning a water-cleanse unit should remove one negative same-side status at round start.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_water_cleanse_debuff` was still `event_flow_or_data_only`, a public `END_PLAYER_TURN` round-start transition did not clear an existing `incoming_damage_bonus` negative mark, and did not write `水流净化了 1`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_water_cleanse_debuff` from the existing round-start mechanism hook, clears same-side living units' `incoming_damage_bonus` up to CSV `cleanse=1`, and logs `水流净化了 1 个负面状态`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_water_cleanse_debuff` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=47`, `event_flow_or_data_only=10`, and `mech_water_cleanse_debuff.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_copy_weak_self behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M35` marks `mech_copy_weak_self` as formal, `trigger=after_action`, `condition=满足冷却`, and `default_params=count=1; hp_pct=0.5; atk_pct=0.5`, meaning an acting unit should copy one weakened same-side version of itself.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_copy_weak_self` was still `event_flow_or_data_only`, a public `SELECT_UNIT` / `SELECT_CELL` attack did not create a same-side copy, did not apply half HP/attack, did not record `copy_source_id`, and did not write `复制出一个弱化体`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now runs an after-action hook from the public attack settlement path, resolves `mech_copy_weak_self`, finds the first adjacent empty cell, creates a real same-side weakened copy with CSV `hp_pct=0.5` and `atk_pct=0.5`, records `copyWeakSelfRound` so it cannot loop within the same battle round, and logs `复制出一个弱化体`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_copy_weak_self` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=46`, `event_flow_or_data_only=11`, and `mech_copy_weak_self.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_revenge_buff behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M18` marks `mech_revenge_buff` as formal, `trigger=ally_death`, `condition=同阵营单位死亡`, and `default_params=atk=1; shield=2`, meaning a surviving same-side unit should gain attack and shield when an ally dies.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_revenge_buff` was still `event_flow_or_data_only`, killing a same-side unit through public `SELECT_UNIT` / `SELECT_CELL` did not increase attack, did not increase shield, and did not write `复仇强化`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now runs an ally-death hook from `_deal_damage`, resolves `mech_revenge_buff` on surviving same-side units, applies CSV default `atk=1` and `shield=2`, and logs `复仇强化`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_revenge_buff` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=45`, `event_flow_or_data_only=12`, and `mech_revenge_buff.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_summon_after_kill behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M39` marks `mech_summon_after_kill` as formal, `trigger=after_kill`, `condition=击杀目标`, and `default_params=summon=ally_sprite; count=1`, meaning a killing unit should summon one allied reinforcement.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_summon_after_kill` was still `event_flow_or_data_only`, a public `SELECT_UNIT` / `SELECT_CELL` kill did not create a new allied summon, did not preserve `summon_id=ally_sprite`, and did not write `击杀后召唤`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now runs an attacker after-kill hook from `_deal_damage`, resolves `mech_summon_after_kill`, finds the first adjacent empty cell, creates a same-side real summoned unit with the formal summon id, and logs `击杀后召唤援军`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_summon_after_kill` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=44`, `event_flow_or_data_only=13`, and `mech_summon_after_kill.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_retaliate_summon behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M17` marks `mech_retaliate_summon` as formal, `trigger=after_hit`, `condition=每回合首次受击`, and `default_params=summon=mon_swarm_plain_01; count=1`, meaning a hit elite/boss unit should summon one reinforcement once per battle round.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_retaliate_summon` was still `event_flow_or_data_only`, public `SELECT_UNIT` / `SELECT_CELL` did not create a new enemy summon, did not preserve `summon_id=mon_swarm_plain_01`, did not write `受击召唤`, and repeated same-round behavior was unguarded.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_retaliate_summon` in the shared after-hit hook, finds the first adjacent empty cell, creates a same-side real summoned unit with the formal summon id, logs `受击召唤`, and records `retaliateSummonRound` so it only triggers once per battle round.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_retaliate_summon` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=43`, `event_flow_or_data_only=14`, and `mech_retaliate_summon.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_summon_when_hit behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M38` marks `mech_summon_when_hit` as formal, `trigger=after_hit`, `condition=每回合一次`, and `default_params=summon=mon_swarm_plain_01; count=1`, meaning a hit unit should split out one minion once per battle round.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_summon_when_hit` was still `event_flow_or_data_only`, public `SELECT_UNIT` / `SELECT_CELL` did not create a new enemy summon, did not preserve `summon_id=mon_swarm_plain_01`, did not write `受击分裂`, and repeated same-round behavior was unguarded.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_summon_when_hit` in the shared after-hit hook, finds the first adjacent empty cell, creates a same-side real summoned unit with the formal summon id, logs `受击分裂`, and records `summonWhenHitRound` so it only triggers once per battle round.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_summon_when_hit` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=42`, `event_flow_or_data_only=15`, and `mech_summon_when_hit.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_counter_attack behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M20` marks `mech_counter_attack` as formal, `trigger=after_hit`, `condition=AP足够且未反击过`, and `default_params=ap_cost=1; damage=atk`, meaning a hit unit with enough AP should immediately counterattack once.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_counter_attack` was still `event_flow_or_data_only`, did not damage the source, did not spend AP, did not write `立即反击`, and repeated same-round behavior was unguarded.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_counter_attack` in the shared after-hit hook, spends CSV default `ap_cost=1`, deals defender `atk` damage back through `_deal_damage`, logs `立即反击`, and records `counterAttackRound` so it only triggers once per battle round.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_counter_attack` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=41`, `event_flow_or_data_only=16`, and `mech_counter_attack.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_on_hit_blast behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M14` marks `mech_on_hit_blast` as formal, `trigger=after_hit`, `condition=受到伤害后`, and `default_params=damage=2; radius=adjacent`, meaning a unit that is hit should splash damage adjacent opposing units.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_on_hit_blast` was still `event_flow_or_data_only`, adjacent units took no splash damage, and no `受击溅射` battle log existed.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves `mech_on_hit_blast` in the shared after-hit hook, applies CSV default 2 damage to adjacent opposing units through `_deal_damage`, writes a visible `受击溅射` log, and guards against recursive splash loops.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_on_hit_blast` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=40`, `event_flow_or_data_only=17`, and `mech_on_hit_blast.godot_behavior_status=covered`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_summon_on_empty_cell behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M34` marks `mech_summon_on_empty_cell` as formal, `trigger=after_element_apply`, `condition=目标格为空且有元素`, and `default_params=summon=ally_sprite; hp=6`, meaning an element-applied empty cell should create a small allied summon.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because public `SELECT_UNIT` / `SELECT_CELL` only emitted the old event-flow log; the covered empty cell stayed empty and no `召唤小灵` log existed.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now passes the covered cell into after-element mechanics, creates a real same-side summoned unit on a valid empty covered cell, preserves `summon_id=ally_sprite`, uses CSV `hp=6`, and keeps the event-flow log for browser-core trace compatibility.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_wind_push_on_hit behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M43` marks `mech_wind_push_on_hit` as formal, Web-implemented in `MECHANIC_STATUS`, `trigger=after_hit`, `condition=风元素命中`, `default_params=distance=1`, and notes `需移动规则`, meaning a wind hit pushes the hit target 1 cell.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_wind_push_on_hit` was still `web_status_only`, the target stayed at `x=3`, and no `风力推动` battle log was emitted.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies attacker-side `mech_wind_push_on_hit` after actual wind-hit damage, pushes the target along the action-slot direction by `distance`, and records either the target movement or a blocked push in the battle log.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_wind_push_on_hit` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=39` and no `web_status_only` entries.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_wind_slow_ap behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` row `M49` marks `mech_wind_slow_ap` as formal, Web-implemented, `trigger=after_hit`, `condition=风元素命中`, `default_params=ap_delta=-1`, meaning a wind hit lowers the hit target's AP by 1.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_wind_slow_ap` was still `web_status_only`, the target AP stayed at 2 after a wind hit, and no `风压降低` battle log was emitted.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies attacker-side after-hit mechanics after actual damage, and `mech_wind_slow_ap` lowers the wind-hit target's AP by `ap_delta` with a visible Chinese battle log.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_wind_slow_ap` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=38` and `web_status_only=1` (`mech_wind_push_on_hit` only).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 mech_fire_ignite_bonus behavior parity:
+  - Browser/data authority: `data/csv/04_mechanisms.csv` marks `mech_fire_ignite_bonus` as formal, Web-implemented, `trigger=element_damage`, `condition=火层结算`, `default_params=per_layer=1`, meaning fire-layer settlement gets +1 damage per fire layer.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because `mech_fire_ignite_bonus` was still `web_status_only`, fire3+ action settlement still dealt 6 instead of 9 before the normal hit, and `BUILD_PREVIEW` still projected 6 settlement damage instead of 9.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies `mech_fire_ignite_bonus` in the shared fire burst damage helper, so both actual fire3+ action settlement and `BUILD_PREVIEW` settlement rows use triangular fire damage plus `layers * per_layer`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now classifies `mech_fire_ignite_bonus` as Godot-covered; re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` now reports `covered=37` and `web_status_only=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 board snapshot preview/previews parity:
+  - Browser authority: `src/core/battle/preview.cjs` derives board-cell action preview state from `buildPreviewGrid(...)`, attaching matching rows to `cell.previews` and the active actor row to `cell.preview`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `START_BATTLE` -> `SELECT_UNIT` fixture with two living player actors previewing the same target cell. The red run failed on missing `board.cells[].previews`, missing active/inactive actor rows, missing active `preview`, and missing legacy active `action_preview_data`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now builds board-cell preview rows from the same `_build_preview_grid(...)` path, groups all rows by cell, writes raw rows to `previews`, writes the active row to `preview`, and keeps `action_preview` / `action_preview_data` compatibility fields with snake-case aliases for existing Godot UI consumers.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 build-preview cumulative projection parity:
+  - Browser authority: `src/core/battle/preview.cjs` keeps `projectedElements` and `projectedUnits` inside `buildPreviewGrid(...)`, so later preview rows see earlier projected element layers, settlement clears, HP/shield loss, and dead-target skips.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `START_BATTLE` -> `SELECT_UNIT` -> `BUILD_PREVIEW` fixture with two player actors both targeting the same enemy. The red run failed because the second actor preview still started from the target's original HP instead of the first actor's projected HP.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now keeps read-only preview-local projection maps by cell and unit id, reuses projected cell elements and target HP/shield across preview rows, clears projected fire settlement layers, updates projected target HP/shield after action damage, and skips later rows for projected-dead targets.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 build-preview multi-actor parity:
+  - Browser authority: `src/core/battle/preview.cjs` builds preview rows for every living hero through `previewActors(...)` / `actors.forEach(...)`, while marking the requested `unitId` as `isActiveActor` and preserving actor `order`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `START_BATTLE` -> `SELECT_UNIT` -> `BUILD_PREVIEW` fixture with two living player units and two enemy targets. The red run failed on missing preview rows for the non-selected living player actor.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now keeps `BUILD_PREVIEW` read-only but iterates all living player actors, applies request parameters only to the active actor, emits `order` / `isActiveActor`, and leaves inactive actors on their own first available action slot/direction.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 build-preview fire settlement preview parity:
+  - Browser authority: `src/core/battle/preview.cjs` projects action-slot element layers into the target cell during `buildPreviewGrid(...)`; when a fire slot raises the cell to fire3+, it emits `settlement`, `triggersElementLink`, `predictedSettlementRawDamage`, `predictedSettlementDamage`, and combines settlement damage before normal action damage.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `START_BATTLE` -> `SELECT_UNIT` -> `BUILD_PREVIEW` fixture with a target cell at fire2 and a fire slot adding one layer. The red run failed on missing element-link trigger, missing fire settlement payload, missing triangular settlement damage, missing combined damage, and missing projected HP range.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now keeps preview settlement read-only, computes the projected fire layers from cell state plus selected slot layers, applies browser-style triangular fire settlement damage first, then projects normal action damage from the post-settlement HP/shield state.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` is nonblank and still shows the battle board, controls, units, and selected action preview.
+- 2026-07-04 board snapshot threat parity:
+  - Browser authority: `src/core/battle/preview.cjs` writes threat rows back into `state.board.cells` during `syncDerivedBoard(...)`, so UI consumers can read threat directly from board cell snapshots, not only from `GET_CELL_DETAIL`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` extended the existing adjacent-enemy threat fixture to read `snapshot().board.cells` through `_board_cell(...)`. The red run failed on missing board-cell attack threat type, enemy id, target id, and predicted damage.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now computes the first-pass read-only threat map once in `_board_cells()` and attaches matching threat rows to board cells while preserving the existing `GET_CELL_DETAIL` threat result.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+- 2026-07-04 get-cell-detail threat parity:
+  - Browser authority: `src/core/battle/preview.cjs` runs `syncDerivedBoard(...)` before `getCellDetail(...)`, and `src/core/battle/threat.cjs` populates `cell.threat` from enemy intent, including attack threat rows with `type`, `unitId`, `targetId`, `damage`, `threat`, `hits`, and action metadata. Godot previously returned cell detail with unit/preview/trace only, so consumers could not inspect enemy threat from the public read command.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `START_BATTLE` -> `getCellDetail` fixture with an enemy adjacent to `pal_002`. The red run failed on missing attack threat type, enemy id, target id, predicted damage, and threat score.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now builds a read-only first-pass threat grid for the current battle phase using the same Godot enemy-turn semantics: adjacent enemies project attack threat onto their target cell, and non-adjacent enemies project a one-step move-path threat without mutating unit positions. `GET_CELL_DETAIL` now includes the matching threat row.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`, route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots refreshed).
+  - Note: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` still fails under the dummy renderer because viewport texture capture is null; the task-card capture command is the non-headless Godot command above.
+- 2026-07-04 build-preview damage breakdown parity:
+  - Browser authority: `src/core/battle/preview.cjs` preview rows expose shield/HP split fields (`predictedHpDamage`, `predictedShieldDamage`, `predictedHpFrom/To`, `predictedShieldFrom/To`) in addition to raw and final preview damage. Godot previously returned only `predictedDamage` / `predictedRawDamage`, so UI/detail consumers could not distinguish shield loss from HP loss.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` extended the public `BUILD_PREVIEW` fixture with attacker `atk=5` and a target at `hp=20`, `shield=3`, `def=1`. The red run failed on final damage, shield damage, HP damage, and projected HP/shield ranges.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now computes a read-only preview damage projection that applies defense before shield/HP allocation and emits the browser-compatible preview breakdown fields without mutating state.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 auto-position command semantic parity:
+  - Browser authority: `src/core/battle.cjs` handles `AUTO_POSITION_HEROES` through `autoPositionHeroes(...)`, builds a player positioning plan, moves heroes through the same board move path, stores action directions, and records a visible command log event. Godot previously accepted the command but only logged that manual deployment was retained.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `START_BATTLE` -> `AUTO_POSITION_HEROES` fixture with `pal_002` outside attack range and a live target at `(4,5)`. The first red run failed because the actor stayed at `(1,5)` and no movement log existed.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now routes `AUTO_POSITION_HEROES` to a real first-pass planner: it enumerates reachable empty/current cells, reuses action-slot shape targeting against live enemies, chooses a best damage/kills candidate, applies movement without spending AP or consuming action slots, preserves the chosen direction, and logs the movement result.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 temporary trial mechanism status cleanup:
+  - Browser authority: `src/core/mechanics.cjs` still lists `mech_shield_max` as `implemented`, but current repo usage shows it only in Day7 trial data (`data/csv/13_day7_beast_trial.csv` / `data/csv/15_summon_trial_questions.csv`), not in the formal `data/csv/04_mechanisms.csv` mainline mechanism table. The user already clarified Day7 trial-only content should stay excluded from the Godot singleplayer mainline.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added snapshot assertions that `mech_shield_max` is `excluded_temporary_trial`, formal empty mechanism `none` is `covered`, and `mechanism_status.godot_behavior.not_covered` is zero. The first red run failed on all four classification assertions.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now marks `none` as covered and classifies `mech_shield_max` with the other temporary Day7 trial mechanics, so Web status remains traceable without reintroducing trial behavior into the Godot mainline.
+  - Re-exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json`; mechanism status now reports `covered=36`, `excluded_temporary_trial=10`, `pending=34`, `event_flow_or_data_only=18`, `web_status_only=3`, with no `not_covered` bucket.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 threshold element settlement parity:
+  - Browser authority: `src/core/battle.cjs` calls `settleElements(state)` when the player ends the turn, before monster actions. `src/core/battle/resolution.cjs` settles occupied cells with `火/水/风/土 >= 3`, deals triangular `Σ(1..N)` element damage, clears both the cell element layer and the target unit status layer, and preserves empty-cell fire3+ as a trap.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `startBattle` -> `END_PLAYER_TURN` fixture with an enemy standing on water3 and mirrored target water3. The first red run failed on missing water3 damage, missing cell clear, missing unit status clear, and missing visible settlement log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now runs a shared threshold-element settlement step before enemy actions in `end_player_turn()`, using the same triangular damage formula and clearing both target cell and unit layers. It also logs empty-cell fire3+ trap preservation.
+  - The existing D30 trace persistence smoke was adjusted to use the non-threshold `金` element so it continues to test no-expiry trace behavior without conflicting with browser-style four-element threshold settlement.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 normal fire explosion lifecycle parity:
+  - Browser authority: `src/core/battle/actions.cjs` applies action-slot elements to the target cell/unit, then for fire slots checks `explodeIfEnemyOnFire(...)`; when the target cell reaches fire >= 3, it deals triangular fire damage, clears the cell fire layer, clears the target fire status layer, and only then proceeds to normal action damage.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `startBattle` -> `SELECT_UNIT` -> `SELECT_CELL` fixture with target cell fire2 plus a fire action slot; the first valid red run failed on missing fire explosion damage, missing cell fire clear, missing target fire clear, and missing visible fire-explosion log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors action-slot element application to occupied target cells, preserves existing D18 preloaded-cell burst ordering, resolves normal fire explosions at fire3+ before normal hit damage, and clears both the target cell and unit fire layers after the explosion.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 loss consolation gold lifecycle parity:
+  - Browser authority: `src/core/battle/lifecycle.cjs` creates battle results with `gold: win ? (state.round <= 5 ? 6 : 4) : 1` and then always applies `state.gold += result.gold`, so party-wipe and max-round losses still grant 1 consolation gold before returning to the visible battle result phase.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added party-wipe and public `START_BATTLE` -> `END_PLAYER_TURN` max-round failure assertions for `battle_result.gold == 1`, `gold_to == gold_before + 1`, and snapshot `coins == gold_before + 1`; the red run failed on all six new assertions because Godot still reported loss gold as 0.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now starts loss results from the browser consolation reward of 1, applies battle-end mechanics to that value, and always writes the final battle gold delta back to `coins` while keeping reward selection eligibility win-only.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+- 2026-07-04 max-round battle failure lifecycle parity:
+  - Browser authority: `src/core/battle.cjs` ends unresolved battles at `state.maxRounds` with `finishBattle(state, false, { reason: 'max_rounds' })`; `src/core/battle/lifecycle.cjs` then applies the non-party-wipe failure penalty by reducing `castleLine` by 1 and multiplying `economyMultiplier` by 0.9, without applying the party-wipe hero HP penalty.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added snapshot assertions for `maxRounds` / `castleLine` / `economyMultiplier` and a public `START_BATTLE` -> `END_PLAYER_TURN` max-round fixture; the red run failed because Godot lacked those snapshot fields and did not stop the battle at the max-round boundary.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now carries `castle_line` and `economy_multiplier` state, exposes browser-style aliases in snapshots, preserves them through capture/restore/save/load paths, and resolves `battle_round >= 10` unresolved battles as `reason=max_rounds` with browser-style castle/economy penalties.
+  - The max-round fixture validates the rule through the public dispatch path (`END_PLAYER_TURN`), not by directly invoking the internal finish hook.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 mechanism status gate and temporary-trial exclusion:
+  - Browser authority: `src/core/mechanics.cjs` keeps `MECHANIC_STATUS` as the runtime truth, while `src/core/trialEngine.cjs` owns the Day7 trial-only fire/water/wind domain mechanics. Those trial-domain mechanics are intentionally excluded from the Godot singleplayer mainline scope instead of being reintroduced as formal 61-row mechanism behavior.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added snapshot assertions for formal mechanism rows exposing `web_runtime_status`, `godot_behavior_status`, and separate `mechanism_status.by_id`; the red run failed on missing status fields and missing excluded temporary-trial summary.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now exports Web `MECHANIC_STATUS` separately from the planner CSV `runtime_status`, marks the current first 35 covered Godot mechanisms as `covered`, marks `mech_fire_ignite_bonus` / `mech_wind_push_on_hit` / `mech_wind_slow_ap` as `web_status_only`, and marks the 9 Day7 trial-domain mechanics as `excluded_temporary_trial`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `mechanism_status` in snapshots so later parity work can distinguish real Godot behavior coverage, Web status-only hooks, pending/data-only mechanisms, and excluded temporary trial mechanics.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 battle-end mechanism family parity:
+  - Browser authority: `src/core/mechanics.cjs` currently implements `battleEndMechanics(...)` for `mech_shop_discount_after_clear` by setting the next shop discount to at least 50% on win, `mech_bonus_reward_under_round5` by adding 1 gold on win when the battle round is <= 5, and `mech_curse_gold_loss` by reducing battle result gold by 1 with a floor at 0.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public `startBattle` / `_check_battle_end` fixtures for all three ids; the red run failed on missing next-shop discount, missing fast-reward gold +1/log, and missing curse reward reduction.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies a shared battle-end mechanism hook inside `_finish_battle_result(...)` before outer-run reward multipliers, records applied battle-end mechanics in `battle_result`, and preserves the existing route-event reward multiplier behavior.
+  - The smoke fixture validates the hook through normal battle result creation, not by directly invoking the mechanism hook.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 after-element-apply mechanism family parity:
+  - Browser authority: `src/core/mechanics.cjs` currently implements `afterElementApply(...)` for `mech_water_heal_on_layer` by healing the caster for applied water layers, `mech_earth_shield_on_layer` by granting shield for applied earth layers, and writes event-flow logs for `mech_summon_on_empty_cell`, `mech_summon_trap`, `mech_dirty_cell`, and `mech_earth_block_cell`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public `SELECT_UNIT` / `SELECT_CELL` fixtures for all six ids; the first valid red run failed on missing water heal, earth shield, and the four after-element event-flow logs.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now calls a shared after-element mechanism hook immediately after applying slot elements to hit units or empty cells, mirrors browser water/earth numeric effects, and keeps the summon/trap/dirty/earth-block ids at browser-current event-flow parity only.
+  - The smoke fixture validates the hook through normal public action-slot attack flow rather than direct internal hook calls.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+- 2026-07-04 after-element placeholder semantic upgrade:
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public `SELECT_UNIT` / `SELECT_CELL` fixtures requiring `mech_summon_trap` to add a real fire trap layer on an empty covered cell, `mech_dirty_cell` to leave a visible dirty-cell board trace, and `mech_earth_block_cell` to create a real blocking wall unit. The red run failed on all three semantic assertions while the old event-flow logs still existed.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now upgrades those three after-element ids from pure event-flow logs to real board mutations while retaining the existing event-flow log for trace compatibility.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`), and `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` was visually checked as nonblank with a normal battle board.
+- 2026-07-04 on-death event-flow mechanism family parity:
+  - Browser authority: `src/core/mechanics.cjs` currently implements `onDeath(...)` event-flow parity for `mech_death_explosion`, `mech_self_destruct`, and `mech_shield_break_explosion` by pushing `死亡爆发被记录，范围伤害进入事件流。`; it also implements `mech_death_summon` and `mech_split_into_minions` by pushing `死亡召唤/分裂被记录。`. This is event-flow parity only, not full explosion damage or summon resolution.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public `SELECT_UNIT` / `SELECT_CELL` lethal-hit fixtures for all five ids; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing on-death event-flow logs for all five fixtures.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now calls a shared on-death mechanism hook from `_deal_damage(...)` when a target transitions from positive HP to 0 HP, mirrors the two browser log families, and stores `flags.onDeathMechanicsApplied` to avoid repeated triggers on the same unit.
+  - The smoke fixture validates the hook through the public attack path, not by directly invoking the internal death hook.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 death/impact placeholder semantic upgrade:
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public attack / monster-turn fixtures requiring `mech_death_explosion` to deal CSV `damage=6` cross damage, `mech_shield_break_explosion` to deal CSV `damage=5` when shield drops from positive to zero, `mech_death_summon` to leave two real enemy summons, `mech_split_into_minions` to create two real minions with CSV `hp_pct=0.4`, and `mech_self_destruct` to explode after CSV `rounds=2` for `damage=8`. The red run failed on all real semantic assertions while old event-flow logs remained.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves those five ids through real board/unit mutations while preserving the prior event-flow trace logs: cross damage, shield-break trigger, death-cell/adjacent summons, split minion HP scaling, and self-destruct countdown.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`), and `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` was visually checked as nonblank with a normal battle board.
+- 2026-07-04 `mech_scale_with_allies` round-start behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` applies `mech_scale_with_allies` in `applyRoundStart(...)` by counting living same-camp units other than itself, then adding `allyCount * atk_per_ally` attack and `allyCount * shield_per_ally` shield; `data/csv/04_mechanisms.csv` currently provides `atk_per_ally=1; shield_per_ally=1`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added a public `startBattle` fixture with `pal_002` carrying `mech_scale_with_allies` and one active same-side roster ally; the first smoke run failed on missing attack/shield growth and missing `同阵营` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now counts living same-side units during the shared round-start hook and applies configured attack/shield growth for `mech_scale_with_allies`.
+  - The smoke fixture validates the ally-count bonus through public `startBattle`, not by directly calling the internal hook.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_enrage_after_round` / `mech_delayed_powerup` round-start behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` applies `mech_enrage_after_round` in the same attack-growth `applyRoundStart(...)` branch as per-round attack growth, reading configured `atk`; `data/csv/04_mechanisms.csv` currently provides `atk=3`. The same branch applies `mech_delayed_powerup` only when the battle round reaches configured `round`, currently `round=3`, then adds configured `atk=5`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public round-start fixtures for both mechanics; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing attack growth and missing `攻击+3` / `攻击+5` logs.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now expands the shared round-start attack-growth hook to cover both browser implemented ids, with the delayed threshold based on `battle_round`.
+  - The smoke fixture validates immediate enrage through public `startBattle`, delayed no-op before threshold, and delayed trigger through public `RUN_MONSTER_TURN` round-start after setting the battle-round fixture to the configured threshold.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_grow_atk_each_round` / `mech_grow_shield_each_round` round-start behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` applies `mech_grow_atk_each_round` in `applyRoundStart(...)` by adding configured `atk` with fallback 1, and applies `mech_grow_shield_each_round` through the shared shield branch with configured `shield` and fallback 2; `data/csv/04_mechanisms.csv` currently provides `atk=1` and `shield=3`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added battle-start public fixtures for both mechanics; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing attack/shield growth and missing round-start logs.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now expands the shared round-start mechanism hook beyond `mech_shield_regen` to cover attack growth and shield growth.
+  - The smoke fixture validates both mechanisms through public `startBattle`, which invokes the same player round-start hook used by normal battle flow.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_harden_when_hit` / `mech_soften_when_hit` after-hit behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` applies `mech_harden_when_hit` after a damaging hit by increasing target `def` by 1, and applies `mech_soften_when_hit` by lowering target `def` by 1 with a floor at 0.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public `SELECT_UNIT` / `SELECT_CELL` fixtures for both mechanics; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing defense changes and missing `防御+1` / `防御-1` logs.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now expands the shared after-hit mechanism hook to cover both defense mutation branches.
+  - The smoke fixture validates defense +1 after a damaging hit, defense -1 after a damaging hit, and the softening floor at 0 through public dispatch.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_rage_low_hp` / `mech_second_phase` after-damage behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` applies `mech_rage_low_hp` once when a living target drops to `ceil(maxHp * 0.5)` or below, sets `flags.raged`, and adds configured `atk` with fallback 2; `data/csv/04_mechanisms.csv` currently provides `atk=3`. The same hook applies `mech_second_phase` once at the same HP threshold, sets `flags.phase2`, and hardcodes attack +1 plus shield +3.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public `SELECT_UNIT` / `SELECT_CELL` fixtures for both mechanisms; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing low-HP attack/shield changes and missing `低血狂怒` / `第二阶段` logs.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now expands the shared after-damage mechanism hook to cover both low-HP attack-growth branches, preserving browser one-shot flags.
+  - The smoke fixture validates the first low-HP trigger and a second public hit that does not re-trigger either mechanism.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 after-hit reflected-damage mechanism family parity:
+  - Browser authority: `src/core/mechanics.cjs` uses one `afterHit(...)` branch for `mech_counter_damage`, `mech_thorn_shield`, `mech_thorns_percent`, and `mech_reflect_first_hit`; `mech_thorns_percent` reflects `ceil(amount * 0.5)`, `mech_reflect_first_hit` stores `flags.reflectUsed`, and the other reflected-damage ids use `reflect` with fallback 2.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` added public `SELECT_UNIT` / `SELECT_CELL` fixtures for `mech_counter_damage`, `mech_thorns_percent`, and `mech_reflect_first_hit`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing attacker HP loss and missing `反伤` logs.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now expands the shared after-hit mechanism hook to cover all four browser reflected-damage ids and preserves the one-time `reflectUsed` flag for `mech_reflect_first_hit`.
+  - The smoke fixture validates fixed reflected damage, half-effective-hit reflected damage, and a second hit that does not re-trigger first-hit reflection.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_thorn_shield` after-hit behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_thorn_shield` as implemented; `afterHit(...)` triggers when a target with the mechanic is hit by a source, reads `reflect=2` from mechanism params with fallback 2, and subtracts that damage from the attacker.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture target to `mechanics=["mech_thorn_shield"]` and drove public `SELECT_UNIT` / `SELECT_CELL`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing reflected HP loss and missing `反伤` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now has a shared after-hit mechanism hook, calls it from `_deal_damage(...)` after actual shield/HP damage, and forwards after-hit mechanism logs through the normal public attack flow.
+  - The smoke fixture validates reflected damage against the attacker and visible battle-log output through public dispatch.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_last_stand_shield` after-damage behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_last_stand_shield` as implemented; `afterDamage(...)` triggers once when the target remains alive at or below 30% max HP, reads current mechanism `shield=10` from `default_params` with fallback 8, sets `flags.lastStand`, and grants shield.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture target to `mechanics=["mech_last_stand_shield"]` and drove public `SELECT_UNIT` / `SELECT_CELL`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing low-HP shield and missing `残血` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now has a shared after-damage mechanism hook, calls it from `_deal_damage(...)` after actual HP damage, stores `flags.lastStand`, and forwards after-damage mechanism logs.
+  - The smoke fixture validates the first low-HP trigger and a second public hit that does not grant the shield again.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_element_barrier` before-damage behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_element_barrier` as implemented; `beforeDamage(...)` compares incoming `ctx.element` against `target.element` and reduces mismatched-element damage by default `reduce=3`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture target to `mechanics=["mech_element_barrier"]`, target element `水`, and incoming slot element `风`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing default -3 damage reduction and missing `元素屏障` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now passes the current damage element into the shared before-damage hook and applies `mech_element_barrier` when it differs from the target element.
+  - The smoke fixture validates the mismatched-element attack through public `SELECT_UNIT` / `SELECT_CELL` dispatch.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_shield_regen` round-start behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_shield_regen` as implemented; `applyRoundStart(...)` grants default `shield=3` and `src/core/battle.cjs` calls the round-start hook at battle start, next round, and monster turn timing.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a roster fixture unit to `mechanics=["mech_shield_regen"]`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing default +3 round-start shield and missing `回合开始` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now has a shared round-start mechanism hook and applies `mech_shield_regen` for player round starts and enemy turn starts.
+  - The smoke fixture validates the player battle-start round hook through public `startBattle` dispatch.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_damage_cap_per_round` before-damage behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_damage_cap_per_round` as implemented; `beforeDamage(...)` reads `target.roundDamageTaken`, caps this round's remaining HP damage by default `cap=8`, and `src/core/battle/resolution.cjs` increments `roundDamageTaken` only after actual HP damage is applied.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture target to `mechanics=["mech_damage_cap_per_round"]`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on first same-round hit exceeding the default cap, missing `损血上限` log, and second same-round hit causing additional HP loss.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies `mech_damage_cap_per_round` in the shared before-damage hook and records `roundDamageTaken` / `round_damage_taken` when HP damage is actually dealt.
+  - The smoke fixture validates both same-round hits through public `SELECT_UNIT` / `SELECT_CELL` dispatch, with only round/action availability reset between attacks.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_first_hit_immunity` before-damage behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_first_hit_immunity` as implemented and `beforeDamage(...)` uses `target.flags.firstHitImmunityUsed` to fully block the first incoming damage event only.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture target to `mechanics=["mech_first_hit_immunity"]`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on first-hit HP not being preserved, missing `首次免疫` log, and the second hit not matching the expected one-time behavior.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now stores `flags.firstHitImmunityUsed` on the target unit inside the shared before-damage mechanism hook, reducing only the first incoming hit to zero damage.
+  - The smoke fixture validates both hits through public `SELECT_UNIT` / `SELECT_CELL` dispatch, with only round/action availability reset between the two attacks.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_damage_reduce_pct` before-damage behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_damage_reduce_pct` as implemented and `beforeDamage(...)` reduces incoming damage to `ceil(damage * (1 - rate))` with default `rate=0.3` and fallback `min_damage=1`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture target to `mechanics=["mech_damage_reduce_pct"]`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing default 30 percent damage reduction and missing `百分比免伤` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now parses float mechanism params from exported/default params and applies `mech_damage_reduce_pct` in `_deal_damage(...)` through the shared before-damage mechanism hook.
+  - Player attack resolution continues to surface before-damage mechanism logs through public `SELECT_UNIT` / `SELECT_CELL` flow.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_armor_flat` before-damage behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_armor_flat` as implemented and `beforeDamage(...)` reduces incoming attack damage by default `armor=2`.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture target to `mechanics=["mech_armor_flat"]`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing default armor damage reduction and missing `护甲减伤` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies `mech_armor_flat` in `_deal_damage(...)` after guard reduction and before normal defense/shield/HP damage, reading `armor` from exported mechanism defaults or unit `mechanic_params`.
+  - Player attack resolution now forwards `_deal_damage(...)` mechanic logs into the battle log, so the before-damage trigger is visible through public `SELECT_UNIT` / `SELECT_CELL` flow.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 `mech_shield_flat` battle-start behavior parity:
+  - Browser authority: `src/core/mechanics.cjs` marks `mech_shield_flat` as implemented and `applyBattleStart(...)` grants default `shield=6` while emitting a battle-start mechanic event.
+  - TDD RED: `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` set a battle fixture unit to `mechanics=["mech_shield_flat"]`; `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing +6 battle-start shield and missing `开场护盾` log.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now resolves unit `mechanics` / `mechanism_id`, looks up exported `battle.mechanisms`, parses integer defaults from `default_params`, and applies `mech_shield_flat` on battle start for player and enemy units.
+  - This is the first formal 61-mechanism behavior slice in Godot; it does not claim broader mechanism parity.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 formal mechanism metadata export:
+  - Audited `data/csv/04_mechanisms.csv`: it contains 61 formal mechanism definitions including the `none` placeholder and many `可接入` / `待接入` runtime statuses.
+  - This slice exports mechanism identity/metadata only. It does not make pending/data-only mechanisms active in combat and does not invent summon or relic behavior that the browser core has not implemented.
+  - TDD RED: adding `data_counts.mechanisms == 61` to `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` first failed because Godot snapshots had no `mechanisms` count.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now exports `data/csv/04_mechanisms.csv` into `battle.mechanisms`, including id, number, name, category, target scope, trigger, condition, default params, effect, log template, score, strength, formal status, runtime status, usage flags, and note.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `data_counts.mechanisms` from the exported battle metadata.
+  - Re-export passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `mechanisms=61` alongside route/shop/battle/quality data.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - JSON structure assertion passed: `battle.mechanisms` has 61 rows, `source.files` contains `data/csv/04_mechanisms.csv`, first mechanism id is `none`, and `mech_shield_flat` is present.
+- 2026-07-04 formal action-skill identity coverage:
+  - Audited formal `技能` values in `data/csv/08_action_shapes.csv`: `buffAllSummons`, `castleReduce`, `healAmpBonus`, `spaceExplosionBonus`, `advHitBonus`, and `summonFromCell`.
+  - Browser core currently marks summon-style mechanisms as pending/data-only, so this slice does not invent new summon behavior in Godot.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on missing Chinese `summonFromCell` label/description.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `summonFromCell` as `格位召唤` with a Chinese summon-action description, so Godot ViewModel/UI does not leak the raw English skill id for formal summon pets.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now locks `summonFromCell` label/description coverage.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+- 2026-07-04 formal action-skill behavior smoke coverage:
+  - Added direct public-combat smoke fixtures for `buffAllSummons`, `healAmpBonus`, `spaceExplosionBonus`, and `advHitBonus` in `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd`.
+  - `buffAllSummons` now has a dedicated assertion that a public `SELECT_UNIT` / `SELECT_CELL` action buffs the actor and an allied unit by attack +1 and logs the Chinese label `召唤强化`.
+  - `healAmpBonus` now has a dedicated assertion that a covered damaged ally is healed by the action skill and logs `疗愈增幅`.
+  - `spaceExplosionBonus` now has dedicated assertions for +2 hit damage, fire layer placement on an empty covered cell, and `爆点轰击` logging.
+  - `advHitBonus` now has dedicated assertions for single-target +1 hit damage, target AP -1, and `牵制追击` logging.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Formal action-skill audit now reports `missing_state=[]` and `missing_test=[]`.
+- 2026-07-04 G29 formal quality parity fix:
+  - After removing temporary Day7 trial/control scope, audited Godot formal quality coverage against `data/csv/29_quality_upgrades.csv`. The only formal upgrade id missing from Godot state coverage was `G29 首尾呼应`.
+  - Supersedes the earlier 2026-07-03 temporary current-browser-gap note for G29: the formal table marks `G29` implemented and defines `形状第一格和最远格同时命中时，最远格伤害 +4。`
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on `G29 adds +4 damage to farthest target when first and farthest cells both hit`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates `G29` through public `SELECT_UNIT` / `SELECT_CELL`: first covered target takes base damage and farthest covered target takes `base + 4` only when both first and farthest cells hit.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now implements `G29` in the shared `_quality_damage_for_hit` path using the existing action-cell and hit-target helpers; no temporary Day7 trial or player-visible automation UI was reintroduced.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Formal quality audit passed: CSV reports `total=68` quality upgrades and Godot state reports `missing_state=[]`.
+- 2026-07-04 temporary trial/control cleanup:
+  - User clarified that Day7 fire trial was a temporary artifact and should not be implemented in the Godot singleplayer remake.
+  - Audited Godot singleplayer for temporary/trial/control artifacts. High-confidence temporary scope found in Godot: Day7 trial CSV export/state/aliases/smoke coverage, plus player-visible full-day/full-run automation buttons. Web-only `command-console` and `battle-debug` pages were not implemented in the Godot project.
+  - TDD RED: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` failed on Day7 data counts, `day7Trial` snapshot exposure, and Day7 command aliases still being accepted.
+  - Removed Day7 trial support from `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`: no `trial` payload, no `13_day7_beast_trial.csv` / `16_trial_action_plan.csv` / `17_trial_victory_rules.csv` source list, and no `day7_units/trial_actions/trial_rules` export summary.
+  - Removed Day7 trial support from `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd`: no Day7 aliases, no `day7_trial` state, no `day7Trial` snapshot fields, no Day7 data counts, and no Day7-specific trial execution / board fire-layer snapshot code.
+  - Removed Day7 positive smoke coverage and replaced it with negative assertions that Godot no longer exposes Day7 trial data/state/aliases.
+  - Removed player-visible `RUN_FULL_DAY` / `RUN_FULL_RUN` automation buttons from Godot `nextActions` and `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd`; internal commands remain available for validation scripts, but the player route page no longer renders `RunFullDayButton` or `RunFullRunButton`.
+  - Re-export passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` is nonblank/readable and no longer shows full-day/full-run automation buttons; route save/load and three normal choices remain visible.
+  - Audit note: Day7 text still appears inside exported normal route/wave notes because the official 10-day schedule has Day7 nodes/encounters. This is not the removed temporary fire-trial package.
+- 2026-07-04 Day7 fire-trial result-level battleTrace parity slice:
+  - Browser authority captured through public `createYSBZSUIAdapter` commands: `SETUP_DAY7_FIRE_TRIAL`, `RUN_DAY7_FIRE_TURN_1`, `RUN_DAY7_FIRE_TRIAL_ALL`, and `EXPORT_BATTLE_TRACE`. Current browser setup result emits 3 trace events (`TRIAL_SETUP`, `TRIAL_POSITIONS`, `TRIAL_RULE`) with `round=1` / `phase=player_turn`; current browser first-round result emits 30 result-level events, including `TRIAL_CATALYST=3`, `TRIAL_WIND_CONVERGE=3`, `TRIAL_FIRE_EXPLODE=5`, `UNIT_DEAD=1`, and result text `本回合表驱动执行17条动作`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now locks those Day7 result-level trace facts directly through public Godot dispatch and `EXPORT_BATTLE_TRACE`. The new assertions first failed because Godot only exported command-checkpoint replay trace and had no Day7 setup/round/action/death events.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now keeps a Day7 `battleTrace` / `battle_trace` event stream in snapshots, save/capture state, replay export, and `EXPORT_BATTLE_TRACE`; setup, round start, data-driven counts, physical/fire damage, catalyst, wind converge, fire explode, death, round result, and final result are emitted as browser-style result-level events.
+  - The implementation also aligned Day7 water catalyst triggering with current browser `trialEngine.cjs`: water-element actions can consume existing water layers through the active catalyst field, so the first round now emits the browser-matching third catalyst event.
+  - Passed red/green proof: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` first failed on Day7 setup trace, turn-one trace count, catalyst/wind/fire/death counts, and `EXPORT_BATTLE_TRACE`, then passed with `SMOKE_SINGLEPLAYER_OK`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `day7_units=9 trial_actions=24 trial_rules=4`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json`, and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `battleTraceSize: 2`, and last command `BUY_OFFER`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` is nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 Day7 fire-trial run-all board-element parity slice:
+  - Browser authority captured through public `createYSBZSUIAdapter` commands: `SETUP_DAY7_FIRE_TRIAL` then `RUN_DAY7_FIRE_TRIAL_ALL`. Current browser ViewModel ends full scripted trial with status `running`, `killedCloneCount=3`, killed clones `精灵龙黄金复制体 / 皮皮鸡黄金复制体 / 棉悠悠黄金复制体`, and only `骑士蜂黄金复制体` remaining at `hp=4 shield=0`.
+  - The same browser ViewModel exposes final Day7 board elements at key cells: chicken cell `(x=6,y=1)` has `火18 / 风2`, bee cell `(x=5,y=2)` has `火3 / 风1`, side cell `(x=6,y=2)` has `火1`, and catalyst cell `(x=5,y=3)` has `水1`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now locks those full-trial summary and board-element values. The new board-element assertions first failed with Godot reporting chicken cell `火3 / 风2` and bee cell `火0 / 风1`, then passed after preserving Day7 fire packet layers across rounds and exposing the browser-compatible packet fire value for wind-tagged cells in run-all snapshots.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now keeps `day7Trial.fireBurstLayers` across `_run_day7_fire_round(...)` summaries, marks full-trial snapshots with `showFirePacketLayers`, and applies that only to Day7 snapshot cell elements so normal battle cell rendering is not changed.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `day7_units=9 trial_actions=24 trial_rules=4`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json`, and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `battleTraceSize: 2`, and last command `BUY_OFFER`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` is nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 Day7 fire-trial first-round browser parity slice:
+  - Browser authority captured through public `createYSBZSUIAdapter` commands: `SETUP_DAY7_FIRE_TRIAL` then `RUN_DAY7_FIRE_TURN_1`. Current browser ViewModel ends round 1 with `round1Kills=["精灵龙黄金复制体"]`, `round1KillCount=1`, `passedRound1Standard=false`, chicken `hp=27 shield=20`, bee `hp=4 shield=0`, and sheep `hp=70 shield=0`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now locks those browser first-round values directly instead of only checking Day7 command/data presence.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies Day7 unit quality stat growth from the exported quality tables, maps Day7 CSV shape ids to the browser two-cell shape size needed for quality growth, supports `restore_shield`, consumes water catalyst one layer at a time, keeps a Day7-local cumulative fire-burst layer counter for browser-equivalent fire explosion damage, and exposes occupied-cell board elements so the Godot snapshot sees board layers like the browser ViewModel.
+  - This covers Day7 first-round summary / damage / shield parity for the scripted public command path. Full multi-round `trialEngine.cjs` trace ordering and every granular `battleTrace` event are still not claimed.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `day7_units=9 trial_actions=24 trial_rules=4` along with route/shop/battle/quality data.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json`, and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `battleTraceSize: 2`, and last command `BUY_OFFER`.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` is nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 Day7 fire-trial public command/data slice:
+  - Browser protocol check: `src/uiAdapterCommands.cjs` exposes `setupDay7FireTrial`, `runDay7FireTurn1`, and `runDay7FireTrialAll` as aliases for `SETUP_DAY7_FIRE_TRIAL`, `RUN_DAY7_FIRE_TURN_1`, and `RUN_DAY7_FIRE_TRIAL_ALL`; `src/core/reducer.cjs` routes those commands into `src/core/day7FireTrial.cjs` / `src/core/trialEngine.cjs`.
+  - `/Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` now exports the Day7 fire-trial source tables into the Godot JSON snapshot: 9 rows from `data/csv/13_day7_beast_trial.csv`, 24 rows from `data/csv/16_trial_action_plan.csv`, and 4 rows from `data/csv/17_trial_victory_rules.csv`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now normalizes the three Day7 browser aliases, builds a real 8x8 Day7 trial battle state from the exported CSV rows, runs the scripted first-round action table with move / attack / element layer / water catalyst / wind-gather / fire-explosion handling, and exposes a browser-style `day7Trial` snapshot summary.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies Day7 data counts, setup state, four player units plus four enemy clones, trial title / enemy hero position, first-round scripted kill metadata, visible fire and water board layers, catalyst and fire-explosion log lines, and the run-all public command status. The new assertions first failed because Godot exported no Day7 trial data and did not recognize the commands, then passed after adding exporter/state support.
+  - Current limitation: this is a first-pass Day7 command/data compatibility slice. It does not yet claim exact browser `trialEngine.cjs` damage / shield / battleTrace parity for every scripted action; that remains in `remaining_gap`.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json`, and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `battleTraceSize: 2`, and last command `BUY_OFFER`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `day7_units=9 trial_actions=24 trial_rules=4` along with the existing route/shop/battle/quality data.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 route/reward public command alias parity slice:
+  - Browser protocol check: `src/uiAdapterCommands.cjs` exposes route/reward/day-flow aliases `generateNodeOptions`, `generateBattleOptions`, `rewardOptions`, `pickReward`, `claimRouteReward`, and `runFullPlayerDayFlow`; `src/core/reducer.cjs` routes them as `GENERATE_NODE_OPTIONS`, `GENERATE_BATTLE_OPTIONS`, `REWARD_OPTIONS`, `PICK_REWARD`, `CLAIM_ROUTE_REWARD`, and `RUN_FULL_DAY`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now normalizes those aliases to the same public command names. The option-generation aliases keep the existing Godot no-version/no-command-log compatibility behavior, `runFullPlayerDayFlow` reaches the same day-end path as `RUN_FULL_DAY`, and reward aliases claim CSV reward options through the existing public reward path.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies browser alias normalization, no `stateVersion` / `command_log` mutation for route/reward option-generation aliases, `runFullPlayerDayFlow` current-day execution, and reward claim aliases returning to route. The new assertions first failed because Godot did not recognize those camelCase aliases, then passed after extending `ACTION_ALIASES`.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json`, `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it, and the exported deterministic `commandStream` did not contain route/reward option-generation aliases. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `battleTraceSize: 2`, `hasRouteAliasInCommandStream: false`, and last command `BUY_OFFER`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` is nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 manual-flow preview public command parity slice:
+  - Browser protocol check: `src/uiAdapterCommands.cjs` exposes public `PREVIEW_MANUAL_FLOW` with alias `previewManualFlow`; `src/uiAdapter.cjs` routes it before normal mutation handling into `runManualFlowPreviewTransaction(...)`, which sandboxes formal `RUN_PLAYER_ALL_OUT` / `END_PLAYER_TURN` commands and restores the original state. Browser replay sanitization also excludes `manualFlowPreview` from deterministic replay command payloads.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now normalizes `previewManualFlow` to `PREVIEW_MANUAL_FLOW`, treats it as a no-version/no-command-log view-state command, captures/restores the current Godot runtime state, executes formal public sandbox commands, and stores a browser-style projection result in `snapshot().last_command_result` / `lastCommandResult`.
+  - The Godot result now includes `commands`, `events`, projected `viewModel`, `beforeCells`, `beforeCellDetails`, projected `cells`, `cellDetails`, `cellDiffs`, `unitDiffs`, `projectedStateHash`, `rolledBack`, phase/round metadata, and a compact timing summary. This is first-pass protocol parity for player preview data, not yet full browser timing persistence parity.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies browser alias normalization, no `stateVersion` / `stateHash` / phase / deterministic `command_log` mutation, default two-step sandbox command order (`RUN_PLAYER_ALL_OUT`, `END_PLAYER_TURN`), full before/projected cell payloads, and non-empty cell/unit diffs. The new assertions first failed because Godot did not recognize `previewManualFlow` and returned no preview result, then passed after adding the alias, read-only dispatch branch, sandbox capture/restore, and diff builders.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json`, `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it, and the exported deterministic `commandStream` did not contain `PREVIEW_MANUAL_FLOW`. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `battleTraceSize: 2`, and `hasPreviewManualFlowInCommandStream: false`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 battle slot public command alias parity slice:
+  - Browser protocol check: `src/uiAdapterCommands.cjs` exposes public `SELECT_SLOT` and `USE_SLOT` with aliases `selectSlot` / `useSlot`; `src/core/reducer.cjs` treats `SELECT_SLOT` as a selection/view command and routes `USE_SLOT` through `battle.useActionSlot(...)`. The browser adapter also exposes `adapter.useSlot(...)` and `adapter.selectSlot(...)`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now normalizes `selectSlot` to `SELECT_SLOT` and `useSlot` to `USE_SLOT`, accepts both browser command names through public `dispatch(...)`, treats `SELECT_SLOT` as a no-version/no-command-log view-state command, and routes `USE_SLOT` through the same player action-slot execution path as `USE_ACTION_SLOT`.
+  - Godot battle `nextActions` now exposes browser-style `USE_SLOT` while retaining `USE_ACTION_SLOT` for existing local compatibility.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies browser `selectSlot` alias behavior, no `stateVersion` / `command_log` mutation for `SELECT_SLOT`, `USE_SLOT` visibility in battle `nextActions`, and a real `useSlot` action that spends AP, applies element layers, marks the slot used, grants the Chinese skill effect, and writes the battle log. The new assertions first failed because Godot did not recognize `selectSlot` / `useSlot` and did not expose `USE_SLOT`, then passed after adding aliases, dispatch branches, and nextAction output.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `battleTraceSize: 2`, last trace event `evt_000002`, last checkpoint event IDs `["evt_000002"]`, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 battle read-only public command parity slice:
+  - Browser protocol check: `src/uiAdapterCommands.cjs` exposes public `BUILD_PREVIEW` and `GET_CELL_DETAIL` with aliases `buildPreview` / `getCellDetail`; `src/core/reducer.cjs` returns `battle.buildPreviewGrid(...)` and `battle.getCellDetail(...)` as read-only command results without mutating authoritative state.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts `BUILD_PREVIEW` and `GET_CELL_DETAIL` through public `dispatch(...)`, normalizes the browser aliases, treats them as view-state commands, and stores their structured result in `snapshot().last_command_result` / `snapshot().lastCommandResult` without advancing `stateVersion` or appending deterministic `command_log`.
+  - `BUILD_PREVIEW` returns a browser-style preview array using `r/c` coordinates, `actorId`, `targetId`, slot/direction/shape/element fields, hit flags, predicted damage, and text. `GET_CELL_DETAIL` returns the requested cell's unit/elements/traces plus the current selected-action preview for that cell.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now sets up a deterministic battle fixture and verifies both read-only commands, alias normalization, no-version/no-command-log behavior, preview target coordinates, enemy-hit flag, unit detail, and selected preview detail. The new assertions first failed because Godot reported the commands as unknown, then passed after adding the read-only handlers and helper result builders.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `battleTraceSize: 2`, last trace event `evt_000002`, last checkpoint event IDs `["evt_000002"]`, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay public export command parity slice:
+  - Browser protocol check: `src/uiAdapterCommands.cjs` exposes public `EXPORT_REPLAY`, `EXPORT_BATTLE_TRACE`, and `REPLAY_BATTLE_TRACE` commands with aliases `exportReplay`, `exportBattleTrace`, and `replayBattleTrace`; `src/core/reducer.cjs` returns replay/battleTrace result payloads for these commands without changing authoritative gameplay state.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts `EXPORT_REPLAY`, `EXPORT_BATTLE_TRACE`, and `REPLAY_BATTLE_TRACE` through public `dispatch(...)`, normalizes the browser aliases, treats them as view-state commands, and stores their structured result in `snapshot().last_command_result` / `snapshot().lastCommandResult` without advancing `stateVersion` or appending deterministic `command_log`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies all three public replay commands, their returned replay/trace payloads, and their no-version/no-command-log behavior. The new assertions first failed because Godot reported the commands as unknown and had no last result payload, then passed after adding `last_command_result` and the dispatch handlers.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports schema `ysbzs.replay`, replay version `ysbzs_replay_v3_command_stream`, checksum `d6689412`, `commandStreamSize: 2`, `battleTraceSize: 2`, last trace event `evt_000002`, last checkpoint event IDs `["evt_000002"]`, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable, showing `第 10 天路线结束` with save/load/restart controls and the full-run log. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay checkpoint eventIds parity slice:
+  - Browser protocol check: `src/core/commandEnvelope.cjs.commitAcceptedCommand(...)` stores accepted command `eventIds`, and `src/core/replayCodec.cjs.appendReplayCommand(...)` preserves checkpoint `eventIds` inside deterministic `commandStream`; top-level `commandCheckpoints` mirrors each command checkpoint.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now uses one stable `_replay_event_id(index)` for both derived command-level `battleTrace` events and deterministic replay checkpoints, so `commandStream[].checkpoint.eventIds` and top-level `commandCheckpoints[].checkpoint.eventIds` link back to the matching `battleTrace.eventId`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies the last `BUY_OFFER` command checkpoint references the matching `battleTrace` event ID and that top-level `commandCheckpoints` preserves the same event IDs. The new assertions first failed because Godot emitted empty checkpoint `eventIds`, then passed after adding `_replay_event_id(...)`.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `d6689412`, `commandStreamSize: 2`, `commandCheckpointsSize: 2`, `battleTraceSize: 2`, last trace event `evt_000002`, last protocol `|COMMAND_ACCEPTED|id=evt_000002|round=0|phase=shop|command=BUY_OFFER`, last command checkpoint event IDs `["evt_000002"]`, top-level command checkpoint event IDs `["evt_000002"]`, both links true, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay battleTrace compatibility parity slice:
+  - Browser protocol check: `src/core/battleEventProtocol.cjs.recordBattleEvent(...)` writes machine-readable battle trace events with `eventId`, `kind`, `type`, `step`, `round`, `phase`, `payload`, `changes`, `source`, `reason`, `tags`, `text`, and `protocol`; `src/core/replayCodec.cjs.buildReplayDocument(...)` preserves `state.battleTrace` as replay `battleTrace`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now derives a first-pass command checkpoint `battleTrace` from accepted public dispatch changes, and accepted `command_log` entries now preserve `beforePhase` / `afterPhase` so replay `inputLog`, `changeLog`, and `battleTrace` report the post-command phase instead of `unknown`. This is command-level protocol compatibility, not yet full browser reducer battle-event granularity.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies replay `battleTrace` mirrors command checkpoint changes, records the last `BUY_OFFER` as `COMMAND_ACCEPTED`, exposes a browser-style protocol line, carries one normalized change payload, and reports phase `shop`. The new assertions first failed because Godot emitted an empty `battleTrace`, then failed again on `phase=unknown`, and passed after adding `_replay_battle_trace()` plus command phase capture.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `712827bf`, `inputLogSize: 2`, `changeLogSize: 2`, `battleTraceSize: 2`, `commandStreamSize: 2`, `debugTimelineSize: 3`, last change phase `shop`, last trace `COMMAND_ACCEPTED`, last trace phase `shop`, protocol `|COMMAND_ACCEPTED|id=evt_000002|round=0|phase=shop|command=BUY_OFFER`, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay changeLog compatibility parity slice:
+  - Browser protocol check: `src/core/changeLog.cjs.recordChange(...)` records structured change entries, and `src/core/replayCodec.cjs.buildReplayDocument(...)` preserves `state.changes` as replay `changeLog` alongside `inputLog`, deterministic `commandStream`, and debugTimeline.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now derives a first-pass command checkpoint `changeLog` from accepted public dispatches, including browser-style fields `changeId`, `step`, `round`, `phase`, `type`, `path`, `from`, `to`, `delta`, `source`, `reason`, and `tags`. This is command-level compatibility, not yet full browser reducer granular change parity.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies replay `changeLog` mirrors accepted command checkpoints, records the last `BUY_OFFER` as `COMMAND_ACCEPTED`, and preserves before/after `stateVersion`. The new assertion first failed because Godot emitted an empty `changeLog`, then passed after adding `_replay_change_log()`.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `712827bf`, `inputLogSize: 2`, `changeLogSize: 2`, `commandStreamSize: 2`, `debugTimelineSize: 3`, last change `COMMAND_ACCEPTED`, last change command type `BUY_OFFER`, version `1 -> 2`, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay inputLog compatibility parity slice:
+  - Browser protocol check: `src/core/changeLog.cjs.recordInput(...)` appends structured input entries, and `src/core/replayCodec.cjs.buildReplayDocument(...)` preserves `state.inputLog` as the replay `inputLog` compatibility field alongside deterministic `commandStream`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now derives replay `inputLog` from accepted public `command_log[].raw`, assigning browser-style `inp_00001` ids and preserving raw input payloads outside the sanitized deterministic commandStream.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies replay `inputLog` mirrors accepted public inputs, records the last `BUY_OFFER`, preserves `offer_id`, and keeps raw transient fields such as `accepted` in `inputLog` while they remain stripped from deterministic `commandStream`. The new assertion first failed because Godot emitted an empty `inputLog`, then passed after adding `_replay_input_log()`.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `712827bf`, `inputLogSize: 2`, `commandStreamSize: 2`, `debugTimelineSize: 3`, last input type `BUY_OFFER`, last input payload `type: BUY_OFFER`, `offer_id: shop_001`, `accepted: true`, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay initial-options sanitization parity slice:
+  - Browser protocol check: `src/core/replayCodec.cjs` builds `initial.options` through `sanitizeInitialOptions(...)`, keeping only `INITIAL_OPTION_KEYS` and recursively dropping `data` / `indexes` before replay checksum generation.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now sanitizes `replay_document({ initialOptions })` with the browser initial-options whitelist, preserves allowed fields such as `seed`, `day`, `period`, `playerId`, `playerName`, `gold`, and `players`, recursively removes `data` / `indexes`, and uses sanitized initial seed/day/period in the replay `initial` block while retaining the existing default initial options when none are supplied.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies custom replay initial options are preserved/sanitized like the browser protocol. The new assertions first failed because Godot hardcoded only `seed/day/period/playerId/mode`, then passed after adding the initial-options sanitizer.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The default document still reports checksum `712827bf`, `seed: ysbzs-local`, `initialSeed: ysbzs-local`, `initialDay: 1`, `initialPeriod: 上午`, initial option keys `day/mode/period/playerId/seed`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `replayableCommands: 2`, `rejectedCommands: 1`, and final state hash `2caf9c08e7f7371d`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replayable command sanitization parity slice:
+  - Browser protocol check: `src/core/replayCodec.cjs` builds deterministic replay payloads through `replayableCommand(command)`, which recursively drops `COMMAND_EXCLUDE_KEYS` plus `data` / `indexes` before writing commandStream entries.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now filters accepted playable command payloads through a Godot replay sanitizer before appending `command_log[].command` and replay `commandStream[].command`, while preserving normalized `type` and filled `baseStateVersion`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now injects transient UI/result fields into a public `BUY_OFFER` dispatch and verifies they do not enter playable command log or replay commandStream. The new assertions first failed on leaked keys such as `accepted`, `defaultPayload`, `events`, `stateHash`, `data`, and `indexes`, then passed after adding the sanitizer.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `712827bf`, `initialStateHash: 634273fae7d6e7a1`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `replayableCommands: 2`, `rejectedCommands: 1`, `finalStateHash: 2caf9c08e7f7371d`, last command `BUY_OFFER`, last `baseStateVersion: 1`, and `excludedKeysPresent: []`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay initial-stateHash parity slice:
+  - Browser protocol check: `src/core/replayCodec.cjs.verifyReplayDocument(...)` creates a fresh adapter from `replay.initial.options` and reports `initialHash`, while replay documents carry `initial.stateHash` in the checksum payload.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now computes `initial.stateHash` for exported `ysbzs.replay` documents from a fresh Godot state using the replay seed, and `verify_replay_document(...)` now returns `initialHash` alongside final hash/version and command checkpoints.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies exported replay `initial.stateHash` is a 16-character browser-style hash and that Godot replay verification reports the same `initialHash`. The new assertions first failed because Godot emitted `null` and omitted `initialHash`, then passed after adding the initial-state hash path.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `712827bf`, `initialStateHash: 634273fae7d6e7a1`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `replayableCommands: 2`, `rejectedCommands: 1`, `finalStateHash: 2caf9c08e7f7371d`, and last debug error code `STATE_VERSION_MISMATCH`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay rejected-error payload parity slice:
+  - Browser protocol check: `src/core/replayCodec.cjs` writes rejected debug timeline errors as structured payloads, and `tests/unit/replay_command_stream.test.cjs` asserts `rejectedTimeline.error.code == "STATE_VERSION_MISMATCH"` for stale commands.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now writes rejected replay debug timeline errors as `{ code, message }` dictionaries instead of bare strings, keeping the same browser-style `STATE_VERSION_MISMATCH` code for stale `baseStateVersion` rejection.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies the rejected debug timeline error is structured and exposes `error.code`. The new assertion first failed because Godot emitted a string error, then passed after adding the structured replay error payload.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `2cecc750`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `replayableCommands: 2`, `rejectedCommands: 1`, and last debug entry `EXIT_SHOP` with `accepted: false`, `replayable: false`, `error.code: STATE_VERSION_MISMATCH`, `error.message: STATE_VERSION_MISMATCH`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay rejected-debugTimeline parity slice:
+  - Browser protocol check: rejected commands belong in replay `debugTimeline` but not deterministic `commandStream`; the stable rejected path preserves before/after version/hash and records the rejection reason without advancing state.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now keeps a replay debug timeline separate from playable `command_log`: accepted playable commands still enter `command_log` and `commandStream`, while rejected public commands append non-replayable debug timeline entries with `accepted: false`, `replayable: false`, before/after version/hash, and an error such as `STATE_VERSION_MISMATCH`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies a stale `EXIT_SHOP` remains out of `commandStream`, increments `summary.rejectedCommands`, increments `summary.timelineEntries`, records the rejected command type/error, and preserves current `stateVersion` / `stateHash` in the debug entry. The new assertions failed first because rejected commands were absent from replay debugTimeline, then passed after adding the separate timeline.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `d2be1dd9`, `commandStreamSize: 2`, `debugTimelineSize: 3`, `replayableCommands: 2`, `rejectedCommands: 1`, `finalStateVersion: 2`, `finalStateHash: 2caf9c08e7f7371d`, and last debug entry `EXIT_SHOP / STATE_VERSION_MISMATCH` with `accepted: false`, `replayable: false`, `beforeVersion: 2`, `afterVersion: 2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay verification parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `verify_replay_document(replay)`, validating browser-style `ysbzs.replay` schema/version/checksum, creating a fresh Godot state from the replay initial seed, replaying each `commandStream` command through public `dispatch(...)`, and checking each command checkpoint plus final `stateVersion` / `stateHash`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies Godot can validate its own replay document, reaches the expected final version/hash, checks both replay commands, reports the final `BUY_OFFER` checkpoint, and rejects a replay whose final hash was tampered after checksum generation. The new assertion first failed on missing `verify_replay_document()`, then passed after adding the replay verifier.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `8f10acf0`, `commandStreamSize: 2`, `debugTimelineSize: 2`, `finalStateVersion: 2`, `finalStateHash: 2caf9c08e7f7371d`, last command `BUY_OFFER`, last `baseStateVersion: 1`, and last checkpoint `afterVersion: 2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replay document export parity slice:
+  - Browser protocol check: `src/core/replayCodec.cjs` owns `ysbzs.replay` schema/version, `ysbzs_replay_v3_command_stream`, commandStream checkpoints, debugTimeline, summary/final hash fields, checksum validation, and `assertReplayDocument(...)`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `replay_document()` with browser-style `schema: "ysbzs.replay"`, `schemaVersion: 1`, `replayVersion: "ysbzs_replay_v3_command_stream"`, commandStream, commandCheckpoints, debugTimeline, summary, final, finalSummary, and checksum. It also adds `save_replay_to_user()` to write `user://ysbzs_singleplayer_replay.json`, matching the browser `EXPORT_REPLAY` direction without changing gameplay rules.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies replay schema/version, checksum presence, commandStream size, last replayable command payload, before/after version/hash checkpoints, summary final state, final phase, and user-storage replay export. The new assertions first failed on missing `replay_document()` and then on missing `save_replay_to_user()`, then passed after adding the export layer.
+  - Cross-runtime replay proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_replay.json` and `src/core/replayCodec.cjs.assertReplayDocument(...)` accepted it. The document reports checksum `8f10acf0`, `commandStreamSize: 2`, `debugTimelineSize: 2`, `finalStateVersion: 2`, `finalStateHash: 2caf9c08e7f7371d`, last command `BUY_OFFER`, last `baseStateVersion: 1`, and last checkpoint `afterVersion: 2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 replayable command normalization parity slice:
+  - Browser protocol check: `src/core/commandEnvelope.cjs` normalizes public commands with a default `baseStateVersion`, and accepted `commandLog` entries store `command: replayableCommand(command)` instead of using only the raw input payload.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now preserves raw action input in `command_log[].raw`, while `command_log[].command` uses the normalized action type and fills browser-style `baseStateVersion` from the pre-command `stateVersion`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies `BUY_OFFER` without an explicit `baseStateVersion` still records `command.type: "BUY_OFFER"` and `command.baseStateVersion` equal to the command's `beforeVersion`. The new assertion failed first on missing `baseStateVersion`, then passed after adding `_replayable_command(...)`.
+  - Cross-runtime save proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_save.json`; browser `src/storage/saveCodec.cjs.checksum({ schema, schemaVersion, state, viewStates })` matched the Godot checksum `013ed439`. The saved log has `commandLogSize: 2`, last entry `BUY_OFFER`, `beforeVersion: 1`, `afterVersion: 2`, `command.baseStateVersion: 1`, and `rawHasBaseStateVersion: false`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 baseStateVersion strict command-envelope parity slice:
+  - Browser protocol check: `src/core/commandEnvelope.cjs` validates `baseStateVersion` against current `stateVersion` when strict version checking is enabled, and rejects stale commands with `STATE_VERSION_MISMATCH` before they can mutate authoritative state.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now rejects any public dispatch carrying stale `baseStateVersion` or `base_state_version`, logs `STATE_VERSION_MISMATCH`, and returns `false` before state hash capture, stateVersion increment, or playable `command_log` recording.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies a stale `EXIT_SHOP` after a shop purchase is rejected, the phase remains `shop`, `stateVersion` and `stateHash` are preserved, command_log size is unchanged, and the rejection is visible in player logs. The new assertions failed first because Godot accepted the stale command, then passed after adding dispatch-level version validation.
+  - Cross-runtime checksum proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_save.json`; `src/storage/saveCodec.cjs.checksum({ schema, schemaVersion, state, viewStates })` returned the same checksum as the Godot document: `69650a3a`, with saved `stateVersion: 2` and playable `command_log` size `2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 stateHash / command checkpoint parity slice:
+  - Browser protocol check: `src/core/stateHash.cjs` builds a deterministic 16-character SHA-256 state hash for ViewModel, and `src/core/commandEnvelope.cjs` records accepted command checkpoints with `beforeVersion`, `afterVersion`, `beforeHash`, and `afterHash`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes `stateHash` / `state_hash` in `snapshot()`, computes it from authoritative playable state with stable sorted JSON + SHA-256, omits view-state selection/log/command-log fields from the hash payload, and records browser-style command checkpoints in playable `command_log`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies initial `stateHash` shape, mutating public commands changing hash, command_log `beforeHash` / `afterHash` / version checkpoints, and selection-only commands preserving authoritative hash. The new assertions failed first on missing hash/checkpoints and passed after adding state-layer hashing.
+  - Cross-runtime checksum proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_save.json`; `src/storage/saveCodec.cjs.checksum(...)` returned the same checksum as the Godot document: `9ac14afb`. The saved playable command log has size `2`, and the last command `BUY_OFFER` records `beforeHash: 0f86b8f145347e5d`, `afterHash: 2caf9c08e7f7371d`, `beforeVersion: 1`, `afterVersion: 2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-04 view-state command version parity slice:
+  - Browser protocol check: `src/uiAdapter.cjs` handles `UI_SELECTION_COMMANDS` as ephemeral view-state commands and `tests/unit/architecture_round4.test.cjs` / `tests/ui_adapter.test.cjs` assert selection and clear-selection do not mutate authoritative `stateVersion` / `stateHash`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now records accepted dispatches after execution and filters view-state-only actions (`SELECT_UNIT`, `SELECT_HERO`, `SELECT_ACTION_SLOT`, `CLEAR_SELECTION`, and compatible generation/read commands) out of authoritative `stateVersion` increments and playable `command_log`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies through public commands that selecting a unit, selecting an action slot, and clearing selection remain accepted and visibly update Godot snapshot selection, while preserving the pre-selection `stateVersion` and `command_log` size. The new assertions failed first on version/log mutation and passed after the dispatch recording change.
+  - Cross-runtime checksum proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_save.json`; `src/storage/saveCodec.cjs.checksum(...)` returned the same checksum as the Godot document: `e64294c7`, with saved `stateVersion: 2` and playable `command_log` size `2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-03 browser-style stateVersion parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes browser-style `stateVersion` in both `snapshot()` and the saved `state` payload, keeps a Godot-compatible `state_version` alias, increments the version after accepted public `dispatch(...)` commands, and restores the version through `load_document()`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies initial `stateVersion: 0`, successful public command increments, later dispatch increments again, saved-state version preservation, exit-before-load increment, and user-storage load restoring the saved version. The new assertions failed first on missing `stateVersion`, then passed after adding state-layer support.
+  - Cross-runtime checksum proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_save.json`; `src/storage/saveCodec.cjs.checksum(...)` returned the same checksum as the Godot document: `e64294c7`, with saved `stateVersion: 2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` remains nonblank/readable. This slice did not introduce visible UI layout changes.
+- 2026-07-03 browser-save checksum parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now writes Godot local saves with the browser outer save contract: `schema: "ysbzs.save"`, `schemaVersion: 1`, `state`, `viewStates`, and FNV-style `checksum` computed from stable sorted JSON like `src/storage/saveCodec.cjs`.
+  - `load_document()` still accepts legacy `ysbzs.godot.save` documents, but browser-schema saves now validate version/state/checksum before mutating Godot state. Tampering saved state data now rejects load with `读档失败：校验不匹配。`
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now verifies the browser save schema fields, checksum presence, `viewStates`, checksum rejection after state tampering, `user://` save/load round trip, and exported document restore.
+  - Cross-runtime checksum proof: Node loaded `/Users/ywh/Library/Application Support/Godot/app_userdata/YSBZS Godot Singleplayer/ysbzs_singleplayer_save.json` and `src/storage/saveCodec.cjs.checksum(...)` returned the same checksum: `689aeb5a`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end/terminal screenshots.
+  - Screenshot review: latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` remains nonblank/readable. `保存` / `读档` controls, shop events, roster summary, and shop list do not visibly overlap.
+- 2026-07-03 full-run automation parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts public `RUN_FULL_RUN` / `runFullRun`, exposes it through `snapshot().next_actions` / `nextActions`, and runs across days by repeatedly using `run_full_day()` plus `START_NEXT_DAY` until the route reaches the final day-end or `game_over`.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a real `RunFullRunButton` from public `next_actions` whenever `RUN_FULL_RUN` is available. Pressing it dispatches `{"type":"RUN_FULL_RUN"}` and re-renders the Godot scene, making full-route autoplay reachable from the playable route UI.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates both public command and real scene behavior: initial snapshots expose `RUN_FULL_RUN`, dispatch advances beyond day 1 or reaches `game_over`, the formal route scene renders `RunFullRunButton`, and emitting `pressed` reaches a visible terminal boundary through the public command path. Red run failed first on missing `RUN_FULL_RUN` action/dispatch/result; green run passed after adding state and UI support.
+  - Visible tester pass: `TEST_SUBTHREAD_UNAVAILABLE`; substitute Godot scene smoke clicked the real full-run button and screenshot capture refreshed the formal route scene. Main-thread screenshot review confirmed `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` is non-black/readable and shows both `自动完成当天` and `自动跑完整局` without obvious overlap or route-card clipping.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end screenshots.
+- 2026-07-03 full-day UI button parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a real `RunFullDayButton` from public `snapshot().next_actions` whenever `RUN_FULL_DAY` is available. Pressing it dispatches `{"type":"RUN_FULL_DAY"}` and re-renders the Godot scene, so full-day automation is reachable from the playable route UI instead of only from tests/state commands.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the real scene button: the initial route scene must expose `RunFullDayButton`, label it `自动完成当天`, emit its `pressed` signal, and reach visible `day_end` through the public command path. Red run failed first on missing `RunFullDayButton`; green run passed after adding the UI action.
+  - Visible tester pass: `TEST_SUBTHREAD_UNAVAILABLE`; substitute Godot scene smoke clicked the real button and screenshot capture refreshed the formal route scene. Main-thread screenshot review confirmed `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png` is non-black/readable and shows `自动完成当天` between Save/Load and the route title without obvious overlap.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end screenshots.
+- 2026-07-03 full-day automation parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts public `RUN_FULL_DAY` / `runFullDay`, exposes it through `snapshot().next_actions` / `nextActions`, and drives the current day through existing route, shop, reward, battle, and battle-result commands until visible `day_end` or terminal `game_over`.
+  - The full-day runner reuses existing Godot state transitions (`choose_route`, `back_to_route`, `pick_reward`, `run_battle_auto`, `continue_after_battle`) instead of directly mutating rewards, route steps, or board state.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates that the initial route snapshot advertises `RUN_FULL_DAY`, `dispatch({"type":"RUN_FULL_DAY"})` reaches `day_end`, keeps day 1 until explicit next-day action, and exposes `START_NEXT_DAY` afterward. Red run failed first on missing `RUN_FULL_DAY` action/dispatch/day-end result; green run passed after adding state support.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end screenshots.
+  - Screenshot review: day_end capture is non-black and readable; it shows `第 1 天路线结束`, run summary, `进入第2天`, and battle log entries produced by the real full-day route flow.
+- 2026-07-03 snapshot next-actions parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes Web ViewModel-style public action descriptors through `snapshot().next_actions` plus a compatible `snapshot().nextActions` alias.
+  - The action list is generated from real Godot state and only advertises existing dispatchable commands: route picks and manual shop entry, shop reroll/buy/freeze/event/exit, reward picks, battle controls, battle-result continue, and day-end `START_NEXT_DAY`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the route/shop/reward/battle/battle_end/day_end snapshots for these actions and checks the `START_NEXT_DAY` default payload. Red run failed on missing route/shop/reward/battle/day_end actions; green run passed after adding the state-layer generator.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed existing route/reward/shop/battle/trace/battle_end/day_end screenshots; no visible UI layout change was introduced by this snapshot-only slice.
+- 2026-07-03 day-end / next-day route parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors the browser route-day boundary more closely: completing the final schedule step leaves the run in visible `day_end` instead of silently advancing to the next day, and public `START_NEXT_DAY` / `startNextDay` advances to the requested next day only after day end.
+  - Route returns now resolve through `route` or `day_end` depending on whether the current day still has schedule rows, so shop exit, reward claim, rest/event nodes, and battle-result continuation all share the same day-completion boundary.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a day-end screen with run summary and a real `StartNextDayButton`; the status header uses `日结` wording instead of showing a phantom `时间节点 7`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now drives the full current day through public route/shop/reward/battle commands, asserts `day_end`, verifies `START_NEXT_DAY` moves to day 2 step 1, and exercises the real day-end scene button. Red run failed first on missing `day_end` / `START_NEXT_DAY`, then failed on the visible `时间节点 7` status text; green run passed after adding state and UI support.
+  - `/Users/ywh/Documents/godot/scripts/test/capture_singleplayer.gd` now saves `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_day_end.png` after reaching `day_end`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end/day_end screenshots.
+  - Screenshot review: day_end capture is non-black and readable; it shows `第 1 天路线结束`, run summary, and `进入第2天` without the old phantom `时间节点 7` header.
+- 2026-07-03 no-cell selected-slot release parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now routes browser-style `USE_ACTION_SLOT` commands without `targetId`, `cell`, `to`, `x`, or `y` through the currently selected action slot. It uses the selected slot direction, finds the first enemy covered by the current preview shape, and then settles through `attack_selected` so AP spend, used-slot marking, element layers, battle log, skill effects, and same-round movement lock share the normal attack path.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a real `施放当前槽` button (`ActionUseSelected`) in the action control row and dispatches public `USE_ACTION_SLOT`, so the player can fire the selected slot without clicking a target cell.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates both public command and real scene behavior: `USE_ACTION_SLOT` without a cell spends AP2 from the current preview, applies damage/elements/logs/lock through the normal path, and the visible `ActionUseSelected` button can emit `pressed` to spend selected AP. Red run failed first on the missing no-cell attack effects and missing real button; green run passed after adding state and UI support.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: battle and trace captures are non-black and readable. Direction/AP controls and `施放当前槽` share one row without obvious overlap; the selected action-slot preview remains visible on the board.
+- 2026-07-03 action-slot AP-spend parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts browser-style `slotId` and `ap` fields on action-slot commands, adds public `SET_ACTION_AP`, stores per-unit/per-slot AP choices, exposes `selected_action_ap` / `selected_ap` / `effective_layers` in snapshots, and persists AP choices through save/load.
+  - Action-slot preview now reports the chosen AP and scales preview element layers by AP. `USE_ACTION_SLOT` with `ap: 2` spends 2 battle AP, records `action_ap_spent = 2`, applies 2 element layers to the hit target, and logs `AP2`; fixed skill rewards such as `守护减伤` keep their existing base-layer behavior instead of being accidentally doubled.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders AP choice buttons (`AP1` / `AP2` / `AP3`, capped by remaining AP) in the same control row as direction buttons, dispatching `SET_ACTION_AP` rather than mutating state directly. Preview tooltips show the chosen AP.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the flow through public commands and the real scene: `SET_ACTION_AP`, snapshot AP fields, board preview AP/layers, `USE_ACTION_SLOT ap:2`, AP/layer/spend/log assertions, preview tooltip `AP2`, and visible `ActionAp_2` button. Red run failed on the missing AP command/snapshot/preview/settlement/UI assertions; green run passed after adding state and UI support.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: battle and trace captures are non-black and readable. Direction and AP controls share one row, selected AP is visibly highlighted, the action preview remains visible on the board, and no obvious new overlap was introduced.
+- 2026-07-03 same-round movement-lock parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors the browser `hasAttacked` movement lock: after a player action slot is used, the actor gets `has_attacked = true`, same-round empty-cell movement is rejected with a visible `位置锁定` battle-log line, and `_reset_action_slots(PLAYER)` clears the lock for the next player round.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the lock through the public player chain: `SELECT_UNIT` / `SELECT_ACTION_SLOT` / `SET_ACTION_DIRECTION` / `SELECT_CELL` attacks first, then another `SELECT_CELL` to an adjacent empty cell must return false, keep the actor position unchanged, and log the lock message.
+  - Red run failed as expected on `acted pet cannot move again in the same player round`, `same-round movement lock keeps acted pet position`, and `same-round movement lock is visible in battle log`; green run passed after adding the lock field, move guard, and round reset.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, and trace captures are non-black and readable. Battle still shows selected action-slot preview coverage; trace still shows used slot state and target trace information without obvious new overlap.
+- 2026-07-03 action-slot board-preview parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now marks the currently selected action slot's covered cells in public board snapshots with `action_preview` and `action_preview_data`, including slot label, element/layers, shape, direction, preview type, and target metadata.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders those preview cells directly from the board snapshot, showing a `预览第N槽/方向` label, tooltip details, and a highlighted border/background for covered cells or covered enemy targets.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the aim-before-attack state through public `SELECT_UNIT` / `SELECT_ACTION_SLOT` / `SET_ACTION_DIRECTION` commands: the target cell must be marked in `state.snapshot().board.cells`, retain the selected direction, and the real `YsbzsSingleplayer` scene must render a visible preview label on `Cell_4_6`.
+  - Red run failed on `board snapshot marks selected action slot covered cell before attack` and `board snapshot preview keeps selected action direction`; green run passed after adding core preview metadata and UI rendering.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable. Battle capture now shows the selected action slot coverage as a highlighted `预览第1槽/右` cell; trace capture still keeps enemy/trace information readable without obvious new overlap.
+- 2026-07-03 action-slot direction parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now accepts browser-style `SET_ACTION_DIRECTION` / `SET_SLOT_DIR` public commands, stores per-unit action-slot directions, exposes `direction` / `direction_label` in selected action-slot snapshots, and persists directions through save/load.
+  - Manual attacks now use the selected slot direction when validating target cells, so Godot no longer silently accepts any matching shape direction after a slot is selected. `RUN_PLAYER_ALL_OUT` still chooses a valid direction before firing, preserving auto-flow behavior.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders four direction buttons (`上` / `右` / `下` / `左`) below the selected action slots and dispatches `SET_ACTION_DIRECTION` instead of mutating state from UI.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the public direction command, selected-slot direction snapshot, and visible direction-change log. Red run failed on `can set action slot direction through public command`, `selected pet action slot direction is exposed in snapshot`, and `direction change is visible in battle log`; green run passed after adding the direction state/command/UI path.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable. Battle screenshots now show `上` / `右` / `下` / `左` direction buttons with the selected direction highlighted and no obvious overlap.
+- 2026-07-03 shop-freeze reroll parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now keeps frozen shop offers when rerolling or applying targeted restock, then fills the remaining shop slots with newly rolled offers. This mirrors the browser `shop.rollShop` behavior where frozen offers survive refresh.
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders a per-offer `锁定` / `解锁` button next to `购买`, dispatching public `FREEZE_OFFER` / `UNFREEZE_OFFER` commands.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the flow through public commands: enter CSV shop, freeze first offer, reroll, assert the same offer id and pet remain frozen, then unfreeze it. Red run failed on `frozen shop offer remains marked after reroll` and `frozen shop offer keeps the same pet after reroll`; green run passed after preserving frozen offers.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable. Shop cards now show `购买` plus `锁定` / `解锁` controls without obvious overlap.
+- 2026-07-03 D05 core-splash quality slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now implements `D05 核心扩散` as an after-hit quality effect: when the actor hits a target, living enemy units in the target's four orthogonally adjacent cells each take 1 splash damage.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D05 through public `SELECT_UNIT` / `SELECT_CELL`: a one-cell D05 actor hits the center enemy for normal damage and splashes both a vertical and horizontal adjacent enemy from 80 HP to 79 HP. The first fixture was corrected after an invalid target-cell red (`D05 can hit the splash center through public cell command`), then the correct fixture failed on the two splash assertions and passed after adding the D05 after-hit branch.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 visible trace-stack board UI parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_singleplayer.gd` now renders stacked board traces from `state.snapshot().board.cells[].traces` into visible cell labels and tooltips, while keeping the older single `trace` field as a fallback.
+  - Empty traced cells still use trace-colored backgrounds/borders, with styling taken from the latest trace for compatibility; occupied traced cells show the stacked trace labels below HP/layers.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the rendered scene through the real `YsbzsSingleplayer` scene: after D30 leaves `纸符` and D29 leaves `妖印` on the same cell, `Cell_4_6.text` and `Cell_4_6.tooltip_text` must contain both labels. The fixture was red first (`battle board renders first stacked trace label` / `battle board tooltip renders first stacked trace`), then passed after the UI read `traces`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 board-trace movement no-trigger current-browser parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now removes the Godot-only behavior where player movement and enemy step movement triggered the last board trace on the destination cell.
+  - This matches the current browser core path: diamond board traces apply immediate effects when the trace is created over an occupied covered cell, D26 wood trace is checked at round start, and ordinary movement into a traced cell does not trigger trace damage/heal/shield/mark effects.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the movement path through public `SELECT_UNIT` / `SELECT_CELL`: a player clone moves onto an existing D24 earth trace and keeps `shield == 0`. The fixture was red first (`moving onto a board trace does not trigger trace effects in current browser parity`), then passed after removing movement-time trace application from `move_selected` and `_step_toward`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 board snapshot trace-stack current-browser parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now exposes stacked board traces in public board-cell snapshots with `cell["traces"]`, while keeping `cell["trace"]` as the last-trace compatibility view.
+  - This mirrors the current browser core model where board cells carry `qualityTraces` arrays, so Godot UI/save/debug consumers can see D30 and later traces such as D29 on the same cell instead of only seeing the latest trace.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the snapshot through public `SELECT_UNIT` / `SELECT_CELL`: after D30 leaves a talisman trace and D29 hits the same cell, `_board_cell(...).traces` must contain both D30 and D29. The new fixture was red first (`board snapshot exposes stacked quality traces like browser cells` / `board snapshot trace stack includes both D30 and D29`), then passed after adding `traces` to `_board_cells`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 multi-trace stack current-browser parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser cell `qualityTraces` more closely by allowing multiple traces on the same board cell instead of replacing the previous trace.
+  - `_board_trace_at` remains as a single-trace compatibility view for existing snapshots/UI, while internal rule checks use `_board_traces_at` so D30 talisman traces can coexist with later traces such as D29 demon marks.
+  - D26 round-start healing and D30 element-apply checks now scan all traces on the cell, matching the current browser array-based trace model.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the stack through public `SELECT_UNIT` / `SELECT_CELL`: D30 leaves a talisman trace, D29 hits the same cell and leaves a demon trace, then a later D29 hit still receives D30's extra element application. The new fixture was red first (`D30 talisman trace remains active after another trace is added to the same cell`), then passed after changing Godot board traces to stacked storage.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D30 talisman trace no-expiry current-browser parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors the current browser `qualityElementApplyCount` D30 behavior more closely: `D30 纸符` talisman traces are marked persistent and are not removed by Godot's player-turn trace tick.
+  - This follows the current browser path where D30 element-apply checks for a D30 trace without filtering by the current round, so a talisman-marked cell can keep adding one extra element application on later player turns.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D30 through public `SELECT_UNIT` / `SELECT_CELL` and `END_PLAYER_TURN`: the first hit applies 1 element layer, then later hits after one and two full player-turn ticks raise total layers to 3 and 5. The new fixture was red first (`D30 talisman trace persists into next player turn like current browser qualityElementApplyCount`), then passed after making D30 traces persistent.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, reward, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D26 wood-trace round-start parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors current browser `D26 木痕` timing: D26 leaves the trace after the action, but does not heal the ally immediately when the trace is placed.
+  - D26 trace now survives the intervening enemy turn and heals the ally at the next player round start through `_apply_quality_round_start_to_unit`, matching browser `applyBoardTraceRoundStart`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D26 through public `SELECT_UNIT` / `SELECT_CELL` and `END_PLAYER_TURN`: a covered ally remains at 10 HP immediately after D26 leaves the trace, then heals to 14 HP on the next round start. The new fixture was red first (`D26 wood trace does not heal immediately after the action like browser core`), then passed after moving wood-trace healing to round start and extending D26 trace lifetime for that check.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D18 immediate-burst dead-target parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `D18 元素先爆` ordering more closely: element application and immediate burst resolve before normal action damage calculation, and D18 burst damage does not consume `incoming_damage_bonus`.
+  - If D18 kills the target before the normal hit, Godot still clears the target next-damage mark during the later action-damage calculation like browser `qualityActionDamage`, but skips applying or reporting a precomputed normal hit against the already-dead target.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the dead-target case through public `SELECT_UNIT` / `SELECT_CELL`: a 6 HP marked target dies to the 3-layer burst, the mark is cleared, and the action log reports `造成 0 伤害` for the skipped normal hit instead of the stale precomputed damage. The new fixture was red first (`D18 killed target does not report precomputed normal action damage as effective damage`), then passed after reordering the Godot D18 hit path.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 G16 per-hit chase timing parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `G16 追魂点` timing by resolving chase damage in `_apply_quality_after_hit` immediately after each killed hit, instead of waiting until action end.
+  - Removed the Godot-only action-end G16 branch that could redirect multiple killed covered-target chases onto the same outside target after all normal hits had already settled.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates G16 through public `SELECT_UNIT` / `SELECT_CELL`: when two covered targets die, the first kill's chase is allowed to hit the second covered target before its own normal hit, and only the second covered kill reaches the outside target. The new fixture was red first (`G16 chase resolves per-hit and only reaches the outside target after the second covered kill`), then passed after moving G16 into the hit loop.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D16 incoming-mark damage-order parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `qualityActionDamage` ordering for action-hit incoming damage marks: `incoming_damage_bonus` is consumed inside `_quality_damage_for_hit` before multiplicative/derived quality damage such as `D16 伤害翻倍`, then `_deal_damage` is called without consuming the mark again.
+  - This preserves the browser semantics where a marked D16 single-target hit deals `(base + mark) * 2`, not `base * 2 + mark`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D16 with an existing +5 incoming mark through public `SELECT_UNIT` / `SELECT_CELL`. The new fixture was red first (`D16 doubles base damage after incoming mark like browser qualityActionDamage`), then passed after moving incoming mark consumption into the quality damage calculation.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D14 per-hit kill-chain parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `D14 击杀连锁` timing by running the chain damage immediately after each hit that kills a target, instead of waiting until action end.
+  - Removed the narrower Godot-only action-end D14 branch that triggered once and excluded every current action target, which redirected chain damage away from a still-valid next hit target.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D14 through public `SELECT_UNIT` / `SELECT_CELL`: killing the first covered target applies +4 to the nearest remaining enemy, even when that enemy is also a later covered target; a separate non-hit enemy remains untouched. The new fixture was red before the implementation fix, then passed after moving D14 into the hit loop.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D13 global low-HP chase parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `D13 残血追击`: after an action, it searches all living enemies on the board with `hp <= 5`, picks the lowest HP target, and applies the 5-damage residual chase.
+  - Removed the narrower Godot-only behavior that only chased low-HP enemies inside the current action `targets` array.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates both the previous hit-target chase case and a browser-parity case where the low-HP enemy is outside the current action shape. The new fixture was red before the implementation fix, then passed after the Godot rule update.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D23 wind trace current-browser parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors the current browser `D23 风痕` behavior by writing `quality_next_damage_bonus` on the ally standing on the traced cell, instead of using the old Godot-only `trace_damage_bonus` attacker damage path.
+  - Removed the Godot-only attacker-side trace bonus consumption from `attack_selected`; the current browser path does not consume D23 as direct attacker damage.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D23 through public `SELECT_UNIT` / `SELECT_CELL`: the first attack leaves the D23 trace and marker, while the next public attack deals only normal base damage.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D30 talisman trace element-apply parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors the current browser `qualityElementApplyCount` behavior for `D30 纸符`: D30 leaves talisman traces on every covered action cell, and a traced cell adds one extra element application instead of copying hit damage.
+  - Removed the old Godot-only D30 damage-copy/trace-consume path; talisman traces now remain normal temporary board traces until the round trace tick expires them.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D30 through public `SELECT_UNIT` / `SELECT_CELL`: the first hit leaves traces on both covered cells and applies one element packet, while the second hit deals only normal damage and raises total element layers from 1 to 3.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 incoming next-damage mark stacking parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `markNextDamage` stacking for incoming damage marks: G12/G23/D25/D28/D29 add to `incoming_damage_bonus` instead of clamping with `max`, and D28 trace self-damage no longer consumes an existing next-damage mark.
+  - D25 metal trace now uses the unit incoming-damage mark as the damage source instead of a second trace-consumed +2 branch, avoiding double-counting while preserving the trace snapshot.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D28 against an existing +5 mark: trace damage deals only 2, stacks the mark to 7, and the next normal damage consumes the full stacked +7.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D20 action-cell reverse parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `D20 逆序结算` at the action-cell mutation layer: `_apply_quality_shape_mutation` reverses the shape cells, and `_enemies_in_attack_option` no longer applies a second D20-specific reverse sort.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates D20 through a fixture that checks the right-facing shape cells are reversed before settlement and verifies public `SELECT_UNIT` / `SELECT_CELL` resolves the far target before the near target.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 G29 current-browser parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` removed the extra Godot-only `G29 回声共振` farthest-target +4 damage branch because the current browser `qualityActionDamage` implementation has no G29 damage case.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates G29 through public `SELECT_UNIT` / `SELECT_CELL`: a three-cell shape hits the first and farthest covered targets, and both targets take only base damage.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 G19/G20 damage-condition parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `G19 前后夹击` and `G20 对角穿心` damage conditions more closely: G19 adds +2 to every hit when at least two targets are hit, and G20 adds +4 to the farthest covered target even if it is the only hit target.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates G19 through public `SELECT_UNIT` / `SELECT_CELL` on a three-cell shape with three enemies, proving all covered targets receive +2; it also validates G20 through public cell targeting with only the farthest shape cell occupied.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 S06 chain-damage parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `S06 连击倍增` damage sequencing more closely: `lastChainDamage` is reset at action start, the first hit floors the current damage after halving, and later hits use `max(current_damage, lastChainDamage * 2)`.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates S06 through public `SELECT_UNIT` / `SELECT_CELL` with odd base damage: first hit floors `15 / 2` to `7`, while the second target remains at base `15` because doubled previous damage is lower than current base damage.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, shop, battle, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 G23 chain-mark parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now mirrors browser `G23 连环标记` after-hit behavior: the first hit target stores `incoming_damage_bonus += 3`, while the existing second-target damage bonus remains in per-hit quality damage.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates G23 through public `SELECT_UNIT` / `SELECT_CELL`: first target takes base damage, second target takes chain bonus damage, first target receives the next-damage mark, and the second player action consumes the mark for +3 damage.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 D11/D12 all-out settlement order slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now sorts living player action units for `RUN_PLAYER_ALL_OUT` by quality settlement order: `D11 抢先结算` first, normal actors in stable unit order, and `D12 压轴结算` last.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates the order through public `RUN_PLAYER_ALL_OUT`, using a three-actor fixture and battle-log ordering (`抢先宠` before `普通宠`, `普通宠` before `压轴宠`).
+  - Debugging note: the first smoke attempt failed because `log_lines` stores newest entries first via `push_front`; the implementation had already produced the correct chronological order, and the cross-line log assertion was fixed to scan logs chronologically from oldest to newest.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --quit`.
+  - Passed: `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` (`CAPTURE_SINGLEPLAYER_OK`) and refreshed route/reward/shop/battle/trace/battle_end screenshots.
+  - Screenshot review: route, battle, trace, and battle_end captures are non-black and readable, with no obvious new overlap or layout regression.
+- 2026-07-03 G21/G27/G28 parity slice:
+  - `/Users/ywh/Documents/godot/scripts/game/ysbzs_state.gd` now applies `G21 一攻一守` as a pre-action back-ally shield (+8), keeps `G28 三点成阵` as a pre-action runtime flag plus allied covered-unit shield (+5), and changes `G27 竖线贯通` from hard-coded cell index `2` to the farthest covered cell.
+  - `/Users/ywh/Documents/godot/scripts/test/smoke_singleplayer.gd` now validates G21, G27, and G28 through public `SELECT_UNIT` / `SELECT_CELL` dispatch commands.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` (`SMOKE_SINGLEPLAYER_OK`).
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`.
+  - Passed: `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`.
+  - Passed after escalated project write permission: `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`, exporting `roster=1 shop_offers=10 waves=134 schedule=60 node_pool=65 encounters=40 shop_items=127 shop_stores=32 relics=40 events=32 shapes=19 action_shapes=127 quality_growth=12 quality_upgrades=68 wave=wave_d01_morning enemies=2`.
+  - Not refreshed this turn: `godot --headless --path /Users/ywh/Documents/godot --quit` and `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` were rejected by the approval layer because the current Codex usage limit was hit, so visible screenshot evidence remains from the prior successful capture until those commands can be rerun.
+- Current data hookup:
+  - `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` passed.
+  - Exported `/Users/ywh/Documents/godot/data/ysbzs_singleplayer_data.json` from current ysbzs CSV files.
+  - Snapshot contains `roster=1`, `shop_offers=10`, `waves=134`, `schedule=60`, `node_pool=65`, `encounters=40`, `shop_items=127`, `shop_stores=32`, `relics=40`, `shapes=19`, `wave=wave_d01_morning`, `enemies=2`.
+  - Latest export contains `action_shapes=127` from `data/csv/08_action_shapes.csv`.
+  - `battle.waves[]` now carries all 134 CSV wave rows with each row expanded to deterministic Godot enemy units.
+  - First three exported rows are Day1 上午 rounds 1-3 with enemy counts `2`, `3`, and `4`.
+  - First Godot battle now derives enemies from `data/csv/03_monster_waves.csv` (`1,2,3,4,5-2`) instead of only the monster template fallback.
+  - Exporter now reads `data/csv/27_shape_catalog.csv`; Godot data snapshot contains all `19` formal battle shapes with offsets and `settle_count`.
+  - Exporter now reads `data/csv/08_action_shapes.csv`; Godot pet/shop/enemy rows carry `shape_id`, `slot_count`, `slot_elements`, `base_layers`, `hit_cells`, `action_type`, and `mechanism_id`.
+  - Exporter now reads `data/csv/28_quality_growth.csv` and `data/csv/29_quality_upgrades.csv`; Godot data snapshot contains `quality_growth=12` and `quality_upgrades=68`.
+  - Exporter now reads `data/csv/05_events.csv`; Godot data snapshot contains `events=32`, including formal `post_battle` rows used by browser route battle outcome logic.
+- Current Godot route hookup:
+  - Exporter now reads `data/csv/24_node_schedule.csv`, `data/csv/25_node_pool.csv`, and `data/csv/26_encounter_pool.csv` into `route.schedule`, `route.node_pool`, and `route.encounters`.
+  - Initial Godot route page now derives Day1 node 1 from CSV schedule `d01_node_1` and shows 3 choices from `node_pool_d01_growth` using a ysbzs-style seed-weighted draw rather than fixed weight sorting.
+  - Godot route and encounter choice generation now uses the same seed context shape as browser core (`route:<kind>:<seed>:<day>:<step>:<pool>`), with deterministic weighted sampling without replacement.
+  - `PICK_NODE node_shop_basic` enters the shop and advances the local route step to node 2.
+  - `PICK_NODE node_reward_pet` on node 2 advances to node 3 and exposes fixed battle `enc_d01_midday_a` from encounter CSV.
+  - `RUN_ROUTE_FIXED_BATTLE` now starts battle with `active_encounter.encounterId=enc_d01_midday_a` and battle wave period from the encounter row.
+- Current Godot shop/reward hookup:
+  - Exporter now reads full `data/csv/06_shop_rewards.csv`, `data/csv/07_relic_blessings.csv`, and `data/csv/30_shop_stores.csv` into `economy.shop_items`, `economy.relics`, and `economy.shop_stores`.
+  - Godot shop nodes now use the selected node's `shopPoolId` and `slots`; `node_shop_basic` opens `night_base` with 6 visible offers, while `node_shop_fire` opens `elem_火` and filters offers to fire-element pets.
+  - Godot shop refresh now uses ysbzs-style deterministic weighted sampling with `shop:v2:<seed>:...` roll seeds, route choice seed context, and persisted `shop_roll_count` / `shop_context_roll_count`.
+  - Godot reward nodes now enter a real `reward` phase instead of awarding placeholder coins; `node_reward_pet` generates 3 options from `reward_pT1`, including pet options and a relic option when the reward pool has an unlocked relic.
+  - Godot reward option generation now uses ysbzs-style deterministic weighted sampling with `reward:<seed>:...` seeds and route choice seed context.
+  - `PICK_REWARD` now adds a pet reward to the roster or records a relic reward, then returns to route.
+  - `PICK_REWARD` and `BUY_OFFER` now share the same Godot roster add/merge path: buying or claiming a duplicate pet keeps one roster entry, increments merge count, and upgrades quality along `青铜 -> 白银 -> 黄金 -> 钻石`.
+  - Duplicate quality merge now applies exported quality stat growth from `28_quality_growth.csv`; the smoke path upgrades `pal_001` from bronze to silver and verifies `max_hp = base_max_hp + hp_bonus` and `atk = base_atk + atk_bonus`.
+  - Silver duplicate merge now attaches the first deterministic implemented silver passive from `29_quality_upgrades.csv`; the current deterministic result is `S01 护体`.
+- Current Godot state/API hookup:
+  - UI callbacks now call `state.dispatch(...)` for route choice, shop purchase, battle cell selection, all-out, end turn, and back-to-route intents.
+  - `state.dispatch(...)` now normalizes the same style of public command aliases used by the browser adapter for the covered vertical slice, including `startBattle`, `enterShop`, `EXIT_SHOP`, `PICK_NODE`, `PICK_BATTLE_ENCOUNTER`, `RUN_ROUTE_FIXED_BATTLE`, `RUN_BATTLE`, `RUN_MONSTER_TURN`, `START_NEXT_ROUND`, `SELECT_UNIT`, `MOVE_HERO`, `AUTO_POSITION_HEROES`, `ROLL_SHOP`, `FREEZE_OFFER`, and `UNFREEZE_OFFER`.
+  - Godot state now records a compact `command_log` for accepted dispatch attempts.
+  - Godot state now stores `run_seed` plus shop roll counters in snapshot/save/load state, so the local singleplayer run can preserve the seed boundary instead of relying on generated instance tables as runtime truth.
+  - Godot state now keeps battle completion as a visible `battle_end` phase instead of instantly jumping back to route.
+  - `state.snapshot()` now includes `battle_result`, including `win`, `code`, `grade`, `gold_from/gold_to`, hero HP delta, `game_over`, encounter identity, and route continuation metadata.
+  - Godot state now accepts public `CONTINUE_AFTER_BATTLE` / `continueAfterBattle`; continuing a non-terminal result returns to route and advances the route schedule, while terminal hero death enters `game_over`.
+  - Godot route battle wins now record browser-style reward metadata in `battle_result`: `base_reward_pool_id`, effective `reward_pool_id`, `event_reward_pool_id`, `reward_eligible`, reward seed context, and `post_battle_events`.
+  - Fast clears now use exported `evt_battle_bonus` from `data/csv/05_events.csv` to select `reward_fast_clear`; because current Godot-exported claimable data has no `reward_fast_clear` candidates, the effective claim pool visibly falls back to `reward_pT1` while preserving the event/base pool in the result.
+  - Continuing a winning route battle now advances the route schedule, opens the normal `reward` phase with 3 claim options, and only returns to route after public `PICK_REWARD`.
+  - Party wipe now records exported `evt_battle_fail` in `battle_result.post_battle_events`, keeping the failure event identity aligned with browser route outcome logic.
+  - Party wipe now applies the browser-parity hero HP penalty of `10`; if hero HP reaches zero the battle result is terminal and the UI enters the game-over page after continue.
+  - `state.snapshot()` now includes `board.cells` as an 8x8 board mirror for UI/test reads.
+  - `state.snapshot()` now includes `battle_round`, `battle_period`, and `active_wave`; battle starts at round 1 and can advance through subsequent CSV wave rounds before awarding victory.
+  - `state.snapshot().data_counts.shapes` now reports exported shape catalog count.
+  - Godot battle targeting now resolves the selected unit's `shape` field against the exported shape catalog, rotates offsets to the four cardinal directions, and allows attacks against enemies inside the resulting action cells instead of requiring Manhattan distance 1.
+  - A shape hit applies the exported `settle_count` as damage multiplier for the covered enemies in that action shape.
+  - Godot state now exposes `selected_action_slots` in `state.snapshot()`, with slot label/index, element, base layers, shape id/name, settle count, used flag, and AP availability.
+  - Godot state now accepts public `SELECT_ACTION_SLOT` / `USE_ACTION_SLOT` commands plus camelCase aliases `selectActionSlot` / `useActionSlot`.
+  - Attacks now consume the selected action slot: the slot element/layers are applied to every hit enemy or empty hit cell, the slot is marked used, `action_ap_spent` increments, and the log includes the slot label.
+  - Unit and empty-cell element layers are represented in Godot state (`elements` and `cell_elements`) and mirrored into `state.snapshot().board.cells`.
+  - Action slot usage resets on a new player turn and when a new wave grants fresh AP.
+  - Godot state now maps visible action skill IDs to Chinese labels: `buffAllSummons -> 召唤强化`, `castleReduce -> 守护减伤`, `spaceExplosionBonus -> 爆点轰击`, `healAmpBonus -> 疗愈增幅`, `advHitBonus -> 牵制追击`.
+  - Godot state now includes a first-pass action skill effect layer:
+    - `守护减伤`: after action, grants shield and next-hit damage reduction.
+    - `爆点轰击`: adds fire-point bonus damage and extra fire layers on empty covered cells.
+    - `疗愈增幅`: heals the most damaged covered ally, or the caster if none are covered.
+    - `召唤强化`: buffs current allied units with attack +1.
+    - `牵制追击`: adds single-target damage and reduces target AP after hit.
+  - Enemy attacks now go through a shared Godot damage path that respects defense, shield, and the `守护减伤` one-shot reduction.
+  - Godot state now carries separate `board_traces` in battle state/save data and mirrors each cell's trace into `state.snapshot().board.cells[]`, keeping trace effects distinct from action-slot element layers.
+  - Godot board traces are temporary battle state: they can be created by diamond quality effects, trigger immediate effects for units already standing on covered cells, feed next-hit trace effects, and expire on the next player-turn refresh; movement onto a traced cell does not trigger trace effects in current browser parity.
+  - Godot battle board UI now renders `state.snapshot().board.cells[].trace` / `traces` into visible cell labels and tooltips; empty traced cells receive trace-colored backgrounds/borders, while occupied traced cells show trace labels below HP/layers.
+  - Godot battle units now preserve base stats (`base_max_hp/base_atk/base_def/base_shield`) and derive runtime `max_hp/atk/quality_growth/quality_upgrade/quality_progression` from exported quality tables.
+  - Godot battle now triggers first-pass round-start silver passives on battle start, on new player turns, and after new wave refresh:
+    - `S01 护体`: round start shield +15.
+    - `S02 自愈`: round start heal 20.
+    - `S03 壮体`: once per battle, max HP doubles up to 30 and current HP gains the delta.
+  - Godot battle now includes the first deterministic gold and diamond quality upgrades selected by the exported table:
+    - `G01 攻守切换`: round start sets mode from current HP; attack mode adds +2 damage, guard mode grants +8 shield.
+    - `D01 末端延伸`: attack shape cells extend one extra cell from the farthest shape cell in the chosen direction.
+  - Godot quality progression now supports the browser core's optional seeded `evolution_points` growth mode while keeping the existing CSV quality table as the default mode.
+  - Godot evolution-point mode now generates cumulative seeded points by target quality (`白银=2`, `黄金=5`, `钻石=9`) with browser-style category inertia, HP rolls, attack/defense points, and element-layer points.
+  - Godot evolution-point mode now records `quality_progression.growth_mode`, `evolution_points`, `evolution_summary`, `quality_growth.growth_mode`, and the resulting HP/attack/defense/element layer bonuses in the unit snapshot.
+  - Godot evolution-point progression is idempotent for element layers by deriving additions from `base_elements`, so repeated progression refreshes do not double-count element points.
+  - Latest evolution-point rerun passed after adding seeded point generation, summary application, idempotent element layering, and smoke coverage.
+  - Smoke now verifies a diamond `pal_002` fixture in `evolution_points` mode creates 9 points, applies HP/attack/defense/element bonuses from `evolution_summary`, is stable for the same seed, changes for a different seed, and does not double-count element layers on reapply.
+  - Godot attack resolution now calculates quality damage per hit instead of applying one shared shape damage value to every target, enabling core-cell, farthest-cell, second-target, single-target, and multi-target quality effects.
+  - Godot action-slot element settlement now mirrors first-pass browser silver element modifiers:
+    - `S04 元素回响`: applies the current action-slot element twice to each covered target or empty covered cell.
+    - `S08 本命爆发`: doubles action-slot element layers when the slot element matches the acting unit's element.
+  - Godot battle now includes additional browser-parity quality hooks:
+    - `G08 背向守势`: before action settlement, grants +10 shield to an allied unit standing behind the actor relative to the action direction.
+    - `S07 越战越勇`: tracks cumulative kills in `quality_runtime` and grants permanent attack +1 after every 5 kills.
+    - `G16 追魂点`: after a kill, deals 3 extra damage to the nearest remaining enemy.
+  - Godot battle now includes first-pass damage behavior for additional table-driven S/G/D quality upgrades:
+    - `S05 收尾暴击`: last hit damage doubles.
+    - `S06 连击倍增`: first hit is reduced, later hits scale by hit order.
+    - `G02 稳爆切换`: first hit +4, later hits +1.
+    - `G03 金色核心格`, `G25 三格核心`, `G30 三选一金印`: core cell +3 damage.
+    - `G04 守护核心格`: core cell covering an ally grants that ally shield.
+    - `G05 回春核心格`: core cell covering an ally heals that ally.
+    - `G06 破敌核心格`: core cell hit adds armor-break style bonus damage.
+    - `G07 正向强化`: farthest cell +3 damage.
+    - `G09 左右借势`: targets on a different row take +1 damage.
+    - `G10 终点重击`: farthest cell +4 damage.
+    - `G11 单挑`: single target +5 damage.
+    - `G13 隔山打牛`: targets at distance 2 or more take +4 damage.
+    - `G14 破绽一击`: hit damage gains +6.
+    - `G12 点穴`: hit targets store next-damage +3.
+    - `G15 斩首`: target HP <= 8 adds +8 damage.
+    - `G18 双点连击`: second target +4 damage.
+    - `G19 前后夹击`, `G20 对角穿心`, `G21 一攻一守`, `G23 连环标记`, `G24 双锋`: first-pass two-cell damage/cover variants.
+    - `G26 横扫压制`: multi-target hit +1 damage.
+    - `G27 竖线贯通`, `G28 三点成阵`, `G29 首尾呼应`: first-pass three-cell damage/cover variants.
+    - `D05 核心扩散`: after hitting a target, adjacent enemies take 1 splash damage.
+    - `D13 残血追击`: after settlement, low-HP targets take a 5-damage chase hit.
+    - `D14 击杀连锁`: after a kill, nearest remaining enemy takes 4 damage.
+    - `D07 三格收束`: single target +6 damage.
+    - `D08 三格外放`: multi-target hit +2 damage.
+    - `D16 反复敲打`: single target damage doubles.
+    - `D20 反向结算`: covered enemies are resolved from farthest option cell back toward the actor.
+    - `D21 火痕`, `D22 水痕`, `D23 风痕`, `D24 土痕`, `D25 金痕`, `D26 木痕`, `D27 佛光`, `D28 流沙`, `D29 妖印`, `D30 纸符`: first-pass board trace creation/trigger/next-hit behavior.
+  - `RUN_PLAYER_ALL_OUT` now searches for enemies inside the acting pet's shape cells instead of only adjacent enemies.
+  - Starting battle now places roster units into distinct deployment slots, so a purchased second pet no longer overlaps the initial CSV pet.
+  - Godot roster now mirrors the browser inventory split: roster entries carry `active` and `slot`; snapshot exposes `inventory.active_count`, `inventory.bench_count`, `MAX_ACTIVE_UNITS=4`, and `MAX_BENCH_UNITS=24`.
+  - Godot state now accepts browser-parity public inventory commands `TOGGLE_UNIT_ACTIVE` / `toggleUnitActive` and `SELL_UNIT` / `sellUnit`.
+  - New pets fill active roster slots first and overflow into the backpack after 4 active pets; battles now deploy only active roster pets, capped at 4.
+  - Godot selling now uses the same visible quality refund values as the browser rule (`青铜=2`, `白银=4`, `黄金=6`, `钻石=8`) and removes the roster entry when its last copy is sold.
+  - Route and shop UI now render a roster management panel with active/backpack counts plus visible `上阵` / `下阵` / `出售` controls.
+  - Shop UI now uses a left goods list plus right roster-management column so the backpack panel no longer pushes shop offers below the first viewport.
+  - Godot state now exposes a browser-style `build_core` construction summary from roster + relics, including primary tags, element/role/tier counts, active/bench counts, and `relic_count`.
+  - Route, reward, and shop UI now show the construction summary; shop UI also shows held relic names after claiming a relic reward.
+  - Reward capture now chooses a formal relic candidate after the reward screenshot, so the following shop screenshot proves the held relic and construction summary are visible in a normal player flow.
+  - Screenshot capture now waits longer on the reward page and rejects black captures, preventing a false `CAPTURE_SINGLEPLAYER_OK` when the viewport texture returns an empty frame.
+  - Godot state now exports/imports a `ysbzs.godot.save` document and supports `user://ysbzs_singleplayer_save.json` save/load for local singleplayer progress.
+  - Main scene now exposes visible `保存` and `读档` buttons that call the state save/load API.
+  - Main scene now renders a battle result page for `battle_end`, showing result code, grade, encounter/day/node, gold delta, hero HP delta on loss, and a visible `继续` button.
+  - Battle result UI now shows the route battle reward pool, including the current `reward_fast_clear -> reward_pT1` fallback text when the fast-clear pool has no claimable candidates.
+  - Battle result UI now shows post-battle event names from exported CSV event rows, e.g. `战后事件：五回合高奖`.
+  - Godot shop phase now exposes formal `shop_phase` rows from `data/csv/05_events.csv` as `shop_events` in `state.snapshot()`.
+  - Godot state now accepts public `APPLY_SHOP_EVENT` / `applyShopEvent`, matching the browser adapter command shape for the covered shop-event slice.
+  - Godot shop event effects now cover the current formal browser shop-event semantics used by `src/core/shop.cjs`: free refresh count, next-roll discount, targeted restock pools, duplicate-pet construction event, and upgrade-pet construction event.
+  - Godot shop refresh state now persists through save/load as `shop_free_rolls`, `shop_paid_refreshes`, `shop_next_discount`, and `shop_event_effects`.
+  - Godot shop UI now shows visible two-column `商店事件` buttons plus refresh state (`免费 / 下次 / 折扣`) and a real `刷新商店` command button.
+  - Godot state now accepts public `APPLY_ROUTE_EVENT` / `applyRouteEvent` for formal route-event rows, matching the browser route adapter command shape for the covered pre-battle/outer-run slice.
+  - Godot route events now queue browser-parity pre-battle effects from exported `data/csv/05_events.csv`: `evt_shield_bless` queues next-battle team shield, and `evt_trap_bonus` queues/activates next fire-trap bonus state.
+  - Godot route events now queue browser-parity outer-run risk effects: `evt_curse_gold` grants immediate CSV gold and consumes a next-battle reward multiplier during battle result settlement.
+  - Godot `state.snapshot()` and save/load now persist `route_effects.battle_prep`, `route_effects.outer_run`, `battle_prep_effects`, and `outer_run_effects`; battle results expose `gold_base_delta`, adjusted `gold_delta`, and consumed `run_effects`.
+  - Route, shop, battle, and battle-result UI now render active route/prep/run effect summaries when those effects exist.
+  - Latest route-event rerun passed after adding `APPLY_ROUTE_EVENT`, pre-battle effect queues, outer-run reward reduction, save/load persistence, UI summaries, and smoke coverage.
+  - Smoke now verifies `evt_shield_bless` enters the route-effect snapshot as pending, grants at least `base_shield + 2` on battle start, is marked applied, and logs `战前护盾`.
+  - Smoke now verifies `evt_trap_bonus` enters battle and becomes active with CSV `bonus_damage=1`, with visible `陷阱增伤` log text.
+  - Smoke now verifies `evt_curse_gold` immediately changes coins `10 -> 14`, records one outer-run effect, then changes a fast-clear base reward `6` into adjusted reward `5` with one consumed `run_effects` record and visible `奖励折损` log text.
+  - Latest silver element-modifier rerun passed after adding Godot `S04`/`S08` element settlement helpers and public-player-chain smoke coverage.
+  - Smoke now verifies `S04` through `SELECT_UNIT` + `SELECT_CELL`: a wind action slot applies `风2` to the target by echoing the `风1` slot twice.
+  - Smoke now verifies `S08` through `SELECT_UNIT` + `SELECT_CELL`: a same-element wind action slot applies `风2` by doubling the slot's `风1` layers.
+  - Latest quality-parity rerun passed after adding `G08`, `G09`, `G13`, `G14`, `G16`, and `S07` behavior plus public-player-chain smoke coverage.
+  - Smoke now verifies `G08` through `SELECT_UNIT` + `SELECT_CELL`: an ally behind the actor gains +10 shield while the selected enemy still takes damage.
+  - Smoke now verifies `G09`, `G13`, and `G14` damage branches through public cell attacks: different-row targets gain +1 damage, distance-2 targets gain +4 damage, and `破绽一击` gains +6 damage.
+  - Smoke now verifies `G16` through a public cell attack: killing the selected target applies 3 chase damage to the nearest remaining enemy.
+  - Smoke now verifies `S07` through two public cell attacks across a wave refresh: five cumulative kills grant permanent attack +1.
+  - Latest quality-parity rerun passed after adding `G17`, `G22`, `D12`, `D15`, `D17`, and `D19` behavior plus public-player-chain smoke coverage.
+  - Smoke now verifies `G17` through `SELECT_UNIT` + `SELECT_CELL`: a single/core target gains +5 damage.
+  - Smoke now verifies `G22` through public cell attacks: a core/first-cell target gains +4 damage, and an allied unit on the core/first covered cell gains +8 shield while another covered enemy still takes damage.
+  - Smoke now verifies `D12` through a two-target public cell attack: the first target uses base damage and the last target gains +5 damage.
+  - Smoke now verifies `D15` through a three-covered-unit public cell attack: the core enemy receives an additional repeat hit equal to the actor's attack.
+  - Smoke now verifies `D17` through a public cell attack: the target takes base damage plus half rounded up.
+  - Smoke now verifies `D19` through a two-target public cell attack: lower-HP targets resolve before higher-HP targets, checked from the battle log order.
+  - Latest shape-mutation parity rerun passed after adding Godot action-cell mutation helpers and per-cell `quality_damage_delta` handling for `D02`, `D03`, `D04`, `D06`, `D09`, and `D10`.
+  - Smoke now verifies `D02 起点回扫`: a mirrored backsweep cell can be hit through `SELECT_UNIT` + `SELECT_CELL` and applies the browser-core `-2` damage delta.
+  - Smoke now verifies `D03 镜像形状`: a mirrored cell can be hit through public cell attack and uses normal damage.
+  - Smoke now verifies `D04 斜向复制`: the diagonal copied cell can be hit through public cell attack and uses normal damage.
+  - Smoke now verifies `D06 双端开花`: the outer extension cell can be hit through public cell attack and applies `-2` damage delta.
+  - Smoke now verifies `D09 角形补点`: the missing-corner cell can be hit through public cell attack and applies `-2` damage delta.
+  - Smoke now verifies `D10 直线贯穿`: the pierced end cell can be hit through public cell attack and applies `-1` damage delta.
+  - Main scene now renders a minimal `game_over` page after terminal battle loss.
+  - Battle UI now shows the selected pet's element layer summary and three action slot buttons above the board, with the selected slot highlighted.
+  - Battle and shop UI now render Chinese skill labels/descriptions instead of raw English skill IDs.
+- `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd` passed.
+- `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd` passed.
+- `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd` passed.
+- `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd` passed.
+- `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` passed with `SMOKE_SINGLEPLAYER_OK`.
+- `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py` passed; exported `events=32`, `waves=134`, `action_shapes=127`, `quality_growth=12`, `quality_upgrades=68`.
+- `godot --headless --path /Users/ywh/Documents/godot --quit` passed.
+- `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` passed with `CAPTURE_SINGLEPLAYER_OK` and refreshed route/reward/shop/battle/trace/battle_end screenshots under `/Users/ywh/Documents/godot/output/`.
+- Screenshot review: route, battle, trace, and battle_end captures are visible/non-black with no obvious layout regression.
+  - Latest rerun after the `G08/G09/G13/G14/G16/S07` batch passed:
+  - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`
+  - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`
+  - `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` with `SMOKE_SINGLEPLAYER_OK`
+  - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`
+  - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`
+  - `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`
+  - `godot --headless --path /Users/ywh/Documents/godot --quit`
+  - `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` with `CAPTURE_SINGLEPLAYER_OK`
+  - Screenshot review again confirmed route, battle, trace, and battle_end captures are visible/non-black with no obvious layout regression.
+  - Latest rerun after the `G17/G22/D12/D15/D17/D19` batch passed:
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` with `SMOKE_SINGLEPLAYER_OK`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`
+    - `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`
+    - `godot --headless --path /Users/ywh/Documents/godot --quit`
+    - `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` with `CAPTURE_SINGLEPLAYER_OK`
+  - Latest data export after the `G17/G22/D12/D15/D17/D19` batch reports `events=32`, `waves=134`, `action_shapes=127`, `quality_growth=12`, and `quality_upgrades=68`.
+  - Latest screenshot review after the `G17/G22/D12/D15/D17/D19` batch confirmed route, battle, trace, and battle_end captures are visible/non-black with no obvious layout regression.
+  - Latest rerun after the `D02/D03/D04/D06/D09/D10` shape-mutation batch passed:
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` with `SMOKE_SINGLEPLAYER_OK`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`
+    - `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`
+    - `godot --headless --path /Users/ywh/Documents/godot --quit`
+    - `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` with `CAPTURE_SINGLEPLAYER_OK`
+  - Latest data export after the `D02/D03/D04/D06/D09/D10` batch reports `events=32`, `waves=134`, `action_shapes=127`, `quality_growth=12`, and `quality_upgrades=68`.
+  - Latest screenshot review after the `D02/D03/D04/D06/D09/D10` batch confirmed route, battle, trace, and battle_end captures are visible/non-black with no obvious layout regression.
+  - Latest rerun after the `D23/D24/D26/D27/D29/D30` board-trace coverage batch passed the state check, smoke script check, full smoke, main scene check, capture script check, data export, Godot project headless boot, and graphical screenshot capture. The first graphical capture attempt failed on the route page because the viewport texture was black; an immediate reproduction run passed with `CAPTURE_SINGLEPLAYER_OK`, and the black-capture gate correctly rejected the bad frame instead of saving it.
+  - Latest data export after the `D23/D24/D26/D27/D29/D30` board-trace coverage batch reports `events=32`, `waves=134`, `action_shapes=127`, `quality_growth=12`, and `quality_upgrades=68`.
+  - Latest screenshot review after the `D23/D24/D26/D27/D29/D30` board-trace coverage batch confirmed route, battle, trace, and battle_end captures are visible/non-black with no obvious layout regression.
+  - Latest rerun after the `D18` element-first-burst batch passed:
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_state.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/smoke_singleplayer.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/smoke_singleplayer.gd` with `SMOKE_SINGLEPLAYER_OK`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/game/ysbzs_singleplayer.gd`
+    - `godot --headless --path /Users/ywh/Documents/godot --check-only --script res://scripts/test/capture_singleplayer.gd`
+    - `python3 /Users/ywh/Documents/godot/tools/export_ysbzs_singleplayer_data.py`
+    - `godot --headless --path /Users/ywh/Documents/godot --quit`
+    - `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` with `CAPTURE_SINGLEPLAYER_OK`
+  - Latest data export after the `D18` element-first-burst batch reports `events=32`, `waves=134`, `action_shapes=127`, `quality_growth=12`, and `quality_upgrades=68`.
+  - Latest screenshot review after the `D18` element-first-burst batch confirmed route, battle, trace, and battle_end captures are visible/non-black with no obvious layout regression.
+  - Capture script now waits up to 60 process frames for a non-empty, non-black viewport image before saving. This keeps the black-capture gate while fixing the repeated first-route-frame black screenshot race.
+  - Latest shop-event rerun passed after adding `APPLY_SHOP_EVENT`, `shop_events`, shop refresh state, compact shop-event UI buttons, and save/load persistence for shop-event refresh state.
+  - Smoke now verifies the shop exposes exported CSV `evt_free_roll` and `evt_discount`, free refresh pays for the next `ROLL_SHOP`, discount halves regenerated offer prices, `evt_shop_fire` switches to `elem_火` and generates fire offers, D4 exposes `evt_duplicate` / `evt_upgrade_offer`, duplicate merges the owned pet to `白银`, and upgrade promotes the owned pet to `黄金`.
+  - Latest event-export rerun passed after adding `data/csv/05_events.csv` export, `events=32` snapshot count, route-page event count text, `evt_battle_bonus` / `evt_battle_fail` post-battle result recording, and battle-result post-event display.
+  - Latest battle-result rerun passed after adding `battle_end`, `game_over`, `battle_result`, and `CONTINUE_AFTER_BATTLE`.
+  - Smoke now verifies route battle victory stops at `battle_end`, records win/gold deltas, records `base_reward_pool_id=reward_fast_clear`, records exported `evt_battle_bonus` in `post_battle_events`, falls back to effective `reward_pool_id=reward_pT1` when the fast-clear pool has no exported claim options, `CONTINUE_AFTER_BATTLE` opens route battle reward claim with 3 options, `PICK_REWARD` returns to route, party wipe records exported `evt_battle_fail`, party wipe subtracts 10 hero HP, and terminal hero HP reaches `game_over` after continue.
+  - Latest relic/build-core rerun passed after adding `build_core`, route/reward/shop construction summary text, held-relic display, and black-capture rejection.
+  - Smoke now verifies `build_core.summary_text` exists in the initial snapshot, a formal relic candidate can be claimed through public `PICK_REWARD`, `relics` and `build_core.relic_count` update, the claimed relic appears as a `kind=relic` summary tag, and the log contains `获得遗物`.
+  - Latest roster/backpack rerun passed after adding active/bench state, sell/toggle commands, route/shop roster UI, and the shop left-goods/right-roster layout.
+  - Smoke now verifies the fifth roster pet starts in backpack, full active roster blocks activation with visible `上场位已满` log text, downshifting opens a slot, upshifting fills it, selling a bronze backpack pet refunds 2 gold, and battle deploys exactly 4 active pets.
+  - Latest rerun after the seed-weighted route/shop/reward batch passed the state check, main scene check, smoke script check, capture script check, real smoke, data export, Godot project headless boot, and graphical screenshot capture.
+  - Smoke now verifies same-seed route choices are stable, changing the run seed changes the first route option order, and the first route options still include the CSV reward/shop nodes.
+  - Smoke duplicate-merge coverage now follows seeded reward/shop output: it claims the current seeded pet reward, opens a matching seeded shop through public `ENTER_SHOP`, rerolls through public `ROLL_SHOP` until a duplicate appears, and buys that offer through public `BUY_OFFER`.
+  - Smoke now verifies exported quality table counts: `quality_growth=12` and `quality_upgrades=68`.
+  - Smoke now verifies initial route options come from exported route CSV, including `node_reward_pet` as the first weighted option.
+  - Smoke now verifies `node_shop_basic -> node_reward_pet -> enc_d01_midday_a` route progression through public dispatch commands.
+  - Smoke now verifies `shop_items` and `relics` are exported, `node_reward_pet` enters reward phase with 3 options, `PICK_REWARD` adds a pet to roster and returns to route, and `node_shop_fire` uses `elem_火` with fire-element offers.
+  - Smoke now verifies a reward `棉悠悠` followed by buying duplicate `shop_001` through public `BUY_OFFER` keeps roster size at 2, upgrades `pal_001` from `青铜` to `白银`, and emits visible log text `同名合成到白银`.
+  - Smoke now verifies the merged silver `pal_001` applies CSV quality growth, receives `S01 护体`, enters battle through public `startBattle`, and starts battle with at least `base_shield + 15` shield while logging `护体`.
+  - Smoke now verifies a gold `pal_002` fixture receives deterministic `G01`, uses public `startBattle`/`SELECT_UNIT`/`SELECT_CELL`, deals `atk * settle_count + 2` in attack mode, and switches to guard mode with +8 shield when HP is at half.
+  - Smoke now verifies a diamond `pal_002` fixture receives deterministic `D01`, uses public `startBattle`/`SELECT_UNIT`/`SELECT_CELL`, and can hit an enemy one cell beyond shape02's original target cell through the extended action shape.
+  - Smoke now verifies fixture-selected `G03`, `G18`, and `D16` quality upgrades through public `startBattle`/`SELECT_UNIT`/`SELECT_CELL` combat flow:
+    - `G03` adds +3 damage on the core cell.
+    - `G18` keeps the first target at base damage and adds +4 to the second target.
+    - `D16` doubles single-target damage.
+  - Smoke now verifies fixture-selected `G04`, `G12`, and `D13` quality upgrades through public `startBattle`/`SELECT_UNIT`/`SELECT_CELL` combat flow:
+    - `G04` grants +8 shield to an ally covered by the core cell while still damaging the target enemy.
+    - `G12` marks the target for next-damage +3 and the following action consumes that bonus.
+    - `D13` adds a 5-damage chase hit to a low-HP target after settlement.
+  - Smoke now verifies fixture-selected `D18` quality through public `startBattle`/`SELECT_UNIT`/`SELECT_CELL` combat flow: attacking a target cell preloaded with 3 matching `风` layers triggers immediate element burst for 6 damage before normal hit damage.
+  - Smoke now verifies fixture-selected board trace upgrades through public `startBattle`/`SELECT_UNIT`/`SELECT_CELL` combat flow and board snapshot reads:
+    - `D21` fire trace is mirrored into `board.cells[].trace` and deals 3 damage to an enemy standing on the covered cell.
+    - `D22` water trace is mirrored into `board.cells[].trace` and heals an ally standing on the covered cell.
+    - `D23` wind trace is mirrored into `board.cells[].trace` and writes the current browser next-damage marker without consuming it as Godot-only attacker damage.
+    - `D24` earth trace is mirrored into `board.cells[].trace` and grants an ally standing on the covered cell +8 shield.
+    - `D25` metal trace persists after the first hit and adds +2 to the next hit on that traced cell.
+    - `D26` wood trace is mirrored into `board.cells[].trace` and heals an ally standing on the covered cell for 4.
+    - `D27` buddha trace is mirrored into `board.cells[].trace` and heals an ally standing on the covered cell for 6.
+    - `D28` sand trace damages the enemy standing on the covered cell and stores next-damage +2.
+    - `D29` demon trace is mirrored into `board.cells[].trace` and stores next-damage +4 without adding immediate damage.
+    - `D30` talisman trace is mirrored into `board.cells[].trace`; a second public hit on the traced cell applies one extra element packet without copying hit damage.
+  - Smoke now verifies main-scene battle rendering of a `D21` fire trace by checking `Cell_4_6` button text contains visible `火痕`.
+  - Smoke now verifies first wave has 2 enemies, clearing the first wave keeps `phase=battle`, advances to `battle_round=2`, and spawns 3 enemies from the second CSV wave.
+  - Smoke now verifies the exported shape catalog has 19 shapes, `pal_002` shape02 can hit a target two cells to the right through public `SELECT_CELL`, and damage uses `atk * settle_count`.
+  - Smoke now verifies exported action shape slots exist, `pal_002` exposes 3 wind slots with 1 base layer, public `SELECT_ACTION_SLOT` works, using slot 1 applies `风1` to the target, marks slot 1 used in snapshot, and logs `第1槽`.
+  - Smoke now verifies selected `pal_002` exposes Chinese skill label `守护减伤`, the action grants shield plus next-hit reduction, the log uses the Chinese skill name, and an adjacent enemy attack after `END_PLAYER_TURN` is absorbed by shield/reduction without reducing `pal_002` HP.
+  - Smoke now verifies camelCase command aliasing, public command dispatch (`EXIT_SHOP`, `SELECT_UNIT`, `MOVE_HERO`, `AUTO_POSITION_HEROES`), save document export/import, and `user://` file save/load.
+  - Smoke now verifies terminal restart flow: `game_over` snapshot exposes `NEW_RUN`, public `NEW_RUN` dispatch resets to `phase=route` and `day=1`, the real Godot scene renders `NewRunButton`, and pressing it returns the visible run to day 1 route through public dispatch.
+- `godot --headless --path /Users/ywh/Documents/godot --quit` passed.
+- `godot --headless --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` failed because the headless dummy renderer has no viewport texture.
+- `godot --path /Users/ywh/Documents/godot --script res://scripts/test/capture_singleplayer.gd` passed with `CAPTURE_SINGLEPLAYER_OK`; screenshots saved to:
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_route.png`
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_reward.png` now renders non-black and shows 2 pet choices plus 1 relic choice from `reward_pT1`, with construction summary visible above the choices.
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` now shows the shop goods list and active/backpack roster controls in the same viewport without overlap.
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_shop.png` now shows held relic `土系装备08` and construction summary `土系 / 风系 / 坦克 / 抗压单点 · 遗物 1` after claiming a relic reward through the formal route reward flow.
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle.png`
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_trace.png`
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle_end.png` shows the visible battle result page with `WIN_FAST`, rating `S`, `金币 14→20 (+6)`, and a `继续` button.
+  - Latest `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_battle_end.png` shows player-facing result labels (`速胜`, `速胜奖励池`, `第1天上午波次`) instead of raw result/reward/wave ids, without visible overlap.
+  - `/Users/ywh/Documents/godot/output/ysbzs_singleplayer_terminal.png` now shows the completed day-10 terminal state with visible `重新开始`, `保存`, and `读档` controls and no visible overlap.
+- Main-thread screenshot review:
+  - route page is nonblank and shows title, status bar, `第 1 天 · 事件节点1`, three seed-weighted route choices, a player-facing route prompt, roster/build summary, and battle log.
+  - route page now shows the visible `保存` / `读档` controls without covering route choices or status text.
+  - route page no longer shows CSV/data-count debug text; route data volume remains verified by exporter/smoke instead of displayed to the player.
+  - reward page shows 3 `基础奖励池` choices and is reached from the formal route choice flow.
+  - reward page now visibly includes construction summary text and a relic choice (`土系装备08`) alongside pet choices.
+  - shop page shows seed-weighted real CSV-driven pet names, element, quality, HP, attack, shield, shape/range, skill, selected stall `夜市商人`, and `夜市基础货架` with 6 visible offers for this node.
+  - shop capture now claims relic `土系装备08` through public `PICK_REWARD`, then buys a shop pet through public `BUY_OFFER`; the screenshot shows `已持有：土系装备08`, `遗物 1`, `金币 14`, and visible roster controls.
+  - latest shop screenshot also shows the new compact `商店事件` button grid (`火元素补货`, `水元素补货`, `风元素补货`, `土元素补货`, `免费刷新`, `折扣摊位`) and the refresh state line `刷新：免费 0 · 下次 2 金 · 折扣 0%`, with no visible overlap against the roster panel.
+  - battle page shows visible `保存` / `读档`, `战斗第 1 回合 第1天上午波次 敌人 2`, an 8x8 board, the CSV-enabled starting pet `捣蛋猫`, a claimed reward pet, and two first-wave enemies derived from the day-1 morning wave; bottom help text is visible after tightening board cell height.
+  - battle page now selects `pal_002` through public dispatch before screenshot capture and visibly shows `元素层：无` plus three action slot buttons: `第1槽 风1层 可用`, `第2槽 风1层 可用`, `第3槽 风1层 可用`.
+  - latest battle screenshot also shows `守护减伤` and the Chinese description `阻挡行动：施放后获得护盾，并让下一次受击减伤。`, with no visible raw `castleReduce` text in the selected panel.
+  - latest battle screenshot shows the merged silver `棉悠悠` at `HP 25` and the battle log line `棉悠悠 触发护体：护盾 2→17。`, confirming visible quality growth and passive trigger.
+  - trace screenshot shows a targeted `D21` action result with the enemy cell displaying `风1` and `火痕` inside the board cell, without blank board rendering or visible text overlap.
+  - battle_end screenshot is nonblank and shows the result page rather than an automatic route jump: `战斗结算`, `速胜`, `评级 S`, gold delta, and the continue button are visible.
+  - terminal screenshot is nonblank and shows `第 10 天路线结束`, status `第 10 天 日结`, the `重新开始` button, and the full-run log line `完整单局流程执行 20 步，停在第10天日结。`
+
+## remaining_gap
+
+- This is still a vertical slice, not the full one-to-one Godot remake.
+- Current Godot scope explicitly excludes temporary fire-trial content: no Day7 trial CSV export, no Day7 trial state/snapshot fields, no Day7 aliases, and no Day7 trial smoke parity work. Day7 route/wave notes remain only as normal schedule data.
+- Godot player-facing `nextActions` no longer expose full-day/full-run automation controls. Internal automation commands still exist for smoke/capture validation and should not be treated as player UI parity.
+- Godot state now uses ysbzs CSV data snapshots, exported route/shop/reward/encounter/wave/shape/action-slot/quality/event rows, formal 61-mechanism metadata rows with separate Web `MECHANIC_STATUS` / Godot behavior-status gating, all 61 formal mechanism behavior/event-flow slices (`mech_shield_flat` battle-start shield, `mech_armor_flat` before-damage armor, `mech_damage_reduce_pct` before-damage percent reduction, `mech_first_hit_immunity` one-time first-hit block, `mech_damage_cap_per_round` same-round HP loss cap, `mech_shield_regen` round-start shield regeneration, `mech_grow_atk_each_round` round-start attack growth, `mech_grow_shield_each_round` round-start shield growth, `mech_enrage_after_round` round-start attack enrage, `mech_delayed_powerup` thresholded round-start attack growth, `mech_scale_with_allies` same-camp round-start attack/shield growth, `mech_element_barrier` mismatched-element damage reduction, `mech_guard_taunt` target-selection taunt redirect, `mech_last_stand_shield` one-time low-HP shield, `mech_rage_low_hp` one-time low-HP attack growth, `mech_second_phase` one-time low-HP attack/shield phase shift, `mech_thorn_shield` after-hit reflected damage, `mech_counter_damage` fixed after-hit reflected damage, `mech_thorns_percent` half-effective-hit reflected damage, `mech_reflect_first_hit` one-time after-hit reflected damage, `mech_harden_when_hit` after-hit defense growth, and `mech_soften_when_hit` after-hit defense reduction, `mech_on_hit_blast` after-hit adjacent splash damage, `mech_counter_attack` after-hit AP-cost counterattack, `mech_summon_when_hit` after-hit same-side minion split, `mech_retaliate_summon` after-hit same-side reinforcement summon, `mech_summon_after_kill` after-kill same-side ally summon, `mech_revenge_buff` ally-death same-side attack/shield growth, `mech_copy_weak_self` after-action same-side weakened copy, `mech_summon_wall` after-action real blocking obstacle, `mech_hatch_after_rounds` enemy round-end countdown hatch, `mech_death_explosion` on-death real cross damage plus event-flow log, `mech_self_destruct` round-end countdown self-explosion plus event-flow compatibility, `mech_shield_break_explosion` shield-break real cross damage plus event-flow compatibility, `mech_death_summon` on-death real summons plus event-flow log, and `mech_split_into_minions` on-death hp-scaled real minions plus event-flow log, `mech_fire_ignite_bonus` fire3+ settlement damage bonus, `mech_fire_cross_detonate_diamond` diamond fire cross detonation, `mech_multi_element_bonus` same-cell multi-element settlement bonus, `mech_water_heal_on_layer` after-element water-layer heal, `mech_water_cleanse_debuff` round-start same-side negative-status cleanse, `mech_earth_shield_on_layer` after-element earth-layer shield, `mech_summon_on_empty_cell` after-element empty-cell ally summon plus event-flow log, `mech_summon_trap` after-element real trap layer plus event-flow log, `mech_dirty_cell` after-element dirty-cell board trace plus event-flow log, and `mech_earth_block_cell` after-element real blocking wall plus event-flow log, `mech_castle_line_damage` max-round battle-fail castle-line damage, `mech_economy_decay_on_fail` max-round failure economy decay, `mech_shop_discount_after_clear` battle-end next-shop discount, `mech_bonus_reward_under_round5` battle-end fast-clear gold bonus, and `mech_curse_gold_loss` battle-end gold reduction, `mech_countdown_pressure` round-start pressure reinforcement, `mech_reduce_reward_if_alive` alive-enemy battle-end reward penalty, and `mech_trap_stack_trigger` enter-cell all-element trap settlement, `mech_consume_layers_grow` same-cell element consume growth, `mech_summon_each_round` round-start summon pressure, `mech_penalty_after_round10` max-round failure, and `mech_elite_reward_bonus` elite extra-reward evidence), a dispatch-style UI intent entry, seed-weighted route/shop/reward sampling, shop-phase event modifiers, pre-battle/outer-run route event effects, optional seeded quality evolution-point growth, multi-wave battle progression, visible battle result/game-over phases, browser-style max-round battle failure pressure, exported post-battle event identity for fast-clear/failure outcomes, shape-cell battle targeting, duplicate-pet quality merge with first-pass stat/passive application, first deterministic gold/diamond quality behavior (`G01` and `D01`), broader first-pass S/G/D quality damage/cover/chase/reorder effects, all 68 formal quality upgrade ids now have Godot state coverage after `G29`, all 6 formal action skill ids now have Godot-visible Chinese identity coverage after `summonFromCell`, dedicated public-combat smoke coverage for the implemented formal action skills, browser-core-style diamond shape mutation cells with per-cell damage deltas for the covered batch, D18 element-first burst, first-pass diamond board traces, action-slot element layer application, browser-style `SELECT_SLOT` / `USE_SLOT` command aliases and battle nextAction visibility, first-pass browser-style `PREVIEW_MANUAL_FLOW` sandbox projection with rollback and cell/unit diffs, first-pass board trace labels/tooltips, first-pass action skill effects, browser-style active/bench roster caps, relic pickup visibility, construction summary, local save/load with browser-style `ysbzs.save` checksum validation, browser-style `stateVersion` and `stateHash` in snapshots, browser-style no-version/no-command-log behavior for selection-only view commands and battle read-only commands (`BUILD_PREVIEW` / `GET_CELL_DETAIL`), browser-style command_log before/after hash checkpoints plus before/after phase capture for accepted playable commands, browser-style replayable command normalization/sanitization with filled `baseStateVersion`, browser-style `ysbzs.replay` command-stream document export and self-verification with initial stateHash plus sanitized initial-options reporting, browser-style public replay export command dispatch results for `EXPORT_REPLAY` / `EXPORT_BATTLE_TRACE` / `REPLAY_BATTLE_TRACE`, browser-style replay `inputLog` compatibility output for accepted public inputs, first-pass browser-style replay `changeLog` compatibility output for accepted command checkpoints, first-pass browser-style replay `battleTrace` protocol output for accepted command checkpoints, browser-style replay checkpoint `eventIds` linked to matching battleTrace events, browser-style rejected-command debugTimeline entries outside deterministic commandStream with structured error payloads, and browser-style stale `baseStateVersion` rejection for strict command envelopes, but full browser-core parity is not implemented yet: exact reducer semantics for every public command, deeper semantic parity for event-flow placeholders and edge cases, exact semantic parity for every S/G/D quality effect, full after-hit quality chains, granular browser reducer changeLog/battleTrace parity, broader semantic import/export compatibility with browser runtime state, trace icon/animation polish, and full UI polish remain.
+- Latest cleared slice: all 68 formal `29_quality_upgrades.csv` ids now have direct smoke references; the latest batch adds public-command validation for S02, S03, S05, G05, G06, G07, G10, G15, G25, G26, D07, and D08.
+- Latest cleared slice: Godot battle UI now surfaces browser-style enemy threat payloads to players: threatened board cells show `威胁N`, tooltips explain the source damage, and the selected-unit panel shows `受到威胁：... 威胁N`; battle screenshot capture now asserts these threat cues are visible.
+- Latest cleared slice: Godot player-facing route/reward/shop/battle-end/log text now maps reward/shop/result/wave raw ids to Chinese labels (`基础奖励池`, `夜市基础货架`, `速胜`, `第1天上午波次`), and screenshot capture now asserts the key raw ids are absent while verifying image files are actually written.
+- Latest cleared slice: Godot route page no longer shows debug/data-source copy (`数据快照` / `CSV 快照`) on the player-facing screen; capture now gates against those terms and the route screenshot shows a normal player route prompt.
+- Latest cleared slice: Godot shop screenshot capture and replay smoke no longer hardcode `shop_001`; both read the current shop snapshot, buy an actual unsold affordable offer, and still verify replay inputLog preserves that raw public payload.
+- Latest cleared slice: normal Godot battle waves no longer interpret numeric monster pools as player pet ids; wave enemies now resolve against `02_monster_templates.csv` row order and no longer inherit player action fields from temporary pet-clone data.
+- Latest cleared slice: Godot shop page now keeps the purchased roster cards and active roster controls visible inside the real 1080x1010 graphical capture viewport by giving the roster side its own scroll area and suppressing the bottom battle log on shop pages.
+- Latest cleared slice: Godot selected battle panel now renders a player-readable current-action preview summary from board preview rows, including slot, direction, AP, element layers, target, and predicted shield/HP damage; battle screenshot capture now asserts this summary is visible.
+- Latest cleared slice: Godot battle panel now renders public quality mode/mark controls from `next_actions`, exposes selected action cells for mark buttons, and dispatches `SET_QUALITY_MODE` / `SET_QUALITY_MARK` through real player-facing buttons; battle screenshot evidence now visibly includes the G01 quality mode controls.
+- Latest cleared slice: party-wipe and max-round losses now grant the browser-style 1 consolation gold through the same visible battle-result lifecycle.
+- Latest cleared slice: normal fire actions now mirror browser fire3+ explosion timing, damage, and fire-layer cleanup before normal hit damage.
+- Latest cleared slice: player end-turn now mirrors browser threshold element settlement for occupied fire/water/wind/earth cells before monster actions.
+- Latest cleared slice: mechanism status export now has no unclassified Web-implemented `not_covered` rows; temporary Day7 `mech_shield_max` is excluded with the trial-only package and formal `none` is covered.
+- Latest cleared slice: `AUTO_POSITION_HEROES` now performs first-pass browser-style smart positioning instead of no-op logging, moving untouched pets into attack cells without spending AP/action slots.
+- Latest cleared slice: `BUILD_PREVIEW` now exposes browser-style raw/final damage plus shield/HP damage breakdown and projected HP/shield ranges.
+- Latest cleared slice: `GET_CELL_DETAIL` now exposes first-pass browser-style enemy threat rows for threatened cells.
+- Latest cleared slice: board cell snapshots now expose the same first-pass enemy threat rows for UI consumers.
+- Latest cleared slice: `BUILD_PREVIEW` now projects fire3+ settlement rows and combines settlement damage before normal action damage.
+- Latest cleared slice: `BUILD_PREVIEW` now emits preview rows for every living player actor, with browser-style active-actor and order metadata.
+- Latest cleared slice: `BUILD_PREVIEW` now carries cumulative projected cell elements and target HP/shield across preview rows.
+- Latest cleared slice: board cell snapshots now expose browser-style `previews` arrays and active `preview` rows from the same `BUILD_PREVIEW` projection path.
+- Latest cleared slice: `mech_fire_ignite_bonus` now has Godot behavior coverage and boosts both actual and previewed fire3+ settlement damage by `per_layer` per fire layer.
+- Latest cleared slice: `mech_multi_element_bonus` now has Godot behavior coverage and adds CSV `bonus=3` damage during threshold element settlement when the cell has at least two active element types; mechanism status now reports `covered=50` and `event_flow_or_data_only=7`.
+- Latest cleared slice: `mech_castle_line_damage` now has Godot behavior coverage through the max-round battle-fail flow; mechanism status now reports `covered=51` and `event_flow_or_data_only=6`.
+- Latest cleared slice: `mech_economy_decay_on_fail` now has Godot behavior coverage through the max-round battle-fail economy multiplier flow; mechanism status now reports `covered=52` and `event_flow_or_data_only=5`.
+- Latest cleared slice: `mech_hatch_after_rounds` now has Godot behavior coverage and transforms a surviving countdown enemy into a stronger hatched unit after CSV `rounds=3`; mechanism status now reports `covered=53` and `event_flow_or_data_only=4`.
+- Latest cleared slice: `mech_fire_cross_detonate_diamond` now has Godot behavior coverage and lets a diamond fire unit turn fire3 explosion into cross-5 damage; mechanism status now reports `covered=54` and `event_flow_or_data_only=3`.
+- Latest cleared slice: `mech_countdown_pressure` now has Godot behavior coverage and spawns a pressure reinforcement at CSV `round=5`; mechanism status now reports `covered=55` and `event_flow_or_data_only=2`.
+- Latest cleared slice: `mech_reduce_reward_if_alive` now has Godot behavior coverage and reduces failure consolation gold when its carrier remains alive; mechanism status now reports `covered=56` and `event_flow_or_data_only=1`.
+- Latest cleared slice: `mech_trap_stack_trigger` now has Godot behavior coverage and triggers all element trap layers when the carrier enters the trapped cell; mechanism status now reports `covered=57` and no `event_flow_or_data_only` bucket.
+- Latest cleared slice: all 61 formal `04_mechanisms.csv` rows now report Godot `covered`; the last formal batch adds `mech_consume_layers_grow`, `mech_summon_each_round`, `mech_penalty_after_round10`, and `mech_elite_reward_bonus`, while 30 non-formal Web leftovers are explicitly `excluded_non_formal`.
+- Latest cleared slice: `G02 稳爆切换` now has a public Godot `SET_QUALITY_MODE` command, battle `next_actions` visibility, `quality_runtime.mode` persistence, and separate `稳` / `爆` damage semantics through real player combat commands.
+- Latest cleared slice: `G01 攻守切换` now has public Godot `SET_QUALITY_MODE` support for `攻` / `守`, explicit player-mode persistence, attack +2 damage, guard round-start +8 shield, and legacy low-HP auto-guard fallback only when no explicit mode was chosen.
+- Latest cleared slice: `G14 破绽一击` now uses the same public `SET_QUALITY_MODE` path, with `稳击` as +2 multi-cell settlement and `重击` as +6 settlement restricted to the clicked shape cell.
+- Latest cleared slice: `G17 精准印记` now has a public Godot `SET_QUALITY_MARK` command, battle `next_actions` visibility, current-action-cell validation, per-turn `quality_runtime.marked_cell` storage, and marked-cell-only +5 damage through public combat commands.
+- Latest cleared slice: `G22 双印择一` and `G30 三选一金印` now share the public Godot `SET_QUALITY_MARK` path, battle `next_actions` visibility, selected-action-cell validation, and marked-cell-only damage/shield semantics while retaining old fixed-core fallback behavior when no explicit mark exists.
+- Latest cleared slice: `G24 双锋` now has public Godot `SET_QUALITY_MODE` support for `同伤` / `主副`, with same-damage +1 across both covered targets and main-sub +4 on the first target only.
+- Latest cleared slice: `BUILD_PREVIEW` now reflects the public quality mode/mark choices for the current G01/G02/G14/G17/G22/G24/G30 command path, so preview rows no longer contradict the selected attack/guard, same/main-sub, or marked-cell damage semantics.
+- Latest cleared slice: `mech_wind_slow_ap` now has Godot behavior coverage and reduces wind-hit targets' AP by `ap_delta`.
+- Latest cleared slice: `mech_wind_push_on_hit` now has Godot behavior coverage and pushes wind-hit targets by `distance`; Web-status-only mechanism coverage is now zero.
+- Latest cleared slice: `mech_summon_on_empty_cell` now creates a real same-side `ally_sprite` summon with CSV `hp=6` on an empty covered element cell while retaining the event-flow trace log.
+- Latest cleared slice: `mech_summon_trap`, `mech_dirty_cell`, and `mech_earth_block_cell` now mutate the actual board through public attack flow: fire trap layers, dirty-cell traces, and blocking wall units respectively, while retaining event-flow logs.
+- Latest cleared slice: `mech_death_explosion`, `mech_self_destruct`, `mech_shield_break_explosion`, `mech_death_summon`, and `mech_split_into_minions` now mutate real units through public attack / monster-turn flow: cross damage, self-kill, shield-break damage, death summons, and hp-scaled split minions.
+- Latest cleared slice: `mech_on_hit_blast` now has Godot behavior coverage and applies CSV `damage=2` splash to adjacent opposing units after a hit; mechanism status now reports `covered=40` and `event_flow_or_data_only=17`.
+- Latest cleared slice: `mech_summon_wall` now has Godot behavior coverage and creates a same-side real blocking obstacle after a public attack action using CSV `hp=8; duration=2`; mechanism status now reports `covered=49` and `event_flow_or_data_only=8`.
+
+## commit_plan
+
+- Do not auto-commit in this turn because both `/Users/ywh/Documents/ysbzs` and `/Users/ywh/Documents/godot` already contain substantial unrelated dirty/untracked work.
+
+## collaboration
+
+collaboration:
+  lead_scope: Godot singleplayer vertical slice in separate Godot project.
+  specialist_input: none
+  tester_pass: passed
+  external_ai_input: none
+  lead_decision: Start with a separated Godot scene and pure state script to avoid ysbzs browser/core task conflicts.

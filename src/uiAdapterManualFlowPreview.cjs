@@ -84,7 +84,7 @@ function buildUnitDiffs(beforeUnits = [], afterUnits = []) {
   const ids = new Set([...beforeMap.keys(), ...afterMap.keys()]);
   return [...ids].sort().map(id => {
     const before = beforeMap.get(id) || null;
-    const after = afterMap.get(id) || null;
+    const after = afterMap.get(id) || (before ? Object.assign({}, before, { hp: 0, shield: 0, alive: false }) : null);
     if (stableSignature(before) === stableSignature(after)) return null;
     return { id, before, after };
   }).filter(Boolean);

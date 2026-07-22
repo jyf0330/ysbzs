@@ -1,6 +1,31 @@
 const LOCAL_RUNTIME_QUERY = 'runtime=local';
 const HTTP_RUNTIME_QUERY = 'runtime=http';
 const DEFAULT_SAVE_SLOT = 'ysbzs.save.slot1';
+export const LOCAL_BATTLE_OPERATION_LOG_KEY = 'ysbzs.localBattleOperations.v1';
+const LOCAL_BATTLE_OPERATION_LOG_LIMIT = 200;
+const BATTLE_OPERATION_TYPES = new Set([
+  'START_BATTLE',
+  'RUN_ROUTE_FIXED_BATTLE',
+  'SETUP_DAY7_FIRE_TRIAL',
+  'RUN_DAY7_FIRE_TURN_1',
+  'RUN_DAY7_FIRE_TRIAL_ALL',
+  'SELECT_UNIT',
+  'SELECT_HERO',
+  'SELECT_CELL',
+  'SELECT_SLOT',
+  'CLEAR_SELECTION',
+  'MOVE_HERO',
+  'AUTO_POSITION_HEROES',
+  'SET_ACTION_DIRECTION',
+  'SET_SLOT_DIR',
+  'USE_SLOT',
+  'USE_ACTION_SLOT',
+  'RUN_PLAYER_ALL_OUT',
+  'END_PLAYER_TURN',
+  'RUN_MONSTER_TURN',
+  'START_NEXT_ROUND',
+  'RUN_BATTLE'
+]);
 
 function getWindow() {
   return typeof window !== 'undefined' ? window : null;
@@ -19,6 +44,124 @@ function endpoint(apiBase, pathname) {
 
 function engineMissing(method) {
   throw new Error(`LOCAL_RUNTIME_ENGINE_MISSING: ${method}`);
+}
+
+function commandType(command) {
+  return typeof command === 'string' ? command : String(command?.type || '');
+}
+
+export function isBattleOperationCommand(command) {
+  return BATTLE_OPERATION_TYPES.has(commandType(command));
+}
+
+function safeJsonClone(value) {
+  if (value === undefined) return undefined;
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (_) {
+    return String(value);
+  }
+}
+
+function compactCommand(command) {
+  if (typeof command === 'string') return { type: command };
+  const out = {
+    type: commandType(command),
+    commandId: command?.commandId || null,
+    battleId: command?.battleId || null,
+    playerId: command?.playerId || null,
+    baseStateVersion: command?.baseStateVersion ?? null,
+    payload: {}
+  };
+  for (const [key, value] of Object.entries(command || {})) {
+    if (['type', 'commandId', 'battleId', 'playerId', 'baseStateVersion'].includes(key)) continue;
+    if (typeof value === 'function') continue;
+    out.payload[key] = safeJsonClone(value);
+  }
+  return out;
+}
+
+function compactEvent(event) {
+  const out = {
+    type: event?.type || '',
+    text: event?.text || ''
+  };
+  for (const key of ['step', 'round', 'unitId', 'targetId', 'slotId', 'damage', 'raw', 'hpFrom', 'hpTo', 'shieldFrom', 'shieldTo', 'r', 'c']) {
+    if (event?.[key] !== undefined) out[key] = event[key];
+  }
+  return out;
+}
+
+function compactResult(result) {
+  const viewModel = result?.viewModel || {};
+  return {
+    ok: result?.ok !== false,
+    command: result?.command || null,
+    phase: viewModel.phase || result?.phase || null,
+    round: viewModel.round ?? result?.round ?? null,
+    battleId: viewModel.battleId || result?.battleId || null,
+    stateVersion: viewModel.stateVersion ?? result?.stateVersion ?? null,
+    stateHash: viewModel.stateHash || result?.stateHash || null,
+    events: Array.isArray(result?.events) ? result.events.slice(-40).map(compactEvent) : []
+  };
+}
+
+function localStorageForRecord(option) {
+  return option || getWindow()?.localStorage || null;
+}
+
+export function readLocalBattleOperationLog(storage = localStorageForRecord()) {
+  if (!storage) return [];
+  try {
+    const parsed = JSON.parse(storage.getItem(LOCAL_BATTLE_OPERATION_LOG_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+export function clearLocalBattleOperationLog(storage = localStorageForRecord()) {
+  if (storage) storage.removeItem(LOCAL_BATTLE_OPERATION_LOG_KEY);
+}
+
+export function recordLocalBattleOperation(input = {}, options = {}) {
+  if (!isBattleOperationCommand(input.command)) return null;
+  const storage = localStorageForRecord(options.storage);
+  if (!storage) return null;
+  const entry = {
+    at: new Date().toISOString(),
+    runtimeKind: input.runtimeKind || 'unknown',
+    playerId: input.playerId || null,
+    sessionId: input.sessionId || null,
+    command: compactCommand(input.command),
+    result: input.error ? null : compactResult(input.result || {}),
+    error: input.error ? String(input.error.message || input.error) : null
+  };
+  const entries = readLocalBattleOperationLog(storage);
+  entries.push(entry);
+  const trimmed = entries.slice(-LOCAL_BATTLE_OPERATION_LOG_LIMIT);
+  try {
+    storage.setItem(LOCAL_BATTLE_OPERATION_LOG_KEY, JSON.stringify(trimmed));
+    return entry;
+  } catch (_) {
+    try {
+      storage.setItem(LOCAL_BATTLE_OPERATION_LOG_KEY, JSON.stringify(trimmed.slice(-50)));
+      return entry;
+    } catch (__) {
+      return null;
+    }
+  }
+}
+
+async function recordActionResult(context, action) {
+  try {
+    const result = await action();
+    recordLocalBattleOperation(Object.assign({}, context, { result }));
+    return result;
+  } catch (err) {
+    recordLocalBattleOperation(Object.assign({}, context, { error: err }));
+    throw err;
+  }
 }
 
 export function resolveRuntimeMode(options = {}) {
@@ -66,7 +209,14 @@ export function createHttpRuntime(options = {}) {
     request,
     view() { return request('/api/view'); },
     report(mode = 'player') { return request(`/api/report?mode=${encodeURIComponent(mode)}`); },
-    action(command) { return request('/api/action', command); },
+    action(command) {
+      return recordActionResult({
+        runtimeKind: 'http',
+        playerId: getPlayerId(playerId),
+        sessionId,
+        command
+      }, () => request('/api/action', command));
+    },
     save() { return request('/api/save'); },
     load(save) { return request('/api/load', { save }); }
   };
@@ -101,14 +251,22 @@ export function createLocalRuntime(options = {}) {
     engineMissing('report');
   }
   async function action(command) {
-    if (command?.type === 'NEW_GAME') {
-      engine = createEngine(command);
-      if (win && engine) win.__YSBZS_LOCAL_ENGINE__ = engine;
-      return Object.assign({ command: 'NEW_GAME' }, viewPayload());
-    }
-    if (engine?.action) return engine.action(command);
-    if (engine?.run) return engine.run(command);
-    engineMissing('action');
+    const run = async () => {
+      if (command?.type === 'NEW_GAME') {
+        engine = createEngine(command);
+        if (win && engine) win.__YSBZS_LOCAL_ENGINE__ = engine;
+        return Object.assign({ command: 'NEW_GAME' }, viewPayload());
+      }
+      if (engine?.action) return engine.action(command);
+      if (engine?.run) return engine.run(command);
+      engineMissing('action');
+    };
+    return recordActionResult({
+      runtimeKind: 'local',
+      playerId: currentPlayerId(),
+      sessionId: options.sessionId || new URLSearchParams(win?.location?.search || '').get('sessionId') || win?.__YSBZS_SESSION_ID__ || null,
+      command
+    }, run);
   }
   async function save() {
     if (engine?.save) return engine.save(currentPlayerId());

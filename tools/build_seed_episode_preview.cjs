@@ -369,6 +369,126 @@ function battleRowsForCsv(battles) {
   return rows;
 }
 
+function groupBy(items, keyFn) {
+  const groups = new Map();
+  for (const item of items || []) {
+    const key = keyFn(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  return groups;
+}
+
+function md(value) {
+  return String(value ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+}
+
+function sourceSummaryForStep(payload, step) {
+  const rows = (payload.tables.petSources || []).filter(row => (
+    row.seed === step.seed
+    && Number(row.day) === Number(step.day)
+    && Number(row.step) === Number(step.step)
+    && Number(row.optionIndex) === Number(step.optionIndex)
+    && row.optionId === step.choiceId
+  ));
+  if (!rows.length) return step.petSourceSummary || '无直接宠物来源';
+  return rows
+    .slice(0, 8)
+    .map(row => {
+      const price = row.price !== '' && row.price !== undefined ? `/${row.price}金` : '';
+      const cells = row.cells ? `/${row.cells}格` : '';
+      return `${row.name}${row.quality ? `(${row.quality})` : ''}${price}${cells}`;
+    })
+    .join('、') + (rows.length > 8 ? ` 等${rows.length}项` : '');
+}
+
+function battleSummaryForStep(payload, step) {
+  const battle = (payload.tables.battles || []).find(row => (
+    row.seed === step.seed
+    && Number(row.day) === Number(step.day)
+    && Number(row.step) === Number(step.step)
+    && Number(row.optionIndex) === Number(step.optionIndex)
+    && row.encounterId === step.choiceId
+  ));
+  if (!battle) return step.battleSummary || '';
+  return `${battle.summary}；总威胁 ${battle.totalThreat}，敌人 ${battle.enemyCount} 只`;
+}
+
+function renderNodeChoiceTable(payload, steps) {
+  const lines = [
+    '| 选项 | 类型 | 名称 | 策划内容 | 备注 |',
+    '|---|---|---|---|---|'
+  ];
+  for (const step of steps) {
+    lines.push(`| ${step.optionIndex} | ${md(step.nodeType)} | ${md(step.choiceName)} | ${md(sourceSummaryForStep(payload, step))} | ${md(step.note || '')} |`);
+  }
+  return lines.join('\n');
+}
+
+function renderBattleTable(payload, steps) {
+  const lines = [
+    '| 战斗 | 名称 | 敌人/波次预览 | 备注 |',
+    '|---|---|---|---|'
+  ];
+  for (const step of steps) {
+    lines.push(`| ${step.label || `步骤${step.step}`} | ${md(step.choiceName)} | ${md(battleSummaryForStep(payload, step))} | ${md(step.note || '')} |`);
+  }
+  return lines.join('\n');
+}
+
+function renderPlannerFlowDoc(payload) {
+  const generatedAt = payload.meta.generatedAt;
+  const seeds = payload.meta.seeds;
+  const days = payload.meta.days;
+  const lines = [
+    '# 元素背包史 Seed 全流程策划预览',
+    '',
+    `生成时间：${generatedAt}`,
+    '',
+    `覆盖 seed：${seeds.join(' / ')}`,
+    '',
+    `覆盖天数：D${Math.min(...days)}-D${Math.max(...days)}`,
+    '',
+    '用途：给策划快速阅读某个 seed 在 10 天内会看到的路线节点、商店/奖励来源和战斗压力。',
+    '',
+    '边界：这是 seed 生成的策划/平衡快照，不是玩家存档，也不替代正式 runtime 的命令日志。',
+    '',
+    '## 阅读说明',
+    '',
+    '- 每天按当前排程展示：节点1、节点2、第一场战斗、节点3、节点4、第二场战斗。',
+    '- 节点三选一只列当前启用节点；当前即时事件和休整节点已禁用，所以节点类型应只出现 `shop` / `reward`。',
+    '- 商店条目显示预期售卖宠物、品质、价格和占格；奖励条目显示候选宠物和占格。',
+    '- 战斗条目显示回合数、敌人数量、主要敌人和总威胁。',
+    ''
+  ];
+  const stepsBySeed = groupBy(payload.tables.steps, row => row.seed);
+  for (const seed of seeds) {
+    lines.push(`## Seed：${seed}`, '');
+    const seedSteps = stepsBySeed.get(seed) || [];
+    const stepsByDay = groupBy(seedSteps, row => Number(row.day));
+    for (const day of days) {
+      const daySteps = (stepsByDay.get(Number(day)) || []).slice().sort((a, b) => Number(a.step) - Number(b.step) || Number(a.optionIndex) - Number(b.optionIndex));
+      if (!daySteps.length) continue;
+      lines.push(`### 第 ${day} 天`, '');
+      const stepsByIndex = groupBy(daySteps, row => Number(row.step));
+      for (const stepNo of Array.from(stepsByIndex.keys()).sort((a, b) => a - b)) {
+        const sameStep = stepsByIndex.get(stepNo) || [];
+        const first = sameStep[0] || {};
+        if (first.kind === 'node_choice') {
+          lines.push(`#### 节点 ${stepNo}：${first.label || '三选一'}`, '');
+          lines.push(renderNodeChoiceTable(payload, sameStep));
+          lines.push('');
+        } else if (first.kind === 'fixed_battle' || first.kind === 'battle_choice') {
+          lines.push(`#### 步骤 ${stepNo}：${first.label || '战斗'}`, '');
+          lines.push(renderBattleTable(payload, sameStep));
+          lines.push('');
+        }
+      }
+    }
+  }
+  return `${lines.join('\n').replace(/\n{3,}/g, '\n\n')}\n`;
+}
+
 function writeEpisodePreviewFiles(payload, options = {}) {
   const outDir = options.outDir || DEFAULT_OUT_DIR;
   fs.mkdirSync(outDir, { recursive: true });
@@ -382,6 +502,7 @@ function writeEpisodePreviewFiles(payload, options = {}) {
   writeCsv(path.join(outDir, 'seed_episode_battle_enemies.csv'), battleRowsForCsv(payload.tables.battles), [
     'seed', 'day', 'step', 'optionIndex', 'encounterId', 'encounterName', 'period', 'round', 'waveId', 'petId', 'name', 'element', 'quality', 'threat', 'pool', 'qualityWeights'
   ]);
+  fs.writeFileSync(path.join(outDir, 'seed_episode_planner_flow.md'), renderPlannerFlowDoc(payload), 'utf8');
   fs.writeFileSync(path.join(outDir, 'README.md'), renderReadme(payload), 'utf8');
 }
 
@@ -398,6 +519,7 @@ function renderReadme(payload) {
     + `- seed_episode_steps.csv：每个 seed 每天每步的节点 3 选 1 / 固定战预览。\n`
     + `- seed_episode_pet_sources.csv：每个节点选项可能给到的宠物来源，包含商店和奖励。\n`
     + `- seed_episode_battle_enemies.csv：每场战斗按 seed 展开的敌人/品质/波次。\n\n`
+    + `- seed_episode_planner_flow.md：按 seed / 天 / 步骤排版的策划可读全流程文档。\n\n`
     + `## 当前实现口径\n\n`
     + `节点、遭遇、商店、奖励和波次都从当前 data/csv 归一化数据读取。路线和遭遇候选使用当前核心 seed 加权不放回抽样规则；路线商店、路线奖励和战斗波次使用与核心 runtime 相同的 seed 上下文，方便提前看同一个 seed 在正式游玩入口会出现什么。\n`;
 }
@@ -449,6 +571,7 @@ module.exports = {
   DEFAULT_SEEDS,
   buildEpisodePreview,
   battleRowsForCsv,
+  renderPlannerFlowDoc,
   firstN,
   sampleWeightedWithoutReplacement,
   parseArgs,

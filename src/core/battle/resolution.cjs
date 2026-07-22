@@ -1,6 +1,7 @@
 const { applyTrapDamageBonus } = require('../outerBattleEffects.cjs');
 const { collectEffectObjects } = require('../objectRegistry.cjs');
 const { recordChange } = require('../changeLog.cjs');
+const { compactPositionLabel } = require('./eventSummary.cjs');
 
 function createResolutionModule(deps) {
   const { pushEvent, mech, elementRules, fireDamage, explodeIfEnemyOnFire, clone, getCell, combatTargets, unitCamp, terrainModules, hasTerrain, ensureElements, weakenUnformedElements, addElementToCell, livingLeader, finishBattle, syncDerivedBoard } = deps;
@@ -60,7 +61,7 @@ function triggerTerrainOnEnter(state, unit, cell) {
         tags: ['trigger_queue', 'object_registry', 'fire_trap'],
         text: `触发物体：${trapObject.objectId} 对 ${unit.displayName || unit.name} 结算火陷阱。`
       });
-      pushEvent(state, 'FIRE_TRAP_TRIGGER', { unitId: unit.id, r: cell.r, c: cell.c, object: trapObject ? clone(trapObject) : null, layers: result.layersBefore, baseDamage: boosted.baseDamage, bonusDamage: boosted.bonusDamage, damage: boosted.damage, eventId: effect ? effect.eventId : null, effectId: effect ? effect.effectId : null, effects: boosted.effects, text: `${unit.displayName || unit.name} 踩入 R${cell.r}C${cell.c} 爆火陷阱：火${result.layersBefore}层，伤害=${boosted.baseDamage}${boosted.bonusDamage ? `+陷阱增伤${boosted.bonusDamage}` : ''}=${boosted.damage}，火${result.layersBefore}→火0。` });
+      pushEvent(state, 'FIRE_TRAP_TRIGGER', { unitId: unit.id, r: cell.r, c: cell.c, object: trapObject ? clone(trapObject) : null, layers: result.layersBefore, baseDamage: boosted.baseDamage, bonusDamage: boosted.bonusDamage, damage: boosted.damage, eventId: effect ? effect.eventId : null, effectId: effect ? effect.effectId : null, effects: boosted.effects, text: `${unit.displayName || unit.name} 踩入 ${compactPositionLabel(cell)} 爆火陷阱：火${result.layersBefore}层，伤害=${boosted.baseDamage}${boosted.bonusDamage ? `+陷阱增伤${boosted.bonusDamage}` : ''}=${boosted.damage}，火${result.layersBefore}→火0。` });
       damageUnit(state, null, unit, boosted.damage, { element: '火', terrain: true, sourceType: 'fire_trap_enter' });
       elementRules.clearElement(state, unit, '火', { reason: 'fire_trap_enter_clear_unit_status' });
       triggered = true;
@@ -74,7 +75,7 @@ function triggerTerrainOnEnter(state, unit, cell) {
     const apDelta = Number(mod.apDelta ?? (mod.element === '风' ? -Number(mod.layers || 1) : 0));
     const apFrom = unit.ap;
     if (apDelta) unit.ap = Math.max(0, Number(unit.ap || 0) + apDelta);
-    pushEvent(state, 'TERRAIN_TRIGGER', { unitId: unit.id, r: cell.r, c: cell.c, element: mod.element, layers: mod.layers, damage, apFrom, apTo: unit.ap, text: `${unit.displayName || unit.name} 踩入 R${cell.r}C${cell.c}，触发${mod.element}地形：伤害${damage}${apDelta ? `，AP${apFrom}→${unit.ap}` : ''}。` });
+    pushEvent(state, 'TERRAIN_TRIGGER', { unitId: unit.id, r: cell.r, c: cell.c, element: mod.element, layers: mod.layers, damage, apFrom, apTo: unit.ap, text: `${unit.displayName || unit.name} 踩入 ${compactPositionLabel(cell)}，触发${mod.element}地形：伤害${damage}${apDelta ? `，AP${apFrom}→${unit.ap}` : ''}。` });
     if (damage > 0) damageUnit(state, null, unit, damage, { element: mod.element, terrain: true });
     triggered = true;
     if (!unit.alive || unit.hp <= 0) break;
@@ -150,7 +151,7 @@ function settleElements(state) {
       if (fireL >= 3) {
         pushEvent(state, 'ELEMENT_SETTLE', {
           r: cell.r, c: cell.c, layers: fireL,
-          text: `R${cell.r}C${cell.c} 火${fireL}层，形成空格爆火陷阱（不引爆不消失）。`
+          text: `${compactPositionLabel(cell)} 火${fireL}层，形成空格爆火陷阱（不引爆不消失）。`
         });
       }
     }

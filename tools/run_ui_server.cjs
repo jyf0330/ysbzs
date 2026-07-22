@@ -12,6 +12,32 @@ const root = path.resolve(__dirname, '..');
 const webRoot = path.join(root, 'web');
 const sessions = new Map();
 const DEFAULT_SESSION_ID = 'local';
+const BATTLE_OPERATION_LOG_DIR = path.join(root, 'output', 'battle-operation-logs');
+const BATTLE_OPERATION_LOG_ENABLED = process.env.YSBZS_BATTLE_OPERATION_LOG !== '0';
+const BATTLE_OPERATION_TYPES = new Set([
+  'START_BATTLE',
+  'RUN_ROUTE_FIXED_BATTLE',
+  'SETUP_DAY7_FIRE_TRIAL',
+  'RUN_DAY7_FIRE_TURN_1',
+  'RUN_DAY7_FIRE_TRIAL_ALL',
+  'SELECT_UNIT',
+  'SELECT_HERO',
+  'SELECT_CELL',
+  'SELECT_SLOT',
+  'CLEAR_SELECTION',
+  'MOVE_HERO',
+  'AUTO_POSITION_HEROES',
+  'SET_ACTION_DIRECTION',
+  'SET_SLOT_DIR',
+  'USE_SLOT',
+  'USE_ACTION_SLOT',
+  'RUN_PLAYER_ALL_OUT',
+  'END_PLAYER_TURN',
+  'RUN_MONSTER_TURN',
+  'START_NEXT_ROUND',
+  'RUN_BATTLE'
+]);
+
 function playerIdFromReq(req, url = new URL(req.url, 'http://localhost')) {
   return req.headers['x-player-id'] || url.searchParams.get('playerId') || 'p1';
 }
@@ -77,6 +103,78 @@ function readBody(req) {
     req.on('error', reject);
   });
 }
+
+function isBattleOperationCommand(command) {
+  return BATTLE_OPERATION_TYPES.has(String(command?.type || ''));
+}
+
+function safeSessionFileName(sessionId) {
+  return String(sessionId || DEFAULT_SESSION_ID).replace(/[^a-zA-Z0-9_.-]/g, '_').slice(0, 120) || DEFAULT_SESSION_ID;
+}
+
+function compactCommand(command) {
+  const out = {
+    type: String(command?.type || ''),
+    commandId: command?.commandId || null,
+    battleId: command?.battleId || null,
+    playerId: command?.playerId || null,
+    baseStateVersion: command?.baseStateVersion ?? null,
+    payload: {}
+  };
+  for (const [key, value] of Object.entries(command || {})) {
+    if (['type', 'commandId', 'battleId', 'playerId', 'baseStateVersion'].includes(key)) continue;
+    if (typeof value === 'function') continue;
+    out.payload[key] = value;
+  }
+  return out;
+}
+
+function compactEvent(event) {
+  const out = {
+    type: event?.type || '',
+    text: event?.text || ''
+  };
+  for (const key of ['step', 'round', 'unitId', 'targetId', 'slotId', 'damage', 'raw', 'hpFrom', 'hpTo', 'shieldFrom', 'shieldTo', 'r', 'c']) {
+    if (event?.[key] !== undefined) out[key] = event[key];
+  }
+  return out;
+}
+
+function compactActionResult(result = {}) {
+  const viewModel = result.viewModel || {};
+  return {
+    ok: result.ok !== false,
+    command: result.command || null,
+    phase: viewModel.phase || result.phase || null,
+    round: viewModel.round ?? result.round ?? null,
+    battleId: viewModel.battleId || result.battleId || null,
+    stateVersion: viewModel.stateVersion ?? result.stateVersion ?? null,
+    stateHash: viewModel.stateHash || result.stateHash || null,
+    events: Array.isArray(result.events) ? result.events.slice(-40).map(compactEvent) : []
+  };
+}
+
+function appendBattleOperationLog({ sessionId, playerId, command, result, error }) {
+  if (!BATTLE_OPERATION_LOG_ENABLED || !isBattleOperationCommand(command)) return null;
+  const entry = {
+    at: new Date().toISOString(),
+    runtimeKind: 'http-server',
+    sessionId,
+    playerId,
+    command: compactCommand(command),
+    result: error ? null : compactActionResult(result),
+    error: error ? String(error.message || error) : null
+  };
+  try {
+    fs.mkdirSync(BATTLE_OPERATION_LOG_DIR, { recursive: true });
+    const file = path.join(BATTLE_OPERATION_LOG_DIR, `${safeSessionFileName(sessionId)}.jsonl`);
+    fs.appendFileSync(file, `${JSON.stringify(entry)}\n`, 'utf8');
+    return file;
+  } catch (_) {
+    return null;
+  }
+}
+
 function staticFile(req, res) {
   const rawPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   const file = rawPath === '/' ? '/index.html' : rawPath;
@@ -125,7 +223,14 @@ async function handleApi(req, res) {
         const fresh = replaceSession(sess.id, Object.assign({}, body, { playerId }));
         return json(res, 200, { ok: true, command: 'NEW_GAME', viewModel: fresh.getViewModel(playerId) }, sess.id);
       }
-      const result = adapter.run(body);
+      let result;
+      try {
+        result = adapter.run(body);
+        appendBattleOperationLog({ sessionId: sess.id, playerId, command: body, result });
+      } catch (err) {
+        appendBattleOperationLog({ sessionId: sess.id, playerId, command: body, error: err });
+        throw err;
+      }
       return json(res, 200, result, sess.id);
     }
     return json(res, 404, { ok: false, error: `unknown api: ${req.method} ${url.pathname}` }, sessionId);

@@ -1,6 +1,6 @@
 # 种子整集预览表
 
-生成时间：2026-07-02T19:03:07.699Z
+生成时间：2026-07-02T19:27:01.466Z
 
 覆盖 seed：ysbzs-local / ysbzs-local-2 / ysbzs-local-3
 
@@ -14,6 +14,8 @@
 - seed_episode_steps.csv：每个 seed 每天每步的节点 3 选 1 / 固定战预览。
 - seed_episode_pet_sources.csv：每个节点选项可能给到的宠物来源，包含商店和奖励。
 - seed_episode_battle_enemies.csv：每场战斗按 seed 展开的敌人/品质/波次。
+
+- seed_episode_planner_flow.md：按 seed / 天 / 步骤排版的策划可读全流程文档。
 
 ## 当前实现口径
 

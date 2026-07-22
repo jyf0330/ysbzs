@@ -9,6 +9,7 @@
  */
 
 const {
+  compactPositionLabel,
   joinClauses,
   summarizeDamageEvents,
   summarizeElementIncreaseEvents
@@ -202,7 +203,7 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
         pushEvent(state, 'FIRE_EXPLODE_AFTER_ATTACK', {
           r: cell.r, c: cell.c, layers: result.layersBefore, damage: result.damage,
           targetId: result.target.id,
-          text: `R${cell.r}C${cell.c} 火${result.layersBefore}层引爆，对 ${result.target.displayName || result.target.name} 造成${result.damage}点火爆伤害。`
+          text: `${compactPositionLabel(cell)} 火${result.layersBefore}层引爆，对 ${result.target.displayName || result.target.name} 造成${result.damage}点火爆伤害。`
         });
         damageUnit(state, actor, result.target, result.damage, { element: '火', sourceType: 'fire_explosion' });
         elementRules.clearElement(state, result.target, '火', { reason: 'fire_explosion_clear_unit_status' });
@@ -210,7 +211,7 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
       } else if ((cell.elements.火 || 0) >= 3) {
         pushEvent(state, 'FIRE_TRAP_READY', {
           r: cell.r, c: cell.c, layers: cell.elements.火,
-          text: `R${cell.r}C${cell.c} 火${cell.elements.火}层，形成空格爆火陷阱。`
+          text: `${compactPositionLabel(cell)} 火${cell.elements.火}层，形成空格爆火陷阱。`
         });
       }
     }

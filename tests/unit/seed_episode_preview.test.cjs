@@ -8,6 +8,7 @@ const {
   DEFAULT_SEEDS,
   buildEpisodePreview,
   battleRowsForCsv,
+  renderPlannerFlowDoc,
   parseDays
 } = require('../../tools/build_seed_episode_preview.cjs');
 const { createYSBZSUIAdapter } = require('../../src/uiAdapter.cjs');
@@ -92,7 +93,7 @@ test('seed episode preview writes json and csv artifacts', () => {
     seeds: ['write-a', 'write-b', 'write-c'],
     days: [1]
   });
-  for (const name of ['seed_episode_preview.json', 'seed_episode_steps.csv', 'seed_episode_pet_sources.csv', 'seed_episode_battle_enemies.csv', 'README.md']) {
+  for (const name of ['seed_episode_preview.json', 'seed_episode_steps.csv', 'seed_episode_pet_sources.csv', 'seed_episode_battle_enemies.csv', 'seed_episode_planner_flow.md', 'README.md']) {
     const file = path.join(outDir, name);
     assert.ok(fs.existsSync(file), `${name} should exist`);
     assert.ok(fs.statSync(file).size > 20, `${name} should have content`);
@@ -100,6 +101,26 @@ test('seed episode preview writes json and csv artifacts', () => {
   const json = JSON.parse(fs.readFileSync(path.join(outDir, 'seed_episode_preview.json'), 'utf8'));
   assert.equal(json.tables.steps.length, payload.tables.steps.length);
   assert.match(fs.readFileSync(path.join(outDir, 'README.md'), 'utf8'), /策划\/平衡快照/);
+  const plannerFlow = fs.readFileSync(path.join(outDir, 'seed_episode_planner_flow.md'), 'utf8');
+  assert.match(plannerFlow, /# 元素背包史 Seed 全流程策划预览/);
+  assert.match(plannerFlow, /## Seed：write-a/);
+  assert.match(plannerFlow, /### 第 1 天/);
+  assert.match(plannerFlow, /\| 选项 \| 类型 \| 名称 \| 策划内容 \| 备注 \|/);
+  assert.match(plannerFlow, /\| 战斗 \| 名称 \| 敌人\/波次预览 \| 备注 \|/);
+});
+
+test('seed episode planner flow document is human readable and current node types are enterable', () => {
+  const payload = buildEpisodePreview({
+    writeFiles: false,
+    generatedAt: '2026-07-02T00:00:00.000Z',
+    seeds: ['doc-seed'],
+    days: [1]
+  });
+  const doc = renderPlannerFlowDoc(payload);
+  assert.match(doc, /Seed：doc-seed/);
+  assert.match(doc, /宠物奖励|夜市商人|火系补货商人/);
+  assert.doesNotMatch(doc, /\| event \|/);
+  assert.doesNotMatch(doc, /\| rest \|/);
 });
 
 test('parseDays accepts ranges and comma lists', () => {

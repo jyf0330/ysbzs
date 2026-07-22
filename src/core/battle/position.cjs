@@ -60,9 +60,9 @@ function moveHero(state, unitId, to) {
   const unit = getUnit(state, unitId || state.selected?.unitId) || living(state, 'hero')[0];
   if (!unit || unit.side !== 'hero') { pushEvent(state, 'MOVE_HERO_BLOCKED', { text: '移动失败：未选择我方单位。' }); return false; }
   const target = normalizePosition(to || state.selected?.cell || unit.position);
-  if (!inBoard(target)) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：R${target.r}C${target.c} 超出棋盘。` }); return false; }
+  if (!inBoard(target)) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：${compactPositionLabel(target)} 超出棋盘。` }); return false; }
   const cell = getCell(state, target.r, target.c);
-  if (cell && cell.unitId && cell.unitId !== unit.id) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：R${target.r}C${target.c} 已被占用。` }); return false; }
+  if (cell && cell.unitId && cell.unitId !== unit.id) { pushEvent(state, 'MOVE_HERO_BLOCKED', { unitId: unit.id, text: `移动失败：${compactPositionLabel(target)} 已被占用。` }); return false; }
   const from = clone(unit.position || { r: 0, c: 0 });
   // 攻击后锁定位置：如果 hasAttacked 为 true，禁止再次移动
   if (unit.hasAttacked) {

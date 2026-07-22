@@ -12,7 +12,7 @@ const { createPlanningModule } = require('./battle/planning.cjs');
 const { createPreviewModule } = require('./battle/preview.cjs');
 const { createResolutionModule } = require('./battle/resolution.cjs');
 const { createLifecycleModule } = require('./battle/lifecycle.cjs');
-const { summarizeDamageEvents } = require('./battle/eventSummary.cjs');
+const { compactPositionLabel, summarizeDamageEvents } = require('./battle/eventSummary.cjs');
 
 let boardUnitAt, canStandAt, allStandCells, moveHero, moveUnitGeneral;
 let slotsForUnit, parseSlotIndex, targetCellsForSlot, targetsAtCells, unitsAtCells, setActionDirection, useActionSlot;
@@ -128,7 +128,7 @@ function weakenUnformedElements(state, cell, amount = 1, source = 'attack') {
       changed = true;
     }
   }
-  if (changed) pushEvent(state, 'ELEMENT_WEAKEN', { r: cell.r, c: cell.c, amount, source, text: `${source}打散 R${cell.r}C${cell.c} 未成型元素：所有元素-${amount}。` });
+  if (changed) pushEvent(state, 'ELEMENT_WEAKEN', { r: cell.r, c: cell.c, amount, source, text: `${source}打散 ${compactPositionLabel(cell)} 未成型元素：所有元素-${amount}。` });
   return changed;
 }
 function addTerrainModule(state, cell, element, layers, actor, source = 'element_form') {
@@ -142,7 +142,7 @@ function addTerrainModule(state, cell, element, layers, actor, source = 'element
     damage: amount
   });
   // 兼容旧 terrain 模块，但不再清空元素包/聚合元素；元素包是事实来源，地形模块只是派生状态。
-  pushEvent(state, 'TERRAIN_MODULE_ADD', { r: cell.r, c: cell.c, element, layers: amount, source, text: `R${cell.r}C${cell.c} 生成${element}地形模块 ${amount}层。` });
+  pushEvent(state, 'TERRAIN_MODULE_ADD', { r: cell.r, c: cell.c, element, layers: amount, source, text: `${compactPositionLabel(cell)} 生成${element}地形模块 ${amount}层。` });
   return terrain;
 }
 function maybeFormTerrain(state, cell, actor) {
@@ -161,7 +161,7 @@ function maybeFormTerrain(state, cell, actor) {
         updatedRound: state.round || 0
       };
       addTerrainModule(state, cell, el, layers, actor, 'threshold_form');
-      pushEvent(state, 'ELEMENT_FORMED', { r: cell.r, c: cell.c, element: el, layers, threshold, text: `R${cell.r}C${cell.c} ${el}${layers}层达到${threshold}层，形成${el === '火' ? '爆火陷阱候选' : '元素成型状态'}；元素包与来源保留。` });
+      pushEvent(state, 'ELEMENT_FORMED', { r: cell.r, c: cell.c, element: el, layers, threshold, text: `${compactPositionLabel(cell)} ${el}${layers}层达到${threshold}层，形成${el === '火' ? '爆火陷阱候选' : '元素成型状态'}；元素包与来源保留。` });
       return true;
     }
   }
@@ -175,7 +175,7 @@ function addElementToCell(state, actor, cell, element, layers, source = 'element
   const result = elementRules.addElementToCell(state, actor, cell, element, layers, source, { tags: [source] });
   ensureElementCamps(cell)[element] = unitCamp(actor);
   if (wasTerrain) addTerrainModule(state, cell, element, result.layers || layers, actor, 'hit_formed_terrain');
-  pushEvent(state, 'APPLY_ELEMENT_CELL', { actorId: actor.id, r: cell.r, c: cell.c, element, layers: result.layers || layers, from: before, to: cell.elements[element], packetId: result.packet && result.packet.packetId, text: `${actor.displayName || actor.name} 向 R${cell.r}C${cell.c} 施加${element}${result.layers || layers}层，${element}层 ${before}→${cell.elements[element]}。` });
+  pushEvent(state, 'APPLY_ELEMENT_CELL', { actorId: actor.id, r: cell.r, c: cell.c, element, layers: result.layers || layers, from: before, to: cell.elements[element], packetId: result.packet && result.packet.packetId, text: `${actor.displayName || actor.name} 向 ${compactPositionLabel(cell)} 施加${element}${result.layers || layers}层，${element}层 ${before}→${cell.elements[element]}。` });
   if (!wasTerrain && maybeFormTerrain(state, cell, actor)) return { kind: 'formed_terrain', from: before, to: cell.elements[element], packetId: result.packet && result.packet.packetId };
   return { kind: wasTerrain ? 'terrain_module_and_packet' : 'element', from: before, to: cell.elements[element], packetId: result.packet && result.packet.packetId, layers: result.layers || layers };
 }
@@ -193,7 +193,7 @@ function spawnWave(state) {
       mech.applyBattleStart(state, unit);
       spawned += 1;
       const qualityText = quality ? `${quality}` : (unit.quality || '');
-      pushEvent(state, 'SPAWN_ENEMY', { unitId: unit.id, waveId: row.waveId, petId, petPool: row.petPool, petPoolExpression: row.petPoolExpression, quality: quality || unit.quality, name: unit.name, hp: unit.hp, atk: unit.atk, position, text: `${summonerName}召唤 ${unit.displayName}${qualityText ? `(${qualityText})` : ''} HP${unit.hp}/攻${unit.atk}，位置 R${position.r}C${position.c}。` });
+      pushEvent(state, 'SPAWN_ENEMY', { unitId: unit.id, waveId: row.waveId, petId, petPool: row.petPool, petPoolExpression: row.petPoolExpression, quality: quality || unit.quality, name: unit.name, hp: unit.hp, atk: unit.atk, position, text: `${summonerName}召唤 ${unit.displayName}${qualityText ? `(${qualityText})` : ''} HP${unit.hp}/攻${unit.atk}，位置 ${compactPositionLabel(position)}。` });
     }
   }
   syncDerivedBoard(state);
@@ -251,7 +251,7 @@ function runPlayerTurn(state) {
     if (!actor || !actor.alive) continue;
     const from = clone(actor.position || { r: 0, c: 0 });
     actor.position = normalizePosition(m.to);
-    pushEvent(state, 'MOVE_HERO', { unitId: actor.id, from, to: actor.position, reason: m.reason, text: `${actor.displayName} 移动：R${from.r}C${from.c}→R${actor.position.r}C${actor.position.c}（${m.reason}）。` });
+    pushEvent(state, 'MOVE_HERO', { unitId: actor.id, from, to: actor.position, reason: m.reason, text: `${actor.displayName} 移动：${compactPositionLabel(from)}→${compactPositionLabel(actor.position)}（${m.reason}）。` });
   }
   for (const a of plan.actions) {
     const actor = getUnit(state, a.unitId);
@@ -263,7 +263,7 @@ function runPlayerTurn(state) {
     state.actionDirs[key] = a.dir || slot.direction || 'right';
     const cells = targetCellsForSlot(state, actor, Object.assign({}, slot, { direction: state.actionDirs[key] }), null);
     const targets = targetsAtCells(state, cells, 'enemy');
-    pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: slot.index + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, score: a.score, effective: a.effective, overflow: a.overflow, text: `玩家选择 ${actor.name} 第${slot.index + 1}槽：${slot.shapeName} / ${slot.element} / ${state.actionDirs[key]}，命中 ${targets.length ? targets.map(t => t.name).join('、') : cells.map(p => `R${p.r}C${p.c}`).join('、')}，有效${a.effective || 0}/溢出${a.overflow || 0}。` });
+    pushEvent(state, 'PLAYER_SELECT_SLOT', { actorId: actor.id, slot: slot.index + 1, shapeId: slot.shapeId, shapeName: slot.shapeName, element: slot.element, cells, score: a.score, effective: a.effective, overflow: a.overflow, text: `玩家选择 ${actor.name} 第${slot.index + 1}槽：${slot.shapeName} / ${slot.element} / ${state.actionDirs[key]}，命中 ${targets.length ? targets.map(t => t.name).join('、') : cells.map(compactPositionLabel).join('、')}，有效${a.effective || 0}/溢出${a.overflow || 0}。` });
     if (targets.length) for (const t of targets) applyElement(state, actor, t, slot.element, slot.layers, { slot });
     else for (const p of cells) { const cell = getCell(state, p.r, p.c); if (cell) applyElementToCell(state, actor, cell, slot.element, slot.layers); }
     actor.actionSlotsUsed = actor.actionSlotsUsed || {};
@@ -298,7 +298,7 @@ function runMonsterTurn(state) {
       path: intent.path,
       actions: clone(intent.actions || []),
       totalDamage: intent.totalDamage || 0,
-      text: `${unit.displayName || unit.name} 计划：路径 ${intent.path.map(p => `R${p.r}C${p.c}`).join('→') || '原地'}，行动块${(intent.actions || []).length}次，预计伤害${intent.totalDamage || 0}${intent.expectedKill ? '，可KO。' : '。'}`
+      text: `${unit.displayName || unit.name} 计划：路径 ${intent.path.map(compactPositionLabel).join('→') || '原地'}，行动块${(intent.actions || []).length}次，预计伤害${intent.totalDamage || 0}${intent.expectedKill ? '，可KO。' : '。'}`
     });
     for (const step of intent.steps || []) {
       if (!unit.alive || unit.hp <= 0) break;
@@ -308,8 +308,8 @@ function runMonsterTurn(state) {
         const cell = getCell(state, unit.position.r, unit.position.c);
         triggerTerrainOnEnter(state, unit, cell);
         const path = [clone(unit.position)];
-        pushEvent(state, 'MONSTER_MOVE', { unitId: unit.id, from, to: clone(unit.position), path, text: `${unit.displayName || unit.name} 移动：R${from.r}C${from.c}→R${unit.position.r}C${unit.position.c}。` });
-        pushEvent(state, 'ENEMY_PET_MOVE', { unitId: unit.id, from, to: clone(unit.position), apCost: 1, apAfter: step.apAfter, text: `${unit.displayName || unit.name} 消耗1 AP移动到 R${unit.position.r}C${unit.position.c}。` });
+        pushEvent(state, 'MONSTER_MOVE', { unitId: unit.id, from, to: clone(unit.position), path, text: `${unit.displayName || unit.name} 移动：${compactPositionLabel(from)}→${compactPositionLabel(unit.position)}。` });
+        pushEvent(state, 'ENEMY_PET_MOVE', { unitId: unit.id, from, to: clone(unit.position), apCost: 1, apAfter: step.apAfter, text: `${unit.displayName || unit.name} 消耗1 AP移动到 ${compactPositionLabel(unit.position)}。` });
         acted++;
         if (!unit.alive || unit.hp <= 0) break;
         continue;

@@ -212,6 +212,7 @@ def main():
         ("04_mechanisms.csv", "机制注册表：机制 ID、触发、效果、接入状态。"),
         ("28_quality_growth.csv", "品质成长数值。"),
         ("29_quality_upgrades.csv", "品质升级质变。"),
+        ("31_battle_rules.csv", "正式双人战斗可调规则。"),
     ])
 
     add_domain_sheet(wb, "SHAPES_TRIALS", [

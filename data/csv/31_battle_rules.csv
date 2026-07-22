@@ -1,0 +1,3 @@
+rule_id,value,unit,description,status
+pet_reset_charge_interval,5,rounds,正式双人战斗每5回合为双方各增加1次宠物重置次数；进入第5和第10回合时补充。,正式
+pet_reset_initial_charges,0,count,正式双人战斗开局不赠送宠物重置次数。,正式

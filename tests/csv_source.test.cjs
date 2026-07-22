@@ -101,6 +101,14 @@ test('CSV02D 宠物商品店字段必须能在商品店表中证明', () => {
   }
 });
 
+test('CSV02E 正式战斗重置次数由策划表声明为每5回合一次且开局为0', () => {
+  const rows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '31_battle_rules.csv'), 'utf8'));
+  const byId = new Map(rows.map(row => [row.rule_id, row]));
+  assert.equal(Number(byId.get('pet_reset_charge_interval')?.value), 5);
+  assert.equal(Number(byId.get('pet_reset_initial_charges')?.value), 0);
+  assert.equal(byId.get('pet_reset_charge_interval')?.status, '正式');
+});
+
 test('CSV02C 宠物重设计导出不保留旧表 44 占位值', () => {
   const checks = [
     ['01_pets.csv', ['副属']],
@@ -213,6 +221,8 @@ assert 'shop_store_ids' in [cell.value for cell in wb['PETS'][1]], [cell.value f
 assert 'shop_store_id' in [cell.value for cell in wb['SHOP_STORES'][1]], [cell.value for cell in wb['SHOP_STORES'][1]]
 marker_values = [str(row[1] or '') for row in wb['SHAPES_TRIALS'].iter_rows(min_col=1, max_col=2, values_only=True)]
 assert '13_day7_beast_trial.csv' not in marker_values, marker_values
+mechanic_markers = [str(row[1] or '') for row in wb['MECHANICS_QUALITY'].iter_rows(min_col=1, max_col=2, values_only=True)]
+assert '31_battle_rules.csv' in mechanic_markers, mechanic_markers
 wb.close()
 `;
   execFileSync('python3', ['-c', code, path.join(root, 'xlsx', 'ysbzs_master.xlsx'), ...allProgramCsvFiles()], { cwd: root, stdio: 'pipe' });

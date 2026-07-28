@@ -1,9 +1,11 @@
 # 2026-07-29_enemy-movement-attack-count-split
 
 task_id: 2026-07-29_enemy-movement-attack-count-split
-status: ACTIVE_IMPL
+status: DONE
 owner: Codex
 branch: shared-worktree
+done_at: 2026-07-29
+implementation_commit: bd55288
 
 ## Goal
 
@@ -49,4 +51,4 @@ branch: shared-worktree
 
 ## commit_plan
 
-验证通过后精确暂存本任务总表、导出器、CSV、测试、任务卡和索引并提交；不吸收其他历史 doing 任务文件。
+已在 `bd55288` 精确提交本任务总表、导出器、CSV、测试、任务卡和索引；未吸收其他历史 doing 任务文件。

@@ -11,8 +11,6 @@
 
 ## ACTIVE_IMPL
 
-- `tasks/doing/2026-07-29_enemy-movement-attack-count-split.md` — data contract: 敌方移动力与攻击次数拆成独立总表/怪物模板字段。
-
 - `tasks/done/2026-07-22_pet-reset-five-round-interval.md` — battle balance: 宠物重置取消开局次数，改为第 5、10 回合各获得 1 次。
 
 - `tasks/doing/2026-07-03_godot-singleplayer-remake.md` — Godot port: 独立 Godot 单机版垂直切片；涉及 `/Users/ywh/Documents/godot/scenes/game/` 与 `/Users/ywh/Documents/godot/scripts/game/`。
@@ -54,5 +52,7 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-07-29_enemy-movement-attack-count-split.md` — data contract: 敌方移动力与攻击次数已拆成独立总表/怪物模板字段。
 
 见 `tasks/done/`。旧归档任务不在本索引全文展开，避免 index 成为长历史清单；需要审计时以目录真实文件为准。

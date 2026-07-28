@@ -112,7 +112,7 @@ test('CSV02E 正式战斗重置次数由策划表声明为每5回合一次且开
 test('CSV02C 宠物重设计导出不保留旧表 44 占位值', () => {
   const checks = [
     ['01_pets.csv', ['副属']],
-    ['02_monster_templates.csv', ['机制参数', '克制', '推荐日', '备注']],
+    ['02_monster_templates.csv', ['移动力', '攻击次数', '机制参数', '克制', '推荐日', '备注']],
     ['06_shop_rewards.csv', ['出现条件', '备注']],
   ];
   for (const [file, fields] of checks) {
@@ -218,6 +218,8 @@ assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets
 assert 'shop_store_ids' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'enemy_move_range' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'enemy_attack_count' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'shop_store_id' in [cell.value for cell in wb['SHOP_STORES'][1]], [cell.value for cell in wb['SHOP_STORES'][1]]
 marker_values = [str(row[1] or '') for row in wb['SHAPES_TRIALS'].iter_rows(min_col=1, max_col=2, values_only=True)]
 assert '13_day7_beast_trial.csv' not in marker_values, marker_values

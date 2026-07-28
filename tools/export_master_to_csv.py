@@ -641,6 +641,9 @@ def generated_tables(master_path, baseline_dir):
                 row["副属"] = "、".join(elements[1:])
 
         elif filename == "02_monster_templates.csv":
+            for field in ["移动力", "攻击次数"]:
+                if field not in headers:
+                    headers.append(field)
             for row in output:
                 pet = pets_by_id.get(row.get("宠物ID", ""))
                 if not pet:
@@ -653,6 +656,8 @@ def generated_tables(master_path, baseline_dir):
                 row["攻"] = first_non_empty(pet.get("atk"), row.get("攻"))
                 row["盾"] = first_non_empty(pet.get("shield"), row.get("盾"))
                 row["行动"] = first_non_empty(pet.get("action"), row.get("行动"))
+                row["移动力"] = first_non_empty(pet.get("enemy_move_range"), row.get("移动力"), pet.get("action"), row.get("行动"))
+                row["攻击次数"] = first_non_empty(pet.get("enemy_attack_count"), row.get("攻击次数"), pet.get("action"), row.get("行动"))
                 row["机制ID"] = sheet_value(pet, "mechanism_id", row.get("机制ID"), allow_blank=True)
                 row["面板分"] = format_number(panel_score(row))
                 row["机制分"] = format_number(pet_mechanic_score(row, pet))

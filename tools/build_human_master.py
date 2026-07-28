@@ -94,10 +94,12 @@ def add_domain_sheet(wb, title, sections):
 
 def main():
     pets = read_csv("01_pets.csv")
+    monsters = read_csv("02_monster_templates.csv")
     waves = read_csv("03_monster_waves.csv")
     shop = read_csv("06_shop_rewards.csv")
     shop_stores = read_csv("30_shop_stores.csv")
     shop_by_pet = {r.get("宠物ID", ""): r for r in shop}
+    monster_by_pet = {r.get("宠物ID", ""): r for r in monsters}
 
     wb = Workbook()
     default = wb.active
@@ -126,7 +128,23 @@ def main():
     add_sheet(
         wb,
         "PETS",
-        ["pet_id", "name", "element", "tier", "role", "shop_store_ids", "hp", "atk", "shield", "action", "mechanism_id", "shape_id", "note"],
+        [
+            "pet_id",
+            "name",
+            "element",
+            "tier",
+            "role",
+            "shop_store_ids",
+            "hp",
+            "atk",
+            "shield",
+            "action",
+            "mechanism_id",
+            "shape_id",
+            "note",
+            "enemy_move_range",
+            "enemy_attack_count",
+        ],
         [
             {
                 "pet_id": r.get("宠物ID", ""),
@@ -142,10 +160,20 @@ def main():
                 "mechanism_id": r.get("机制ID", ""),
                 "shape_id": r.get("形状", ""),
                 "note": r.get("备注", ""),
+                "enemy_move_range": monster_by_pet.get(r.get("宠物ID", ""), {}).get("移动力", r.get("行动", "")),
+                "enemy_attack_count": monster_by_pet.get(r.get("宠物ID", ""), {}).get("攻击次数", r.get("行动", "")),
             }
             for r in pets
         ],
-        widths={"pet_id": 12, "shop_store_ids": 38, "mechanism_id": 26, "shape_id": 18, "note": 26},
+        widths={
+            "pet_id": 12,
+            "shop_store_ids": 38,
+            "mechanism_id": 26,
+            "shape_id": 18,
+            "note": 26,
+            "enemy_move_range": 20,
+            "enemy_attack_count": 20,
+        },
     )
 
     add_sheet(

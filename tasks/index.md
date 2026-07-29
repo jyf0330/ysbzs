@@ -53,6 +53,7 @@
 
 ## DONE
 
+- `tasks/done/2026-07-29_journey-shop-min-six.md` — 合并西游宠物短名与 79 个西游商店，全部正式宠物商店候选池不少于 6，并完成 CSV 与 Godot 数据链验证。
 - `tasks/done/2026-07-29_enemy-movement-attack-count-split.md` — data contract: 敌方移动力与攻击次数已拆成独立总表/怪物模板字段。
 
 见 `tasks/done/`。旧归档任务不在本索引全文展开，避免 index 成为长历史清单；需要审计时以目录真实文件为准。

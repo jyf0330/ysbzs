@@ -93,12 +93,37 @@ test('CSV02D 宠物商品店字段必须能在商品店表中证明', () => {
   const petRows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '06_shop_rewards.csv'), 'utf8'));
   const storeRows = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '30_shop_stores.csv'), 'utf8'));
   const storeIds = new Set(storeRows.map(row => row.shop_store_id).filter(Boolean));
+  const productCounts = new Map(storeRows.map(row => [row.shop_store_id, 0]));
+  assert.equal(petRows.length, 369, 'Vanessa 231 items + 138 skills should map to 369 pets');
+  assert.equal(storeRows.length, 30, 'only the first 30 Journey shops remain formal stores');
   assert.ok(storeIds.has('night_base'), 'shop store table should include night_base');
   for (const row of petRows) {
     const ids = String(row['商店池(自动)'] || '').split(/[,，、]/).map(x => x.trim()).filter(Boolean);
-    assert.ok(ids.length > 0, `${row['宠物ID']} should list shop_store_ids`);
-    for (const id of ids) assert.ok(storeIds.has(id), `${row['宠物ID']} references missing shop store ${id}`);
+    assert.ok(ids.length >= 8, `${row['宠物ID']} should list at least 8 shop_store_ids`);
+    for (const id of ids) {
+      assert.ok(storeIds.has(id), `${row['宠物ID']} references missing shop store ${id}`);
+      productCounts.set(id, productCounts.get(id) + 1);
+    }
   }
+  for (const [storeId, count] of productCounts) assert.ok(count >= 8, `${storeId} should contain at least 8 pets`);
+});
+
+test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
+  const pets = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '01_pets.csv'), 'utf8'));
+  const shapes = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '08_action_shapes.csv'), 'utf8'));
+  const enchantments = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '32_enchantment_types.csv'), 'utf8'));
+  const petEnchantments = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '33_pet_enchantments.csv'), 'utf8'));
+  const objects = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '34_bazaar_objects.csv'), 'utf8'));
+  const shopMapping = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '35_bazaar_shop_mapping.csv'), 'utf8'));
+  assert.equal(pets.length, 369);
+  assert.equal(shapes.length, 369);
+  assert.equal(enchantments.length, 13);
+  assert.equal(petEnchantments.length, 369);
+  assert.equal(objects.length, 369);
+  assert.equal(shopMapping.length, 51, '36 merchants + 15 trainers');
+  assert.equal(objects.filter(row => row.source_status === 'confirmed').length, 276);
+  assert.equal(objects.filter(row => row.source_status === 'derived_gap_profile').length, 93);
+  assert.deepEqual(new Set(shapes.map(row => Number(row['命中格数']))), new Set([1, 2, 3]));
 });
 
 test('CSV02E 正式战斗重置次数由策划表声明为每5回合一次且开局为0', () => {
@@ -213,14 +238,24 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS'], visible
+assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT'], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets
 assert 'shop_store_ids' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'source_object_id' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'attack_grid_count' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'primary_enchant' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'enemy_move_range' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'enemy_attack_count' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'shop_store_id' in [cell.value for cell in wb['SHOP_STORES'][1]], [cell.value for cell in wb['SHOP_STORES'][1]]
+nonempty_rows = lambda sheet: sum(
+    1 for row in wb[sheet].iter_rows(values_only=True)
+    if any(value is not None and str(value).strip() != '' for value in row)
+)
+assert nonempty_rows('PETS') == 370, nonempty_rows('PETS')
+assert nonempty_rows('SHOP_STORES') == 31, nonempty_rows('SHOP_STORES')
+assert nonempty_rows('ENCHANTMENTS') == 14, nonempty_rows('ENCHANTMENTS')
 marker_values = [str(row[1] or '') for row in wb['SHAPES_TRIALS'].iter_rows(min_col=1, max_col=2, values_only=True)]
 assert '13_day7_beast_trial.csv' not in marker_values, marker_values
 mechanic_markers = [str(row[1] or '') for row in wb['MECHANICS_QUALITY'].iter_rows(min_col=1, max_col=2, values_only=True)]

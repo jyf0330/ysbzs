@@ -35,6 +35,10 @@ MASTER_ONLY_EXPORTS = [
     ("SHAPE_CATALOG", "27_shape_catalog.csv"),
     ("QUALITY_GROWTH", "28_quality_growth.csv"),
     ("QUALITY_UPGRADES", "29_quality_upgrades.csv"),
+    ("ENCHANTMENTS", "32_enchantment_types.csv"),
+    ("PET_ENCHANTMENTS", "33_pet_enchantments.csv"),
+    ("BAZAAR_OBJECTS", "34_bazaar_objects.csv"),
+    ("SHOP_MAPPING", "35_bazaar_shop_mapping.csv"),
 ]
 
 DOMAIN_SECTION_SHEETS = [
@@ -409,6 +413,63 @@ def unique_preserve(values):
     return out
 
 
+def pet_id_sort_key(pet_id):
+    match = re.search(r"(\d+)$", str(pet_id or ""))
+    return int(match.group(1)) if match else 10**9
+
+
+def expand_pet_rows(filename, rows, headers, pets_by_id):
+    """Make the four one-row-per-pet program tables follow the workbook roster."""
+    id_field = {
+        "01_pets.csv": "宠物ID",
+        "02_monster_templates.csv": "宠物ID",
+        "06_shop_rewards.csv": "宠物ID",
+        "08_action_shapes.csv": "宠物ID",
+    }.get(filename)
+    if not id_field:
+        return rows
+    existing = {str(row.get(id_field, "")).strip() for row in rows}
+    for pet_id in sorted(pets_by_id, key=pet_id_sort_key):
+        if pet_id in existing:
+            continue
+        pet = pets_by_id[pet_id]
+        row = {header: "" for header in headers}
+        row[id_field] = pet_id
+        tier = str(pet.get("tier", "")).strip()
+        tier_pool = {"青铜": "pT1", "白银": "pT2", "黄金": "pT3", "钻石": "pT4"}.get(tier, "pT1")
+        if filename == "01_pets.csv":
+            row["编号"] = f"No.{pet_id_sort_key(pet_id):03d}"
+            row["防"] = "0"
+            row["范围"] = f"攻击{first_non_empty(pet.get('attack_grid_count'), '1')}格"
+            row["动作"] = "攻击"
+            row["技能"] = str(pet.get("source_object_id", "")).strip()
+            row["可召"] = "—"
+        elif filename == "02_monster_templates.csv":
+            row["阶段"] = {"青铜": "前期", "白银": "中期", "黄金": "后期", "钻石": "首领"}.get(tier, "中期")
+            row["敌方定位"] = "小怪" if tier != "钻石" else "精英"
+            row["防"] = "0"
+        elif filename == "06_shop_rewards.csv":
+            row["商品类型"] = "宠物"
+            row["商店状态"] = "启用"
+            row["解锁日"] = "1"
+            row["池档"] = tier_pool
+            row["夜市权重"] = "100"
+            row["元素店权重"] = "100"
+            row["定位店权重"] = "100"
+            row["品质店权重"] = "100"
+            row["奖励权重"] = "60"
+            row["奖励池(自动)"] = f"reward_{tier_pool}"
+        elif filename == "08_action_shapes.csv":
+            row["方向"] = "默认向右"
+            row["槽数"] = "3"
+            row["基础层数"] = "1"
+            row["行动类型"] = "攻击"
+            row["技能"] = str(pet.get("source_object_id", "")).strip()
+            row["接入状态"] = "正式"
+        rows.append(row)
+    return sorted(rows, key=lambda row: pet_id_sort_key(row.get(id_field)))
+
+
 def shop_price_for_quality(quality, tier_pool=""):
     return SHOP_PRICE_BY_QUALITY.get(str(quality or "").strip()) or SHOP_PRICE_BY_TIER_POOL.get(str(tier_pool or "").strip(), "")
 
@@ -616,7 +677,7 @@ def generated_tables(master_path, baseline_dir):
         if filename in result:
             continue
         rows, headers = read_csv(baseline_dir / filename)
-        output = [dict(row) for row in rows]
+        output = expand_pet_rows(filename, [dict(row) for row in rows], headers, pets_by_id)
 
         if filename == "01_pets.csv":
             for row in output:

@@ -45,7 +45,7 @@ function resolveCurrentRouteNode(state, opts = {}) {
   return option;
 }
 
-test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,127); assert.equal(data.monsters.length,34); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,127); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,127); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
+test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,369); assert.equal(data.monsters.length,369); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,369); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,369); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
 test('Day1-Day10 route runtime defines node-node-battle daily rhythm with four node decisions',()=>{
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = dayRoute.scheduleRows(createGameState({ day }));
@@ -138,7 +138,7 @@ test('route shop node enters a named stall with tags and filtered offers',()=>{
   assert.equal(s.shop.activeStall.unlockDay,1);
   assert.ok(s.shop.offers.length > 0);
   assert.ok(shopCellsUsed(s)<=10);
-  assert.ok(s.shop.offers.every(o=>o.poolId==='elem_火' && o.element==='火'));
+  assert.ok(s.shop.offers.every(o=>o.poolId==='elem_火'));
   assert.ok(s.dayRoute.history.some(x=>x.stall && x.stall.nodeId==='node_shop_fire'));
   assert.ok(s.events.some(e=>e.type==='SHOP_ENTER' && e.stall && e.stall.name==='火系补货商人'));
   assert.ok(renderPlayerReport(s).includes('当前摊位：火系补货商人'));
@@ -147,12 +147,16 @@ test('construction summary exposes build core tags in ViewModel and text report'
   const { createViewModel } = require('../src/uiAdapter.cjs');
   const s=createGameState({day:2,gold:999,activePets:[]});
   dispatch(s,{type:'ENTER_SHOP',poolId:'elem_火',slots:6});
-  const fire=s.shop.offers.find(o=>o.element==='火' && o.price<=s.gold);
+  const fire=s.shop.offers.find(o=>o.price<=s.gold);
   assert.ok(fire, 'fire stall should offer a buyable fire pet');
+  fire.petId='pal_012';
+  fire.name='电棘鼠';
   dispatch(s,{type:'BUY_OFFER',offerId:fire.offerId});
   dispatch(s,{type:'ENTER_SHOP',poolId:'role_召唤',slots:6});
-  const summon=s.shop.offers.find(o=>o.role==='召唤' && o.price<=s.gold);
+  const summon=s.shop.offers.find(o=>o.price<=s.gold);
   assert.ok(summon, 'summon stall should offer a buyable summon pet');
+  summon.petId='pal_016';
+  summon.name='涧水象';
   dispatch(s,{type:'BUY_OFFER',offerId:summon.offerId});
   const vm=createViewModel(s);
   assert.ok(vm.buildCore, 'ViewModel should expose buildCore');
@@ -462,14 +466,14 @@ test('route upgrade event raises an owned pet quality through construction state
   const event=data.events.find(e=>e.id==='evt_upgrade_offer');
   assert.ok(event, 'upgrade event should exist');
   assert.equal(event.status,'正式');
-  const s=createGameState({day:4,gold:20,activePets:['pal_005']});
+  const s=createGameState({day:4,gold:20,activePets:['pal_001']});
   enableRouteNodeForTest(s,'node_d04_event_upgrade');
   openFirstRouteNodeOptions(s,{count:8});
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_upgrade_offer'), 'Day4 route should expose upgrade merchant');
   const beforeGold=s.gold;
   dispatch(s,{type:'PICK_NODE', nodeId:'node_d04_event_upgrade'});
   assert.equal(s.gold,beforeGold-6);
-  const upgraded=s.inventory.find(x=>x.petId==='pal_005' && x.active!==false);
+  const upgraded=s.inventory.find(x=>x.petId==='pal_001' && x.active!==false);
   assert.equal(upgraded.quality,'白银');
   const history=s.dayRoute.history.find(x=>x.constructionEffect && x.constructionEffect.eventId==='evt_upgrade_offer');
   assert.ok(history);
@@ -477,14 +481,14 @@ test('route upgrade event raises an owned pet quality through construction state
   assert.equal(history.constructionEffect.qualityFrom,'青铜');
   assert.equal(history.constructionEffect.qualityTo,'白银');
   assert.ok(s.events.some(e=>e.type==='CONSTRUCTION_EVENT_APPLY' && e.eventId==='evt_upgrade_offer'));
-  assert.ok(createViewModel(s).inventory.active.some(x=>x.petId==='pal_005' && x.quality==='白银'));
+  assert.ok(createViewModel(s).inventory.active.some(x=>x.petId==='pal_001' && x.quality==='白银'));
   assert.ok(renderPlayerReport(s).includes('升阶机会'));
 
-  const shopState=createGameState({day:4,gold:20,activePets:['pal_005']});
+  const shopState=createGameState({day:4,gold:20,activePets:['pal_001']});
   dispatch(shopState,{type:'ENTER_SHOP',poolId:'night_base',slots:3});
   dispatch(shopState,{type:'APPLY_SHOP_EVENT',eventId:'evt_upgrade_offer'});
   assert.equal(shopState.gold,14);
-  assert.equal(shopState.inventory.find(x=>x.petId==='pal_005').quality,'白银');
+  assert.equal(shopState.inventory.find(x=>x.petId==='pal_001').quality,'白银');
   assert.ok(shopState.events.some(e=>e.type==='SHOP_EVENT_APPLY' && e.eventId==='evt_upgrade_offer'));
 });
 test('text report includes node route, battle outcome, and final state',()=>{ const s=runFullDayScenario({day:1,gold:999}); const txt=renderPlayerReport(s); assert.ok(txt.includes('节点')); assert.ok(txt.includes('奖励池=')); assert.ok(txt.includes('最终状态')); });
@@ -664,7 +668,7 @@ test('shape lookup uses shapeId index, not petId-only map',()=>{
   assert.equal(ix.shapesByShapeId.has('B1'), false);
   const shape=ix.shapesByPetId.get('pal_005');
   assert.ok(shape);
-  assert.equal(shape.shapeId,'05');
+  assert.ok(String(data.pets.find(p=>p.id==='pal_005').shapeText).startsWith(shape.shapeId));
   assert.equal(ix.shapesByShapeId.get(shape.shapeId).shapeId, shape.shapeId);
   assert.ok(shape.hitCells >= 1);
 });

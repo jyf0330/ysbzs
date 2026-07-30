@@ -99,7 +99,8 @@ test('CSV02D 宠物商品店字段必须能在商品店表中证明', () => {
   assert.ok(storeIds.has('night_base'), 'shop store table should include night_base');
   for (const row of petRows) {
     const ids = String(row['商店池(自动)'] || '').split(/[,，、]/).map(x => x.trim()).filter(Boolean);
-    assert.ok(ids.length >= 8, `${row['宠物ID']} should list at least 8 shop_store_ids`);
+    assert.ok(ids.length >= 1, `${row['宠物ID']} should keep at least one source-derived shop_store_id`);
+    assert.ok(ids.length <= 10, `${row['宠物ID']} should not receive synthetic source shops`);
     for (const id of ids) {
       assert.ok(storeIds.has(id), `${row['宠物ID']} references missing shop store ${id}`);
       productCounts.set(id, productCounts.get(id) + 1);
@@ -120,9 +121,31 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   assert.equal(enchantments.length, 13);
   assert.equal(petEnchantments.length, 369);
   assert.equal(objects.length, 369);
-  assert.equal(shopMapping.length, 51, '36 merchants + 15 trainers');
-  assert.equal(objects.filter(row => row.source_status === 'confirmed').length, 276);
-  assert.equal(objects.filter(row => row.source_status === 'derived_gap_profile').length, 93);
+  assert.equal(shopMapping.length, 56, '41 merchant stalls + 15 trainer stalls');
+  assert.equal(objects.filter(row => row.source_status === 'confirmed').length, 369);
+  assert.equal(objects.filter(row => row.source_type === 'item').length, 138);
+  assert.equal(objects.filter(row => row.source_type === 'merchant_package').length, 93);
+  assert.equal(objects.filter(row => row.source_type === 'skill').length, 138);
+  assert.equal(objects.filter(row => row.source_status === 'derived_gap_profile').length, 0);
+  const stallIds = new Set(shopMapping.map(row => row.stall_id));
+  assert.ok(objects.every(row => String(row.source_stall_ids || '').trim()), 'every object keeps exact source stall ids');
+  for (const row of objects) {
+    const ids = String(row.source_stall_ids).split(/[,，、]/).map(value => value.trim()).filter(Boolean);
+    assert.ok(ids.every(id => stallIds.has(id)), `${row.object_id} references a missing source stall`);
+  }
+  const packageRows = objects.filter(row => row.source_type === 'merchant_package');
+  assert.ok(packageRows.every(row => /^https:\/\/bazaardb\.gg\/card\//.test(row.source_url)));
+  assert.deepEqual(new Set(packageRows.map(row => row.source_size)), new Set(['Small', 'Medium', 'Large']));
+  assert.ok(packageRows.every(row => Number(row.local_shop_count) >= 1 && Number(row.local_shop_count) <= 2));
+  assert.equal(shopMapping.filter(row => row.day1_status === '开放').length, 9);
+  assert.equal(shopMapping.filter(row => row.day2_status === '开放').length, 10);
+  assert.equal(shopMapping.filter(row => row.day3_status === '开放').length, 10);
+  const day1Names = shopMapping.filter(row => row.day1_status === '开放').map(row => row.source_name).sort();
+  assert.deepEqual(day1Names, ['Aila', 'Ande', 'Barkun', 'Curio', 'Jay Jay', 'Kina', 'Midsworth', 'Nufu', 'Valpak'].sort());
+  const curio = shopMapping.find(row => row.source_slug === 'curio');
+  assert.equal(Number(curio?.offer_slots), 10);
+  assert.equal(Number(curio?.free_rerolls), 1);
+  assert.equal(Number(curio?.source_object_count), 31, '30 bronze packages plus Curio silver package');
   assert.deepEqual(new Set(shapes.map(row => Number(row['命中格数']))), new Set([1, 2, 3]));
 });
 

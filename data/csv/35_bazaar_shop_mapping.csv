@@ -1,52 +1,57 @@
-source_node_type,source_slug,source_name,source_rule,source_object_count,local_shop_id,local_shop_name,mapping_rule
-merchant,goldie,Goldie,sells gold-tier items,223,night_base,寅将军,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,adira,Adira,teaches diamond-tier skills,138,night_base,寅将军,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,jay-jay,Jay Jay,sells items.,226,elem_火,熊山君,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,argenta,Argenta,teaches silver-tier skills,88,elem_火,熊山君,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,luxe,Luxe,sells diamond-tier items,220,elem_水,特处士,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,nufu,Nufu,sells skills,138,elem_水,特处士,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,midsworth,Midsworth,sells small and large items. buys your medium items at +2 value.,106,elem_草,刘伯钦,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,old-zane,Old Zane,teaches skills unique to vanessa,22,elem_草,刘伯钦,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,serafina,Serafina,sells enchanted items,108,elem_雷,孙悟空,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,orlin,Orlin,teaches gold-tier skills,121,elem_雷,孙悟空,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,barkun,Barkun,sells medium and large items. buys your small items at +1 value.,130,elem_冰,小白龙,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,vermir,Vermir,teaches crit skills,33,elem_冰,小白龙,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,mr-morland,Mr. Morland,sells property items,9,elem_地,金池长老,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,quixel,Quixel,sells small and medium items. buys your large items at +3 value.,133,elem_地,金池长老,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,kina,Kina,sells non-weapon items.,122,elem_暗,黑熊精,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,the-antiquarian,The Antiquarian,sells relics from any hero,5,elem_暗,黑熊精,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,nautica,Nautica,sells aquatic items,100,elem_龙,凌虚子,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,valpak,Valpak,sells items. always sells discounted items.,21,elem_龙,凌虚子,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,aila,Aila,sells weapons,104,elem_无,苍狼精,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,prospero,Prospero,sells economic items from any hero,6,elem_无,苍狼精,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,ande,Ande,sells small items,96,role_召唤,猪八戒,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,ryukon,Ryukon,teaches weapon skills,39,role_召唤,猪八戒,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,colt,Colt,sells ammo items,48,role_坦克,黄风怪,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,bjorn,Bjorn,teaches freeze skills,10,role_坦克,黄风怪,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,mittel,Mittel,sells medium items,90,role_控制,灵吉菩萨,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,malafang,Malafang,teaches burn skills,21,role_控制,灵吉菩萨,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,tok-s-clocks,Tok's Clocks,"sells haste, slow and cooldown items.",88,role_治疗,沙悟净,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,professor-riggle,Professor Riggle,teaches poison skills,17,role_治疗,沙悟净,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,aimbot,Aimbot,sells crit items from any hero,33,role_输出,沙僧,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,slohmor-lumbra,Slohmor Lumbra,teaches slow skills,12,role_输出,沙僧,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,chronos,Chronos,sells haste items.,48,role_经济,黎山老母,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,zara,Zara,teaches haste and charge skills,25,role_经济,黎山老母,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,hef,Hef,sells burn items.,35,role_机动,观音,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,vanessa,Vanessa,sells items from this hero,4,role_机动,观音,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,kev-s-armory,Kev's Armory,sells health and shield items,22,special_merchant,普贤,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,c4,C4,teaches ammo skills,10,special_merchant,普贤,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,cobweb,Cobweb,sells slow items.,43,elite_high,文殊,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,regenald,Regenald,"teaches health, heal and regen skills",9,elite_high,文殊,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,gastro,Gastro,sells foods,2,tier_pT1,镇元大仙,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,the-tester,The Tester,sells tech items from any hero,24,tier_pT1,镇元大仙,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,dryad,Dryad,sells friend items,41,tier_pT2,观音菩萨,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-trainer,fortis,Fortis,teaches shield skills,10,tier_pT2,观音菩萨,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,gaseo,Gaseo,sells apparel from any hero,19,tier_pT3,白骨精,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,orion,Orion,sells tools,28,role_召唤铺场,黄袍怪,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,pol,Pol,sells large items,17,role_机动压制,百花羞,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,freiya,Freiya,sells freeze items.,10,role_抗压承伤,宝象国国王,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,knightshade,Knightshade,sells poison items.,17,role_重甲抗压,金角大王,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,pinfeather,Pinfeather,sells flying items from any hero,11,role_远点压制,银角大王,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,silvia,Silvia,sells silver-tier items,38,role_风系铺场,九尾狐,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,aero,Aero,sells vehicles or drones,12,role_风系牵制,狐阿七,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
-merchant,herma,Herma,sells heal and regen items,9,role_火系压制,狮猁王,冲突图着色：同一来源对象共同出现的商人/训练师不折叠到同一西游商店。
+source_node_type,source_slug,source_name,source_rule,source_object_count,stall_id,unlock_day,close_day,day1_status,day2_status,day3_status,offer_slots,free_rerolls,local_shop_id,local_shop_name,mapping_rule
+merchant,aila,Aila,sells weapons,64,merchant_aila,1,,开放,开放,开放,3,1,night_base,寅将军,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,herma,Herma,sells heal and regen items,6,merchant_herma,4,,未开放,未开放,未开放,3,1,night_base,寅将军,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,aero,Aero,sells vehicles or drones,9,merchant_aero,6,,未开放,未开放,未开放,3,1,elem_火,熊山君,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,ande,Ande,sells small items,58,merchant_ande,1,,开放,开放,开放,3,1,elem_火,熊山君,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,barkun,Barkun,sells medium and large items. buys your small items at +1 value.,80,merchant_barkun,1,,开放,开放,开放,3,1,elem_水,特处士,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,adira,Adira,teaches diamond-tier skills,138,trainer_adira,5,,未开放,未开放,未开放,3,1,elem_水,特处士,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,curio,Curio,sells Bronze-tier Neutral items; pure-pet adaptation uses Bronze package pets,31,merchant_curio,1,,开放,开放,开放,10,1,elem_草,刘伯钦,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,pinfeather,Pinfeather,sells flying items from any hero,9,merchant_pinfeather,6,,未开放,未开放,未开放,3,1,elem_草,刘伯钦,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,jay-jay,Jay Jay,sells items.,137,merchant_jay-jay,1,,开放,开放,开放,3,1,elem_雷,孙悟空,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,argenta,Argenta,teaches silver-tier skills,88,trainer_argenta,5,,未开放,未开放,未开放,3,1,elem_雷,孙悟空,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,kina,Kina,sells non-weapon items.,77,merchant_kina,1,1,开放,已离场,已离场,3,1,elem_冰,小白龙,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,the-antiquarian,The Antiquarian,sells relics from any hero,6,merchant_the-antiquarian,5,,未开放,未开放,未开放,3,1,elem_冰,小白龙,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,midsworth,Midsworth,sells small and large items. buys your medium items at +2 value.,67,merchant_midsworth,1,,开放,开放,开放,3,1,elem_地,金池长老,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,old-zane,Old Zane,teaches skills unique to vanessa,22,trainer_old-zane,4,,未开放,未开放,未开放,3,1,elem_地,金池长老,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,mr-morland,Mr. Morland,sells property items,6,merchant_mr-morland,5,,未开放,未开放,未开放,3,1,elem_暗,黑熊精,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,valpak,Valpak,sells items. always sells discounted items.,14,merchant_valpak,1,,开放,开放,开放,3,1,elem_暗,黑熊精,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,proteus,Proteus,Sells Shield items,7,merchant_proteus,4,,未开放,未开放,未开放,3,1,elem_龙,凌虚子,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,nufu,Nufu,sells skills,138,trainer_nufu,1,,开放,开放,开放,3,1,elem_龙,凌虚子,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,mittel,Mittel,sells medium items,56,merchant_mittel,2,,未开放,开放,开放,3,1,elem_无,苍狼精,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,orlin,Orlin,teaches gold-tier skills,121,trainer_orlin,5,,未开放,未开放,未开放,3,1,elem_无,苍狼精,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,quixel,Quixel,sells small and medium items. buys your large items at +3 value.,78,merchant_quixel,2,,未开放,开放,开放,3,1,role_召唤,猪八戒,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,vermir,Vermir,teaches crit skills,33,trainer_vermir,6,,未开放,未开放,未开放,3,1,role_召唤,猪八戒,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,goldie,Goldie,sells gold-tier items,153,merchant_goldie,4,,未开放,未开放,未开放,3,1,role_坦克,黄风怪,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,ryukon,Ryukon,teaches weapon skills,39,trainer_ryukon,5,,未开放,未开放,未开放,3,1,role_坦克,黄风怪,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,luxe,Luxe,sells diamond-tier items,135,merchant_luxe,4,,未开放,未开放,未开放,3,1,role_控制,灵吉菩萨,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,bjorn,Bjorn,teaches freeze skills,10,trainer_bjorn,6,,未开放,未开放,未开放,3,1,role_控制,灵吉菩萨,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,serafina,Serafina,sells enchanted items,66,merchant_serafina,5,,未开放,未开放,未开放,3,1,role_治疗,沙悟净,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,malafang,Malafang,teaches burn skills,21,trainer_malafang,5,,未开放,未开放,未开放,3,1,role_治疗,沙悟净,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,nautica,Nautica,sells aquatic items,64,merchant_nautica,6,,未开放,未开放,未开放,3,1,role_输出,沙僧,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,professor-riggle,Professor Riggle,teaches poison skills,17,trainer_professor-riggle,6,,未开放,未开放,未开放,3,1,role_输出,沙僧,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,silvia,Silvia,sells silver-tier items,71,merchant_silvia,6,,未开放,未开放,未开放,3,1,role_经济,黎山老母,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,slohmor-lumbra,Slohmor Lumbra,teaches slow skills,12,trainer_slohmor-lumbra,5,,未开放,未开放,未开放,3,1,role_经济,黎山老母,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,colt,Colt,sells ammo items,33,merchant_colt,6,,未开放,未开放,未开放,3,1,role_机动,观音,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,prospero,Prospero,sells economic items from any hero,3,merchant_prospero,6,,未开放,未开放,未开放,3,1,role_机动,观音,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,tok-s-clocks,Tok's Clocks,"sells haste, slow and cooldown items.",55,merchant_tok-s-clocks,4,,未开放,未开放,未开放,3,1,special_merchant,普贤,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,zara,Zara,teaches haste and charge skills,25,trainer_zara,5,,未开放,未开放,未开放,3,1,special_merchant,普贤,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,chronos,Chronos,sells haste items.,32,merchant_chronos,6,,未开放,未开放,未开放,3,1,elite_high,文殊,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,vanessa,Vanessa,sells items from this hero,5,merchant_vanessa,4,,未开放,未开放,未开放,3,1,elite_high,文殊,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,aimbot,Aimbot,sells crit items from any hero,24,merchant_aimbot,5,,未开放,未开放,未开放,3,1,tier_pT1,镇元大仙,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,c4,C4,teaches ammo skills,10,trainer_c4,4,,未开放,未开放,未开放,3,1,tier_pT1,镇元大仙,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,hef,Hef,sells burn items.,23,merchant_hef,4,,未开放,未开放,未开放,3,1,tier_pT2,观音菩萨,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,regenald,Regenald,"teaches health, heal and regen skills",9,trainer_regenald,5,,未开放,未开放,未开放,3,1,tier_pT2,观音菩萨,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,gastro,Gastro,sells foods,1,merchant_gastro,5,,未开放,未开放,未开放,3,1,tier_pT3,白骨精,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,kev-s-armory,Kev's Armory,sells health and shield items,16,merchant_kev-s-armory,6,,未开放,未开放,未开放,3,1,tier_pT3,白骨精,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,cobweb,Cobweb,sells slow items.,27,merchant_cobweb,4,,未开放,未开放,未开放,3,1,role_召唤铺场,黄袍怪,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+trainer,fortis,Fortis,teaches shield skills,10,trainer_fortis,6,,未开放,未开放,未开放,3,1,role_召唤铺场,黄袍怪,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,dryad,Dryad,sells friend items,27,merchant_dryad,6,,未开放,未开放,未开放,3,1,role_机动压制,百花羞,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,lord-oak,Lord Oak,receives Lord Oak package items,3,merchant_lord-oak,4,,未开放,未开放,未开放,3,1,role_机动压制,百花羞,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,shelter-shelby,Shelter Shelby,receives Shelter Shelby package items,3,merchant_shelter-shelby,5,,未开放,未开放,未开放,3,1,role_抗压承伤,宝象国国王,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,the-tester,The Tester,sells tech items from any hero,18,merchant_the-tester,4,,未开放,未开放,未开放,3,1,role_抗压承伤,宝象国国王,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,gaseo,Gaseo,sells apparel from any hero,14,merchant_gaseo,4,,未开放,未开放,未开放,3,1,role_重甲抗压,金角大王,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,tatiana,Tatiana,receives Tatiana package items,3,merchant_tatiana,6,,未开放,未开放,未开放,3,1,role_重甲抗压,金角大王,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,orion,Orion,sells tools,18,merchant_orion,6,,未开放,未开放,未开放,3,1,role_远点压制,银角大王,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,pol,Pol,sells large items,14,merchant_pol,5,,未开放,未开放,未开放,3,1,role_风系铺场,九尾狐,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,freiya,Freiya,sells freeze items.,9,merchant_freiya,4,,未开放,未开放,未开放,3,1,role_风系牵制,狐阿七,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。
+merchant,knightshade,Knightshade,sells poison items.,14,merchant_knightshade,6,,未开放,未开放,未开放,3,1,role_火系压制,狮猁王,先固定前三天来源摊位，再做冲突图着色；地点内各摊位独立抽取，不合并货池。

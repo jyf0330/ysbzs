@@ -1,5 +1,5 @@
 trait_id,name,effects_json,enabled,description,note
-trait_relentless,猛攻本能,"[{""hook"":""skill"",""type"":""physical_power_bonus_permille"",""value"":100}]",true,每个技能的物理伤害倍率增加 10%。,输出/机动定位默认特性
-trait_element_affinity,元素亲和,"[{""hook"":""skill"",""type"":""element_layer_bonus"",""value"":1}]",true,每个技能额外铺 1 层对应元素。,治疗/控制定位默认特性
-trait_combo_mastery,连携精通,"[{""hook"":""combo"",""type"":""physical_power_bonus_permille"",""value"":250}]",true,技能组合的物理伤害倍率增加 25%。,坦克/防御/抗压定位默认特性
-trait_combo_resonance,连携共鸣,"[{""hook"":""combo"",""type"":""element_layer_bonus"",""value"":1}]",true,技能组合额外铺 1 层对应元素。,其他定位默认特性
+trait_relentless,猛攻本能,"[{""hook"":""skill"",""type"":""modify_stat"",""stat"":""physical_power_permille"",""operation"":""flat_add"",""value"":100,""phase"":""trait"",""priority"":100}]",true,每个技能的物理伤害倍率增加 10%。,输出/机动定位默认特性
+trait_element_affinity,元素亲和,"[{""hook"":""skill"",""type"":""modify_stat"",""stat"":""element_layer_bonus"",""operation"":""flat_add"",""value"":1,""phase"":""trait"",""priority"":100}]",true,每个技能额外铺 1 层对应元素。,治疗/控制定位默认特性
+trait_combo_mastery,连携精通,"[{""hook"":""combo"",""type"":""modify_stat"",""stat"":""physical_power_permille"",""operation"":""flat_add"",""value"":250,""phase"":""trait"",""priority"":100}]",true,技能组合的物理伤害倍率增加 25%。,坦克/防御/抗压定位默认特性
+trait_combo_resonance,连携共鸣,"[{""hook"":""combo"",""type"":""modify_stat"",""stat"":""element_layer_bonus"",""operation"":""flat_add"",""value"":1,""phase"":""trait"",""priority"":100}]",true,技能组合额外铺 1 层对应元素。,其他定位默认特性

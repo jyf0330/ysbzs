@@ -1,0 +1,9 @@
+status_id,name,polarity,max_stacks,duration_policy,default_duration,effects_json,description
+status_fury,激昂,positive,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""atk"",""operation"":""flat_add_per_stack"",""value"":2,""phase"":""status"",""priority"":100}]",每层攻击+2
+status_fortified,坚固,positive,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""def"",""operation"":""flat_add_per_stack"",""value"":2,""phase"":""status"",""priority"":100}]",每层防御+2
+status_haste,迅捷,positive,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""speed"",""operation"":""flat_add_per_stack"",""value"":100,""phase"":""status"",""priority"":100}]",每层速度+100
+status_focus,专注,positive,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""crit_rate_permille"",""operation"":""flat_add_per_stack"",""value"":100,""phase"":""status"",""priority"":100}]",每层暴击率+10%
+status_weakened,虚弱,negative,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""physical_power_permille"",""operation"":""flat_add_per_stack"",""value"":-100,""phase"":""status"",""priority"":100}]",每层物理威力-10%
+status_vulnerable,易伤,negative,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""damage_taken_permille"",""operation"":""flat_add_per_stack"",""value"":150,""phase"":""status"",""priority"":100}]",每层承伤+15%
+status_slow,迟缓,negative,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""speed"",""operation"":""flat_add_per_stack"",""value"":-100,""phase"":""status"",""priority"":100}]",每层速度-100
+status_barrier,屏障强化,positive,3,refresh,2,"[{""hook"":""always"",""type"":""modify_stat"",""stat"":""shield_gain_permille"",""operation"":""flat_add_per_stack"",""value"":200,""phase"":""status"",""priority"":100}]",每层护盾获得+20%

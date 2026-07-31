@@ -256,6 +256,11 @@ def main():
         ("38_skill_combo_catalog.csv", "有序技能组合 Type Object；按相邻技能标签顺序匹配。"),
     ])
 
+    add_domain_sheet(wb, "ATTRIBUTES_EFFECTS", [
+        ("39_stat_catalog.csv", "通用宠物属性目录；整数/千分比、默认值、上下限和叠加规则。"),
+        ("40_status_catalog.csv", "运行状态 Type Object；叠层、持续回合和通用 modifier effects。"),
+    ])
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUT)
     print(f"wrote {OUT}")

@@ -261,7 +261,7 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT'], visible
+assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS'], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets
@@ -287,6 +287,9 @@ assert '31_battle_rules.csv' in mechanic_markers, mechanic_markers
 assert '36_skill_catalog.csv' in marker_values, marker_values
 assert '37_trait_catalog.csv' in marker_values, marker_values
 assert '38_skill_combo_catalog.csv' in marker_values, marker_values
+attribute_markers = [str(row[1] or '') for row in wb['ATTRIBUTES_EFFECTS'].iter_rows(min_col=1, max_col=2, values_only=True)]
+assert '39_stat_catalog.csv' in attribute_markers, attribute_markers
+assert '40_status_catalog.csv' in attribute_markers, attribute_markers
 wb.close()
 `;
   execFileSync('python3', ['-c', code, path.join(root, 'xlsx', 'ysbzs_master.xlsx'), ...allProgramCsvFiles()], { cwd: root, stdio: 'pipe' });
@@ -323,6 +326,8 @@ test('CSV08D 每只宠物拥有已注册特性且技能组合引用有效标签'
     const effects = JSON.parse(trait.effects_json);
     assert.ok(effects.length > 0, trait.trait_id);
     assert.ok(effects.every((effect) => ['skill', 'combo'].includes(effect.hook)), trait.trait_id);
+    assert.ok(effects.every((effect) => effect.type === 'modify_stat'), trait.trait_id);
+    assert.ok(effects.every((effect) => effect.stat && effect.operation), trait.trait_id);
   }
   for (const combo of combos) {
     assert.equal(combo.match_type, 'tag_sequence');
@@ -335,6 +340,24 @@ test('CSV08D 每只宠物拥有已注册特性且技能组合引用有效标签'
     const ids = String(pet['特性序列'] || '').split(',').filter(Boolean);
     assert.equal(ids.length, 1, pet['宠物ID']);
     assert.ok(traitIds.has(ids[0]), pet['宠物ID']);
+  }
+});
+
+test('CSV08E 通用属性与状态目录支持几十种属性和白名单 modifier', () => {
+  const stats = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '39_stat_catalog.csv'), 'utf8'));
+  const statuses = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '40_status_catalog.csv'), 'utf8'));
+  const statIds = new Set(stats.map((row) => row.stat_id));
+  assert.ok(stats.length >= 40, `expected dozens of stats, got ${stats.length}`);
+  assert.ok(['max_hp', 'atk', 'def', 'physical_power_permille', 'element_layer_bonus'].every((id) => statIds.has(id)));
+  assert.ok(stats.every((row) => ['integer', 'permille'].includes(row.value_type)), 'typed stat values');
+  assert.ok(stats.every((row) => Number.isFinite(Number(row.default_value))), 'numeric defaults');
+  assert.ok(statuses.length >= 8);
+  for (const status of statuses) {
+    const effects = JSON.parse(status.effects_json);
+    assert.ok(effects.length > 0, status.status_id);
+    assert.ok(effects.every((effect) => effect.type === 'modify_stat'), status.status_id);
+    assert.ok(effects.every((effect) => statIds.has(effect.stat)), status.status_id);
+    assert.ok(effects.every((effect) => ['flat_add', 'flat_add_per_stack'].includes(effect.operation)), status.status_id);
   }
 });
 

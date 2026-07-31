@@ -53,6 +53,8 @@
 
 ## DONE
 
+- `tasks/done/2026-07-31_generic-pet-attribute-data.md` — 已增加 47 个属性、8 个状态和通用特性 modifier 的 workbook→CSV 真相链。
+
 - `tasks/done/2026-07-31_pet-skill-action-queue.md` — 已为正式 Godot 提供每宠 8 个可排序基础技能及 workbook→CSV 数据真相链。
 
 - `tasks/done/2026-07-30_bazaar-source-complete-shop-roster.md` — 已补全 93 个商人包，369 宠按 56 个真实来源摊位映射至前 30 地点，并补齐前三天开放与 13 类附魔。

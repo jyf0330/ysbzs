@@ -144,6 +144,7 @@ def main():
             "note",
             "enemy_move_range",
             "enemy_attack_count",
+            "skill_ids",
         ],
         [
             {
@@ -162,6 +163,7 @@ def main():
                 "note": r.get("备注", ""),
                 "enemy_move_range": monster_by_pet.get(r.get("宠物ID", ""), {}).get("移动力", r.get("行动", "")),
                 "enemy_attack_count": monster_by_pet.get(r.get("宠物ID", ""), {}).get("攻击次数", r.get("行动", "")),
+                "skill_ids": r.get("技能序列", ""),
             }
             for r in pets
         ],
@@ -173,6 +175,7 @@ def main():
             "note": 26,
             "enemy_move_range": 20,
             "enemy_attack_count": 20,
+            "skill_ids": 52,
         },
     )
 
@@ -248,6 +251,9 @@ def main():
         ("15_summon_trial_questions.csv", "召唤试炼题库。"),
         ("16_trial_action_plan.csv", "试炼行动脚本。"),
         ("17_trial_victory_rules.csv", "试炼胜负规则。"),
+        ("36_skill_catalog.csv", "8 技能 Type Object；effects_json 依次执行技能效果。"),
+        ("37_trait_catalog.csv", "宠物特性 Type Object；按 skill/combo hook 修饰效果。"),
+        ("38_skill_combo_catalog.csv", "有序技能组合 Type Object；按相邻技能标签顺序匹配。"),
     ])
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

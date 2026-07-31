@@ -271,6 +271,7 @@ assert 'attack_grid_count' in [cell.value for cell in wb['PETS'][1]], [cell.valu
 assert 'primary_enchant' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'enemy_move_range' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'enemy_attack_count' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'skill_ids' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'shop_store_id' in [cell.value for cell in wb['SHOP_STORES'][1]], [cell.value for cell in wb['SHOP_STORES'][1]]
 nonempty_rows = lambda sheet: sum(
     1 for row in wb[sheet].iter_rows(values_only=True)
@@ -283,9 +284,58 @@ marker_values = [str(row[1] or '') for row in wb['SHAPES_TRIALS'].iter_rows(min_
 assert '13_day7_beast_trial.csv' not in marker_values, marker_values
 mechanic_markers = [str(row[1] or '') for row in wb['MECHANICS_QUALITY'].iter_rows(min_col=1, max_col=2, values_only=True)]
 assert '31_battle_rules.csv' in mechanic_markers, mechanic_markers
+assert '36_skill_catalog.csv' in marker_values, marker_values
+assert '37_trait_catalog.csv' in marker_values, marker_values
+assert '38_skill_combo_catalog.csv' in marker_values, marker_values
 wb.close()
 `;
   execFileSync('python3', ['-c', code, path.join(root, 'xlsx', 'ysbzs_master.xlsx'), ...allProgramCsvFiles()], { cwd: root, stdio: 'pipe' });
+});
+
+test('CSV08C 每只宠物拥有八个已注册的可排序技能', () => {
+  const pets = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '01_pets.csv'), 'utf8'));
+  const skills = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '36_skill_catalog.csv'), 'utf8'));
+  const catalogIds = new Set(skills.map((row) => row.skill_id));
+  assert.equal(skills.length, 8);
+  for (const skill of skills) {
+    const effects = JSON.parse(skill.effects_json);
+    assert.deepEqual(effects.map((effect) => effect.type), ['physical_damage', 'apply_element_layer']);
+    assert.equal(effects[1].layers, 1);
+  }
+  for (const pet of pets) {
+    const ids = String(pet['技能序列'] || '').split(',').filter(Boolean);
+    assert.equal(ids.length, 8, pet['宠物ID']);
+    assert.equal(new Set(ids).size, 8, pet['宠物ID']);
+    assert.ok(ids.every((id) => catalogIds.has(id)), pet['宠物ID']);
+  }
+});
+
+test('CSV08D 每只宠物拥有已注册特性且技能组合引用有效标签', () => {
+  const pets = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '01_pets.csv'), 'utf8'));
+  const skills = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '36_skill_catalog.csv'), 'utf8'));
+  const traits = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '37_trait_catalog.csv'), 'utf8'));
+  const combos = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '38_skill_combo_catalog.csv'), 'utf8'));
+  const traitIds = new Set(traits.map((row) => row.trait_id));
+  const skillTags = new Set(skills.flatMap((row) => String(row.tags || '').split('|').filter(Boolean)));
+  assert.equal(traits.length, 4);
+  assert.equal(combos.length, 4);
+  for (const trait of traits) {
+    const effects = JSON.parse(trait.effects_json);
+    assert.ok(effects.length > 0, trait.trait_id);
+    assert.ok(effects.every((effect) => ['skill', 'combo'].includes(effect.hook)), trait.trait_id);
+  }
+  for (const combo of combos) {
+    assert.equal(combo.match_type, 'tag_sequence');
+    const pattern = JSON.parse(combo.pattern_json);
+    assert.ok(pattern.length >= 2, combo.combo_id);
+    assert.ok(pattern.every((tag) => skillTags.has(tag)), combo.combo_id);
+    assert.ok(JSON.parse(combo.effects_json).length > 0, combo.combo_id);
+  }
+  for (const pet of pets) {
+    const ids = String(pet['特性序列'] || '').split(',').filter(Boolean);
+    assert.equal(ids.length, 1, pet['宠物ID']);
+    assert.ok(traitIds.has(ids[0]), pet['宠物ID']);
+  }
 });
 
 test('CSV09 策划好读版 workbook 可从当前 CSV 重建', () => {

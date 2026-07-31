@@ -680,6 +680,10 @@ def generated_tables(master_path, baseline_dir):
         output = expand_pet_rows(filename, [dict(row) for row in rows], headers, pets_by_id)
 
         if filename == "01_pets.csv":
+            if "技能序列" not in headers:
+                headers.append("技能序列")
+            if "特性序列" not in headers:
+                headers.append("特性序列")
             for row in output:
                 pet = pets_by_id.get(row.get("宠物ID", ""))
                 if not pet:
@@ -700,6 +704,8 @@ def generated_tables(master_path, baseline_dir):
                 row["标签"] = first_non_empty(build_pet_tags(pet, row.get("标签")), row.get("标签"))
                 row["备注"] = first_non_empty(pet.get("note"), row.get("备注"))
                 row["副属"] = "、".join(elements[1:])
+                row["技能序列"] = first_non_empty(pet.get("skill_ids"), row.get("技能序列"))
+                row["特性序列"] = first_non_empty(pet.get("trait_ids"), row.get("特性序列"))
 
         elif filename == "02_monster_templates.csv":
             for field in ["移动力", "攻击次数"]:

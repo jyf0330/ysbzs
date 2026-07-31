@@ -53,6 +53,8 @@
 
 ## DONE
 
+- `tasks/done/2026-07-31_pet-skill-action-queue.md` — 已为正式 Godot 提供每宠 8 个可排序基础技能及 workbook→CSV 数据真相链。
+
 - `tasks/done/2026-07-30_bazaar-source-complete-shop-roster.md` — 已补全 93 个商人包，369 宠按 56 个真实来源摊位映射至前 30 地点，并补齐前三天开放与 13 类附魔。
 - `tasks/done/2026-07-30_vanessa-369-pets-shops-enchantments.md` — 以 Vanessa 物品/技能对象为基线设计 369 只纯宠物，压缩为前 30 家交叉商店，并补齐品质、攻击格数与 13 类附魔。
 - `tasks/done/2026-07-29_journey-shop-min-six.md` — 合并西游宠物短名与 79 个西游商店，全部正式宠物商店候选池不少于 6，并完成 CSV 与 Godot 数据链验证。

@@ -1,0 +1,5 @@
+combo_id,name,match_type,pattern_json,effects_json,shape_slot,element_source,enabled,note
+combo_pincer,前后夹击,tag_sequence,"[""opening"",""flank""]","[{""type"":""physical_damage"",""power_permille"":250}]",1,secondary,true,先锋击后紧接侧翼击
+combo_piercing_arc,穿回连携,tag_sequence,"[""pierce"",""revolve""]","[{""type"":""apply_element_layer"",""layers"":1,""element_source"":""secondary""}]",0,secondary,true,穿阵击后紧接回旋击
+combo_breakthrough,追裂连携,tag_sequence,"[""chase"",""break""]","[{""type"":""physical_damage"",""power_permille"":250},{""type"":""apply_element_layer"",""layers"":1,""element_source"":""secondary""}]",2,secondary,true,追风击后紧接裂阵击
+combo_finale,压制终幕,tag_sequence,"[""suppress"",""finale""]","[{""type"":""physical_damage"",""power_permille"":500},{""type"":""apply_element_layer"",""layers"":1,""element_source"":""secondary""}]",1,secondary,true,压制击后紧接终幕击

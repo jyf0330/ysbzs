@@ -183,6 +183,12 @@ function toNum(v, fallback = null) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function requiredPetStat(row, field, rowId) {
+  const value = toNum(row[field], null);
+  if (value === null) throw new Error(`pet ${rowId || '<unknown>'} missing required base stat ${field}`);
+  return value;
+}
+
 function toBool(v) {
   if (v === true || v === 1) return true;
   if (v === false || v === 0 || v === null || v === undefined) return false;
@@ -283,11 +289,11 @@ function normalizeSourceTables(sourceTables, options = {}) {
       size: row['体型'],
       role: row['定位'],
       score: toNum(row['效果分'], 0),
-      hp: toNum(row['HP'], 1),
-      atk: toNum(row['攻'], 1),
-      def: toNum(row['防'], 0),
-      shield: toNum(row['盾'], 0),
-      ap: toNum(row['行动'], 3),
+      hp: requiredPetStat(row, 'HP', row['宠物ID']),
+      atk: requiredPetStat(row, '攻', row['宠物ID']),
+      def: requiredPetStat(row, '防', row['宠物ID']),
+      shield: requiredPetStat(row, '盾', row['宠物ID']),
+      ap: requiredPetStat(row, '行动', row['宠物ID']),
       mechanics: mech.normalized,
       shapeText: row['形状'],
       range: row['范围'],
@@ -310,11 +316,11 @@ function normalizeSourceTables(sourceTables, options = {}) {
       petRole: row['宠物定位(自动)'],
       stage: row['阶段'],
       enemyRole: row['敌方定位'],
-      hp: toNum(row['HP'], 1),
-      atk: toNum(row['攻'], 1),
-      def: toNum(row['防'], 0),
-      shield: toNum(row['盾'], 0),
-      ap: toNum(row['行动'], 3),
+      hp: requiredPetStat(row, 'HP', row['宠物ID']),
+      atk: requiredPetStat(row, '攻', row['宠物ID']),
+      def: requiredPetStat(row, '防', row['宠物ID']),
+      shield: requiredPetStat(row, '盾', row['宠物ID']),
+      ap: requiredPetStat(row, '行动', row['宠物ID']),
       mechanics: mech.normalized,
       mechanicParams: parseParams(row['机制参数']),
       panelScore: toNum(row['面板分'], 0),

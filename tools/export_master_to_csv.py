@@ -440,7 +440,7 @@ def expand_pet_rows(filename, rows, headers, pets_by_id):
         tier_pool = {"青铜": "pT1", "白银": "pT2", "黄金": "pT3", "钻石": "pT4"}.get(tier, "pT1")
         if filename == "01_pets.csv":
             row["编号"] = f"No.{pet_id_sort_key(pet_id):03d}"
-            row["防"] = "0"
+            row["防"] = first_non_empty(pet.get("def"))
             row["范围"] = f"攻击{first_non_empty(pet.get('attack_grid_count'), '1')}格"
             row["动作"] = "攻击"
             row["技能"] = str(pet.get("source_object_id", "")).strip()
@@ -571,6 +571,7 @@ def normalize_redesign_pets(rows):
             "body_size": body_size_text(row.get("body_size"), shape_text),
             "hp": format_number(row.get("hp")),
             "atk": format_number(row.get("atk")),
+            "def": format_number(row.get("def")),
             "shield": format_number(row.get("shield")),
             "action": format_number(row.get("action")),
             "cell_count": format_number(row.get("cell_count")),
@@ -647,6 +648,16 @@ def generated_tables(master_path, baseline_dir):
     }
 
     pets_by_id = by_key(master["PETS"], "pet_id")
+    required_pet_stats = ("hp", "atk", "def", "shield", "action")
+    for pet_id, pet in pets_by_id.items():
+        for stat in required_pet_stats:
+            value = str(pet.get(stat, "")).strip()
+            if not value:
+                raise ValueError(f"pet {pet_id} missing required base stat {stat}")
+            try:
+                float(value)
+            except ValueError as exc:
+                raise ValueError(f"pet {pet_id} has non-numeric base stat {stat}: {value}") from exc
     shop_by_id = by_key(master["SHOP_ITEMS"], "pet_id")
     mech_by_id = by_key(master["MECHANISMS"], "mechanism_id")
     baseline_pets, _baseline_pet_headers = read_csv(baseline_dir / "01_pets.csv")
@@ -656,7 +667,7 @@ def generated_tables(master_path, baseline_dir):
     pet_effect_scores = {}
     for pet_id, pet in pets_by_id.items():
         score_row = dict(baseline_pets_by_id.get(pet_id, {}))
-        for field, key in [("HP", "hp"), ("攻", "atk"), ("盾", "shield"), ("行动", "action")]:
+        for field, key in [("HP", "hp"), ("攻", "atk"), ("防", "def"), ("盾", "shield"), ("行动", "action")]:
             if pet.get(key) not in (None, ""):
                 score_row[field] = pet.get(key)
         pet_effect_scores[pet_id] = panel_score(score_row) + pet_mechanic_score(baseline_monsters_by_pet.get(pet_id, {}), pet)
@@ -697,6 +708,7 @@ def generated_tables(master_path, baseline_dir):
                 row["体型"] = first_non_empty(pet.get("body_size"), row.get("体型"))
                 row["HP"] = first_non_empty(pet.get("hp"), row.get("HP"))
                 row["攻"] = first_non_empty(pet.get("atk"), row.get("攻"))
+                row["防"] = first_non_empty(pet.get("def"), row.get("防"))
                 row["盾"] = first_non_empty(pet.get("shield"), row.get("盾"))
                 row["行动"] = first_non_empty(pet.get("action"), row.get("行动"))
                 row["机制ID"] = sheet_value(pet, "mechanism_id", row.get("机制ID"), allow_blank=True)
@@ -722,6 +734,7 @@ def generated_tables(master_path, baseline_dir):
                 row["宠物定位(自动)"] = sheet_value(pet, "role", row.get("宠物定位(自动)"), allow_blank=True)
                 row["HP"] = first_non_empty(pet.get("hp"), row.get("HP"))
                 row["攻"] = first_non_empty(pet.get("atk"), row.get("攻"))
+                row["防"] = first_non_empty(pet.get("def"), row.get("防"))
                 row["盾"] = first_non_empty(pet.get("shield"), row.get("盾"))
                 row["行动"] = first_non_empty(pet.get("action"), row.get("行动"))
                 row["移动力"] = first_non_empty(pet.get("enemy_move_range"), row.get("移动力"), pet.get("action"), row.get("行动"))

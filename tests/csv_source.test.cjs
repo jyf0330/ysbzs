@@ -261,7 +261,7 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS'], visible
+assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES'], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets
@@ -272,6 +272,7 @@ assert 'primary_enchant' in [cell.value for cell in wb['PETS'][1]], [cell.value 
 assert 'enemy_move_range' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'enemy_attack_count' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'skill_ids' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert 'def' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'shop_store_id' in [cell.value for cell in wb['SHOP_STORES'][1]], [cell.value for cell in wb['SHOP_STORES'][1]]
 nonempty_rows = lambda sheet: sum(
     1 for row in wb[sheet].iter_rows(values_only=True)
@@ -280,6 +281,7 @@ nonempty_rows = lambda sheet: sum(
 assert nonempty_rows('PETS') == 370, nonempty_rows('PETS')
 assert nonempty_rows('SHOP_STORES') == 31, nonempty_rows('SHOP_STORES')
 assert nonempty_rows('ENCHANTMENTS') == 14, nonempty_rows('ENCHANTMENTS')
+assert nonempty_rows('PET_STAT_RULES') == 87, nonempty_rows('PET_STAT_RULES')
 marker_values = [str(row[1] or '') for row in wb['SHAPES_TRIALS'].iter_rows(min_col=1, max_col=2, values_only=True)]
 assert '13_day7_beast_trial.csv' not in marker_values, marker_values
 mechanic_markers = [str(row[1] or '') for row in wb['MECHANICS_QUALITY'].iter_rows(min_col=1, max_col=2, values_only=True)]

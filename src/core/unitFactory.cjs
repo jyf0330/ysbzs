@@ -17,6 +17,15 @@ function normalizePosition(pos, fallback) {
   return clone(fallback || { r: 0, c: 0 });
 }
 
+function requiredDataStat(stat, petId, ...values) {
+  const raw = values.find(value => value !== undefined && value !== null && value !== '');
+  const numeric = Number(raw);
+  if (raw === undefined || !Number.isFinite(numeric)) {
+    throw new Error(`pet ${petId} missing required base stat ${stat}`);
+  }
+  return numeric;
+}
+
 /**
  * 创建通用单位
  *
@@ -119,6 +128,13 @@ function makeUnitFromData(state, side, petId, override = {}) {
   const boardCols = Number(state.board?.cols || 8);
   const boardMaxMove = Math.max(0, boardRows - 1) + Math.max(0, boardCols - 1);
   const configuredMoveRange = override.moveRange ?? override.moveAp ?? base.moveRange ?? pet.moveRange ?? base['移动范围'] ?? pet['移动范围'];
+  const baseStats = {
+    hp: requiredDataStat('hp', petId, override.hp, base.hp, pet.hp),
+    atk: requiredDataStat('atk', petId, override.atk, base.atk, pet.atk),
+    def: requiredDataStat('def', petId, override.def, base.def, pet.def),
+    shield: requiredDataStat('shield', petId, override.shield, base.shield, pet.shield),
+    ap: requiredDataStat('ap', petId, override.ap, base.ap, pet.ap),
+  };
 
   return createUnit({
     id,
@@ -132,12 +148,12 @@ function makeUnitFromData(state, side, petId, override = {}) {
     bodySize: override.bodySize || base.bodySize || base.size || pet.bodySize || pet.size || pet.体型 || '中型',
     role: override.role || base.enemyRole || base.role || pet.role || pet.定位,
     effectScore: override.effectScore ?? base.effectScore ?? base.panelScore ?? pet.score ?? 0,
-    maxHp: override.hp || base.hp || pet.hp || 1,
-    hp: override.hp || base.hp || pet.hp || 1,
-    atk: override.atk || base.atk || pet.atk || 1,
-    def: override.def ?? base.def ?? pet.def ?? 0,
-    shield: override.shield ?? base.shield ?? pet.shield ?? 0,
-    ap: override.ap || base.ap || pet.ap || 3,
+    maxHp: baseStats.hp,
+    hp: baseStats.hp,
+    atk: baseStats.atk,
+    def: baseStats.def,
+    shield: baseStats.shield,
+    ap: baseStats.ap,
     moveRange: configuredMoveRange ?? (side === 'hero' ? boardMaxMove : null),
     mechanics: override.mechanics || base.mechanics || pet.mechanics || ['none'],
     shape: shape || null,

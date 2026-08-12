@@ -8,15 +8,24 @@ function waveRandom(state, row) {
   return rng(`wave:${seed}:${state.day}:${state.period}:${state.round}:${row.waveId}:${index}`);
 }
 
+function requiredEnemyStat(stat, petId, base, pet) {
+  const raw = base?.[stat] ?? pet?.[stat];
+  const numeric = Number(raw);
+  if (raw === undefined || raw === null || raw === '' || !Number.isFinite(numeric)) {
+    throw new Error(`pet ${petId} missing required base stat ${stat}`);
+  }
+  return numeric;
+}
+
 function enemyBaseStats(state, petId) {
   const pet = state.indexes?.petsById?.get(petId) || null;
   const monster = state.indexes?.monstersByPetId?.get(petId) || null;
   const base = monster || pet || {};
   return {
-    hp: base.hp ?? pet?.hp ?? 1,
-    atk: base.atk ?? pet?.atk ?? 1,
-    def: base.def ?? pet?.def ?? 0,
-    shield: base.shield ?? pet?.shield ?? 0,
+    hp: requiredEnemyStat('hp', petId, base, pet),
+    atk: requiredEnemyStat('atk', petId, base, pet),
+    def: requiredEnemyStat('def', petId, base, pet),
+    shield: requiredEnemyStat('shield', petId, base, pet),
     effectScore: pet?.score ?? base.panelScore ?? base.effectScore ?? 0
   };
 }

@@ -7,6 +7,8 @@
  *   pending      — 已注册但未实现
  */
 
+const { PET_PLUGIN_STATUS } = require('./petPlugins/registry.cjs');
+
 const MECHANIC_STATUS = Object.freeze({
   none: 'implemented',
   mech_shield_flat: 'implemented',
@@ -108,7 +110,8 @@ const MECHANIC_STATUS = Object.freeze({
   mech_summon_each_round: 'pending',
   mech_consume_layers_grow: 'pending',
   mech_scale_with_allies: 'implemented',
-  mech_summon: 'pending'
+  mech_summon: 'pending',
+  ...PET_PLUGIN_STATUS
 });
 
 const SUPPORTED_MECHANICS = new Set(Object.keys(MECHANIC_STATUS));

@@ -11,6 +11,8 @@
 
 ## ACTIVE_IMPL
 
+- `tasks/done/2026-08-28_run_health_outer_loop.md` — outer-run rule: 战败改为按当前天数扣英雄耐久，移除城堡扣线与经济衰减口径。
+
 - `tasks/done/2026-07-22_pet-reset-five-round-interval.md` — battle balance: 宠物重置取消开局次数，改为第 5、10 回合各获得 1 次。
 
 - `tasks/doing/2026-07-03_godot-singleplayer-remake.md` — Godot port: 独立 Godot 单机版垂直切片；涉及 `/Users/ywh/Documents/godot/scenes/game/` 与 `/Users/ywh/Documents/godot/scripts/game/`。

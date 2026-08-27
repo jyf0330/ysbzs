@@ -52,8 +52,8 @@ M49,mech_wind_slow_ap,元素减行动,元素/通用,宠物/怪物,after_hit,任�
 M50,mech_earth_block_cell,元素阻挡,元素/通用,宠物/怪物,after_element_apply,目标格可阻挡,duration=1; hp=6,任意元素形成阻挡地块。,元素地块阻挡路径。,7,高,正式,待接入,1,1,0,0,兼容旧机制ID；适配九系与双属性。
 M51,mech_curse_gold_loss,金币诅咒,诅咒/经济,事件/怪物,battle_end,单位存活或事件选择,gold=-2,减少金币。,诅咒生效，金币 {gold}。,4,中,正式,待接入,0,1,1,1,事件和失败惩罚可复用。
 M52,mech_reduce_reward_if_alive,存活减奖,诅咒/奖励,波次/怪物,battle_end,特定怪物未击杀,reward_pct=-0.2,降低奖励倍率。,敌人未清，奖励降低。,5,中,正式,待接入,0,1,1,1,波次用。
-M53,mech_castle_line_damage,城堡扣线,波次/失败,波次/怪物,battle_fail,战斗失败或怪物越线,castle_hp=-1,扣城堡线。,城堡受到 {damage} 点损害。,5,中,正式,可接入,0,1,1,1,10回合失败核心。
-M54,mech_economy_decay_on_fail,失败经济折损,波次/失败,波次/事件,battle_fail,战斗失败,income_pct=0.8,后续经济收益降低。,失败导致经济收益降低。,6,中,正式,待接入,0,0,1,1,和大巴扎节奏相关。
+M53,mech_castle_line_damage,英雄耐久损耗（兼容ID）,外层/失败,单局,battle_fail,战斗失败,run_health=-day,按当前天数扣英雄耐久。,英雄耐久受到 {damage} 点损害。,5,中,正式,已替代旧城堡规则,0,0,1,0,兼容旧机制ID；城堡扣线与经济衰减已由英雄耐久外层规则取代。
+M54,mech_economy_decay_on_fail,失败经济折损（兼容ID）,外层/失败,单局,battle_fail,战斗失败,none,不再降低经济倍率。,英雄耐久规则已取代失败经济折损。,6,中,正式,已由英雄耐久取代,0,0,1,0,兼容旧机制ID；战败经济衰减不再生效。
 M55,mech_dirty_cell,污染格子,诅咒/地形,怪物/事件,after_action,目标格可污染,duration=2; penalty=1,生成污染地块，影响站位/路径。,{unit} 污染了格子。,6,中,正式,待接入,0,1,1,1,地形层实现。
 M56,mech_countdown_pressure,倒计时压力,波次/倒计时,波次/事件,round_start,指定回合后,round=5; effect=spawn_extra,达到回合后追加惩罚。,倒计时触发，战场压力上升。,7,高,正式,待接入,0,0,1,1,压缩战斗节奏。
 M57,mech_shop_discount_after_clear,快速清场折扣,奖励/商店,波次/事件,battle_end,5回合内清场,discount=1; slots=1,下一商店获得折扣位。,快速清场，获得折扣商店位。,5,中,正式,待接入,0,0,1,1,大巴扎式奖励。

@@ -1,4 +1,4 @@
-const id = 'pet_pal_014_money_raccoon';
+const id = 'mech_win_gold_bonus';
 
 function battleEnd(context = {}) {
   const alive = context.owner?.alive !== false && Number(context.owner?.hp || 0) > 0;

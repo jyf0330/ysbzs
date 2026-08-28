@@ -55,6 +55,8 @@
 
 ## DONE
 
+- `tasks/done/2026-08-28_bazaar_day1_route_source.md` — 恢复 `ROUTE` 策划域对 24/25/26 路线表的可重建真相链，并开放 Day 1 免费刷新事件与休整补给节点。
+
 - `tasks/done/2026-07-31_generic-pet-attribute-data.md` — 已增加 47 个属性、8 个状态和通用特性 modifier 的 workbook→CSV 真相链。
 
 - `tasks/done/2026-07-31_pet-skill-action-queue.md` — 已为正式 Godot 提供每宠 8 个可排序基础技能及 workbook→CSV 数据真相链。

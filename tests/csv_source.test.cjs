@@ -261,7 +261,7 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES'], visible
+assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES', 'ROUTE'], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets
@@ -292,6 +292,8 @@ assert '38_skill_combo_catalog.csv' in marker_values, marker_values
 attribute_markers = [str(row[1] or '') for row in wb['ATTRIBUTES_EFFECTS'].iter_rows(min_col=1, max_col=2, values_only=True)]
 assert '39_stat_catalog.csv' in attribute_markers, attribute_markers
 assert '40_status_catalog.csv' in attribute_markers, attribute_markers
+route_markers = [str(row[1]) for row in wb['ROUTE'].iter_rows(min_col=1, max_col=2, values_only=True) if row[0] == '#csv']
+assert route_markers == ['24_node_schedule.csv', '25_node_pool.csv', '26_encounter_pool.csv'], route_markers
 wb.close()
 `;
   execFileSync('python3', ['-c', code, path.join(root, 'xlsx', 'ysbzs_master.xlsx'), ...allProgramCsvFiles()], { cwd: root, stdio: 'pipe' });

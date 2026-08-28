@@ -106,11 +106,31 @@ test('shop refresh controls store free roll, discount, and targeted restock stat
   assert.ok(s.events.some(e=>e.type==='SHOP_TARGETED_RESTOCK' && e.poolId==='elem_火'));
   assert.ok(renderPlayerReport(s).includes('定向补货'));
 });
-test('active route node pool excludes instant event/rest nodes',()=>{
+test('active route node pool opens only the first Day1 event/rest slice',()=>{
   const s=createGameState({day:1,gold:20});
   const activeNodes = s.data.nodePool.filter(node => node.status === '正式');
   assert.ok(activeNodes.length > 0);
-  assert.ok(activeNodes.every(node => ['shop','reward'].includes(node.nodeType)));
+  assert.deepEqual(
+    activeNodes.filter(node => ['event','rest'].includes(node.nodeType)).map(node => node.nodeId).sort(),
+    ['node_event_free_roll','node_rest_gold']
+  );
+  assert.ok(s.data.nodePool.filter(node => ['event','rest'].includes(node.nodeType) && !['node_event_free_roll','node_rest_gold'].includes(node.nodeId)).every(node => node.status !== '正式'));
+});
+test('Day1 free-roll event and rest resolve through player route commands',()=>{
+  const eventState=createGameState({day:1,gold:20});
+  const eventOptions=openFirstRouteNodeOptions(eventState,{count:6});
+  assert.ok(eventOptions.some(node=>node.nodeId==='node_event_free_roll'));
+  const freeRollsBefore=eventState.shop.freeRolls;
+  dispatch(eventState,{type:'PICK_NODE',nodeId:'node_event_free_roll'});
+  assert.equal(eventState.shop.freeRolls,freeRollsBefore+1);
+  assert.ok(hasEvent(eventState,'NODE_EVENT_APPLY'));
+
+  const restState=createGameState({day:1,gold:20});
+  const restOptions=openFirstRouteNodeOptions(restState,{count:6});
+  assert.ok(restOptions.some(node=>node.nodeId==='node_rest_gold'));
+  dispatch(restState,{type:'PICK_NODE',nodeId:'node_rest_gold'});
+  assert.equal(restState.gold,22);
+  assert.ok(hasEvent(restState,'NODE_REST'));
 });
 test('reward options can include pet/relic and pick reward',()=>{ const s=createGameState({gold:5}); dispatch(s,{type:'REWARD_OPTIONS',poolId:'reward_pT1',count:3}); assert.equal(s.rewards.length,3); dispatch(s,{type:'PICK_REWARD',index:0}); assert.ok(hasEvent(s,'REWARD_PICK')); });
 test('node shop returns to day route while manual shop still exits to day_end',()=>{

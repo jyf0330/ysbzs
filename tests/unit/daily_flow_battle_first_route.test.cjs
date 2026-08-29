@@ -74,10 +74,9 @@ function petNamesForWave(row) {
 test('daily route runtime keeps two battles per day and distributes first-battle choices across the Run', () => {
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = createYSBZSUIAdapter({ day }).getViewModel('p1').dailyFlow.steps;
-    const firstBattleKind = [1, 3, 6, 9].includes(day) ? 'battle_choice' : 'fixed_battle';
-    assert.deepEqual(rows.map(row => row.kind), ['node_choice', 'node_choice', firstBattleKind, 'node_choice', 'node_choice', 'fixed_battle']);
+    assert.deepEqual(rows.map(row => row.kind), ['node_choice', 'node_choice', 'battle_choice', 'node_choice', 'node_choice', 'fixed_battle']);
     assert.equal(rows.filter(row => row.kind === 'node_choice').length, 4);
-    if (firstBattleKind === 'fixed_battle') assert.ok(rows[2].encounterId, `day ${day} fixed third step should point at an encounter`);
+    assert.match(rows[2].summary, /三选一/, `day ${day} third step should expose three encounter choices`);
     assert.ok(rows[5].encounterId, `day ${day} sixth step should point at an encounter`);
   }
 });
@@ -119,20 +118,23 @@ test('daily flow public commands follow node -> node -> battle -> node -> node -
   assert.equal(vm.dailyFlow.currentStep, 6);
 });
 
-test('daily flow fixed battle enters manual battle instead of auto resolving', () => {
+test('daily flow second fixed battle enters manual battle instead of auto resolving', () => {
   const adapter = createYSBZSUIAdapter({ day: 2, gold: 999, seed: 'daily-flow-manual-fixed-battle' });
   let vm = adapter.getViewModel('p1');
 
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
+  ({ vm } = resolveBattleChoice(adapter));
+  ({ vm } = resolveNode(adapter));
+  ({ vm } = resolveNode(adapter));
   assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
 
-  const entered = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 });
+  const entered = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 6 });
   vm = entered.viewModel;
 
   assert.equal(vm.phase, 'player_turn');
-  assert.equal(vm.dailyFlow.currentStep, 3);
-  assert.equal(vm.dailyFlow.battleOutcomes.length, 0);
+  assert.equal(vm.dailyFlow.currentStep, 6);
+  assert.equal(vm.dailyFlow.battleOutcomes.length, 1);
   assert.ok(vm.nextActions.some(action => action.type === 'MOVE_HERO'), 'manual battle should expose normal move controls');
   assert.ok(vm.nextActions.some(action => action.type === 'USE_SLOT'), 'manual battle should expose normal action-slot controls');
   assert.ok(entered.events.some(event => event.type === 'BATTLE_START'));

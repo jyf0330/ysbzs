@@ -106,15 +106,13 @@ test('shop refresh controls store free roll, discount, and targeted restock stat
   assert.ok(s.events.some(e=>e.type==='SHOP_TARGETED_RESTOCK' && e.poolId==='elem_火'));
   assert.ok(renderPlayerReport(s).includes('定向补货'));
 });
-test('active route node pool opens only the first Day1 event/rest slice',()=>{
+test('active route node pool exposes the complete formal event/rest ecosystem',()=>{
   const s=createGameState({day:1,gold:20});
   const activeNodes = s.data.nodePool.filter(node => node.status === '正式');
   assert.ok(activeNodes.length > 0);
-  assert.deepEqual(
-    activeNodes.filter(node => ['event','rest'].includes(node.nodeType)).map(node => node.nodeId).sort(),
-    ['node_event_free_roll','node_rest_gold']
-  );
-  assert.ok(s.data.nodePool.filter(node => ['event','rest'].includes(node.nodeType) && !['node_event_free_roll','node_rest_gold'].includes(node.nodeId)).every(node => node.status !== '正式'));
+  assert.equal(activeNodes.filter(node => node.nodeType === 'event').length,16);
+  assert.equal(activeNodes.filter(node => node.nodeType === 'rest').length,10);
+  assert.ok(s.data.nodePool.filter(node => ['event','rest'].includes(node.nodeType)).every(node => node.status === '正式'));
 });
 test('Day1 free-roll event and rest resolve through player route commands',()=>{
   const eventState=createGameState({day:1,gold:20});

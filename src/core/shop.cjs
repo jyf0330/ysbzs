@@ -142,13 +142,31 @@ function upgradeTarget(state, meta={}) {
 	 return list.find(x => x.active !== false && nextQualityLabel(inventoryQuality(state,x))) || list.find(x => nextQualityLabel(inventoryQuality(state,x))) || null;
 }
 function petDisplayName(state, petId){ const pet=state.indexes?.petsById?.get(petId) || (state.data?.pets || []).find(x=>x.petId===petId) || {}; return pet.name || petId; }
-function applyConstructionEvent(state, e, source='shop_event', meta={}) {
- if (!isConstructionEvent(e)) return null;
+function preflightConstructionEvent(state, e, source='shop_event', meta={}) {
+ if (!isConstructionEvent(e)) return { ok:false, code:'not_construction_event', eventId:e?.id || null, source };
  const cost=parseGoldCost(e.costText);
- if(state.gold<cost){ pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold, text:`金币不足，无法执行构筑事件 ${e.name}。`}); return null; }
+ if(state.gold<cost) return { ok:false, code:'insufficient_coins', eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold };
  if(isConstructionUpgradeEvent(e)) {
-  const target=upgradeTarget(state, meta);
-  if(!target){ pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold, text:`没有可升阶的已拥有宠物。`}); return null; }
+  const target=upgradeTarget(state,meta);
+  if(!target) return { ok:false, code:'no_eligible_target', eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold };
+  return { ok:true, code:'ok', eventId:e.id, source, nodeId:meta.nodeId || null, cost, target, type:'upgrade_pet' };
+ }
+ const target=constructionTarget(state,meta);
+ if(!target) return { ok:false, code:'no_eligible_target', eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold };
+ const mergeTarget=mergeBenchEntry(state,target.petId);
+ if(!mergeTarget && benchCount(state)>=MAX_BENCH_UNITS) return { ok:false, code:'bench_full', eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold };
+ return { ok:true, code:'ok', eventId:e.id, source, nodeId:meta.nodeId || null, cost, target, type:'duplicate_pet' };
+}
+function applyConstructionEvent(state, e, source='shop_event', meta={}) {
+ const plan=preflightConstructionEvent(state,e,source,meta);
+ if(!plan.ok){
+  const text=plan.code==='insufficient_coins' ? `金币不足，无法执行构筑事件 ${e?.name || e?.id}。` : (plan.code==='bench_full' ? `背包已满，无法执行构筑事件 ${e?.name || e?.id}。` : `没有可执行构筑事件 ${e?.name || e?.id} 的合法宠物。`);
+  pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e?.id || null, source, nodeId:meta.nodeId || null, code:plan.code, cost:Number(plan.cost || 0), gold:state.gold, text});
+  return null;
+ }
+ const cost=plan.cost;
+ if(isConstructionUpgradeEvent(e)) {
+  const target=plan.target;
   const before=state.gold;
 	  const qualityFrom=inventoryQuality(state,target);
 	  const qualityTo=nextQualityLabel(qualityFrom);
@@ -158,11 +176,11 @@ function applyConstructionEvent(state, e, source='shop_event', meta={}) {
 	  pushEvent(state,'CONSTRUCTION_EVENT_APPLY',{eventId:e.id, name:e.name, source, nodeId:meta.nodeId || null, constructionEffect:clone(effect), petId:target.petId, petName:effect.petName, cost, goldFrom:before, goldTo:state.gold, qualityFrom, qualityTo, inventory:clone(effect.inventory), text:`构筑事件【${e.name}】：升阶机会 ${effect.petName} ${qualityFrom}→${qualityTo}，金币${before}→${state.gold}。`});
 	  return effect;
  }
- const target=constructionTarget(state, meta);
- if(!target){ pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e.id, source, nodeId:meta.nodeId || null, cost, gold:state.gold, text:`没有可复制的已拥有宠物。`}); return null; }
+ const target=plan.target;
  const before=state.gold;
  state.gold-=cost;
 	 const inv=addInventory(state,target.petId,{quality:target.quality});
+	 if(inv.blocked){ state.gold=before; pushEvent(state,'CONSTRUCTION_EVENT_BLOCKED',{eventId:e.id,source,nodeId:meta.nodeId || null,code:inv.reason || 'inventory_blocked',cost,gold:state.gold,text:inv.text || `复制失败：没有背包空位。`}); return null; }
 	 const effect={eventId:e.id, name:e.name, source, nodeId:meta.nodeId || null, type:'duplicate_pet', petId:target.petId, petName:petDisplayName(state,target.petId), cost, goldFrom:before, goldTo:state.gold, inventory:clone(inv)};
 	 pushEvent(state,'CONSTRUCTION_EVENT_APPLY',{eventId:e.id, name:e.name, source, nodeId:meta.nodeId || null, constructionEffect:clone(effect), petId:target.petId, petName:effect.petName, cost, goldFrom:before, goldTo:state.gold, inventory:clone(inv), text:`构筑事件【${e.name}】：同名复制 ${effect.petName}，金币${before}→${state.gold}${inv.merged?`，同名合成到${inv.quality}`:''}。`});
  return effect;
@@ -189,4 +207,4 @@ function rewardOptions(state, poolId='reward_pT1', count=3, opts={}){ const pool
 function finishRouteReturn(state, returnPhase){ if(returnPhase==='day_end' && state.dayRoute && !state.dayRoute.dayEnded){ state.dayRoute.dayEnded=true; pushEvent(state,'DAY_ROUTE_END',{day:state.day,text:`第${state.day}天路线结束。`}); } }
 function pickReward(state, index=0){ const r=state.rewards[index]; if(!r) return false; if(r.type==='pet') addInventory(state,r.petId); if(r.type==='relic') state.relics.push(r.id); pushEvent(state,'REWARD_PICK',{reward:r,text:`选择奖励：${r.name}。`}); const returnPhase=state.dayRoute?.rewardReturnPhase || null; if(returnPhase){ delete state.dayRoute.rewardReturnPhase; state.rewards=[]; state.phase=returnPhase; finishRouteReturn(state,returnPhase); } return true; }
 function exitShop(state){ const returnPhase=state.shop.routeReturnPhase || null; delete state.shop.routeReturnPhase; state.shop.rollSeedContext=null; state.shop.contextRollCount=0; state.phase=returnPhase || 'day_end'; finishRouteReturn(state,returnPhase); pushEvent(state,'SHOP_EXIT',{stall:state.shop.activeStall||null,text:`离开商店：金币${state.gold}，背包${state.inventory.length}种宠物，遗物${state.relics.length}件。`}); }
-module.exports={ enterShop, rollShop, freezeOffer, buyOffer, availableEvents, applyShopEvent, applyShopEventModifiers, applyConstructionEvent, rewardOptions, pickReward, exitShop, enabledShopItems, makeStall, stallTags, ensureRefreshState, shopRollSeed, rewardSeed };
+module.exports={ enterShop, rollShop, freezeOffer, buyOffer, availableEvents, applyShopEvent, applyShopEventModifiers, preflightConstructionEvent, applyConstructionEvent, rewardOptions, pickReward, exitShop, enabledShopItems, makeStall, stallTags, ensureRefreshState, shopRollSeed, rewardSeed };

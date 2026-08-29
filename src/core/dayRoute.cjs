@@ -355,6 +355,41 @@ function optionByRef(options, ref) {
   if (typeof ref === 'number') return options[ref] || null;
   return options.find(x => x.optionId === ref || x.nodeId === ref || x.encounterId === ref) || null;
 }
+function routeEventCost(event) {
+  const match = String(event?.costText || '').match(/金币\s*-\s*(\d+)/);
+  return match ? Number(match[1]) : 0;
+}
+function isTargetedShopRouteEvent(event) {
+  return !!event?.shopPoolId && /候选|商品位|补货/.test(String(event.gainText || event.optionText || ''));
+}
+function planRouteEvent(state, option) {
+  const event = (state.data.events || []).find(e => e.id === option.eventId && e.status === '正式');
+  if (!event) return { ok:false, code:'missing_event', event:null, cost:0 };
+  const construction = shop.preflightConstructionEvent(state, event, 'route_event', { nodeId:option.nodeId });
+  if (construction.code !== 'not_construction_event') return { ...construction, event, construction:true };
+  const cost = routeEventCost(event);
+  if (Number(state.gold || 0) < cost) return { ok:false, code:'insufficient_coins', event, cost, gold:Number(state.gold || 0) };
+  return { ok:true, code:'ok', event, cost, construction:false, targetedShop:isTargetedShopRouteEvent(event) };
+}
+function pushRouteEventBlocked(state, option, plan) {
+  const eventName = plan.event?.name || option.name || option.eventId || '事件';
+  const text = plan.code === 'insufficient_coins'
+    ? `金币不足，无法选择路线事件【${eventName}】：需要${Number(plan.cost || 0)}金币，当前${Number(state.gold || 0)}。`
+    : plan.code === 'bench_full'
+      ? `背包已满，无法选择路线事件【${eventName}】。`
+      : plan.code === 'no_eligible_target'
+        ? `没有合法宠物可执行路线事件【${eventName}】。`
+        : `路线事件【${eventName}】不可用。`;
+  pushEvent(state, 'NODE_EVENT_BLOCKED', { eventId:option.eventId || null, nodeId:option.nodeId, code:plan.code, cost:Number(plan.cost || 0), gold:Number(state.gold || 0), text });
+}
+function commitNodePick(state, option) {
+  const route = ensureDayRoute(state);
+  route.nodeIndex = Number(option.scheduleStep || route.nodeIndex + 1);
+  route.history.push({ kind:'node', option:clone(option) });
+  route.options = [];
+  pushEvent(state, 'NODE_PICK', { nodeId:option.nodeId, nodeType:option.nodeType, scheduleStep:route.nodeIndex, text:`选择节点：${option.name}。` });
+  return route;
+}
 function pickNode(state, ref) {
   const route = ensureDayRoute(state);
   const option = optionByRef(route.options, ref);
@@ -362,10 +397,13 @@ function pickNode(state, ref) {
     pushEvent(state, 'NODE_PICK_BLOCKED', { text: '节点选择失败：候选不存在。' });
     return false;
   }
-  route.nodeIndex = Number(option.scheduleStep || route.nodeIndex + 1);
-  route.history.push({ kind: 'node', option: clone(option) });
-  route.options = [];
-  pushEvent(state, 'NODE_PICK', { nodeId: option.nodeId, nodeType: option.nodeType, scheduleStep: route.nodeIndex, text: `选择节点：${option.name}。` });
+  let eventPlan = null;
+  if (option.nodeType === 'event') {
+    eventPlan = planRouteEvent(state, option);
+    if (!eventPlan.ok) { pushRouteEventBlocked(state, option, eventPlan); return false; }
+  }
+  if (option.nodeType === 'event') return applyRouteEvent(state, option, eventPlan);
+  commitNodePick(state, option);
   if (option.nodeType === 'shop') {
     const ok = shop.enterShop(state, option.shopPoolId || 'night_base', 10, { stall: Object.assign({}, option, { slots: 10 }), seedContext: routeChoiceSeedContext(state, option) });
     if (ok !== false) {
@@ -381,7 +419,6 @@ function pickNode(state, ref) {
     state.phase = 'reward';
     return true;
   }
-  if (option.nodeType === 'event') return applyRouteEvent(state, option);
   if (option.nodeType === 'rest') {
     const before = state.gold;
     state.gold += Number(option.value || 1);
@@ -392,23 +429,37 @@ function pickNode(state, ref) {
   completeRouteStep(state);
   return true;
 }
-function applyRouteEvent(state, option) {
+function applyRouteEvent(state, option, plan = null) {
   const route = ensureDayRoute(state);
-  const event = (state.data.events || []).find(e => e.id === option.eventId);
-  if (!event) {
-    pushEvent(state, 'NODE_EVENT_APPLY', { nodeId: option.nodeId, text: `${option.name}：事件占位已结算。` });
-    completeRouteStep(state);
-    return true;
-  }
+  const effectivePlan = plan?.ok ? plan : planRouteEvent(state, option);
+  if (!effectivePlan.ok) { pushRouteEventBlocked(state, option, effectivePlan); return false; }
+  const event = effectivePlan.event;
   const before = state.gold;
-  const constructionEffect = shop.applyConstructionEvent(state, event, 'route_event', { nodeId: option.nodeId });
-  if (!constructionEffect) shop.applyShopEventModifiers(state, event, 'route_event');
-  const prepEffect = queueBattlePrepEffectFromEvent(state, event, { source: 'route_event', nodeId: option.nodeId });
-  const runEffect = queueOuterRunEffectFromEvent(state, event, { source: 'route_event', nodeId: option.nodeId });
+  let constructionEffect = null;
+  let shopEffect = null;
+  let prepEffect = null;
+  let runEffect = null;
+  if (effectivePlan.construction) {
+    constructionEffect = shop.applyConstructionEvent(state, event, 'route_event', { nodeId:option.nodeId });
+  } else if (effectivePlan.targetedShop) {
+    state.gold -= Number(effectivePlan.cost || 0);
+    const slots = Math.max(3, Number(option.value || event.value || 3));
+    const entered = shop.enterShop(state, event.shopPoolId, slots, { stall:{ nodeId:option.nodeId, name:event.name, slots }, seedContext:routeChoiceSeedContext(state, option) });
+    if (entered === false) { state.gold = before; return false; }
+    shopEffect = { type:'targeted_shop', poolId:event.shopPoolId, slots, cost:Number(effectivePlan.cost || 0), goldFrom:before, goldTo:state.gold };
+  } else {
+    state.gold -= Number(effectivePlan.cost || 0);
+    shopEffect = shop.applyShopEventModifiers(state, event, 'route_event');
+    prepEffect = queueBattlePrepEffectFromEvent(state, event, { source:'route_event', nodeId:option.nodeId });
+    runEffect = queueOuterRunEffectFromEvent(state, event, { source:'route_event', nodeId:option.nodeId });
+  }
+  if (effectivePlan.construction && !constructionEffect) return false;
+  commitNodePick(state, option);
+  const historyItem = route.history[route.history.length - 1];
   if (constructionEffect) {
-    const historyItem = route.history[route.history.length - 1];
     if (historyItem) historyItem.constructionEffect = clone(constructionEffect);
   }
+  if (shopEffect && historyItem) historyItem.shopEffect = clone(shopEffect);
   if (prepEffect) {
     const historyItem = route.history[route.history.length - 1];
     if (historyItem) historyItem.prepEffect = clone(prepEffect);
@@ -417,7 +468,11 @@ function applyRouteEvent(state, option) {
     const historyItem = route.history[route.history.length - 1];
     if (historyItem) historyItem.runEffect = clone(runEffect);
   }
-  pushEvent(state, 'NODE_EVENT_APPLY', { eventId: event.id, nodeId: option.nodeId, goldFrom: before, goldTo: state.gold, constructionEffect: constructionEffect ? clone(constructionEffect) : null, prepEffect: prepEffect ? clone(prepEffect) : null, runEffect: runEffect ? clone(runEffect) : null, text: `节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
+  pushEvent(state, 'NODE_EVENT_APPLY', { eventId:event.id, nodeId:option.nodeId, goldFrom:before, goldTo:state.gold, constructionEffect:constructionEffect ? clone(constructionEffect) : null, shopEffect:shopEffect ? clone(shopEffect) : null, prepEffect:prepEffect ? clone(prepEffect) : null, runEffect:runEffect ? clone(runEffect) : null, text:`节点事件【${event.name}】：${event.optionText || event.gainText || '已结算'}。` });
+  if (effectivePlan.targetedShop) {
+    state.shop.routeReturnPhase = routeReturnPhaseAfterCurrentStep(state);
+    return true;
+  }
   completeRouteStep(state);
   return true;
 }

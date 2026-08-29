@@ -116,12 +116,24 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   const petEnchantments = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '33_pet_enchantments.csv'), 'utf8'));
   const objects = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '34_bazaar_objects.csv'), 'utf8'));
   const shopMapping = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '35_bazaar_shop_mapping.csv'), 'utf8'));
+  const heroCatalog = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '41_hero_catalog.csv'), 'utf8'));
+  const tagCatalog = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '42_bazaar_tag_catalog.csv'), 'utf8'));
   assert.equal(pets.length, 369);
   assert.equal(shapes.length, 369);
   assert.equal(enchantments.length, 13);
   assert.equal(petEnchantments.length, 369);
   assert.equal(objects.length, 369);
   assert.equal(shopMapping.length, 56, '41 merchant stalls + 15 trainer stalls');
+  assert.deepEqual(heroCatalog, [{
+    hero_id: 'hero_001',
+    catalog_status: 'playable',
+    source_archetype: 'vanessa_items',
+    playable_pet_count: '138',
+    reserved_record_count: '231',
+    source_object_count: '369',
+    note: '第一英雄只开放138个物品来源宠物；技能与商人包映射保留为内部记录。'
+  }]);
+  assert.ok(tagCatalog.length > 0, 'formal Bazaar build-tag catalog should be exported');
   assert.equal(objects.filter(row => row.source_status === 'confirmed').length, 369);
   assert.equal(objects.filter(row => row.source_type === 'item').length, 138);
   assert.equal(objects.filter(row => row.source_type === 'merchant_package').length, 93);
@@ -137,16 +149,45 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   assert.ok(packageRows.every(row => /^https:\/\/bazaardb\.gg\/card\//.test(row.source_url)));
   assert.deepEqual(new Set(packageRows.map(row => row.source_size)), new Set(['Small', 'Medium', 'Large']));
   assert.ok(packageRows.every(row => Number(row.local_shop_count) >= 1 && Number(row.local_shop_count) <= 2));
-  assert.equal(shopMapping.filter(row => row.day1_status === '开放').length, 9);
-  assert.equal(shopMapping.filter(row => row.day2_status === '开放').length, 10);
-  assert.equal(shopMapping.filter(row => row.day3_status === '开放').length, 10);
-  const day1Names = shopMapping.filter(row => row.day1_status === '开放').map(row => row.source_name).sort();
-  assert.deepEqual(day1Names, ['Aila', 'Ande', 'Barkun', 'Curio', 'Jay Jay', 'Kina', 'Midsworth', 'Nufu', 'Valpak'].sort());
+  assert.equal(shopMapping.filter(row => row.catalog_status === 'playable').length, 37);
+  assert.equal(shopMapping.filter(row => row.catalog_status === 'reserved').length, 19);
+  assert.ok(shopMapping.filter(row => row.catalog_status === 'playable').every(row => Number(row.playable_item_count) > 0));
+  assert.ok(shopMapping.filter(row => row.catalog_status === 'reserved').every(row => Number(row.playable_item_count) === 0));
+  assert.equal(shopMapping.filter(row => row.catalog_status === 'playable' && row.day1_status === '开放').length, 7);
+  const day1Names = shopMapping.filter(row => row.catalog_status === 'playable' && row.day1_status === '开放').map(row => row.source_name).sort();
+  assert.deepEqual(day1Names, ['Aila', 'Ande', 'Barkun', 'Jay Jay', 'Kina', 'Midsworth', 'Valpak'].sort());
   const curio = shopMapping.find(row => row.source_slug === 'curio');
   assert.equal(Number(curio?.offer_slots), 10);
   assert.equal(Number(curio?.free_rerolls), 1);
   assert.equal(Number(curio?.source_object_count), 31, '30 bronze packages plus Curio silver package');
   assert.deepEqual(new Set(shapes.map(row => Number(row['命中格数']))), new Set([1, 2, 3]));
+});
+
+test('CSV02G 第一英雄目录只开放 138 个物品映射，标签严格区分拥有与引用', () => {
+  const pets = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '01_pets.csv'), 'utf8'));
+  const shops = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '06_shop_rewards.csv'), 'utf8'));
+  const objects = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '34_bazaar_objects.csv'), 'utf8'));
+  const tags = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '42_bazaar_tag_catalog.csv'), 'utf8'));
+  const playable = pets.filter(row => row.catalog_status === 'playable');
+  const reserved = pets.filter(row => row.catalog_status === 'reserved');
+  assert.equal(playable.length, 138);
+  assert.equal(reserved.length, 231);
+  assert.ok(playable.every(row => row.owner_hero_id === 'hero_001'));
+  assert.ok(reserved.every(row => !row.owner_hero_id));
+  const objectByPet = new Map(objects.map(row => [row.pet_id, row]));
+  assert.ok(playable.every(row => objectByPet.get(row['宠物ID'])?.source_type === 'item'));
+  assert.ok(reserved.every(row => ['skill', 'merchant_package'].includes(objectByPet.get(row['宠物ID'])?.source_type)));
+  assert.equal(shops.filter(row => row.catalog_status === 'playable').length, 138);
+  assert.equal(shops.filter(row => row.catalog_status === 'reserved').length, 231);
+  assert.ok(shops.filter(row => row.catalog_status === 'reserved').every(row => row['商店状态'] === '保留'));
+  const tagIds = new Set(tags.map(row => row.tag_id));
+  for (const row of playable) {
+    const buildTags = String(row.build_tags || '').split(/[,|]/).map(tag => tag.trim()).filter(Boolean);
+    const references = String(row.tag_references || '').split(/[,|]/).map(tag => tag.trim()).filter(Boolean);
+    assert.ok(buildTags.every(tag => tagIds.has(tag)), `${row['宠物ID']} has unknown build tag`);
+    assert.ok(references.every(tag => tagIds.has(tag)), `${row['宠物ID']} has unknown tag reference`);
+    assert.ok(buildTags.every(tag => !tag.endsWith('reference')), `${row['宠物ID']} leaks reference tag into build tags`);
+  }
 });
 
 test('CSV02E 正式战斗重置次数由策划表声明为每5回合一次且开局为0', () => {
@@ -261,7 +302,7 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES', 'ROUTE'], visible
+assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES', 'ROUTE', 'HERO_CATALOG', 'TAG_CATALOG'], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets

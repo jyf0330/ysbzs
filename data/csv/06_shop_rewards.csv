@@ -1,370 +1,370 @@
-宠物ID,名称(自动),元素(自动),品质(自动),定位(自动),标签(自动),商品类型,商店状态,解锁日,池档,默认价,价格覆盖,夜市权重,元素店权重,定位店权重,品质店权重,奖励权重,商店池(自动),奖励池(自动),出现条件,备注
-pal_001,棉角羊,水,青铜,治疗,水、龙、治疗、无、风、基准单点、发育,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_输出, role_机动",reward_pT1,,来源对象 bz_van_001；主附魔 Restorative；真实来源地点数 10
-pal_002,灰尾狸,水,黄金,治疗,水、地、治疗、无、风、抗压单点、前排、阻挡,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_水, elem_雷, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_远点压制",reward_pT1,,来源对象 bz_van_002；主附魔 Turbo；真实来源地点数 10
-pal_003,芦花鸡,雷,白银,机动,雷、机动、无、风、削弱远点、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_机动, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_003；主附魔 Turbo；真实来源地点数 10
-pal_004,青藤鼠,雷,白银,机动,雷、机动、草、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, special_merchant, elite_high, role_远点压制",reward_pT1,,来源对象 bz_van_004；主附魔 Turbo；真实来源地点数 10
-pal_005,赤尾狐,火,黄金,输出,火、输出、雷、抗压承伤、爆发、前排,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_火, role_输出, tier_pT3",reward_pT1,,来源对象 bz_van_005；主附魔 Deadly；真实来源地点数 10
-pal_006,碧水鸭,地,青铜,坦克,地、坦克、水、毒伤牵制、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT3",reward_pT1,,来源对象 bz_van_006；主附魔 Shielded；真实来源地点数 10
-pal_007,雷须猫,雷,青铜,控制,雷、火、控制、地、输出、风、抗压承伤、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, role_控制, tier_pT1",reward_pT1,,来源对象 bz_van_007；主附魔 Deadly；真实来源地点数 10
-pal_008,藤甲猿,水,青铜,机动,水、机动、草、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_输出, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_008；主附魔 Turbo；真实来源地点数 10
-pal_009,火角鹿,火,青铜,召唤,火、召唤、水、输出、火系压制、爆发、前排,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, role_召唤, tier_pT1",reward_pT1,,来源对象 bz_van_009；主附魔 Deadly；真实来源地点数 10
-pal_010,霜羽鹭,水,白银,机动,水、龙、机动、冰、治疗、水系牵制、后排、增益,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, elem_水, elem_草, elem_雷, elem_无, role_坦克, role_控制, role_输出, role_抗压承伤",reward_pT1,,来源对象 bz_van_010；主附魔 Deadly；真实来源地点数 10
-pal_011,冰背獭,草,黄金,控制,草、龙、控制、水、冰、治疗、水系牵制、后排、增益,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_火系压制",reward_pT1,,来源对象 bz_van_011；主附魔 Toxic；真实来源地点数 10
-pal_012,电棘鼠,火,黄金,输出,火、雷、输出、控制、风、风系牵制、牵制、范围、机动,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_火, elem_雷, role_输出, tier_pT3",reward_pT1,,来源对象 bz_van_012；主附魔 Fiery；真实来源地点数 10
-pal_013,苔甲龟,雷,青铜,控制,雷、控制、草、地、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_机动, special_merchant, role_召唤铺场",reward_pT1,,来源对象 bz_van_013；主附魔 Icy；真实来源地点数 10
-pal_014,金钱狸,火,白银,经济,火、经济、机动、无、风、风系铺场、召唤、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, role_经济, tier_pT2",reward_pT1,,来源对象 bz_van_014；主附魔 Fiery；真实来源地点数 10
-pal_015,黑甲猪,水,白银,输出,水、输出、暗、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, elem_雷, elem_地, elem_暗, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT1,,来源对象 bz_van_015；主附魔 Deadly；真实来源地点数 10
-pal_016,涧水象,雷,青铜,召唤,雷、龙、召唤、水、治疗、水系控场、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_机动压制",reward_pT1,,来源对象 bz_van_016；主附魔 Deadly；真实来源地点数 10
-pal_017,黑角犀,火,青铜,坦克,火、雷、坦克、输出、暗、土、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, role_坦克, tier_pT1",reward_pT1,,来源对象 bz_van_017；主附魔 Fiery；真实来源地点数 10
-pal_018,竹囊鼠,雷,黄金,机动,雷、机动、无、经济、风、风系铺场、召唤、发育,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_水, elem_雷, elem_地, elem_暗, role_坦克, role_控制, role_治疗, elite_high, role_风系铺场",reward_pT1,,来源对象 bz_van_018；主附魔 Turbo；真实来源地点数 10
-pal_019,夜穴鼹,暗,白银,输出,暗、火、输出、雷、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, elem_暗, role_输出, tier_pT2",reward_pT1,,来源对象 bz_van_019；主附魔 Deadly；真实来源地点数 10
-pal_020,沙鬃猪,水,白银,机动,水、雷、机动、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, role_机动, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_020；主附魔 Turbo；真实来源地点数 10
-pal_021,暮羽鸦,水,白银,机动,水、龙、机动、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_远点压制",reward_pT1,,来源对象 bz_van_021；主附魔 Turbo；真实来源地点数 10
-pal_022,岩爪鼹,龙,白银,机动,龙、机动、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT1,,来源对象 bz_van_022；主附魔 Turbo；真实来源地点数 10
-pal_023,墨潭鲵,草,青铜,控制,草、水、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT1,,来源对象 bz_van_023；主附魔 Toxic；真实来源地点数 10
-pal_024,幽纹猫,火,白银,控制,火、控制、暗、经济、土、土系抗压、召唤、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_水, elem_雷, role_坦克, role_控制, special_merchant, elite_high, tier_pT2, role_召唤铺场, role_抗压承伤",reward_pT1,,来源对象 bz_van_024；主附魔 Fiery；真实来源地点数 10
-pal_025,泉须鲶,草,青铜,经济,草、水、经济、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_输出, tier_pT1, tier_pT3",reward_pT1,,来源对象 bz_van_025；主附魔 Golden；真实来源地点数 10
-pal_026,疾风狼,水,白银,控制,水、控制、无、机动、风、抗压承伤、灵活、泛用,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场",reward_pT1,,来源对象 bz_van_026；主附魔 Icy；真实来源地点数 10
-pal_027,惊羽雀,地,青铜,机动,地、机动、无、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_027；主附魔 Turbo；真实来源地点数 10
-pal_028,药草兔,水,青铜,治疗,水、龙、治疗、草、风、风系铺场、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出",reward_pT1,,来源对象 bz_van_028；主附魔 Restorative；真实来源地点数 10
-pal_029,黄背牛,水,青铜,坦克,水、地、坦克、无、经济、风、诅咒牵制、召唤、发育,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_重甲抗压",reward_pT1,,来源对象 bz_van_029；主附魔 Shielded；真实来源地点数 10
-pal_030,花刺蛛,水,青铜,坦克,水、地、坦克、草、治疗、风、风系铺场、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_输出, tier_pT3, role_风系铺场",reward_pT1,,来源对象 bz_van_030；主附魔 Shielded；真实来源地点数 10
-pal_031,青背鲵,水,白银,治疗,水、雷、治疗、抗压承伤、后排、增益,宠物,启用,4,pT2,4,4,85,100,90,100,50,elite_high,reward_pT1,,来源对象 bz_van_031；主附魔 Icy；真实来源地点数 1
-pal_032,石甲鲮,雷,白银,机动,雷、机动、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_抗压承伤",reward_pT1,,来源对象 bz_van_032；主附魔 Turbo；真实来源地点数 10
-pal_033,芭蕉熊,雷,青铜,控制,雷、控制、草、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_召唤铺场",reward_pT1,,来源对象 bz_van_033；主附魔 Icy；真实来源地点数 10
-pal_034,蜜纹獾,雷,白银,输出,雷、输出、无、经济、风、远点压制、召唤、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_抗压承伤",reward_pT1,,来源对象 bz_van_034；主附魔 Deadly；真实来源地点数 10
-pal_035,藤巢蜂,水,黄金,控制,水、雷、控制、草、召唤、风、召唤铺场、成长、核心,宠物,启用,4,pT3,6,6,65,100,90,100,40,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_治疗, role_输出, role_风系铺场",reward_pT1,,来源对象 bz_van_035；主附魔 Turbo；真实来源地点数 10
-pal_036,云纹巨驼,火,白银,控制,火、水、控制、无、经济、风、远点压制、召唤、发育,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, tier_pT2, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_036；主附魔 Fiery；真实来源地点数 10
-pal_037,月角白鹿,草,白银,控制,草、控制、无、机动、风、机动压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_坦克, role_控制, special_merchant, role_召唤铺场, role_抗压承伤, role_火系压制",reward_pT2,,来源对象 bz_van_037；主附魔 Icy；真实来源地点数 10
-pal_038,疾风苍鹰,雷,白银,机动,雷、机动、无、风、机动压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_重甲抗压",reward_pT2,,来源对象 bz_van_038；主附魔 Turbo；真实来源地点数 10
-pal_039,银背巨兔,水,白银,机动,水、雷、机动、无、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, role_输出, role_机动, special_merchant, elite_high, role_重甲抗压",reward_pT2,,来源对象 bz_van_039；主附魔 Turbo；真实来源地点数 10
-pal_040,炎角黑羊,水,黄金,坦克,水、雷、坦克、火、暗、输出、火系压制、爆发、前排,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_重甲抗压, role_远点压制",reward_pT2,,来源对象 bz_van_040；主附魔 Turbo；真实来源地点数 10
-pal_041,回春彩蝶,水,白银,控制,水、控制、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_远点压制",reward_pT2,,来源对象 bz_van_041；主附魔 Icy；真实来源地点数 10
-pal_042,赤焰蛮牛,雷,青铜,输出,雷、输出、火、火系压制、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_042；主附魔 Deadly；真实来源地点数 10
-pal_043,泥甲巨鲶,水,黄金,控制,水、雷、控制、地、治疗、土、土系抗压、后排、增益,宠物,启用,4,pT3,6,6,65,70,65,80,40,"night_base, elem_水, elem_雷, elem_地, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_043；主附魔 Icy；真实来源地点数 10
-pal_044,夜羽巨鸦,火,白银,控制,火、冰、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, role_坦克, role_输出, role_机动, tier_pT2, role_抗压承伤, role_风系牵制, role_火系压制",reward_pT2,,来源对象 bz_van_044；主附魔 Fiery；真实来源地点数 10
-pal_045,墨鳞巨蜥,水,白银,机动,水、龙、机动、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, special_merchant",reward_pT2,,来源对象 bz_van_045；主附魔 Turbo；真实来源地点数 10
-pal_046,月镰螳螂,水,青铜,控制,水、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_远点压制",reward_pT2,,来源对象 bz_van_046；主附魔 Icy；真实来源地点数 10
-pal_047,裂空苍鹰,水,青铜,机动,水、机动、无、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_远点压制",reward_pT2,,来源对象 bz_van_047；主附魔 Turbo；真实来源地点数 10
-pal_048,木刺豪猪,水,白银,召唤,水、雷、召唤、草、治疗、风、远点压制、后排、增益,宠物,启用,4,pT2,4,4,85,70,65,80,50,elite_high,reward_pT2,,来源对象 bz_van_048；主附魔 Deadly；真实来源地点数 1
-pal_049,铁臂黑猿,水,青铜,机动,水、龙、机动、无、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_草, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制",reward_pT2,,来源对象 bz_van_049；主附魔 Turbo；真实来源地点数 10
-pal_050,金甲蜂群,雷,青铜,输出,雷、输出、草、召唤、风、召唤铺场、成长、核心,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_050；主附魔 Deadly；真实来源地点数 10
-pal_051,百花巨蜂,暗,青铜,控制,暗、控制、草、治疗、风、远点压制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, special_merchant, role_召唤铺场, role_远点压制",reward_pT2,,来源对象 bz_van_051；主附魔 Icy；真实来源地点数 10
-pal_052,笑面山猫,雷,青铜,输出,雷、输出、无、机动、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_052；主附魔 Deadly；真实来源地点数 10
-pal_053,霜尾雪貂,无,青铜,输出,无、输出、冰、控制、水、水系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, elem_暗, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT2,,来源对象 bz_van_053；主附魔 Deadly；真实来源地点数 10
-pal_054,白眉雪猿,水,白银,控制,水、雷、控制、冰、水系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_机动",reward_pT2,,来源对象 bz_van_054；主附魔 Obsidian；真实来源地点数 10
-pal_055,寒风幼螭,火,白银,机动,火、机动、冰、龙、控制、水、召唤铺场、牵制、范围,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, special_merchant, elite_high, role_重甲抗压",reward_pT2,,来源对象 bz_van_055；主附魔 Turbo；真实来源地点数 10
-pal_056,震角雷牛,无,青铜,输出,无、输出、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_远点压制",reward_pT2,,来源对象 bz_van_056；主附魔 Deadly；真实来源地点数 10
-pal_057,吹雪银狐,冰,白银,控制,冰、控制、水、水系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_远点压制, role_风系牵制",reward_pT2,,来源对象 bz_van_057；主附魔 Icy；真实来源地点数 10
-pal_058,丹角火麟,冰,钻石,控制,冰、水、控制、火、输出、火系压制、爆发、前排,宠物,启用,6,pT4,8,8,40,70,65,80,25,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_控制, role_治疗, role_输出, role_风系铺场, role_风系牵制",reward_pT2,,来源对象 bz_van_058；主附魔 Icy；真实来源地点数 10
-pal_059,冰角白鹿,水,青铜,控制,水、龙、控制、冰、水系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_059；主附魔 Icy；真实来源地点数 10
-pal_060,霹雳战獒,火,白银,输出,火、输出、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, tier_pT2",reward_pT2,,来源对象 bz_van_060；主附魔 Fiery；真实来源地点数 10
-pal_061,苍焰赤豺,雷,白银,控制,雷、控制、火、输出、成长输出、爆发、前排,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, special_merchant, tier_pT1, role_召唤铺场, role_抗压承伤, role_重甲抗压",reward_pT2,,来源对象 bz_van_061；主附魔 Icy；真实来源地点数 10
-pal_062,雷纹巨猿,雷,白银,机动,雷、机动、控制、风、风系牵制、牵制、范围,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_机动, special_merchant, elite_high",reward_pT2,,来源对象 bz_van_062；主附魔 Turbo；真实来源地点数 10
-pal_063,蜃雾白鹿,草,青铜,控制,草、水、控制、无、召唤、风、召唤铺场、成长、核心,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT2,,来源对象 bz_van_063；主附魔 Toxic；真实来源地点数 10
-pal_064,翠冠花螭,雷,白银,机动,雷、龙、机动、草、召唤、风、召唤铺场、成长、核心,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_水, elem_草, elem_雷, elem_地, role_坦克, role_控制, role_治疗, role_风系铺场",reward_pT2,,来源对象 bz_van_064；主附魔 Turbo；真实来源地点数 10
-pal_065,霆角龙犀,暗,白银,控制,暗、控制、雷、龙、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, role_召唤铺场",reward_pT2,,来源对象 bz_van_065；主附魔 Icy；真实来源地点数 10
-pal_066,浪鳞水蛇,地,青铜,输出,地、输出、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT2,,来源对象 bz_van_066；主附魔 Deadly；真实来源地点数 10
-pal_067,沙鳞巨蟒,雷,白银,输出,雷、龙、输出、地、坦克、土、召唤铺场、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_重甲抗压",reward_pT2,,来源对象 bz_van_067；主附魔 Deadly；真实来源地点数 10
-pal_068,食梦黑貘,雷,白银,控制,雷、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_坦克, role_控制, special_merchant, tier_pT1, role_召唤铺场, role_抗压承伤",reward_pT2,,来源对象 bz_van_068；主附魔 Icy；真实来源地点数 10
-pal_069,碎岩巨龟,龙,青铜,输出,龙、输出、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT2,,来源对象 bz_van_069；主附魔 Deadly；真实来源地点数 10
-pal_070,猫翼夜蝠,水,青铜,治疗,水、地、治疗、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_坦克, role_控制, role_输出, tier_pT3",reward_pT2,,来源对象 bz_van_070；主附魔 Restorative；真实来源地点数 10
-pal_071,甘露壁虎,火,青铜,输出,火、输出、无、治疗、风、远点压制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT2, role_远点压制",reward_pT2,,来源对象 bz_van_071；主附魔 Fiery；真实来源地点数 10
-pal_072,赤巢火蚁,火,黄金,控制,火、水、控制、召唤、召唤铺场、成长、核心,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, tier_pT2, role_召唤铺场",reward_pT2,,来源对象 bz_van_072；主附魔 Fiery；真实来源地点数 10
-pal_073,烽翼火龙,龙,白银,经济,龙、经济、火、暗、机动、火系压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_073；主附魔 Golden；真实来源地点数 10
-pal_074,霜翼冥龙,火,青铜,控制,火、水、控制、冰、暗、水系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, role_坦克, role_输出, role_机动, special_merchant, tier_pT2, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_074；主附魔 Fiery；真实来源地点数 10
-pal_075,赤刃螳螂,水,青铜,机动,水、雷、机动、火、输出、火系压制、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_草, elem_雷, elem_无, role_坦克, role_控制, role_输出, tier_pT1, role_机动压制",reward_pT2,,来源对象 bz_van_075；主附魔 Deadly；真实来源地点数 10
-pal_076,迅雷金雕,水,白银,坦克,水、地、坦克、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, role_坦克, role_输出, special_merchant, elite_high, tier_pT3, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_076；主附魔 Icy；真实来源地点数 10
-pal_077,燧火黑乌,火,白银,输出,火、雷、输出、机动、火系压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_机动, tier_pT2",reward_pT2,,来源对象 bz_van_077；主附魔 Fiery；真实来源地点数 10
-pal_078,幽泉灵猫,水,青铜,召唤,水、龙、召唤、暗、治疗、土、土系抗压、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_机动压制",reward_pT2,,来源对象 bz_van_078；主附魔 Deadly；真实来源地点数 10
-pal_079,焰尾山狐,雷,白银,坦克,雷、地、坦克、火、输出、成长输出、爆发、前排,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, elem_龙, role_召唤, role_坦克, role_控制, role_机动, tier_pT3",reward_pT2,,来源对象 bz_van_079；主附魔 Shielded；真实来源地点数 10
-pal_080,踏春白兔,水,白银,控制,水、龙、控制、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_080；主附魔 Icy；真实来源地点数 10
-pal_081,药香花鹿,火,白银,输出,火、雷、输出、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, tier_pT1, tier_pT2, role_抗压承伤, role_重甲抗压",reward_pT2,,来源对象 bz_van_081；主附魔 Fiery；真实来源地点数 10
-pal_082,冰丝巨蛾,龙,白银,经济,龙、经济、冰、治疗、水、水系牵制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_机动, role_机动压制",reward_pT2,,来源对象 bz_van_082；主附魔 Golden；真实来源地点数 10
-pal_083,云鳞幼螭,水,青铜,坦克,水、雷、坦克、龙、召唤、风、召唤铺场、成长、核心,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, elem_龙, role_召唤, role_坦克, role_控制, role_输出, tier_pT3",reward_pT2,,来源对象 bz_van_083；主附魔 Turbo；真实来源地点数 10
-pal_084,沧浪青蛟,火,青铜,机动,火、龙、机动、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_草, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, tier_pT2, role_机动压制",reward_pT2,,来源对象 bz_van_084；主附魔 Fiery；真实来源地点数 10
-pal_085,涌泉水獭,雷,青铜,召唤,雷、地、召唤、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_机动压制",reward_pT2,,来源对象 bz_van_085；主附魔 Deadly；真实来源地点数 10
-pal_086,赤炎狻猊,龙,黄金,机动,龙、机动、火、输出、火系压制、爆发、前排,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, elite_high",reward_pT2,,来源对象 bz_van_086；主附魔 Turbo；真实来源地点数 10
-pal_087,碧海青蛟,草,青铜,机动,草、水、机动、龙、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_机动压制",reward_pT2,,来源对象 bz_van_087；主附魔 Turbo；真实来源地点数 10
-pal_088,冰棘豪猪,雷,黄金,输出,雷、输出、冰、坦克、水、抗压承伤、防御、前排、阻挡,宠物,启用,4,pT3,6,6,65,70,65,80,40,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_机动",reward_pT2,,来源对象 bz_van_088；主附魔 Deadly；真实来源地点数 10
-pal_089,狱火凶獒,火,青铜,输出,火、雷、输出、重甲抗压、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_机动, tier_pT2",reward_pT2,,来源对象 bz_van_089；主附魔 Fiery；真实来源地点数 10
-pal_090,三首火犬,水,白银,机动,水、雷、机动、火、暗、输出、召唤铺场、爆发、前排,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_输出, role_机动, role_风系铺场",reward_pT2,,来源对象 bz_van_090；主附魔 Turbo；真实来源地点数 10
-pal_091,覆水龙龟,雷,青铜,输出,雷、输出、龙、水、坦克、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_机动, role_远点压制",reward_pT2,,来源对象 bz_van_091；主附魔 Deadly；真实来源地点数 10
-pal_092,雷泽青蛟,火,黄金,治疗,火、水、治疗、龙、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,4,pT3,6,6,65,70,65,80,40,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT2",reward_pT2,,来源对象 bz_van_092；主附魔 Fiery；真实来源地点数 10
-pal_093,连理双鹿,草,白银,控制,草、水、控制、召唤、风、召唤铺场、成长、核心,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT2,,来源对象 bz_van_093；主附魔 Toxic；真实来源地点数 10
-pal_094,海棠水鹿,雷,青铜,输出,雷、输出、草、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_机动, tier_pT1, role_远点压制",reward_pT2,,来源对象 bz_van_094；主附魔 Deadly；真实来源地点数 10
-pal_095,百花灵鹿,雷,白银,输出,雷、输出、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_095；主附魔 Deadly；真实来源地点数 10
-pal_096,熔岩巨兽,雷,青铜,输出,雷、输出、火、地、坦克、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_096；主附魔 Deadly；真实来源地点数 10
-pal_097,寒岩巨兽,雷,青铜,输出,雷、输出、冰、地、坦克、水、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_097；主附魔 Deadly；真实来源地点数 10
-pal_098,云顶巨驼,水,黄金,机动,水、雷、机动、无、经济、风、夹击牵制、召唤、发育,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_火, elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_输出, special_merchant",reward_pT2,,来源对象 bz_van_098；主附魔 Turbo；真实来源地点数 10
-pal_099,冰峰巨驼,草,白银,控制,草、水、控制、冰、坦克、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, tier_pT1, role_火系压制",reward_pT2,,来源对象 bz_van_099；主附魔 Toxic；真实来源地点数 10
-pal_100,青林巨象,水,青铜,坦克,水、地、坦克、草、风、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, elem_龙, role_召唤, role_坦克, role_控制, role_输出, tier_pT3",reward_pT2,,来源对象 bz_van_100；主附魔 Shielded；真实来源地点数 10
-pal_101,白牙雪象,水,白银,控制,水、龙、控制、冰、坦克、重甲抗压、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_召唤铺场",reward_pT2,,来源对象 bz_van_101；主附魔 Icy；真实来源地点数 10
-pal_102,白绒雪猿,暗,白银,机动,暗、龙、机动、冰、坦克、水、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, special_merchant, role_机动压制",reward_pT2,,来源对象 bz_van_102；主附魔 Turbo；真实来源地点数 10
-pal_103,绿苔巨猿,水,青铜,治疗,水、治疗、草、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出",reward_pT2,,来源对象 bz_van_103；主附魔 Restorative；真实来源地点数 10
-pal_104,铁甲巨兕,水,白银,机动,水、雷、机动、地、草、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, tier_pT1",reward_pT2,,来源对象 bz_van_104；主附魔 Turbo；真实来源地点数 10
-pal_105,云海白鹿,水,青铜,输出,水、输出、无、机动、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_经济",reward_pT2,,来源对象 bz_van_105；主附魔 Deadly；真实来源地点数 10
-pal_106,夜幕巨蝠,草,白银,控制,草、水、控制、暗、坦克、土、召唤铺场、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT2,,来源对象 bz_van_106；主附魔 Toxic；真实来源地点数 10
-pal_107,天羽云螭,水,钻石,召唤,水、龙、召唤、机动、风、机动压制、灵活、泛用,宠物,启用,6,pT4,8,8,40,70,65,80,25,"elem_火, elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_控制, role_治疗, role_输出, role_风系铺场",reward_pT2,,来源对象 bz_van_107；主附魔 Radiant；真实来源地点数 10
-pal_108,焰羽赤雕,雷,青铜,输出,雷、输出、火、火系重压、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_重甲抗压",reward_pT2,,来源对象 bz_van_108；主附魔 Deadly；真实来源地点数 10
-pal_109,冥羽黑乌,雷,白银,控制,雷、控制、暗、机动、土、土系抗压、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_机动, special_merchant, elite_high, role_召唤铺场",reward_pT2,,来源对象 bz_van_109；主附魔 Icy；真实来源地点数 10
-pal_110,渊鳞黑蛟,雷,青铜,输出,雷、输出、龙、暗、坦克、土、诅咒牵制、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_远点压制",reward_pT2,,来源对象 bz_van_110；主附魔 Deadly；真实来源地点数 10
-pal_111,毒甲蝎将,雷,青铜,输出,雷、输出、暗、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,32,30,45,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT3,,来源对象 bz_van_111；主附魔 Deadly；真实来源地点数 10
-pal_112,石猿战将,火,黄金,控制,火、冰、控制、地、输出、土、土系抗压、爆发、前排,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, role_坦克, role_控制, role_输出, tier_pT2, role_机动压制, role_风系牵制, role_火系压制",reward_pT3,,来源对象 bz_van_112；主附魔 Fiery；真实来源地点数 10
-pal_113,覆海蛟王,水,黄金,输出,水、输出、龙、治疗、水系牵制、后排、增益,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, elite_high",reward_pT3,,来源对象 bz_van_113；主附魔 Deadly；真实来源地点数 10
-pal_114,赤焰龙君,雷,黄金,控制,雷、控制、龙、火、输出、火系重压、爆发、前排,宠物,启用,4,pT3,6,6,65,32,30,45,40,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, special_merchant, tier_pT1, role_召唤铺场, role_远点压制",reward_pT3,,来源对象 bz_van_114；主附魔 Icy；真实来源地点数 10
-pal_115,南明朱雀,雷,青铜,机动,雷、龙、机动、火、火系压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,32,30,45,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, special_merchant, tier_pT1, role_远点压制",reward_pT3,,来源对象 bz_van_115；主附魔 Turbo；真实来源地点数 10
-pal_116,净瓶青鸾,龙,白银,机动,龙、机动、水、治疗、水系牵制、后排、增益,宠物,启用,2,pT2,4,4,85,32,30,45,50,"elem_火, elem_水, elem_草, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_抗压承伤, role_风系铺场",reward_pT3,,来源对象 bz_van_116；主附魔 Deadly；真实来源地点数 10
-pal_117,九霄熊王,冰,白银,坦克,冰、水、坦克、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,32,30,45,50,"night_base, elem_火, elem_水, elem_雷, elem_地, role_坦克, role_控制, role_输出, tier_pT3, role_抗压承伤",reward_pT3,,来源对象 bz_van_117；主附魔 Icy；真实来源地点数 10
-pal_118,百花鹿仙,水,白银,坦克,水、地、坦克、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,32,30,45,50,"elem_火, elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_抗压承伤",reward_pT3,,来源对象 bz_van_118；主附魔 Turbo；真实来源地点数 10
-pal_119,黑月狐姬,水,白银,机动,水、机动、暗、治疗、土、土系抗压、后排、增益,宠物,启用,2,pT2,4,4,85,32,30,45,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, role_抗压承伤",reward_pT3,,来源对象 bz_van_119；主附魔 Turbo；真实来源地点数 10
-pal_120,火云鹏王,水,黄金,治疗,水、雷、治疗、火、机动、火系压制、灵活、泛用,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, tier_pT1, tier_pT3, role_重甲抗压",reward_pT3,,来源对象 bz_van_120；主附魔 Restorative；真实来源地点数 10
-pal_121,雷泽龙王,暗,青铜,输出,暗、输出、龙、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,32,30,45,60,"night_base, elem_火, elem_雷, elem_地, elem_暗, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT3,,来源对象 bz_van_121；主附魔 Deadly；真实来源地点数 10
-pal_122,玄羽雕尊,水,黄金,治疗,水、雷、治疗、暗、机动、土、土系抗压、灵活、泛用,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_治疗, role_机动, role_风系铺场",reward_pT3,,来源对象 bz_van_122；主附魔 Restorative；真实来源地点数 10
-pal_123,白象护法,雷,黄金,输出,雷、输出、无、坦克、风、重甲抗压、防御、前排、阻挡,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_机动, tier_pT1",reward_pT3,,来源对象 bz_van_123；主附魔 Deadly；真实来源地点数 10
-pal_124,混世魔猿,雷,青铜,输出,雷、输出、暗、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,4,pT1,2,2,100,32,30,45,60,elite_high,"reward_pT3, reward_elite",,来源对象 bz_van_124；主附魔 Deadly；真实来源地点数 1
-pal_125,寒狮妖王,水,白银,输出,水、雷、输出、冰、控制、水系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,32,30,45,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_输出, role_机动, role_抗压承伤",reward_pT3,,来源对象 bz_van_125；主附魔 Deadly；真实来源地点数 10
-pal_126,幽冥獒王,水,黄金,机动,水、雷、机动、暗、控制、土、土系抗压、牵制、范围,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_火, elem_水, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制",reward_pT3,,来源对象 bz_van_126；主附魔 Turbo；真实来源地点数 10
-pal_127,九天龙君,火,白银,机动,火、雷、机动、龙、风、机动压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,32,30,45,50,"night_base, elem_水, elem_雷, elem_地, role_坦克, role_控制, special_merchant, elite_high, tier_pT2, role_风系铺场","reward_pT3, reward_elite",,来源对象 bz_van_127；主附魔 Fiery；真实来源地点数 10
-pal_128,星貂王,无,黄金,控制,无、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, role_召唤铺场",reward_pT3,,来源对象 bz_van_128；主附魔 Icy；真实来源地点数 10
-pal_129,渊鹤王,水,黄金,治疗,水、治疗,宠物,启用,4,pT3,6,6,65,100,100,100,40,"night_base, elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场",reward_pT3,,来源对象 bz_van_129；主附魔 Icy；真实来源地点数 10
-pal_130,潮甲君,水,黄金,坦克,水、雷、坦克,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_召唤, role_坦克, role_控制, role_输出, tier_pT3",reward_pT3,,来源对象 bz_van_130；主附魔 Turbo；真实来源地点数 10
-pal_131,碧蜂妖,水,白银,召唤,水、雷、召唤,宠物,启用,2,pT2,4,4,85,100,100,100,50,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_输出, tier_pT1, role_机动压制",reward_pT2,,来源对象 bz_van_131；主附魔 Deadly；真实来源地点数 10
-pal_132,烬隼童,火,青铜,输出,火、水、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, tier_pT2",reward_pT1,,来源对象 bz_van_132；主附魔 Fiery；真实来源地点数 10
-pal_133,雷貉卫,雷,白银,经济,雷、经济,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, tier_pT1",reward_pT2,,来源对象 bz_van_133；主附魔 Deadly；真实来源地点数 10
-pal_134,沧雀卫,水,白银,机动,水、雷、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_输出, special_merchant, elite_high",reward_pT2,,来源对象 bz_van_134；主附魔 Turbo；真实来源地点数 10
-pal_135,赤蝎精,火,白银,控制,火、冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_冰, role_坦克, role_控制, special_merchant, tier_pT2, role_召唤铺场, role_风系牵制, role_火系压制",reward_pT2,,来源对象 bz_van_135；主附魔 Fiery；真实来源地点数 10
-pal_136,沧熊童,水,青铜,坦克,水、地、坦克,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_抗压承伤, role_重甲抗压",reward_pT1,,来源对象 bz_van_136；主附魔 Turbo；真实来源地点数 10
-pal_137,雪貂童,冰,青铜,控制,冰、草、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_火, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, role_机动压制, role_风系牵制, role_火系压制",reward_pT1,,来源对象 bz_van_137；主附魔 Icy；真实来源地点数 10
-pal_138,烬蜂童,火,青铜,机动,火、水、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"night_base, elem_火, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, tier_pT2, role_机动压制",reward_pT1,,来源对象 bz_van_138；主附魔 Fiery；真实来源地点数 10
-pal_139,雷鲭王,雷,黄金,机动,雷、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, special_merchant",reward_pT3,,来源对象 bz_van_139；主附魔 Turbo；真实来源地点数 5
-pal_140,冥雀卫,暗,白银,经济,暗、经济,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无",reward_pT2,,来源对象 bz_van_140；主附魔 Golden；真实来源地点数 4
-pal_141,沧鸾仔,水,青铜,治疗,水、地、治疗,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, tier_pT2",reward_pT1,,来源对象 bz_van_141；主附魔 Restorative；真实来源地点数 6
-pal_142,霆螳灵,雷,青铜,输出,雷、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_142；主附魔 Deadly；真实来源地点数 5
-pal_143,山熊卫,地,白银,坦克,地、龙、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT2,,来源对象 bz_van_143；主附魔 Shielded；真实来源地点数 5
-pal_144,沧燕侯,水,黄金,机动,水、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_144；主附魔 Turbo；真实来源地点数 4
-pal_145,螭蜂妖,龙,白银,召唤,龙、召唤,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无",reward_pT2,,来源对象 bz_van_145；主附魔 Deadly；真实来源地点数 4
-pal_146,沧鲤将,水,白银,治疗,水、地、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_146；主附魔 Turbo；真实来源地点数 6
-pal_147,沙狮神,地,钻石,输出,地、输出,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_147；主附魔 Deadly；真实来源地点数 3
-pal_148,震狼君,雷,黄金,输出,雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_148；主附魔 Deadly；真实来源地点数 4
-pal_149,渊鹿妖,水,白银,治疗,水、雷、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_149；主附魔 Turbo；真实来源地点数 5
-pal_150,汐蝶卫,水,白银,治疗,水、地、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_150；主附魔 Turbo；真实来源地点数 5
-pal_151,电鹰君,雷,黄金,输出,雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_151；主附魔 Deadly；真实来源地点数 4
-pal_152,鸣鳗王,雷,黄金,控制,雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_经济, tier_pT1",reward_pT3,,来源对象 bz_van_152；主附魔 Icy；真实来源地点数 6
-pal_153,震狐卫,雷,白银,机动,雷、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_153；主附魔 Turbo；真实来源地点数 5
-pal_154,朱蛛将,火,白银,控制,火、草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, role_输出",reward_pT2,,来源对象 bz_van_154；主附魔 Fiery；真实来源地点数 6
-pal_155,沧鲤祖,水,钻石,治疗,水、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_155；主附魔 Deadly；真实来源地点数 3
-pal_156,角马王,龙,黄金,机动,龙、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_156；主附魔 Turbo；真实来源地点数 3
-pal_157,焰鹰妖,火,白银,输出,火、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_157；主附魔 Fiery；真实来源地点数 5
-pal_158,澜蜂尊,水,黄金,机动,水、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_158；主附魔 Turbo；真实来源地点数 6
-pal_159,凝鳗卫,冰,白银,控制,冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, role_经济",reward_pT2,,来源对象 bz_van_159；主附魔 Icy；真实来源地点数 6
-pal_160,青鳗君,草,黄金,控制,草、雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_输出, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_160；主附魔 Icy；真实来源地点数 6
-pal_161,电鹰童,雷,青铜,输出,雷、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_坦克",reward_pT1,,来源对象 bz_van_161；主附魔 Deadly；真实来源地点数 6
-pal_162,澜鲨童,水,青铜,输出,水、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_地, elem_龙, elem_无",reward_pT1,,来源对象 bz_van_162；主附魔 Deadly；真实来源地点数 5
-pal_163,石甲将,地,白银,坦克,地、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_召唤铺场",reward_pT2,,来源对象 bz_van_163；主附魔 Shielded；真实来源地点数 6
-pal_164,朱蛛侯,火,黄金,控制,火、草、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_治疗, role_输出",reward_pT3,,来源对象 bz_van_164；主附魔 Fiery；真实来源地点数 6
-pal_165,渊猿王,水,黄金,机动,水、雷、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_坦克, tier_pT1",reward_pT3,,来源对象 bz_van_165；主附魔 Turbo；真实来源地点数 6
-pal_166,焰蚌圣,火,钻石,治疗,火、冰、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙",reward_pT4,,来源对象 bz_van_166；主附魔 Fiery；真实来源地点数 2
-pal_167,渊兔妖,水,白银,治疗,水、雷、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_167；主附魔 Restorative；真实来源地点数 5
-pal_168,澜兔祖,水,钻石,治疗,水、地、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_168；主附魔 Restorative；真实来源地点数 3
-pal_169,朱鹤将,火,白银,治疗,火、水、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_169；主附魔 Fiery；真实来源地点数 5
-pal_170,青蝎卫,草,白银,控制,草、雷、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_输出",reward_pT2,,来源对象 bz_van_170；主附魔 Toxic；真实来源地点数 6
-pal_171,赤狼童,火,青铜,输出,火、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT1,,来源对象 bz_van_171；主附魔 Fiery；真实来源地点数 5
-pal_172,森蟒仔,草,青铜,控制,草、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT1,,来源对象 bz_van_172；主附魔 Toxic；真实来源地点数 5
-pal_173,燎鹰兽,火,青铜,输出,火、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT1,,来源对象 bz_van_173；主附魔 Fiery；真实来源地点数 5
-pal_174,焰狼将,火,白银,输出,火、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_174；主附魔 Fiery；真实来源地点数 5
-pal_175,电豹尊,雷,黄金,输出,雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_175；主附魔 Deadly；真实来源地点数 4
-pal_176,电螳精,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_176；主附魔 Deadly；真实来源地点数 5
-pal_177,霆狼卫,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_177；主附魔 Deadly；真实来源地点数 5
-pal_178,闪鲲妖,雷,白银,召唤,雷、龙、召唤,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_178；主附魔 Deadly；真实来源地点数 5
-pal_179,震鹰王,雷,黄金,输出,雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, tier_pT1",reward_pT3,,来源对象 bz_van_179；主附魔 Deadly；真实来源地点数 5
-pal_180,鸣马王,雷,黄金,机动,雷、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_180；主附魔 Turbo；真实来源地点数 6
-pal_181,碧兔神,水,钻石,治疗,水、雷、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙, role_召唤",reward_pT4,,来源对象 bz_van_181；主附魔 Restorative；真实来源地点数 4
-pal_182,渊蚁皇,水,钻石,召唤,水、龙、召唤,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙",reward_pT4,,来源对象 bz_van_182；主附魔 Radiant；真实来源地点数 3
-pal_183,垒牦灵,地,青铜,坦克,地、坦克,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT1,,来源对象 bz_van_183；主附魔 Shielded；真实来源地点数 5
-pal_184,雷鹰将,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, tier_pT1",reward_pT2,,来源对象 bz_van_184；主附魔 Deadly；真实来源地点数 6
-pal_185,烬鳗将,火,白银,控制,火、冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, role_治疗",reward_pT2,,来源对象 bz_van_185；主附魔 Fiery；真实来源地点数 6
-pal_186,角豹神,龙,钻石,输出,龙、输出,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_186；主附魔 Deadly；真实来源地点数 4
-pal_187,雷鹰卫,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT1",reward_pT2,,来源对象 bz_van_187；主附魔 Deadly；真实来源地点数 5
-pal_188,岩獒精,地,白银,坦克,地、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT2,,来源对象 bz_van_188；主附魔 Shielded；真实来源地点数 5
-pal_189,烬鹿祖,火,钻石,治疗,火、草、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, tier_pT2",reward_pT4,,来源对象 bz_van_189；主附魔 Fiery；真实来源地点数 3
-pal_190,潮鹤精,水,白银,治疗,水、地、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant, tier_pT2",reward_pT2,,来源对象 bz_van_190；主附魔 Turbo；真实来源地点数 6
-pal_191,焰豹将,火,白银,输出,火、雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, tier_pT1",reward_pT2,,来源对象 bz_van_191；主附魔 Fiery；真实来源地点数 6
-pal_192,赤鼋妖,火,白银,坦克,火、地、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_192；主附魔 Fiery；真实来源地点数 5
-pal_193,雷狼卫,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_坦克",reward_pT2,,来源对象 bz_van_193；主附魔 Deadly；真实来源地点数 6
-pal_194,电虎侯,雷,黄金,输出,雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_194；主附魔 Deadly；真实来源地点数 4
-pal_195,燎狼将,火,白银,输出,火、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_195；主附魔 Fiery；真实来源地点数 5
-pal_196,凛鳗王,冰,黄金,控制,冰、雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_控制, tier_pT1",reward_pT3,,来源对象 bz_van_196；主附魔 Icy；真实来源地点数 6
-pal_197,寒狐祖,冰,钻石,控制,冰、控制,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_197；主附魔 Icy；真实来源地点数 3
-pal_198,赤虎仔,火,青铜,输出,火、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT1,,来源对象 bz_van_198；主附魔 Fiery；真实来源地点数 5
-pal_199,藤貂仔,草,青铜,控制,草、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT1,,来源对象 bz_van_199；主附魔 Toxic；真实来源地点数 5
-pal_200,烬豹侯,火,黄金,输出,火、雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_治疗",reward_pT3,,来源对象 bz_van_200；主附魔 Fiery；真实来源地点数 5
-pal_201,潮鸾卫,水,白银,治疗,水、雷、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_召唤, tier_pT2",reward_pT2,,来源对象 bz_van_201；主附魔 Restorative；真实来源地点数 7
-pal_202,苔狐侯,草,黄金,控制,草、雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_输出",reward_pT3,,来源对象 bz_van_202；主附魔 Toxic；真实来源地点数 5
-pal_203,霆熊卫,雷,白银,坦克,雷、地、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_召唤铺场",reward_pT2,,来源对象 bz_van_203；主附魔 Shielded；真实来源地点数 6
-pal_204,闪鲨将,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_坦克",reward_pT2,,来源对象 bz_van_204；主附魔 Deadly；真实来源地点数 6
-pal_205,雷隼卫,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_205；主附魔 Deadly；真实来源地点数 6
-pal_206,霜狐卫,冰,白银,控制,冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制",reward_pT2,,来源对象 bz_van_206；主附魔 Icy；真实来源地点数 5
-pal_207,森蛇童,草,青铜,控制,草、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT1,,来源对象 bz_van_207；主附魔 Toxic；真实来源地点数 5
-pal_208,冰蛙将,冰,白银,控制,冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, special_merchant",reward_pT2,,来源对象 bz_van_208；主附魔 Icy；真实来源地点数 6
-pal_209,夜貉精,暗,白银,经济,暗、经济,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_209；主附魔 Golden；真实来源地点数 5
-pal_210,震豹童,雷,青铜,输出,雷、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_210；主附魔 Deadly；真实来源地点数 5
-pal_211,夜雀皇,暗,钻石,机动,暗、机动,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_211；主附魔 Turbo；真实来源地点数 3
-pal_212,沧鹤妖,水,白银,治疗,水、地、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT2",reward_pT2,,来源对象 bz_van_212；主附魔 Restorative；真实来源地点数 5
-pal_213,震鹰童,雷,青铜,输出,雷、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_213；主附魔 Deadly；真实来源地点数 5
-pal_214,角鲨兽,龙,青铜,输出,龙、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT1,,来源对象 bz_van_214；主附魔 Deadly；真实来源地点数 5
-pal_215,角隼尊,龙,黄金,机动,龙、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, special_merchant",reward_pT3,,来源对象 bz_van_215；主附魔 Turbo；真实来源地点数 4
-pal_216,霆鲭将,雷,白银,机动,雷、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无",reward_pT2,,来源对象 bz_van_216；主附魔 Turbo；真实来源地点数 4
-pal_217,震雀将,雷,白银,经济,雷、经济,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_217；主附魔 Golden；真实来源地点数 5
-pal_218,赤鹤皇,火,钻石,治疗,火、水、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_治疗",reward_pT4,,来源对象 bz_van_218；主附魔 Fiery；真实来源地点数 3
-pal_219,霆狼妖,雷,白银,输出,雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, tier_pT1",reward_pT2,,来源对象 bz_van_219；主附魔 Deadly；真实来源地点数 6
-pal_220,碧雀君,水,黄金,机动,水、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_220；主附魔 Turbo；真实来源地点数 4
-pal_221,霆虎神,雷,钻石,输出,雷、输出,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙, role_坦克, tier_pT1",reward_pT4,,来源对象 bz_van_221；主附魔 Deadly；真实来源地点数 5
-pal_222,雷猿王,雷,黄金,机动,雷、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_222；主附魔 Turbo；真实来源地点数 5
-pal_223,燎蚌皇,火,钻石,治疗,火、水、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_治疗, tier_pT2",reward_pT4,,来源对象 bz_van_223；主附魔 Fiery；真实来源地点数 4
-pal_224,夜蝎卫,暗,白银,控制,暗、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_经济",reward_pT2,,来源对象 bz_van_224；主附魔 Icy；真实来源地点数 5
-pal_225,星隼精,无,白银,输出,无、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_225；主附魔 Deadly；真实来源地点数 5
-pal_226,潮雀妖,水,白银,机动,水、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_226；主附魔 Turbo；真实来源地点数 6
-pal_227,蛟蛙侯,龙,黄金,控制,龙、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_227；主附魔 Icy；真实来源地点数 5
-pal_228,凛蝎卫,冰,白银,控制,冰、草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, role_输出",reward_pT2,,来源对象 bz_van_228；主附魔 Icy；真实来源地点数 6
-pal_229,闪狼侯,雷,黄金,输出,雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, tier_pT1",reward_pT3,,来源对象 bz_van_229；主附魔 Deadly；真实来源地点数 5
-pal_230,震隼灵,雷,青铜,输出,雷、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_230；主附魔 Deadly；真实来源地点数 5
-pal_231,苔蛛将,草,白银,控制,草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT2,,来源对象 bz_van_231；主附魔 Toxic；真实来源地点数 5
-pal_232,汐羊王,水,黄金,治疗,水、雷、治疗,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_坦克",reward_pT3,,来源对象 bz_van_232；主附魔 Deadly；真实来源地点数 5
-pal_233,山象王,地,黄金,坦克,地、坦克,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤铺场",reward_pT3,,来源对象 bz_van_233；主附魔 Turbo；真实来源地点数 4
-pal_234,寒蟒卫,冰,白银,控制,冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, special_merchant",reward_pT2,,来源对象 bz_van_234；主附魔 Icy；真实来源地点数 6
-pal_235,朱鲭将,火,白银,机动,火、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, special_merchant",reward_pT2,,来源对象 bz_van_235；主附魔 Fiery；真实来源地点数 6
-pal_236,寒鹰祖,冰,钻石,输出,冰、输出,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙",reward_pT4,,来源对象 bz_van_236；主附魔 Shiny；真实来源地点数 2
-pal_237,寒蝎尊,冰,黄金,控制,冰、雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_控制",reward_pT3,,来源对象 bz_van_237；主附魔 Icy；真实来源地点数 5
-pal_238,石甲兽,地,青铜,坦克,地、坦克,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT1,,来源对象 bz_van_238；主附魔 Shielded；真实来源地点数 5
-pal_239,沧鹤神,水,钻石,治疗,水、地、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙",reward_pT4,,来源对象 bz_van_239；主附魔 Turbo；真实来源地点数 3
-pal_240,碧蚌将,水,白银,治疗,水、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT2",reward_pT2,,来源对象 bz_van_240；主附魔 Mossy；真实来源地点数 5
-pal_241,墨蝎王,暗,黄金,控制,暗、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_241；主附魔 Obsidian；真实来源地点数 3
-pal_242,鸣螳仔,雷,青铜,输出,雷、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_242；主附魔 Deadly；真实来源地点数 5
-pal_243,岩豹兽,地,青铜,输出,地、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT1,,来源对象 bz_van_243；主附魔 Deadly；真实来源地点数 5
-pal_244,雷蛛妖,雷,白银,控制,雷、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_经济, special_merchant",reward_pT2,,来源对象 bz_van_244；主附魔 Icy；真实来源地点数 6
-pal_245,角蛙君,龙,黄金,控制,龙、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_经济",reward_pT3,,来源对象 bz_van_245；主附魔 Icy；真实来源地点数 4
-pal_246,燎隼精,火,白银,机动,火、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, special_merchant",reward_pT2,,来源对象 bz_van_246；主附魔 Fiery；真实来源地点数 6
-pal_247,潮羊卫,水,白银,治疗,水、地、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT2",reward_pT2,,来源对象 bz_van_247；主附魔 Restorative；真实来源地点数 5
-pal_248,岳熊精,地,白银,坦克,地、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_召唤铺场",reward_pT2,,来源对象 bz_van_248；主附魔 Shielded；真实来源地点数 6
-pal_249,霆鲨皇,雷,钻石,输出,雷、输出,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_召唤, role_坦克",reward_pT4,,来源对象 bz_van_249；主附魔 Deadly；真实来源地点数 4
-pal_250,霜貂卫,冰,白银,控制,冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_控制",reward_pT2,,来源对象 bz_van_250；主附魔 Icy；真实来源地点数 6
-pal_251,霆牦王,雷,黄金,坦克,雷、地、坦克,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_251；主附魔 Turbo；真实来源地点数 5
-pal_252,炎蛛尊,火,黄金,控制,火、草、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_治疗, role_输出, special_merchant",reward_pT3,,来源对象 bz_van_252；主附魔 Fiery；真实来源地点数 6
-pal_253,炎鳗精,火,白银,控制,火、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_经济",reward_pT2,,来源对象 bz_van_253；主附魔 Icy；真实来源地点数 6
-pal_254,赤蟒王,火,黄金,控制,火、雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_治疗, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_254；主附魔 Fiery；真实来源地点数 6
-pal_255,电蟒精,雷,白银,控制,雷、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_经济",reward_pT2,,来源对象 bz_van_255；主附魔 Icy；真实来源地点数 6
-pal_256,震隼将,雷,白银,机动,雷、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, special_merchant",reward_pT2,,来源对象 bz_van_256；主附魔 Turbo；真实来源地点数 6
-pal_257,翠隼将,草,白银,输出,草、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_257；主附魔 Deadly；真实来源地点数 6
-pal_258,汐蝶精,水,白银,治疗,水、地、治疗,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_经济",reward_pT2,,来源对象 bz_van_258；主附魔 Icy；真实来源地点数 5
-pal_259,朱雀妖,火,白银,机动,火、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, special_merchant",reward_pT2,,来源对象 bz_van_259；主附魔 Turbo；真实来源地点数 6
-pal_260,云隼兽,无,青铜,输出,无、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT1,,来源对象 bz_van_260；主附魔 Deadly；真实来源地点数 5
-pal_261,寒貂卫,冰,白银,控制,冰、雷、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_控制",reward_pT2,,来源对象 bz_van_261；主附魔 Icy；真实来源地点数 6
-pal_262,澜象将,水,白银,坦克,水、地、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克, role_召唤铺场",reward_pT2,,来源对象 bz_van_262；主附魔 Shielded；真实来源地点数 7
-pal_263,沙鹰仔,地,青铜,输出,地、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无",reward_pT1,,来源对象 bz_van_263；主附魔 Heavy；真实来源地点数 4
-pal_264,蛟鲨精,龙,白银,输出,龙、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_264；主附魔 Deadly；真实来源地点数 5
-pal_265,电狐王,雷,黄金,控制,雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_265；主附魔 Icy；真实来源地点数 6
-pal_266,沧狮将,水,白银,输出,水、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_266；主附魔 Deadly；真实来源地点数 6
-pal_267,炎鲭侯,火,黄金,机动,火、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_267；主附魔 Turbo；真实来源地点数 3
-pal_268,石牦灵,地,青铜,坦克,地、坦克,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT1,,来源对象 bz_van_268；主附魔 Shielded；真实来源地点数 5
-pal_269,焰蝎妖,火,白银,控制,火、草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, role_输出",reward_pT2,,来源对象 bz_van_269；主附魔 Fiery；真实来源地点数 6
-pal_270,芽蛛将,草,白银,控制,草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_输出",reward_pT2,,来源对象 bz_van_270；主附魔 Toxic；真实来源地点数 6
-pal_271,青蛇将,草,白银,控制,草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT2,,来源对象 bz_van_271；主附魔 Toxic；真实来源地点数 5
-pal_272,芽貂卫,草,白银,控制,草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_输出, special_merchant",reward_pT2,,来源对象 bz_van_272；主附魔 Toxic；真实来源地点数 6
-pal_273,燎鹰卫,火,白银,输出,火、雷、输出,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_治疗",reward_pT2,,来源对象 bz_van_273；主附魔 Fiery；真实来源地点数 6
-pal_274,苔貂王,草,黄金,控制,草、雷、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, role_输出, special_merchant",reward_pT3,,来源对象 bz_van_274；主附魔 Toxic；真实来源地点数 6
-pal_275,青鹿祖,草,钻石,治疗,草、水、治疗,宠物,启用,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_输出, tier_pT2",reward_pT4,,来源对象 bz_van_275；主附魔 Toxic；真实来源地点数 4
-pal_276,焰蟾卫,火,白银,召唤,火、龙、召唤,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_276；主附魔 Fiery；真实来源地点数 5
-pal_277,克诺大兽,地,白银,机动,地、机动、水、龙、治疗,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_经济, elite_high",reward_pT1,,来源对象 bz_van_277；主附魔 Turbo；真实来源地点数 2
-pal_278,克诺中兽,龙,黄金,机动,龙、机动、地、坦克,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, elite_high",reward_pT1,,来源对象 bz_van_278；主附魔 Turbo；真实来源地点数 2
-pal_279,克诺小兽,地,黄金,机动,地、机动、冰、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, elite_high",reward_pT1,,来源对象 bz_van_279；主附魔 Turbo；真实来源地点数 2
-pal_280,蛛婆小兽,水,黄金,控制,水、控制、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_召唤铺场",reward_pT1,,来源对象 bz_van_280；主附魔 Icy；真实来源地点数 2
-pal_281,蛛婆大兽,地,白银,控制,地、控制、水、输出,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_召唤铺场",reward_pT1,,来源对象 bz_van_281；主附魔 Icy；真实来源地点数 2
-pal_282,蛛婆中兽,暗,黄金,控制,暗、控制、雷,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_召唤铺场",reward_pT1,,来源对象 bz_van_282；主附魔 Icy；真实来源地点数 2
-pal_283,芙蕾小兽,冰,黄金,控制,冰、控制、雷、龙、召唤,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系牵制",reward_pT1,,来源对象 bz_van_283；主附魔 Icy；真实来源地点数 2
-pal_284,芙蕾大兽,冰,白银,控制,冰、控制、火、雷、输出,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_风系牵制",reward_pT1,,来源对象 bz_van_284；主附魔 Icy；真实来源地点数 2
-pal_285,芙蕾中兽,冰,黄金,控制,冰、控制、草、水,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系牵制",reward_pT1,,来源对象 bz_van_285；主附魔 Icy；真实来源地点数 2
-pal_286,赫夫小兽,火,黄金,经济,火、经济、草、水、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, tier_pT2",reward_pT1,,来源对象 bz_van_286；主附魔 Fiery；真实来源地点数 2
-pal_287,赫夫中兽,火,黄金,经济,火、经济、无、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, tier_pT2",reward_pT1,,来源对象 bz_van_287；主附魔 Fiery；真实来源地点数 2
-pal_288,赫夫大兽,火,白银,经济,火、经济、水、龙、治疗,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT2",reward_pT1,,来源对象 bz_van_288；主附魔 Fiery；真实来源地点数 2
-pal_289,夜爵大兽,草,白银,控制,草、控制、水、地、坦克,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_经济, role_火系压制",reward_pT1,,来源对象 bz_van_289；主附魔 Toxic；真实来源地点数 2
-pal_290,夜爵小兽,草,黄金,控制,草、控制、水、地、坦克,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_火系压制",reward_pT1,,来源对象 bz_van_290；主附魔 Toxic；真实来源地点数 2
-pal_291,夜爵中兽,草,黄金,控制,草、控制、雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_火系压制",reward_pT1,,来源对象 bz_van_291；主附魔 Toxic；真实来源地点数 2
-pal_292,瑟菲小兽,雷,黄金,经济,雷、经济、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_治疗",reward_pT1,,来源对象 bz_van_292；主附魔 Golden；真实来源地点数 2
-pal_293,瑟菲大兽,地,白银,经济,地、经济、水、控制,宠物,启用,5,pT2,4,4,85,100,100,100,50,"role_治疗, role_经济",reward_pT1,,来源对象 bz_van_293；主附魔 Golden；真实来源地点数 2
-pal_294,瑟菲中兽,无,黄金,经济,无、经济、水、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_治疗",reward_pT1,,来源对象 bz_van_294；主附魔 Golden；真实来源地点数 2
-pal_295,凯夫中兽,地,青铜,坦克,地、坦克、水、龙、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, tier_pT3",reward_pT1,,来源对象 bz_van_295；主附魔 Shielded；真实来源地点数 2
-pal_296,凯夫小兽,地,青铜,坦克,地、坦克、雷、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, tier_pT3",reward_pT1,,来源对象 bz_van_296；主附魔 Shielded；真实来源地点数 2
-pal_297,加瑟中兽,火,白银,输出,火、输出、冰、控制,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_297；主附魔 Heavy；真实来源地点数 2
-pal_298,加瑟大兽,草,白银,经济,草、经济、雷、输出,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_298；主附魔 Golden；真实来源地点数 2
-pal_299,加瑟小兽,雷,白银,输出,雷、输出、暗,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_299；主附魔 Shiny；真实来源地点数 2
-pal_300,古董大兽,雷,白银,输出,雷、输出、水,宠物,启用,5,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_300；主附魔 Shiny；真实来源地点数 2
-pal_301,古董中兽,无,白银,输出,无、输出、水、龙、控制,宠物,启用,5,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_301；主附魔 Shiny；真实来源地点数 2
-pal_302,古董小兽,龙,白银,输出,龙、输出、草、水、控制,宠物,启用,5,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_302；主附魔 Heavy；真实来源地点数 2
-pal_303,吉娜小兽,水,青铜,输出,水、输出、草,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_冰",reward_pT1,,来源对象 bz_van_303；主附魔 Heavy；真实来源地点数 2
-pal_304,吉娜大兽,无,白银,输出,无、输出、龙,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_304；主附魔 Heavy；真实来源地点数 2
-pal_305,吉娜中兽,无,青铜,输出,无、输出、水、地、治疗,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_冰",reward_pT1,,来源对象 bz_van_305；主附魔 Heavy；真实来源地点数 2
-pal_306,塔季中兽,龙,白银,输出,龙、输出、火,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_306；主附魔 Heavy；真实来源地点数 2
-pal_307,塔季大兽,无,白银,经济,无、经济、火、水、控制,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_307；主附魔 Golden；真实来源地点数 2
-pal_308,塔季小兽,水,白银,输出,水、输出、雷、机动,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_308；主附魔 Shiny；真实来源地点数 2
-pal_309,奥利中兽,无,青铜,输出,无、输出、水、龙、召唤,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_远点压制",reward_pT1,,来源对象 bz_van_309；主附魔 Shiny；真实来源地点数 2
-pal_310,奥利小兽,水,青铜,输出,水、输出、地、坦克,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_远点压制",reward_pT1,,来源对象 bz_van_310；主附魔 Shiny；真实来源地点数 2
-pal_311,安德大兽,暗,白银,输出,暗、输出、火、龙、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_火, role_经济",reward_pT1,,来源对象 bz_van_311；主附魔 Heavy；真实来源地点数 2
-pal_312,安德小兽,草,青铜,输出,草、输出、雷、地、召唤,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_火, elem_草",reward_pT1,,来源对象 bz_van_312；主附魔 Shiny；真实来源地点数 2
-pal_313,安德中兽,龙,青铜,输出,龙、输出、水、雷、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_火, elem_草",reward_pT1,,来源对象 bz_van_313；主附魔 Heavy；真实来源地点数 2
-pal_314,寇特大兽,龙,白银,输出,龙、输出、雷、机动,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_经济, role_机动",reward_pT2,,来源对象 bz_van_314；主附魔 Shiny；真实来源地点数 2
-pal_315,寇特小兽,暗,青铜,输出,暗、输出、火、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动",reward_pT2,,来源对象 bz_van_315；主附魔 Heavy；真实来源地点数 2
-pal_316,寇特中兽,火,青铜,输出,火、输出、水、龙、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动",reward_pT2,,来源对象 bz_van_316；主附魔 Shiny；真实来源地点数 2
-pal_317,库里中兽,龙,青铜,输出,龙、输出、火、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,elem_草,reward_pT2,,来源对象 bz_van_317；主附魔 Shiny；真实来源地点数 1
-pal_318,库里小兽,无,青铜,输出,无、输出、龙,宠物,启用,1,pT1,2,2,100,100,100,100,60,elem_草,reward_pT2,,来源对象 bz_van_318；主附魔 Heavy；真实来源地点数 1
-pal_319,库里大兽,水,白银,输出,水、输出、雷,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT2,,来源对象 bz_van_319；主附魔 Shiny；真实来源地点数 2
-pal_320,戈迪小兽,草,白银,经济,草、经济、水、雷、机动,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_坦克, role_经济",reward_pT2,,来源对象 bz_van_320；主附魔 Golden；真实来源地点数 2
-pal_321,戈迪中兽,龙,白银,经济,龙、经济、水、机动,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_坦克, role_经济",reward_pT2,,来源对象 bz_van_321；主附魔 Golden；真实来源地点数 2
-pal_322,戈迪大兽,龙,白银,经济,龙、经济、冰、输出,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_坦克, role_经济",reward_pT2,,来源对象 bz_van_322；主附魔 Golden；真实来源地点数 2
-pal_323,托克大兽,水,白银,输出,水、输出、火,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, special_merchant",reward_pT2,,来源对象 bz_van_323；主附魔 Shiny；真实来源地点数 2
-pal_324,托克中兽,地,白银,输出,地、输出、水、控制,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, special_merchant",reward_pT2,,来源对象 bz_van_324；主附魔 Shiny；真实来源地点数 2
-pal_325,托克小兽,水,青铜,输出,水、输出、雷,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, special_merchant",reward_pT2,,来源对象 bz_van_325；主附魔 Heavy；真实来源地点数 2
-pal_326,谢尔小兽,草,青铜,输出,草、输出、雷、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_抗压承伤",reward_pT2,,来源对象 bz_van_326；主附魔 Shiny；真实来源地点数 2
-pal_327,谢尔中兽,暗,白银,输出,暗、输出、雷,宠物,启用,5,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_327；主附魔 Shiny；真实来源地点数 2
-pal_328,谢尔大兽,龙,白银,经济,龙、经济、火、水、控制,宠物,启用,5,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_328；主附魔 Golden；真实来源地点数 2
-pal_329,杰杰大兽,火,白银,输出,火、输出、草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_雷, role_经济",reward_pT2,,来源对象 bz_van_329；主附魔 Heavy；真实来源地点数 2
-pal_330,杰杰中兽,地,青铜,输出,地、输出、雷、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_雷",reward_pT2,,来源对象 bz_van_330；主附魔 Shiny；真实来源地点数 2
-pal_331,橡君大兽,草,白银,输出,草、输出、水、雷、机动,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_机动压制",reward_pT2,,来源对象 bz_van_331；主附魔 Heavy；真实来源地点数 2
-pal_332,橡君小兽,龙,青铜,输出,龙、输出、水、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT2,,来源对象 bz_van_332；主附魔 Shiny；真实来源地点数 2
-pal_333,橡君中兽,水,青铜,输出,水、输出、火、冰、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT2,,来源对象 bz_van_333；主附魔 Shiny；真实来源地点数 2
-pal_334,波尔小兽,水,黄金,经济,水、经济、龙、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系铺场",reward_pT2,,来源对象 bz_van_334；主附魔 Golden；真实来源地点数 2
-pal_335,波尔大兽,水,白银,输出,水、输出、雷、召唤,宠物,启用,5,pT2,4,4,85,100,100,100,50,"role_经济, role_风系铺场",reward_pT2,,来源对象 bz_van_335；主附魔 Heavy；真实来源地点数 2
-pal_336,波尔中兽,龙,黄金,经济,龙、经济、水、雷、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系铺场",reward_pT2,,来源对象 bz_van_336；主附魔 Golden；真实来源地点数 2
-pal_337,试家大兽,冰,白银,输出,冰、输出、暗、机动,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_337；主附魔 Heavy；真实来源地点数 2
-pal_338,试家中兽,无,白银,输出,无、输出、冰、控制,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_338；主附魔 Heavy；真实来源地点数 2
-pal_339,试家小兽,草,白银,输出,草、输出、火,宠物,启用,4,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_339；主附魔 Shiny；真实来源地点数 2
-pal_340,爱拉中兽,龙,青铜,输出,龙、输出、雷、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"night_base, elem_草",reward_pT2,,来源对象 bz_van_340；主附魔 Heavy；真实来源地点数 2
-pal_341,爱拉大兽,冰,白银,输出,冰、输出、雷、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"night_base, role_经济",reward_pT2,,来源对象 bz_van_341；主附魔 Heavy；真实来源地点数 2
-pal_342,爱拉小兽,冰,青铜,输出,冰、输出、龙、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"night_base, elem_草",reward_pT2,,来源对象 bz_van_342；主附魔 Heavy；真实来源地点数 2
-pal_343,瓦尔大兽,地,白银,输出,地、输出、草、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_暗, role_经济",reward_pT2,,来源对象 bz_van_343；主附魔 Shiny；真实来源地点数 2
-pal_344,瓦尔小兽,火,青铜,输出,火、输出、雷、龙,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_暗",reward_pT2,,来源对象 bz_van_344；主附魔 Heavy；真实来源地点数 2
-pal_345,瓦尔中兽,火,青铜,输出,火、输出、雷、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_暗",reward_pT2,,来源对象 bz_van_345；主附魔 Shiny；真实来源地点数 2
-pal_346,米兹中兽,水,青铜,输出,水、输出、龙、经济,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_地",reward_pT2,,来源对象 bz_van_346；主附魔 Shiny；真实来源地点数 2
-pal_347,米兹大兽,地,白银,输出,地、输出、水、坦克,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_地, role_经济",reward_pT2,,来源对象 bz_van_347；主附魔 Shiny；真实来源地点数 2
-pal_348,米兹小兽,地,青铜,输出,地、输出、火、雷,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_地",reward_pT2,,来源对象 bz_van_348；主附魔 Shiny；真实来源地点数 2
-pal_349,米透小兽,无,青铜,输出,无、输出、雷、地、坦克,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_无",reward_pT2,,来源对象 bz_van_349；主附魔 Shiny；真实来源地点数 2
-pal_350,米透大兽,无,白银,输出,无、输出、水、龙、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_无, role_经济",reward_pT2,,来源对象 bz_van_350；主附魔 Heavy；真实来源地点数 2
-pal_351,米透中兽,水,白银,输出,水、输出、火、雷,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_无, role_经济",reward_pT2,,来源对象 bz_van_351；主附魔 Shiny；真实来源地点数 2
-pal_352,自瞄大兽,水,白银,输出,水、输出、龙、召唤,宠物,启用,5,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT1",reward_pT2,,来源对象 bz_van_352；主附魔 Shiny；真实来源地点数 2
-pal_353,自瞄中兽,地,白银,输出,地、输出、水、机动,宠物,启用,5,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT1",reward_pT3,,来源对象 bz_van_353；主附魔 Shiny；真实来源地点数 2
-pal_354,自瞄小兽,水,白银,输出,水、输出、雷,宠物,启用,5,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT1",reward_pT3,,来源对象 bz_van_354；主附魔 Heavy；真实来源地点数 2
-pal_355,葵仙中兽,无,青铜,输出,无、输出、草、龙、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT3,,来源对象 bz_van_355；主附魔 Heavy；真实来源地点数 2
-pal_356,葵仙小兽,龙,青铜,输出,龙、输出、火、雷,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT3,,来源对象 bz_van_356；主附魔 Shiny；真实来源地点数 2
-pal_357,葵仙大兽,水,白银,输出,水、输出、雷,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_经济, role_机动压制",reward_pT3,,来源对象 bz_van_357；主附魔 Heavy；真实来源地点数 2
-pal_358,西尔小兽,暗,青铜,输出,暗、输出、水,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_358；主附魔 Heavy；真实来源地点数 2
-pal_359,西尔大兽,草,白银,输出,草、输出、水、雷、坦克,宠物,启用,6,pT2,4,4,85,100,100,100,50,role_经济,reward_pT3,,来源对象 bz_van_359；主附魔 Shiny；真实来源地点数 1
-pal_360,西尔中兽,暗,青铜,输出,暗、输出、水、雷、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_360；主附魔 Heavy；真实来源地点数 2
-pal_361,诺提中兽,草,青铜,输出,草、输出、火、水、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_输出",reward_pT3,,来源对象 bz_van_361；主附魔 Shiny；真实来源地点数 2
-pal_362,诺提小兽,火,青铜,输出,火、输出、地、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_草, role_输出",reward_pT3,,来源对象 bz_van_362；主附魔 Heavy；真实来源地点数 2
-pal_363,诺提大兽,草,白银,输出,草、输出、雷,宠物,启用,6,pT2,4,4,85,100,100,100,50,"role_输出, role_经济",reward_pT3,,来源对象 bz_van_363；主附魔 Shiny；真实来源地点数 2
-pal_364,路克小兽,暗,黄金,经济,暗、经济、火、输出,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_控制",reward_pT3,,来源对象 bz_van_364；主附魔 Golden；真实来源地点数 2
-pal_365,路克中兽,草,黄金,经济,草、经济、水、雷、机动,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_控制",reward_pT3,,来源对象 bz_van_365；主附魔 Golden；真实来源地点数 2
-pal_366,路克大兽,水,黄金,经济,水、经济、火、冰、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_控制",reward_pT3,,来源对象 bz_van_366；主附魔 Golden；真实来源地点数 2
-pal_367,针羽大兽,火,白银,输出,火、输出、草,宠物,启用,6,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_367；主附魔 Heavy；真实来源地点数 2
-pal_368,针羽小兽,冰,白银,输出,冰、输出、雷、控制,宠物,启用,6,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_368；主附魔 Shiny；真实来源地点数 2
-pal_369,针羽中兽,无,白银,输出,无、输出、冰、水、控制,宠物,启用,6,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT4,,来源对象 bz_van_369；主附魔 Heavy；真实来源地点数 2
+宠物ID,名称(自动),元素(自动),品质(自动),定位(自动),标签(自动),商品类型,商店状态,解锁日,池档,默认价,价格覆盖,夜市权重,元素店权重,定位店权重,品质店权重,奖励权重,商店池(自动),奖励池(自动),出现条件,备注,catalog_status
+pal_001,棉角羊,水,青铜,治疗,水、龙、治疗、无、风、基准单点、发育,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_输出, role_机动",reward_pT1,,来源对象 bz_van_001；主附魔 Restorative；真实来源地点数 10,playable
+pal_002,灰尾狸,水,黄金,治疗,水、地、治疗、无、风、抗压单点、前排、阻挡,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_水, elem_雷, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_远点压制",reward_pT1,,来源对象 bz_van_002；主附魔 Turbo；真实来源地点数 10,playable
+pal_003,芦花鸡,雷,白银,机动,雷、机动、无、风、削弱远点、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_机动, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_003；主附魔 Turbo；真实来源地点数 10,playable
+pal_004,青藤鼠,雷,白银,机动,雷、机动、草、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, special_merchant, elite_high, role_远点压制",reward_pT1,,来源对象 bz_van_004；主附魔 Turbo；真实来源地点数 10,playable
+pal_005,赤尾狐,火,黄金,输出,火、输出、雷、抗压承伤、爆发、前排,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_火, role_输出, tier_pT3",reward_pT1,,来源对象 bz_van_005；主附魔 Deadly；真实来源地点数 10,playable
+pal_006,碧水鸭,地,青铜,坦克,地、坦克、水、毒伤牵制、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT3",reward_pT1,,来源对象 bz_van_006；主附魔 Shielded；真实来源地点数 10,playable
+pal_007,雷须猫,雷,青铜,控制,雷、火、控制、地、输出、风、抗压承伤、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, role_控制, tier_pT1",reward_pT1,,来源对象 bz_van_007；主附魔 Deadly；真实来源地点数 10,playable
+pal_008,藤甲猿,水,青铜,机动,水、机动、草、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_输出, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_008；主附魔 Turbo；真实来源地点数 10,playable
+pal_009,火角鹿,火,青铜,召唤,火、召唤、水、输出、火系压制、爆发、前排,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, role_召唤, tier_pT1",reward_pT1,,来源对象 bz_van_009；主附魔 Deadly；真实来源地点数 10,playable
+pal_010,霜羽鹭,水,白银,机动,水、龙、机动、冰、治疗、水系牵制、后排、增益,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, elem_水, elem_草, elem_雷, elem_无, role_坦克, role_控制, role_输出, role_抗压承伤",reward_pT1,,来源对象 bz_van_010；主附魔 Deadly；真实来源地点数 10,playable
+pal_011,冰背獭,草,黄金,控制,草、龙、控制、水、冰、治疗、水系牵制、后排、增益,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_火系压制",reward_pT1,,来源对象 bz_van_011；主附魔 Toxic；真实来源地点数 10,playable
+pal_012,电棘鼠,火,黄金,输出,火、雷、输出、控制、风、风系牵制、牵制、范围、机动,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_火, elem_雷, role_输出, tier_pT3",reward_pT1,,来源对象 bz_van_012；主附魔 Fiery；真实来源地点数 10,playable
+pal_013,苔甲龟,雷,青铜,控制,雷、控制、草、地、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_机动, special_merchant, role_召唤铺场",reward_pT1,,来源对象 bz_van_013；主附魔 Icy；真实来源地点数 10,playable
+pal_014,金钱狸,火,白银,经济,火、经济、机动、无、风、风系铺场、召唤、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, role_经济, tier_pT2",reward_pT1,,来源对象 bz_van_014；主附魔 Fiery；真实来源地点数 10,playable
+pal_015,黑甲猪,水,白银,输出,水、输出、暗、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, elem_雷, elem_地, elem_暗, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT1,,来源对象 bz_van_015；主附魔 Deadly；真实来源地点数 10,playable
+pal_016,涧水象,雷,青铜,召唤,雷、龙、召唤、水、治疗、水系控场、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_机动压制",reward_pT1,,来源对象 bz_van_016；主附魔 Deadly；真实来源地点数 10,playable
+pal_017,黑角犀,火,青铜,坦克,火、雷、坦克、输出、暗、土、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, role_坦克, tier_pT1",reward_pT1,,来源对象 bz_van_017；主附魔 Fiery；真实来源地点数 10,playable
+pal_018,竹囊鼠,雷,黄金,机动,雷、机动、无、经济、风、风系铺场、召唤、发育,宠物,启用,4,pT3,6,6,65,100,90,100,40,"night_base, elem_水, elem_雷, elem_地, elem_暗, role_坦克, role_控制, role_治疗, elite_high, role_风系铺场",reward_pT1,,来源对象 bz_van_018；主附魔 Turbo；真实来源地点数 10,playable
+pal_019,夜穴鼹,暗,白银,输出,暗、火、输出、雷、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_火, elem_暗, role_输出, tier_pT2",reward_pT1,,来源对象 bz_van_019；主附魔 Deadly；真实来源地点数 10,playable
+pal_020,沙鬃猪,水,白银,机动,水、雷、机动、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, role_机动, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_020；主附魔 Turbo；真实来源地点数 10,playable
+pal_021,暮羽鸦,水,白银,机动,水、龙、机动、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_远点压制",reward_pT1,,来源对象 bz_van_021；主附魔 Turbo；真实来源地点数 10,playable
+pal_022,岩爪鼹,龙,白银,机动,龙、机动、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_水, elem_雷, elem_冰, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT1,,来源对象 bz_van_022；主附魔 Turbo；真实来源地点数 10,playable
+pal_023,墨潭鲵,草,青铜,控制,草、水、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT1,,来源对象 bz_van_023；主附魔 Toxic；真实来源地点数 10,playable
+pal_024,幽纹猫,火,白银,控制,火、控制、暗、经济、土、土系抗压、召唤、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_水, elem_雷, role_坦克, role_控制, special_merchant, elite_high, tier_pT2, role_召唤铺场, role_抗压承伤",reward_pT1,,来源对象 bz_van_024；主附魔 Fiery；真实来源地点数 10,playable
+pal_025,泉须鲶,草,青铜,经济,草、水、经济、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_输出, tier_pT1, tier_pT3",reward_pT1,,来源对象 bz_van_025；主附魔 Golden；真实来源地点数 10,playable
+pal_026,疾风狼,水,白银,控制,水、控制、无、机动、风、抗压承伤、灵活、泛用,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场",reward_pT1,,来源对象 bz_van_026；主附魔 Icy；真实来源地点数 10,playable
+pal_027,惊羽雀,地,青铜,机动,地、机动、无、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, elite_high",reward_pT1,,来源对象 bz_van_027；主附魔 Turbo；真实来源地点数 10,playable
+pal_028,药草兔,水,青铜,治疗,水、龙、治疗、草、风、风系铺场、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出",reward_pT1,,来源对象 bz_van_028；主附魔 Restorative；真实来源地点数 10,playable
+pal_029,黄背牛,水,青铜,坦克,水、地、坦克、无、经济、风、诅咒牵制、召唤、发育,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_重甲抗压",reward_pT1,,来源对象 bz_van_029；主附魔 Shielded；真实来源地点数 10,playable
+pal_030,花刺蛛,水,青铜,坦克,水、地、坦克、草、治疗、风、风系铺场、后排、增益,宠物,启用,1,pT1,2,2,100,100,90,100,60,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_输出, tier_pT3, role_风系铺场",reward_pT1,,来源对象 bz_van_030；主附魔 Shielded；真实来源地点数 10,playable
+pal_031,青背鲵,水,白银,治疗,水、雷、治疗、抗压承伤、后排、增益,宠物,启用,4,pT2,4,4,85,100,90,100,50,elite_high,reward_pT1,,来源对象 bz_van_031；主附魔 Icy；真实来源地点数 1,playable
+pal_032,石甲鲮,雷,白银,机动,雷、机动、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,100,90,100,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_抗压承伤",reward_pT1,,来源对象 bz_van_032；主附魔 Turbo；真实来源地点数 10,playable
+pal_033,芭蕉熊,雷,青铜,控制,雷、控制、草、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,100,90,100,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_召唤铺场",reward_pT1,,来源对象 bz_van_033；主附魔 Icy；真实来源地点数 10,playable
+pal_034,蜜纹獾,雷,白银,输出,雷、输出、无、经济、风、远点压制、召唤、发育,宠物,启用,2,pT2,4,4,85,100,90,100,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_抗压承伤",reward_pT1,,来源对象 bz_van_034；主附魔 Deadly；真实来源地点数 10,playable
+pal_035,藤巢蜂,水,黄金,控制,水、雷、控制、草、召唤、风、召唤铺场、成长、核心,宠物,启用,4,pT3,6,6,65,100,90,100,40,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_治疗, role_输出, role_风系铺场",reward_pT1,,来源对象 bz_van_035；主附魔 Turbo；真实来源地点数 10,playable
+pal_036,云纹巨驼,火,白银,控制,火、水、控制、无、经济、风、远点压制、召唤、发育,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, tier_pT2, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_036；主附魔 Fiery；真实来源地点数 10,playable
+pal_037,月角白鹿,草,白银,控制,草、控制、无、机动、风、机动压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_坦克, role_控制, special_merchant, role_召唤铺场, role_抗压承伤, role_火系压制",reward_pT2,,来源对象 bz_van_037；主附魔 Icy；真实来源地点数 10,playable
+pal_038,疾风苍鹰,雷,白银,机动,雷、机动、无、风、机动压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_重甲抗压",reward_pT2,,来源对象 bz_van_038；主附魔 Turbo；真实来源地点数 10,playable
+pal_039,银背巨兔,水,白银,机动,水、雷、机动、无、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, role_输出, role_机动, special_merchant, elite_high, role_重甲抗压",reward_pT2,,来源对象 bz_van_039；主附魔 Turbo；真实来源地点数 10,playable
+pal_040,炎角黑羊,水,黄金,坦克,水、雷、坦克、火、暗、输出、火系压制、爆发、前排,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_重甲抗压, role_远点压制",reward_pT2,,来源对象 bz_van_040；主附魔 Turbo；真实来源地点数 10,playable
+pal_041,回春彩蝶,水,白银,控制,水、控制、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_远点压制",reward_pT2,,来源对象 bz_van_041；主附魔 Icy；真实来源地点数 10,playable
+pal_042,赤焰蛮牛,雷,青铜,输出,雷、输出、火、火系压制、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_042；主附魔 Deadly；真实来源地点数 10,playable
+pal_043,泥甲巨鲶,水,黄金,控制,水、雷、控制、地、治疗、土、土系抗压、后排、增益,宠物,启用,4,pT3,6,6,65,70,65,80,40,"night_base, elem_水, elem_雷, elem_地, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_043；主附魔 Icy；真实来源地点数 10,playable
+pal_044,夜羽巨鸦,火,白银,控制,火、冰、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, role_坦克, role_输出, role_机动, tier_pT2, role_抗压承伤, role_风系牵制, role_火系压制",reward_pT2,,来源对象 bz_van_044；主附魔 Fiery；真实来源地点数 10,playable
+pal_045,墨鳞巨蜥,水,白银,机动,水、龙、机动、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, special_merchant",reward_pT2,,来源对象 bz_van_045；主附魔 Turbo；真实来源地点数 10,playable
+pal_046,月镰螳螂,水,青铜,控制,水、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_远点压制",reward_pT2,,来源对象 bz_van_046；主附魔 Icy；真实来源地点数 10,playable
+pal_047,裂空苍鹰,水,青铜,机动,水、机动、无、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_远点压制",reward_pT2,,来源对象 bz_van_047；主附魔 Turbo；真实来源地点数 10,playable
+pal_048,木刺豪猪,水,白银,召唤,水、雷、召唤、草、治疗、风、远点压制、后排、增益,宠物,启用,4,pT2,4,4,85,70,65,80,50,elite_high,reward_pT2,,来源对象 bz_van_048；主附魔 Deadly；真实来源地点数 1,playable
+pal_049,铁臂黑猿,水,青铜,机动,水、龙、机动、无、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_草, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制",reward_pT2,,来源对象 bz_van_049；主附魔 Turbo；真实来源地点数 10,playable
+pal_050,金甲蜂群,雷,青铜,输出,雷、输出、草、召唤、风、召唤铺场、成长、核心,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_050；主附魔 Deadly；真实来源地点数 10,playable
+pal_051,百花巨蜂,暗,青铜,控制,暗、控制、草、治疗、风、远点压制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, special_merchant, role_召唤铺场, role_远点压制",reward_pT2,,来源对象 bz_van_051；主附魔 Icy；真实来源地点数 10,playable
+pal_052,笑面山猫,雷,青铜,输出,雷、输出、无、机动、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_052；主附魔 Deadly；真实来源地点数 10,playable
+pal_053,霜尾雪貂,无,青铜,输出,无、输出、冰、控制、水、水系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, elem_暗, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT2,,来源对象 bz_van_053；主附魔 Deadly；真实来源地点数 10,playable
+pal_054,白眉雪猿,水,白银,控制,水、雷、控制、冰、水系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_机动",reward_pT2,,来源对象 bz_van_054；主附魔 Obsidian；真实来源地点数 10,playable
+pal_055,寒风幼螭,火,白银,机动,火、机动、冰、龙、控制、水、召唤铺场、牵制、范围,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, special_merchant, elite_high, role_重甲抗压",reward_pT2,,来源对象 bz_van_055；主附魔 Turbo；真实来源地点数 10,playable
+pal_056,震角雷牛,无,青铜,输出,无、输出、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_远点压制",reward_pT2,,来源对象 bz_van_056；主附魔 Deadly；真实来源地点数 10,playable
+pal_057,吹雪银狐,冰,白银,控制,冰、控制、水、水系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_远点压制, role_风系牵制",reward_pT2,,来源对象 bz_van_057；主附魔 Icy；真实来源地点数 10,playable
+pal_058,丹角火麟,冰,钻石,控制,冰、水、控制、火、输出、火系压制、爆发、前排,宠物,启用,6,pT4,8,8,40,70,65,80,25,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_控制, role_治疗, role_输出, role_风系铺场, role_风系牵制",reward_pT2,,来源对象 bz_van_058；主附魔 Icy；真实来源地点数 10,playable
+pal_059,冰角白鹿,水,青铜,控制,水、龙、控制、冰、水系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_059；主附魔 Icy；真实来源地点数 10,playable
+pal_060,霹雳战獒,火,白银,输出,火、输出、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, tier_pT2",reward_pT2,,来源对象 bz_van_060；主附魔 Fiery；真实来源地点数 10,playable
+pal_061,苍焰赤豺,雷,白银,控制,雷、控制、火、输出、成长输出、爆发、前排,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, special_merchant, tier_pT1, role_召唤铺场, role_抗压承伤, role_重甲抗压",reward_pT2,,来源对象 bz_van_061；主附魔 Icy；真实来源地点数 10,playable
+pal_062,雷纹巨猿,雷,白银,机动,雷、机动、控制、风、风系牵制、牵制、范围,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_机动, special_merchant, elite_high",reward_pT2,,来源对象 bz_van_062；主附魔 Turbo；真实来源地点数 10,playable
+pal_063,蜃雾白鹿,草,青铜,控制,草、水、控制、无、召唤、风、召唤铺场、成长、核心,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT2,,来源对象 bz_van_063；主附魔 Toxic；真实来源地点数 10,playable
+pal_064,翠冠花螭,雷,白银,机动,雷、龙、机动、草、召唤、风、召唤铺场、成长、核心,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_水, elem_草, elem_雷, elem_地, role_坦克, role_控制, role_治疗, role_风系铺场",reward_pT2,,来源对象 bz_van_064；主附魔 Turbo；真实来源地点数 10,playable
+pal_065,霆角龙犀,暗,白银,控制,暗、控制、雷、龙、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, role_召唤铺场",reward_pT2,,来源对象 bz_van_065；主附魔 Icy；真实来源地点数 10,playable
+pal_066,浪鳞水蛇,地,青铜,输出,地、输出、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT2,,来源对象 bz_van_066；主附魔 Deadly；真实来源地点数 10,playable
+pal_067,沙鳞巨蟒,雷,白银,输出,雷、龙、输出、地、坦克、土、召唤铺场、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_重甲抗压",reward_pT2,,来源对象 bz_van_067；主附魔 Deadly；真实来源地点数 10,playable
+pal_068,食梦黑貘,雷,白银,控制,雷、控制、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, elem_地, role_坦克, role_控制, special_merchant, tier_pT1, role_召唤铺场, role_抗压承伤",reward_pT2,,来源对象 bz_van_068；主附魔 Icy；真实来源地点数 10,playable
+pal_069,碎岩巨龟,龙,青铜,输出,龙、输出、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT2,,来源对象 bz_van_069；主附魔 Deadly；真实来源地点数 10,playable
+pal_070,猫翼夜蝠,水,青铜,治疗,水、地、治疗、暗、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_坦克, role_控制, role_输出, tier_pT3",reward_pT2,,来源对象 bz_van_070；主附魔 Restorative；真实来源地点数 10,playable
+pal_071,甘露壁虎,火,青铜,输出,火、输出、无、治疗、风、远点压制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT2, role_远点压制",reward_pT2,,来源对象 bz_van_071；主附魔 Fiery；真实来源地点数 10,playable
+pal_072,赤巢火蚁,火,黄金,控制,火、水、控制、召唤、召唤铺场、成长、核心,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, tier_pT2, role_召唤铺场",reward_pT2,,来源对象 bz_van_072；主附魔 Fiery；真实来源地点数 10,playable
+pal_073,烽翼火龙,龙,白银,经济,龙、经济、火、暗、机动、火系压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_073；主附魔 Golden；真实来源地点数 10,playable
+pal_074,霜翼冥龙,火,青铜,控制,火、水、控制、冰、暗、水系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, role_坦克, role_输出, role_机动, special_merchant, tier_pT2, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_074；主附魔 Fiery；真实来源地点数 10,playable
+pal_075,赤刃螳螂,水,青铜,机动,水、雷、机动、火、输出、火系压制、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_草, elem_雷, elem_无, role_坦克, role_控制, role_输出, tier_pT1, role_机动压制",reward_pT2,,来源对象 bz_van_075；主附魔 Deadly；真实来源地点数 10,playable
+pal_076,迅雷金雕,水,白银,坦克,水、地、坦克、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, role_坦克, role_输出, special_merchant, elite_high, tier_pT3, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_076；主附魔 Icy；真实来源地点数 10,playable
+pal_077,燧火黑乌,火,白银,输出,火、雷、输出、机动、火系压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_机动, tier_pT2",reward_pT2,,来源对象 bz_van_077；主附魔 Fiery；真实来源地点数 10,playable
+pal_078,幽泉灵猫,水,青铜,召唤,水、龙、召唤、暗、治疗、土、土系抗压、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_机动压制",reward_pT2,,来源对象 bz_van_078；主附魔 Deadly；真实来源地点数 10,playable
+pal_079,焰尾山狐,雷,白银,坦克,雷、地、坦克、火、输出、成长输出、爆发、前排,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, elem_龙, role_召唤, role_坦克, role_控制, role_机动, tier_pT3",reward_pT2,,来源对象 bz_van_079；主附魔 Shielded；真实来源地点数 10,playable
+pal_080,踏春白兔,水,白银,控制,水、龙、控制、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_火, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_召唤铺场, role_机动压制",reward_pT2,,来源对象 bz_van_080；主附魔 Icy；真实来源地点数 10,playable
+pal_081,药香花鹿,火,白银,输出,火、雷、输出、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, tier_pT1, tier_pT2, role_抗压承伤, role_重甲抗压",reward_pT2,,来源对象 bz_van_081；主附魔 Fiery；真实来源地点数 10,playable
+pal_082,冰丝巨蛾,龙,白银,经济,龙、经济、冰、治疗、水、水系牵制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_机动, role_机动压制",reward_pT2,,来源对象 bz_van_082；主附魔 Golden；真实来源地点数 10,playable
+pal_083,云鳞幼螭,水,青铜,坦克,水、雷、坦克、龙、召唤、风、召唤铺场、成长、核心,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, elem_龙, role_召唤, role_坦克, role_控制, role_输出, tier_pT3",reward_pT2,,来源对象 bz_van_083；主附魔 Turbo；真实来源地点数 10,playable
+pal_084,沧浪青蛟,火,青铜,机动,火、龙、机动、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_草, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, tier_pT2, role_机动压制",reward_pT2,,来源对象 bz_van_084；主附魔 Fiery；真实来源地点数 10,playable
+pal_085,涌泉水獭,雷,青铜,召唤,雷、地、召唤、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_机动压制",reward_pT2,,来源对象 bz_van_085；主附魔 Deadly；真实来源地点数 10,playable
+pal_086,赤炎狻猊,龙,黄金,机动,龙、机动、火、输出、火系压制、爆发、前排,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, elite_high",reward_pT2,,来源对象 bz_van_086；主附魔 Turbo；真实来源地点数 10,playable
+pal_087,碧海青蛟,草,青铜,机动,草、水、机动、龙、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_机动压制",reward_pT2,,来源对象 bz_van_087；主附魔 Turbo；真实来源地点数 10,playable
+pal_088,冰棘豪猪,雷,黄金,输出,雷、输出、冰、坦克、水、抗压承伤、防御、前排、阻挡,宠物,启用,4,pT3,6,6,65,70,65,80,40,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_机动",reward_pT2,,来源对象 bz_van_088；主附魔 Deadly；真实来源地点数 10,playable
+pal_089,狱火凶獒,火,青铜,输出,火、雷、输出、重甲抗压、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_机动, tier_pT2",reward_pT2,,来源对象 bz_van_089；主附魔 Fiery；真实来源地点数 10,playable
+pal_090,三首火犬,水,白银,机动,水、雷、机动、火、暗、输出、召唤铺场、爆发、前排,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_输出, role_机动, role_风系铺场",reward_pT2,,来源对象 bz_van_090；主附魔 Turbo；真实来源地点数 10,playable
+pal_091,覆水龙龟,雷,青铜,输出,雷、输出、龙、水、坦克、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_机动, role_远点压制",reward_pT2,,来源对象 bz_van_091；主附魔 Deadly；真实来源地点数 10,playable
+pal_092,雷泽青蛟,火,黄金,治疗,火、水、治疗、龙、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,4,pT3,6,6,65,70,65,80,40,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, tier_pT2",reward_pT2,,来源对象 bz_van_092；主附魔 Fiery；真实来源地点数 10,playable
+pal_093,连理双鹿,草,白银,控制,草、水、控制、召唤、风、召唤铺场、成长、核心,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT2,,来源对象 bz_van_093；主附魔 Toxic；真实来源地点数 10,playable
+pal_094,海棠水鹿,雷,青铜,输出,雷、输出、草、水、治疗、水系牵制、后排、增益,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_机动, tier_pT1, role_远点压制",reward_pT2,,来源对象 bz_van_094；主附魔 Deadly；真实来源地点数 10,playable
+pal_095,百花灵鹿,雷,白银,输出,雷、输出、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_095；主附魔 Deadly；真实来源地点数 10,playable
+pal_096,熔岩巨兽,雷,青铜,输出,雷、输出、火、地、坦克、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_096；主附魔 Deadly；真实来源地点数 10,playable
+pal_097,寒岩巨兽,雷,青铜,输出,雷、输出、冰、地、坦克、水、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT2,,来源对象 bz_van_097；主附魔 Deadly；真实来源地点数 10,playable
+pal_098,云顶巨驼,水,黄金,机动,水、雷、机动、无、经济、风、夹击牵制、召唤、发育,宠物,启用,4,pT3,6,6,65,70,65,80,40,"elem_火, elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_输出, special_merchant",reward_pT2,,来源对象 bz_van_098；主附魔 Turbo；真实来源地点数 10,playable
+pal_099,冰峰巨驼,草,白银,控制,草、水、控制、冰、坦克、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, tier_pT1, role_火系压制",reward_pT2,,来源对象 bz_van_099；主附魔 Toxic；真实来源地点数 10,playable
+pal_100,青林巨象,水,青铜,坦克,水、地、坦克、草、风、重甲抗压、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"elem_火, elem_雷, elem_冰, elem_地, elem_龙, role_召唤, role_坦克, role_控制, role_输出, tier_pT3",reward_pT2,,来源对象 bz_van_100；主附魔 Shielded；真实来源地点数 10,playable
+pal_101,白牙雪象,水,白银,控制,水、龙、控制、冰、坦克、重甲抗压、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_召唤铺场",reward_pT2,,来源对象 bz_van_101；主附魔 Icy；真实来源地点数 10,playable
+pal_102,白绒雪猿,暗,白银,机动,暗、龙、机动、冰、坦克、水、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, special_merchant, role_机动压制",reward_pT2,,来源对象 bz_van_102；主附魔 Turbo；真实来源地点数 10,playable
+pal_103,绿苔巨猿,水,青铜,治疗,水、治疗、草、坦克、风、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_输出",reward_pT2,,来源对象 bz_van_103；主附魔 Restorative；真实来源地点数 10,playable
+pal_104,铁甲巨兕,水,白银,机动,水、雷、机动、地、草、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, special_merchant, elite_high, tier_pT1",reward_pT2,,来源对象 bz_van_104；主附魔 Turbo；真实来源地点数 10,playable
+pal_105,云海白鹿,水,青铜,输出,水、输出、无、机动、风、机动压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, role_经济",reward_pT2,,来源对象 bz_van_105；主附魔 Deadly；真实来源地点数 10,playable
+pal_106,夜幕巨蝠,草,白银,控制,草、水、控制、暗、坦克、土、召唤铺场、防御、前排、阻挡,宠物,启用,2,pT2,4,4,85,70,65,80,50,"night_base, elem_水, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制, role_火系压制",reward_pT2,,来源对象 bz_van_106；主附魔 Toxic；真实来源地点数 10,playable
+pal_107,天羽云螭,水,钻石,召唤,水、龙、召唤、机动、风、机动压制、灵活、泛用,宠物,启用,6,pT4,8,8,40,70,65,80,25,"elem_火, elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_控制, role_治疗, role_输出, role_风系铺场",reward_pT2,,来源对象 bz_van_107；主附魔 Radiant；真实来源地点数 10,playable
+pal_108,焰羽赤雕,雷,青铜,输出,雷、输出、火、火系重压、爆发、前排,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, tier_pT1, role_重甲抗压",reward_pT2,,来源对象 bz_van_108；主附魔 Deadly；真实来源地点数 10,playable
+pal_109,冥羽黑乌,雷,白银,控制,雷、控制、暗、机动、土、土系抗压、灵活、泛用,宠物,启用,2,pT2,4,4,85,70,65,80,50,"elem_火, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_机动, special_merchant, elite_high, role_召唤铺场",reward_pT2,,来源对象 bz_van_109；主附魔 Icy；真实来源地点数 10,playable
+pal_110,渊鳞黑蛟,雷,青铜,输出,雷、输出、龙、暗、坦克、土、诅咒牵制、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,70,65,80,60,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_远点压制",reward_pT2,,来源对象 bz_van_110；主附魔 Deadly；真实来源地点数 10,playable
+pal_111,毒甲蝎将,雷,青铜,输出,雷、输出、暗、地、坦克、土、抗压承伤、防御、前排、阻挡,宠物,启用,1,pT1,2,2,100,32,30,45,60,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_经济, role_机动",reward_pT3,,来源对象 bz_van_111；主附魔 Deadly；真实来源地点数 10,playable
+pal_112,石猿战将,火,黄金,控制,火、冰、控制、地、输出、土、土系抗压、爆发、前排,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, role_坦克, role_控制, role_输出, tier_pT2, role_机动压制, role_风系牵制, role_火系压制",reward_pT3,,来源对象 bz_van_112；主附魔 Fiery；真实来源地点数 10,playable
+pal_113,覆海蛟王,水,黄金,输出,水、输出、龙、治疗、水系牵制、后排、增益,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, elem_暗, elem_无, role_召唤, role_坦克, role_控制, role_治疗, elite_high",reward_pT3,,来源对象 bz_van_113；主附魔 Deadly；真实来源地点数 10,playable
+pal_114,赤焰龙君,雷,黄金,控制,雷、控制、龙、火、输出、火系重压、爆发、前排,宠物,启用,4,pT3,6,6,65,32,30,45,40,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, special_merchant, tier_pT1, role_召唤铺场, role_远点压制",reward_pT3,,来源对象 bz_van_114；主附魔 Icy；真实来源地点数 10,playable
+pal_115,南明朱雀,雷,青铜,机动,雷、龙、机动、火、火系压制、灵活、泛用,宠物,启用,1,pT1,2,2,100,32,30,45,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, special_merchant, tier_pT1, role_远点压制",reward_pT3,,来源对象 bz_van_115；主附魔 Turbo；真实来源地点数 10,playable
+pal_116,净瓶青鸾,龙,白银,机动,龙、机动、水、治疗、水系牵制、后排、增益,宠物,启用,2,pT2,4,4,85,32,30,45,50,"elem_火, elem_水, elem_草, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_抗压承伤, role_风系铺场",reward_pT3,,来源对象 bz_van_116；主附魔 Deadly；真实来源地点数 10,playable
+pal_117,九霄熊王,冰,白银,坦克,冰、水、坦克、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,32,30,45,50,"night_base, elem_火, elem_水, elem_雷, elem_地, role_坦克, role_控制, role_输出, tier_pT3, role_抗压承伤",reward_pT3,,来源对象 bz_van_117；主附魔 Icy；真实来源地点数 10,playable
+pal_118,百花鹿仙,水,白银,坦克,水、地、坦克、草、治疗、风、远点压制、后排、增益,宠物,启用,2,pT2,4,4,85,32,30,45,50,"elem_火, elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_抗压承伤",reward_pT3,,来源对象 bz_van_118；主附魔 Turbo；真实来源地点数 10,playable
+pal_119,黑月狐姬,水,白银,机动,水、机动、暗、治疗、土、土系抗压、后排、增益,宠物,启用,2,pT2,4,4,85,32,30,45,50,"elem_火, elem_雷, elem_冰, elem_地, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, role_抗压承伤",reward_pT3,,来源对象 bz_van_119；主附魔 Turbo；真实来源地点数 10,playable
+pal_120,火云鹏王,水,黄金,治疗,水、雷、治疗、火、机动、火系压制、灵活、泛用,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, tier_pT1, tier_pT3, role_重甲抗压",reward_pT3,,来源对象 bz_van_120；主附魔 Restorative；真实来源地点数 10,playable
+pal_121,雷泽龙王,暗,青铜,输出,暗、输出、龙、雷、控制、风、风系牵制、牵制、范围、机动,宠物,启用,1,pT1,2,2,100,32,30,45,60,"night_base, elem_火, elem_雷, elem_地, elem_暗, role_召唤, role_坦克, role_控制, role_治疗, role_经济",reward_pT3,,来源对象 bz_van_121；主附魔 Deadly；真实来源地点数 10,playable
+pal_122,玄羽雕尊,水,黄金,治疗,水、雷、治疗、暗、机动、土、土系抗压、灵活、泛用,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_治疗, role_机动, role_风系铺场",reward_pT3,,来源对象 bz_van_122；主附魔 Restorative；真实来源地点数 10,playable
+pal_123,白象护法,雷,黄金,输出,雷、输出、无、坦克、风、重甲抗压、防御、前排、阻挡,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_治疗, role_机动, tier_pT1",reward_pT3,,来源对象 bz_van_123；主附魔 Deadly；真实来源地点数 10,playable
+pal_124,混世魔猿,雷,青铜,输出,雷、输出、暗、坦克、土、重甲抗压、防御、前排、阻挡,宠物,启用,4,pT1,2,2,100,32,30,45,60,elite_high,"reward_pT3, reward_elite",,来源对象 bz_van_124；主附魔 Deadly；真实来源地点数 1,playable
+pal_125,寒狮妖王,水,白银,输出,水、雷、输出、冰、控制、水系牵制、牵制、范围、机动,宠物,启用,2,pT2,4,4,85,32,30,45,50,"night_base, elem_水, elem_雷, elem_无, role_召唤, role_坦克, role_控制, role_输出, role_机动, role_抗压承伤",reward_pT3,,来源对象 bz_van_125；主附魔 Deadly；真实来源地点数 10,playable
+pal_126,幽冥獒王,水,黄金,机动,水、雷、机动、暗、控制、土、土系抗压、牵制、范围,宠物,启用,4,pT3,6,6,65,32,30,45,40,"night_base, elem_火, elem_水, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, role_机动压制",reward_pT3,,来源对象 bz_van_126；主附魔 Turbo；真实来源地点数 10,playable
+pal_127,九天龙君,火,白银,机动,火、雷、机动、龙、风、机动压制、灵活、泛用,宠物,启用,2,pT2,4,4,85,32,30,45,50,"night_base, elem_水, elem_雷, elem_地, role_坦克, role_控制, special_merchant, elite_high, tier_pT2, role_风系铺场","reward_pT3, reward_elite",,来源对象 bz_van_127；主附魔 Fiery；真实来源地点数 10,playable
+pal_128,星貂王,无,黄金,控制,无、控制,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, special_merchant, role_召唤铺场",reward_pT3,,来源对象 bz_van_128；主附魔 Icy；真实来源地点数 10,playable
+pal_129,渊鹤王,水,黄金,治疗,水、治疗,宠物,启用,4,pT3,6,6,65,100,100,100,40,"night_base, elem_水, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, special_merchant, role_召唤铺场",reward_pT3,,来源对象 bz_van_129；主附魔 Icy；真实来源地点数 10,playable
+pal_130,潮甲君,水,黄金,坦克,水、雷、坦克,宠物,启用,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_雷, elem_冰, elem_龙, elem_无, role_召唤, role_坦克, role_控制, role_输出, tier_pT3",reward_pT3,,来源对象 bz_van_130；主附魔 Turbo；真实来源地点数 10,playable
+pal_131,碧蜂妖,水,白银,召唤,水、雷、召唤,宠物,启用,2,pT2,4,4,85,100,100,100,50,"night_base, elem_火, elem_雷, elem_地, role_召唤, role_坦克, role_控制, role_输出, tier_pT1, role_机动压制",reward_pT2,,来源对象 bz_van_131；主附魔 Deadly；真实来源地点数 10,playable
+pal_132,烬隼童,火,青铜,输出,火、水、输出,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_输出, tier_pT2",reward_pT1,,来源对象 bz_van_132；主附魔 Fiery；真实来源地点数 10,playable
+pal_133,雷貉卫,雷,白银,经济,雷、经济,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_冰, elem_无, role_召唤, role_坦克, role_控制, role_治疗, role_经济, tier_pT1",reward_pT2,,来源对象 bz_van_133；主附魔 Deadly；真实来源地点数 10,playable
+pal_134,沧雀卫,水,白银,机动,水、雷、机动,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_冰, elem_地, elem_暗, role_坦克, role_控制, role_输出, special_merchant, elite_high",reward_pT2,,来源对象 bz_van_134；主附魔 Turbo；真实来源地点数 10,playable
+pal_135,赤蝎精,火,白银,控制,火、冰、控制,宠物,启用,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_冰, role_坦克, role_控制, special_merchant, tier_pT2, role_召唤铺场, role_风系牵制, role_火系压制",reward_pT2,,来源对象 bz_van_135；主附魔 Fiery；真实来源地点数 10,playable
+pal_136,沧熊童,水,青铜,坦克,水、地、坦克,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_冰, elem_无, role_坦克, role_控制, role_输出, tier_pT3, role_抗压承伤, role_重甲抗压",reward_pT1,,来源对象 bz_van_136；主附魔 Turbo；真实来源地点数 10,playable
+pal_137,雪貂童,冰,青铜,控制,冰、草、控制,宠物,启用,1,pT1,2,2,100,100,100,100,60,"elem_火, elem_雷, elem_冰, elem_地, role_坦克, role_控制, role_输出, role_机动压制, role_风系牵制, role_火系压制",reward_pT1,,来源对象 bz_van_137；主附魔 Icy；真实来源地点数 10,playable
+pal_138,烬蜂童,火,青铜,机动,火、水、机动,宠物,启用,1,pT1,2,2,100,100,100,100,60,"night_base, elem_火, elem_雷, role_坦克, role_控制, role_输出, special_merchant, elite_high, tier_pT2, role_机动压制",reward_pT1,,来源对象 bz_van_138；主附魔 Fiery；真实来源地点数 10,playable
+pal_139,雷鲭王,雷,黄金,机动,雷、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, special_merchant",reward_pT3,,来源对象 bz_van_139；主附魔 Turbo；真实来源地点数 5,reserved
+pal_140,冥雀卫,暗,白银,经济,暗、经济,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无",reward_pT2,,来源对象 bz_van_140；主附魔 Golden；真实来源地点数 4,reserved
+pal_141,沧鸾仔,水,青铜,治疗,水、地、治疗,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, tier_pT2",reward_pT1,,来源对象 bz_van_141；主附魔 Restorative；真实来源地点数 6,reserved
+pal_142,霆螳灵,雷,青铜,输出,雷、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_142；主附魔 Deadly；真实来源地点数 5,reserved
+pal_143,山熊卫,地,白银,坦克,地、龙、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT2,,来源对象 bz_van_143；主附魔 Shielded；真实来源地点数 5,reserved
+pal_144,沧燕侯,水,黄金,机动,水、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_144；主附魔 Turbo；真实来源地点数 4,reserved
+pal_145,螭蜂妖,龙,白银,召唤,龙、召唤,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无",reward_pT2,,来源对象 bz_van_145；主附魔 Deadly；真实来源地点数 4,reserved
+pal_146,沧鲤将,水,白银,治疗,水、地、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_146；主附魔 Turbo；真实来源地点数 6,reserved
+pal_147,沙狮神,地,钻石,输出,地、输出,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_147；主附魔 Deadly；真实来源地点数 3,reserved
+pal_148,震狼君,雷,黄金,输出,雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_148；主附魔 Deadly；真实来源地点数 4,reserved
+pal_149,渊鹿妖,水,白银,治疗,水、雷、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_149；主附魔 Turbo；真实来源地点数 5,reserved
+pal_150,汐蝶卫,水,白银,治疗,水、地、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_150；主附魔 Turbo；真实来源地点数 5,reserved
+pal_151,电鹰君,雷,黄金,输出,雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_151；主附魔 Deadly；真实来源地点数 4,reserved
+pal_152,鸣鳗王,雷,黄金,控制,雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_经济, tier_pT1",reward_pT3,,来源对象 bz_van_152；主附魔 Icy；真实来源地点数 6,reserved
+pal_153,震狐卫,雷,白银,机动,雷、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_153；主附魔 Turbo；真实来源地点数 5,reserved
+pal_154,朱蛛将,火,白银,控制,火、草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, role_输出",reward_pT2,,来源对象 bz_van_154；主附魔 Fiery；真实来源地点数 6,reserved
+pal_155,沧鲤祖,水,钻石,治疗,水、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_155；主附魔 Deadly；真实来源地点数 3,reserved
+pal_156,角马王,龙,黄金,机动,龙、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_156；主附魔 Turbo；真实来源地点数 3,reserved
+pal_157,焰鹰妖,火,白银,输出,火、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_157；主附魔 Fiery；真实来源地点数 5,reserved
+pal_158,澜蜂尊,水,黄金,机动,水、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_158；主附魔 Turbo；真实来源地点数 6,reserved
+pal_159,凝鳗卫,冰,白银,控制,冰、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, role_经济",reward_pT2,,来源对象 bz_van_159；主附魔 Icy；真实来源地点数 6,reserved
+pal_160,青鳗君,草,黄金,控制,草、雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_输出, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_160；主附魔 Icy；真实来源地点数 6,reserved
+pal_161,电鹰童,雷,青铜,输出,雷、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_坦克",reward_pT1,,来源对象 bz_van_161；主附魔 Deadly；真实来源地点数 6,reserved
+pal_162,澜鲨童,水,青铜,输出,水、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_地, elem_龙, elem_无",reward_pT1,,来源对象 bz_van_162；主附魔 Deadly；真实来源地点数 5,reserved
+pal_163,石甲将,地,白银,坦克,地、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_召唤铺场",reward_pT2,,来源对象 bz_van_163；主附魔 Shielded；真实来源地点数 6,reserved
+pal_164,朱蛛侯,火,黄金,控制,火、草、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_治疗, role_输出",reward_pT3,,来源对象 bz_van_164；主附魔 Fiery；真实来源地点数 6,reserved
+pal_165,渊猿王,水,黄金,机动,水、雷、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_坦克, tier_pT1",reward_pT3,,来源对象 bz_van_165；主附魔 Turbo；真实来源地点数 6,reserved
+pal_166,焰蚌圣,火,钻石,治疗,火、冰、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙",reward_pT4,,来源对象 bz_van_166；主附魔 Fiery；真实来源地点数 2,reserved
+pal_167,渊兔妖,水,白银,治疗,水、雷、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_167；主附魔 Restorative；真实来源地点数 5,reserved
+pal_168,澜兔祖,水,钻石,治疗,水、地、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_168；主附魔 Restorative；真实来源地点数 3,reserved
+pal_169,朱鹤将,火,白银,治疗,火、水、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_169；主附魔 Fiery；真实来源地点数 5,reserved
+pal_170,青蝎卫,草,白银,控制,草、雷、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_输出",reward_pT2,,来源对象 bz_van_170；主附魔 Toxic；真实来源地点数 6,reserved
+pal_171,赤狼童,火,青铜,输出,火、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT1,,来源对象 bz_van_171；主附魔 Fiery；真实来源地点数 5,reserved
+pal_172,森蟒仔,草,青铜,控制,草、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT1,,来源对象 bz_van_172；主附魔 Toxic；真实来源地点数 5,reserved
+pal_173,燎鹰兽,火,青铜,输出,火、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT1,,来源对象 bz_van_173；主附魔 Fiery；真实来源地点数 5,reserved
+pal_174,焰狼将,火,白银,输出,火、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_174；主附魔 Fiery；真实来源地点数 5,reserved
+pal_175,电豹尊,雷,黄金,输出,雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_175；主附魔 Deadly；真实来源地点数 4,reserved
+pal_176,电螳精,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_176；主附魔 Deadly；真实来源地点数 5,reserved
+pal_177,霆狼卫,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_177；主附魔 Deadly；真实来源地点数 5,reserved
+pal_178,闪鲲妖,雷,白银,召唤,雷、龙、召唤,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_178；主附魔 Deadly；真实来源地点数 5,reserved
+pal_179,震鹰王,雷,黄金,输出,雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, tier_pT1",reward_pT3,,来源对象 bz_van_179；主附魔 Deadly；真实来源地点数 5,reserved
+pal_180,鸣马王,雷,黄金,机动,雷、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_180；主附魔 Turbo；真实来源地点数 6,reserved
+pal_181,碧兔神,水,钻石,治疗,水、雷、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙, role_召唤",reward_pT4,,来源对象 bz_van_181；主附魔 Restorative；真实来源地点数 4,reserved
+pal_182,渊蚁皇,水,钻石,召唤,水、龙、召唤,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙",reward_pT4,,来源对象 bz_van_182；主附魔 Radiant；真实来源地点数 3,reserved
+pal_183,垒牦灵,地,青铜,坦克,地、坦克,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT1,,来源对象 bz_van_183；主附魔 Shielded；真实来源地点数 5,reserved
+pal_184,雷鹰将,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, tier_pT1",reward_pT2,,来源对象 bz_van_184；主附魔 Deadly；真实来源地点数 6,reserved
+pal_185,烬鳗将,火,白银,控制,火、冰、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, role_治疗",reward_pT2,,来源对象 bz_van_185；主附魔 Fiery；真实来源地点数 6,reserved
+pal_186,角豹神,龙,钻石,输出,龙、输出,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_186；主附魔 Deadly；真实来源地点数 4,reserved
+pal_187,雷鹰卫,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT1",reward_pT2,,来源对象 bz_van_187；主附魔 Deadly；真实来源地点数 5,reserved
+pal_188,岩獒精,地,白银,坦克,地、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT2,,来源对象 bz_van_188；主附魔 Shielded；真实来源地点数 5,reserved
+pal_189,烬鹿祖,火,钻石,治疗,火、草、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, tier_pT2",reward_pT4,,来源对象 bz_van_189；主附魔 Fiery；真实来源地点数 3,reserved
+pal_190,潮鹤精,水,白银,治疗,水、地、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, special_merchant, tier_pT2",reward_pT2,,来源对象 bz_van_190；主附魔 Turbo；真实来源地点数 6,reserved
+pal_191,焰豹将,火,白银,输出,火、雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, tier_pT1",reward_pT2,,来源对象 bz_van_191；主附魔 Fiery；真实来源地点数 6,reserved
+pal_192,赤鼋妖,火,白银,坦克,火、地、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_192；主附魔 Fiery；真实来源地点数 5,reserved
+pal_193,雷狼卫,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_坦克",reward_pT2,,来源对象 bz_van_193；主附魔 Deadly；真实来源地点数 6,reserved
+pal_194,电虎侯,雷,黄金,输出,雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤",reward_pT3,,来源对象 bz_van_194；主附魔 Deadly；真实来源地点数 4,reserved
+pal_195,燎狼将,火,白银,输出,火、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_195；主附魔 Fiery；真实来源地点数 5,reserved
+pal_196,凛鳗王,冰,黄金,控制,冰、雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无, role_控制, tier_pT1",reward_pT3,,来源对象 bz_van_196；主附魔 Icy；真实来源地点数 6,reserved
+pal_197,寒狐祖,冰,钻石,控制,冰、控制,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_197；主附魔 Icy；真实来源地点数 3,reserved
+pal_198,赤虎仔,火,青铜,输出,火、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT1,,来源对象 bz_van_198；主附魔 Fiery；真实来源地点数 5,reserved
+pal_199,藤貂仔,草,青铜,控制,草、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT1,,来源对象 bz_van_199；主附魔 Toxic；真实来源地点数 5,reserved
+pal_200,烬豹侯,火,黄金,输出,火、雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_治疗",reward_pT3,,来源对象 bz_van_200；主附魔 Fiery；真实来源地点数 5,reserved
+pal_201,潮鸾卫,水,白银,治疗,水、雷、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_召唤, tier_pT2",reward_pT2,,来源对象 bz_van_201；主附魔 Restorative；真实来源地点数 7,reserved
+pal_202,苔狐侯,草,黄金,控制,草、雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_输出",reward_pT3,,来源对象 bz_van_202；主附魔 Toxic；真实来源地点数 5,reserved
+pal_203,霆熊卫,雷,白银,坦克,雷、地、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_召唤铺场",reward_pT2,,来源对象 bz_van_203；主附魔 Shielded；真实来源地点数 6,reserved
+pal_204,闪鲨将,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_坦克",reward_pT2,,来源对象 bz_van_204；主附魔 Deadly；真实来源地点数 6,reserved
+pal_205,雷隼卫,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_召唤",reward_pT2,,来源对象 bz_van_205；主附魔 Deadly；真实来源地点数 6,reserved
+pal_206,霜狐卫,冰,白银,控制,冰、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制",reward_pT2,,来源对象 bz_van_206；主附魔 Icy；真实来源地点数 5,reserved
+pal_207,森蛇童,草,青铜,控制,草、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT1,,来源对象 bz_van_207；主附魔 Toxic；真实来源地点数 5,reserved
+pal_208,冰蛙将,冰,白银,控制,冰、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, special_merchant",reward_pT2,,来源对象 bz_van_208；主附魔 Icy；真实来源地点数 6,reserved
+pal_209,夜貉精,暗,白银,经济,暗、经济,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_209；主附魔 Golden；真实来源地点数 5,reserved
+pal_210,震豹童,雷,青铜,输出,雷、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_210；主附魔 Deadly；真实来源地点数 5,reserved
+pal_211,夜雀皇,暗,钻石,机动,暗、机动,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_坦克",reward_pT4,,来源对象 bz_van_211；主附魔 Turbo；真实来源地点数 3,reserved
+pal_212,沧鹤妖,水,白银,治疗,水、地、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT2",reward_pT2,,来源对象 bz_van_212；主附魔 Restorative；真实来源地点数 5,reserved
+pal_213,震鹰童,雷,青铜,输出,雷、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_213；主附魔 Deadly；真实来源地点数 5,reserved
+pal_214,角鲨兽,龙,青铜,输出,龙、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT1,,来源对象 bz_van_214；主附魔 Deadly；真实来源地点数 5,reserved
+pal_215,角隼尊,龙,黄金,机动,龙、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, special_merchant",reward_pT3,,来源对象 bz_van_215；主附魔 Turbo；真实来源地点数 4,reserved
+pal_216,霆鲭将,雷,白银,机动,雷、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无",reward_pT2,,来源对象 bz_van_216；主附魔 Turbo；真实来源地点数 4,reserved
+pal_217,震雀将,雷,白银,经济,雷、经济,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_217；主附魔 Golden；真实来源地点数 5,reserved
+pal_218,赤鹤皇,火,钻石,治疗,火、水、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_治疗",reward_pT4,,来源对象 bz_van_218；主附魔 Fiery；真实来源地点数 3,reserved
+pal_219,霆狼妖,雷,白银,输出,雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, tier_pT1",reward_pT2,,来源对象 bz_van_219；主附魔 Deadly；真实来源地点数 6,reserved
+pal_220,碧雀君,水,黄金,机动,水、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_地, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_220；主附魔 Turbo；真实来源地点数 4,reserved
+pal_221,霆虎神,雷,钻石,输出,雷、输出,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙, role_坦克, tier_pT1",reward_pT4,,来源对象 bz_van_221；主附魔 Deadly；真实来源地点数 5,reserved
+pal_222,雷猿王,雷,黄金,机动,雷、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_222；主附魔 Turbo；真实来源地点数 5,reserved
+pal_223,燎蚌皇,火,钻石,治疗,火、水、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_治疗, tier_pT2",reward_pT4,,来源对象 bz_van_223；主附魔 Fiery；真实来源地点数 4,reserved
+pal_224,夜蝎卫,暗,白银,控制,暗、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_经济",reward_pT2,,来源对象 bz_van_224；主附魔 Icy；真实来源地点数 5,reserved
+pal_225,星隼精,无,白银,输出,无、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_225；主附魔 Deadly；真实来源地点数 5,reserved
+pal_226,潮雀妖,水,白银,机动,水、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, special_merchant",reward_pT2,,来源对象 bz_van_226；主附魔 Turbo；真实来源地点数 6,reserved
+pal_227,蛟蛙侯,龙,黄金,控制,龙、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_227；主附魔 Icy；真实来源地点数 5,reserved
+pal_228,凛蝎卫,冰,白银,控制,冰、草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, role_输出",reward_pT2,,来源对象 bz_van_228；主附魔 Icy；真实来源地点数 6,reserved
+pal_229,闪狼侯,雷,黄金,输出,雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, tier_pT1",reward_pT3,,来源对象 bz_van_229；主附魔 Deadly；真实来源地点数 5,reserved
+pal_230,震隼灵,雷,青铜,输出,雷、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_230；主附魔 Deadly；真实来源地点数 5,reserved
+pal_231,苔蛛将,草,白银,控制,草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT2,,来源对象 bz_van_231；主附魔 Toxic；真实来源地点数 5,reserved
+pal_232,汐羊王,水,黄金,治疗,水、雷、治疗,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_坦克",reward_pT3,,来源对象 bz_van_232；主附魔 Deadly；真实来源地点数 5,reserved
+pal_233,山象王,地,黄金,坦克,地、坦克,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤铺场",reward_pT3,,来源对象 bz_van_233；主附魔 Turbo；真实来源地点数 4,reserved
+pal_234,寒蟒卫,冰,白银,控制,冰、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_控制, special_merchant",reward_pT2,,来源对象 bz_van_234；主附魔 Icy；真实来源地点数 6,reserved
+pal_235,朱鲭将,火,白银,机动,火、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, special_merchant",reward_pT2,,来源对象 bz_van_235；主附魔 Fiery；真实来源地点数 6,reserved
+pal_236,寒鹰祖,冰,钻石,输出,冰、输出,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙",reward_pT4,,来源对象 bz_van_236；主附魔 Shiny；真实来源地点数 2,reserved
+pal_237,寒蝎尊,冰,黄金,控制,冰、雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_召唤, role_控制",reward_pT3,,来源对象 bz_van_237；主附魔 Icy；真实来源地点数 5,reserved
+pal_238,石甲兽,地,青铜,坦克,地、坦克,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT1,,来源对象 bz_van_238；主附魔 Shielded；真实来源地点数 5,reserved
+pal_239,沧鹤神,水,钻石,治疗,水、地、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_地, elem_龙",reward_pT4,,来源对象 bz_van_239；主附魔 Turbo；真实来源地点数 3,reserved
+pal_240,碧蚌将,水,白银,治疗,水、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT2",reward_pT2,,来源对象 bz_van_240；主附魔 Mossy；真实来源地点数 5,reserved
+pal_241,墨蝎王,暗,黄金,控制,暗、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_241；主附魔 Obsidian；真实来源地点数 3,reserved
+pal_242,鸣螳仔,雷,青铜,输出,雷、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤",reward_pT1,,来源对象 bz_van_242；主附魔 Deadly；真实来源地点数 5,reserved
+pal_243,岩豹兽,地,青铜,输出,地、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT1,,来源对象 bz_van_243；主附魔 Deadly；真实来源地点数 5,reserved
+pal_244,雷蛛妖,雷,白银,控制,雷、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_经济, special_merchant",reward_pT2,,来源对象 bz_van_244；主附魔 Icy；真实来源地点数 6,reserved
+pal_245,角蛙君,龙,黄金,控制,龙、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_经济",reward_pT3,,来源对象 bz_van_245；主附魔 Icy；真实来源地点数 4,reserved
+pal_246,燎隼精,火,白银,机动,火、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, special_merchant",reward_pT2,,来源对象 bz_van_246；主附魔 Fiery；真实来源地点数 6,reserved
+pal_247,潮羊卫,水,白银,治疗,水、地、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, tier_pT2",reward_pT2,,来源对象 bz_van_247；主附魔 Restorative；真实来源地点数 5,reserved
+pal_248,岳熊精,地,白银,坦克,地、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_召唤铺场",reward_pT2,,来源对象 bz_van_248；主附魔 Shielded；真实来源地点数 6,reserved
+pal_249,霆鲨皇,雷,钻石,输出,雷、输出,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_召唤, role_坦克",reward_pT4,,来源对象 bz_van_249；主附魔 Deadly；真实来源地点数 4,reserved
+pal_250,霜貂卫,冰,白银,控制,冰、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_控制",reward_pT2,,来源对象 bz_van_250；主附魔 Icy；真实来源地点数 6,reserved
+pal_251,霆牦王,雷,黄金,坦克,雷、地、坦克,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, special_merchant",reward_pT3,,来源对象 bz_van_251；主附魔 Turbo；真实来源地点数 5,reserved
+pal_252,炎蛛尊,火,黄金,控制,火、草、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_治疗, role_输出, special_merchant",reward_pT3,,来源对象 bz_van_252；主附魔 Fiery；真实来源地点数 6,reserved
+pal_253,炎鳗精,火,白银,控制,火、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_经济",reward_pT2,,来源对象 bz_van_253；主附魔 Icy；真实来源地点数 6,reserved
+pal_254,赤蟒王,火,黄金,控制,火、雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_治疗, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_254；主附魔 Fiery；真实来源地点数 6,reserved
+pal_255,电蟒精,雷,白银,控制,雷、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_经济",reward_pT2,,来源对象 bz_van_255；主附魔 Icy；真实来源地点数 6,reserved
+pal_256,震隼将,雷,白银,机动,雷、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, special_merchant",reward_pT2,,来源对象 bz_van_256；主附魔 Turbo；真实来源地点数 6,reserved
+pal_257,翠隼将,草,白银,输出,草、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_257；主附魔 Deadly；真实来源地点数 6,reserved
+pal_258,汐蝶精,水,白银,治疗,水、地、治疗,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_经济",reward_pT2,,来源对象 bz_van_258；主附魔 Icy；真实来源地点数 5,reserved
+pal_259,朱雀妖,火,白银,机动,火、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, special_merchant",reward_pT2,,来源对象 bz_van_259；主附魔 Turbo；真实来源地点数 6,reserved
+pal_260,云隼兽,无,青铜,输出,无、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT1,,来源对象 bz_van_260；主附魔 Deadly；真实来源地点数 5,reserved
+pal_261,寒貂卫,冰,白银,控制,冰、雷、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_控制",reward_pT2,,来源对象 bz_van_261；主附魔 Icy；真实来源地点数 6,reserved
+pal_262,澜象将,水,白银,坦克,水、地、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克, role_召唤铺场",reward_pT2,,来源对象 bz_van_262；主附魔 Shielded；真实来源地点数 7,reserved
+pal_263,沙鹰仔,地,青铜,输出,地、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无",reward_pT1,,来源对象 bz_van_263；主附魔 Heavy；真实来源地点数 4,reserved
+pal_264,蛟鲨精,龙,白银,输出,龙、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_264；主附魔 Deadly；真实来源地点数 5,reserved
+pal_265,电狐王,雷,黄金,控制,雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, role_经济, special_merchant",reward_pT3,,来源对象 bz_van_265；主附魔 Icy；真实来源地点数 6,reserved
+pal_266,沧狮将,水,白银,输出,水、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_地, elem_龙, elem_无, role_坦克",reward_pT2,,来源对象 bz_van_266；主附魔 Deadly；真实来源地点数 6,reserved
+pal_267,炎鲭侯,火,黄金,机动,火、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无",reward_pT3,,来源对象 bz_van_267；主附魔 Turbo；真实来源地点数 3,reserved
+pal_268,石牦灵,地,青铜,坦克,地、坦克,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_水, elem_雷, elem_龙, elem_无, role_召唤铺场",reward_pT1,,来源对象 bz_van_268；主附魔 Shielded；真实来源地点数 5,reserved
+pal_269,焰蝎妖,火,白银,控制,火、草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗, role_输出",reward_pT2,,来源对象 bz_van_269；主附魔 Fiery；真实来源地点数 6,reserved
+pal_270,芽蛛将,草,白银,控制,草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_坦克, role_输出",reward_pT2,,来源对象 bz_van_270；主附魔 Toxic；真实来源地点数 6,reserved
+pal_271,青蛇将,草,白银,控制,草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_输出",reward_pT2,,来源对象 bz_van_271；主附魔 Toxic；真实来源地点数 5,reserved
+pal_272,芽貂卫,草,白银,控制,草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_输出, special_merchant",reward_pT2,,来源对象 bz_van_272；主附魔 Toxic；真实来源地点数 6,reserved
+pal_273,燎鹰卫,火,白银,输出,火、雷、输出,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_召唤, role_治疗",reward_pT2,,来源对象 bz_van_273；主附魔 Fiery；真实来源地点数 6,reserved
+pal_274,苔貂王,草,黄金,控制,草、雷、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"elem_水, elem_龙, elem_无, role_坦克, role_输出, special_merchant",reward_pT3,,来源对象 bz_van_274；主附魔 Toxic；真实来源地点数 6,reserved
+pal_275,青鹿祖,草,钻石,治疗,草、水、治疗,宠物,保留,6,pT4,8,8,40,100,100,100,25,"elem_水, elem_龙, role_输出, tier_pT2",reward_pT4,,来源对象 bz_van_275；主附魔 Toxic；真实来源地点数 4,reserved
+pal_276,焰蟾卫,火,白银,召唤,火、龙、召唤,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_水, elem_雷, elem_龙, elem_无, role_治疗",reward_pT2,,来源对象 bz_van_276；主附魔 Fiery；真实来源地点数 5,reserved
+pal_277,克诺大兽,地,白银,机动,地、机动、水、龙、治疗,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_经济, elite_high",reward_pT1,,来源对象 bz_van_277；主附魔 Turbo；真实来源地点数 2,reserved
+pal_278,克诺中兽,龙,黄金,机动,龙、机动、地、坦克,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, elite_high",reward_pT1,,来源对象 bz_van_278；主附魔 Turbo；真实来源地点数 2,reserved
+pal_279,克诺小兽,地,黄金,机动,地、机动、冰、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, elite_high",reward_pT1,,来源对象 bz_van_279；主附魔 Turbo；真实来源地点数 2,reserved
+pal_280,蛛婆小兽,水,黄金,控制,水、控制、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_召唤铺场",reward_pT1,,来源对象 bz_van_280；主附魔 Icy；真实来源地点数 2,reserved
+pal_281,蛛婆大兽,地,白银,控制,地、控制、水、输出,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_召唤铺场",reward_pT1,,来源对象 bz_van_281；主附魔 Icy；真实来源地点数 2,reserved
+pal_282,蛛婆中兽,暗,黄金,控制,暗、控制、雷,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_召唤铺场",reward_pT1,,来源对象 bz_van_282；主附魔 Icy；真实来源地点数 2,reserved
+pal_283,芙蕾小兽,冰,黄金,控制,冰、控制、雷、龙、召唤,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系牵制",reward_pT1,,来源对象 bz_van_283；主附魔 Icy；真实来源地点数 2,reserved
+pal_284,芙蕾大兽,冰,白银,控制,冰、控制、火、雷、输出,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_风系牵制",reward_pT1,,来源对象 bz_van_284；主附魔 Icy；真实来源地点数 2,reserved
+pal_285,芙蕾中兽,冰,黄金,控制,冰、控制、草、水,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系牵制",reward_pT1,,来源对象 bz_van_285；主附魔 Icy；真实来源地点数 2,reserved
+pal_286,赫夫小兽,火,黄金,经济,火、经济、草、水、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, tier_pT2",reward_pT1,,来源对象 bz_van_286；主附魔 Fiery；真实来源地点数 2,reserved
+pal_287,赫夫中兽,火,黄金,经济,火、经济、无、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, tier_pT2",reward_pT1,,来源对象 bz_van_287；主附魔 Fiery；真实来源地点数 2,reserved
+pal_288,赫夫大兽,火,白银,经济,火、经济、水、龙、治疗,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT2",reward_pT1,,来源对象 bz_van_288；主附魔 Fiery；真实来源地点数 2,reserved
+pal_289,夜爵大兽,草,白银,控制,草、控制、水、地、坦克,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_经济, role_火系压制",reward_pT1,,来源对象 bz_van_289；主附魔 Toxic；真实来源地点数 2,reserved
+pal_290,夜爵小兽,草,黄金,控制,草、控制、水、地、坦克,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_火系压制",reward_pT1,,来源对象 bz_van_290；主附魔 Toxic；真实来源地点数 2,reserved
+pal_291,夜爵中兽,草,黄金,控制,草、控制、雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_火系压制",reward_pT1,,来源对象 bz_van_291；主附魔 Toxic；真实来源地点数 2,reserved
+pal_292,瑟菲小兽,雷,黄金,经济,雷、经济、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_治疗",reward_pT1,,来源对象 bz_van_292；主附魔 Golden；真实来源地点数 2,reserved
+pal_293,瑟菲大兽,地,白银,经济,地、经济、水、控制,宠物,保留,5,pT2,4,4,85,100,100,100,50,"role_治疗, role_经济",reward_pT1,,来源对象 bz_van_293；主附魔 Golden；真实来源地点数 2,reserved
+pal_294,瑟菲中兽,无,黄金,经济,无、经济、水、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_治疗",reward_pT1,,来源对象 bz_van_294；主附魔 Golden；真实来源地点数 2,reserved
+pal_295,凯夫中兽,地,青铜,坦克,地、坦克、水、龙、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, tier_pT3",reward_pT1,,来源对象 bz_van_295；主附魔 Shielded；真实来源地点数 2,reserved
+pal_296,凯夫小兽,地,青铜,坦克,地、坦克、雷、输出,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, tier_pT3",reward_pT1,,来源对象 bz_van_296；主附魔 Shielded；真实来源地点数 2,reserved
+pal_297,加瑟中兽,火,白银,输出,火、输出、冰、控制,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_297；主附魔 Heavy；真实来源地点数 2,reserved
+pal_298,加瑟大兽,草,白银,经济,草、经济、雷、输出,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_298；主附魔 Golden；真实来源地点数 2,reserved
+pal_299,加瑟小兽,雷,白银,输出,雷、输出、暗,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_299；主附魔 Shiny；真实来源地点数 2,reserved
+pal_300,古董大兽,雷,白银,输出,雷、输出、水,宠物,保留,5,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_300；主附魔 Shiny；真实来源地点数 2,reserved
+pal_301,古董中兽,无,白银,输出,无、输出、水、龙、控制,宠物,保留,5,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_301；主附魔 Shiny；真实来源地点数 2,reserved
+pal_302,古董小兽,龙,白银,输出,龙、输出、草、水、控制,宠物,保留,5,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_302；主附魔 Heavy；真实来源地点数 2,reserved
+pal_303,吉娜小兽,水,青铜,输出,水、输出、草,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_冰",reward_pT1,,来源对象 bz_van_303；主附魔 Heavy；真实来源地点数 2,reserved
+pal_304,吉娜大兽,无,白银,输出,无、输出、龙,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_冰, role_经济",reward_pT1,,来源对象 bz_van_304；主附魔 Heavy；真实来源地点数 2,reserved
+pal_305,吉娜中兽,无,青铜,输出,无、输出、水、地、治疗,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_冰",reward_pT1,,来源对象 bz_van_305；主附魔 Heavy；真实来源地点数 2,reserved
+pal_306,塔季中兽,龙,白银,输出,龙、输出、火,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_306；主附魔 Heavy；真实来源地点数 2,reserved
+pal_307,塔季大兽,无,白银,经济,无、经济、火、水、控制,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_307；主附魔 Golden；真实来源地点数 2,reserved
+pal_308,塔季小兽,水,白银,输出,水、输出、雷、机动,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_经济, role_重甲抗压",reward_pT1,,来源对象 bz_van_308；主附魔 Shiny；真实来源地点数 2,reserved
+pal_309,奥利中兽,无,青铜,输出,无、输出、水、龙、召唤,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_远点压制",reward_pT1,,来源对象 bz_van_309；主附魔 Shiny；真实来源地点数 2,reserved
+pal_310,奥利小兽,水,青铜,输出,水、输出、地、坦克,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_远点压制",reward_pT1,,来源对象 bz_van_310；主附魔 Shiny；真实来源地点数 2,reserved
+pal_311,安德大兽,暗,白银,输出,暗、输出、火、龙、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_火, role_经济",reward_pT1,,来源对象 bz_van_311；主附魔 Heavy；真实来源地点数 2,reserved
+pal_312,安德小兽,草,青铜,输出,草、输出、雷、地、召唤,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_火, elem_草",reward_pT1,,来源对象 bz_van_312；主附魔 Shiny；真实来源地点数 2,reserved
+pal_313,安德中兽,龙,青铜,输出,龙、输出、水、雷、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_火, elem_草",reward_pT1,,来源对象 bz_van_313；主附魔 Heavy；真实来源地点数 2,reserved
+pal_314,寇特大兽,龙,白银,输出,龙、输出、雷、机动,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_经济, role_机动",reward_pT2,,来源对象 bz_van_314；主附魔 Shiny；真实来源地点数 2,reserved
+pal_315,寇特小兽,暗,青铜,输出,暗、输出、火、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动",reward_pT2,,来源对象 bz_van_315；主附魔 Heavy；真实来源地点数 2,reserved
+pal_316,寇特中兽,火,青铜,输出,火、输出、水、龙、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动",reward_pT2,,来源对象 bz_van_316；主附魔 Shiny；真实来源地点数 2,reserved
+pal_317,库里中兽,龙,青铜,输出,龙、输出、火、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,elem_草,reward_pT2,,来源对象 bz_van_317；主附魔 Shiny；真实来源地点数 1,reserved
+pal_318,库里小兽,无,青铜,输出,无、输出、龙,宠物,保留,1,pT1,2,2,100,100,100,100,60,elem_草,reward_pT2,,来源对象 bz_van_318；主附魔 Heavy；真实来源地点数 1,reserved
+pal_319,库里大兽,水,白银,输出,水、输出、雷,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT2,,来源对象 bz_van_319；主附魔 Shiny；真实来源地点数 2,reserved
+pal_320,戈迪小兽,草,白银,经济,草、经济、水、雷、机动,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_坦克, role_经济",reward_pT2,,来源对象 bz_van_320；主附魔 Golden；真实来源地点数 2,reserved
+pal_321,戈迪中兽,龙,白银,经济,龙、经济、水、机动,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_坦克, role_经济",reward_pT2,,来源对象 bz_van_321；主附魔 Golden；真实来源地点数 2,reserved
+pal_322,戈迪大兽,龙,白银,经济,龙、经济、冰、输出,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_坦克, role_经济",reward_pT2,,来源对象 bz_van_322；主附魔 Golden；真实来源地点数 2,reserved
+pal_323,托克大兽,水,白银,输出,水、输出、火,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, special_merchant",reward_pT2,,来源对象 bz_van_323；主附魔 Shiny；真实来源地点数 2,reserved
+pal_324,托克中兽,地,白银,输出,地、输出、水、控制,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, special_merchant",reward_pT2,,来源对象 bz_van_324；主附魔 Shiny；真实来源地点数 2,reserved
+pal_325,托克小兽,水,青铜,输出,水、输出、雷,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, special_merchant",reward_pT2,,来源对象 bz_van_325；主附魔 Heavy；真实来源地点数 2,reserved
+pal_326,谢尔小兽,草,青铜,输出,草、输出、雷、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_抗压承伤",reward_pT2,,来源对象 bz_van_326；主附魔 Shiny；真实来源地点数 2,reserved
+pal_327,谢尔中兽,暗,白银,输出,暗、输出、雷,宠物,保留,5,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_327；主附魔 Shiny；真实来源地点数 2,reserved
+pal_328,谢尔大兽,龙,白银,经济,龙、经济、火、水、控制,宠物,保留,5,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_328；主附魔 Golden；真实来源地点数 2,reserved
+pal_329,杰杰大兽,火,白银,输出,火、输出、草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_雷, role_经济",reward_pT2,,来源对象 bz_van_329；主附魔 Heavy；真实来源地点数 2,reserved
+pal_330,杰杰中兽,地,青铜,输出,地、输出、雷、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_雷",reward_pT2,,来源对象 bz_van_330；主附魔 Shiny；真实来源地点数 2,reserved
+pal_331,橡君大兽,草,白银,输出,草、输出、水、雷、机动,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_机动压制",reward_pT2,,来源对象 bz_van_331；主附魔 Heavy；真实来源地点数 2,reserved
+pal_332,橡君小兽,龙,青铜,输出,龙、输出、水、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT2,,来源对象 bz_van_332；主附魔 Shiny；真实来源地点数 2,reserved
+pal_333,橡君中兽,水,青铜,输出,水、输出、火、冰、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT2,,来源对象 bz_van_333；主附魔 Shiny；真实来源地点数 2,reserved
+pal_334,波尔小兽,水,黄金,经济,水、经济、龙、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系铺场",reward_pT2,,来源对象 bz_van_334；主附魔 Golden；真实来源地点数 2,reserved
+pal_335,波尔大兽,水,白银,输出,水、输出、雷、召唤,宠物,保留,5,pT2,4,4,85,100,100,100,50,"role_经济, role_风系铺场",reward_pT2,,来源对象 bz_van_335；主附魔 Heavy；真实来源地点数 2,reserved
+pal_336,波尔中兽,龙,黄金,经济,龙、经济、水、雷、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_风系铺场",reward_pT2,,来源对象 bz_van_336；主附魔 Golden；真实来源地点数 2,reserved
+pal_337,试家大兽,冰,白银,输出,冰、输出、暗、机动,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_337；主附魔 Heavy；真实来源地点数 2,reserved
+pal_338,试家中兽,无,白银,输出,无、输出、冰、控制,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_338；主附魔 Heavy；真实来源地点数 2,reserved
+pal_339,试家小兽,草,白银,输出,草、输出、火,宠物,保留,4,pT2,4,4,85,100,100,100,50,"role_经济, role_抗压承伤",reward_pT2,,来源对象 bz_van_339；主附魔 Shiny；真实来源地点数 2,reserved
+pal_340,爱拉中兽,龙,青铜,输出,龙、输出、雷、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"night_base, elem_草",reward_pT2,,来源对象 bz_van_340；主附魔 Heavy；真实来源地点数 2,reserved
+pal_341,爱拉大兽,冰,白银,输出,冰、输出、雷、机动,宠物,保留,2,pT2,4,4,85,100,100,100,50,"night_base, role_经济",reward_pT2,,来源对象 bz_van_341；主附魔 Heavy；真实来源地点数 2,reserved
+pal_342,爱拉小兽,冰,青铜,输出,冰、输出、龙、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"night_base, elem_草",reward_pT2,,来源对象 bz_van_342；主附魔 Heavy；真实来源地点数 2,reserved
+pal_343,瓦尔大兽,地,白银,输出,地、输出、草、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_暗, role_经济",reward_pT2,,来源对象 bz_van_343；主附魔 Shiny；真实来源地点数 2,reserved
+pal_344,瓦尔小兽,火,青铜,输出,火、输出、雷、龙,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_暗",reward_pT2,,来源对象 bz_van_344；主附魔 Heavy；真实来源地点数 2,reserved
+pal_345,瓦尔中兽,火,青铜,输出,火、输出、雷、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_暗",reward_pT2,,来源对象 bz_van_345；主附魔 Shiny；真实来源地点数 2,reserved
+pal_346,米兹中兽,水,青铜,输出,水、输出、龙、经济,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_地",reward_pT2,,来源对象 bz_van_346；主附魔 Shiny；真实来源地点数 2,reserved
+pal_347,米兹大兽,地,白银,输出,地、输出、水、坦克,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_地, role_经济",reward_pT2,,来源对象 bz_van_347；主附魔 Shiny；真实来源地点数 2,reserved
+pal_348,米兹小兽,地,青铜,输出,地、输出、火、雷,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_地",reward_pT2,,来源对象 bz_van_348；主附魔 Shiny；真实来源地点数 2,reserved
+pal_349,米透小兽,无,青铜,输出,无、输出、雷、地、坦克,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, elem_无",reward_pT2,,来源对象 bz_van_349；主附魔 Shiny；真实来源地点数 2,reserved
+pal_350,米透大兽,无,白银,输出,无、输出、水、龙、控制,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_无, role_经济",reward_pT2,,来源对象 bz_van_350；主附魔 Heavy；真实来源地点数 2,reserved
+pal_351,米透中兽,水,白银,输出,水、输出、火、雷,宠物,保留,2,pT2,4,4,85,100,100,100,50,"elem_无, role_经济",reward_pT2,,来源对象 bz_van_351；主附魔 Shiny；真实来源地点数 2,reserved
+pal_352,自瞄大兽,水,白银,输出,水、输出、龙、召唤,宠物,保留,5,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT1",reward_pT2,,来源对象 bz_van_352；主附魔 Shiny；真实来源地点数 2,reserved
+pal_353,自瞄中兽,地,白银,输出,地、输出、水、机动,宠物,保留,5,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT1",reward_pT3,,来源对象 bz_van_353；主附魔 Shiny；真实来源地点数 2,reserved
+pal_354,自瞄小兽,水,白银,输出,水、输出、雷,宠物,保留,5,pT2,4,4,85,100,100,100,50,"role_经济, tier_pT1",reward_pT3,,来源对象 bz_van_354；主附魔 Heavy；真实来源地点数 2,reserved
+pal_355,葵仙中兽,无,青铜,输出,无、输出、草、龙、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT3,,来源对象 bz_van_355；主附魔 Heavy；真实来源地点数 2,reserved
+pal_356,葵仙小兽,龙,青铜,输出,龙、输出、火、雷,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_机动压制",reward_pT3,,来源对象 bz_van_356；主附魔 Shiny；真实来源地点数 2,reserved
+pal_357,葵仙大兽,水,白银,输出,水、输出、雷,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_经济, role_机动压制",reward_pT3,,来源对象 bz_van_357；主附魔 Heavy；真实来源地点数 2,reserved
+pal_358,西尔小兽,暗,青铜,输出,暗、输出、水,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_358；主附魔 Heavy；真实来源地点数 2,reserved
+pal_359,西尔大兽,草,白银,输出,草、输出、水、雷、坦克,宠物,保留,6,pT2,4,4,85,100,100,100,50,role_经济,reward_pT3,,来源对象 bz_van_359；主附魔 Shiny；真实来源地点数 1,reserved
+pal_360,西尔中兽,暗,青铜,输出,暗、输出、水、雷、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_360；主附魔 Heavy；真实来源地点数 2,reserved
+pal_361,诺提中兽,草,青铜,输出,草、输出、火、水、控制,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_输出",reward_pT3,,来源对象 bz_van_361；主附魔 Shiny；真实来源地点数 2,reserved
+pal_362,诺提小兽,火,青铜,输出,火、输出、地、机动,宠物,保留,1,pT1,2,2,100,100,100,100,60,"elem_草, role_输出",reward_pT3,,来源对象 bz_van_362；主附魔 Heavy；真实来源地点数 2,reserved
+pal_363,诺提大兽,草,白银,输出,草、输出、雷,宠物,保留,6,pT2,4,4,85,100,100,100,50,"role_输出, role_经济",reward_pT3,,来源对象 bz_van_363；主附魔 Shiny；真实来源地点数 2,reserved
+pal_364,路克小兽,暗,黄金,经济,暗、经济、火、输出,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_控制",reward_pT3,,来源对象 bz_van_364；主附魔 Golden；真实来源地点数 2,reserved
+pal_365,路克中兽,草,黄金,经济,草、经济、水、雷、机动,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_控制",reward_pT3,,来源对象 bz_van_365；主附魔 Golden；真实来源地点数 2,reserved
+pal_366,路克大兽,水,黄金,经济,水、经济、火、冰、控制,宠物,保留,4,pT3,6,6,65,100,100,100,40,"role_坦克, role_控制",reward_pT3,,来源对象 bz_van_366；主附魔 Golden；真实来源地点数 2,reserved
+pal_367,针羽大兽,火,白银,输出,火、输出、草,宠物,保留,6,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_367；主附魔 Heavy；真实来源地点数 2,reserved
+pal_368,针羽小兽,冰,白银,输出,冰、输出、雷、控制,宠物,保留,6,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT3,,来源对象 bz_van_368；主附魔 Shiny；真实来源地点数 2,reserved
+pal_369,针羽中兽,无,白银,输出,无、输出、冰、水、控制,宠物,保留,6,pT2,4,4,85,100,100,100,50,"elem_草, role_经济",reward_pT4,,来源对象 bz_van_369；主附魔 Heavy；真实来源地点数 2,reserved

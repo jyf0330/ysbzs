@@ -529,6 +529,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
     rewardPoolId: row.reward_pool_id || row['奖励池ID'],
     riskLabel: row.risk_label || row['风险文案'],
     enemyPreview: row.enemy_preview || row['敌阵预览'],
+    mechanicPreview: row.mechanic_preview || row['机制预览'],
     rewardPreview: row.reward_preview || row['奖励预览'],
     status: row.status || row['状态'],
     note: row.note || row['备注']

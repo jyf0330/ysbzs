@@ -256,6 +256,7 @@ function buildBattleChoicePreview(enc, schedule) {
     rewardPoolId: enc.rewardPoolId || null,
     riskLabel: enc.riskLabel || null,
     enemyPreview: enc.enemyPreview || null,
+    mechanicPreview: enc.mechanicPreview || null,
     rewardPreview: enc.rewardPreview || null
   };
 }
@@ -300,6 +301,7 @@ function buildBattlePressurePreview(state, encounter = {}, schedule = {}) {
     dominantQuality: dominantQuality(rows),
     rewardPoolId,
     enemyPreview: encounter.enemyPreview || '',
+    mechanicPreview: encounter.mechanicPreview || '',
     rewardPreview: encounter.rewardPreview || '',
     rewardText: encounter.rewardPreview || `${pressureTier === '常规' ? '胜利预期' : '高压胜利预期'}：${rewardLabel}奖励`,
     summary: `${phaseLabel} · ${encounter.riskLabel || pressureTier} · ${wavePeriod}${rows.length ? ` ${rows.length}波` : ''} · 威胁${totalThreat}`
@@ -439,6 +441,7 @@ function generateBattleOptions(state, opts = {}) {
     rewardPoolId: enc.rewardPoolId || null,
     riskLabel: enc.riskLabel || null,
     enemyPreview: enc.enemyPreview || null,
+    mechanicPreview: enc.mechanicPreview || null,
     rewardPreview: enc.rewardPreview || null,
     battleIndex: enc.battleIndex || 1,
     phaseLabel: enc.phaseLabel || schedule.phaseLabel || '战斗',

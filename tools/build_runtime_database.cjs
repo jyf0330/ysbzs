@@ -448,6 +448,7 @@ const SCHEMA = {
       ['reward_pool_id', 'TEXT'],
       ['risk_label', 'TEXT'],
       ['enemy_preview', 'TEXT'],
+      ['mechanic_preview', 'TEXT'],
       ['reward_preview', 'TEXT'],
       ['status', 'TEXT'],
       ['note', 'TEXT']
@@ -855,6 +856,7 @@ function buildDatabaseModel(payload) {
     reward_pool_id: encounter.rewardPoolId,
     risk_label: encounter.riskLabel,
     enemy_preview: encounter.enemyPreview,
+    mechanic_preview: encounter.mechanicPreview,
     reward_preview: encounter.rewardPreview,
     status: encounter.status,
     note: encounter.note

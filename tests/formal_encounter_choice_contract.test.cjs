@@ -43,6 +43,17 @@ const EXPECTED_ENCOUNTERS = new Map(
   [...EXPECTED_BANDS.values()].flatMap(band => band.encounters.map(([encounterId, waveId, rewardPoolId]) => [encounterId, { waveId, rewardPoolId }]))
 );
 
+const EXPECTED_MECHANIC_PRESSURE = new Map([
+  ['enc_d06_midday_c', {
+    petPool: ['pal_029', 'pal_046', 'pal_061', 'pal_097', 'pal_101', 'pal_107'],
+    mechanicPreview: '护甲减伤 / 三名反击 / 回合攻盾成长'
+  }],
+  ['enc_d09_midday_c', {
+    petPool: ['pal_035', 'pal_054', 'pal_182', 'pal_186', 'pal_197', 'pal_241'],
+    mechanicPreview: '三名死亡爆炸 / 回合攻盾成长 / 反击'
+  }]
+]);
+
 function choiceReadyState(day = 1, seed = 'encounter-contract') {
   const state = createGameState({ day, seed, gold: 20 });
   dayRoute.ensureDayRoute(state);
@@ -97,6 +108,8 @@ test('generated choices preserve preview fields and every selected encounter con
       assert.ok(selected);
       assert.equal(selected.choicePreview.waveId, selected.waveId);
       assert.equal(selected.choicePreview.enemyPreview, selected.enemyPreview);
+      assert.equal(selected.choicePreview.mechanicPreview, selected.mechanicPreview);
+      assert.equal(selected.pressurePreview.mechanicPreview, selected.mechanicPreview || '');
       assert.equal(selected.pressurePreview.rewardPoolId, selected.rewardPoolId);
 
       assert.equal(dayRoute.pickBattleEncounter(state, selected.encounterId), true);
@@ -107,6 +120,27 @@ test('generated choices preserve preview fields and every selected encounter con
       assert.ok(spawnEvents.every(event => event.waveId === waveId));
       assert.ok(spawnEvents.every(event => wave.petPool.includes(event.petId)));
     }
+  }
+});
+
+test('Day6 and Day9 high-risk routes expose exact mechanic pressure bands', () => {
+  for (const [encounterId, expected] of EXPECTED_MECHANIC_PRESSURE) {
+    const encounter = data.encounterPool.find(row => row.encounterId === encounterId);
+    assert.ok(encounter, encounterId);
+    assert.equal(encounter.mechanicPreview, expected.mechanicPreview);
+    const wave = data.waves.find(row => row.waveId === encounter.waveId);
+    assert.deepEqual(wave.petPool, expected.petPool);
+
+    const midEncounter = data.encounterPool.find(row =>
+      row.encounterPoolId === encounter.encounterPoolId && row.riskLabel === '中风险');
+    const midWave = data.waves.find(row => row.waveId === midEncounter.waveId);
+    assert.ok(Number(wave.threat) > Number(midWave.threat), `${encounterId} must exceed the same-day mid route`);
+
+    const state = choiceReadyState(encounter.unlockDay, `mechanic-${encounterId}`);
+    const selected = dayRoute.generateBattleOptions(state).find(option => option.encounterId === encounterId);
+    assert.equal(selected.mechanicPreview, expected.mechanicPreview);
+    assert.equal(selected.choicePreview.mechanicPreview, expected.mechanicPreview);
+    assert.equal(selected.pressurePreview.mechanicPreview, expected.mechanicPreview);
   }
 });
 

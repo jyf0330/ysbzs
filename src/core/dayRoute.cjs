@@ -247,11 +247,16 @@ function buildBattleChoicePreview(enc, schedule) {
   const label = enc.phaseLabel || schedule.phaseLabel || '战斗';
   const pressure = isPressureEncounter(enc);
   return {
-    kindLabel: pressure ? '高压遭遇' : '遭遇',
-    summary: `${label}：${enc.name || enc.encounterId}，将进入元素棋盘战斗。`,
+    kindLabel: enc.riskLabel || (pressure ? '高压遭遇' : '遭遇'),
+    summary: `${label}：${enc.name || enc.encounterId}，${enc.riskLabel || (pressure ? '高压力' : '常规风险')}。`,
     costText: '消耗战斗机会',
-    gainText: pressure ? '高压力 / 高奖励' : '胜利获得路线奖励',
-    tags: ['战斗压力', pressure ? '精英/Boss' : '常规战'].filter(Boolean)
+    gainText: enc.rewardPreview || (pressure ? '高压力 / 高奖励' : '胜利获得路线奖励'),
+    tags: ['战斗压力', enc.riskLabel || (pressure ? '精英/Boss' : '常规战')].filter(Boolean),
+    waveId: enc.waveId || null,
+    rewardPoolId: enc.rewardPoolId || null,
+    riskLabel: enc.riskLabel || null,
+    enemyPreview: enc.enemyPreview || null,
+    rewardPreview: enc.rewardPreview || null
   };
 }
 function round1(n) { return Math.round(Number(n || 0) * 10) / 10; }
@@ -262,12 +267,15 @@ function dominantQuality(rows) {
   return Object.entries(totals).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || null;
 }
 function previewRewardPoolId(state, encounter) {
+  if (encounter?.rewardPoolId) return encounter.rewardPoolId;
   if (isPressureEncounter(encounter)) return 'reward_elite';
   return Number(state.day || 1) >= 3 ? 'reward_pT2' : 'reward_pT1';
 }
 function buildBattlePressurePreview(state, encounter = {}, schedule = {}) {
   const wavePeriod = encounter.wavePeriod || schedule.wavePeriod || state.period || '上午';
-  const rows = (state.data.waves || []).filter(w => Number(w.day) === Number(state.day || encounter.unlockDay || 1) && w.period === wavePeriod);
+  const rows = (state.data.waves || []).filter(w => encounter.waveId
+    ? w.waveId === encounter.waveId
+    : Number(w.day) === Number(state.day || encounter.unlockDay || 1) && w.period === wavePeriod);
   const threats = rows.map(waveThreat);
   const totalThreat = round1(threats.reduce((sum, n) => sum + n, 0));
   const totalSpawnCount = rows.reduce((sum, row) => sum + Number(row.spawnCount || 0), 0);
@@ -277,11 +285,12 @@ function buildBattlePressurePreview(state, encounter = {}, schedule = {}) {
   const phaseLabel = encounter.phaseLabel || schedule.phaseLabel || '战斗';
   return {
     encounterId: encounter.encounterId || schedule.encounterId || null,
+    waveId: encounter.waveId || null,
     name: encounter.name || schedule.label || encounter.encounterId || '路线战斗',
     phaseLabel,
     wavePeriod,
     battleIndex: Number(encounter.battleIndex || schedule.battleIndex || 1),
-    pressureTier,
+    pressureTier: encounter.riskLabel || pressureTier,
     roundCount: new Set(rows.map(x => x.round)).size,
     waveRows: rows.length,
     totalThreat,
@@ -290,8 +299,10 @@ function buildBattlePressurePreview(state, encounter = {}, schedule = {}) {
     peakSpawnCount: Math.max(0, ...rows.map(x => Number(x.spawnCount || 0))),
     dominantQuality: dominantQuality(rows),
     rewardPoolId,
-    rewardText: `${pressureTier === '常规' ? '胜利预期' : '高压胜利预期'}：${rewardLabel}奖励`,
-    summary: `${phaseLabel} · ${pressureTier} · ${wavePeriod}${rows.length ? ` ${rows.length}波` : ''} · 威胁${totalThreat}`
+    enemyPreview: encounter.enemyPreview || '',
+    rewardPreview: encounter.rewardPreview || '',
+    rewardText: encounter.rewardPreview || `${pressureTier === '常规' ? '胜利预期' : '高压胜利预期'}：${rewardLabel}奖励`,
+    summary: `${phaseLabel} · ${encounter.riskLabel || pressureTier} · ${wavePeriod}${rows.length ? ` ${rows.length}波` : ''} · 威胁${totalThreat}`
   };
 }
 function fixedEncounterForSchedule(state, schedule) {
@@ -424,6 +435,11 @@ function generateBattleOptions(state, opts = {}) {
     encounterId: enc.encounterId,
     name: enc.name,
     wavePeriod: enc.wavePeriod || '上午',
+    waveId: enc.waveId || null,
+    rewardPoolId: enc.rewardPoolId || null,
+    riskLabel: enc.riskLabel || null,
+    enemyPreview: enc.enemyPreview || null,
+    rewardPreview: enc.rewardPreview || null,
     battleIndex: enc.battleIndex || 1,
     phaseLabel: enc.phaseLabel || schedule.phaseLabel || '战斗',
     choicePreview: buildBattleChoicePreview(enc, schedule),
@@ -595,7 +611,9 @@ function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId, 
 }
 function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) {
   const route = ensureDayRoute(state);
-  const baseRewardPoolId = baseRewardPoolForOutcome(state, result);
+  const baseRewardPoolId = result?.win && encounter.rewardPoolId
+    ? encounter.rewardPoolId
+    : baseRewardPoolForOutcome(state, result);
   const postBattle = postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId, source);
   const rewardPoolId = postBattle.rewardPoolId;
   const outcome = {
@@ -603,6 +621,7 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
     battleIndex: route.battleIndex,
     kind: source.kind || 'battle',
     encounterId: encounter.encounterId,
+    waveId: encounter.waveId || null,
     name: encounter.name || encounter.encounterId,
     phaseLabel: encounter.phaseLabel || '战斗',
     resultCode: result?.code || 'UNKNOWN',

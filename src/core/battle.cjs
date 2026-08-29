@@ -33,7 +33,12 @@ function getUnit(state, unitId) {
     || leaders(state).find(l => l.id === unitId)
     || null;
 }
-function waveRows(state, round = state.round) { return state.data.waves.filter(w => w.day === state.day && w.period === state.period && w.round === round); }
+function waveRows(state, round = state.round) {
+  const encounterWaveId = state.dayRoute?.pendingBattle?.encounter?.waveId;
+  return state.data.waves.filter(w => encounterWaveId
+    ? w.waveId === encounterWaveId && w.round === round
+    : w.day === state.day && w.period === state.period && w.round === round);
+}
 function sign(n) { return n === 0 ? 0 : n > 0 ? 1 : -1; }
 function dirDelta(dir = 'right') {
   const d = String(dir || 'right').toLowerCase();

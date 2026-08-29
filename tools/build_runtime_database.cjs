@@ -444,6 +444,11 @@ const SCHEMA = {
       ['wave_period', 'TEXT'],
       ['battle_index', 'INTEGER'],
       ['phase_label', 'TEXT'],
+      ['wave_id', 'TEXT'],
+      ['reward_pool_id', 'TEXT'],
+      ['risk_label', 'TEXT'],
+      ['enemy_preview', 'TEXT'],
+      ['reward_preview', 'TEXT'],
       ['status', 'TEXT'],
       ['note', 'TEXT']
     ],
@@ -846,6 +851,11 @@ function buildDatabaseModel(payload) {
     wave_period: encounter.wavePeriod,
     battle_index: encounter.battleIndex,
     phase_label: encounter.phaseLabel,
+    wave_id: encounter.waveId,
+    reward_pool_id: encounter.rewardPoolId,
+    risk_label: encounter.riskLabel,
+    enemy_preview: encounter.enemyPreview,
+    reward_preview: encounter.rewardPreview,
     status: encounter.status,
     note: encounter.note
   });

@@ -45,15 +45,16 @@ function resolveCurrentRouteNode(state, opts = {}) {
   return option;
 }
 
-test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,369); assert.equal(data.monsters.length,369); assert.equal(data.waves.length,134); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,369); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,369); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
+test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,369); assert.equal(data.monsters.length,369); assert.equal(data.waves.length,137); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,369); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,369); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
 test('Day1-Day10 route runtime defines node-node-battle daily rhythm with four node decisions',()=>{
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = dayRoute.scheduleRows(createGameState({ day }));
-    assert.deepEqual(rows.map(x => x.kind), ['node_choice','node_choice','fixed_battle','node_choice','node_choice','fixed_battle'], `day ${day} should run two nodes, battle, two nodes, battle`);
+    const firstBattleKind = day === 1 ? 'battle_choice' : 'fixed_battle';
+    assert.deepEqual(rows.map(x => x.kind), ['node_choice','node_choice',firstBattleKind,'node_choice','node_choice','fixed_battle'], `day ${day} should run two nodes, battle, two nodes, battle`);
     const decisions = rows.filter(x => x.kind === 'node_choice');
     assert.equal(decisions.length, 4, `day ${day} should have four route node decisions`);
     assert.ok(decisions.every(x => Number(x.choiceCount || 3) === 3), `day ${day} choices should be 3选1`);
-    assert.equal(rows.filter(x => x.kind === 'fixed_battle').length, 2, `day ${day} should have two battle anchors`);
+    assert.equal(rows.filter(x => x.kind === 'fixed_battle' || x.kind === 'battle_choice').length, 2, `day ${day} should have two battle anchors`);
   }
 });
 test('Day4-Day10 route data escalates shop reward tier and encounter pressure',()=>{
@@ -190,20 +191,21 @@ test('construction summary exposes build core tags in ViewModel and text report'
   assert.ok(report.includes('火系'));
   assert.ok(report.includes('召唤'));
 });
-test('Day1 full day route runs two nodes, fixed battle, two nodes, fixed battle',()=>{
+test('Day1 full day route runs two nodes, encounter choice, two nodes, fixed battle',()=>{
   const s=runFullDayScenario({day:1,gold:999});
   const types=s.events.map(e=>e.type);
   assert.deepEqual(types.filter(t=>t==='NODE_OPTIONS').length,4);
   assert.deepEqual(types.filter(t=>t==='NODE_PICK').length,4);
-  assert.equal(types.filter(t=>t==='BATTLE_OPTIONS').length,0);
-  assert.equal(types.filter(t=>t==='BATTLE_PICK').length,0);
-  assert.equal(types.filter(t=>t==='FIXED_BATTLE_START').length,2);
+  assert.equal(types.filter(t=>t==='BATTLE_OPTIONS').length,1);
+  assert.equal(types.filter(t=>t==='BATTLE_PICK').length,1);
+  assert.equal(types.filter(t=>t==='FIXED_BATTLE_START').length,1);
   const nodePickIndexes = types.map((type, index) => type === 'NODE_PICK' ? index : -1).filter(index => index >= 0);
-  const fixedBattleIndexes = types.map((type, index) => type === 'FIXED_BATTLE_START' ? index : -1).filter(index => index >= 0);
-  assert.ok(nodePickIndexes[1] < fixedBattleIndexes[0], 'first two node choices should resolve before the first fixed battle');
-  assert.ok(fixedBattleIndexes[0] < nodePickIndexes[2], 'first fixed battle should resolve before the closing node choices');
-  assert.ok(nodePickIndexes[3] < fixedBattleIndexes[1], 'closing node choices should resolve before the second fixed battle');
-  assert.ok(s.events.some(e=>e.type==='FIXED_BATTLE_START' && e.encounterId==='enc_d01_midday_a'));
+  const battlePickIndex = types.indexOf('BATTLE_PICK');
+  const fixedBattleIndex = types.indexOf('FIXED_BATTLE_START');
+  assert.ok(nodePickIndexes[1] < battlePickIndex, 'first two node choices should resolve before the encounter choice');
+  assert.ok(battlePickIndex < nodePickIndexes[2], 'encounter choice should resolve before the closing node choices');
+  assert.ok(nodePickIndexes[3] < fixedBattleIndex, 'closing node choices should resolve before the fixed battle');
+  assert.ok(s.events.some(e=>e.type==='BATTLE_PICK' && ['enc_d01_midday_a','enc_d01_midday_b','enc_d01_midday_c'].includes(e.encounterId)));
   assert.ok(s.events.some(e=>e.type==='FIXED_BATTLE_START' && e.encounterId==='enc_d01_evening_fixed'));
   assert.equal(s.phase,'day_end');
   assert.equal(s.dayRoute.nodeIndex,6);
@@ -225,7 +227,7 @@ test('Day1-Day10 route can run continuously and records daily route history',()=
     const nodeNames = Array.from(new Set(run.history.filter(x => x.kind === 'node').map(x => x.option.name)));
     assert.equal(choices.length, 4, `day ${run.day} should record four route node decisions`);
     assert.ok(nodeNames.length >= 2, `day ${run.day} should auto-pick at least two different node types`);
-    assert.equal(run.history.filter(x => x.kind === 'fixed_battle').length, 2, `day ${run.day} should record two battle anchors`);
+    assert.equal(run.history.filter(x => x.kind === 'fixed_battle' || x.kind === 'battle_choice').length, 2, `day ${run.day} should record two battle anchors`);
   }
 });
 test('Day1-Day10 route battle outcomes write back result, economy, and reward eligibility',()=>{

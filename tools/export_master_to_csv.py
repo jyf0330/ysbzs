@@ -746,6 +746,18 @@ def generated_tables(master_path, baseline_dir):
                     row[field] = blank_legacy_placeholder(row.get(field))
 
         elif filename == "03_monster_waves.csv":
+            output_by_key = {
+                (row.get("波次ID", ""), row.get("回合", "")): row
+                for row in output
+                if row.get("波次ID", "")
+            }
+            for key, wave in waves_by_key.items():
+                if key in output_by_key:
+                    continue
+                row = {header: "" for header in headers}
+                row["波次ID"], row["回合"] = key
+                output.append(row)
+                output_by_key[key] = row
             for row in output:
                 key = (row.get("波次ID", ""), row.get("回合", ""))
                 wave = waves_by_key.get(key)

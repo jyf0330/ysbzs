@@ -1,41 +1,41 @@
-encounter_id,encounter_pool_id,name,weight,unlock_day,wave_period,battle_index,phase_label,status,note
-enc_d01_midday_a,enc_pool_d01_midday,中午遭遇A,100,1,上午,1,中午战,正式,映射当前上午波次
-enc_d01_midday_b,enc_pool_d01_midday,中午遭遇B,90,1,上午,1,中午战,正式,第一版复用上午波次
-enc_d01_midday_c,enc_pool_d01_midday,中午遭遇C,80,1,上午,1,中午战,正式,第一版复用上午波次
-enc_d01_evening_fixed,enc_pool_d01_evening,晚上固定战,100,1,下午,2,晚上战,正式,映射当前下午波次
-enc_d02_midday_a,enc_pool_d02_midday,第二天中午遭遇A,100,2,上午,1,中午战,正式,映射 Day2 上午波次
-enc_d02_midday_b,enc_pool_d02_midday,第二天中午遭遇B,90,2,上午,1,中午战,正式,Day2 备选中午遭遇
-enc_d02_midday_c,enc_pool_d02_midday,第二天中午遭遇C,80,2,上午,1,中午战,正式,Day2 备选中午遭遇
-enc_d02_evening_fixed,enc_pool_d02_evening,第二天晚上固定战,100,2,下午,2,晚上战,正式,映射 Day2 下午波次
-enc_d03_midday_a,enc_pool_d03_midday,第三天中午遭遇A,100,3,上午,1,中午战,正式,映射 Day3 上午波次
-enc_d03_midday_b,enc_pool_d03_midday,第三天中午遭遇B,90,3,上午,1,中午战,正式,Day3 备选中午遭遇
-enc_d03_midday_c,enc_pool_d03_midday,第三天中午遭遇C,80,3,上午,1,中午战,正式,Day3 备选中午遭遇
-enc_d03_evening_fixed,enc_pool_d03_evening,第三天晚上固定战,100,3,下午,2,晚上战,正式,映射 Day3 下午波次
-enc_d04_midday_a,enc_pool_d04_midday,第四天中午遭遇A,100,4,上午,1,中午战,正式,映射 Day4 上午波次
-enc_d04_midday_b,enc_pool_d04_midday,第四天中午遭遇B,90,4,上午,1,中午战,正式,Day4 备选中午遭遇
-enc_d04_midday_c,enc_pool_d04_midday,第四天中午遭遇C,80,4,上午,1,中午战,正式,Day4 备选中午遭遇
-enc_d04_evening_fixed,enc_pool_d04_evening,第四天晚上固定战,100,4,下午,2,晚上战,正式,映射 Day4 下午波次
-enc_d05_midday_a,enc_pool_d05_midday,第五天中午遭遇A,100,5,上午,1,中午战,正式,映射 Day5 上午波次
-enc_d05_midday_b,enc_pool_d05_midday,第五天中午遭遇B,90,5,上午,1,中午战,正式,Day5 备选中午遭遇
-enc_d05_midday_c,enc_pool_d05_midday,第五天中午遭遇C,80,5,上午,1,中午战,正式,Day5 备选中午遭遇
-enc_d05_evening_fixed,enc_pool_d05_evening,第五天晚上固定战,100,5,下午,2,晚上战,正式,映射 Day5 下午波次
-enc_d06_midday_a,enc_pool_d06_midday,第六天精英遭遇A,100,6,上午,1,精英战,正式,Day6 精英压力上午波次
-enc_d06_midday_b,enc_pool_d06_midday,第六天精英遭遇B,90,6,上午,1,精英战,正式,Day6 备选精英遭遇
-enc_d06_midday_c,enc_pool_d06_midday,第六天精英遭遇C,80,6,上午,1,精英战,正式,Day6 备选精英遭遇
-enc_d06_evening_fixed,enc_pool_d06_evening,第六天晚上精英固定战,100,6,下午,2,精英固定战,正式,映射 Day6 下午精英波次
-enc_d07_midday_a,enc_pool_d07_midday,第七天精英遭遇A,100,7,上午,1,精英战,正式,Day7 精英压力上午波次
-enc_d07_midday_b,enc_pool_d07_midday,第七天精英遭遇B,90,7,上午,1,精英战,正式,Day7 备选精英遭遇
-enc_d07_midday_c,enc_pool_d07_midday,第七天精英遭遇C,80,7,上午,1,精英战,正式,Day7 备选精英遭遇
-enc_d07_evening_fixed,enc_pool_d07_evening,第七天晚上精英固定战,100,7,下午,2,精英固定战,正式,映射 Day7 下午精英波次
-enc_d08_midday_a,enc_pool_d08_midday,第八天精英遭遇A,100,8,上午,1,精英战,正式,Day8 精英压力上午波次
-enc_d08_midday_b,enc_pool_d08_midday,第八天精英遭遇B,90,8,上午,1,精英战,正式,Day8 备选精英遭遇
-enc_d08_midday_c,enc_pool_d08_midday,第八天精英遭遇C,80,8,上午,1,精英战,正式,Day8 备选精英遭遇
-enc_d08_evening_fixed,enc_pool_d08_evening,第八天晚上精英固定战,100,8,下午,2,精英固定战,正式,映射 Day8 下午精英波次
-enc_d09_midday_a,enc_pool_d09_midday,第九天Boss前遭遇A,100,9,上午,1,Boss前战,正式,Day9 Boss 前上午波次
-enc_d09_midday_b,enc_pool_d09_midday,第九天Boss前遭遇B,90,9,上午,1,Boss前战,正式,Day9 备选 Boss 前遭遇
-enc_d09_midday_c,enc_pool_d09_midday,第九天Boss前遭遇C,80,9,上午,1,Boss前战,正式,Day9 备选 Boss 前遭遇
-enc_d09_evening_fixed,enc_pool_d09_evening,第九天晚上Boss前固定战,100,9,下午,2,Boss前固定战,正式,映射 Day9 下午 Boss 前波次
-enc_d10_midday_a,enc_pool_d10_midday,第十天Boss前遭遇A,100,10,上午,1,Boss前战,正式,Day10 Boss 前上午波次
-enc_d10_midday_b,enc_pool_d10_midday,第十天Boss前遭遇B,90,10,上午,1,Boss前战,正式,Day10 备选 Boss 前遭遇
-enc_d10_midday_c,enc_pool_d10_midday,第十天Boss前遭遇C,80,10,上午,1,Boss前战,正式,Day10 备选 Boss 前遭遇
-enc_d10_final_boss,enc_pool_d10_evening,第十天终局Boss,100,10,下午,2,终局战,正式,Day10 终局 Boss 压力
+encounter_id,encounter_pool_id,name,weight,unlock_day,wave_period,battle_index,phase_label,wave_id,reward_pool_id,risk_label,enemy_preview,reward_preview,status,note
+enc_d01_midday_a,enc_pool_d01_midday,水泽巡队,100,1,上午,1,中午战,wave_d01_enc_scout,reward_pT1,低风险,棉角羊 / 灰尾狸 / 芦花鸡,基础宠物三选一,正式,Day1 稳妥遭遇；3只青铜敌人
+enc_d01_midday_b,enc_pool_d01_midday,燎原伏兵,90,1,上午,1,中午战,wave_d01_enc_assault,reward_pT2,中风险,赤尾狐 / 雷须猫 / 火角鹿 / 电棘鼠,进阶宠物三选一,正式,Day1 进取遭遇；4只青铜敌人
+enc_d01_midday_c,enc_pool_d01_midday,甲阵守关,80,1,上午,1,中午战,wave_d01_enc_guard,reward_pT2,高风险,碧水鸭 / 苔甲龟 / 黑甲猪 / 黑角犀,进阶宠物三选一,正式,Day1 高压遭遇；4只白银敌人
+enc_d01_evening_fixed,enc_pool_d01_evening,晚上固定战,100,1,下午,2,晚上战,,,,,,正式,映射当前下午波次
+enc_d02_midday_a,enc_pool_d02_midday,第二天中午遭遇A,100,2,上午,1,中午战,,,,,,正式,映射 Day2 上午波次
+enc_d02_midday_b,enc_pool_d02_midday,第二天中午遭遇B,90,2,上午,1,中午战,,,,,,正式,Day2 备选中午遭遇
+enc_d02_midday_c,enc_pool_d02_midday,第二天中午遭遇C,80,2,上午,1,中午战,,,,,,正式,Day2 备选中午遭遇
+enc_d02_evening_fixed,enc_pool_d02_evening,第二天晚上固定战,100,2,下午,2,晚上战,,,,,,正式,映射 Day2 下午波次
+enc_d03_midday_a,enc_pool_d03_midday,第三天中午遭遇A,100,3,上午,1,中午战,,,,,,正式,映射 Day3 上午波次
+enc_d03_midday_b,enc_pool_d03_midday,第三天中午遭遇B,90,3,上午,1,中午战,,,,,,正式,Day3 备选中午遭遇
+enc_d03_midday_c,enc_pool_d03_midday,第三天中午遭遇C,80,3,上午,1,中午战,,,,,,正式,Day3 备选中午遭遇
+enc_d03_evening_fixed,enc_pool_d03_evening,第三天晚上固定战,100,3,下午,2,晚上战,,,,,,正式,映射 Day3 下午波次
+enc_d04_midday_a,enc_pool_d04_midday,第四天中午遭遇A,100,4,上午,1,中午战,,,,,,正式,映射 Day4 上午波次
+enc_d04_midday_b,enc_pool_d04_midday,第四天中午遭遇B,90,4,上午,1,中午战,,,,,,正式,Day4 备选中午遭遇
+enc_d04_midday_c,enc_pool_d04_midday,第四天中午遭遇C,80,4,上午,1,中午战,,,,,,正式,Day4 备选中午遭遇
+enc_d04_evening_fixed,enc_pool_d04_evening,第四天晚上固定战,100,4,下午,2,晚上战,,,,,,正式,映射 Day4 下午波次
+enc_d05_midday_a,enc_pool_d05_midday,第五天中午遭遇A,100,5,上午,1,中午战,,,,,,正式,映射 Day5 上午波次
+enc_d05_midday_b,enc_pool_d05_midday,第五天中午遭遇B,90,5,上午,1,中午战,,,,,,正式,Day5 备选中午遭遇
+enc_d05_midday_c,enc_pool_d05_midday,第五天中午遭遇C,80,5,上午,1,中午战,,,,,,正式,Day5 备选中午遭遇
+enc_d05_evening_fixed,enc_pool_d05_evening,第五天晚上固定战,100,5,下午,2,晚上战,,,,,,正式,映射 Day5 下午波次
+enc_d06_midday_a,enc_pool_d06_midday,第六天精英遭遇A,100,6,上午,1,精英战,,,,,,正式,Day6 精英压力上午波次
+enc_d06_midday_b,enc_pool_d06_midday,第六天精英遭遇B,90,6,上午,1,精英战,,,,,,正式,Day6 备选精英遭遇
+enc_d06_midday_c,enc_pool_d06_midday,第六天精英遭遇C,80,6,上午,1,精英战,,,,,,正式,Day6 备选精英遭遇
+enc_d06_evening_fixed,enc_pool_d06_evening,第六天晚上精英固定战,100,6,下午,2,精英固定战,,,,,,正式,映射 Day6 下午精英波次
+enc_d07_midday_a,enc_pool_d07_midday,第七天精英遭遇A,100,7,上午,1,精英战,,,,,,正式,Day7 精英压力上午波次
+enc_d07_midday_b,enc_pool_d07_midday,第七天精英遭遇B,90,7,上午,1,精英战,,,,,,正式,Day7 备选精英遭遇
+enc_d07_midday_c,enc_pool_d07_midday,第七天精英遭遇C,80,7,上午,1,精英战,,,,,,正式,Day7 备选精英遭遇
+enc_d07_evening_fixed,enc_pool_d07_evening,第七天晚上精英固定战,100,7,下午,2,精英固定战,,,,,,正式,映射 Day7 下午精英波次
+enc_d08_midday_a,enc_pool_d08_midday,第八天精英遭遇A,100,8,上午,1,精英战,,,,,,正式,Day8 精英压力上午波次
+enc_d08_midday_b,enc_pool_d08_midday,第八天精英遭遇B,90,8,上午,1,精英战,,,,,,正式,Day8 备选精英遭遇
+enc_d08_midday_c,enc_pool_d08_midday,第八天精英遭遇C,80,8,上午,1,精英战,,,,,,正式,Day8 备选精英遭遇
+enc_d08_evening_fixed,enc_pool_d08_evening,第八天晚上精英固定战,100,8,下午,2,精英固定战,,,,,,正式,映射 Day8 下午精英波次
+enc_d09_midday_a,enc_pool_d09_midday,第九天Boss前遭遇A,100,9,上午,1,Boss前战,,,,,,正式,Day9 Boss 前上午波次
+enc_d09_midday_b,enc_pool_d09_midday,第九天Boss前遭遇B,90,9,上午,1,Boss前战,,,,,,正式,Day9 备选 Boss 前遭遇
+enc_d09_midday_c,enc_pool_d09_midday,第九天Boss前遭遇C,80,9,上午,1,Boss前战,,,,,,正式,Day9 备选 Boss 前遭遇
+enc_d09_evening_fixed,enc_pool_d09_evening,第九天晚上Boss前固定战,100,9,下午,2,Boss前固定战,,,,,,正式,映射 Day9 下午 Boss 前波次
+enc_d10_midday_a,enc_pool_d10_midday,第十天Boss前遭遇A,100,10,上午,1,Boss前战,,,,,,正式,Day10 Boss 前上午波次
+enc_d10_midday_b,enc_pool_d10_midday,第十天Boss前遭遇B,90,10,上午,1,Boss前战,,,,,,正式,Day10 备选 Boss 前遭遇
+enc_d10_midday_c,enc_pool_d10_midday,第十天Boss前遭遇C,80,10,上午,1,Boss前战,,,,,,正式,Day10 备选 Boss 前遭遇
+enc_d10_final_boss,enc_pool_d10_evening,第十天终局Boss,100,10,下午,2,终局战,,,,,,正式,Day10 终局 Boss 压力

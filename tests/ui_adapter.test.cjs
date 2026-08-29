@@ -291,8 +291,8 @@ test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
   const vm = adapter.runFullPlayerDayFlow();
   const types = new Set(adapter.getEvents().map(e => e.type));
   for (const t of ['NODE_OPTIONS','NODE_PICK','BATTLE_START','BATTLE_END','FIXED_BATTLE_START']) assert.ok(types.has(t), t);
-  assert.equal(types.has('BATTLE_OPTIONS'), false);
-  assert.equal(types.has('BATTLE_PICK'), false);
+  assert.equal(types.has('BATTLE_OPTIONS'), true);
+  assert.equal(types.has('BATTLE_PICK'), true);
   assert.equal(types.has('REWARD_OPTIONS'), true);
   assert.equal(types.has('REWARD_PICK'), true);
   assert.equal(vm.phase, 'day_end');
@@ -332,7 +332,7 @@ test('UI07H 当天结束后通过公开命令进入下一天', () => {
   assert.equal(result.viewModel.dayRouteRuns.length, 1);
 });
 
-test('UI07B Day1 前两个节点之后第三步进入固定战', () => {
+test('UI07B Day1 前两个节点之后第三步进入真实遭遇三选一', () => {
   const adapter = createYSBZSUIAdapter({ day: 1, gold: 20, seed: 'route_ui_test' });
   const initVm = adapter.getViewModel();
   assert.equal(initVm.dailyFlow.nextSchedule.kind, 'node_choice');
@@ -357,10 +357,18 @@ test('UI07B Day1 前两个节点之后第三步进入固定战', () => {
   assert.ok(hasEvent(secondPick, 'NODE_PICK'));
   if (secondPick.viewModel.phase === 'shop') adapter.run('EXIT_SHOP');
   if (secondPick.viewModel.phase === 'reward') adapter.run('PICK_REWARD', { index: 0 });
-  assert.equal(secondPick.viewModel.dailyFlow.nextSchedule.kind, 'fixed_battle');
-  const firstBattle = adapter.run('RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 });
-  assert.ok(hasEvent(firstBattle, 'FIXED_BATTLE_START'));
-  assert.equal(firstBattle.viewModel.dayRoute.currentEncounter.encounterId, 'enc_d01_midday_a');
+  assert.equal(secondPick.viewModel.dailyFlow.nextSchedule.kind, 'battle_choice');
+  const battleOptions = adapter.generateBattleOptions();
+  assert.ok(hasEvent(battleOptions, 'BATTLE_OPTIONS'));
+  assert.equal(battleOptions.viewModel.dayRoute.battleOptions.length, 3);
+  assert.equal(new Set(battleOptions.viewModel.dayRoute.battleOptions.map(x => x.encounterId)).size, 3);
+  assert.equal(new Set(battleOptions.viewModel.dayRoute.battleOptions.map(x => x.waveId)).size, 3);
+  assert.ok(battleOptions.viewModel.dayRoute.battleOptions.every(x => x.riskLabel && x.enemyPreview && x.rewardPreview && x.rewardPoolId));
+  const selected = battleOptions.viewModel.dayRoute.battleOptions[0];
+  const firstBattle = adapter.pickBattleEncounter(selected.encounterId);
+  assert.ok(hasEvent(firstBattle, 'BATTLE_PICK'));
+  assert.equal(firstBattle.viewModel.dayRoute.currentEncounter.encounterId, selected.encounterId);
+  assert.equal(firstBattle.viewModel.dayRoute.currentEncounter.waveId, selected.waveId);
   assert.equal(firstBattle.viewModel.dayRoute.currentEncounter.phaseLabel, '中午战');
   assert.equal(firstBattle.viewModel.dailyFlow.nextSchedule.kind, 'node_choice');
 });

@@ -525,6 +525,11 @@ function normalizeSourceTables(sourceTables, options = {}) {
     wavePeriod: row.wave_period || row['波次时段'],
     battleIndex: toNum(row.battle_index || row['战斗序号'], 1),
     phaseLabel: row.phase_label || row['阶段文案'],
+    waveId: row.wave_id || row['波次ID'],
+    rewardPoolId: row.reward_pool_id || row['奖励池ID'],
+    riskLabel: row.risk_label || row['风险文案'],
+    enemyPreview: row.enemy_preview || row['敌阵预览'],
+    rewardPreview: row.reward_preview || row['奖励预览'],
     status: row.status || row['状态'],
     note: row.note || row['备注']
   })).filter(x => x.encounterId);

@@ -54,6 +54,9 @@ function buildIndexes(d = loadGameData()) {
   const shopPools = new Map();
   const rewardPools = new Map();
   const nodePools = new Map();
+  const wavesById = new Map();
+  for (const wave of d.waves || []) if (wave.waveId && !wavesById.has(wave.waveId)) wavesById.set(wave.waveId, []);
+  for (const wave of d.waves || []) if (wave.waveId) wavesById.get(wave.waveId).push(wave);
   const encountersById = byId(d.encounterPool || [], 'encounterId');
   const encounterPools = new Map();
   for (const store of d.shopStores || []) if (store.id && !shopPools.has(store.id)) shopPools.set(store.id, []);
@@ -75,7 +78,7 @@ function buildIndexes(d = loadGameData()) {
   for (const enc of d.encounterPool || []) {
     if (enc.encounterPoolId) { if (!encounterPools.has(enc.encounterPoolId)) encounterPools.set(enc.encounterPoolId, []); encounterPools.get(enc.encounterPoolId).push(enc); }
   }
-  return { petsById, monstersByPetId, mechanicsById, shapesByPetId, shapesByShapeId, shopByPetId, shopStoresById, relicsById, shopPools, rewardPools, nodePools, encountersById, encounterPools };
+  return { petsById, monstersByPetId, mechanicsById, shapesByPetId, shapesByShapeId, shopByPetId, shopStoresById, relicsById, shopPools, rewardPools, nodePools, wavesById, encountersById, encounterPools };
 }
 function listMechanics(ids) { return (ids || ['none']).filter(Boolean); }
 function validateData(d = loadGameData()) {
@@ -108,6 +111,10 @@ function validateData(d = loadGameData()) {
     if (node.shopPoolId && !hasShopStore(node.shopPoolId)) issues.push(`node ${node.nodeId} missing shop store ${node.shopPoolId}`);
     if (node.rewardPoolId && !ix.rewardPools.has(node.rewardPoolId)) issues.push(`node ${node.nodeId} missing reward pool ${node.rewardPoolId}`);
     if (node.eventId && !d.events.some(e => e.id === node.eventId)) issues.push(`node ${node.nodeId} missing event ${node.eventId}`);
+  }
+  for (const encounter of d.encounterPool || []) {
+    if (encounter.waveId && !ix.wavesById.has(encounter.waveId)) issues.push(`encounter ${encounter.encounterId} missing wave ${encounter.waveId}`);
+    if (encounter.rewardPoolId && !ix.rewardPools.has(encounter.rewardPoolId)) issues.push(`encounter ${encounter.encounterId} missing reward pool ${encounter.rewardPoolId}`);
   }
   return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length }};
 }

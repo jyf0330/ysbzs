@@ -1,4 +1,5 @@
 const { loadGameData: loadCsvGameData } = require('./csvData.cjs');
+const runGrowth = require('./runGrowth.cjs');
 
 function normalizeDailyRouteSchedule(rows = []) {
   const grouped = new Map();
@@ -127,6 +128,12 @@ function validateData(d = loadGameData()) {
       if (choice.petId && !ix.petsById.has(choice.petId)) issues.push(`start choice ${choice.id} missing pet ${choice.petId}`);
     }
   }
-  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length, startChoices:(d.startChoices||[]).length }};
+  if ((d.runGrowth || []).length || (d.growthChoices || []).length) {
+    try { runGrowth.validateCatalog({ data: d }); } catch (error) { issues.push(error.message); }
+    for (const encounter of (d.encounterPool || []).filter(row => row.status === '正式')) {
+      if (![1, 2, 3].includes(Number(encounter.xpReward))) issues.push(`encounter ${encounter.encounterId} invalid xp reward ${encounter.xpReward}`);
+    }
+  }
+  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length, startChoices:(d.startChoices||[]).length, runGrowth:(d.runGrowth||[]).length, growthChoices:(d.growthChoices||[]).length }};
 }
 module.exports = { data, loadGameData, buildIndexes, validateData };

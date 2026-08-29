@@ -59,7 +59,9 @@ function dataSummary(state) {
     nodeSchedule: (state.data.nodeSchedule || []).length,
     nodePool: (state.data.nodePool || []).length,
     encounterPool: (state.data.encounterPool || []).length,
-    startChoices: (state.data.startChoices || []).length
+    startChoices: (state.data.startChoices || []).length,
+    runGrowth: (state.data.runGrowth || []).length,
+    growthChoices: (state.data.growthChoices || []).length
   };
 }
 function stripUnit(state, unit) {
@@ -262,7 +264,7 @@ function nextActions(state) {
     return out;
   }
   const nextSchedule = nextDaySchedule(state);
-  if (state.dayRoute?.terminal && !nextSchedule) return [{ type: 'NEW_RUN', label: '重新开局', defaultPayload: {} }];
+  if (state.dayRoute?.terminal && !nextSchedule && state.phase === 'day_end' && !(state.dayRoute?.pendingRewards || []).length) return [{ type: 'NEW_RUN', label: '重新开局', defaultPayload: {} }];
   const currentDay = Number(state.day || 1);
   const finalDay = maxRouteDay(state);
   if (state.phase === 'day_end' && currentDay < finalDay) out.push({ type: 'START_NEXT_DAY', label: `进入第${currentDay + 1}天`, defaultPayload: { day: currentDay + 1 } });
@@ -276,6 +278,11 @@ function nextActions(state) {
   }
   if (state.phase === 'node_choice') for (const option of state.dayRoute?.options || []) out.push({ type: 'PICK_NODE', label: `选择 ${option.name}`, defaultPayload: { optionId: option.optionId } });
   if (state.phase === 'battle_choice') for (const option of state.dayRoute?.battleOptions || []) out.push({ type: 'PICK_BATTLE_ENCOUNTER', label: `选择 ${option.name}`, defaultPayload: { encounterId: option.encounterId } });
+  if (state.phase === 'battle_end' && (state.dayRoute?.postBattleReturnPhase || state.pendingGrowth || (state.dayRoute?.pendingRewards || []).length)) {
+    return [{ type: 'CONTINUE_AFTER_BATTLE', label: '继续战斗结算', defaultPayload: {} }];
+  }
+  if (state.phase === 'level_up') return (state.growthOptions || []).map(option => ({ type: 'CHOOSE_GROWTH', label: `选择 ${option.name}`, defaultPayload: { growthChoiceId: option.growthChoiceId || option.optionId || option.id } }));
+  if (state.phase === 'route_reward') return (state.dayRoute?.pendingRewards || []).filter(pending => pending && !pending.claimed).map(pending => ({ type: 'CLAIM_ROUTE_REWARD', label: `领取路线奖励 ${pending.rewardPoolId}`, defaultPayload: { rewardId: pending.rewardId, rewardIndex: 0 } }));
   if (state.phase === 'init') out.push({ type: 'START_BATTLE', label: '开始战斗' });
 	  if (state.phase === 'player_turn') {
 	    out.push({ type: 'AUTO_POSITION_HEROES', label: '智能调整站位' });
@@ -288,7 +295,6 @@ function nextActions(state) {
   if (state.phase === 'round_end' && state.round < state.maxRounds) out.push({ type: 'START_NEXT_ROUND', label: '下一回合' });
   if (state.phase === 'monster_turn') out.push({ type: 'RUN_MONSTER_TURN', label: '怪物行动' });
   if (state.phase === 'battle_end') out.push({ type: 'REWARD_OPTIONS', label: '生成奖励候选', defaultPayload: { poolId: 'reward_pT1', count: 3 } });
-  for (const pending of state.dayRoute?.pendingRewards || []) if (pending && !pending.claimed) out.push({ type: 'CLAIM_ROUTE_REWARD', label: `领取路线奖励 ${pending.rewardPoolId}`, defaultPayload: { rewardId: pending.rewardId, rewardIndex: 0 } });
   if (state.rewards && state.rewards.length) for (let i = 0; i < state.rewards.length; i++) out.push({ type: 'PICK_REWARD', label: `选择奖励${i + 1}`, defaultPayload: { index: i } });
   if (state.phase !== 'shop' && state.phase !== 'day_end') out.push({ type: 'ENTER_SHOP', label: '进入夜晚商店', defaultPayload: { poolId: 'night_base', slots: 10 } });
   out.push({ type: 'RUN_BATTLE', label: '自动完成战斗' });
@@ -345,6 +351,13 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     economyMultiplier: state.economyMultiplier,
     runHealth: state.runHealth,
     runMaxHealth: state.runMaxHealth,
+    runLevel: Number(state.runLevel || 1),
+    runXp: Number(state.runXp || 0),
+    nextLevelXp: state.nextLevelXp == null ? null : Number(state.nextLevelXp),
+    pendingGrowth: state.pendingGrowth ? clone(state.pendingGrowth) : null,
+    growthOptions: clone(state.growthOptions || []),
+    growthHistory: clone(state.growthHistory || []),
+    roundApBonus: Number(state.roundApBonus || 0),
     startOptions: clone(state.startOptions || []),
     runStart: state.runStart ? clone(state.runStart) : null,
     result: state.result ? clone(state.result) : null,
@@ -751,6 +764,7 @@ function createYSBZSUIAdapter(options = {}) {
     },
     startBattle() { return this.run('START_BATTLE'); },
     chooseStart(startChoiceId) { return this.run('CHOOSE_START', { startChoiceId }); },
+    chooseGrowth(growthChoiceId) { return this.run('CHOOSE_GROWTH', { growthChoiceId }); },
     newRun(options = {}) { return this.run('NEW_RUN', options); },
     startNextRound() { return this.run('START_NEXT_ROUND'); },
     moveHero(unitId, to) { return this.run('MOVE_HERO', { unitId, to }); },
@@ -773,6 +787,7 @@ function createYSBZSUIAdapter(options = {}) {
     generateBattleOptions(options = {}) { return this.run('GENERATE_BATTLE_OPTIONS', options); },
     pickBattleEncounter(encounterId) { return this.run('PICK_BATTLE_ENCOUNTER', { encounterId }); },
     claimRouteReward(options = {}) { return this.run('CLAIM_ROUTE_REWARD', options); },
+    continueAfterBattle() { return this.run('CONTINUE_AFTER_BATTLE'); },
     startNextDay(options = {}) { return this.run('START_NEXT_DAY', options); },
     rewardOptions(poolId = 'reward_pT1', count = 3) { return this.run('REWARD_OPTIONS', { poolId, count }); },
     pickReward(index = 0) { return this.run('PICK_REWARD', { index }); },

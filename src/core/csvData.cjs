@@ -37,7 +37,9 @@ const TABLE_FILES = Object.freeze({
   nodePool: '25_node_pool.csv',
   encounterPool: '26_encounter_pool.csv',
   shopStores: '30_shop_stores.csv',
-  startChoices: '41_start_choices.csv'
+  startChoices: '41_start_choices.csv',
+  runGrowth: '42_run_growth.csv',
+  growthChoices: '43_growth_choices.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
@@ -532,6 +534,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
     enemyPreview: row.enemy_preview || row['敌阵预览'],
     mechanicPreview: row.mechanic_preview || row['机制预览'],
     rewardPreview: row.reward_preview || row['奖励预览'],
+    xpReward: toNum(row.xp_reward || row['经验奖励'], 0),
     status: row.status || row['状态'],
     note: row.note || row['备注']
   })).filter(x => x.encounterId);
@@ -550,6 +553,28 @@ function normalizeSourceTables(sourceTables, options = {}) {
     source: row.source || row['来源'] || 'START_CHOICES',
     note: row.note || row['备注'] || ''
   })).filter(x => x.id).sort((a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id));
+  const runGrowth = (sourceTables.runGrowth || []).map(row => ({
+    targetLevel: toNum(row.target_level || row['目标等级'], 0),
+    cumulativeXp: toNum(row.cumulative_xp || row['累计经验'], 0),
+    status: row.status || row['状态'] || '',
+    source: row.source || row['来源'] || 'RUN_GROWTH',
+    note: row.note || row['备注'] || ''
+  })).filter(x => x.targetLevel > 0).sort((a, b) => a.targetLevel - b.targetLevel);
+  const growthChoices = (sourceTables.growthChoices || []).map(row => ({
+    id: row.growth_choice_id || row['成长选项ID'] || '',
+    targetLevel: toNum(row.target_level || row['目标等级'], 0),
+    name: row.name || row['名称'] || '',
+    description: row.description || row['说明'] || '',
+    displayOrder: toNum(row.display_order || row['展示顺序'], 0),
+    coinsDelta: toNum(row.coins_delta || row['金币变化'], 0),
+    freeRollsDelta: toNum(row.free_rolls_delta || row['免费刷新变化'], 0),
+    runHealthDelta: toNum(row.run_health_delta || row['Run当前生命变化'], 0),
+    runMaxHealthDelta: toNum(row.run_max_health_delta || row['Run最大生命变化'], 0),
+    roundApBonusDelta: toNum(row.round_ap_bonus_delta || row['每回合AP加成变化'], 0),
+    status: row.status || row['状态'] || '',
+    source: row.source || row['来源'] || 'GROWTH_CHOICES',
+    note: row.note || row['备注'] || ''
+  })).filter(x => x.id).sort((a, b) => a.targetLevel - b.targetLevel || a.displayOrder - b.displayOrder || a.id.localeCompare(b.id));
 
   const yamlRules = loadWaveRulesYaml(options.waveRulesYaml || DEFAULT_WAVE_RULES_YAML);
   return {
@@ -590,6 +615,8 @@ function normalizeSourceTables(sourceTables, options = {}) {
     nodePool,
     encounterPool,
     startChoices,
+    runGrowth,
+    growthChoices,
     waveRules: {
       qualityMultiplierMap,
       ...yamlRules
@@ -649,7 +676,9 @@ function loadSourceTablesFromCsv(csvDir = DEFAULT_CSV_DIR) {
     nodePool: rows(TABLE_FILES.nodePool),
     encounterPool: rows(TABLE_FILES.encounterPool),
     shopStores: rows(TABLE_FILES.shopStores),
-    startChoices: rows(TABLE_FILES.startChoices)
+    startChoices: rows(TABLE_FILES.startChoices),
+    runGrowth: rows(TABLE_FILES.runGrowth),
+    growthChoices: rows(TABLE_FILES.growthChoices)
   };
 }
 

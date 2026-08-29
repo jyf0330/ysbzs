@@ -1,5 +1,6 @@
 const PUBLIC_COMMANDS = Object.freeze([
   'CHOOSE_START',
+  'CHOOSE_GROWTH',
   'NEW_RUN',
   'START_BATTLE',
   'START_NEXT_ROUND',
@@ -27,6 +28,7 @@ const PUBLIC_COMMANDS = Object.freeze([
   'PICK_BATTLE_ENCOUNTER',
   'RUN_ROUTE_FIXED_BATTLE',
   'CLAIM_ROUTE_REWARD',
+  'CONTINUE_AFTER_BATTLE',
   'START_NEXT_DAY',
   'REWARD_OPTIONS',
   'PICK_REWARD',
@@ -51,6 +53,7 @@ const PUBLIC_COMMANDS = Object.freeze([
 
 const ACTION_ALIASES = Object.freeze({
   chooseStart: 'CHOOSE_START',
+  chooseGrowth: 'CHOOSE_GROWTH',
   newRun: 'NEW_RUN',
   runBattle: 'RUN_BATTLE',
   generateNodeOptions: 'GENERATE_NODE_OPTIONS',
@@ -59,6 +62,7 @@ const ACTION_ALIASES = Object.freeze({
   pickBattleEncounter: 'PICK_BATTLE_ENCOUNTER',
   runRouteFixedBattle: 'RUN_ROUTE_FIXED_BATTLE',
   claimRouteReward: 'CLAIM_ROUTE_REWARD',
+  continueAfterBattle: 'CONTINUE_AFTER_BATTLE',
   startNextDay: 'START_NEXT_DAY',
   startBattle: 'START_BATTLE',
   startNextRound: 'START_NEXT_ROUND',

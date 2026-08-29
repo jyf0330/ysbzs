@@ -14,6 +14,7 @@ if (params.toString() !== new URLSearchParams(window.location.search || '').toSt
 
 const COMMAND_TABLE = Object.freeze([
   { type: 'CHOOSE_START', label: '选择开局构筑', category: '流程/开局', aliases: ['chooseStart'] },
+  { type: 'CHOOSE_GROWTH', label: '选择阶段成长', category: '流程/成长', aliases: ['chooseGrowth'] },
   { type: 'NEW_RUN', label: '重新开局', category: '流程/开局', aliases: ['newRun'] },
   { type: 'START_BATTLE', label: '开始战斗', category: '流程/战斗', aliases: ['startBattle'] },
   { type: 'START_NEXT_ROUND', label: '下一回合', category: '流程/战斗', aliases: ['startNextRound'] },
@@ -41,6 +42,7 @@ const COMMAND_TABLE = Object.freeze([
   { type: 'PICK_BATTLE_ENCOUNTER', label: '选择遭遇', category: '路线/奖励', aliases: ['pickBattleEncounter'] },
   { type: 'RUN_ROUTE_FIXED_BATTLE', label: '进入固定战', category: '路线/奖励', aliases: ['runRouteFixedBattle'] },
   { type: 'CLAIM_ROUTE_REWARD', label: '领取路线奖励', category: '路线/奖励', aliases: ['claimRouteReward'] },
+  { type: 'CONTINUE_AFTER_BATTLE', label: '继续战斗结算', category: '路线/奖励', aliases: ['continueAfterBattle'] },
   { type: 'START_NEXT_DAY', label: '进入下一天', category: '路线/奖励', aliases: ['startNextDay'] },
   { type: 'REWARD_OPTIONS', label: '生成奖励候选', category: '路线/奖励', aliases: ['rewardOptions'] },
   { type: 'PICK_REWARD', label: '选择奖励', category: '路线/奖励', aliases: ['pickReward'] },
@@ -74,6 +76,8 @@ const PHASE_TEXT = {
   monster_turn: '敌方行动',
   round_end: '回合结算',
   battle_end: '战斗结束',
+  level_up: '阶段升级',
+  route_reward: '战后奖励',
   shop: '商店',
   reward: '奖励',
   day_end: '当天结束'

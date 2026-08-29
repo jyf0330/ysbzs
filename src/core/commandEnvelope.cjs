@@ -4,6 +4,7 @@ const { replayableCommand } = require('./replayCodec.cjs');
 
 const SYSTEM_COMMANDS = new Set([
   'CHOOSE_START',
+  'CHOOSE_GROWTH', 'CONTINUE_AFTER_BATTLE',
   'NEW_RUN',
   'START_BATTLE', 'START_NEXT_ROUND', 'END_PLAYER_TURN', 'RUN_MONSTER_TURN',
   'RUN_PLAYER_ALL_OUT', 'AUTO_POSITION_HEROES',
@@ -57,6 +58,22 @@ function validateCommandAuthority(state, command, opts = {}) {
   if (command.type === 'CHOOSE_START' && state.phase !== 'start_choice') {
     const err = new Error(`START_CHOICE_PHASE_INVALID: current phase is ${state.phase}`);
     err.code = 'START_CHOICE_PHASE_INVALID';
+    throw err;
+  }
+  if (state.phase === 'battle_end' && (state.dayRoute?.postBattleReturnPhase || state.pendingGrowth || (state.dayRoute?.pendingRewards || []).length)
+    && command.type !== 'CONTINUE_AFTER_BATTLE' && command.type !== 'EXPORT_REPLAY') {
+    const err = new Error(`CONTINUE_AFTER_BATTLE_REQUIRED: current phase is ${state.phase}`);
+    err.code = 'CONTINUE_AFTER_BATTLE_REQUIRED';
+    throw err;
+  }
+  if (state.phase === 'level_up' && command.type !== 'CHOOSE_GROWTH' && command.type !== 'EXPORT_REPLAY') {
+    const err = new Error(`GROWTH_CHOICE_REQUIRED: choose growth before ${command.type}`);
+    err.code = 'GROWTH_CHOICE_REQUIRED';
+    throw err;
+  }
+  if (state.phase === 'route_reward' && command.type !== 'CLAIM_ROUTE_REWARD' && command.type !== 'EXPORT_REPLAY') {
+    const err = new Error(`ROUTE_REWARD_REQUIRED: claim reward before ${command.type}`);
+    err.code = 'ROUTE_REWARD_REQUIRED';
     throw err;
   }
   if (opts.strictVersion && Number(command.baseStateVersion) !== Number(state.stateVersion || 0)) {

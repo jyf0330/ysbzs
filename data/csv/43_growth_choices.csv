@@ -1,0 +1,10 @@
+growth_choice_id,target_level,name,description,display_order,coins_delta,free_rolls_delta,run_health_delta,run_max_health_delta,round_ap_bonus_delta,status,source,note
+growth_l2_vitality,2,耐久训练 I,提高本局英雄当前与最大耐久，增强失败后的调整空间。,1,0,0,4,4,0,正式,GROWTH_CHOICES,Lv2 耐久路线。
+growth_l2_tactics,2,战术训练 I,以后每个玩家战斗回合增加 1 点权威行动预算。,2,0,0,0,0,1,正式,GROWTH_CHOICES,Lv2 战斗行动路线。
+growth_l2_trade,2,商路进修 I,立即获得 4 金币，并为下一家商店储备 1 次免费刷新。,3,4,1,0,0,0,正式,GROWTH_CHOICES,Lv2 经济路线。
+growth_l3_vitality,3,耐久训练 II,进一步提高本局英雄当前与最大耐久。,1,0,0,6,6,0,正式,GROWTH_CHOICES,Lv3 耐久路线。
+growth_l3_tactics,3,战术训练 II,以后每个玩家战斗回合再增加 1 点权威行动预算。,2,0,0,0,0,1,正式,GROWTH_CHOICES,Lv3 战斗行动路线。
+growth_l3_trade,3,商路进修 II,立即获得 6 金币，并储备 1 次免费刷新。,3,6,1,0,0,0,正式,GROWTH_CHOICES,Lv3 经济路线。
+growth_l4_vitality,4,耐久训练 III,终局前大幅提高本局英雄当前与最大耐久。,1,0,0,8,8,0,正式,GROWTH_CHOICES,Lv4 耐久路线。
+growth_l4_tactics,4,战术训练 III,以后每个玩家战斗回合再增加 1 点权威行动预算。,2,0,0,0,0,1,正式,GROWTH_CHOICES,Lv4 战斗行动路线。
+growth_l4_trade,4,商路进修 III,立即获得 8 金币，并储备 2 次免费刷新。,3,8,2,0,0,0,正式,GROWTH_CHOICES,Lv4 经济路线。

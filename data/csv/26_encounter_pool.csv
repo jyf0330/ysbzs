@@ -1,61 +1,61 @@
-encounter_id,encounter_pool_id,name,weight,unlock_day,wave_period,battle_index,phase_label,wave_id,reward_pool_id,risk_label,enemy_preview,mechanic_preview,reward_preview,status,note
-enc_d01_midday_a,enc_pool_d01_midday,水泽巡队,100,1,上午,1,中午战,wave_d01_enc_scout,reward_pT1,低风险,棉角羊 / 灰尾狸 / 芦花鸡,双护盾回复,基础宠物三选一,正式,Day1 稳妥遭遇；3只青铜敌人
-enc_d01_midday_b,enc_pool_d01_midday,燎原伏兵,90,1,上午,1,中午战,wave_d01_enc_assault,reward_pT2,中风险,赤尾狐 / 雷须猫 / 火角鹿 / 电棘鼠,火层增伤 / 雷火联动,进阶宠物三选一,正式,Day1 进取遭遇；4只青铜敌人
-enc_d01_midday_c,enc_pool_d01_midday,甲阵守关,80,1,上午,1,中午战,wave_d01_enc_guard,reward_pT2,高风险,碧水鸭 / 苔甲龟 / 黑甲猪 / 黑角犀,护甲 / 反击 / 回合攻击成长 / 元素推拉,进阶宠物三选一,正式,Day1 高压遭遇；4只白银敌人
-enc_d01_evening_a,enc_pool_d01_evening,治愈巡夜,100,1,下午,2,首夜决战,wave_d01_evening_choice_a,reward_pT1,低风险,水、龙 / 水、龙 / 水、地 / 水,四名护盾回复,基础宠物三选一,正式,Day1 第二战低风险；威胁435
-enc_d02_midday_a,enc_pool_d02_midday,润泽巡护,100,2,上午,1,成长试探,wave_d02_enc_sustain,reward_pT1,低风险,棉角羊 / 药草兔 / 猫翼夜蝠,三名护盾回复,基础宠物三选一,正式,Day2 3只青铜护盾回复敌人
-enc_d02_midday_b,enc_pool_d02_midday,荆棘回阵,90,2,上午,1,成长试探,wave_d02_enc_counter,reward_pT2,中风险,冰背獭 / 芭蕉熊 / 百花巨蜂 / 冰角白鹿,四名反击,进阶宠物三选一,正式,Day2 4只青铜/白银反击敌人
-enc_d02_midday_c,enc_pool_d02_midday,催锋兽群,80,2,上午,1,成长试探,wave_d02_enc_growth,reward_pT2,高风险,黑甲猪 / 金甲蜂群 / 笑面山猫 / 霜尾雪貂 / 震角雷牛,五名回合攻击成长,进阶宠物三选一,正式,Day2 5只回合攻击成长敌人
-enc_d02_evening_a,enc_pool_d02_evening,四甲夜门,100,2,下午,2,成长夜战,wave_d02_evening_choice_a,reward_pT2,低风险,水、地 / 地 / 地 / 地,四名护甲减伤,进阶宠物三选一,正式,Day2 第二战低风险；威胁622.5
-enc_d03_midday_a,enc_pool_d03_midday,潮岸稳行队,100,3,上午,1,早期定向,wave_d03_enc_safe,reward_pT1,低风险,棉角羊 / 碧水鸭 / 藤甲猿 / 霜羽鹭,护盾回复 / 护甲减伤,基础宠物三选一,正式,Day3 稳妥路线；4只白银敌人
-enc_d03_midday_b,enc_pool_d03_midday,雷火夹击队,90,3,上午,1,早期定向,wave_d03_enc_assault,reward_pT2,中风险,赤尾狐 / 雷须猫 / 火角鹿 / 电棘鼠 / 金钱狸,雷火联动 / 胜利金币,进阶宠物三选一,正式,Day3 进取路线；5只白银敌人
-enc_d03_midday_c,enc_pool_d03_midday,铁甲破阵队,80,3,上午,1,早期定向,wave_d03_enc_breaker,reward_pT3,高风险,苔甲龟 / 黑甲猪 / 黑角犀 / 夜穴鼹 / 沙鬃猪,反击 / 回合攻击成长 / 元素推拉 / 火层伏爆,高阶宠物三选一,正式,Day3 高压路线；5只黄金敌人
-enc_d03_evening_a,enc_pool_d03_evening,深潮守夜,100,3,下午,2,定向夜战,wave_d03_evening_choice_a,reward_pT2,低风险,水、地 / 水、地 / 地 / 水、地 / 水、雷,五名护盾回复,进阶宠物三选一,正式,Day3 第二战低风险；威胁823.5
-enc_d04_midday_a,enc_pool_d04_midday,四甲关隘,100,4,上午,1,中段转压,wave_d04_enc_armor,reward_pT2,低风险,碧水鸭 / 花刺蛛 / 石甲兽 / 石牦灵,四名护甲减伤,进阶宠物三选一,正式,Day4 4只护甲减伤敌人
-enc_d04_midday_b,enc_pool_d04_midday,生息垒潮,90,4,上午,1,中段转压,wave_d04_enc_shield_growth,reward_pT3,中风险,涧水象 / 幽泉灵猫 / 涌泉水獭 / 木刺豪猪 / 碧蜂妖,五名回合护盾成长,高阶宠物三选一,正式,Day4 5只回合护盾成长敌人
-enc_d04_midday_c,enc_pool_d04_midday,甲反联营,80,4,上午,1,中段转压,wave_d04_enc_combined,reward_pT3,高风险,黄背牛 / 月镰螳螂 / 苍焰赤豺 / 沙鳞巨蟒 / 天羽云螭 / 百花鹿仙,双护甲 / 双反击 / 回合攻盾成长,高阶宠物三选一,正式,Day4 6只护甲反击成长混编敌人
-enc_d04_evening_a,enc_pool_d04_evening,五潮生壁,100,4,下午,2,中段夜战,wave_d04_evening_choice_a,reward_pT2,低风险,水、雷 / 水、雷 / 龙 / 雷、龙 / 水、龙,五名回合护盾成长,进阶宠物三选一,正式,Day4 第二战低风险；威胁1362.5
-enc_d05_midday_a,enc_pool_d05_midday,潮生守队,100,5,上午,1,中期预热,wave_d05_enc_regen,reward_pT2,低风险,潮鹤精 / 潮鸾卫 / 沧鹤妖 / 碧蚌将,四名护盾回复,进阶宠物三选一,正式,Day5 4只护盾回复敌人
-enc_d05_midday_b,enc_pool_d05_midday,五返猎群,90,5,上午,1,中期预热,wave_d05_enc_counter,reward_pT3,中风险,霜貂卫 / 炎鳗精 / 电蟒精 / 寒貂卫 / 芽蛛将,五名反击,高阶宠物三选一,正式,Day5 5只反击敌人
-enc_d05_midday_c,enc_pool_d05_midday,六将催锋,80,5,上午,1,精英预热,wave_d05_enc_growth,reward_elite,高风险,蜜纹獾 / 沙鳞巨蟒 / 覆水龙龟 / 渊鳞黑蛟 / 覆海蛟王 / 白象护法,六名回合攻击成长,精英专属奖励,正式,Day5 6只回合攻击成长敌人
-enc_d05_evening_a,enc_pool_d05_evening,六灵护夜,100,5,下午,2,中期夜战,wave_d05_evening_choice_a,reward_pT2,低风险,水、雷 / 水 / 地、龙 / 水、雷 / 水、雷 / 雷、地,六名护盾回复,进阶宠物三选一,正式,Day5 第二战低风险；威胁1428
-enc_d06_midday_a,enc_pool_d06_midday,龙龟稳压阵,100,6,上午,1,中期遭遇,wave_d06_enc_anchor,reward_pT2,低风险,三首火犬 / 覆水龙龟 / 连理双鹿 / 冰峰巨驼 / 青林巨象,双反击 / 护盾回复 / 回合攻击成长,进阶宠物三选一,正式,Day6 稳妥路线；6只白银敌人
-enc_d06_midday_b,enc_pool_d06_midday,熔雷突袭群,90,6,上午,1,中期遭遇,wave_d06_enc_assault,reward_pT3,中风险,雷泽青蛟 / 海棠水鹿 / 百花灵鹿 / 熔岩巨兽 / 云顶巨驼 / 焰羽赤雕,四名回合攻击成长 / 火层增伤,高阶宠物三选一,正式,Day6 进取路线；6只白银/黄金混编敌人
-enc_d06_midday_c,enc_pool_d06_midday,反击成长精英团,80,6,上午,1,精英战,wave_d06_enc_elite,reward_elite,高风险,黄背牛 / 月镰螳螂 / 苍焰赤豺 / 寒岩巨兽 / 白牙雪象 / 天羽云螭,护甲减伤 / 三名反击 / 回合攻盾成长,精英专属奖励,正式,Day6 机制精英路线；6只黄金敌人
-enc_d06_evening_a,enc_pool_d06_evening,祖灵回潮,100,6,下午,2,高阶夜战,wave_d06_evening_choice_a,reward_pT3,低风险,水 / 水、地 / 水、雷 / 水、地 / 草、水 / 地,六名护盾回复,高阶宠物三选一,正式,Day6 第二战低风险；威胁1785
-enc_d07_midday_a,enc_pool_d07_midday,重甲四卫,100,7,上午,1,高阶续战,wave_d07_enc_armor,reward_pT2,低风险,迅雷金雕 / 百花鹿仙 / 石甲将 / 霆熊卫,四名护甲减伤,进阶宠物三选一,正式,Day7 4只高强度护甲敌人
-enc_d07_midday_b,enc_pool_d07_midday,开盾城垒,90,7,上午,1,高阶续战,wave_d07_enc_opening_shield,reward_pT3,中风险,云鳞幼螭 / 九霄熊王 / 岩獒精 / 凯夫小兽 / 潮甲君,五名开场护盾,高阶宠物三选一,正式,Day7 5只开场护盾敌人
-enc_d07_midday_c,enc_pool_d07_midday,怒潮六将,80,7,上午,1,精英续战,wave_d07_enc_growth,reward_elite,高风险,冰棘豪猪 / 混世魔猿 / 沙狮神 / 角豹神 / 霆虎神 / 霆鲨皇,六名回合攻击成长,精英专属奖励,正式,Day7 6只高强度回合攻击成长敌人
-enc_d07_evening_a,enc_pool_d07_evening,金甲森城,100,7,下午,2,后期夜战,wave_d07_evening_choice_a,reward_pT3,低风险,水、地 / 地 / 雷、地 / 地 / 水、地 / 雷、地,六名护甲减伤,高阶宠物三选一,正式,Day7 第二战低风险；威胁2156
-enc_d08_midday_a,enc_pool_d08_midday,不息神眷,100,8,上午,1,后期升压,wave_d08_enc_regen,reward_pT2,低风险,焰尾山狐 / 沧鲤祖 / 澜兔祖 / 碧兔神 / 沧鹤神,五名护盾回复,进阶宠物三选一,正式,Day8 5只白银/黄金护盾回复敌人
-enc_d08_midday_b,enc_pool_d08_midday,六返伏线,90,8,上午,1,后期升压,wave_d08_enc_counter,reward_pT3,中风险,疾风狼 / 丹角火麟 / 食梦黑貘 / 白牙雪象 / 寒狐祖 / 夜幕巨蝠,六名反击,高阶宠物三选一,正式,Day8 6只黄金/钻石反击敌人
-enc_d08_midday_c,enc_pool_d08_midday,爆巢续盾,80,8,上午,1,后期升压,wave_d08_enc_bomb_growth,reward_pT4,高风险,藤巢蜂 / 白眉雪猿 / 墨蝎王 / 天羽云螭 / 渊蚁皇 / 霆鲨皇,三名死亡爆炸 / 双回合护盾成长 / 回合攻击成长,钻石宠物三选一,正式,Day8 6只钻石爆炸成长混编敌人
-enc_d08_evening_a,enc_pool_d08_evening,不息神潮,100,8,下午,2,终战夜战,wave_d08_evening_choice_a,reward_pT3,低风险,水、雷 / 地 / 水 / 水、地 / 水、雷 / 水、地,六名护盾回复,高阶宠物三选一,正式,Day8 第二战低风险；威胁2321.8
-enc_d09_midday_a,enc_pool_d09_midday,王侯守备线,100,9,上午,1,终战备战,wave_d09_enc_guard,reward_pT2,低风险,焰豹将 / 赤鼋妖 / 雷狼卫 / 电虎侯 / 燎狼将,三名火层增伤 / 双回合攻击成长,进阶宠物三选一,正式,Day9 稳妥路线；6只黄金敌人
-enc_d09_midday_b,enc_pool_d09_midday,地雷决胜阵,90,9,上午,1,终战备战,wave_d09_enc_decisive,reward_pT3,中风险,垒牦灵 / 雷鹰将 / 烬鳗将 / 雷鹰卫 / 岩獒精 / 潮鹤精,双护盾回复 / 双回合攻击成长 / 火层增伤 / 开场护盾,高阶宠物三选一,正式,Day9 进取路线；6只钻石敌人
-enc_d09_midday_c,enc_pool_d09_midday,死亡爆阵团,80,9,上午,1,终战备战,wave_d09_enc_ancestral,reward_pT4,高风险,藤巢蜂 / 白眉雪猿 / 渊蚁皇 / 角豹神 / 寒狐祖 / 墨蝎王,三名死亡爆炸 / 回合攻盾成长 / 反击,钻石宠物三选一,正式,Day9 死亡爆阵路线；6只钻石敌人
-enc_d09_evening_a,enc_pool_d09_evening,王甲前线,100,9,下午,2,决胜前夜,wave_d09_evening_choice_a,reward_pT3,低风险,水、地 / 水、地 / 地 / 雷、地 / 地 / 雷、地,六名护甲减伤,高阶宠物三选一,正式,Day9 第二战低风险；威胁2366.4
-enc_d10_midday_a,enc_pool_d10_midday,六甲封途,100,10,上午,1,终战前试炼,wave_d10_enc_armor,reward_pT2,低风险,黄背牛 / 迅雷金雕 / 百花鹿仙 / 石甲将 / 霆熊卫 / 霆牦王,六名护甲减伤,进阶宠物三选一,正式,Day10 6只白银/黄金/钻石护甲敌人
-enc_d10_midday_b,enc_pool_d10_midday,万刃回廊,90,10,上午,1,终战前试炼,wave_d10_enc_counter,reward_pT3,中风险,疾风狼 / 丹角火麟 / 食梦黑貘 / 白牙雪象 / 寒狐祖 / 夜幕巨蝠,六名反击,高阶宠物三选一,正式,Day10 6只钻石反击敌人
-enc_d10_midday_c,enc_pool_d10_midday,爆阵终试,80,10,上午,1,终战前试炼,wave_d10_enc_bomb_growth,reward_pT4,高风险,藤巢蜂 / 白眉雪猿 / 墨蝎王 / 霆虎神 / 寒鹰祖 / 霆鲨皇,三名死亡爆炸 / 三名回合攻击成长,钻石宠物三选一,正式,Day10 6只钻石爆炸成长混编敌人
-enc_d10_evening_a,enc_pool_d10_evening,终局甲城,100,10,下午,2,终局战,wave_d10_evening_choice_a,reward_pT3,低风险,水、地 / 水、地 / 地 / 雷、地 / 地 / 雷、地,六名护甲减伤,高阶宠物三选一,正式,Day10 第二战低风险；威胁2465
-enc_d01_evening_b,enc_pool_d01_evening,荆返夜袭,90,1,下午,2,首夜决战,wave_d01_evening_choice_b,reward_pT2,中风险,雷 / 暗 / 水、龙 / 草、水,四名反击,进阶宠物三选一,正式,Day1 第二战中风险；威胁456
-enc_d01_evening_c,enc_pool_d01_evening,催锋暮群,80,1,下午,2,首夜决战,wave_d01_evening_choice_c,reward_pT2,高风险,雷 / 雷 / 无 / 无 / 地,五名回合攻击成长,进阶宠物三选一,正式,Day1 第二战高风险；威胁592.5
-enc_d02_evening_b,enc_pool_d02_evening,生息夜垒,90,2,下午,2,成长夜战,wave_d02_evening_choice_b,reward_pT2,中风险,雷、龙 / 水、龙 / 雷、地 / 水、雷 / 水、雷,五名回合护盾成长,进阶宠物三选一,正式,Day2 第二战中风险；威胁766
-enc_d02_evening_c,enc_pool_d02_evening,六返猎阵,80,2,下午,2,成长夜战,wave_d02_evening_choice_c,reward_pT3,高风险,草、水 / 水 / 草 / 水 / 冰 / 暗,六名反击,高阶宠物三选一,正式,Day2 第二战高风险；威胁936
-enc_d03_evening_b,enc_pool_d03_evening,五甲夜关,90,3,下午,2,定向夜战,wave_d03_evening_choice_b,reward_pT3,中风险,水、地 / 水、地 / 地 / 雷、地 / 地,五名护甲减伤,高阶宠物三选一,正式,Day3 第二战中风险；威胁930
-enc_d03_evening_c,enc_pool_d03_evening,逐夜催锋,80,3,下午,2,定向夜战,wave_d03_evening_choice_c,reward_pT3,高风险,雷 / 雷 / 水、雷 / 雷 / 雷 / 雷,六名回合攻击成长,高阶宠物三选一,正式,Day3 第二战高风险；威胁1035
-enc_d04_evening_b,enc_pool_d04_evening,六返回廊,90,4,下午,2,中段夜战,wave_d04_evening_choice_b,reward_pT3,中风险,雷 / 水、雷 / 雷 / 无 / 雷 / 草、雷,六名反击,高阶宠物三选一,正式,Day4 第二战中风险；威胁1458
-enc_d04_evening_c,enc_pool_d04_evening,六将狂潮,80,4,下午,2,中段夜战,wave_d04_evening_choice_c,reward_pT3,高风险,雷 / 雷、龙 / 水 / 雷 / 雷 / 雷,六名回合攻击成长,高阶宠物三选一,正式,Day4 第二战高风险；威胁1594.8
-enc_d05_evening_b,enc_pool_d05_evening,六甲重关,90,5,下午,2,中期夜战,wave_d05_evening_choice_b,reward_pT3,中风险,水、地 / 水、地 / 地 / 雷、地 / 地 / 水、地,六名护甲减伤,高阶宠物三选一,正式,Day5 第二战中风险；威胁1581
-enc_d05_evening_c,enc_pool_d05_evening,爆返伏阵,80,5,下午,2,中期夜战,wave_d05_evening_choice_c,reward_elite,高风险,水、雷 / 水、雷 / 暗 / 水 / 冰、水 / 草、水,三名死亡爆炸 / 三名反击,精英专属奖励,正式,Day5 第二战高风险；威胁1752
-enc_d06_evening_b,enc_pool_d06_evening,夜幕反围,90,6,下午,2,高阶夜战,wave_d06_evening_choice_b,reward_pT3,中风险,雷 / 水 / 水、龙 / 冰、水 / 冰 / 草、水,六名反击,高阶宠物三选一,正式,Day6 第二战中风险；威胁1912
-enc_d06_evening_c,enc_pool_d06_evening,怒潮六兽,80,6,下午,2,高阶夜战,wave_d06_evening_choice_c,reward_elite,高风险,雷 / 雷 / 地 / 龙 / 雷 / 雷,六名回合攻击成长,精英专属奖励,正式,Day6 第二战高风险；威胁2196
-enc_d07_evening_b,enc_pool_d07_evening,百刃夜阵,90,7,下午,2,后期夜战,wave_d07_evening_choice_b,reward_elite,中风险,雷 / 水 / 水、龙 / 冰、水 / 冰 / 草、水,六名反击,精英专属奖励,正式,Day7 第二战中风险；威胁2198.8
-enc_d07_evening_c,enc_pool_d07_evening,终途催锋,80,7,下午,2,后期夜战,wave_d07_evening_choice_c,reward_pT4,高风险,雷 / 地 / 龙 / 雷 / 冰 / 雷,六名回合攻击成长,钻石宠物三选一,正式,Day7 第二战高风险；威胁2571.4
-enc_d08_evening_b,enc_pool_d08_evening,万刃星幕,90,8,下午,2,终战夜战,wave_d08_evening_choice_b,reward_elite,中风险,雷 / 水 / 水、龙 / 冰、水 / 冰 / 草、水,六名反击,精英专属奖励,正式,Day8 第二战中风险；威胁2390
-enc_d08_evening_c,enc_pool_d08_evening,爆巢汐阵,80,8,下午,2,终战夜战,wave_d08_evening_choice_c,reward_pT4,高风险,水、雷 / 水、雷 / 暗 / 水、雷 / 地 / 水,三名死亡爆炸 / 三名护盾回复,钻石宠物三选一,正式,Day8 第二战高风险；威胁2522.5
-enc_d09_evening_b,enc_pool_d09_evening,反锋终夜,90,9,下午,2,决胜前夜,wave_d09_evening_choice_b,reward_elite,中风险,草、水 / 冰、水 / 冰 / 地 / 龙 / 雷,三名反击 / 三名回合攻击成长,精英专属奖励,正式,Day9 第二战中风险；威胁2463.3
-enc_d09_evening_c,enc_pool_d09_evening,爆潮终夜,80,9,下午,2,决胜前夜,wave_d09_evening_choice_c,reward_pT4,高风险,水、雷 / 水、雷 / 暗 / 水、雷 / 地 / 水、地,三名死亡爆炸 / 三名护盾回复,钻石宠物三选一,正式,Day9 第二战高风险；威胁2522.5
-enc_d10_evening_b,enc_pool_d10_evening,终局回锋,90,10,下午,2,终局战,wave_d10_evening_choice_b,reward_elite,中风险,草、水 / 冰、水 / 冰 / 地 / 龙 / 雷,三名反击 / 三名回合攻击成长,精英专属奖励,正式,Day10 第二战中风险；威胁2570.4
-enc_d10_evening_c,enc_pool_d10_evening,终局狂潮,80,10,下午,2,终局战,wave_d10_evening_choice_c,reward_pT4,高风险,雷 / 地 / 龙 / 雷 / 冰 / 雷,六名回合攻击成长,钻石宠物三选一,正式,Day10 第二战高风险；威胁2795
+encounter_id,encounter_pool_id,name,weight,unlock_day,wave_period,battle_index,phase_label,wave_id,reward_pool_id,risk_label,enemy_preview,mechanic_preview,reward_preview,xp_reward,status,note
+enc_d01_midday_a,enc_pool_d01_midday,水泽巡队,100,1,上午,1,中午战,wave_d01_enc_scout,reward_pT1,低风险,棉角羊 / 灰尾狸 / 芦花鸡,双护盾回复,基础宠物三选一,1,正式,Day1 稳妥遭遇；3只青铜敌人
+enc_d01_midday_b,enc_pool_d01_midday,燎原伏兵,90,1,上午,1,中午战,wave_d01_enc_assault,reward_pT2,中风险,赤尾狐 / 雷须猫 / 火角鹿 / 电棘鼠,火层增伤 / 雷火联动,进阶宠物三选一,2,正式,Day1 进取遭遇；4只青铜敌人
+enc_d01_midday_c,enc_pool_d01_midday,甲阵守关,80,1,上午,1,中午战,wave_d01_enc_guard,reward_pT2,高风险,碧水鸭 / 苔甲龟 / 黑甲猪 / 黑角犀,护甲 / 反击 / 回合攻击成长 / 元素推拉,进阶宠物三选一,3,正式,Day1 高压遭遇；4只白银敌人
+enc_d01_evening_a,enc_pool_d01_evening,治愈巡夜,100,1,下午,2,首夜决战,wave_d01_evening_choice_a,reward_pT1,低风险,水、龙 / 水、龙 / 水、地 / 水,四名护盾回复,基础宠物三选一,1,正式,Day1 第二战低风险；威胁435
+enc_d02_midday_a,enc_pool_d02_midday,润泽巡护,100,2,上午,1,成长试探,wave_d02_enc_sustain,reward_pT1,低风险,棉角羊 / 药草兔 / 猫翼夜蝠,三名护盾回复,基础宠物三选一,1,正式,Day2 3只青铜护盾回复敌人
+enc_d02_midday_b,enc_pool_d02_midday,荆棘回阵,90,2,上午,1,成长试探,wave_d02_enc_counter,reward_pT2,中风险,冰背獭 / 芭蕉熊 / 百花巨蜂 / 冰角白鹿,四名反击,进阶宠物三选一,2,正式,Day2 4只青铜/白银反击敌人
+enc_d02_midday_c,enc_pool_d02_midday,催锋兽群,80,2,上午,1,成长试探,wave_d02_enc_growth,reward_pT2,高风险,黑甲猪 / 金甲蜂群 / 笑面山猫 / 霜尾雪貂 / 震角雷牛,五名回合攻击成长,进阶宠物三选一,3,正式,Day2 5只回合攻击成长敌人
+enc_d02_evening_a,enc_pool_d02_evening,四甲夜门,100,2,下午,2,成长夜战,wave_d02_evening_choice_a,reward_pT2,低风险,水、地 / 地 / 地 / 地,四名护甲减伤,进阶宠物三选一,1,正式,Day2 第二战低风险；威胁622.5
+enc_d03_midday_a,enc_pool_d03_midday,潮岸稳行队,100,3,上午,1,早期定向,wave_d03_enc_safe,reward_pT1,低风险,棉角羊 / 碧水鸭 / 藤甲猿 / 霜羽鹭,护盾回复 / 护甲减伤,基础宠物三选一,1,正式,Day3 稳妥路线；4只白银敌人
+enc_d03_midday_b,enc_pool_d03_midday,雷火夹击队,90,3,上午,1,早期定向,wave_d03_enc_assault,reward_pT2,中风险,赤尾狐 / 雷须猫 / 火角鹿 / 电棘鼠 / 金钱狸,雷火联动 / 胜利金币,进阶宠物三选一,2,正式,Day3 进取路线；5只白银敌人
+enc_d03_midday_c,enc_pool_d03_midday,铁甲破阵队,80,3,上午,1,早期定向,wave_d03_enc_breaker,reward_pT3,高风险,苔甲龟 / 黑甲猪 / 黑角犀 / 夜穴鼹 / 沙鬃猪,反击 / 回合攻击成长 / 元素推拉 / 火层伏爆,高阶宠物三选一,3,正式,Day3 高压路线；5只黄金敌人
+enc_d03_evening_a,enc_pool_d03_evening,深潮守夜,100,3,下午,2,定向夜战,wave_d03_evening_choice_a,reward_pT2,低风险,水、地 / 水、地 / 地 / 水、地 / 水、雷,五名护盾回复,进阶宠物三选一,1,正式,Day3 第二战低风险；威胁823.5
+enc_d04_midday_a,enc_pool_d04_midday,四甲关隘,100,4,上午,1,中段转压,wave_d04_enc_armor,reward_pT2,低风险,碧水鸭 / 花刺蛛 / 石甲兽 / 石牦灵,四名护甲减伤,进阶宠物三选一,1,正式,Day4 4只护甲减伤敌人
+enc_d04_midday_b,enc_pool_d04_midday,生息垒潮,90,4,上午,1,中段转压,wave_d04_enc_shield_growth,reward_pT3,中风险,涧水象 / 幽泉灵猫 / 涌泉水獭 / 木刺豪猪 / 碧蜂妖,五名回合护盾成长,高阶宠物三选一,2,正式,Day4 5只回合护盾成长敌人
+enc_d04_midday_c,enc_pool_d04_midday,甲反联营,80,4,上午,1,中段转压,wave_d04_enc_combined,reward_pT3,高风险,黄背牛 / 月镰螳螂 / 苍焰赤豺 / 沙鳞巨蟒 / 天羽云螭 / 百花鹿仙,双护甲 / 双反击 / 回合攻盾成长,高阶宠物三选一,3,正式,Day4 6只护甲反击成长混编敌人
+enc_d04_evening_a,enc_pool_d04_evening,五潮生壁,100,4,下午,2,中段夜战,wave_d04_evening_choice_a,reward_pT2,低风险,水、雷 / 水、雷 / 龙 / 雷、龙 / 水、龙,五名回合护盾成长,进阶宠物三选一,1,正式,Day4 第二战低风险；威胁1362.5
+enc_d05_midday_a,enc_pool_d05_midday,潮生守队,100,5,上午,1,中期预热,wave_d05_enc_regen,reward_pT2,低风险,潮鹤精 / 潮鸾卫 / 沧鹤妖 / 碧蚌将,四名护盾回复,进阶宠物三选一,1,正式,Day5 4只护盾回复敌人
+enc_d05_midday_b,enc_pool_d05_midday,五返猎群,90,5,上午,1,中期预热,wave_d05_enc_counter,reward_pT3,中风险,霜貂卫 / 炎鳗精 / 电蟒精 / 寒貂卫 / 芽蛛将,五名反击,高阶宠物三选一,2,正式,Day5 5只反击敌人
+enc_d05_midday_c,enc_pool_d05_midday,六将催锋,80,5,上午,1,精英预热,wave_d05_enc_growth,reward_elite,高风险,蜜纹獾 / 沙鳞巨蟒 / 覆水龙龟 / 渊鳞黑蛟 / 覆海蛟王 / 白象护法,六名回合攻击成长,精英专属奖励,3,正式,Day5 6只回合攻击成长敌人
+enc_d05_evening_a,enc_pool_d05_evening,六灵护夜,100,5,下午,2,中期夜战,wave_d05_evening_choice_a,reward_pT2,低风险,水、雷 / 水 / 地、龙 / 水、雷 / 水、雷 / 雷、地,六名护盾回复,进阶宠物三选一,1,正式,Day5 第二战低风险；威胁1428
+enc_d06_midday_a,enc_pool_d06_midday,龙龟稳压阵,100,6,上午,1,中期遭遇,wave_d06_enc_anchor,reward_pT2,低风险,三首火犬 / 覆水龙龟 / 连理双鹿 / 冰峰巨驼 / 青林巨象,双反击 / 护盾回复 / 回合攻击成长,进阶宠物三选一,1,正式,Day6 稳妥路线；6只白银敌人
+enc_d06_midday_b,enc_pool_d06_midday,熔雷突袭群,90,6,上午,1,中期遭遇,wave_d06_enc_assault,reward_pT3,中风险,雷泽青蛟 / 海棠水鹿 / 百花灵鹿 / 熔岩巨兽 / 云顶巨驼 / 焰羽赤雕,四名回合攻击成长 / 火层增伤,高阶宠物三选一,2,正式,Day6 进取路线；6只白银/黄金混编敌人
+enc_d06_midday_c,enc_pool_d06_midday,反击成长精英团,80,6,上午,1,精英战,wave_d06_enc_elite,reward_elite,高风险,黄背牛 / 月镰螳螂 / 苍焰赤豺 / 寒岩巨兽 / 白牙雪象 / 天羽云螭,护甲减伤 / 三名反击 / 回合攻盾成长,精英专属奖励,3,正式,Day6 机制精英路线；6只黄金敌人
+enc_d06_evening_a,enc_pool_d06_evening,祖灵回潮,100,6,下午,2,高阶夜战,wave_d06_evening_choice_a,reward_pT3,低风险,水 / 水、地 / 水、雷 / 水、地 / 草、水 / 地,六名护盾回复,高阶宠物三选一,1,正式,Day6 第二战低风险；威胁1785
+enc_d07_midday_a,enc_pool_d07_midday,重甲四卫,100,7,上午,1,高阶续战,wave_d07_enc_armor,reward_pT2,低风险,迅雷金雕 / 百花鹿仙 / 石甲将 / 霆熊卫,四名护甲减伤,进阶宠物三选一,1,正式,Day7 4只高强度护甲敌人
+enc_d07_midday_b,enc_pool_d07_midday,开盾城垒,90,7,上午,1,高阶续战,wave_d07_enc_opening_shield,reward_pT3,中风险,云鳞幼螭 / 九霄熊王 / 岩獒精 / 凯夫小兽 / 潮甲君,五名开场护盾,高阶宠物三选一,2,正式,Day7 5只开场护盾敌人
+enc_d07_midday_c,enc_pool_d07_midday,怒潮六将,80,7,上午,1,精英续战,wave_d07_enc_growth,reward_elite,高风险,冰棘豪猪 / 混世魔猿 / 沙狮神 / 角豹神 / 霆虎神 / 霆鲨皇,六名回合攻击成长,精英专属奖励,3,正式,Day7 6只高强度回合攻击成长敌人
+enc_d07_evening_a,enc_pool_d07_evening,金甲森城,100,7,下午,2,后期夜战,wave_d07_evening_choice_a,reward_pT3,低风险,水、地 / 地 / 雷、地 / 地 / 水、地 / 雷、地,六名护甲减伤,高阶宠物三选一,1,正式,Day7 第二战低风险；威胁2156
+enc_d08_midday_a,enc_pool_d08_midday,不息神眷,100,8,上午,1,后期升压,wave_d08_enc_regen,reward_pT2,低风险,焰尾山狐 / 沧鲤祖 / 澜兔祖 / 碧兔神 / 沧鹤神,五名护盾回复,进阶宠物三选一,1,正式,Day8 5只白银/黄金护盾回复敌人
+enc_d08_midday_b,enc_pool_d08_midday,六返伏线,90,8,上午,1,后期升压,wave_d08_enc_counter,reward_pT3,中风险,疾风狼 / 丹角火麟 / 食梦黑貘 / 白牙雪象 / 寒狐祖 / 夜幕巨蝠,六名反击,高阶宠物三选一,2,正式,Day8 6只黄金/钻石反击敌人
+enc_d08_midday_c,enc_pool_d08_midday,爆巢续盾,80,8,上午,1,后期升压,wave_d08_enc_bomb_growth,reward_pT4,高风险,藤巢蜂 / 白眉雪猿 / 墨蝎王 / 天羽云螭 / 渊蚁皇 / 霆鲨皇,三名死亡爆炸 / 双回合护盾成长 / 回合攻击成长,钻石宠物三选一,3,正式,Day8 6只钻石爆炸成长混编敌人
+enc_d08_evening_a,enc_pool_d08_evening,不息神潮,100,8,下午,2,终战夜战,wave_d08_evening_choice_a,reward_pT3,低风险,水、雷 / 地 / 水 / 水、地 / 水、雷 / 水、地,六名护盾回复,高阶宠物三选一,1,正式,Day8 第二战低风险；威胁2321.8
+enc_d09_midday_a,enc_pool_d09_midday,王侯守备线,100,9,上午,1,终战备战,wave_d09_enc_guard,reward_pT2,低风险,焰豹将 / 赤鼋妖 / 雷狼卫 / 电虎侯 / 燎狼将,三名火层增伤 / 双回合攻击成长,进阶宠物三选一,1,正式,Day9 稳妥路线；6只黄金敌人
+enc_d09_midday_b,enc_pool_d09_midday,地雷决胜阵,90,9,上午,1,终战备战,wave_d09_enc_decisive,reward_pT3,中风险,垒牦灵 / 雷鹰将 / 烬鳗将 / 雷鹰卫 / 岩獒精 / 潮鹤精,双护盾回复 / 双回合攻击成长 / 火层增伤 / 开场护盾,高阶宠物三选一,2,正式,Day9 进取路线；6只钻石敌人
+enc_d09_midday_c,enc_pool_d09_midday,死亡爆阵团,80,9,上午,1,终战备战,wave_d09_enc_ancestral,reward_pT4,高风险,藤巢蜂 / 白眉雪猿 / 渊蚁皇 / 角豹神 / 寒狐祖 / 墨蝎王,三名死亡爆炸 / 回合攻盾成长 / 反击,钻石宠物三选一,3,正式,Day9 死亡爆阵路线；6只钻石敌人
+enc_d09_evening_a,enc_pool_d09_evening,王甲前线,100,9,下午,2,决胜前夜,wave_d09_evening_choice_a,reward_pT3,低风险,水、地 / 水、地 / 地 / 雷、地 / 地 / 雷、地,六名护甲减伤,高阶宠物三选一,1,正式,Day9 第二战低风险；威胁2366.4
+enc_d10_midday_a,enc_pool_d10_midday,六甲封途,100,10,上午,1,终战前试炼,wave_d10_enc_armor,reward_pT2,低风险,黄背牛 / 迅雷金雕 / 百花鹿仙 / 石甲将 / 霆熊卫 / 霆牦王,六名护甲减伤,进阶宠物三选一,1,正式,Day10 6只白银/黄金/钻石护甲敌人
+enc_d10_midday_b,enc_pool_d10_midday,万刃回廊,90,10,上午,1,终战前试炼,wave_d10_enc_counter,reward_pT3,中风险,疾风狼 / 丹角火麟 / 食梦黑貘 / 白牙雪象 / 寒狐祖 / 夜幕巨蝠,六名反击,高阶宠物三选一,2,正式,Day10 6只钻石反击敌人
+enc_d10_midday_c,enc_pool_d10_midday,爆阵终试,80,10,上午,1,终战前试炼,wave_d10_enc_bomb_growth,reward_pT4,高风险,藤巢蜂 / 白眉雪猿 / 墨蝎王 / 霆虎神 / 寒鹰祖 / 霆鲨皇,三名死亡爆炸 / 三名回合攻击成长,钻石宠物三选一,3,正式,Day10 6只钻石爆炸成长混编敌人
+enc_d10_evening_a,enc_pool_d10_evening,终局甲城,100,10,下午,2,终局战,wave_d10_evening_choice_a,reward_pT3,低风险,水、地 / 水、地 / 地 / 雷、地 / 地 / 雷、地,六名护甲减伤,高阶宠物三选一,1,正式,Day10 第二战低风险；威胁2465
+enc_d01_evening_b,enc_pool_d01_evening,荆返夜袭,90,1,下午,2,首夜决战,wave_d01_evening_choice_b,reward_pT2,中风险,雷 / 暗 / 水、龙 / 草、水,四名反击,进阶宠物三选一,2,正式,Day1 第二战中风险；威胁456
+enc_d01_evening_c,enc_pool_d01_evening,催锋暮群,80,1,下午,2,首夜决战,wave_d01_evening_choice_c,reward_pT2,高风险,雷 / 雷 / 无 / 无 / 地,五名回合攻击成长,进阶宠物三选一,3,正式,Day1 第二战高风险；威胁592.5
+enc_d02_evening_b,enc_pool_d02_evening,生息夜垒,90,2,下午,2,成长夜战,wave_d02_evening_choice_b,reward_pT2,中风险,雷、龙 / 水、龙 / 雷、地 / 水、雷 / 水、雷,五名回合护盾成长,进阶宠物三选一,2,正式,Day2 第二战中风险；威胁766
+enc_d02_evening_c,enc_pool_d02_evening,六返猎阵,80,2,下午,2,成长夜战,wave_d02_evening_choice_c,reward_pT3,高风险,草、水 / 水 / 草 / 水 / 冰 / 暗,六名反击,高阶宠物三选一,3,正式,Day2 第二战高风险；威胁936
+enc_d03_evening_b,enc_pool_d03_evening,五甲夜关,90,3,下午,2,定向夜战,wave_d03_evening_choice_b,reward_pT3,中风险,水、地 / 水、地 / 地 / 雷、地 / 地,五名护甲减伤,高阶宠物三选一,2,正式,Day3 第二战中风险；威胁930
+enc_d03_evening_c,enc_pool_d03_evening,逐夜催锋,80,3,下午,2,定向夜战,wave_d03_evening_choice_c,reward_pT3,高风险,雷 / 雷 / 水、雷 / 雷 / 雷 / 雷,六名回合攻击成长,高阶宠物三选一,3,正式,Day3 第二战高风险；威胁1035
+enc_d04_evening_b,enc_pool_d04_evening,六返回廊,90,4,下午,2,中段夜战,wave_d04_evening_choice_b,reward_pT3,中风险,雷 / 水、雷 / 雷 / 无 / 雷 / 草、雷,六名反击,高阶宠物三选一,2,正式,Day4 第二战中风险；威胁1458
+enc_d04_evening_c,enc_pool_d04_evening,六将狂潮,80,4,下午,2,中段夜战,wave_d04_evening_choice_c,reward_pT3,高风险,雷 / 雷、龙 / 水 / 雷 / 雷 / 雷,六名回合攻击成长,高阶宠物三选一,3,正式,Day4 第二战高风险；威胁1594.8
+enc_d05_evening_b,enc_pool_d05_evening,六甲重关,90,5,下午,2,中期夜战,wave_d05_evening_choice_b,reward_pT3,中风险,水、地 / 水、地 / 地 / 雷、地 / 地 / 水、地,六名护甲减伤,高阶宠物三选一,2,正式,Day5 第二战中风险；威胁1581
+enc_d05_evening_c,enc_pool_d05_evening,爆返伏阵,80,5,下午,2,中期夜战,wave_d05_evening_choice_c,reward_elite,高风险,水、雷 / 水、雷 / 暗 / 水 / 冰、水 / 草、水,三名死亡爆炸 / 三名反击,精英专属奖励,3,正式,Day5 第二战高风险；威胁1752
+enc_d06_evening_b,enc_pool_d06_evening,夜幕反围,90,6,下午,2,高阶夜战,wave_d06_evening_choice_b,reward_pT3,中风险,雷 / 水 / 水、龙 / 冰、水 / 冰 / 草、水,六名反击,高阶宠物三选一,2,正式,Day6 第二战中风险；威胁1912
+enc_d06_evening_c,enc_pool_d06_evening,怒潮六兽,80,6,下午,2,高阶夜战,wave_d06_evening_choice_c,reward_elite,高风险,雷 / 雷 / 地 / 龙 / 雷 / 雷,六名回合攻击成长,精英专属奖励,3,正式,Day6 第二战高风险；威胁2196
+enc_d07_evening_b,enc_pool_d07_evening,百刃夜阵,90,7,下午,2,后期夜战,wave_d07_evening_choice_b,reward_elite,中风险,雷 / 水 / 水、龙 / 冰、水 / 冰 / 草、水,六名反击,精英专属奖励,2,正式,Day7 第二战中风险；威胁2198.8
+enc_d07_evening_c,enc_pool_d07_evening,终途催锋,80,7,下午,2,后期夜战,wave_d07_evening_choice_c,reward_pT4,高风险,雷 / 地 / 龙 / 雷 / 冰 / 雷,六名回合攻击成长,钻石宠物三选一,3,正式,Day7 第二战高风险；威胁2571.4
+enc_d08_evening_b,enc_pool_d08_evening,万刃星幕,90,8,下午,2,终战夜战,wave_d08_evening_choice_b,reward_elite,中风险,雷 / 水 / 水、龙 / 冰、水 / 冰 / 草、水,六名反击,精英专属奖励,2,正式,Day8 第二战中风险；威胁2390
+enc_d08_evening_c,enc_pool_d08_evening,爆巢汐阵,80,8,下午,2,终战夜战,wave_d08_evening_choice_c,reward_pT4,高风险,水、雷 / 水、雷 / 暗 / 水、雷 / 地 / 水,三名死亡爆炸 / 三名护盾回复,钻石宠物三选一,3,正式,Day8 第二战高风险；威胁2522.5
+enc_d09_evening_b,enc_pool_d09_evening,反锋终夜,90,9,下午,2,决胜前夜,wave_d09_evening_choice_b,reward_elite,中风险,草、水 / 冰、水 / 冰 / 地 / 龙 / 雷,三名反击 / 三名回合攻击成长,精英专属奖励,2,正式,Day9 第二战中风险；威胁2463.3
+enc_d09_evening_c,enc_pool_d09_evening,爆潮终夜,80,9,下午,2,决胜前夜,wave_d09_evening_choice_c,reward_pT4,高风险,水、雷 / 水、雷 / 暗 / 水、雷 / 地 / 水、地,三名死亡爆炸 / 三名护盾回复,钻石宠物三选一,3,正式,Day9 第二战高风险；威胁2522.5
+enc_d10_evening_b,enc_pool_d10_evening,终局回锋,90,10,下午,2,终局战,wave_d10_evening_choice_b,reward_elite,中风险,草、水 / 冰、水 / 冰 / 地 / 龙 / 雷,三名反击 / 三名回合攻击成长,精英专属奖励,2,正式,Day10 第二战中风险；威胁2570.4
+enc_d10_evening_c,enc_pool_d10_evening,终局狂潮,80,10,下午,2,终局战,wave_d10_evening_choice_c,reward_pT4,高风险,雷 / 地 / 龙 / 雷 / 冰 / 雷,六名回合攻击成长,钻石宠物三选一,3,正式,Day10 第二战高风险；威胁2795

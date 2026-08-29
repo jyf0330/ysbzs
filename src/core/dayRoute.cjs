@@ -5,6 +5,7 @@ const { syncBoardUnits } = require('./state.cjs');
 const { queueBattlePrepEffectFromEvent } = require('./outerBattleEffects.cjs');
 const { queueOuterRunEffectFromEvent, applyRouteBattleOutcomeEffects } = require('./outerRunEffects.cjs');
 const { rng, pickWeighted } = require('./rng.cjs');
+const runGrowth = require('./runGrowth.cjs');
 
 const { deepClone: clone } = require('./utils.cjs');
 function activeRows(rows, day) {
@@ -102,6 +103,11 @@ function archiveCurrentDayRoute(state) {
     history: clone(route.history || []),
     battleOutcomes: clone(route.battleOutcomes || []),
     claimedRewards: clone(route.claimedRewards || []),
+    runLevel: Number(state.runLevel || 1),
+    runXp: Number(state.runXp || 0),
+    nextLevelXp: state.nextLevelXp == null ? null : Number(state.nextLevelXp),
+    roundApBonus: Number(state.roundApBonus || 0),
+    growthHistory: clone(state.growthHistory || []),
     terminal: route.terminal ? clone(route.terminal) : null
   });
 }
@@ -250,14 +256,15 @@ function buildBattleChoicePreview(enc, schedule) {
     kindLabel: enc.riskLabel || (pressure ? '高压遭遇' : '遭遇'),
     summary: `${label}：${enc.name || enc.encounterId}，${enc.riskLabel || (pressure ? '高压力' : '常规风险')}。`,
     costText: '消耗战斗机会',
-    gainText: enc.rewardPreview || (pressure ? '高压力 / 高奖励' : '胜利获得路线奖励'),
+    gainText: `${enc.rewardPreview || (pressure ? '高压力 / 高奖励' : '胜利获得路线奖励')} · 胜利 +${Number(enc.xpReward || 0)} XP`,
     tags: ['战斗压力', enc.riskLabel || (pressure ? '精英/Boss' : '常规战')].filter(Boolean),
     waveId: enc.waveId || null,
     rewardPoolId: enc.rewardPoolId || null,
     riskLabel: enc.riskLabel || null,
     enemyPreview: enc.enemyPreview || null,
     mechanicPreview: enc.mechanicPreview || null,
-    rewardPreview: enc.rewardPreview || null
+    rewardPreview: enc.rewardPreview || null,
+    xpReward: Number(enc.xpReward || 0)
   };
 }
 function round1(n) { return Math.round(Number(n || 0) * 10) / 10; }
@@ -303,6 +310,7 @@ function buildBattlePressurePreview(state, encounter = {}, schedule = {}) {
     enemyPreview: encounter.enemyPreview || '',
     mechanicPreview: encounter.mechanicPreview || '',
     rewardPreview: encounter.rewardPreview || '',
+    xpReward: Number(encounter.xpReward || 0),
     rewardText: encounter.rewardPreview || `${pressureTier === '常规' ? '胜利预期' : '高压胜利预期'}：${rewardLabel}奖励`,
     summary: `${phaseLabel} · ${encounter.riskLabel || pressureTier} · ${wavePeriod}${rows.length ? ` ${rows.length}波` : ''} · 威胁${totalThreat}`
   };
@@ -498,6 +506,7 @@ function generateBattleOptions(state, opts = {}) {
     enemyPreview: enc.enemyPreview || null,
     mechanicPreview: enc.mechanicPreview || null,
     rewardPreview: enc.rewardPreview || null,
+    xpReward: Number(enc.xpReward || 0),
     battleIndex: enc.battleIndex || 1,
     phaseLabel: enc.phaseLabel || schedule.phaseLabel || '战斗',
     choicePreview: buildBattleChoicePreview(enc, schedule),
@@ -710,6 +719,7 @@ function recordBattleOutcome(state, encounter, result, beforeGold, source = {}) 
   outcome.goldDelta = runEffectResult.goldDelta;
   outcome.goldTo = state.gold;
   outcome.runEffects = runEffectResult.consumed;
+  runGrowth.awardEncounterXp(state, encounter, outcome, result);
   route.battleOutcomes.push(outcome);
   const historyItem = route.history[route.history.length - 1];
   if (historyItem && (historyItem.kind === 'battle_choice' || historyItem.kind === 'fixed_battle')) historyItem.outcome = clone(outcome);
@@ -753,6 +763,10 @@ function pendingRewardIndex(route, ref) {
 }
 function claimRouteReward(state, ref, opts = {}) {
   const route = ensureDayRoute(state);
+  if (state.phase !== 'route_reward') {
+    pushEvent(state, 'ROUTE_REWARD_BLOCKED', { phase: state.phase, text: '请先继续战斗结算，再领取路线奖励。' });
+    return false;
+  }
   const idx = pendingRewardIndex(route, ref);
   const pending = idx >= 0 ? route.pendingRewards[idx] : null;
   if (!pending || pending.claimed) {
@@ -782,7 +796,10 @@ function claimRouteReward(state, ref, opts = {}) {
   const historyItem = route.history.slice().reverse().find(x => x?.outcome?.battleIndex === claimed.battleIndex)
     || route.history.slice().reverse().find(x => x.kind === 'battle_choice' || x.kind === 'fixed_battle');
   if (historyItem) historyItem.claimedReward = clone(claimed);
-  if (state.phase === 'battle_end' || state.phase === 'reward') state.phase = 'node_resolved';
+  const returnPhase = route.postBattleReturnPhase || routeReturnPhaseAfterCurrentStep(state);
+  delete route.postBattleReturnPhase;
+  if (returnPhase === 'day_end') finishDayRoute(state);
+  else state.phase = returnPhase;
   pushEvent(state, 'ROUTE_REWARD_CLAIM', { reward: clone(claimed), text: `路线奖励：${pending.rewardPoolId} 领取 ${selected.name}。` });
   return claimed;
 }
@@ -793,6 +810,24 @@ function claimAvailableRouteRewards(state) {
     claimed += 1;
   }
   return claimed;
+}
+function continueAfterBattle(state) {
+  const route = ensureDayRoute(state);
+  if (state.phase !== 'battle_end') {
+    const error = new Error(`CONTINUE_AFTER_BATTLE_PHASE_INVALID: current phase is ${state.phase}`);
+    error.code = 'CONTINUE_AFTER_BATTLE_PHASE_INVALID';
+    throw error;
+  }
+  const routeReturnPhase = route.postBattleReturnPhase || routeReturnPhaseAfterCurrentStep(state);
+  route.postBattleReturnPhase = routeReturnPhase;
+  const resumePhase = route.pendingRewards.some(item => item && !item.claimed) ? 'route_reward' : routeReturnPhase;
+  if (state.pendingGrowth && runGrowth.enterLevelUp(state, resumePhase, routeReturnPhase)) {
+    return { schema: 'ysbzs.post-battle-continue-result.v1', phaseFrom: 'battle_end', phaseTo: 'level_up', resumePhase, pendingGrowth: clone(state.pendingGrowth) };
+  }
+  if (resumePhase === 'day_end') finishDayRoute(state);
+  else state.phase = resumePhase;
+  pushEvent(state, 'CONTINUE_AFTER_BATTLE', { phaseFrom: 'battle_end', phaseTo: state.phase, text: `继续战斗结算：进入 ${state.phase}。` });
+  return { schema: 'ysbzs.post-battle-continue-result.v1', phaseFrom: 'battle_end', phaseTo: state.phase, resumePhase };
 }
 function startRouteBattle(state, encounter, source = {}) {
   const route = ensureDayRoute(state);
@@ -832,7 +867,8 @@ function finalizeRouteBattle(state, result = null) {
     markPlayerHeroDeathTerminal(state, encounter, outcome);
     return outcome;
   }
-  completeRouteStep(state);
+  route.postBattleReturnPhase = routeReturnPhaseAfterCurrentStep(state);
+  state.phase = 'battle_end';
   return outcome;
 }
 function runEncounterBattle(state, encounter, source = {}) {
@@ -890,6 +926,8 @@ function runDayRoute(state) {
       pickBattleEncounter(state, options[0].encounterId);
       autoResolvePendingRouteBattle(state);
       if (state.phase === 'game_over') return false;
+      continueAfterBattle(state);
+      if (state.phase === 'level_up') runGrowth.chooseGrowth(state, state.growthOptions[0]?.growthChoiceId);
       claimAvailableRouteRewards(state);
       continue;
     }
@@ -898,6 +936,8 @@ function runDayRoute(state) {
       if (!ok || state.phase === 'day_end') return ok;
       autoResolvePendingRouteBattle(state);
       if (state.phase === 'game_over') return false;
+      continueAfterBattle(state);
+      if (state.phase === 'level_up') runGrowth.chooseGrowth(state, state.growthOptions[0]?.growthChoiceId);
       claimAvailableRouteRewards(state);
       continue;
     }
@@ -905,4 +945,4 @@ function runDayRoute(state) {
   return state.phase === 'day_end';
 }
 
-module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, buildBattlePressurePreview, fixedBattlePressurePreview, finalizeRouteBattle, routeChoiceSeedContext, seededRouteOptions, routeOptionSeed };
+module.exports = { ensureDayRoute, scheduleRows, generateNodeOptions, pickNode, generateBattleOptions, pickBattleEncounter, runFixedBattle, runDayRoute, startNextDay, recordBattleOutcome, claimRouteReward, continueAfterBattle, buildBattlePressurePreview, fixedBattlePressurePreview, finalizeRouteBattle, routeChoiceSeedContext, seededRouteOptions, routeOptionSeed };

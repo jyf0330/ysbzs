@@ -15,7 +15,8 @@ import { createGameRuntime } from './runtime-client.js';
   const PHASE_TEXT = {
     init: '准备', player_turn: '玩家回合', monster_turn: '敌方宠物行动', round_end: '回合结算',
     battle_end: '战斗结束', shop: '商店', day_end: '当天结束', loading: '加载中',
-    node_choice: '节点选择', node_resolved: '节点结算', battle_choice: '遭遇选择', reward: '奖励'
+    node_choice: '节点选择', node_resolved: '节点结算', battle_choice: '遭遇选择', reward: '奖励',
+    level_up: '阶段升级', route_reward: '战后奖励'
   };
   const MANUAL_LOCK_TYPES = new Set(['MOVE_HERO', 'USE_SLOT', 'AUTO_POSITION_HEROES']);
   const UNDOABLE_FLOW_TYPES = new Set(['END_PLAYER_TURN', 'RUN_MONSTER_TURN', 'START_NEXT_ROUND']);

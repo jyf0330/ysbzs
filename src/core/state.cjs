@@ -296,6 +296,13 @@ function createGameState(opts = {}) {
     gold: opts.gold ?? 3,
     runHealth: initialRunHealth,
     runMaxHealth: initialRunMaxHealth,
+    runLevel: 1,
+    runXp: 0,
+    nextLevelXp: 3,
+    pendingGrowth: null,
+    growthOptions: [],
+    growthHistory: [],
+    roundApBonus: 0,
     castleLine: initialRunHealth,
     economyMultiplier: 1,
     leaders: {

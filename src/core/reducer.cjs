@@ -4,6 +4,7 @@ const day7 = require('./day7FireTrial.cjs');
 const dayRoute = require('./dayRoute.cjs');
 const inventory = require('./inventoryRules.cjs');
 const startChoice = require('./startChoice.cjs');
+const runGrowth = require('./runGrowth.cjs');
 const { buildReplay } = require('./changeLog.cjs');
 
 function finalizeRouteBattleIfNeeded(state, result) {
@@ -14,6 +15,7 @@ function finalizeRouteBattleIfNeeded(state, result) {
 function dispatch(state, command) {
   switch (command.type) {
     case 'CHOOSE_START': return startChoice.chooseStart(state, command.startChoiceId ?? command.optionId ?? command.id);
+    case 'CHOOSE_GROWTH': return runGrowth.chooseGrowth(state, command.growthChoiceId ?? command.optionId ?? command.id);
     case 'NEW_RUN': return startChoice.newRun(state, command);
     case 'START_BATTLE': return battle.startBattle(state);
     case 'START_NEXT_ROUND': return finalizeRouteBattleIfNeeded(state, battle.startNextRound(state));
@@ -37,6 +39,7 @@ function dispatch(state, command) {
     case 'PICK_BATTLE_ENCOUNTER': return dayRoute.pickBattleEncounter(state, command.encounterId ?? command.optionId ?? command.index);
     case 'RUN_ROUTE_FIXED_BATTLE': return dayRoute.runFixedBattle(state, command);
     case 'CLAIM_ROUTE_REWARD': return dayRoute.claimRouteReward(state, command.rewardId ?? command.encounterId ?? command.index, command);
+    case 'CONTINUE_AFTER_BATTLE': return dayRoute.continueAfterBattle(state);
     case 'START_NEXT_DAY': return dayRoute.startNextDay(state, command);
     case 'ENTER_SHOP': return shop.enterShop(state, command.poolId, command.slots);
     case 'ROLL_SHOP': return shop.rollShop(state, command);

@@ -389,13 +389,18 @@ test('UI07D 路线战斗 pending reward 进入玩家可领取动作', () => {
   dayRoute.ensureDayRoute(state);
   state.dayRoute.history.push({ kind: 'battle_choice', option: { encounterId: 'enc_reward_ui', name: '奖励UI测试战', phaseLabel: '中午战' } });
   dayRoute.recordBattleOutcome(state, { encounterId: 'enc_reward_ui', name: '奖励UI测试战', phaseLabel: '中午战' }, { code: 'WIN', win: true, grade: 'A' }, state.gold, { kind: 'battle_choice' });
+  state.phase = 'battle_end';
+  state.dayRoute.postBattleReturnPhase = 'node_resolved';
 
   const vm = createViewModel(state);
   const pending = vm.dayRoute.pendingRewards[0];
   assert.ok(pending, 'route battle should create a pending reward');
   assert.equal(pending.claimed, false);
-  assert.ok(vm.nextActions.some(x => x.type === 'CLAIM_ROUTE_REWARD' && x.defaultPayload.rewardId === pending.rewardId));
+  assert.deepEqual(vm.nextActions.map(x => x.type), ['CONTINUE_AFTER_BATTLE']);
 
+  dispatch(state, { type: 'CONTINUE_AFTER_BATTLE' });
+  if (state.phase === 'level_up') dispatch(state, { type: 'CHOOSE_GROWTH', growthChoiceId: state.growthOptions[0].growthChoiceId });
+  assert.ok(createViewModel(state).nextActions.some(x => x.type === 'CLAIM_ROUTE_REWARD' && x.defaultPayload.rewardId === pending.rewardId));
   const claimResult = dispatch(state, { type: 'CLAIM_ROUTE_REWARD', rewardId: pending.rewardId, rewardIndex: 0 });
   assert.ok(claimResult.selectedReward);
   const claimedVm = createViewModel(state);
@@ -427,6 +432,10 @@ test('UI07E 终局三选一通过公开路线命令进入并写入终局', () =>
 
   const finished = dispatch(state, { type: 'RUN_BATTLE' });
   assert.ok(finished && finished.win !== undefined);
+  assert.equal(state.phase, 'battle_end');
+  dispatch(state, { type: 'CONTINUE_AFTER_BATTLE' });
+  if (state.phase === 'level_up') dispatch(state, { type: 'CHOOSE_GROWTH', growthChoiceId: state.growthOptions[0].growthChoiceId });
+  if (state.phase === 'route_reward') dispatch(state, { type: 'CLAIM_ROUTE_REWARD', rewardIndex: 0 });
   assert.equal(state.phase, 'day_end');
   assert.equal(state.dayRoute.nodeIndex, 6);
   assert.ok(state.dayRoute.history.some(x => x.kind === 'battle_choice' && x.option.encounterId === selected.encounterId));

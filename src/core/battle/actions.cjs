@@ -44,9 +44,12 @@ function uniqueUnits(list) {
  */
 function createActionsModule(deps) {
   const { pushEvent, mech, elementRules, explodeIfEnemyOnFire, clone, getUnit, living, opposingCamp, unitCamp, sideForCamp, actionDirs, dirDelta, inBoard, normalizePosition, getCell, combatTargets, applyElement, applyElementToCell, damageUnit, syncDerivedBoard, startBattle } = deps;
-function unitApMax(unit) { return Math.max(1, Number(unit?.ap || 1)); }
+function unitApMax(state, unit) {
+  const growthBonus = unit?.side === 'hero' ? Math.max(0, Number(state?.roundApBonus || 0)) : 0;
+  return Math.max(1, Number(unit?.ap || 1) + growthBonus);
+}
 function unitApSpent(unit) { return Math.max(0, Number(unit?.actionApSpent || 0)); }
-function unitApAvailable(unit) { return Math.max(0, unitApMax(unit) - unitApSpent(unit)); }
+function unitApAvailable(state, unit) { return Math.max(0, unitApMax(state, unit) - unitApSpent(unit)); }
 /**
  * @param {BattleState} state
  * @param {BattleUnit} unit
@@ -63,7 +66,7 @@ function slotsForUnit(state, unit) {
   const hitCells = positiveInt(resolvedShape?.cellCount || shape.hitCells, 1);
   return elements.map((element, i) => {
     const slotId = `${unit.id}:slot${i}`;
-    const availableAp = unitApAvailable(unit);
+    const availableAp = unitApAvailable(state, unit);
     return {
       slotId,
       index: i,
@@ -163,7 +166,7 @@ function useActionSlot(state, unitId, slotId, targetCell = null, options = {}) {
   if (!cells.length) { pushEvent(state, 'USE_SLOT_BLOCKED', { unitId: actor.id, slotId: idx, text: `${actor.displayName} 第${idx + 1}槽没有合法目标格。` }); return false; }
   const targetCamp = opposingCamp(unitCamp(actor));
   const requestedAp = Math.max(1, Number(options.ap || 1));
-  const availableAp = unitApAvailable(actor);
+  const availableAp = unitApAvailable(state, actor);
   if (requestedAp > availableAp) { pushEvent(state, 'USE_SLOT_BLOCKED', { unitId: actor.id, slotId: idx, requestedAp, availableAp, text: `施放失败：${actor.displayName} AP不足（需要${requestedAp}，剩余${availableAp}）。` }); return false; }
   const apUsed = requestedAp;
   const effectiveLayers = Math.max(1, Number(slot.layers || 1)) * apUsed;

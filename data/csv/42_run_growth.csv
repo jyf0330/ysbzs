@@ -1,0 +1,4 @@
+target_level,cumulative_xp,status,source,note
+2,3,正式,RUN_GROWTH,首次升级；一场高风险胜利即可触发。
+3,8,正式,RUN_GROWTH,第二次升级；阈值与单场最大经验保持间隔。
+4,15,正式,RUN_GROWTH,当前最高里程碑；后续 XP 保留但不生成虚假等级。

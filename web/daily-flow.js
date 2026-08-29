@@ -13,6 +13,8 @@ const PHASE_TEXT = {
   monster_turn: '怪物行动',
   round_end: '回合结算',
   battle_end: '战斗结束',
+  level_up: '阶段升级',
+  route_reward: '战后奖励',
   shop: '商店节点',
   reward: '奖励节点',
   day_end: '当天结束'

@@ -7,9 +7,9 @@ enc_d02_midday_a,enc_pool_d02_midday,第二天中午遭遇A,100,2,上午,1,中�
 enc_d02_midday_b,enc_pool_d02_midday,第二天中午遭遇B,90,2,上午,1,中午战,,,,,,正式,Day2 备选中午遭遇
 enc_d02_midday_c,enc_pool_d02_midday,第二天中午遭遇C,80,2,上午,1,中午战,,,,,,正式,Day2 备选中午遭遇
 enc_d02_evening_fixed,enc_pool_d02_evening,第二天晚上固定战,100,2,下午,2,晚上战,,,,,,正式,映射 Day2 下午波次
-enc_d03_midday_a,enc_pool_d03_midday,第三天中午遭遇A,100,3,上午,1,中午战,,,,,,正式,映射 Day3 上午波次
-enc_d03_midday_b,enc_pool_d03_midday,第三天中午遭遇B,90,3,上午,1,中午战,,,,,,正式,Day3 备选中午遭遇
-enc_d03_midday_c,enc_pool_d03_midday,第三天中午遭遇C,80,3,上午,1,中午战,,,,,,正式,Day3 备选中午遭遇
+enc_d03_midday_a,enc_pool_d03_midday,潮岸稳行队,100,3,上午,1,早期定向,wave_d03_enc_safe,reward_pT1,低风险,棉角羊 / 碧水鸭 / 藤甲猿 / 霜羽鹭,基础宠物三选一,正式,Day3 稳妥路线；4只白银敌人
+enc_d03_midday_b,enc_pool_d03_midday,雷火夹击队,90,3,上午,1,早期定向,wave_d03_enc_assault,reward_pT2,中风险,赤尾狐 / 雷须猫 / 火角鹿 / 电棘鼠 / 金钱狸,进阶宠物三选一,正式,Day3 进取路线；5只白银敌人
+enc_d03_midday_c,enc_pool_d03_midday,铁甲破阵队,80,3,上午,1,早期定向,wave_d03_enc_breaker,reward_pT3,高风险,苔甲龟 / 黑甲猪 / 黑角犀 / 夜穴鼹 / 沙鬃猪,高阶宠物三选一,正式,Day3 高压路线；5只黄金敌人
 enc_d03_evening_fixed,enc_pool_d03_evening,第三天晚上固定战,100,3,下午,2,晚上战,,,,,,正式,映射 Day3 下午波次
 enc_d04_midday_a,enc_pool_d04_midday,第四天中午遭遇A,100,4,上午,1,中午战,,,,,,正式,映射 Day4 上午波次
 enc_d04_midday_b,enc_pool_d04_midday,第四天中午遭遇B,90,4,上午,1,中午战,,,,,,正式,Day4 备选中午遭遇
@@ -19,9 +19,9 @@ enc_d05_midday_a,enc_pool_d05_midday,第五天中午遭遇A,100,5,上午,1,中�
 enc_d05_midday_b,enc_pool_d05_midday,第五天中午遭遇B,90,5,上午,1,中午战,,,,,,正式,Day5 备选中午遭遇
 enc_d05_midday_c,enc_pool_d05_midday,第五天中午遭遇C,80,5,上午,1,中午战,,,,,,正式,Day5 备选中午遭遇
 enc_d05_evening_fixed,enc_pool_d05_evening,第五天晚上固定战,100,5,下午,2,晚上战,,,,,,正式,映射 Day5 下午波次
-enc_d06_midday_a,enc_pool_d06_midday,第六天精英遭遇A,100,6,上午,1,精英战,,,,,,正式,Day6 精英压力上午波次
-enc_d06_midday_b,enc_pool_d06_midday,第六天精英遭遇B,90,6,上午,1,精英战,,,,,,正式,Day6 备选精英遭遇
-enc_d06_midday_c,enc_pool_d06_midday,第六天精英遭遇C,80,6,上午,1,精英战,,,,,,正式,Day6 备选精英遭遇
+enc_d06_midday_a,enc_pool_d06_midday,龙龟稳压阵,100,6,上午,1,中期遭遇,wave_d06_enc_anchor,reward_pT2,低风险,三首火犬 / 覆水龙龟 / 连理双鹿 / 冰峰巨驼 / 青林巨象,进阶宠物三选一,正式,Day6 稳妥路线；6只白银敌人
+enc_d06_midday_b,enc_pool_d06_midday,熔雷突袭群,90,6,上午,1,中期遭遇,wave_d06_enc_assault,reward_pT3,中风险,雷泽青蛟 / 海棠水鹿 / 百花灵鹿 / 熔岩巨兽 / 云顶巨驼 / 焰羽赤雕,高阶宠物三选一,正式,Day6 进取路线；6只白银/黄金混编敌人
+enc_d06_midday_c,enc_pool_d06_midday,云螭精英团,80,6,上午,1,精英战,wave_d06_enc_elite,reward_elite,高风险,白牙雪象 / 白绒雪猿 / 铁甲巨兕 / 天羽云螭 / 冥羽黑乌 / 渊鳞黑蛟,精英专属奖励,正式,Day6 精英路线；6只黄金敌人
 enc_d06_evening_fixed,enc_pool_d06_evening,第六天晚上精英固定战,100,6,下午,2,精英固定战,,,,,,正式,映射 Day6 下午精英波次
 enc_d07_midday_a,enc_pool_d07_midday,第七天精英遭遇A,100,7,上午,1,精英战,,,,,,正式,Day7 精英压力上午波次
 enc_d07_midday_b,enc_pool_d07_midday,第七天精英遭遇B,90,7,上午,1,精英战,,,,,,正式,Day7 备选精英遭遇
@@ -31,9 +31,9 @@ enc_d08_midday_a,enc_pool_d08_midday,第八天精英遭遇A,100,8,上午,1,精�
 enc_d08_midday_b,enc_pool_d08_midday,第八天精英遭遇B,90,8,上午,1,精英战,,,,,,正式,Day8 备选精英遭遇
 enc_d08_midday_c,enc_pool_d08_midday,第八天精英遭遇C,80,8,上午,1,精英战,,,,,,正式,Day8 备选精英遭遇
 enc_d08_evening_fixed,enc_pool_d08_evening,第八天晚上精英固定战,100,8,下午,2,精英固定战,,,,,,正式,映射 Day8 下午精英波次
-enc_d09_midday_a,enc_pool_d09_midday,第九天Boss前遭遇A,100,9,上午,1,Boss前战,,,,,,正式,Day9 Boss 前上午波次
-enc_d09_midday_b,enc_pool_d09_midday,第九天Boss前遭遇B,90,9,上午,1,Boss前战,,,,,,正式,Day9 备选 Boss 前遭遇
-enc_d09_midday_c,enc_pool_d09_midday,第九天Boss前遭遇C,80,9,上午,1,Boss前战,,,,,,正式,Day9 备选 Boss 前遭遇
+enc_d09_midday_a,enc_pool_d09_midday,王侯守备线,100,9,上午,1,终战备战,wave_d09_enc_guard,reward_pT2,低风险,焰豹将 / 赤鼋妖 / 雷狼卫 / 电虎侯 / 燎狼将,进阶宠物三选一,正式,Day9 稳妥路线；6只黄金敌人
+enc_d09_midday_b,enc_pool_d09_midday,地雷决胜阵,90,9,上午,1,终战备战,wave_d09_enc_decisive,reward_pT3,中风险,垒牦灵 / 雷鹰将 / 烬鳗将 / 雷鹰卫 / 岩獒精 / 潮鹤精,高阶宠物三选一,正式,Day9 进取路线；6只钻石敌人
+enc_d09_midday_c,enc_pool_d09_midday,祖灵死斗团,80,9,上午,1,终战备战,wave_d09_enc_ancestral,reward_pT4,高风险,碧兔神 / 渊蚁皇 / 角豹神 / 烬鹿祖 / 寒狐祖 / 烬豹侯,钻石宠物三选一,正式,Day9 高压路线；6只钻石祖灵敌人
 enc_d09_evening_fixed,enc_pool_d09_evening,第九天晚上Boss前固定战,100,9,下午,2,Boss前固定战,,,,,,正式,映射 Day9 下午 Boss 前波次
 enc_d10_midday_a,enc_pool_d10_midday,第十天Boss前遭遇A,100,10,上午,1,Boss前战,,,,,,正式,Day10 Boss 前上午波次
 enc_d10_midday_b,enc_pool_d10_midday,第十天Boss前遭遇B,90,10,上午,1,Boss前战,,,,,,正式,Day10 备选 Boss 前遭遇

@@ -45,11 +45,11 @@ function resolveCurrentRouteNode(state, opts = {}) {
   return option;
 }
 
-test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,369); assert.equal(data.monsters.length,369); assert.equal(data.waves.length,137); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,369); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,369); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
+test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,369); assert.equal(data.monsters.length,369); assert.equal(data.waves.length,146); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,369); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,369); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
 test('Day1-Day10 route runtime defines node-node-battle daily rhythm with four node decisions',()=>{
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = dayRoute.scheduleRows(createGameState({ day }));
-    const firstBattleKind = day === 1 ? 'battle_choice' : 'fixed_battle';
+    const firstBattleKind = [1, 3, 6, 9].includes(day) ? 'battle_choice' : 'fixed_battle';
     assert.deepEqual(rows.map(x => x.kind), ['node_choice','node_choice',firstBattleKind,'node_choice','node_choice','fixed_battle'], `day ${day} should run two nodes, battle, two nodes, battle`);
     const decisions = rows.filter(x => x.kind === 'node_choice');
     assert.equal(decisions.length, 4, `day ${day} should have four route node decisions`);

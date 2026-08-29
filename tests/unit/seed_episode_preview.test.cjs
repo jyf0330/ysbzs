@@ -119,8 +119,9 @@ test('seed episode planner flow document is human readable and current node type
   const doc = renderPlannerFlowDoc(payload);
   assert.match(doc, /Seed：doc-seed/);
   assert.match(doc, /宠物奖励|夜市商人|火系补货商人/);
-  assert.doesNotMatch(doc, /\| event \|/);
-  assert.doesNotMatch(doc, /\| rest \|/);
+  assert.match(doc, /\| event \|/);
+  assert.match(doc, /\| rest \|/);
+  assert.match(doc, /当前内容包含 `shop` \/ `reward` \/ `event` \/ `rest`/);
 });
 
 test('parseDays accepts ranges and comma lists', () => {

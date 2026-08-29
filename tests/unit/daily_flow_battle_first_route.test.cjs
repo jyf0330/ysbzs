@@ -56,17 +56,28 @@ function resolveFixedBattle(adapter, scheduleStep) {
   vm = run(adapter, 'RUN_BATTLE').viewModel;
   return vm;
 }
+function resolveBattleChoice(adapter, encounterIndex = 0) {
+  let vm = run(adapter, 'GENERATE_BATTLE_OPTIONS').viewModel;
+  const selected = vm.dayRoute.battleOptions[encounterIndex] || vm.dayRoute.battleOptions[0];
+  assert.ok(selected, 'battle choice should expose an encounter');
+  vm = run(adapter, 'PICK_BATTLE_ENCOUNTER', { encounterId: selected.encounterId }).viewModel;
+  assert.equal(vm.phase, 'player_turn');
+  vm = run(adapter, 'RUN_BATTLE').viewModel;
+  if (vm.dayRoute.pendingRewards.length) vm = run(adapter, 'CLAIM_ROUTE_REWARD').viewModel;
+  return { vm, selected };
+}
 function petNamesForWave(row) {
   const petIds = (row?.petPool && row.petPool.length ? row.petPool : [row?.petId]).filter(Boolean);
   return petIds.map(petId => data.pets.find(pet => pet.id === petId)?.name || petId);
 }
 
-test('daily route runtime runs two 3-choice events before each fixed battle', () => {
+test('daily route runtime keeps two battles per day and distributes first-battle choices across the Run', () => {
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = createYSBZSUIAdapter({ day }).getViewModel('p1').dailyFlow.steps;
-    assert.deepEqual(rows.map(row => row.kind), ['node_choice', 'node_choice', 'fixed_battle', 'node_choice', 'node_choice', 'fixed_battle']);
+    const firstBattleKind = [1, 3, 6, 9].includes(day) ? 'battle_choice' : 'fixed_battle';
+    assert.deepEqual(rows.map(row => row.kind), ['node_choice', 'node_choice', firstBattleKind, 'node_choice', 'node_choice', 'fixed_battle']);
     assert.equal(rows.filter(row => row.kind === 'node_choice').length, 4);
-    assert.ok(rows[2].encounterId, `day ${day} third step should point at an encounter`);
+    if (firstBattleKind === 'fixed_battle') assert.ok(rows[2].encounterId, `day ${day} fixed third step should point at an encounter`);
     assert.ok(rows[5].encounterId, `day ${day} sixth step should point at an encounter`);
   }
 });
@@ -86,10 +97,10 @@ test('daily flow public commands follow node -> node -> battle -> node -> node -
 
   ({ vm } = resolveNode(adapter));
   assert.equal(vm.dailyFlow.currentStep, 2);
-  assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
+  assert.equal(vm.dailyFlow.nextSchedule.kind, 'battle_choice');
   assert.equal(vm.dailyFlow.steps[2].status, 'next');
 
-  vm = resolveFixedBattle(adapter, 3);
+  ({ vm } = resolveBattleChoice(adapter));
   assert.equal(vm.dailyFlow.currentStep, 3);
   assert.equal(vm.dailyFlow.nextSchedule.kind, 'node_choice');
   assert.equal(vm.dailyFlow.steps[3].status, 'next');
@@ -109,7 +120,7 @@ test('daily flow public commands follow node -> node -> battle -> node -> node -
 });
 
 test('daily flow fixed battle enters manual battle instead of auto resolving', () => {
-  const adapter = createYSBZSUIAdapter({ day: 1, gold: 999, seed: 'daily-flow-manual-fixed-battle' });
+  const adapter = createYSBZSUIAdapter({ day: 2, gold: 999, seed: 'daily-flow-manual-fixed-battle' });
   let vm = adapter.getViewModel('p1');
 
   ({ vm } = resolveNode(adapter));
@@ -136,7 +147,7 @@ test('daily flow exposes real next-day command after completing day 1 route', ()
 
   ({ vm } = resolveShopWithBuySell(adapter));
   ({ vm } = resolveNode(adapter));
-  vm = resolveFixedBattle(adapter, 3);
+  ({ vm } = resolveBattleChoice(adapter));
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
   vm = resolveFixedBattle(adapter, 6);
@@ -306,7 +317,7 @@ test('daily flow inventory lets players manually move pets between active roster
   assert.equal(up.viewModel.inventory.benchCount, 1);
 });
 
-test('daily flow opening exposes Sun Wukong versus Tiger Vanguard with the day 1 starter pool', () => {
+test('daily flow opening exposes Sun Wukong versus Tiger Vanguard without mixing explicit encounter waves', () => {
   const adapter = createYSBZSUIAdapter({ day: 1, seed: 'daily-flow-opening-roster' });
   const vm = adapter.getViewModel('p1');
   const opening = vm.dailyFlow.opening;
@@ -338,10 +349,10 @@ test('daily flow ViewModel owns route primary and auto actions consumed by the p
 
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
-  assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
-  assert.equal(vm.dailyFlow.primaryAction?.type, 'RUN_ROUTE_FIXED_BATTLE');
-  assert.deepEqual(vm.dailyFlow.primaryAction.defaultPayload, { scheduleStep: 3 });
-  assert.equal(vm.dailyFlow.autoAction, null);
+  assert.equal(vm.dailyFlow.nextSchedule.kind, 'battle_choice');
+  assert.equal(vm.dailyFlow.primaryAction, null);
+  assert.equal(vm.dailyFlow.autoAction?.type, 'GENERATE_BATTLE_OPTIONS');
+  assert.deepEqual(vm.dailyFlow.autoAction.defaultPayload, { scheduleStep: 3 });
 
   const js = read('web/daily-flow.js');
   assert.match(js, /vm\?\.dailyFlow\?\.primaryAction/, 'page should consume primaryAction from ViewModel');
@@ -354,16 +365,16 @@ test('daily flow ViewModel owns route primary and auto actions consumed by the p
   assert.doesNotMatch(js, /schedule\.kind\s*===\s*'fixed_battle'/, 'route kind decisions belong in ViewModel');
 });
 
-test('day 1 opening wave is Tiger Vanguard summoning starter pets, not extra heroes', () => {
-  const firstWave = data.waves.find(row => row.day === 1 && row.period === '上午' && row.round === 1);
-  assert.ok(firstWave, 'day 1 morning round 1 wave should exist');
-  assert.ok(firstWave.petPool.length >= firstWave.spawnCount);
-
+test('day 1 selected encounter wave is Tiger Vanguard summoning previewed pets, not extra heroes', () => {
   const adapter = createYSBZSUIAdapter({ day: 1, seed: 'daily-flow-opening-wave' });
   let vm = adapter.getViewModel('p1');
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
-  vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 3 }).viewModel;
+  let selected;
+  ({ vm, selected } = resolveBattleChoice(adapter));
+  const firstWave = data.waves.find(row => row.waveId === selected.waveId);
+  assert.ok(firstWave, 'selected encounter wave should exist');
+  assert.ok(firstWave.petPool.length >= 1);
   const firstSpawns = vm.events.filter(event => event.type === 'SPAWN_ENEMY').slice(0, firstWave.spawnCount);
 
   assert.equal(firstSpawns.length, firstWave.spawnCount);

@@ -160,9 +160,11 @@ function sampleRewardOptions(data, seed, day, step, optionIndex, poolId, count =
   return out;
 }
 
-function sampleWaveEnemies(data, seed, day, period) {
+function sampleWaveEnemies(data, seed, day, period, waveId = null) {
   const rows = (data.waves || [])
-    .filter(row => Number(row.day || 0) === Number(day || 0) && row.period === period)
+    .filter(row => waveId
+      ? row.waveId === waveId
+      : Number(row.day || 0) === Number(day || 0) && row.period === period && !/_enc_/.test(String(row.waveId || '')))
     .sort((a, b) => Number(a.round || 0) - Number(b.round || 0) || String(a.waveId).localeCompare(String(b.waveId)));
   const spawns = [];
   for (const row of rows) {
@@ -194,10 +196,13 @@ function summarizePets(list, max = 8) {
 
 function battlePreview(data, seed, day, schedule, encounter) {
   const period = encounter?.wavePeriod || schedule.wavePeriod || '上午';
-  const enemies = sampleWaveEnemies(data, seed, day, period);
+  const waveId = encounter?.waveId || null;
+  const enemies = sampleWaveEnemies(data, seed, day, period, waveId);
   const rounds = new Set(enemies.map(x => x.round)).size;
   const threat = (data.waves || [])
-    .filter(row => Number(row.day || 0) === Number(day || 0) && row.period === period)
+    .filter(row => waveId
+      ? row.waveId === waveId
+      : Number(row.day || 0) === Number(day || 0) && row.period === period && !/_enc_/.test(String(row.waveId || '')))
     .reduce((sum, row) => sum + Number(row.threat || 0), 0);
   return {
     period,
@@ -456,7 +461,7 @@ function renderPlannerFlowDoc(payload) {
     '## 阅读说明',
     '',
     '- 每天按当前排程展示：节点1、节点2、第一场战斗、节点3、节点4、第二场战斗。',
-    '- 节点三选一只列当前启用节点；当前即时事件和休整节点已禁用，所以节点类型应只出现 `shop` / `reward`。',
+    '- 节点三选一只列当前正式启用节点；当前内容包含 `shop` / `reward` / `event` / `rest`。',
     '- 商店条目显示预期售卖宠物、品质、价格和占格；奖励条目显示候选宠物和占格。',
     '- 战斗条目显示回合数、敌人数量、主要敌人和总威胁。',
     ''

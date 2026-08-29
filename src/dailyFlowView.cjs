@@ -30,7 +30,9 @@ function openingWavePreview(state, schedule) {
   const encounter = encounterForSchedule(state, schedule) || {};
   const wavePeriod = encounter.wavePeriod || schedule?.wavePeriod || state.period || '上午';
   const rows = (state.data?.waves || [])
-    .filter(row => Number(row.day) === Number(state.day || 1) && row.period === wavePeriod)
+    .filter(row => encounter.waveId
+      ? row.waveId === encounter.waveId
+      : Number(row.day) === Number(state.day || 1) && row.period === wavePeriod && !/_enc_/.test(String(row.waveId || '')))
     .sort((a, b) => Number(a.round || 0) - Number(b.round || 0));
   if (!rows.length) return null;
   const round = Number(rows[0].round || 1);
@@ -114,6 +116,9 @@ function buildAutoAction(state, nextScheduleRow) {
   }
   if (nextScheduleRow.kind === 'node_choice' && canAdvanceRoutePhase(state)) {
     return { type: 'GENERATE_NODE_OPTIONS', label: '展开 3 选 1', defaultPayload: { scheduleStep: Number(nextScheduleRow.step || 0) } };
+  }
+  if (nextScheduleRow.kind === 'battle_choice' && canAdvanceRoutePhase(state)) {
+    return { type: 'GENERATE_BATTLE_OPTIONS', label: '展开遭遇 3 选 1', defaultPayload: { scheduleStep: Number(nextScheduleRow.step || 0) } };
   }
   return null;
 }

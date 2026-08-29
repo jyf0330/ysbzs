@@ -466,7 +466,11 @@ function pickBattleEncounter(state, ref) {
   route.history.push({ kind: 'battle_choice', option: clone(option) });
   route.battleOptions = [];
   pushEvent(state, 'BATTLE_PICK', { encounterId: option.encounterId, scheduleStep: route.nodeIndex, text: `选择${option.phaseLabel}：${option.name}。` });
-  return startRouteBattle(state, option, { kind: 'battle_choice', scheduleStep: route.nodeIndex });
+  return startRouteBattle(state, option, {
+    kind: 'battle_choice',
+    scheduleStep: route.nodeIndex,
+    terminal: isTerminalEncounter(state, option)
+  });
 }
 function runFixedBattle(state, opts = {}) {
   const route = ensureDayRoute(state);
@@ -596,7 +600,9 @@ function postBattleEventsForOutcome(state, encounter, result, baseRewardPoolId, 
       }]
     };
   }
-  if (!result?.win || !isPressureEncounter(encounter)) return { rewardPoolId: baseRewardPoolId, events: [] };
+  if (!result?.win || encounter?.rewardPoolId || !isPressureEncounter(encounter)) {
+    return { rewardPoolId: baseRewardPoolId, events: [] };
+  }
   const event = (state.data.events || []).find(e => e.id === 'evt_elite_reward' && e.layer === 'post_battle' && e.status === '正式' && dayExprAllows(e.dayExpr, state.day));
   if (!event) return { rewardPoolId: baseRewardPoolId, events: [] };
   const rewardPoolId = event.rewardPoolId || baseRewardPoolId;

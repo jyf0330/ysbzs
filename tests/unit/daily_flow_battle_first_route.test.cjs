@@ -50,12 +50,6 @@ function resolveShopWithBuySell(adapter) {
   assert.equal(vm.phase, 'node_resolved');
   return { vm, option };
 }
-function resolveFixedBattle(adapter, scheduleStep) {
-  let vm = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep }).viewModel;
-  assert.equal(vm.phase, 'player_turn');
-  vm = run(adapter, 'RUN_BATTLE').viewModel;
-  return vm;
-}
 function resolveBattleChoice(adapter, encounterIndex = 0) {
   let vm = run(adapter, 'GENERATE_BATTLE_OPTIONS').viewModel;
   const selected = vm.dayRoute.battleOptions[encounterIndex] || vm.dayRoute.battleOptions[0];
@@ -71,13 +65,13 @@ function petNamesForWave(row) {
   return petIds.map(petId => data.pets.find(pet => pet.id === petId)?.name || petId);
 }
 
-test('daily route runtime keeps two battles per day and distributes first-battle choices across the Run', () => {
+test('daily route runtime keeps two three-way battles per day across the Run', () => {
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = createYSBZSUIAdapter({ day }).getViewModel('p1').dailyFlow.steps;
-    assert.deepEqual(rows.map(row => row.kind), ['node_choice', 'node_choice', 'battle_choice', 'node_choice', 'node_choice', 'fixed_battle']);
+    assert.deepEqual(rows.map(row => row.kind), ['node_choice', 'node_choice', 'battle_choice', 'node_choice', 'node_choice', 'battle_choice']);
     assert.equal(rows.filter(row => row.kind === 'node_choice').length, 4);
     assert.match(rows[2].summary, /三选一/, `day ${day} third step should expose three encounter choices`);
-    assert.ok(rows[5].encounterId, `day ${day} sixth step should point at an encounter`);
+    assert.match(rows[5].summary, /三选一/, `day ${day} sixth step should expose three encounter choices`);
   }
 });
 
@@ -111,15 +105,15 @@ test('daily flow public commands follow node -> node -> battle -> node -> node -
 
   ({ vm } = resolveNode(adapter));
   assert.equal(vm.dailyFlow.currentStep, 5);
-  assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
+  assert.equal(vm.dailyFlow.nextSchedule.kind, 'battle_choice');
 
-  vm = resolveFixedBattle(adapter, 6);
+  ({ vm } = resolveBattleChoice(adapter));
   assert.equal(vm.phase, 'day_end');
   assert.equal(vm.dailyFlow.currentStep, 6);
 });
 
-test('daily flow second fixed battle enters manual battle instead of auto resolving', () => {
-  const adapter = createYSBZSUIAdapter({ day: 2, gold: 999, seed: 'daily-flow-manual-fixed-battle' });
+test('daily flow second battle choice enters manual battle instead of auto resolving', () => {
+  const adapter = createYSBZSUIAdapter({ day: 2, gold: 999, seed: 'daily-flow-manual-second-battle' });
   let vm = adapter.getViewModel('p1');
 
   ({ vm } = resolveNode(adapter));
@@ -127,9 +121,11 @@ test('daily flow second fixed battle enters manual battle instead of auto resolv
   ({ vm } = resolveBattleChoice(adapter));
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
-  assert.equal(vm.dailyFlow.nextSchedule.kind, 'fixed_battle');
+  assert.equal(vm.dailyFlow.nextSchedule.kind, 'battle_choice');
 
-  const entered = run(adapter, 'RUN_ROUTE_FIXED_BATTLE', { scheduleStep: 6 });
+  vm = run(adapter, 'GENERATE_BATTLE_OPTIONS').viewModel;
+  const selected = vm.dayRoute.battleOptions[0];
+  const entered = run(adapter, 'PICK_BATTLE_ENCOUNTER', { encounterId: selected.encounterId });
   vm = entered.viewModel;
 
   assert.equal(vm.phase, 'player_turn');
@@ -152,7 +148,7 @@ test('daily flow exposes real next-day command after completing day 1 route', ()
   ({ vm } = resolveBattleChoice(adapter));
   ({ vm } = resolveNode(adapter));
   ({ vm } = resolveNode(adapter));
-  vm = resolveFixedBattle(adapter, 6);
+  ({ vm } = resolveBattleChoice(adapter));
 
   assert.equal(vm.day, 1);
   assert.equal(vm.phase, 'day_end');

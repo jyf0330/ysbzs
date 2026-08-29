@@ -171,8 +171,10 @@ function monsterScoreFromIndex(monstersByPetId, petId) {
 }
 
 function scoreForWaveThreat(petsById, monstersByPetId, petId) {
+  const petScore = petScoreFromIndex(petsById, petId);
+  if (petScore !== null) return petScore;
   const monsterScore = monsterScoreFromIndex(monstersByPetId, petId);
-  return monsterScore !== null ? monsterScore : petScoreFromIndex(petsById, petId);
+  return monsterScore;
 }
 
 function computeWaveThreat(petPool, spawnCount, qualityWeights, petsById, qualityMultipliers = null, opts = {}) {
@@ -224,7 +226,7 @@ function normalizeWaveRow(row, context = {}) {
     threat: useComputedThreat && computedThreat !== null ? computedThreat : manualThreat,
     threatManual: manualThreat,
     threatComputed: computedThreat,
-    threatScoreSource: context.monstersByPetId ? 'monster_panel_score_with_pet_fallback' : 'pet_score',
+    threatScoreSource: context.monstersByPetId ? 'pet_score_with_monster_panel_fallback' : 'pet_score',
     designGoal: row['设计目的'],
     failPenalty: row['失败惩罚'],
     rewardImpact: row['奖励影响'],

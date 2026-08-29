@@ -43,7 +43,7 @@ test('WB03 quality is rolled independently for every spawned enemy', () => {
   assert.deepEqual(qualities, ['青铜', '白银', '青铜', '白银']);
 });
 
-test('WB04 threat uses monster template panel score when available, with pet score fallback', () => {
+test('WB04 formal threat uses pet effect score first, with monster panel score fallback', () => {
   const petsById = new Map([
     ['pal_001', { id: 'pal_001', score: 100 }],
     ['pal_002', { id: 'pal_002', score: 200 }],
@@ -55,7 +55,7 @@ test('WB04 threat uses monster template panel score when available, with pet sco
   ]);
   const qualityMultiplierMap = buildQualityMultiplierMap([]);
   const weights = { 青铜: 1, 白银: 0, 黄金: 0, 钻石: 0 };
-  assert.equal(computeWaveThreat(['pal_001', 'pal_002', 'pal_003'], 2, weights, petsById, qualityMultiplierMap, { monstersByPetId }), 220);
+  assert.equal(computeWaveThreat(['pal_001', 'pal_002', 'pal_003'], 2, weights, petsById, qualityMultiplierMap, { monstersByPetId }), 400);
 
   const row = normalizeWaveRow({
     '波次ID': 'wave_template_score',
@@ -65,6 +65,6 @@ test('WB04 threat uses monster template panel score when available, with pet sco
     '宠物池-数量': '1,2,3-2',
     '品质权重': '1,0,0,0'
   }, { petsById, monstersByPetId, qualityMultiplierMap });
-  assert.equal(row.threat, 220);
-  assert.equal(row.threatScoreSource, 'monster_panel_score_with_pet_fallback');
+  assert.equal(row.threat, 400);
+  assert.equal(row.threatScoreSource, 'pet_score_with_monster_panel_fallback');
 });

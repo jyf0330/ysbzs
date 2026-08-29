@@ -290,7 +290,7 @@ test('UI07 runFullPlayerDayFlow 一次跑完战斗奖励商店闭环', () => {
   const adapter = createYSBZSUIAdapter({ gold: 8 });
   const vm = adapter.runFullPlayerDayFlow();
   const types = new Set(adapter.getEvents().map(e => e.type));
-  for (const t of ['NODE_OPTIONS','NODE_PICK','BATTLE_START','BATTLE_END','FIXED_BATTLE_START']) assert.ok(types.has(t), t);
+  for (const t of ['NODE_OPTIONS','NODE_PICK','BATTLE_START','BATTLE_END']) assert.ok(types.has(t), t);
   assert.equal(types.has('BATTLE_OPTIONS'), true);
   assert.equal(types.has('BATTLE_PICK'), true);
   assert.equal(types.has('REWARD_OPTIONS'), true);
@@ -407,18 +407,21 @@ test('UI07D 路线战斗 pending reward 进入玩家可领取动作', () => {
   assert.ok(state.events.some(e => e.type === 'ROUTE_REWARD_CLAIM'));
 });
 
-test('UI07E 固定战和终局 Boss 通过公开路线命令进入', () => {
+test('UI07E 终局三选一通过公开路线命令进入并写入终局', () => {
   const state = createGameState({ day: 10, gold: 999 });
   dayRoute.ensureDayRoute(state);
   state.dayRoute.nodeIndex = 5;
   state.phase = 'node_resolved';
 
   const beforeVm = createViewModel(state);
-  const action = beforeVm.nextActions.find(x => x.type === 'RUN_ROUTE_FIXED_BATTLE');
-  assert.ok(action, 'fixed battle should be exposed as a player route action');
-  assert.match(action.label, /终局Boss战|固定战|终局战/);
+  const action = beforeVm.nextActions.find(x => x.type === 'GENERATE_BATTLE_OPTIONS');
+  assert.ok(action, 'final battle choice should be exposed as a player route action');
+  assert.match(action.label, /终局战/);
 
-  const result = dispatch(state, { type: 'RUN_ROUTE_FIXED_BATTLE' });
+  const options = dispatch(state, { type: 'GENERATE_BATTLE_OPTIONS' });
+  assert.equal(options.length, 3);
+  const selected = options[0];
+  const result = dispatch(state, { type: 'PICK_BATTLE_ENCOUNTER', encounterId: selected.encounterId });
   assert.equal(result, true);
   assert.equal(state.phase, 'player_turn');
 
@@ -426,38 +429,35 @@ test('UI07E 固定战和终局 Boss 通过公开路线命令进入', () => {
   assert.ok(finished && finished.win !== undefined);
   assert.equal(state.phase, 'day_end');
   assert.equal(state.dayRoute.nodeIndex, 6);
-  assert.ok(state.dayRoute.history.some(x => x.kind === 'fixed_battle' && x.option.encounterId === 'enc_d10_final_boss'));
-  assert.ok(state.dayRoute.battleOutcomes.some(x => x.kind === 'fixed_battle' && x.encounterId === 'enc_d10_final_boss'));
+  assert.ok(state.dayRoute.history.some(x => x.kind === 'battle_choice' && x.option.encounterId === selected.encounterId));
+  assert.ok(state.dayRoute.battleOutcomes.some(x => x.kind === 'battle_choice' && x.encounterId === selected.encounterId));
   assert.ok(state.dayRoute.terminal && state.dayRoute.terminal.kind === 'final_boss');
-  assert.ok(state.events.some(e => e.type === 'FIXED_BATTLE_START'));
+  assert.ok(state.events.some(e => e.type === 'BATTLE_PICK' && e.encounterId === selected.encounterId));
   assert.ok(state.events.some(e => e.type === 'RUN_TERMINAL'));
   assert.equal(createViewModel(state).nextActions.some(x => x.type === 'GENERATE_NODE_OPTIONS'), false, 'final battle should complete the terminal day route');
 });
 
-test('UI07F 路线遭遇和固定战暴露战前压力预览', () => {
+test('UI07F 两场路线遭遇都暴露战前压力预览', () => {
   const state6 = createGameState({ day: 6, gold: 20, seed: 'pressure-preview' });
   dayRoute.ensureDayRoute(state6);
   state6.dayRoute.nodeIndex = 2;
   state6.phase = 'node_resolved';
-  const firstBattleAction = createViewModel(state6).nextActions.find(x => x.type === 'RUN_ROUTE_FIXED_BATTLE');
-  assert.ok(firstBattleAction, 'first fixed battle should be exposed after two daily nodes');
-  const firstBattle = firstBattleAction.defaultPayload.pressurePreview;
-  assert.ok(firstBattle, 'fixed battle action should expose pressure preview');
-  assert.equal(firstBattle.pressureTier, '高压');
-  assert.ok(firstBattle.totalThreat > 0);
-  assert.ok(firstBattle.peakThreat > 0);
-  assert.ok(firstBattle.totalSpawnCount > 0);
-  assert.match(firstBattle.rewardText, /精英|奖励/);
+  const firstOptions = dayRoute.generateBattleOptions(state6);
+  assert.equal(firstOptions.length, 3);
+  assert.ok(firstOptions.every(option => option.pressurePreview));
+  assert.ok(firstOptions.every(option => option.pressurePreview.totalThreat > 0));
+  assert.ok(firstOptions.every(option => option.pressurePreview.peakThreat > 0));
+  assert.ok(firstOptions.every(option => option.pressurePreview.totalSpawnCount > 0));
 
   const state = createGameState({ day: 10, gold: 999 });
   dayRoute.ensureDayRoute(state);
   state.dayRoute.nodeIndex = 5;
   state.phase = 'node_resolved';
-  const action = createViewModel(state).nextActions.find(x => x.type === 'RUN_ROUTE_FIXED_BATTLE');
-  assert.ok(action.defaultPayload.pressurePreview, 'fixed battle action should carry pressure preview');
-  assert.equal(action.defaultPayload.pressurePreview.pressureTier, '终局');
-  assert.match(action.defaultPayload.pressurePreview.summary, /终局|Boss/);
-  assert.ok(action.defaultPayload.pressurePreview.totalSpawnCount > 0);
+  const finalOptions = dayRoute.generateBattleOptions(state);
+  assert.equal(finalOptions.length, 3);
+  assert.deepEqual(new Set(finalOptions.map(option => option.pressurePreview.pressureTier)), new Set(['低风险', '中风险', '高风险']));
+  assert.ok(finalOptions.every(option => /终局/.test(option.pressurePreview.summary)));
+  assert.ok(finalOptions.every(option => option.pressurePreview.totalSpawnCount > 0));
 });
 
 test('UI08 未知 UI 命令会被拦截', () => {

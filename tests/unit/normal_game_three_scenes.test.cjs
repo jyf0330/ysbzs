@@ -202,8 +202,7 @@ test('route battle entry is deterministic by seed and current time point', () =>
   function runUntilRouteBattleEntry(adapter) {
     for (let step = 0; step < 20; step += 1) {
       const vm = adapter.getViewModel();
-      const routeBattle = vm.nextActions.find(item => item.type === 'RUN_ROUTE_FIXED_BATTLE');
-      if (routeBattle) return routeBattle;
+      if (vm.phase === 'player_turn' && vm.dayRoute?.pendingBattle) return { entered: true };
       const generateNodes = vm.nextActions.find(item => item.type === 'GENERATE_NODE_OPTIONS');
       if (generateNodes) {
         adapter.run(generateNodes.type, generateNodes.defaultPayload);
@@ -228,7 +227,7 @@ test('route battle entry is deterministic by seed and current time point', () =>
       }
       if ((vm.dayRoute?.battleOptions || []).length) {
         adapter.pickBattleEncounter(vm.dayRoute.battleOptions[0].encounterId);
-        return null;
+        continue;
       }
     }
     return null;
@@ -238,7 +237,6 @@ test('route battle entry is deterministic by seed and current time point', () =>
     const adapter = createYSBZSUIAdapter({ day: 1, gold: 8, seed, activePets: ['pal_001', 'pal_002'] });
     const action = runUntilRouteBattleEntry(adapter);
     assert.ok(action, 'current route should expose a time-point battle entry after player choices');
-    adapter.run(action.type, action.defaultPayload);
     const vm = adapter.getViewModel();
     return {
       phase: vm.phase,

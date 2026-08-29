@@ -33,7 +33,7 @@ test('seed episode preview exports three default seeds with route, pet, and batt
   assert.ok(payload.tables.petSources.length > 0);
   assert.ok(battleRowsForCsv(payload.tables.battles).length > 0);
   assert.ok(payload.tables.steps.some(row => row.kind === 'node_choice' && row.optionIndex === 3));
-  assert.ok(payload.tables.steps.some(row => row.kind === 'fixed_battle' && /只/.test(row.battleSummary)));
+  assert.ok(payload.tables.steps.some(row => row.kind === 'battle_choice' && row.step === 6 && /只/.test(row.battleSummary)));
   assert.ok(payload.tables.petSources.every(row => row.seed && row.petId && row.name));
   assert.match(payload.meta.boundary, /not formal runtime storage/);
 });

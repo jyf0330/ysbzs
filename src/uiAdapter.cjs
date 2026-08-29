@@ -258,7 +258,9 @@ function nextActions(state) {
   const finalDay = maxRouteDay(state);
   if (state.phase === 'day_end' && currentDay < finalDay) out.push({ type: 'START_NEXT_DAY', label: `进入第${currentDay + 1}天`, defaultPayload: { day: currentDay + 1 } });
   if ((state.phase === 'node_resolved' || state.phase === 'init') && nextSchedule?.kind === 'node_choice') out.push({ type: 'GENERATE_NODE_OPTIONS', label: '生成节点候选' });
-  if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'battle_choice') out.push({ type: 'GENERATE_BATTLE_OPTIONS', label: '生成中午遭遇' });
+  if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'battle_choice') {
+    out.push({ type: 'GENERATE_BATTLE_OPTIONS', label: `生成${nextSchedule.phaseLabel || nextSchedule.label || '遭遇'}` });
+  }
   if ((state.phase === 'node_resolved' || state.phase === 'battle_end' || state.phase === 'init') && nextSchedule?.kind === 'fixed_battle') {
     const isOpeningBattle = state.phase === 'init' && Number(nextSchedule.step || 0) === 1;
     out.push({ type: 'RUN_ROUTE_FIXED_BATTLE', label: isOpeningBattle ? '开始开场战斗' : `进入${nextSchedule.phaseLabel || nextSchedule.label || '固定战'}`, defaultPayload: { scheduleStep: nextSchedule.step, pressurePreview: dayRoute.fixedBattlePressurePreview(state, nextSchedule) } });

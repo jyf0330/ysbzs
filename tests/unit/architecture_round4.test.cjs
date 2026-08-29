@@ -54,7 +54,7 @@ test('R404 read-only commands do not consume authoritative stateVersion', () => 
 
 test('R405 server authority still rejects stale mutation commands', () => {
   const server = createServerAuthorityAdapter({ gold: 8, battleId: 'round4_strict' });
-  const first = server.validate({ type: 'START_BATTLE', commandId: 'r405_a', playerId: 'p1', baseStateVersion: 0 });
+  const first = server.validate({ type: 'CHOOSE_START', startChoiceId: 'start_trade_capital', commandId: 'r405_a', playerId: 'p1', baseStateVersion: 0 });
   assert.equal(first.accepted, true);
   const stale = server.validate({ type: 'END_PLAYER_TURN', commandId: 'r405_b', playerId: 'p1', baseStateVersion: 0 });
   assert.equal(stale.accepted, false);

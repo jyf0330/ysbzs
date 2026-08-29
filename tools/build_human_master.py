@@ -98,6 +98,7 @@ def main():
     waves = read_csv("03_monster_waves.csv")
     shop = read_csv("06_shop_rewards.csv")
     shop_stores = read_csv("30_shop_stores.csv")
+    start_choices = read_csv("41_start_choices.csv")
     shop_by_pet = {r.get("宠物ID", ""): r for r in shop}
     monster_by_pet = {r.get("宠物ID", ""): r for r in monsters}
 
@@ -260,6 +261,18 @@ def main():
         ("39_stat_catalog.csv", "通用宠物属性目录；整数/千分比、默认值、上下限和叠加规则。"),
         ("40_status_catalog.csv", "运行状态 Type Object；叠层、持续回合和通用 modifier effects。"),
     ])
+
+    add_sheet(
+        wb,
+        "START_CHOICES",
+        [
+            "start_choice_id", "name", "description", "display_order", "coins_delta",
+            "free_rolls_delta", "pet_id", "pet_quality", "run_health_delta",
+            "run_max_health_delta", "status", "source", "note",
+        ],
+        start_choices,
+        widths={"start_choice_id": 27, "description": 46, "note": 42},
+    )
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUT)

@@ -21,6 +21,7 @@
 - `08_action_shapes.csv`：宠物行动槽、元素、形状。
 - `09_cross_validation.csv`：人工校验说明。
 - `10_initial_roster.csv`：我方初始宠物和站位；想换开局阵容改这里。
+- `41_start_choices.csv`：正式开局构筑三选一；只由工作簿 `START_CHOICES` 导出，运行时不得另写同名效果。
 
 ## 注意
 

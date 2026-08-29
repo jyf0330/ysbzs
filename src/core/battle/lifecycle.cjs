@@ -52,6 +52,7 @@ function createLifecycleModule(deps) {
         applyPlayerHeroLossPenalty(state, result, reason);
       } else {
         state.castleLine -= 1;
+        state.runHealth = state.castleLine;
         state.economyMultiplier *= 0.9;
         result.defeatReason = reason;
         pushEvent(state, 'BATTLE_FAIL_PENALTY', { defeatReason: reason, text: '战斗失败：我方英雄防线-1，经济倍率x0.9。' });

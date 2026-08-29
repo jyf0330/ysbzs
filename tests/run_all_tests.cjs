@@ -295,7 +295,9 @@ test('route battle loss writes fail penalty post-battle event into run pressure'
   assert.ok(s.events.some(e=>e.type==='ROUTE_POST_BATTLE_EVENT_APPLY' && e.eventId==='evt_battle_fail'));
   const vm=createViewModel(s);
   assert.equal(vm.leaders.player.hp,70);
-  assert.equal(vm.castleLine,10);
+  assert.equal(vm.castleLine,s.runHealth);
+  assert.equal(vm.runHealth,s.runHealth);
+  assert.equal(vm.runMaxHealth,s.runMaxHealth);
   assert.equal(vm.economyMultiplier,1);
   assert.ok(renderPlayerReport(s).includes('失败惩罚'));
 });

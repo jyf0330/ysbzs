@@ -272,6 +272,10 @@ function initialPartyFromData(d) {
 function createGameState(opts = {}) {
   const loadedData = opts.data || loadGameData(opts.dataOptions || {});
   const indexes = buildIndexes(loadedData);
+  const startOptions = (loadedData.startChoices || []).filter(row => row.status === '正式').map(row => ({ ...row }));
+  const requiresStartChoice = opts.requireStartChoice === true && startOptions.length > 0;
+  const initialRunMaxHealth = Math.max(1, Number(opts.runMaxHealth ?? 20));
+  const initialRunHealth = Math.max(0, Math.min(initialRunMaxHealth, Number(opts.runHealth ?? initialRunMaxHealth)));
   const state = {
     data: loadedData,
     indexes,
@@ -284,13 +288,15 @@ function createGameState(opts = {}) {
     rngState: { seed: opts.seed || opts.battleId || 'ysbzs-local', index: 0 },
     commandLog: [],
     nextCommand: 1,
-    phase: 'init',
+    phase: requiresStartChoice ? 'start_choice' : 'init',
     day: opts.day || 1,
     period: opts.period || '上午',
     round: 0,
     maxRounds: opts.maxRounds || 10,
     gold: opts.gold ?? 3,
-    castleLine: 10,
+    runHealth: initialRunHealth,
+    runMaxHealth: initialRunMaxHealth,
+    castleLine: initialRunHealth,
     economyMultiplier: 1,
     leaders: {
       player: makeLeader('player', opts.playerLeader || {}),
@@ -314,6 +320,8 @@ function createGameState(opts = {}) {
     relics: [],
     battlePrepEffects: [],
     outerRunEffects: [],
+    startOptions,
+    runStart: null,
     shop: { offers: [], frozen: {}, rollCount: 0, freeRolls: 0, nextDiscount: 0, activePool: 'night_base', activeStall: null, refreshState: { freeRolls: 0, nextDiscount: 0, paidRefreshes: 0, nextPaidRefreshCost: 2, nextRefreshCost: 2, targetedRestocks: [], effects: [], lastRoll: null } },
     rewards: [],
     dayRoute: { day: opts.day || 1, nodeIndex: 0, battleIndex: 0, options: [], battleOptions: [], currentEncounter: null, history: [] },

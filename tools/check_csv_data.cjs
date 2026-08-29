@@ -27,7 +27,8 @@ console.log('source rows:', JSON.stringify({
 	  relics: tables.relics.length,
   shapes: tables.shapes.length,
   validation: tables.validation.length,
-  initialSetup: tables.initialSetup.length
+  initialSetup: tables.initialSetup.length,
+  startChoices: (tables.startChoices || []).length
 }));
 console.log('normalized counts:', JSON.stringify(v.counts));
 console.log('initial heroes:', heroes.join(' | '));

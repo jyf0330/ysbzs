@@ -1,7 +1,7 @@
 const { createYSBZSUIAdapter } = require('../uiAdapter.cjs');
 
 function createServerAuthorityAdapter(options = {}) {
-  const adapter = createYSBZSUIAdapter(Object.assign({ mode: options.mode || 'solo' }, options, { strictVersion: true }));
+  const adapter = createYSBZSUIAdapter(Object.assign({ mode: options.mode || 'solo', requireStartChoice: true }, options, { strictVersion: true }));
   return {
     kind: 'server_authority',
     run(command) {

@@ -27,6 +27,7 @@ const INITIAL_OPTION_KEYS = [
   'playerLeader',
   'playerName',
   'players',
+  'requireStartChoice',
   'seed',
   'teams',
   'turn'

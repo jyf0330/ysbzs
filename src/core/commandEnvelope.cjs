@@ -3,6 +3,8 @@ const { DEFAULT_PLAYER_ID, ensureMultiplayerState, canPlayerControlUnit, inferTe
 const { replayableCommand } = require('./replayCodec.cjs');
 
 const SYSTEM_COMMANDS = new Set([
+  'CHOOSE_START',
+  'NEW_RUN',
   'START_BATTLE', 'START_NEXT_ROUND', 'END_PLAYER_TURN', 'RUN_MONSTER_TURN',
   'RUN_PLAYER_ALL_OUT', 'AUTO_POSITION_HEROES',
   'REWARD_OPTIONS', 'PICK_REWARD', 'ENTER_SHOP', 'ROLL_SHOP', 'EXIT_SHOP',
@@ -47,6 +49,16 @@ function actorIdFromCommand(state, command) {
 }
 function validateCommandAuthority(state, command, opts = {}) {
   ensureMultiplayerState(state, { playerId: command.playerId });
+  if (state.phase === 'start_choice' && command.type !== 'CHOOSE_START' && !['EXPORT_REPLAY'].includes(command.type)) {
+    const err = new Error(`START_CHOICE_REQUIRED: choose an opening before ${command.type}`);
+    err.code = 'START_CHOICE_REQUIRED';
+    throw err;
+  }
+  if (command.type === 'CHOOSE_START' && state.phase !== 'start_choice') {
+    const err = new Error(`START_CHOICE_PHASE_INVALID: current phase is ${state.phase}`);
+    err.code = 'START_CHOICE_PHASE_INVALID';
+    throw err;
+  }
   if (opts.strictVersion && Number(command.baseStateVersion) !== Number(state.stateVersion || 0)) {
     const err = new Error(`STATE_VERSION_MISMATCH: command based on ${command.baseStateVersion}, current ${state.stateVersion}`);
     err.code = 'STATE_VERSION_MISMATCH';

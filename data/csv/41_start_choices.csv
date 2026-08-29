@@ -1,0 +1,4 @@
+start_choice_id,name,description,display_order,coins_delta,free_rolls_delta,pet_id,pet_quality,run_health_delta,run_max_health_delta,status,source,note
+start_trade_capital,商路本钱,以更多本金和一次免费刷新，优先建立经济与商店节奏。,1,4,1,,,0,0,正式,START_CHOICES,经济起手；不新增宠物或生命。
+start_thunder_companion,雷鸣同伴,支付少量本金，携雷须猫组成雷系双宠起手。,2,-2,0,pal_007,青铜,0,0,正式,START_CHOICES,宠物引用必须存在且不得与初始阵容重复。
+start_endurance_oath,坚韧誓约,支付少量本金，提高整局英雄耐久上限与当前耐久。,3,-2,0,,,4,4,正式,START_CHOICES,先增加最大生命，再增加当前生命。

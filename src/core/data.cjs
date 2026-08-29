@@ -116,6 +116,17 @@ function validateData(d = loadGameData()) {
     if (encounter.waveId && !ix.wavesById.has(encounter.waveId)) issues.push(`encounter ${encounter.encounterId} missing wave ${encounter.waveId}`);
     if (encounter.rewardPoolId && !ix.rewardPools.has(encounter.rewardPoolId)) issues.push(`encounter ${encounter.encounterId} missing reward pool ${encounter.rewardPoolId}`);
   }
-  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length }};
+  const formalStarts = (d.startChoices || []).filter(row => row.status === '正式');
+  if ((d.startChoices || []).length) {
+    if (formalStarts.length !== 3) issues.push(`start choices require exactly 3 formal rows, got ${formalStarts.length}`);
+    if (new Set(formalStarts.map(row => row.id)).size !== formalStarts.length) issues.push('start choices contain duplicate ids');
+    if (new Set(formalStarts.map(row => Number(row.displayOrder))).size !== formalStarts.length) issues.push('start choices contain duplicate display orders');
+    for (const choice of formalStarts) {
+      if (!choice.name) issues.push(`start choice ${choice.id} missing name`);
+      if (!Number.isFinite(Number(choice.displayOrder)) || Number(choice.displayOrder) < 1) issues.push(`start choice ${choice.id} invalid display order`);
+      if (choice.petId && !ix.petsById.has(choice.petId)) issues.push(`start choice ${choice.id} missing pet ${choice.petId}`);
+    }
+  }
+  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length, startChoices:(d.startChoices||[]).length }};
 }
 module.exports = { data, loadGameData, buildIndexes, validateData };

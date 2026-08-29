@@ -36,7 +36,8 @@ const TABLE_FILES = Object.freeze({
   nodeSchedule: '24_node_schedule.csv',
   nodePool: '25_node_pool.csv',
   encounterPool: '26_encounter_pool.csv',
-  shopStores: '30_shop_stores.csv'
+  shopStores: '30_shop_stores.csv',
+  startChoices: '41_start_choices.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
@@ -534,6 +535,21 @@ function normalizeSourceTables(sourceTables, options = {}) {
     status: row.status || row['状态'],
     note: row.note || row['备注']
   })).filter(x => x.encounterId);
+  const startChoices = (sourceTables.startChoices || []).map(row => ({
+    id: row.start_choice_id || row['开局方案ID'] || '',
+    name: row.name || row['名称'] || '',
+    description: row.description || row['说明'] || '',
+    displayOrder: toNum(row.display_order || row['展示顺序'], 0),
+    coinsDelta: toNum(row.coins_delta || row['金币变化'], 0),
+    freeRollsDelta: toNum(row.free_rolls_delta || row['免费刷新变化'], 0),
+    petId: row.pet_id || row['宠物ID'] || '',
+    petQuality: row.pet_quality || row['宠物品质'] || '',
+    runHealthDelta: toNum(row.run_health_delta || row['Run当前生命变化'], 0),
+    runMaxHealthDelta: toNum(row.run_max_health_delta || row['Run最大生命变化'], 0),
+    status: row.status || row['状态'] || '',
+    source: row.source || row['来源'] || 'START_CHOICES',
+    note: row.note || row['备注'] || ''
+  })).filter(x => x.id).sort((a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id));
 
   const yamlRules = loadWaveRulesYaml(options.waveRulesYaml || DEFAULT_WAVE_RULES_YAML);
   return {
@@ -573,6 +589,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
     nodeSchedule,
     nodePool,
     encounterPool,
+    startChoices,
     waveRules: {
       qualityMultiplierMap,
       ...yamlRules
@@ -631,7 +648,8 @@ function loadSourceTablesFromCsv(csvDir = DEFAULT_CSV_DIR) {
     nodeSchedule: rows(TABLE_FILES.nodeSchedule),
     nodePool: rows(TABLE_FILES.nodePool),
     encounterPool: rows(TABLE_FILES.encounterPool),
-    shopStores: rows(TABLE_FILES.shopStores)
+    shopStores: rows(TABLE_FILES.shopStores),
+    startChoices: rows(TABLE_FILES.startChoices)
   };
 }
 

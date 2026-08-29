@@ -1,4 +1,6 @@
 const PUBLIC_COMMANDS = Object.freeze([
+  'CHOOSE_START',
+  'NEW_RUN',
   'START_BATTLE',
   'START_NEXT_ROUND',
   'SELECT_HERO',
@@ -48,6 +50,8 @@ const PUBLIC_COMMANDS = Object.freeze([
 ]);
 
 const ACTION_ALIASES = Object.freeze({
+  chooseStart: 'CHOOSE_START',
+  newRun: 'NEW_RUN',
   runBattle: 'RUN_BATTLE',
   generateNodeOptions: 'GENERATE_NODE_OPTIONS',
   pickNode: 'PICK_NODE',

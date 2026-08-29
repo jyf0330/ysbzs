@@ -1,7 +1,7 @@
 const { createYSBZSUIAdapter } = require('../uiAdapter.cjs');
 
 function createLocalPredictionAdapter(options = {}) {
-  const adapter = createYSBZSUIAdapter(Object.assign({ mode: options.mode || 'solo' }, options, { strictVersion: false }));
+  const adapter = createYSBZSUIAdapter(Object.assign({ mode: options.mode || 'solo', requireStartChoice: true }, options, { strictVersion: false }));
   return {
     kind: 'local_prediction',
     playerId: options.playerId || 'p1',

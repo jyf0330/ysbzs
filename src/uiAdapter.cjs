@@ -58,7 +58,8 @@ function dataSummary(state) {
     validation: state.data.validation.length,
     nodeSchedule: (state.data.nodeSchedule || []).length,
     nodePool: (state.data.nodePool || []).length,
-    encounterPool: (state.data.encounterPool || []).length
+    encounterPool: (state.data.encounterPool || []).length,
+    startChoices: (state.data.startChoices || []).length
   };
 }
 function stripUnit(state, unit) {
@@ -252,12 +253,20 @@ function maxRouteDay(state) {
 }
 function nextActions(state) {
   const out = [];
+  if (state.phase === 'start_choice') {
+    for (const option of state.startOptions || []) out.push({
+      type: 'CHOOSE_START',
+      label: `选择 ${option.name || option.title || option.id}`,
+      defaultPayload: { startChoiceId: option.startChoiceId || option.optionId || option.id }
+    });
+    return out;
+  }
   const nextSchedule = nextDaySchedule(state);
-  if (state.dayRoute?.terminal && !nextSchedule) return out;
+  if (state.dayRoute?.terminal && !nextSchedule) return [{ type: 'NEW_RUN', label: '重新开局', defaultPayload: {} }];
   const currentDay = Number(state.day || 1);
   const finalDay = maxRouteDay(state);
   if (state.phase === 'day_end' && currentDay < finalDay) out.push({ type: 'START_NEXT_DAY', label: `进入第${currentDay + 1}天`, defaultPayload: { day: currentDay + 1 } });
-  if ((state.phase === 'node_resolved' || state.phase === 'init') && nextSchedule?.kind === 'node_choice') out.push({ type: 'GENERATE_NODE_OPTIONS', label: '生成节点候选' });
+  if ((state.phase === 'node_resolved' || state.phase === 'init' || state.phase === 'route') && nextSchedule?.kind === 'node_choice') out.push({ type: 'GENERATE_NODE_OPTIONS', label: '生成节点候选' });
   if ((state.phase === 'node_resolved' || state.phase === 'battle_end') && nextSchedule?.kind === 'battle_choice') {
     out.push({ type: 'GENERATE_BATTLE_OPTIONS', label: `生成${nextSchedule.phaseLabel || nextSchedule.label || '遭遇'}` });
   }
@@ -334,6 +343,10 @@ function buildViewModelForPlayer(state, playerId = 'p1', playerViewState = makeP
     gold: state.gold,
     castleLine: state.castleLine,
     economyMultiplier: state.economyMultiplier,
+    runHealth: state.runHealth,
+    runMaxHealth: state.runMaxHealth,
+    startOptions: clone(state.startOptions || []),
+    runStart: state.runStart ? clone(state.runStart) : null,
     result: state.result ? clone(state.result) : null,
 	    selected,
 	    teamPlacementPreview: teamPlacementPreviewVM(state, board.previewGrid),
@@ -737,6 +750,8 @@ function createYSBZSUIAdapter(options = {}) {
       }
     },
     startBattle() { return this.run('START_BATTLE'); },
+    chooseStart(startChoiceId) { return this.run('CHOOSE_START', { startChoiceId }); },
+    newRun(options = {}) { return this.run('NEW_RUN', options); },
     startNextRound() { return this.run('START_NEXT_ROUND'); },
     moveHero(unitId, to) { return this.run('MOVE_HERO', { unitId, to }); },
     autoPositionHeroes() { return this.run('AUTO_POSITION_HEROES'); },

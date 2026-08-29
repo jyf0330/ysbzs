@@ -3,6 +3,7 @@ const shop = require('./shop.cjs');
 const day7 = require('./day7FireTrial.cjs');
 const dayRoute = require('./dayRoute.cjs');
 const inventory = require('./inventoryRules.cjs');
+const startChoice = require('./startChoice.cjs');
 const { buildReplay } = require('./changeLog.cjs');
 
 function finalizeRouteBattleIfNeeded(state, result) {
@@ -12,6 +13,8 @@ function finalizeRouteBattleIfNeeded(state, result) {
 
 function dispatch(state, command) {
   switch (command.type) {
+    case 'CHOOSE_START': return startChoice.chooseStart(state, command.startChoiceId ?? command.optionId ?? command.id);
+    case 'NEW_RUN': return startChoice.newRun(state, command);
     case 'START_BATTLE': return battle.startBattle(state);
     case 'START_NEXT_ROUND': return finalizeRouteBattleIfNeeded(state, battle.startNextRound(state));
     case 'AUTO_POSITION_HEROES': return finalizeRouteBattleIfNeeded(state, battle.autoPositionHeroes(state));

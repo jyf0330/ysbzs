@@ -13,6 +13,8 @@ if (params.toString() !== new URLSearchParams(window.location.search || '').toSt
 }
 
 const COMMAND_TABLE = Object.freeze([
+  { type: 'CHOOSE_START', label: '选择开局构筑', category: '流程/开局', aliases: ['chooseStart'] },
+  { type: 'NEW_RUN', label: '重新开局', category: '流程/开局', aliases: ['newRun'] },
   { type: 'START_BATTLE', label: '开始战斗', category: '流程/战斗', aliases: ['startBattle'] },
   { type: 'START_NEXT_ROUND', label: '下一回合', category: '流程/战斗', aliases: ['startNextRound'] },
   { type: 'SELECT_HERO', label: '选择英雄', category: '选择/棋盘', aliases: ['selectHero'] },
@@ -62,6 +64,8 @@ const COMMAND_TABLE = Object.freeze([
 ]);
 
 const PHASE_TEXT = {
+  start_choice: '开局构筑选择',
+  route: '路线准备',
   init: '准备',
   node_choice: '路线选择',
   node_resolved: '节点完成',

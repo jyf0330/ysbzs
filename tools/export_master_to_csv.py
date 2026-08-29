@@ -39,6 +39,8 @@ MASTER_ONLY_EXPORTS = [
     ("PET_ENCHANTMENTS", "33_pet_enchantments.csv"),
     ("BAZAAR_OBJECTS", "34_bazaar_objects.csv"),
     ("SHOP_MAPPING", "35_bazaar_shop_mapping.csv"),
+    ("HERO_CATALOG", "41_hero_catalog.csv"),
+    ("TAG_CATALOG", "42_bazaar_tag_catalog.csv"),
     ("START_CHOICES", "43_start_choices.csv"),
     ("RUN_GROWTH", "44_run_growth.csv"),
     ("GROWTH_CHOICES", "45_growth_choices.csv"),
@@ -696,10 +698,9 @@ def generated_tables(master_path, baseline_dir):
         output = expand_pet_rows(filename, [dict(row) for row in rows], headers, pets_by_id)
 
         if filename == "01_pets.csv":
-            if "技能序列" not in headers:
-                headers.append("技能序列")
-            if "特性序列" not in headers:
-                headers.append("特性序列")
+            for field in ["技能序列", "特性序列", "owner_hero_id", "catalog_status", "build_tags", "tag_references"]:
+                if field not in headers:
+                    headers.append(field)
             for row in output:
                 pet = pets_by_id.get(row.get("宠物ID", ""))
                 if not pet:
@@ -723,6 +724,10 @@ def generated_tables(master_path, baseline_dir):
                 row["副属"] = "、".join(elements[1:])
                 row["技能序列"] = first_non_empty(pet.get("skill_ids"), row.get("技能序列"))
                 row["特性序列"] = first_non_empty(pet.get("trait_ids"), row.get("特性序列"))
+                row["owner_hero_id"] = sheet_value(pet, "owner_hero_id", "", allow_blank=True)
+                row["catalog_status"] = first_non_empty(pet.get("catalog_status"), "reserved")
+                row["build_tags"] = sheet_value(pet, "build_tags", "", allow_blank=True)
+                row["tag_references"] = sheet_value(pet, "tag_references", "", allow_blank=True)
 
         elif filename == "02_monster_templates.csv":
             for field in ["移动力", "攻击次数"]:
@@ -790,6 +795,8 @@ def generated_tables(master_path, baseline_dir):
                 row["备注"] = first_non_empty(mech.get("note"), row.get("备注"))
 
         elif filename == "06_shop_rewards.csv":
+            if "catalog_status" not in headers:
+                headers.append("catalog_status")
             for row in output:
                 shop = shop_by_id.get(row.get("宠物ID", ""))
                 pet = pets_by_id.get(row.get("宠物ID", ""))
@@ -799,6 +806,9 @@ def generated_tables(master_path, baseline_dir):
                     row["品质(自动)"] = first_non_empty(pet.get("tier"), row.get("品质(自动)"))
                     row["定位(自动)"] = sheet_value(pet, "role", row.get("定位(自动)"), allow_blank=True)
                     row["标签(自动)"] = first_non_empty(build_pet_tags(pet, row.get("标签(自动)")), row.get("标签(自动)"))
+                    row["catalog_status"] = first_non_empty(pet.get("catalog_status"), "reserved")
+                    if row["catalog_status"] != "playable":
+                        row["商店状态"] = "保留"
                 if not shop:
                     if pet:
                         row["商店池(自动)"] = build_shop_pools(row.get("商店池(自动)"), pet, row.get("池档"))

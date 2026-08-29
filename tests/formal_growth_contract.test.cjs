@@ -63,7 +63,8 @@ test('pet reward pools follow authored quality while preserving special encounte
     '钻石': 'reward_pT4',
   };
   const authoredPets = data.shop.filter(row => row.status === '启用' && row.itemType === '宠物');
-  assert.equal(authoredPets.length, 369);
+  assert.equal(authoredPets.length, 138);
+  assert.equal(data.shop.filter(row => row.itemType === '宠物' && row.status === '保留').length, 231);
   for (const pet of authoredPets) {
     assert.ok(pet.rewardPools.includes(tierByQuality[pet.quality]), `${pet.petId} should belong to its quality reward pool`);
   }

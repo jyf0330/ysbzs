@@ -1,0 +1,2 @@
+hero_id,catalog_status,source_archetype,playable_pet_count,reserved_record_count,source_object_count,note
+hero_001,playable,vanessa_items,138,231,369,第一英雄只开放138个物品来源宠物；技能与商人包映射保留为内部记录。

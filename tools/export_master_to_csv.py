@@ -39,9 +39,9 @@ MASTER_ONLY_EXPORTS = [
     ("PET_ENCHANTMENTS", "33_pet_enchantments.csv"),
     ("BAZAAR_OBJECTS", "34_bazaar_objects.csv"),
     ("SHOP_MAPPING", "35_bazaar_shop_mapping.csv"),
-    ("START_CHOICES", "41_start_choices.csv"),
-    ("RUN_GROWTH", "42_run_growth.csv"),
-    ("GROWTH_CHOICES", "43_growth_choices.csv"),
+    ("START_CHOICES", "43_start_choices.csv"),
+    ("RUN_GROWTH", "44_run_growth.csv"),
+    ("GROWTH_CHOICES", "45_growth_choices.csv"),
 ]
 
 DOMAIN_SECTION_SHEETS = [

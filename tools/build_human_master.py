@@ -98,7 +98,7 @@ def main():
     waves = read_csv("03_monster_waves.csv")
     shop = read_csv("06_shop_rewards.csv")
     shop_stores = read_csv("30_shop_stores.csv")
-    start_choices = read_csv("41_start_choices.csv")
+    start_choices = read_csv("43_start_choices.csv")
     shop_by_pet = {r.get("宠物ID", ""): r for r in shop}
     monster_by_pet = {r.get("宠物ID", ""): r for r in monsters}
 

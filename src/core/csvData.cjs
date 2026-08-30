@@ -37,9 +37,9 @@ const TABLE_FILES = Object.freeze({
   nodePool: '25_node_pool.csv',
   encounterPool: '26_encounter_pool.csv',
   shopStores: '30_shop_stores.csv',
-  startChoices: '41_start_choices.csv',
-  runGrowth: '42_run_growth.csv',
-  growthChoices: '43_growth_choices.csv'
+  startChoices: '43_start_choices.csv',
+  runGrowth: '44_run_growth.csv',
+  growthChoices: '45_growth_choices.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({

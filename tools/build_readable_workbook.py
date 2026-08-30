@@ -40,7 +40,7 @@ CSV_TO_SHEET = [
     ("27_shape_catalog.csv", "27_新19战斗形状目录"),
     ("28_quality_growth.csv", "28_品质成长数值表"),
     ("29_quality_upgrades.csv", "29_品质升级质变表"),
-    ("41_start_choices.csv", "41_开局构筑选择"),
+    ("43_start_choices.csv", "43_开局构筑选择"),
 ]
 
 

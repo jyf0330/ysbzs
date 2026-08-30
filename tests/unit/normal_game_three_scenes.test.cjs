@@ -199,11 +199,11 @@ test('normal game deploys every active pet into seed-stable left-bottom cells', 
 test('route battle entry is deterministic by seed and current time point', () => {
   const { createYSBZSUIAdapter } = require('../../src/uiAdapter.cjs');
 
-  function runUntilRouteBattleEntry(adapter) {
-    for (let step = 0; step < 20; step += 1) {
-      const vm = adapter.getViewModel();
-      const routeBattle = vm.nextActions.find(item => item.type === 'RUN_ROUTE_FIXED_BATTLE');
-      if (routeBattle) return routeBattle;
+	function runUntilRouteBattleEntry(adapter) {
+		for (let step = 0; step < 20; step += 1) {
+			const vm = adapter.getViewModel();
+			const routeBattle = vm.nextActions.find(item => item.type === 'PICK_BATTLE_ENCOUNTER');
+			if (routeBattle) return routeBattle;
       const generateNodes = vm.nextActions.find(item => item.type === 'GENERATE_NODE_OPTIONS');
       if (generateNodes) {
         adapter.run(generateNodes.type, generateNodes.defaultPayload);
@@ -226,10 +226,9 @@ test('route battle entry is deterministic by seed and current time point', () =>
         adapter.run(generateBattles.type, generateBattles.defaultPayload);
         continue;
       }
-      if ((vm.dayRoute?.battleOptions || []).length) {
-        adapter.pickBattleEncounter(vm.dayRoute.battleOptions[0].encounterId);
-        return null;
-      }
+			if ((vm.dayRoute?.battleOptions || []).length) {
+				return { type: 'PICK_BATTLE_ENCOUNTER', defaultPayload: { encounterId: vm.dayRoute.battleOptions[0].encounterId } };
+			}
     }
     return null;
   }

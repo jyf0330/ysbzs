@@ -18,8 +18,10 @@ function nextRouteSchedule(state) {
 }
 function enterCurrentRouteNodeStep(state) {
   const schedule = nextRouteSchedule(state);
-  if (schedule && schedule.kind === 'fixed_battle') {
-    dispatch(state, { type: 'RUN_ROUTE_FIXED_BATTLE', scheduleStep: schedule.step });
+  if (schedule && schedule.kind === 'battle_choice') {
+	const options = dispatch(state, { type: 'GENERATE_BATTLE_OPTIONS', scheduleStep: schedule.step }) || [];
+	assert.equal(options.length, 3, `step ${schedule.step} should expose three encounters`);
+	dispatch(state, { type: 'PICK_BATTLE_ENCOUNTER', encounterId: options[0].encounterId });
   }
 }
 function openFirstRouteNodeOptions(state, opts = {}) {
@@ -45,16 +47,15 @@ function resolveCurrentRouteNode(state, opts = {}) {
   return option;
 }
 
-test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,369); assert.equal(data.monsters.length,369); assert.equal(data.waves.length,146); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,369); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,369); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
+test('loads v1 linked table counts',()=>{ assert.equal(data.pets.length,369); assert.equal(data.monsters.length,369); assert.equal(data.waves.length,194); assert.ok(data.mechanisms.length>=61); assert.equal(data.events.length,32); assert.equal(data.shop.length,369); assert.equal(data.relics.length,40); assert.equal(data.shapes.length,369); assert.equal(data.validation.length,10); assert.equal(data.heroDomains.length,7); assert.equal(data.elementReactions.length,8); assert.equal(data.trialQuestions.length,4); assert.equal(data.trialActions.length,24); assert.equal(data.victoryRules.length,4); assert.equal(data.effectObjects.length,3); assert.equal(data.modifiers.length,3); assert.equal(data.elementConversions.length,2); });
 test('Day1-Day10 route runtime defines node-node-battle daily rhythm with four node decisions',()=>{
   for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
     const rows = dayRoute.scheduleRows(createGameState({ day }));
-    const firstBattleKind = [1, 3, 6, 9].includes(day) ? 'battle_choice' : 'fixed_battle';
-    assert.deepEqual(rows.map(x => x.kind), ['node_choice','node_choice',firstBattleKind,'node_choice','node_choice','fixed_battle'], `day ${day} should run two nodes, battle, two nodes, battle`);
+		assert.deepEqual(rows.map(x => x.kind), ['node_choice','node_choice','battle_choice','node_choice','node_choice','battle_choice'], `day ${day} should run two nodes, battle choice, two nodes, battle choice`);
     const decisions = rows.filter(x => x.kind === 'node_choice');
     assert.equal(decisions.length, 4, `day ${day} should have four route node decisions`);
     assert.ok(decisions.every(x => Number(x.choiceCount || 3) === 3), `day ${day} choices should be 3选1`);
-    assert.equal(rows.filter(x => x.kind === 'fixed_battle' || x.kind === 'battle_choice').length, 2, `day ${day} should have two battle anchors`);
+		assert.equal(rows.filter(x => x.kind === 'battle_choice').length, 2, `day ${day} should have two real battle-choice anchors`);
   }
 });
 test('Day4-Day10 route data escalates shop reward tier and encounter pressure',()=>{
@@ -62,10 +63,17 @@ test('Day4-Day10 route data escalates shop reward tier and encounter pressure',(
     const nodes = data.nodePool.filter(x => x.unlockDay === day);
     assert.ok(nodes.some(x => x.shopPoolId === 'tier_pT2' || x.shopPoolId === 'tier_pT3' || x.rewardPoolId === 'reward_pT2' || x.rewardPoolId === 'reward_pT3'), `day ${day} should include higher tier economy`);
   }
-  for (const day of [6, 7, 8, 9, 10]) {
-    const encounters = data.encounterPool.filter(x => x.unlockDay === day);
-    assert.ok(encounters.some(x => /精英|Boss|终局/.test(`${x.name}${x.phaseLabel}${x.note}`)), `day ${day} should include pressure label`);
-  }
+	for (const day of [4, 5, 6, 7, 8, 9, 10]) {
+		const encounters = data.encounterPool.filter(x => x.unlockDay === day);
+		assert.equal(encounters.length, 6, `day ${day} should author three choices for both battle anchors`);
+		for (const suffix of ['midday', 'evening']) {
+			const pool = encounters.filter(x => x.encounterPoolId === `enc_pool_d${String(day).padStart(2, '0')}_${suffix}`);
+			assert.equal(pool.length, 3, `day ${day} ${suffix} should expose three encounters`);
+			assert.equal(new Set(pool.map(x => x.waveId)).size, 3, `day ${day} ${suffix} should use three waves`);
+			assert.equal(new Set(pool.map(x => x.riskLabel)).size, 3, `day ${day} ${suffix} should expose three risk bands`);
+			assert.equal(new Set(pool.map(x => x.rewardPoolId)).size, 3, `day ${day} ${suffix} should expose three reward sources`);
+		}
+	}
 });
 test('all cross-table references connected',()=>{ const v=validateData(); assert.deepEqual(v.issues,[]); assert.equal(v.ok,true); });
 test('all mechanism IDs have executable handler registration',()=>{ for(const m of data.mechanisms) assert.ok(SUPPORTED_MECHANICS.has(m.id), `unsupported ${m.id}`); });
@@ -107,15 +115,18 @@ test('shop refresh controls store free roll, discount, and targeted restock stat
   assert.ok(s.events.some(e=>e.type==='SHOP_TARGETED_RESTOCK' && e.poolId==='elem_火'));
   assert.ok(renderPlayerReport(s).includes('定向补货'));
 });
-test('active route node pool opens only the first Day1 event/rest slice',()=>{
+test('active route node pool exposes the complete authored event/rest ecosystem',()=>{
   const s=createGameState({day:1,gold:20});
   const activeNodes = s.data.nodePool.filter(node => node.status === '正式');
   assert.ok(activeNodes.length > 0);
-  assert.deepEqual(
-    activeNodes.filter(node => ['event','rest'].includes(node.nodeType)).map(node => node.nodeId).sort(),
-    ['node_event_free_roll','node_rest_gold']
-  );
-  assert.ok(s.data.nodePool.filter(node => ['event','rest'].includes(node.nodeType) && !['node_event_free_roll','node_rest_gold'].includes(node.nodeId)).every(node => node.status !== '正式'));
+	const events = activeNodes.filter(node => node.nodeType === 'event');
+	const rests = activeNodes.filter(node => node.nodeType === 'rest');
+	assert.equal(events.length, 16);
+	assert.equal(rests.length, 10);
+	for (const eventId of ['evt_role_summon','evt_role_tank','evt_upgrade_offer','evt_duplicate','evt_curse_gold','evt_shield_bless','evt_trap_bonus','evt_discount','evt_free_roll']) {
+		assert.ok(events.some(node => node.eventId === eventId), `${eventId} should be reachable from a formal route node`);
+	}
+	assert.deepEqual(rests.map(node => Number(node.value)), [2,2,3,3,3,4,4,4,5,5]);
 });
 test('Day1 free-roll event and rest resolve through player route commands',()=>{
   const eventState=createGameState({day:1,gold:20});
@@ -191,43 +202,37 @@ test('construction summary exposes build core tags in ViewModel and text report'
   assert.ok(report.includes('火系'));
   assert.ok(report.includes('召唤'));
 });
-test('Day1 full day route runs two nodes, encounter choice, two nodes, fixed battle',()=>{
+test('Day1 full day route runs two nodes, encounter choice, two nodes, encounter choice',()=>{
   const s=runFullDayScenario({day:1,gold:999});
   const types=s.events.map(e=>e.type);
   assert.deepEqual(types.filter(t=>t==='NODE_OPTIONS').length,4);
   assert.deepEqual(types.filter(t=>t==='NODE_PICK').length,4);
-  assert.equal(types.filter(t=>t==='BATTLE_OPTIONS').length,1);
-  assert.equal(types.filter(t=>t==='BATTLE_PICK').length,1);
-  assert.equal(types.filter(t=>t==='FIXED_BATTLE_START').length,1);
-  const nodePickIndexes = types.map((type, index) => type === 'NODE_PICK' ? index : -1).filter(index => index >= 0);
-  const battlePickIndex = types.indexOf('BATTLE_PICK');
-  const fixedBattleIndex = types.indexOf('FIXED_BATTLE_START');
-  assert.ok(nodePickIndexes[1] < battlePickIndex, 'first two node choices should resolve before the encounter choice');
-  assert.ok(battlePickIndex < nodePickIndexes[2], 'encounter choice should resolve before the closing node choices');
-  assert.ok(nodePickIndexes[3] < fixedBattleIndex, 'closing node choices should resolve before the fixed battle');
-  assert.ok(s.events.some(e=>e.type==='BATTLE_PICK' && ['enc_d01_midday_a','enc_d01_midday_b','enc_d01_midday_c'].includes(e.encounterId)));
-  assert.ok(s.events.some(e=>e.type==='FIXED_BATTLE_START' && e.encounterId==='enc_d01_evening_fixed'));
+	assert.equal(types.filter(t=>t==='BATTLE_OPTIONS').length,2);
+	assert.equal(types.filter(t=>t==='BATTLE_PICK').length,2);
+	assert.equal(types.filter(t=>t==='FIXED_BATTLE_START').length,0);
+	const nodePickIndexes = types.map((type, index) => type === 'NODE_PICK' ? index : -1).filter(index => index >= 0);
+	const battlePickIndexes = types.map((type, index) => type === 'BATTLE_PICK' ? index : -1).filter(index => index >= 0);
+	assert.ok(nodePickIndexes[1] < battlePickIndexes[0], 'first two node choices should resolve before the first encounter choice');
+	assert.ok(battlePickIndexes[0] < nodePickIndexes[2], 'first encounter choice should resolve before the closing node choices');
+	assert.ok(nodePickIndexes[3] < battlePickIndexes[1], 'closing node choices should resolve before the second encounter choice');
+	assert.ok(s.events.some(e=>e.type==='BATTLE_PICK' && ['enc_d01_midday_a','enc_d01_midday_b','enc_d01_midday_c'].includes(e.encounterId)));
+	assert.ok(s.events.some(e=>e.type==='BATTLE_PICK' && ['enc_d01_evening_fixed','enc_d01_evening_b','enc_d01_evening_c'].includes(e.encounterId)));
   assert.equal(s.phase,'day_end');
   assert.equal(s.dayRoute.nodeIndex,6);
 });
 test('Day1-Day10 route can run continuously and records daily route history',()=>{
   const s=runDayRangeScenario({fromDay:1,toDay:10,gold:999,playerLeader:{hp:999,maxHp:999}});
   assert.equal(s.day,10);
-  assert.equal(s.phase,'day_end');
-  assert.equal(s.dayRouteRuns.length,10);
-  const finalRun=s.dayRouteRuns[9];
-  assert.ok(finalRun.terminal, 'Day10 run should expose terminal state');
-  assert.equal(finalRun.terminal.kind,'final_boss');
-  assert.ok(['victory','defeat','reached'].includes(finalRun.terminal.status));
-  assert.ok(s.dayRoute.terminal && s.dayRoute.terminal.day===10);
-  assert.ok(s.events.some(e=>e.type==='RUN_TERMINAL' && e.terminal && e.terminal.kind==='final_boss'));
-  assert.ok(renderPlayerReport(s).includes('终局'));
+	assert.equal(s.phase,'day_end');
+	assert.equal(s.dayRouteRuns.length,10);
+	const finalRun=s.dayRouteRuns[9];
+	assert.equal(finalRun.history.filter(x => x.kind === 'battle_choice').length, 2, 'Day10 run should resolve both authored battle choices');
   for (const run of s.dayRouteRuns) {
     const choices = run.history.filter(x => x.kind === 'node');
     const nodeNames = Array.from(new Set(run.history.filter(x => x.kind === 'node').map(x => x.option.name)));
     assert.equal(choices.length, 4, `day ${run.day} should record four route node decisions`);
     assert.ok(nodeNames.length >= 2, `day ${run.day} should auto-pick at least two different node types`);
-    assert.equal(run.history.filter(x => x.kind === 'fixed_battle' || x.kind === 'battle_choice').length, 2, `day ${run.day} should record two battle anchors`);
+		assert.equal(run.history.filter(x => x.kind === 'battle_choice').length, 2, `day ${run.day} should record two battle choices`);
   }
 });
 test('Day1-Day10 route battle outcomes write back result, economy, and reward eligibility',()=>{
@@ -352,9 +357,9 @@ test('route pre-battle shield event becomes next battle core effect and report e
   assert.ok(s.dayRoute.options.some(x=>x.eventId==='evt_shield_bless'), 'Day4 route should expose shield blessing event');
   dispatch(s,{type:'PICK_NODE', nodeId:'node_d04_event_shield'});
   assert.ok((s.battlePrepEffects||[]).some(x=>x.eventId==='evt_shield_bless' && x.status==='pending'), 'shield blessing should become pending battle prep effect');
-  assert.ok(createViewModel(s).battlePrepEffects.some(x=>x.eventId==='evt_shield_bless'));
-  resolveCurrentRouteNode(s,{count:6});
-  dispatch(s,{type:'RUN_ROUTE_FIXED_BATTLE',scheduleStep:3});
+	assert.ok(createViewModel(s).battlePrepEffects.some(x=>x.eventId==='evt_shield_bless'));
+	resolveCurrentRouteNode(s,{count:6});
+	enterCurrentRouteNodeStep(s);
   const applied=s.events.find(e=>e.type==='BATTLE_PREP_EFFECT_APPLY' && e.eventId==='evt_shield_bless');
   assert.ok(applied, 'next battle should apply shield blessing');
   assert.equal(applied.shield,2);

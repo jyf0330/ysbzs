@@ -24,13 +24,13 @@ test('autoplay live report runs RUN_FULL_RUN and renders a day 1-10 transcript',
   assert.equal(run.finalViewModel.day, 10);
   assert.equal(run.finalViewModel.phase, 'day_end');
   assert.equal(run.finalViewModel.dayRouteRuns.length, 10);
-  assert.ok(run.events.length > 100, 'live report should be backed by the actual event stream');
-  assert.ok(run.events.some(event => event.type === 'NODE_PICK'));
-  assert.ok(run.events.some(event => event.type === 'BATTLE_START'));
-  assert.ok(run.events.some(event => event.type === 'RUN_TERMINAL'));
-  const grouped = groupEventsByDay(run.events);
-  assert.equal(grouped.get(1).some(event => /第2天/.test(event.text || '')), false, 'day 1 transcript must not swallow day 2 events');
-  assert.ok(grouped.get(10).some(event => event.type === 'RUN_TERMINAL'), 'day 10 transcript should contain the terminal event');
+	assert.ok(run.events.length > 100, 'live report should be backed by the actual event stream');
+	assert.ok(run.events.some(event => event.type === 'NODE_PICK'));
+	assert.ok(run.events.some(event => event.type === 'BATTLE_START'));
+	assert.equal(run.events.filter(event => event.type === 'BATTLE_PICK').length, 20, 'live report should record both encounter choices on all ten days');
+	const grouped = groupEventsByDay(run.events);
+	assert.equal(grouped.get(1).some(event => /第2天/.test(event.text || '')), false, 'day 1 transcript must not swallow day 2 events');
+	assert.equal(grouped.get(10).filter(event => event.type === 'BATTLE_PICK').length, 2, 'day 10 transcript should contain both encounter choices');
 
   assert.match(run.markdown, /# 自动机器人实况全流程战报/);
   assert.match(run.markdown, /命令：RUN_FULL_RUN/);

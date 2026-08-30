@@ -19,8 +19,8 @@ test('runtime data report builds game data payload and HTML audit without writin
   assert.equal(payload.data.meta.sourcePackage, 'xlsx/ysbzs_master.xlsx');
   assert.equal(payload.data.meta.compatibilityBaseline, 'data/csv');
   assert.equal(payload.source.connectedTables.pets.format, 'xlsx-derived');
-  assert.equal(payload.data.pets.length, 127);
-  assert.equal(payload.data.waves.length, 134);
+	assert.equal(payload.data.waves.length, 194);
+	assert.equal(payload.data.pets.length, 127);
   assert.equal(payload.data.mechanisms.length, 61);
   assert.equal(payload.source.workbook, 'xlsx/ysbzs_master.xlsx');
   assert.ok(payload.source.filesByFormat.csv.count >= 31);

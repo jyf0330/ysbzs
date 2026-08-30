@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-07-30，由 `2026-07-30_bazaar-source-complete-shop-roster` 收口。
+最后刷新：2026-08-31，由 `2026-08-31_bazaar_route_content_completion` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-08-31_bazaar_route_content_completion.md` — data: 完成 16 事件、10 休整、20 个真实遭遇三选一锚点及 workbook→CSV 真相链。
 
 - `tasks/done/2026-08-28_bazaar_day1_route_source.md` — 恢复 `ROUTE` 策划域对 24/25/26 路线表的可重建真相链，并开放 Day 1 免费刷新事件与休整补给节点。
 

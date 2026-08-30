@@ -806,6 +806,14 @@ def generated_tables(master_path, baseline_dir):
                     continue
                 row["解锁日"] = first_non_empty(shop.get("unlock_day"), row.get("解锁日"))
                 row["池档"] = first_non_empty(shop.get("tier_pool"), row.get("池档"))
+                # 品质奖励池由池档派生；elite 等专属池仍保留，不能被普通品质归一化吞掉。
+                tier_reward = f"reward_{first_non_empty(row.get('池档'), 'pT1')}"
+                special_rewards = [
+                    reward_id
+                    for reward_id in split_list_text(row.get("奖励池(自动)"))
+                    if not reward_id.startswith("reward_pT")
+                ]
+                row["奖励池(自动)"] = ", ".join([tier_reward, *special_rewards])
                 row["默认价"] = first_non_empty(shop.get("base_price"), row.get("默认价"))
                 public_quality_price = shop_price_for_quality(row.get("品质(自动)"), row.get("池档"))
                 if public_quality_price:

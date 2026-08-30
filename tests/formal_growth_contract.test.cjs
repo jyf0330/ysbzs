@@ -47,6 +47,28 @@ test('formal growth data has 3 milestones, 9 choices, and 60 authored encounter 
   assert.doesNotThrow(() => runGrowth.validateCatalog(createGameState({ data })));
 });
 
+test('pet reward pools follow authored quality while preserving special encounter pools', () => {
+  const data = loadGameData();
+  const tierByQuality = {
+    '青铜': 'reward_pT1',
+    '白银': 'reward_pT2',
+    '黄金': 'reward_pT3',
+    '钻石': 'reward_pT4',
+  };
+  const authoredPets = data.shop.filter(row => row.status === '启用' && row.itemType === '宠物');
+  assert.equal(authoredPets.length, 369);
+  for (const pet of authoredPets) {
+    assert.ok(pet.rewardPools.includes(tierByQuality[pet.quality]), `${pet.petId} should belong to its quality reward pool`);
+  }
+  const diamondRewardIds = authoredPets.filter(pet => pet.rewardPools.includes('reward_pT4')).map(pet => pet.petId);
+  assert.ok(diamondRewardIds.includes('pal_058'));
+  assert.ok(diamondRewardIds.includes('pal_107'));
+  assert.deepEqual(
+    authoredPets.filter(pet => pet.rewardPools.includes('reward_elite')).map(pet => pet.petId).sort(),
+    ['pal_124', 'pal_127'],
+  );
+});
+
 test('risk cards project the exact authored 1/2/3 XP rather than deriving it in UI', () => {
   const state = createGameState({ day: 1, seed: 'growth-preview' });
   const options = dayRoute.generateBattleOptions(state, { scheduleStep: 3 });

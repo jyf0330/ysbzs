@@ -61,7 +61,8 @@ function dataSummary(state) {
     encounterPool: (state.data.encounterPool || []).length,
     startChoices: (state.data.startChoices || []).length,
     runGrowth: (state.data.runGrowth || []).length,
-    growthChoices: (state.data.growthChoices || []).length
+    growthChoices: (state.data.growthChoices || []).length,
+    runRules: (state.data.runRules || []).length
   };
 }
 function stripUnit(state, unit) {

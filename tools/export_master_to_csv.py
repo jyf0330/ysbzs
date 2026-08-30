@@ -42,6 +42,7 @@ MASTER_ONLY_EXPORTS = [
     ("START_CHOICES", "43_start_choices.csv"),
     ("RUN_GROWTH", "44_run_growth.csv"),
     ("GROWTH_CHOICES", "45_growth_choices.csv"),
+    ("RUN_RULES", "46_run_rules.csv"),
 ]
 
 DOMAIN_SECTION_SHEETS = [

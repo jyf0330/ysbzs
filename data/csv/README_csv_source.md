@@ -24,6 +24,7 @@
 - `43_start_choices.csv`：正式开局构筑三选一；只由工作簿 `START_CHOICES` 导出，运行时不得另写同名效果。
 - `44_run_growth.csv`：Run 等级与累计经验阈值；只由工作簿 `RUN_GROWTH` 导出。
 - `45_growth_choices.csv`：各等级三张正式成长卡；只由工作簿 `GROWTH_CHOICES` 导出。
+- `46_run_rules.csv`：Run 胜场目标与终局规则入口；只由工作簿 `RUN_RULES` 导出。
 
 ## 注意
 

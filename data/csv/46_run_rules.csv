@@ -1,0 +1,2 @@
+rule_id,run_win_target,status,source,note
+run_victory,10,正式,RUN_RULES,本局累计10场有效胜利即可提前完成；未达目标仍进入Day10终局Boss。

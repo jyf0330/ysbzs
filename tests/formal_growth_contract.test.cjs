@@ -37,6 +37,13 @@ function run(adapter, type, payload = {}) {
 
 test('formal growth data has 3 milestones, 9 choices, and 60 authored encounter XP values', () => {
   const data = loadGameData();
+  assert.deepEqual(data.runRules, [{
+    id: 'run_victory',
+    runWinTarget: 10,
+    status: '正式',
+    source: 'RUN_RULES',
+    note: '本局累计10场有效胜利即可提前完成；未达目标仍进入Day10终局Boss。'
+  }]);
   assert.deepEqual(data.runGrowth.map(row => [row.targetLevel, row.cumulativeXp]), [[2, 3], [3, 8], [4, 15]]);
   assert.equal(data.growthChoices.length, 9);
   for (const level of [2, 3, 4]) {

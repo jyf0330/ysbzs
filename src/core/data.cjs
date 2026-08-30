@@ -134,6 +134,12 @@ function validateData(d = loadGameData()) {
       if (![1, 2, 3].includes(Number(encounter.xpReward))) issues.push(`encounter ${encounter.encounterId} invalid xp reward ${encounter.xpReward}`);
     }
   }
-  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length, startChoices:(d.startChoices||[]).length, runGrowth:(d.runGrowth||[]).length, growthChoices:(d.growthChoices||[]).length }};
+  const formalRunRules = (d.runRules || []).filter(row => row.status === '正式');
+  if ((d.runRules || []).length) {
+    if (formalRunRules.length !== 1) issues.push(`run rules require exactly 1 formal row, got ${formalRunRules.length}`);
+    if (formalRunRules[0]?.id !== 'run_victory') issues.push('run rules require run_victory');
+    if (!Number.isInteger(Number(formalRunRules[0]?.runWinTarget)) || Number(formalRunRules[0]?.runWinTarget) < 1) issues.push('run_victory requires a positive integer win target');
+  }
+  return { ok: issues.length === 0, issues, indexes: ix, counts: { pets:d.pets.length, monsters:d.monsters.length, waves:d.waves.length, mechanisms:d.mechanisms.length, events:d.events.length, shop:d.shop.length, shopStores:(d.shopStores||[]).length, relics:d.relics.length, shapes:d.shapes.length, validation:d.validation.length, nodeSchedule:(d.nodeSchedule||[]).length, nodePool:(d.nodePool||[]).length, encounterPool:(d.encounterPool||[]).length, startChoices:(d.startChoices||[]).length, runGrowth:(d.runGrowth||[]).length, growthChoices:(d.growthChoices||[]).length, runRules:(d.runRules||[]).length }};
 }
 module.exports = { data, loadGameData, buildIndexes, validateData };

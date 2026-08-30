@@ -39,7 +39,8 @@ const TABLE_FILES = Object.freeze({
   shopStores: '30_shop_stores.csv',
   startChoices: '43_start_choices.csv',
   runGrowth: '44_run_growth.csv',
-  growthChoices: '45_growth_choices.csv'
+  growthChoices: '45_growth_choices.csv',
+  runRules: '46_run_rules.csv'
 });
 
 const LEGACY_MECHANIC_ALIAS = Object.freeze({
@@ -575,6 +576,13 @@ function normalizeSourceTables(sourceTables, options = {}) {
     source: row.source || row['来源'] || 'GROWTH_CHOICES',
     note: row.note || row['备注'] || ''
   })).filter(x => x.id).sort((a, b) => a.targetLevel - b.targetLevel || a.displayOrder - b.displayOrder || a.id.localeCompare(b.id));
+  const runRules = (sourceTables.runRules || []).map(row => ({
+    id: row.rule_id || row['规则ID'] || '',
+    runWinTarget: toNum(row.run_win_target || row['胜场目标'], 0),
+    status: row.status || row['状态'] || '',
+    source: row.source || row['来源'] || 'RUN_RULES',
+    note: row.note || row['备注'] || ''
+  })).filter(x => x.id);
 
   const yamlRules = loadWaveRulesYaml(options.waveRulesYaml || DEFAULT_WAVE_RULES_YAML);
   return {
@@ -617,6 +625,7 @@ function normalizeSourceTables(sourceTables, options = {}) {
     startChoices,
     runGrowth,
     growthChoices,
+    runRules,
     waveRules: {
       qualityMultiplierMap,
       ...yamlRules
@@ -678,7 +687,8 @@ function loadSourceTablesFromCsv(csvDir = DEFAULT_CSV_DIR) {
     shopStores: rows(TABLE_FILES.shopStores),
     startChoices: rows(TABLE_FILES.startChoices),
     runGrowth: rows(TABLE_FILES.runGrowth),
-    growthChoices: rows(TABLE_FILES.growthChoices)
+    growthChoices: rows(TABLE_FILES.growthChoices),
+    runRules: rows(TABLE_FILES.runRules)
   };
 }
 

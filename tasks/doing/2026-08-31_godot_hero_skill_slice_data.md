@@ -20,7 +20,7 @@
 
 ## write_scopes
 
-- `xlsx/ysbzs_master.xlsx`: 只新增 `HERO_SKILLS` sheet；不修改既有 sheet/公式/样式域。
+- `xlsx/ysbzs_master.xlsx`: 只新增/修正 `HERO_SKILLS` sheet；不修改既有 sheet/公式/样式域。
 - `tools/export_master_to_csv.py`: 只在 `MASTER_ONLY_EXPORTS` 注册 `HERO_SKILLS -> 43_hero_skills.csv`。
 - `43_hero_skills.csv`: 只由 workbook exporter 重建，不手改输出。
 - `README_csv_source.md`: 补充 43 表职责和 reserved 来源边界。
@@ -46,9 +46,9 @@
 
 ## downstream_schema_alignment_gate
 
-- Godot 已合入 validator v1 仍使用 `max_per_battle/max_per_battle_value_key`；本正式数据使用能正确表达商店事件的通用 `limit_scope + max_triggers/max_triggers_value_key`。
-- 下游必须先以独立原子提交统一 Godot schema/validator/domain test，禁止 builder 接受双别名或静默改名。
-- 对齐前不得把 43 表导入 `data/content/generated`；对齐后生成 package 必须直接通过同一个 `HeroSkillCatalogValidator`。
+- Godot 原子提交 `1f070178` 已统一为本批实际使用的 `event/battle + max_triggers/max_triggers_value_key`，并继续拒绝旧别名。
+- 下游 builder 必须同时读取 42 表，保证 `tag_references` 只引用正式 tag；英雄技能不拥有宠物身份字段 `build_tags`。
+- 生成 package 必须直接通过同一个 `HeroSkillCatalogValidator`；重舷尺寸条件必须使用 `triggering_pet_size_is`，不得把 `large` 伪装为 tag。
 
 ## validation_result
 
@@ -60,8 +60,11 @@
 - `npm run data:export:check`：PASS。
 - `node --test tests/unit/hero_skill_catalog_source.test.cjs`：1/1 PASS。
 - 7 条定义覆盖四基础品质、四类语义事件和首切所需五种 effect 外壳；每条来源 tier 与 2—7 个训练师关系精确匹配 34/35 表。
+- 阻断修正：移除 hero `build_tags`，`tag_references` 全部收口到 42 表的 31 个 playable tag；`large` 改为 `triggering_pet_size_is{size=large}`，42 表未新增伪标签。
+- tag 合同修正前 workbook 备份为 `outputs/2026-08-31-godot-hero-skill-slice-data/tag-contract-fix/ysbzs_master.before.xlsx`（SHA-256 `497f9b26dbd8b12517f2ef5d0c9de3e2c0b62502808d1681ec6dc90c72190796`）；修正后 workbook SHA-256 为 `3452e50b9c87b9ce82ffef2a28233f2717b806681437b080a11141fdacbf0b56`，candidate 重建除 43 表外零 CSV 漂移。
 
 ## commit_plan
 
 - 上游独立原子提交：`data: add first hero skill catalog slice`
+- 上游追加原子修正：`fix(hero-skills): enforce public tag references`
 - 只精确暂存本任务拥有文件；Godot 生成 package 由下游 exporter 从本 CSV 重建，不手改 JSON。

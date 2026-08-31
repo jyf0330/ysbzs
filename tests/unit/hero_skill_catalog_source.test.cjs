@@ -25,8 +25,10 @@ test('HERO_SKILLS workbook domain exports a rebuildable first slice', () => {
   const skills = rows('43_hero_skills.csv');
   const sources = rows('34_bazaar_objects.csv');
   const mappings = rows('35_bazaar_shop_mapping.csv');
+  const tags = rows('42_bazaar_tag_catalog.csv');
   const sourceById = new Map(sources.map(row => [row.object_id, row]));
   const trainerIds = new Set(mappings.filter(row => row.source_node_type === 'trainer').map(row => row.stall_id));
+  const formalTagIds = new Set(tags.filter(row => row.catalog_status === 'playable').map(row => row.tag_id));
 
   assert.equal(skills.length, 7, 'first slice keeps seven fully specified representative definitions');
   assert.deepEqual(new Set(skills.map(row => row.completeness)), new Set(['slice']));
@@ -45,6 +47,10 @@ test('HERO_SKILLS workbook domain exports a rebuildable first slice', () => {
     assert.match(skill.name_zh, /[\u3400-\u9fff]/u);
     assert.match(skill.description_zh, /[\u3400-\u9fff]/u);
     assert.ok(!Object.hasOwn(skill, 'source_name') && !Object.hasOwn(skill, 'source_effect'), 'English audit text is not executable catalog data');
+    assert.ok(!Object.hasOwn(skill, 'build_tags'), 'hero skills reference pet build identity but never own build_tags');
+    const tagReferences = ids(skill.tag_references);
+    assert.ok(tagReferences.length > 0, `${skill.skill_id} declares at least one formal tag reference`);
+    assert.ok(tagReferences.every(tagId => formalTagIds.has(tagId)), `${skill.skill_id} references only playable tag catalog ids`);
 
     const source = sourceById.get(skill.source_object_id);
     assert.ok(source, `${skill.skill_id} source exists`);
@@ -62,6 +68,23 @@ test('HERO_SKILLS workbook domain exports a rebuildable first slice', () => {
     const values = JSON.parse(skill.quality_values_json);
     triggerEvents.add(trigger.event);
     assert.ok(Array.isArray(trigger.conditions) && trigger.conditions.length > 0);
+    for (const condition of trigger.conditions) {
+      assert.equal(typeof condition.params, 'object');
+      assert.ok(!Array.isArray(condition.params));
+      if (condition.type === 'always') {
+        assert.deepEqual(condition.params, {});
+      } else if (condition.type === 'event_skill_has_any_tag') {
+        assert.deepEqual(Object.keys(condition.params), ['tags']);
+        assert.ok(condition.params.tags.length > 0 && condition.params.tags.every(tagId => formalTagIds.has(tagId)));
+      } else if (condition.type === 'hero_health_crossed_below_permille') {
+        assert.deepEqual(Object.keys(condition.params), ['threshold_permille']);
+        assert.ok(Number.isInteger(condition.params.threshold_permille) && condition.params.threshold_permille > 0 && condition.params.threshold_permille < 1000);
+      } else if (condition.type === 'triggering_pet_size_is') {
+        assert.deepEqual(condition.params, { size: 'large' });
+      } else {
+        assert.fail(`unknown condition type: ${condition.type}`);
+      }
+    }
     assert.equal(typeof trigger.allow_secondary_events, 'boolean');
     assert.ok(['battle', 'event'].includes(trigger.limit_scope));
     const valueKeys = [];
@@ -71,6 +94,14 @@ test('HERO_SKILLS workbook domain exports a rebuildable first slice', () => {
     for (const effect of effects) {
       effectTypes.add(effect.type);
       assert.ok(effect.id && effect.target && Array.isArray(effect.value_keys) && effect.value_keys.length > 0);
+      if (Object.hasOwn(effect.params, 'required_tags_all')) {
+        assert.ok(
+          Array.isArray(effect.params.required_tags_all)
+            && effect.params.required_tags_all.length > 0
+            && effect.params.required_tags_all.every(tagId => formalTagIds.has(tagId)),
+          `${skill.skill_id}.${effect.id} requires only playable tag catalog ids`,
+        );
+      }
       valueKeys.push(...effect.value_keys);
     }
     assert.equal(new Set(valueKeys).size, valueKeys.length, `${skill.skill_id} value keys are unambiguous`);
@@ -86,6 +117,8 @@ test('HERO_SKILLS workbook domain exports a rebuildable first slice', () => {
   assert.ok(triggerEvents.has('PET_SKILL_ROOT_SUCCEEDED'));
   assert.ok(triggerEvents.has('HERO_HEALTH_THRESHOLD_CROSSED'));
   assert.ok(triggerEvents.has('SHOP_REFRESH_REQUESTED'));
+  const heavyHull = skills.find(skill => skill.skill_id === 'hero_skill_heavy_hull_lock');
+  assert.deepEqual(JSON.parse(heavyHull.trigger_json).conditions, [{ type: 'triggering_pet_size_is', params: { size: 'large' } }]);
   for (const type of ['stat_modifier', 'shop_refresh_discount', 'cooldown_advance_ticks', 'cooldown_rate_permille', 'freeze_next_skill_root']) {
     assert.ok(effectTypes.has(type), `slice prepares ${type}`);
   }

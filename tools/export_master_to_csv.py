@@ -41,6 +41,7 @@ MASTER_ONLY_EXPORTS = [
     ("SHOP_MAPPING", "35_bazaar_shop_mapping.csv"),
     ("HERO_CATALOG", "41_hero_catalog.csv"),
     ("TAG_CATALOG", "42_bazaar_tag_catalog.csv"),
+    ("HERO_SKILLS", "43_hero_skills.csv"),
 ]
 
 DOMAIN_SECTION_SHEETS = [

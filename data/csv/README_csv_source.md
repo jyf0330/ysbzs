@@ -21,6 +21,7 @@
 - `08_action_shapes.csv`：宠物行动槽、元素、形状。
 - `09_cross_validation.csv`：人工校验说明。
 - `10_initial_roster.csv`：我方初始宠物和站位；想换开局阵容改这里。
+- `43_hero_skills.csv`：第一英雄被动技能正式定义；当前 `completeness=slice` 只表示已接入切片，来源关系仍以 `34_bazaar_objects.csv` 的 reserved skill 审计记录为准，不与宠物 A/B 技能目录混用。
 
 ## 注意
 

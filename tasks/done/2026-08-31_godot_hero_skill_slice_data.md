@@ -1,7 +1,7 @@
 # Godot 英雄技能首批正式数据真相链
 
 - task_id: `2026-08-31_godot_hero_skill_slice_data`
-- status: `READY_TO_MERGE`
+- status: `DONE`
 - owner: `Codex task 01a05757-4636-7e03-afa9-616fb039abb5`
 - branch: `codex/bazaar-day1-day3-route`
 
@@ -46,7 +46,7 @@
 
 ## downstream_schema_alignment_gate
 
-- Godot 原子提交 `1f070178` 已统一为本批实际使用的 `event/battle + max_triggers/max_triggers_value_key`，并继续拒绝旧别名。
+- Godot 原子提交 `8c0a6245` 已统一为本批实际使用的 `event/battle + max_triggers/max_triggers_value_key`，并继续拒绝旧别名；`c244a3e1` 已把正式第 17 个内容包接入 exporter/repository。
 - 下游 builder 必须同时读取 42 表，保证 `tag_references` 只引用正式 tag；英雄技能不拥有宠物身份字段 `build_tags`。
 - 生成 package 必须直接通过同一个 `HeroSkillCatalogValidator`；重舷尺寸条件必须使用 `triggering_pet_size_is`，不得把 `large` 伪装为 tag。
 
@@ -62,9 +62,15 @@
 - 7 条定义覆盖四基础品质、四类语义事件和首切所需五种 effect 外壳；每条来源 tier 与 2—7 个训练师关系精确匹配 34/35 表。
 - 阻断修正：移除 hero `build_tags`，`tag_references` 全部收口到 42 表的 31 个 playable tag；`large` 改为 `triggering_pet_size_is{size=large}`，42 表未新增伪标签。
 - tag 合同修正前 workbook 备份为 `outputs/2026-08-31-godot-hero-skill-slice-data/tag-contract-fix/ysbzs_master.before.xlsx`（SHA-256 `497f9b26dbd8b12517f2ef5d0c9de3e2c0b62502808d1681ec6dc90c72190796`）；修正后 workbook SHA-256 为 `3452e50b9c87b9ce82ffef2a28233f2717b806681437b080a11141fdacbf0b56`，candidate 重建除 43 表外零 CSV 漂移。
+- 下游消费验证：Python export `6/6`、hero domain/content/modular/effect-schema 四项 Godot smoke 与 fast QA `23/23` 全部通过；正式 `017` 为 `completeness=slice` 的 7 条目录基础，未宣称玩家技能已实现。
 
 ## commit_plan
 
 - 上游独立原子提交：`data: add first hero skill catalog slice`
 - 上游追加原子修正：`fix(hero-skills): enforce public tag references`
 - 只精确暂存本任务拥有文件；Godot 生成 package 由下游 exporter 从本 CSV 重建，不手改 JSON。
+
+## completion
+
+- 上游提交：`1131e83`、`0f65f37`。
+- 下游集成提交：`8c0a6245`、`c244a3e1`。

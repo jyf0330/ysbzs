@@ -55,6 +55,8 @@
 
 ## DONE
 
+- `tasks/done/2026-09-01_bazaar_shop_reward_profiles.md` — data: 为 56 个 Vanessa 商店事件逐条冻结本地奖励档案，服务摊位显式映射当前可执行商品并 fail-closed。
+
 - `tasks/done/2026-08-31_godot_hero_skill_slice_data.md` — data: 新增首批 7 条英雄技能正式 workbook/CSV 真相链，并完成 Godot 第 17 内容包消费验证。
 
 - `tasks/done/2026-08-31_bazaar_route_content_completion.md` — data: 完成 16 事件、10 休整、20 个真实遭遇三选一锚点及 workbook→CSV 真相链。

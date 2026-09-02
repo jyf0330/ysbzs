@@ -139,6 +139,7 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   assert.deepEqual(referenceSnapshots.map(row => row.source_snapshot_id), [
     'snapshot_the_bazaar_patch_18_0_boundary',
     'snapshot_vanessa_legacy_catalog_v1',
+    'snapshot_vanessa_local_cache_24720155_398715e6',
   ]);
   const currentBoundary = referenceSnapshots[0];
   assert.equal(currentBoundary.snapshot_role, 'current_version_boundary');
@@ -165,6 +166,38 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   assert.equal(legacySnapshot.license_status, 'unverified');
   assert.equal(legacySnapshot.usage_scope, 'reference_only');
   assert.equal(legacySnapshot.rule_verification_policy, 'per_record_required');
+  const localCacheSnapshot = referenceSnapshots[2];
+  assert.equal(localCacheSnapshot.snapshot_role, 'build_bound_catalog_candidate');
+  assert.equal(localCacheSnapshot.source_kind, 'local_installed_server_cache');
+  assert.equal(localCacheSnapshot.source_namespace, 'tempo_prod_cache_gamedata');
+  assert.equal(localCacheSnapshot.hero_scope, 'vanessa');
+  assert.equal(localCacheSnapshot.game_patch, null);
+  assert.equal(
+    localCacheSnapshot.game_build,
+    'steam_build_24720155+steam_lastupdated_epoch_1787836957+client_1.0.11980-prod-macos-arm64-d75a8ee9+gamedata_etag_398715e6296f400e5d7aa829f8f8ed35',
+  );
+  assert.equal(localCacheSnapshot.steam_app_id, '1617400');
+  assert.equal(localCacheSnapshot.steam_announcement_gid, null);
+  assert.equal(localCacheSnapshot.published_at_utc, null);
+  assert.equal(localCacheSnapshot.official_api_url, null);
+  assert.equal(localCacheSnapshot.official_announcement_url, null);
+  assert.equal(
+    localCacheSnapshot.raw_content_hash_subject,
+    'local_cache_GameData.db_raw_bytes:bytes=41197568:mtime_epoch=1788062922:manifest_observed_epoch=1788342470',
+  );
+  assert.equal(localCacheSnapshot.raw_content_sha256, '352c635cda5acf8af7ab91a81fa73a5d33c3e6beec19ffd9e29dbd17d8a89d31');
+  assert.equal(localCacheSnapshot.record_count, '276');
+  assert.equal(localCacheSnapshot.license_status, 'unverified');
+  assert.equal(localCacheSnapshot.usage_scope, 'reference_only');
+  assert.equal(
+    localCacheSnapshot.rule_verification_policy,
+    'identity_set_locked:item_id_set_sha256=ac97522afdae6d9f0174b4c695bc272252adcc6ad9aea924853712e43d6d9708;skill_id_set_sha256=66cacbf986415cf6218e98254274d4b58c528136186e7fc7b632d0b01588d81b;per_record_rule_semantics_and_live_trace_required',
+  );
+  assert.equal(localCacheSnapshot.catalog_status, 'reference_reserved');
+  assert.equal(
+    localCacheSnapshot.unresolved_fields,
+    'game_patch,explicit_patch_build_binding,license_terms,merchant_package_identity',
+  );
   assert.ok(objects.every(row => row.source_snapshot_id === legacySnapshot.source_snapshot_id));
   assert.ok(objects.every(row => row.current_version_boundary_snapshot_id === currentBoundary.source_snapshot_id));
   assert.ok(objects.every(row => row.identity_confirmed === 'true'));
@@ -253,6 +286,11 @@ def forged(mutator, expected):
     raise AssertionError(expected)
 
 forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][0].__setitem__('raw_content_sha256', '0' * 64), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('game_patch', '18.0'), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('record_count', '277'), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('license_status', 'verified'), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('rule_verification_policy', t['66_bazaar_reference_snapshots.csv'][0][2]['rule_verification_policy'].replace(exporter.LOCAL_CACHE_ITEM_ID_SET_SHA256, '0' * 64)), 'LOCAL_ID_SET_LOCK_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('rule_verification_policy', 'identity_set_locked:item_id_set_sha256=bad;skill_id_set_sha256=bad;per_record_rule_semantics_and_live_trace_required'), 'LOCAL_ID_SET_LOCK_INVALID')
 forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('source_snapshot_id', exporter.CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID), 'LEGACY_BINDING_INVALID')
 forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('rule_verified', 'true'), 'VERIFICATION_INVALID')
 forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('catalog_status', 'playable'), 'STATUS_INVALID')

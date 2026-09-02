@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_tidescar_matchlock` 收口刷新。
+最后刷新：2026-09-03，由 `2026-09-03_bazaar_local_gamedata_source_lock` 收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_bazaar_local_gamedata_source_lock.md` — data source: 固定本机已安装客户端的 build-bound GameData、Vanessa 138/138 身份集合与不可再分发边界。
 
 - `tasks/done/2026-09-03_original_pirate_tidescar_matchlock.md` — data content: 新增正式可达的“潮痕火绳枪”、当场伤害成长 operation 与完整品质/刷新/进阶/适用铭刻数据。
 

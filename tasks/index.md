@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_hero_skill_content` 收口。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_hero_skill_training` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_hero_skill_training.md` — data contract: 新增独立英雄技能训练师与学习/相邻升阶 offer，冻结价格、日窗、逐品质中文效果及 Day 10 可达性。
 
 - `tasks/done/2026-09-03_original_pirate_hero_skill_content.md` — data contract: 物品技能与英雄技能正式分域，新增两项原创雾航英雄被动、起始实例与十日 Ghost 品质实例。
 

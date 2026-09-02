@@ -23,8 +23,10 @@
 - `10_initial_roster.csv`：我方初始宠物和站位；想换开局阵容改这里。
 - `43_hero_skills.csv`：第一英雄被动技能正式定义；当前 `completeness=slice` 只表示已接入切片，来源关系仍以 `34_bazaar_objects.csv` 的 reserved skill 审计记录为准，不与宠物 A/B 技能目录混用。
 - `48_bz_item_skills.csv`：`original_pirate` 的物品技能目录，只能由 `46_bz_items.csv.item_skill_id` 与 `47_bz_item_effects.csv.item_skill_id` 引用；不得作为英雄技能。
-- `62_bz_hero_skills.csv`：雾航船长的原创英雄被动技能，按技能与品质冻结 `friendly_item_used` 触发次数及正式效果数值；不复用 `43_hero_skills.csv` 的 `hero_001` 参考审计切片。
-- `63_bz_hero_skill_loadouts.csv`：英雄起始与离线 Ghost 的规范化英雄技能实例，`starter` 与 `ghost_snapshot` 分别投影到英雄目录和 Ghost build，并共同参与运行包 hash。
+- `62_bz_hero_skills.csv`：雾航船长的原创英雄被动技能，按技能与品质冻结 `friendly_item_used` 触发次数、正式效果数值和逐品质中文效果文案；不复用 `43_hero_skills.csv` 的 `hero_001` 参考审计切片。
+- `63_bz_hero_skill_loadouts.csv`：英雄起始与离线 Ghost 的规范化英雄技能实例；起始仅携带雾线追炮，`starter` 与 `ghost_snapshot` 分别投影到英雄目录和 Ghost build，并共同参与运行包 hash。
+- `64_bz_hero_skill_trainers.csv`：英雄技能训练师目录；训练师归属英雄并绑定正式摊位，和物品商店目录保持独立。
+- `65_bz_hero_skill_offers.csv`：英雄技能学习与相邻品质升阶入口；`offer_id` 是命令内容身份，价格、日窗、顺序和 `learn|upgrade` action 均由正式数据冻结。学习所得实例来源固定为 `sourceType=hero_skill_trainer`、`sourceId=trainer_id`。
 
 ## 注意
 

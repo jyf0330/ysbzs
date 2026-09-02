@@ -19,7 +19,8 @@ const domainFiles = [
   '56_bz_source_snapshot.csv', '57_bz_item_upgrades.csv', '58_bz_enchantments.csv',
   '59_bz_level_up_choices.csv', '60_bz_ghost_snapshots.csv',
   '61_bz_last_chance_choices.csv', '62_bz_hero_skills.csv',
-  '63_bz_hero_skill_loadouts.csv',
+  '63_bz_hero_skill_loadouts.csv', '64_bz_hero_skill_trainers.csv',
+  '65_bz_hero_skill_offers.csv',
 ];
 const sheets = domainFiles.map((name) => `BZ_${name.replace(/^\d+_bz_|\.csv$/g, '').toUpperCase()}`);
 
@@ -99,6 +100,8 @@ function expectedBundleHash(content) {
     }
   }
   catalogs.heroSkills.sort((left, right) => stableIdCompare(left.heroSkillId, right.heroSkillId));
+  catalogs.heroSkillTrainers.sort((left, right) => stableIdCompare(left.trainerId, right.trainerId));
+  catalogs.heroSkillOffers.sort((left, right) => stableIdCompare(left.offerId, right.offerId));
   for (const stall of catalogs.stalls) stall.shopTemplateIds.sort();
   catalogs.stalls.sort((left, right) => stableIdCompare(left.stallId, right.stallId));
   catalogs.upgrades.sort((left, right) => stableIdCompare(left.upgradeId, right.upgradeId));
@@ -209,7 +212,7 @@ function reverseDataRows(dir, file) {
   fs.writeFileSync(target, encodeCsv([rows[0], ...rows.slice(1).reverse()]), 'utf8');
 }
 
-test('OPC01 workbook 的 20 个 original-pirate BZ 页与 CSV 可逐字重建', () => {
+test('OPC01 workbook 的 22 个 original-pirate BZ 页与 CSV 可逐字重建', () => {
   const code = `
 import csv, json, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(sys.argv[5]) / 'tools'))
@@ -230,7 +233,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v13/v11 物品技能与英雄技能分域、Ghost 实例和既有规则确定且 hash 兼容', () => {
+test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -247,13 +250,13 @@ test('OPC02 v13/v11 物品技能与英雄技能分域、Ghost 实例和既有规
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 13);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v9');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v10');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v10');
+  assert.equal(content.schemaVersion, 14);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v10');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v11');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v11');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 11);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v10');
+  assert.equal(content.runtimeBundle.schemaVersion, 12);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v11');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -421,17 +424,19 @@ test('OPC02 v13/v11 物品技能与英雄技能分域、Ghost 实例和既有规
   assert.equal('maxDay' in generation.battle || 'maxRefreshIndex' in generation.shop, false);
   const catalogs = content.runtimeBundle.executableCatalogs;
   assert.deepEqual(Object.keys(catalogs).sort(), [
-    'enchantments', 'eventOptions', 'events', 'heroes', 'heroSkills', 'itemSkills',
-    'rewards', 'schema', 'schemaVersion', 'stalls', 'upgrades',
+    'enchantments', 'eventOptions', 'events', 'heroes', 'heroSkillOffers',
+    'heroSkillTrainers', 'heroSkills', 'itemSkills', 'rewards', 'schema',
+    'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 4,
+    'ysbzs.original-pirate-executable-catalogs.v1', 5,
   ]);
   assert.deepEqual([
-    catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length, catalogs.stalls.length,
+    catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
+    catalogs.heroSkillTrainers.length, catalogs.heroSkillOffers.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 6, 2, 1, 4, 8, 8, 12, 3]);
+  ], [1, 6, 2, 2, 7, 1, 4, 8, 8, 12, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
     'heroId', 'heroSkillIds', 'startingHeroSkills',
   ]);
@@ -444,12 +449,48 @@ test('OPC02 v13/v11 物品技能与英雄技能分域、Ghost 实例和既有规
       quality: 'bronze', sourceType: 'starting_loadout', sourceId: 'hero_mistwake_captain',
       acquiredDay: 1, acquiredSeq: 1,
     },
+  ]);
+  assert.deepEqual(catalogs.heroSkillTrainers, [
     {
-      instanceId: 'starter_hero_skill_tailwind_return', heroSkillId: 'hero_skill_tailwind_return',
-      quality: 'bronze', sourceType: 'starting_loadout', sourceId: 'hero_mistwake_captain',
-      acquiredDay: 1, acquiredSeq: 2,
+      trainerId: 'trainer_mistwake_gunnery', heroId: 'hero_mistwake_captain',
+      stallId: 'stall_mistwake', offerSlots: 1,
+      offerIds: [
+        'hero_skill_offer_mist_salvo_bronze_silver',
+        'hero_skill_offer_mist_salvo_silver_gold',
+        'hero_skill_offer_mist_salvo_gold_diamond',
+      ],
+    },
+    {
+      trainerId: 'trainer_mistwake_rigging', heroId: 'hero_mistwake_captain',
+      stallId: 'stall_mistwake', offerSlots: 1,
+      offerIds: [
+        'hero_skill_offer_tailwind_return_learn_bronze',
+        'hero_skill_offer_tailwind_return_bronze_silver',
+        'hero_skill_offer_tailwind_return_silver_gold',
+        'hero_skill_offer_tailwind_return_gold_diamond',
+      ],
     },
   ]);
+  const heroSkillOfferById = Object.fromEntries(
+    catalogs.heroSkillOffers.map((offer) => [offer.offerId, offer]),
+  );
+  assert.deepEqual(heroSkillOfferById.hero_skill_offer_tailwind_return_learn_bronze, {
+    offerId: 'hero_skill_offer_tailwind_return_learn_bronze',
+    trainerId: 'trainer_mistwake_rigging', heroSkillId: 'hero_skill_tailwind_return',
+    action: { type: 'learn', toQuality: 'bronze' },
+    price: { currency: 'gold', amount: 5 }, availability: { fromDay: 1, toDay: 10 }, order: 1,
+  });
+  assert.deepEqual(heroSkillOfferById.hero_skill_offer_mist_salvo_gold_diamond, {
+    offerId: 'hero_skill_offer_mist_salvo_gold_diamond',
+    trainerId: 'trainer_mistwake_gunnery', heroSkillId: 'hero_skill_mist_salvo',
+    action: {
+      type: 'upgrade', upgradeId: 'hero_skill_upgrade_mist_salvo_gold_diamond',
+      fromQuality: 'gold', toQuality: 'diamond',
+    },
+    price: { currency: 'gold', amount: 12 }, availability: { fromDay: 8, toDay: 10 }, order: 3,
+  });
+  assert.equal(catalogs.heroSkillOffers.filter(({ action }) => action.type === 'learn').length, 1);
+  assert.equal(catalogs.heroSkillOffers.filter(({ action }) => action.type === 'upgrade').length, 6);
   const heroSkillById = Object.fromEntries(catalogs.heroSkills.map((skill) => [skill.heroSkillId, skill]));
   assert.deepEqual(Object.keys(heroSkillById.hero_skill_mist_salvo).sort(), [
     'heroId', 'heroSkillId', 'priority', 'qualityProfiles', 'reentrant', 'triggerEvent',
@@ -525,11 +566,11 @@ test('OPC02 v13/v11 物品技能与英雄技能分域、Ghost 实例和既有规
     'contentRevision', 'entries', 'gameplayId', 'schema', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
-  assert.equal(display.schemaVersion, 2);
+  assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v10');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v10');
-  assert.equal(display.entries.length, 72);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v11');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v11');
+  assert.equal(display.entries.length, 89);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -541,6 +582,26 @@ test('OPC02 v13/v11 物品技能与英雄技能分域、Ghost 实例和既有规
     sourceId: 'hero_skill_mist_salvo', nameZh: '雾线追炮',
     descriptionZh: '英雄被动：每当我方物品完成一次使用，雾航船长向敌方英雄追加追击炮火；每场触发次数与伤害由品质决定。',
   });
+  assert.deepEqual(display.entries.find(({ displayId }) => (
+    displayId === 'hero_skill_quality_profiles.hero_skill_mist_salvo.gold'
+  )), {
+    displayId: 'hero_skill_quality_profiles.hero_skill_mist_salvo.gold',
+    domain: 'hero_skill_quality_profiles', sourceId: 'hero_skill_mist_salvo.gold',
+    nameZh: '雾线追炮·黄金',
+    descriptionZh: '每场战斗中，前两次我方物品使用后，每次对敌方英雄造成两点伤害。',
+  });
+  assert.deepEqual(display.entries.find(({ displayId }) => (
+    displayId === 'hero_skill_trainers.trainer_mistwake_rigging'
+  )), {
+    displayId: 'hero_skill_trainers.trainer_mistwake_rigging',
+    domain: 'hero_skill_trainers', sourceId: 'trainer_mistwake_rigging',
+    nameZh: '回风索具席',
+    descriptionZh: '在雾航补给舱内传授顺风回索，并提供与当前品质相邻的正式进阶。',
+  });
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'hero_skill_offers.hero_skill_offer_tailwind_return_learn_bronze'
+  )).descriptionZh, /学习青铜品质/);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'hero_skill_quality_profiles').length, 8);
   assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
   assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 6);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'level_up_options.level_option_2_upgrade'), {
@@ -585,6 +646,7 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
     ['hero-skill-trigger', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'trigger_event', 'item_ready')],
     ['hero-skill-reentrant', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'reentrant', 'true')],
     ['hero-skill-owner-drift', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'hero_id', 'hero_missing')],
+    ['hero-skill-effect-description', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'effect_description_zh', '')],
     ['hero-skill-quality-missing', (dir) => {
       const target = path.join(dir, '62_bz_hero_skills.csv');
       const rows = parseCsv(fs.readFileSync(target, 'utf8'));
@@ -595,11 +657,32 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
     ['hero-skill-effect-params', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'ticks', '1')],
     ['hero-skill-loadout-unknown', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 1, 'hero_skill_id', 'skill_brine_cannon')],
     ['hero-skill-loadout-quality', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 1, 'quality', 'silver')],
-    ['hero-skill-loadout-order', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 2, 'acquired_seq', '1')],
-    ['hero-skill-loadout-instance-duplicate', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 2, 'instance_id', 'starter_hero_skill_mist_salvo')],
-    ['hero-skill-loadout-source', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'source_type', 'starting_loadout')],
-    ['ghost-hero-skill-day', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'acquired_day', '2')],
-    ['ghost-hero-skill-quality-band', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'quality', 'silver')],
+    ['hero-skill-loadout-order', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'acquired_seq', '1')],
+    ['hero-skill-loadout-instance-duplicate', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'instance_id', 'ghost_d01_hero_skill_mist_salvo')],
+    ['hero-skill-loadout-source', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 2, 'source_type', 'starting_loadout')],
+    ['ghost-hero-skill-day', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 2, 'acquired_day', '2')],
+    ['ghost-hero-skill-quality-band', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 2, 'quality', 'silver')],
+    ['hero-skill-trainer-owner', (dir) => mutateCell(dir, '64_bz_hero_skill_trainers.csv', 1, 'hero_id', 'hero_missing')],
+    ['hero-skill-trainer-stall', (dir) => mutateCell(dir, '64_bz_hero_skill_trainers.csv', 1, 'stall_id', 'stall_missing')],
+    ['hero-skill-trainer-slots', (dir) => mutateCell(dir, '64_bz_hero_skill_trainers.csv', 1, 'offer_slots', '4')],
+    ['hero-skill-offer-item-collision', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'offer_id', 'offer_initial_signal_flare')],
+    ['hero-skill-offer-trainer', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'trainer_id', 'trainer_missing')],
+    ['hero-skill-offer-skill', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'hero_skill_id', 'hero_skill_missing')],
+    ['hero-skill-offer-action', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 4, 'action_type', 'purchase')],
+    ['hero-skill-offer-learn-upgrade-id', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 4, 'upgrade_id', 'forged_upgrade')],
+    ['hero-skill-upgrade-item-collision', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'upgrade_id', 'upgrade_brine_cannon_bronze_silver')],
+    ['hero-skill-offer-nonadjacent', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'to_quality', 'gold')],
+    ['hero-skill-offer-currency', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'price_currency', 'gems')],
+    ['hero-skill-offer-price', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'price_amount', '0')],
+    ['hero-skill-offer-window-order', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'to_day', '1')],
+    ['hero-skill-offer-beyond-day10', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'to_day', '11')],
+    ['hero-skill-offer-order', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 2, 'offer_order', '1')],
+    ['hero-skill-learn-path-missing', (dir) => {
+      const target = path.join(dir, '65_bz_hero_skill_offers.csv');
+      const rows = parseCsv(fs.readFileSync(target, 'utf8'));
+      rows.splice(4, 1);
+      fs.writeFileSync(target, encodeCsv(rows));
+    }],
     ['ghost-snapshot-item', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'item_id', 'item_missing')],
     ['ghost-snapshot-instance-duplicate', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 2, 'instance_id', 'ghost_d01_ram')],
     ['relation', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_missing')],
@@ -699,7 +782,7 @@ test('OPC04 缺任一声明刷新层或日程战斗槽时整包拒绝', () => {
   assert.equal(fs.existsSync(battleOut), false);
 });
 
-test('OPC05 20 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
+test('OPC05 22 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
   const baselineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-canonical-baseline-'));
   const baselineOut = path.join(baselineDir, 'content.json');
   const baselineDisplay = path.join(baselineDir, 'display.json');
@@ -715,8 +798,29 @@ test('OPC05 20 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v13/v11 forged hero skill、Ghost、catalog 或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v13-forgery-'));
+test('OPC05B starter 与 Ghost 允许非空合法英雄技能子集', () => {
+  const subsetDir = mutateDomain((dir) => {
+    const target = path.join(dir, '63_bz_hero_skill_loadouts.csv');
+    const rows = parseCsv(fs.readFileSync(target, 'utf8'));
+    const kindColumn = rows[0].indexOf('loadout_kind');
+    const skillColumn = rows[0].indexOf('hero_skill_id');
+    fs.writeFileSync(target, encodeCsv(rows.filter((row, index) => (
+      index === 0 || row[kindColumn] !== 'ghost_snapshot'
+        || row[skillColumn] !== 'hero_skill_tailwind_return'
+    ))));
+  });
+  const out = path.join(subsetDir, 'subset.json');
+  assert.equal(runExporter(subsetDir, out).status, 0);
+  const content = JSON.parse(fs.readFileSync(out, 'utf8'));
+  assert.equal(content.runtimeBundle.executableCatalogs.heroes[0].startingHeroSkills.length, 1);
+  assert.equal(content.runtimeBundle.generation.battle.ghostSnapshots.every(({ build }) => (
+    build.heroSkills.length === 1 && build.heroSkills[0].heroSkillId === 'hero_skill_mist_salvo'
+  )), true);
+  assert.equal(validatePackageFile(out).status, 0);
+});
+
+test('OPC06 v14/v12 forged hero skill training、Ghost、catalog 或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v14-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -842,7 +946,46 @@ test('OPC06 v13/v11 forged hero skill、Ghost、catalog 或 hash 整包拒绝', 
       value.runtimeBundle.executableCatalogs.heroes[0].startingHeroSkills[0].sourceType = 'offline_snapshot';
     }],
     ['starting-hero-skill-order', (value) => {
-      value.runtimeBundle.executableCatalogs.heroes[0].startingHeroSkills[1].acquiredSeq = 1;
+      value.runtimeBundle.executableCatalogs.heroes[0].startingHeroSkills[0].acquiredSeq = 2;
+    }],
+    ['starting-hero-skill-empty', (value) => {
+      value.runtimeBundle.executableCatalogs.heroes[0].startingHeroSkills = [];
+    }],
+    ['hero-skill-trainer-extra-field', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillTrainers[0].sourceType = 'hero_skill_trainer';
+    }],
+    ['hero-skill-trainer-stall', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillTrainers[0].stallId = 'stall_missing';
+    }],
+    ['hero-skill-trainer-offer-order', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillTrainers[0].offerIds.reverse();
+    }],
+    ['hero-skill-offer-extra-field', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillOffers[0].sourceType = 'hero_skill_trainer';
+    }],
+    ['hero-skill-learn-action-extra-field', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillOffers
+        .find(({ action }) => action.type === 'learn').action.fromQuality = '';
+    }],
+    ['hero-skill-upgrade-transition', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillOffers
+        .find(({ action }) => action.type === 'upgrade').action.toQuality = 'diamond';
+    }],
+    ['hero-skill-upgrade-item-collision', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillOffers
+        .find(({ action }) => action.type === 'upgrade').action.upgradeId =
+          value.runtimeBundle.executableCatalogs.upgrades[0].upgradeId;
+    }],
+    ['hero-skill-offer-price-currency', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillOffers[0].price.currency = 'gems';
+    }],
+    ['hero-skill-offer-window-beyond-maximum-day', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkillOffers[0].availability.toDay = 11;
+    }],
+    ['hero-skill-offer-order-duplicate', (value) => {
+      const offers = value.runtimeBundle.executableCatalogs.heroSkillOffers
+        .filter(({ trainerId }) => trainerId === 'trainer_mistwake_gunnery');
+      offers[1].order = offers[0].order;
     }],
     ['retired-level-placeholder-through-event', (value) => { value.runtimeBundle.executableCatalogs.eventOptions[0].rewardId = 'reward_level_2'; }],
     ['item-reward-board-slot', (value) => { value.runtimeBundle.executableCatalogs.rewards.find(({ rewardId }) => rewardId === 'reward_signal_flare').effects[0].startSlot = 4; }],

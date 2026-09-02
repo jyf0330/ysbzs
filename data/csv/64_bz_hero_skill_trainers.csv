@@ -1,0 +1,3 @@
+trainer_id,hero_id,stall_id,name_zh,description_zh,offer_slots,catalog_status
+trainer_mistwake_gunnery,hero_mistwake_captain,stall_mistwake,雾航炮术席,在雾航补给舱内校准雾线追炮，只提供与当前品质相邻的正式进阶。,1,formal
+trainer_mistwake_rigging,hero_mistwake_captain,stall_mistwake,回风索具席,在雾航补给舱内传授顺风回索，并提供与当前品质相邻的正式进阶。,1,formal

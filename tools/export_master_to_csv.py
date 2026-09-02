@@ -51,6 +51,8 @@ ORIGINAL_PIRATE_EXPORTS = [
     ("BZ_LAST_CHANCE_CHOICES", "61_bz_last_chance_choices.csv"),
     ("BZ_HERO_SKILLS", "62_bz_hero_skills.csv"),
     ("BZ_HERO_SKILL_LOADOUTS", "63_bz_hero_skill_loadouts.csv"),
+    ("BZ_HERO_SKILL_TRAINERS", "64_bz_hero_skill_trainers.csv"),
+    ("BZ_HERO_SKILL_OFFERS", "65_bz_hero_skill_offers.csv"),
 ]
 
 MASTER_ONLY_EXPORTS = [

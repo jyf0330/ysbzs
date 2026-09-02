@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 20 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 22 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v13 candidate package while still validating every
+outside the formal v14 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,21 +25,21 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 13
+CONTENT_SCHEMA_VERSION = 14
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 11
-SOURCE_CONTENT_SCHEMA_VERSION = 11
-SOURCE_RUNTIME_SCHEMA_VERSION = 9
+RUNTIME_SCHEMA_VERSION = 12
+SOURCE_CONTENT_SCHEMA_VERSION = 12
+SOURCE_RUNTIME_SCHEMA_VERSION = 10
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
 GENERATION_SCHEMA_VERSION = 3
 GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
-DISPLAY_SCHEMA_VERSION = 2
+DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 4
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 5
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,9 +51,10 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v9"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v10"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
+QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
 ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
 ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status"}
 ITEM_STATUSES = {"haste", "slow", "freeze"}
@@ -158,7 +159,7 @@ DOMAIN_HEADERS = OrderedDict([
         "restore_prestige", "cost_type", "cost_amount", "catalog_status",
     ]),
     ("62_bz_hero_skills.csv", [
-        "hero_skill_id", "hero_id", "quality", "name_zh", "description_zh",
+        "hero_skill_id", "hero_id", "quality", "name_zh", "description_zh", "effect_description_zh",
         "priority", "trigger_event", "reentrant", "max_triggers_per_battle",
         "effect_id", "target_type", "operation_type", "amount", "ticks",
         "catalog_status",
@@ -166,6 +167,15 @@ DOMAIN_HEADERS = OrderedDict([
     ("63_bz_hero_skill_loadouts.csv", [
         "loadout_kind", "loadout_id", "instance_id", "hero_skill_id", "quality",
         "source_type", "source_id", "acquired_day", "acquired_seq", "catalog_status",
+    ]),
+    ("64_bz_hero_skill_trainers.csv", [
+        "trainer_id", "hero_id", "stall_id", "name_zh", "description_zh",
+        "offer_slots", "catalog_status",
+    ]),
+    ("65_bz_hero_skill_offers.csv", [
+        "offer_id", "trainer_id", "hero_skill_id", "action_type", "upgrade_id",
+        "from_quality", "to_quality", "price_currency", "price_amount", "from_day",
+        "to_day", "offer_order", "name_zh", "description_zh", "catalog_status",
     ]),
 ])
 
@@ -183,6 +193,8 @@ DISPLAY_DOMAINS = [
     ("59_bz_level_up_choices.csv", "level_up_options", "option_id"),
     ("61_bz_last_chance_choices.csv", "last_chance_options", "option_id"),
     ("62_bz_hero_skills.csv", "hero_skills", "hero_skill_id"),
+    ("64_bz_hero_skill_trainers.csv", "hero_skill_trainers", "trainer_id"),
+    ("65_bz_hero_skill_offers.csv", "hero_skill_offers", "offer_id"),
 ]
 
 
@@ -373,6 +385,8 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
         for profile in skill.get("qualityProfiles", {}).values():
             profile.get("effects", []).sort(key=lambda value: value.get("effectId", ""))
     catalogs.get("heroSkills", []).sort(key=lambda value: value.get("heroSkillId", ""))
+    catalogs.get("heroSkillTrainers", []).sort(key=lambda value: value.get("trainerId", ""))
+    catalogs.get("heroSkillOffers", []).sort(key=lambda value: value.get("offerId", ""))
     for stall in catalogs.get("stalls", []):
         stall.get("shopTemplateIds", []).sort()
     catalogs.get("stalls", []).sort(key=lambda value: value.get("stallId", ""))
@@ -582,7 +596,8 @@ def _validate_combat_build(
             instance_ids.add(instance["instanceId"])
             skill_ids.add(instance["heroSkillId"])
             sequences.append(instance["acquiredSeq"])
-        if skill_ids != owned_hero_skill_ids or sequences != list(range(1, len(sequences) + 1)):
+        if not skill_ids or not skill_ids.issubset(owned_hero_skill_ids) \
+                or sequences != list(range(1, len(sequences) + 1)):
             raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_SKILLS_INVALID:{context}:{hero_id}")
     hp = _expect_integer(hero["hp"], f"{context}:hero:hp", 1)
     max_hp = _expect_integer(hero["maxHp"], f"{context}:hero:maxHp", 1)
@@ -636,7 +651,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v13/v11 candidate package without accepting partial data."""
+    """Validate the formal v14/v12 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -807,8 +822,9 @@ def validate_package(package: Any) -> None:
         raise ExportError("EXECUTABLE_PROGRESSION_OPTION_COVERAGE_INVALID")
 
     catalogs = _expect_exact_fields(bundle["executableCatalogs"], {
-        "schema", "schemaVersion", "heroes", "itemSkills", "heroSkills", "stalls", "events",
-        "eventOptions", "rewards", "upgrades", "enchantments",
+        "schema", "schemaVersion", "heroes", "itemSkills", "heroSkills",
+        "heroSkillTrainers", "heroSkillOffers", "stalls", "events", "eventOptions",
+        "rewards", "upgrades", "enchantments",
     }, "executableCatalogs")
     if catalogs["schema"] != EXECUTABLE_CATALOGS_SCHEMA \
             or catalogs["schemaVersion"] != EXECUTABLE_CATALOGS_SCHEMA_VERSION:
@@ -841,7 +857,7 @@ def validate_package(package: Any) -> None:
             "qualityProfiles",
         }, "heroSkills"
     )
-    if len(hero_skills) != 2 or set(item_skills).intersection(hero_skills):
+    if not hero_skills or set(item_skills).intersection(hero_skills):
         raise ExportError("EXECUTABLE_HERO_SKILL_CATALOG_INVALID")
     hero_effect_ids: set[str] = set()
     priorities: set[int] = set()
@@ -877,6 +893,7 @@ def validate_package(package: Any) -> None:
     heroes = _directory(_expect_list(catalogs["heroes"], "catalogs:heroes"), "heroId", {
         "heroId", "heroSkillIds", "startingHeroSkills",
     }, "heroes")
+    starting_skill_ids_by_hero: dict[str, set[str]] = {}
     for hero_id, hero in heroes.items():
         hero_skill_ids = [
             _expect_stable_id(skill_id, f"heroes:{hero_id}:heroSkillIds")
@@ -903,9 +920,10 @@ def validate_package(package: Any) -> None:
             starting_ids.add(instance["instanceId"])
             starting_skill_ids.add(instance["heroSkillId"])
             starting_sequences.append(instance["acquiredSeq"])
-        if starting_skill_ids != set(hero_skill_ids) \
+        if not starting_skill_ids or not starting_skill_ids.issubset(set(hero_skill_ids)) \
                 or starting_sequences != list(range(1, len(starting) + 1)):
             raise ExportError(f"EXECUTABLE_HERO_STARTING_SKILLS_INVALID:{hero_id}")
+        starting_skill_ids_by_hero[hero_id] = starting_skill_ids
     new_run = _expect_exact_fields(bundle["newRunTemplate"], {
         "schemaVersion", "stateVersion", "phase", "day", "hour", "activeNode", "seed",
         "hero", "economy", "run", "board", "stash", "itemInstances", "shop", "battle",
@@ -1019,9 +1037,143 @@ def validate_package(package: Any) -> None:
     if catalog_template_refs != set(shop_templates):
         raise ExportError("EXECUTABLE_STALL_TEMPLATE_COVERAGE_INVALID")
 
+    hero_skill_trainers = _directory(
+        _expect_list(catalogs["heroSkillTrainers"], "catalogs:heroSkillTrainers"),
+        "trainerId",
+        {"trainerId", "heroId", "stallId", "offerSlots", "offerIds"},
+        "heroSkillTrainers",
+    )
+    hero_skill_offers = _directory(
+        _expect_list(catalogs["heroSkillOffers"], "catalogs:heroSkillOffers"),
+        "offerId",
+        {
+            "offerId", "trainerId", "heroSkillId", "action", "price",
+            "availability", "order",
+        },
+        "heroSkillOffers",
+    )
+    if not hero_skill_trainers or not hero_skill_offers \
+            or set(hero_skill_trainers).intersection(set(hero_skills) | set(item_skills) | set(stalls)) \
+            or set(hero_skill_offers).intersection(
+                set(shop_templates) | set(hero_skill_trainers) | set(hero_skills) | set(item_skills)
+            ):
+        raise ExportError("EXECUTABLE_HERO_SKILL_TRAINING_CATALOG_INVALID")
+    offers_by_trainer: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    learn_by_skill: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    upgrade_by_transition: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    upgrade_ids: set[str] = set()
+    for offer_id, offer in hero_skill_offers.items():
+        trainer_id = _expect_stable_id(offer["trainerId"], f"heroSkillOffers:{offer_id}:trainerId")
+        trainer = hero_skill_trainers.get(trainer_id)
+        if trainer is None:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_OFFER_TRAINER_UNKNOWN:{offer_id}")
+        hero_skill_id = _expect_stable_id(
+            offer["heroSkillId"], f"heroSkillOffers:{offer_id}:heroSkillId"
+        )
+        skill = hero_skills.get(hero_skill_id)
+        if skill is None or skill["heroId"] != trainer["heroId"]:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_OFFER_OWNER_INVALID:{offer_id}")
+        action = offer["action"]
+        if not isinstance(action, dict):
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_OFFER_ACTION_INVALID:{offer_id}")
+        action_type = action.get("type")
+        if action_type == "learn":
+            _expect_exact_fields(action, {"type", "toQuality"}, f"heroSkillOffers:{offer_id}:action")
+            if action["toQuality"] != "bronze":
+                raise ExportError(f"EXECUTABLE_HERO_SKILL_LEARN_ACTION_INVALID:{offer_id}")
+            learn_by_skill[hero_skill_id].append(offer)
+        elif action_type == "upgrade":
+            _expect_exact_fields(
+                action,
+                {"type", "upgradeId", "fromQuality", "toQuality"},
+                f"heroSkillOffers:{offer_id}:action",
+            )
+            upgrade_id = _expect_stable_id(
+                action["upgradeId"], f"heroSkillOffers:{offer_id}:action:upgradeId"
+            )
+            if upgrade_id in upgrade_ids:
+                raise ExportError(f"EXECUTABLE_HERO_SKILL_UPGRADE_ID_DUPLICATE:{upgrade_id}")
+            upgrade_ids.add(upgrade_id)
+            from_quality = action["fromQuality"]
+            to_quality = action["toQuality"]
+            if from_quality not in QUALITIES \
+                    or QUALITIES.index(from_quality) + 1 >= len(QUALITIES) \
+                    or QUALITIES[QUALITIES.index(from_quality) + 1] != to_quality:
+                raise ExportError(f"EXECUTABLE_HERO_SKILL_UPGRADE_TRANSITION_INVALID:{offer_id}")
+            upgrade_by_transition[(hero_skill_id, from_quality, to_quality)].append(offer)
+        else:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_OFFER_ACTION_INVALID:{offer_id}")
+        price = _expect_exact_fields(
+            offer["price"], {"currency", "amount"}, f"heroSkillOffers:{offer_id}:price"
+        )
+        if price["currency"] != "gold":
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_OFFER_CURRENCY_INVALID:{offer_id}")
+        _expect_integer(price["amount"], f"heroSkillOffers:{offer_id}:price:amount", 1)
+        availability = _expect_exact_fields(
+            offer["availability"], {"fromDay", "toDay"},
+            f"heroSkillOffers:{offer_id}:availability",
+        )
+        from_day = _expect_integer(
+            availability["fromDay"], f"heroSkillOffers:{offer_id}:availability:fromDay", 1
+        )
+        to_day = _expect_integer(
+            availability["toDay"], f"heroSkillOffers:{offer_id}:availability:toDay", 1
+        )
+        if to_day < from_day:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_OFFER_DAY_WINDOW_INVALID:{offer_id}")
+        _expect_integer(offer["order"], f"heroSkillOffers:{offer_id}:order", 1)
+        offers_by_trainer[trainer_id].append(offer)
+
+    trainer_skill_owners: dict[str, str] = {}
+    for trainer_id, trainer in hero_skill_trainers.items():
+        hero_id = _expect_stable_id(trainer["heroId"], f"heroSkillTrainers:{trainer_id}:heroId")
+        stall_id = _expect_stable_id(trainer["stallId"], f"heroSkillTrainers:{trainer_id}:stallId")
+        if hero_id not in heroes or stall_id not in stalls:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_TRAINER_REFERENCE_INVALID:{trainer_id}")
+        offer_slots = _expect_integer(
+            trainer["offerSlots"], f"heroSkillTrainers:{trainer_id}:offerSlots", 1
+        )
+        trainer_offers = sorted(
+            offers_by_trainer.get(trainer_id, []), key=lambda value: (value["order"], value["offerId"])
+        )
+        orders = [value["order"] for value in trainer_offers]
+        expected_offer_ids = [value["offerId"] for value in trainer_offers]
+        offer_ids = [
+            _expect_stable_id(value, f"heroSkillTrainers:{trainer_id}:offerIds")
+            for value in _expect_list(trainer["offerIds"], f"heroSkillTrainers:{trainer_id}:offerIds")
+        ]
+        skill_ids = {value["heroSkillId"] for value in trainer_offers}
+        if orders != list(range(1, len(trainer_offers) + 1)) \
+                or offer_ids != expected_offer_ids or offer_slots > len(trainer_offers) \
+                or len(skill_ids) != 1:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_TRAINER_OFFERS_INVALID:{trainer_id}")
+        hero_skill_id = next(iter(skill_ids))
+        if hero_skill_id in trainer_skill_owners:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_TRAINER_SKILL_DUPLICATE:{hero_skill_id}")
+        trainer_skill_owners[hero_skill_id] = trainer_id
+    if set(trainer_skill_owners) != set(hero_skills) \
+            or set(offers_by_trainer) != set(hero_skill_trainers):
+        raise ExportError("EXECUTABLE_HERO_SKILL_TRAINER_COVERAGE_INVALID")
+
+    starting_skill_ids = set().union(*starting_skill_ids_by_hero.values())
+    expected_learn_skills = set(hero_skills) - starting_skill_ids
+    if set(learn_by_skill) != expected_learn_skills \
+            or any(len(values) != 1 for values in learn_by_skill.values()):
+        raise ExportError("EXECUTABLE_HERO_SKILL_LEARN_PATH_INVALID")
+    expected_hero_skill_transitions = {
+        (hero_skill_id, QUALITIES[index], QUALITIES[index + 1])
+        for hero_skill_id in hero_skills
+        for index in range(len(QUALITIES) - 1)
+    }
+    if set(upgrade_by_transition) != expected_hero_skill_transitions \
+            or any(len(values) != 1 for values in upgrade_by_transition.values()):
+        raise ExportError("EXECUTABLE_HERO_SKILL_UPGRADE_PATH_INVALID")
+
     upgrades = _directory(_expect_list(catalogs["upgrades"], "catalogs:upgrades"), "upgradeId", {
         "upgradeId", "itemId", "fromQuality", "toQuality", "price", "stallId",
     }, "upgrades")
+    if upgrade_ids.intersection(upgrades):
+        raise ExportError("EXECUTABLE_HERO_SKILL_UPGRADE_ID_CROSS_DIRECTORY")
     upgrade_transitions: set[tuple[str, str, str]] = set()
     for upgrade_id, upgrade in upgrades.items():
         item_id = _expect_stable_id(upgrade["itemId"], f"upgrades:{upgrade_id}:itemId")
@@ -1239,6 +1391,7 @@ def validate_package(package: Any) -> None:
 
     event_hour_refs: dict[str, set[int]] = defaultdict(set)
     seen_schedule_hours: set[int] = set()
+    scheduled_node_ids: set[str] = set()
     for hour_record in _expect_list(schedule.get("hours"), "schedule:hours"):
         hour_record = _expect_exact_fields(hour_record, {
             "hour", "kind", "completionXp", "nodeTypes",
@@ -1250,6 +1403,7 @@ def validate_package(package: Any) -> None:
         _expect_integer(hour_record["completionXp"], f"schedule:hours:{hour}:completionXp", 0)
         for node_id in _expect_list(hour_record["nodeTypes"], f"schedule:hours:{hour}:nodeTypes"):
             _expect_stable_id(node_id, f"schedule:hours:{hour}:nodeType")
+            scheduled_node_ids.add(node_id)
             if node_id in events:
                 event_hour_refs[node_id].add(hour)
             elif node_id in rewards:
@@ -1261,6 +1415,11 @@ def validate_package(package: Any) -> None:
     for event_id, event in events.items():
         if event_hour_refs.get(event_id, set()) != set(event["hourSlots"]):
             raise ExportError(f"EXECUTABLE_EVENT_SCHEDULE_MISMATCH:{event_id}")
+    if any(
+        trainer["stallId"] not in scheduled_node_ids
+        for trainer in hero_skill_trainers.values()
+    ):
+        raise ExportError("EXECUTABLE_HERO_SKILL_TRAINER_SCHEDULE_UNREACHABLE")
 
     battle = _expect_exact_fields(
         generation["battle"], {"templates", "ghostEncounters", "ghostSnapshots", "layers"},
@@ -1372,6 +1531,47 @@ def validate_package(package: Any) -> None:
         layer_ghost_refs.update(ghost_refs)
     if layer_pve_refs != pve_template_ids or layer_ghost_refs != set(ghost_encounters):
         raise ExportError("EXECUTABLE_BATTLE_LAYER_TEMPLATE_COVERAGE_INVALID")
+
+    maximum_day = len(layers)
+    if maximum_day < 1:
+        raise ExportError("EXECUTABLE_HERO_SKILL_TRAINING_MAXIMUM_DAY_INVALID")
+    if any(
+        offer["availability"]["toDay"] > maximum_day
+        for offer in hero_skill_offers.values()
+    ):
+        raise ExportError("EXECUTABLE_HERO_SKILL_OFFER_DAY_WINDOW_INVALID")
+    reachable_hero_skill_profiles: dict[tuple[str, str], int] = {}
+    for hero in heroes.values():
+        for instance in hero["startingHeroSkills"]:
+            reachable_hero_skill_profiles[(instance["heroSkillId"], instance["quality"])] = \
+                instance["acquiredDay"]
+    for hero_skill_id, skill_offers in learn_by_skill.items():
+        offer = skill_offers[0]
+        reachable_hero_skill_profiles[(hero_skill_id, offer["action"]["toQuality"])] = \
+            offer["availability"]["fromDay"]
+    changed = True
+    while changed:
+        changed = False
+        for (hero_skill_id, from_quality, to_quality), skill_offers in upgrade_by_transition.items():
+            source_day = reachable_hero_skill_profiles.get((hero_skill_id, from_quality))
+            offer = skill_offers[0]
+            if source_day is None:
+                continue
+            target_day = max(source_day, offer["availability"]["fromDay"])
+            if target_day <= offer["availability"]["toDay"] \
+                    and target_day < reachable_hero_skill_profiles.get(
+                        (hero_skill_id, to_quality), maximum_day + 1
+                    ):
+                reachable_hero_skill_profiles[(hero_skill_id, to_quality)] = target_day
+                changed = True
+    expected_hero_skill_profiles = {
+        (hero_skill_id, quality)
+        for hero_skill_id in hero_skills
+        for quality in QUALITIES
+    }
+    if set(reachable_hero_skill_profiles) != expected_hero_skill_profiles \
+            or any(day > maximum_day for day in reachable_hero_skill_profiles.values()):
+        raise ExportError("EXECUTABLE_HERO_SKILL_PROFILE_MAXIMUM_DAY_REACHABILITY_INVALID")
     if referenced_rewards != set(rewards):
         raise ExportError("EXECUTABLE_REWARD_REFERENCE_COVERAGE_INVALID")
 
@@ -1402,6 +1602,13 @@ class ContentAssembler:
         upgrades = self._upgrades(stalls)
         enchantments = self._enchantments(stalls)
         shop_generation, source_refresh_max = self._offers(stalls)
+        hero_skill_trainers, hero_skill_offers = self._hero_skill_training(
+            hero,
+            hero_skills,
+            stalls,
+            {value["offerTemplateId"] for value in shop_generation["templates"]},
+            {value["upgradeId"] for value in upgrades},
+        )
         events = self._events(rewards)
         node_ids = set(stalls) | set(events) | set(rewards)
         schedule, identity = self._gameplay(source_revision, node_ids, last_chance_rules)
@@ -1416,11 +1623,22 @@ class ContentAssembler:
         self._validate_player_profile_reachability(
             starters, shop_generation, rewards, progression_rules, upgrades
         )
+        starting_hero_skills = hero_skill_loadouts["starter"].get(hero["heroId"], [])
+        self._validate_hero_skill_training_reachability(
+            hero_skills,
+            starting_hero_skills,
+            hero_skill_trainers,
+            hero_skill_offers,
+            schedule,
+            identity["runDayMax"],
+        )
         executable_catalogs = self._executable_catalogs(
             hero,
             item_skills,
             hero_skills,
-            hero_skill_loadouts["starter"].get(hero["heroId"], []),
+            starting_hero_skills,
+            hero_skill_trainers,
+            hero_skill_offers,
             stalls,
             shop_generation,
             events,
@@ -2025,7 +2243,7 @@ class ContentAssembler:
             _formal(filename, row)
             hero_skill_id = _require_id(filename, row, "hero_skill_id")
             grouped[hero_skill_id].append(row)
-        if len(grouped) != 2 or set(grouped).intersection(self.item_skills.values()):
+        if not grouped or set(grouped).intersection(self.item_skills.values()):
             raise ExportError("HERO_SKILL_CATALOG_INVALID")
         result: dict[str, dict[str, Any]] = {}
         priorities: set[int] = set()
@@ -2052,6 +2270,7 @@ class ContentAssembler:
             profiles: dict[str, dict[str, Any]] = {}
             for row in rows:
                 quality = _require_text(filename, row, "quality")
+                _require_chinese(filename, row, "effect_description_zh")
                 effect_id = _require_id(filename, row, "effect_id")
                 profile_key = (hero_skill_id, quality, effect_id)
                 if quality not in QUALITIES or profile_key in seen_profile_effects:
@@ -2149,7 +2368,6 @@ class ContentAssembler:
                 "acquiredDay": _integer(filename, row, "acquired_day", 1),
                 "acquiredSeq": _integer(filename, row, "acquired_seq", 1),
             })
-        expected_hero_skill_ids = set(hero_skills)
         starter_groups = grouped["starter"]
         if set(starter_groups) != {hero["heroId"]}:
             raise ExportError("HERO_STARTING_SKILL_LOADOUT_INVALID")
@@ -2161,10 +2379,221 @@ class ContentAssembler:
                 if sequences != list(range(1, len(instances) + 1)) \
                         or len(skill_ids) != len(set(skill_ids)):
                     raise ExportError(f"HERO_SKILL_LOADOUT_ORDER_INVALID:{loadout_id}")
-        if {value["heroSkillId"] for value in starter_groups[hero["heroId"]]} \
-                != expected_hero_skill_ids:
+        starter_skill_ids = {value["heroSkillId"] for value in starter_groups[hero["heroId"]]}
+        if not starter_skill_ids or not starter_skill_ids.issubset(set(hero_skills)):
             raise ExportError("HERO_STARTING_SKILL_COVERAGE_INVALID")
         return grouped
+
+    def _hero_skill_training(
+        self,
+        hero: dict[str, Any],
+        hero_skills: dict[str, dict[str, Any]],
+        stalls: dict[str, dict[str, Any]],
+        item_offer_ids: set[str],
+        item_upgrade_ids: set[str],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        trainer_file = "64_bz_hero_skill_trainers.csv"
+        offer_file = "65_bz_hero_skill_offers.csv"
+        trainer_rows = _unique(self.tables[trainer_file], trainer_file, "trainer_id")
+        trainers: dict[str, dict[str, Any]] = {}
+        for trainer_id, row in trainer_rows.items():
+            _formal(trainer_file, row)
+            _require_chinese(trainer_file, row, "name_zh")
+            _require_chinese(trainer_file, row, "description_zh")
+            hero_id = _require_id(trainer_file, row, "hero_id")
+            stall_id = _require_id(trainer_file, row, "stall_id")
+            if trainer_id in set(hero_skills) | set(self.item_skills.values()) | set(stalls):
+                raise ExportError(f"HERO_SKILL_TRAINER_ID_CROSS_DIRECTORY:{trainer_id}")
+            if hero_id != hero["heroId"]:
+                raise ExportError(f"HERO_SKILL_TRAINER_OWNER_INVALID:{trainer_id}")
+            if stall_id not in stalls:
+                raise ExportError(f"HERO_SKILL_TRAINER_STALL_UNKNOWN:{trainer_id}")
+            trainers[trainer_id] = {
+                "trainerId": trainer_id,
+                "heroId": hero_id,
+                "stallId": stall_id,
+                "offerSlots": _integer(trainer_file, row, "offer_slots", 1),
+                "offerIds": [],
+            }
+        if not trainers:
+            raise ExportError("HERO_SKILL_TRAINER_CATALOG_REQUIRED")
+
+        offers_by_trainer: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        offer_ids: set[str] = set()
+        upgrade_ids: set[str] = set()
+        learn_keys: set[tuple[str, str]] = set()
+        for row in self.tables[offer_file]:
+            _formal(offer_file, row)
+            offer_id = _require_id(offer_file, row, "offer_id")
+            if offer_id in offer_ids or offer_id in item_offer_ids \
+                    or offer_id in trainers or offer_id in hero_skills \
+                    or offer_id in self.item_skills.values():
+                raise ExportError(f"HERO_SKILL_OFFER_ID_DUPLICATE:{offer_id}")
+            offer_ids.add(offer_id)
+            trainer_id = _require_id(offer_file, row, "trainer_id")
+            trainer = trainers.get(trainer_id)
+            if trainer is None:
+                raise ExportError(f"HERO_SKILL_OFFER_TRAINER_UNKNOWN:{offer_id}")
+            hero_skill_id = _require_id(offer_file, row, "hero_skill_id")
+            skill = hero_skills.get(hero_skill_id)
+            if skill is None:
+                raise ExportError(f"HERO_SKILL_OFFER_SKILL_UNKNOWN:{offer_id}")
+            if skill["heroId"] != trainer["heroId"]:
+                raise ExportError(f"HERO_SKILL_OFFER_OWNER_INVALID:{offer_id}")
+            _require_chinese(offer_file, row, "name_zh")
+            _require_chinese(offer_file, row, "description_zh")
+            action_type = _require_text(offer_file, row, "action_type")
+            from_quality = row.get("from_quality", "")
+            to_quality = _require_text(offer_file, row, "to_quality")
+            if to_quality not in QUALITIES:
+                raise ExportError(f"HERO_SKILL_OFFER_QUALITY_INVALID:{offer_id}")
+            if action_type == "learn":
+                if row.get("upgrade_id", "") or from_quality or to_quality != "bronze":
+                    raise ExportError(f"HERO_SKILL_LEARN_ACTION_INVALID:{offer_id}")
+                learn_key = (trainer_id, hero_skill_id)
+                if learn_key in learn_keys:
+                    raise ExportError(f"HERO_SKILL_LEARN_OFFER_DUPLICATE:{trainer_id}:{hero_skill_id}")
+                learn_keys.add(learn_key)
+                action = {"type": "learn", "toQuality": to_quality}
+            elif action_type == "upgrade":
+                upgrade_id = _require_id(offer_file, row, "upgrade_id")
+                if upgrade_id in upgrade_ids or upgrade_id in item_upgrade_ids:
+                    raise ExportError(f"HERO_SKILL_UPGRADE_ID_DUPLICATE:{upgrade_id}")
+                upgrade_ids.add(upgrade_id)
+                if from_quality not in QUALITIES \
+                        or QUALITIES.index(from_quality) + 1 >= len(QUALITIES) \
+                        or QUALITIES[QUALITIES.index(from_quality) + 1] != to_quality:
+                    raise ExportError(f"HERO_SKILL_UPGRADE_TRANSITION_INVALID:{offer_id}")
+                action = {
+                    "type": "upgrade",
+                    "upgradeId": upgrade_id,
+                    "fromQuality": from_quality,
+                    "toQuality": to_quality,
+                }
+            else:
+                raise ExportError(f"HERO_SKILL_OFFER_ACTION_INVALID:{offer_id}")
+            if _require_text(offer_file, row, "price_currency") != "gold":
+                raise ExportError(f"HERO_SKILL_OFFER_CURRENCY_INVALID:{offer_id}")
+            from_day = _integer(offer_file, row, "from_day", 1)
+            to_day = _integer(offer_file, row, "to_day", 1)
+            if to_day < from_day:
+                raise ExportError(f"HERO_SKILL_OFFER_DAY_WINDOW_INVALID:{offer_id}")
+            offers_by_trainer[trainer_id].append({
+                "offerId": offer_id,
+                "trainerId": trainer_id,
+                "heroSkillId": hero_skill_id,
+                "action": action,
+                "price": {
+                    "currency": "gold",
+                    "amount": _integer(offer_file, row, "price_amount", 1),
+                },
+                "availability": {"fromDay": from_day, "toDay": to_day},
+                "order": _integer(offer_file, row, "offer_order", 1),
+            })
+        if not offer_ids:
+            raise ExportError("HERO_SKILL_OFFER_CATALOG_REQUIRED")
+
+        trainer_skill_owners: dict[str, str] = {}
+        ordered_offers: list[dict[str, Any]] = []
+        for trainer_id, trainer in trainers.items():
+            trainer_offers = offers_by_trainer.get(trainer_id, [])
+            trainer_offers.sort(key=lambda value: (value["order"], value["offerId"]))
+            orders = [value["order"] for value in trainer_offers]
+            skill_ids = {value["heroSkillId"] for value in trainer_offers}
+            if orders != list(range(1, len(trainer_offers) + 1)):
+                raise ExportError(f"HERO_SKILL_OFFER_ORDER_INVALID:{trainer_id}")
+            if len(skill_ids) != 1:
+                raise ExportError(f"HERO_SKILL_TRAINER_SKILL_OWNERSHIP_INVALID:{trainer_id}")
+            if trainer["offerSlots"] > len(trainer_offers):
+                raise ExportError(f"HERO_SKILL_TRAINER_OFFER_SLOTS_INVALID:{trainer_id}")
+            hero_skill_id = next(iter(skill_ids))
+            if hero_skill_id in trainer_skill_owners:
+                raise ExportError(f"HERO_SKILL_TRAINER_SKILL_DUPLICATE:{hero_skill_id}")
+            trainer_skill_owners[hero_skill_id] = trainer_id
+            trainer["offerIds"] = [value["offerId"] for value in trainer_offers]
+            ordered_offers.extend(trainer_offers)
+        if set(trainer_skill_owners) != set(hero_skills):
+            raise ExportError("HERO_SKILL_TRAINER_SKILL_COVERAGE_INVALID")
+        return (
+            [trainers[trainer_id] for trainer_id in sorted(trainers)],
+            sorted(ordered_offers, key=lambda value: value["offerId"]),
+        )
+
+    def _validate_hero_skill_training_reachability(
+        self,
+        hero_skills: dict[str, dict[str, Any]],
+        starting_hero_skills: list[dict[str, Any]],
+        trainers: list[dict[str, Any]],
+        offers: list[dict[str, Any]],
+        schedule: dict[str, Any],
+        run_day_max: int,
+    ) -> None:
+        schedule_stalls = {
+            node_id
+            for hour in schedule["hours"]
+            if hour["kind"] == "choice"
+            for node_id in hour["nodeTypes"]
+        }
+        if any(trainer["stallId"] not in schedule_stalls for trainer in trainers):
+            raise ExportError("HERO_SKILL_TRAINER_SCHEDULE_UNREACHABLE")
+        if any(
+            offer["availability"]["toDay"] > run_day_max
+            for offer in offers
+        ):
+            raise ExportError("HERO_SKILL_OFFER_DAY_WINDOW_INVALID")
+        starting_skill_ids = {value["heroSkillId"] for value in starting_hero_skills}
+        learn_by_skill: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        upgrade_by_transition: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+        for offer in offers:
+            action = offer["action"]
+            if action["type"] == "learn":
+                learn_by_skill[offer["heroSkillId"]].append(offer)
+            else:
+                upgrade_by_transition[(
+                    offer["heroSkillId"], action["fromQuality"], action["toQuality"]
+                )].append(offer)
+        expected_learn_skills = set(hero_skills) - starting_skill_ids
+        if set(learn_by_skill) != expected_learn_skills \
+                or any(len(values) != 1 for values in learn_by_skill.values()):
+            raise ExportError("HERO_SKILL_LEARN_PATH_INVALID")
+        expected_transitions = {
+            (hero_skill_id, QUALITIES[index], QUALITIES[index + 1])
+            for hero_skill_id in hero_skills
+            for index in range(len(QUALITIES) - 1)
+        }
+        if set(upgrade_by_transition) != expected_transitions \
+                or any(len(values) != 1 for values in upgrade_by_transition.values()):
+            raise ExportError("HERO_SKILL_UPGRADE_PATH_INVALID")
+
+        reachable: dict[tuple[str, str], int] = {
+            (value["heroSkillId"], value["quality"]): value["acquiredDay"]
+            for value in starting_hero_skills
+        }
+        for hero_skill_id, skill_offers in learn_by_skill.items():
+            offer = skill_offers[0]
+            reachable[(hero_skill_id, offer["action"]["toQuality"])] = \
+                offer["availability"]["fromDay"]
+        changed = True
+        while changed:
+            changed = False
+            for (hero_skill_id, from_quality, to_quality), skill_offers in upgrade_by_transition.items():
+                source_day = reachable.get((hero_skill_id, from_quality))
+                offer = skill_offers[0]
+                if source_day is None:
+                    continue
+                target_day = max(source_day, offer["availability"]["fromDay"])
+                if target_day <= offer["availability"]["toDay"] \
+                        and target_day < reachable.get((hero_skill_id, to_quality), run_day_max + 1):
+                    reachable[(hero_skill_id, to_quality)] = target_day
+                    changed = True
+        expected_profiles = {
+            (hero_skill_id, quality)
+            for hero_skill_id in hero_skills
+            for quality in QUALITIES
+        }
+        if set(reachable) != expected_profiles \
+                or any(day > run_day_max for day in reachable.values()):
+            raise ExportError("HERO_SKILL_PROFILE_MAXIMUM_DAY_REACHABILITY_INVALID")
 
     def _hero(self) -> dict[str, Any]:
         filename = "45_bz_heroes.csv"
@@ -2316,6 +2745,8 @@ class ContentAssembler:
         item_skills: dict[str, dict[str, Any]],
         hero_skills: dict[str, dict[str, Any]],
         starting_hero_skills: list[dict[str, Any]],
+        hero_skill_trainers: list[dict[str, Any]],
+        hero_skill_offers: list[dict[str, Any]],
         stalls: dict[str, dict[str, Any]],
         shop_generation: dict[str, Any],
         events: dict[str, dict[str, Any]],
@@ -2366,6 +2797,8 @@ class ContentAssembler:
                 for item_skill_id in sorted(item_skills)
             ],
             "heroSkills": [hero_skills[hero_skill_id] for hero_skill_id in sorted(hero_skills)],
+            "heroSkillTrainers": hero_skill_trainers,
+            "heroSkillOffers": hero_skill_offers,
             "stalls": stall_records,
             "upgrades": upgrades,
             "enchantments": enchantments,
@@ -2396,8 +2829,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 20-domain workbook is the finite v11 candidate source.
-            # This adapter is its explicit one-way projection into executable v13.
+            # The current 22-domain workbook is the finite v12 candidate source.
+            # This adapter is its explicit one-way projection into executable v14.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -2562,8 +2995,9 @@ class ContentAssembler:
                 else "gold" if day <= 9 else "diamond"
             )
             hero_skill_instances = ghost_loadouts.get(snapshot_id, [])
-            if len(hero_skill_instances) != len(hero_skills) \
-                    or {value["heroSkillId"] for value in hero_skill_instances} != set(hero_skills):
+            ghost_skill_ids = {value["heroSkillId"] for value in hero_skill_instances}
+            if not hero_skill_instances or len(ghost_skill_ids) != len(hero_skill_instances) \
+                    or not ghost_skill_ids.issubset(set(hero_skills)):
                 raise ExportError(f"GHOST_HERO_SKILL_LOADOUT_INVALID:{snapshot_id}")
             for value in hero_skill_instances:
                 skill = hero_skills[value["heroSkillId"]]
@@ -2862,6 +3296,27 @@ def _build_display_directory(
                 # the adapter never synthesizes presentation prose.
                 "descriptionZh": description_zh,
             })
+    seen_quality_profiles: set[tuple[str, str]] = set()
+    for row in tables["62_bz_hero_skills.csv"]:
+        _formal("62_bz_hero_skills.csv", row)
+        hero_skill_id = _require_id("62_bz_hero_skills.csv", row, "hero_skill_id")
+        quality = _require_text("62_bz_hero_skills.csv", row, "quality")
+        profile_key = (hero_skill_id, quality)
+        if quality not in QUALITIES or profile_key in seen_quality_profiles:
+            raise ExportError(f"DISPLAY_HERO_SKILL_QUALITY_PROFILE_INVALID:{hero_skill_id}:{quality}")
+        seen_quality_profiles.add(profile_key)
+        name_zh = _require_chinese("62_bz_hero_skills.csv", row, "name_zh")
+        effect_description_zh = _require_chinese(
+            "62_bz_hero_skills.csv", row, "effect_description_zh"
+        )
+        source_id = f"{hero_skill_id}.{quality}"
+        entries.append({
+            "displayId": f"hero_skill_quality_profiles.{source_id}",
+            "domain": "hero_skill_quality_profiles",
+            "sourceId": source_id,
+            "nameZh": f"{name_zh}·{QUALITY_NAMES_ZH[quality]}",
+            "descriptionZh": effect_description_zh,
+        })
     entries.sort(key=lambda value: value["displayId"])
     return {
         "schema": DISPLAY_SCHEMA,
@@ -2896,7 +3351,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v13 runtime and display candidates from 20 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v14 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -2911,7 +3366,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v13 candidate "
+            "PASS original-pirate v14 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -2924,7 +3379,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v13 candidate to {output}")
+        print(f"exported original-pirate v14 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

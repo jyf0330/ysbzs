@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-02，由 `2026-09-02_original_pirate_ghost_snapshots` 收口。
+最后刷新：2026-09-02，由 `2026-09-02_original_pirate_last_chance_choices` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-02_original_pirate_last_chance_choices.md` — data contract: Ghost-only Prestige 与首次归零后一次性正式最后机会三选一，冻结三项原创代价和恢复量。
 
 - `tasks/done/2026-09-02_original_pirate_ghost_snapshots.md` — data contract: PvE template、Ghost encounter、Ghost snapshot 三段单一真相，冻结完整英雄构筑与 canonical build hash。
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 17 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 18 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the integration-pending v9 runtime package while still validating every
+outside the integration-pending v10 runtime package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,13 +25,13 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 11
+CONTENT_SCHEMA_VERSION = 12
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 9
-SOURCE_CONTENT_SCHEMA_VERSION = 9
-SOURCE_RUNTIME_SCHEMA_VERSION = 7
-NEW_RUN_SCHEMA_VERSION = 1
+RUNTIME_SCHEMA_VERSION = 10
+SOURCE_CONTENT_SCHEMA_VERSION = 10
+SOURCE_RUNTIME_SCHEMA_VERSION = 8
+NEW_RUN_SCHEMA_VERSION = 2
 BATTLE_PACKAGE_SCHEMA_VERSION = 2
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
 GENERATION_SCHEMA_VERSION = 2
@@ -42,12 +42,16 @@ EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
 EXECUTABLE_CATALOGS_SCHEMA_VERSION = 3
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
-SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v3"
-SCHEDULE_SCHEMA_VERSION = 3
+SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
+SCHEDULE_SCHEMA_VERSION = 4
+PRESTIGE_POLICY_SCHEMA = "ysbzs.original-pirate-prestige-policy.v1"
+PRESTIGE_POLICY_SCHEMA_VERSION = 1
+LAST_CHANCE_SCHEMA = "ysbzs.original-pirate-last-chance-rules.v1"
+LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 1
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v7"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v8"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
@@ -70,8 +74,8 @@ DOMAIN_HEADERS = OrderedDict([
         "terminal_pressure_enabled", "terminal_pressure_start_tick",
         "terminal_pressure_interval_ticks", "terminal_pressure_initial_damage",
         "terminal_pressure_increment_damage", "pve_win_bonus_xp",
-        "pve_loss_prestige", "pve_draw_prestige", "ghost_loss_prestige",
-        "ghost_draw_prestige", "win_target", "last_chance_enabled",
+        "prestige_battle_kind", "ghost_loss_prestige", "ghost_draw_prestige",
+        "win_target", "last_chance_policy_id",
         "bootstrap_run_day_coverage", "bootstrap_refresh_package_coverage", "hour", "kind",
         "completion_xp", "node_types", "catalog_status",
     ]),
@@ -144,6 +148,12 @@ DOMAIN_HEADERS = OrderedDict([
         "hero_hp", "hero_max_hp", "instance_id", "item_id", "quality",
         "enchantment", "start_slot", "catalog_status",
     ]),
+    ("61_bz_last_chance_choices.csv", [
+        "schema", "schema_version", "policy_id", "max_uses_per_run",
+        "trigger_battle_kind", "trigger_outcomes", "trigger_prestige_at_or_below",
+        "option_id", "option_order", "name_zh", "description_zh",
+        "restore_prestige", "cost_type", "cost_amount", "catalog_status",
+    ]),
 ])
 
 DISPLAY_DOMAINS = [
@@ -158,6 +168,7 @@ DISPLAY_DOMAINS = [
     ("55_bz_rewards.csv", "rewards", "reward_id"),
     ("58_bz_enchantments.csv", "enchantments", "enchantment_id"),
     ("59_bz_level_up_choices.csv", "level_up_options", "option_id"),
+    ("61_bz_last_chance_choices.csv", "last_chance_options", "option_id"),
 ]
 
 
@@ -748,6 +759,9 @@ def validate_package(package: Any) -> None:
     }, "newRunTemplate:activeNode")
     if new_run_hero.get("heroId") not in heroes:
         raise ExportError("EXECUTABLE_NEW_RUN_HERO_REFERENCE_INVALID")
+    new_run_prestige = _expect_integer(
+        new_run_hero["prestige"], "newRunTemplate:hero:prestige", 1
+    )
     if active_node != {"nodeId": "", "kind": "", "rewardId": ""}:
         raise ExportError("EXECUTABLE_NEW_RUN_ACTIVE_NODE_INVALID")
     level_rewards = _expect_exact_fields(new_run["levelRewards"], {
@@ -755,6 +769,24 @@ def validate_package(package: Any) -> None:
     }, "newRunTemplate:levelRewards")
     if level_rewards["pendingMilestoneIds"] != [] or level_rewards["resolved"] != []:
         raise ExportError("EXECUTABLE_NEW_RUN_LEVEL_REWARDS_INVALID")
+    new_run_state = _expect_exact_fields(new_run["run"], {
+        "wins", "losses", "lastChance", "terminal",
+    }, "newRunTemplate:run")
+    if _expect_integer(new_run_state["wins"], "newRunTemplate:run:wins", 0) != 0 \
+            or _expect_integer(new_run_state["losses"], "newRunTemplate:run:losses", 0) != 0:
+        raise ExportError("EXECUTABLE_NEW_RUN_RECORD_INVALID")
+    new_run_last_chance = _expect_exact_fields(new_run_state["lastChance"], {
+        "status", "policyId", "optionIds", "selectedOptionId",
+    }, "newRunTemplate:run:lastChance")
+    if new_run_last_chance != {
+        "status": "available", "policyId": "", "optionIds": [], "selectedOptionId": "",
+    }:
+        raise ExportError("EXECUTABLE_NEW_RUN_LAST_CHANCE_INVALID")
+    new_run_terminal = _expect_exact_fields(new_run_state["terminal"], {
+        "ended", "victory", "reason",
+    }, "newRunTemplate:run:terminal")
+    if new_run_terminal != {"ended": False, "victory": False, "reason": ""}:
+        raise ExportError("EXECUTABLE_NEW_RUN_TERMINAL_INVALID")
 
     rewards = _directory(_expect_list(catalogs["rewards"], "catalogs:rewards"), "rewardId", {
         "rewardId", "trigger", "effects",
@@ -956,7 +988,8 @@ def validate_package(package: Any) -> None:
 
     schedule = _expect_exact_fields(bundle["scheduleConfig"], {
         "schema", "schemaVersion", "rulesVersion", "contentRevision", "hours",
-        "incomePayoutPolicy", "pveWinBonusXp", "prestigeLoss", "terminalRules",
+        "incomePayoutPolicy", "pveWinBonusXp", "prestigePolicy", "terminalRules",
+        "lastChanceRules",
     }, "scheduleConfig")
     if schedule["schema"] != SCHEDULE_SCHEMA or schedule["schemaVersion"] != SCHEDULE_SCHEMA_VERSION \
             or schedule["rulesVersion"] != root["rulesVersion"] \
@@ -965,17 +998,80 @@ def validate_package(package: Any) -> None:
     if schedule["incomePayoutPolicy"] != INCOME_PAYOUT_POLICY:
         raise ExportError("EXECUTABLE_SCHEDULE_INCOME_POLICY_INVALID")
     _expect_integer(schedule["pveWinBonusXp"], "schedule:pveWinBonusXp", 0)
-    prestige_loss = _expect_exact_fields(schedule["prestigeLoss"], {
-        "pveLoss", "pveDraw", "ghostLoss", "ghostDraw",
-    }, "schedule:prestigeLoss")
-    for field in ["pveLoss", "pveDraw", "ghostLoss", "ghostDraw"]:
-        _expect_integer(prestige_loss[field], f"schedule:prestigeLoss:{field}", 0)
+    prestige_policy = _expect_exact_fields(schedule["prestigePolicy"], {
+        "schema", "schemaVersion", "affectedBattleKind", "lossAmount", "drawAmount",
+    }, "schedule:prestigePolicy")
+    if prestige_policy["schema"] != PRESTIGE_POLICY_SCHEMA \
+            or prestige_policy["schemaVersion"] != PRESTIGE_POLICY_SCHEMA_VERSION:
+        raise ExportError("EXECUTABLE_PRESTIGE_POLICY_IDENTITY_INVALID")
+    if prestige_policy["affectedBattleKind"] != "ghost":
+        raise ExportError("EXECUTABLE_PRESTIGE_POLICY_SCOPE_INVALID")
+    _expect_integer(prestige_policy["lossAmount"], "schedule:prestigePolicy:lossAmount", 1)
+    _expect_integer(prestige_policy["drawAmount"], "schedule:prestigePolicy:drawAmount", 1)
     terminal_rules = _expect_exact_fields(schedule["terminalRules"], {
-        "winTarget", "lastChanceEnabled",
+        "winTarget", "lastChancePolicyId",
     }, "schedule:terminalRules")
     _expect_integer(terminal_rules["winTarget"], "schedule:terminalRules:winTarget", 1)
-    if not isinstance(terminal_rules["lastChanceEnabled"], bool):
-        raise ExportError("EXECUTABLE_SCHEDULE_LAST_CHANCE_INVALID")
+    last_chance_policy_id = _expect_stable_id(
+        terminal_rules["lastChancePolicyId"], "schedule:terminalRules:lastChancePolicyId"
+    )
+    last_chance_rules = _expect_exact_fields(schedule["lastChanceRules"], {
+        "schema", "schemaVersion", "policyId", "trigger", "maxUsesPerRun", "options",
+    }, "schedule:lastChanceRules")
+    if last_chance_rules["schema"] != LAST_CHANCE_SCHEMA \
+            or last_chance_rules["schemaVersion"] != LAST_CHANCE_SCHEMA_VERSION:
+        raise ExportError("EXECUTABLE_LAST_CHANCE_IDENTITY_INVALID")
+    if last_chance_rules["policyId"] != last_chance_policy_id:
+        raise ExportError("EXECUTABLE_LAST_CHANCE_POLICY_LINK_INVALID")
+    if _expect_integer(
+        last_chance_rules["maxUsesPerRun"], "schedule:lastChanceRules:maxUsesPerRun", 1
+    ) != 1:
+        raise ExportError("EXECUTABLE_LAST_CHANCE_MAX_USES_INVALID")
+    trigger = _expect_exact_fields(last_chance_rules["trigger"], {
+        "battleKind", "outcomes", "prestigeAtOrBelow",
+    }, "schedule:lastChanceRules:trigger")
+    if trigger != {
+        "battleKind": "ghost", "outcomes": ["draw", "loss"], "prestigeAtOrBelow": 0,
+    }:
+        raise ExportError("EXECUTABLE_LAST_CHANCE_TRIGGER_INVALID")
+    last_chance_options = _expect_list(
+        last_chance_rules["options"], "schedule:lastChanceRules:options"
+    )
+    if len(last_chance_options) != 3:
+        raise ExportError("EXECUTABLE_LAST_CHANCE_OPTION_COUNT_INVALID")
+    seen_last_chance_options: set[str] = set()
+    fallback_count = 0
+    for option_index, option_value in enumerate(last_chance_options):
+        option = _expect_exact_fields(option_value, {
+            "optionId", "restorePrestige", "cost",
+        }, f"schedule:lastChanceRules:options:{option_index}")
+        option_id = _expect_stable_id(
+            option["optionId"], f"schedule:lastChanceRules:options:{option_index}:optionId"
+        )
+        if option_id in seen_last_chance_options:
+            raise ExportError(f"EXECUTABLE_LAST_CHANCE_OPTION_ID_DUPLICATE:{option_id}")
+        seen_last_chance_options.add(option_id)
+        restore = _expect_integer(
+            option["restorePrestige"], f"schedule:lastChanceRules:{option_id}:restorePrestige", 1
+        )
+        if restore > new_run_prestige:
+            raise ExportError(f"EXECUTABLE_LAST_CHANCE_RESTORE_INVALID:{option_id}")
+        cost = _expect_exact_fields(option["cost"], {
+            "type", "amount",
+        }, f"schedule:lastChanceRules:{option_id}:cost")
+        cost_type = cost["type"]
+        amount = _expect_integer(cost["amount"], f"schedule:lastChanceRules:{option_id}:cost:amount", 0)
+        if cost_type == "none":
+            if amount != 0:
+                raise ExportError(f"EXECUTABLE_LAST_CHANCE_COST_INVALID:{option_id}")
+            fallback_count += 1
+        elif cost_type in {"spend_gold", "reduce_income"}:
+            if amount <= 0:
+                raise ExportError(f"EXECUTABLE_LAST_CHANCE_COST_INVALID:{option_id}")
+        else:
+            raise ExportError(f"EXECUTABLE_LAST_CHANCE_COST_INVALID:{option_id}")
+    if fallback_count != 1:
+        raise ExportError("EXECUTABLE_LAST_CHANCE_FALLBACK_REQUIRED")
 
     event_hour_refs: dict[str, set[int]] = defaultdict(set)
     seen_schedule_hours: set[int] = set()
@@ -1131,13 +1227,14 @@ class ContentAssembler:
         rewards = self._rewards()
         progression_rules = self._progression_rules()
         hero = self._hero(skills)
+        last_chance_rules = self._last_chance_rules(hero)
         stalls = self._stalls()
         upgrades = self._upgrades(stalls)
         enchantments = self._enchantments(stalls)
         shop_generation, source_refresh_max = self._offers(stalls)
         events = self._events(rewards)
         node_ids = set(stalls) | set(events) | set(rewards)
-        schedule, identity = self._gameplay(source_revision, node_ids)
+        schedule, identity = self._gameplay(source_revision, node_ids, last_chance_rules)
         if source_refresh_max != identity["refreshPackageMax"]:
             raise ExportError("STALL_REFRESH_DECLARED_COVERAGE_INVALID")
         ghost_snapshots = self._ghost_snapshots(identity["contentRevision"], hero, skills)
@@ -1344,6 +1441,83 @@ class ContentAssembler:
             "enabled": True,
             "milestones": runtime_milestones,
             "options": runtime_options,
+        }
+
+    def _last_chance_rules(self, hero: dict[str, Any]) -> dict[str, Any]:
+        filename = "61_bz_last_chance_choices.csv"
+        rows = self.tables[filename]
+        if len(rows) != 3:
+            raise ExportError("LAST_CHANCE_OPTION_COUNT_INVALID")
+        for row in rows:
+            _formal(filename, row)
+        if _same(rows, filename, "schema") != LAST_CHANCE_SCHEMA \
+                or _same(rows, filename, "schema_version") != str(LAST_CHANCE_SCHEMA_VERSION):
+            raise ExportError("LAST_CHANCE_POLICY_IDENTITY_INVALID")
+        policy_id = _same(rows, filename, "policy_id")
+        if not STABLE_ID_RE.fullmatch(policy_id):
+            raise ExportError("LAST_CHANCE_POLICY_IDENTITY_INVALID")
+        max_uses = _same(rows, filename, "max_uses_per_run")
+        if max_uses != "1":
+            raise ExportError("LAST_CHANCE_MAX_USES_INVALID")
+        battle_kind = _same(rows, filename, "trigger_battle_kind")
+        trigger_outcomes = _ids(filename, rows[0], "trigger_outcomes")
+        if any(_ids(filename, row, "trigger_outcomes") != trigger_outcomes for row in rows[1:]) \
+                or battle_kind != "ghost" or trigger_outcomes != ["draw", "loss"]:
+            raise ExportError("LAST_CHANCE_TRIGGER_INVALID")
+        threshold = _same(rows, filename, "trigger_prestige_at_or_below")
+        if threshold != "0":
+            raise ExportError("LAST_CHANCE_TRIGGER_INVALID")
+
+        options = []
+        seen_ids: set[str] = set()
+        fallback_count = 0
+        for row in rows:
+            option_id = _require_id(filename, row, "option_id")
+            if option_id in seen_ids:
+                raise ExportError(f"LAST_CHANCE_OPTION_ID_DUPLICATE:{option_id}")
+            seen_ids.add(option_id)
+            option_order = _integer(filename, row, "option_order", 1)
+            _require_chinese(filename, row, "name_zh")
+            _require_chinese(filename, row, "description_zh")
+            restore = _integer(filename, row, "restore_prestige", 1)
+            if restore > hero["prestige"]:
+                raise ExportError(f"LAST_CHANCE_RESTORE_INVALID:{option_id}")
+            cost_type = _require_text(filename, row, "cost_type")
+            cost_amount = _integer(filename, row, "cost_amount", 0)
+            if cost_type == "none":
+                if cost_amount != 0:
+                    raise ExportError(f"LAST_CHANCE_COST_INVALID:{option_id}")
+                fallback_count += 1
+            elif cost_type in {"spend_gold", "reduce_income"}:
+                if cost_amount <= 0:
+                    raise ExportError(f"LAST_CHANCE_COST_INVALID:{option_id}")
+            else:
+                raise ExportError(f"LAST_CHANCE_COST_INVALID:{option_id}")
+            options.append({
+                "optionId": option_id,
+                "optionOrder": option_order,
+                "restorePrestige": restore,
+                "cost": {"type": cost_type, "amount": cost_amount},
+            })
+        options.sort(key=lambda value: value["optionOrder"])
+        if [value["optionOrder"] for value in options] != [1, 2, 3]:
+            raise ExportError("LAST_CHANCE_OPTION_ORDER_INVALID")
+        if fallback_count != 1:
+            raise ExportError("LAST_CHANCE_FALLBACK_REQUIRED")
+        return {
+            "schema": LAST_CHANCE_SCHEMA,
+            "schemaVersion": LAST_CHANCE_SCHEMA_VERSION,
+            "policyId": policy_id,
+            "trigger": {
+                "battleKind": battle_kind,
+                "outcomes": trigger_outcomes,
+                "prestigeAtOrBelow": int(threshold),
+            },
+            "maxUsesPerRun": int(max_uses),
+            "options": [
+                {key: value[key] for key in ["optionId", "restorePrestige", "cost"]}
+                for value in options
+            ],
         }
 
     def _skills(self) -> dict[str, dict[str, Any]]:
@@ -1884,6 +2058,7 @@ class ContentAssembler:
         self,
         source_revision: str,
         node_ids: set[str],
+        last_chance_rules: dict[str, Any],
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         filename = "44_bz_gameplay.csv"
         rows = self.tables[filename]
@@ -1894,8 +2069,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 17-domain workbook is the finite v9 candidate source.
-            # This adapter is its explicit one-way projection into executable v11.
+            # The current 18-domain workbook is the finite v10 candidate source.
+            # This adapter is its explicit one-way projection into executable v12.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -1934,8 +2109,7 @@ class ContentAssembler:
         global_integer_fields = [
             "terminal_pressure_start_tick", "terminal_pressure_interval_ticks",
             "terminal_pressure_initial_damage", "terminal_pressure_increment_damage",
-            "pve_win_bonus_xp", "pve_loss_prestige", "pve_draw_prestige",
-            "ghost_loss_prestige", "ghost_draw_prestige", "win_target",
+            "pve_win_bonus_xp", "ghost_loss_prestige", "ghost_draw_prestige", "win_target",
             "bootstrap_run_day_coverage", "bootstrap_refresh_package_coverage",
         ]
         globals_int = {}
@@ -1948,8 +2122,8 @@ class ContentAssembler:
                 or globals_int["terminal_pressure_interval_ticks"] <= 0 \
                 or globals_int["terminal_pressure_initial_damage"] <= 0 \
                 or globals_int["terminal_pressure_increment_damage"] < 0 \
-                or any(globals_int[field] < 0 for field in [
-                    "pve_win_bonus_xp", "pve_loss_prestige", "pve_draw_prestige",
+                or globals_int["pve_win_bonus_xp"] < 0 \
+                or any(globals_int[field] <= 0 for field in [
                     "ghost_loss_prestige", "ghost_draw_prestige",
                 ]) \
                 or any(globals_int[field] <= 0 for field in [
@@ -1967,9 +2141,15 @@ class ContentAssembler:
             "initialDamage": globals_int["terminal_pressure_initial_damage"],
             "incrementDamage": globals_int["terminal_pressure_increment_damage"],
         }
-        last_chance_text = _same(rows, filename, "last_chance_enabled")
-        if last_chance_text not in {"true", "false"}:
-            raise ExportError("GAMEPLAY_LAST_CHANCE_INVALID")
+        prestige_battle_kind = _same(rows, filename, "prestige_battle_kind")
+        if prestige_battle_kind != "ghost":
+            raise ExportError("PRESTIGE_POLICY_SCOPE_INVALID")
+        last_chance_policy_id = _same(rows, filename, "last_chance_policy_id")
+        if not STABLE_ID_RE.fullmatch(last_chance_policy_id) \
+                or last_chance_policy_id != last_chance_rules["policyId"]:
+            raise ExportError("LAST_CHANCE_POLICY_REFERENCE_INVALID")
+        if last_chance_rules["trigger"]["battleKind"] != prestige_battle_kind:
+            raise ExportError("LAST_CHANCE_TRIGGER_INVALID")
         hours = []
         seen_hours: set[int] = set()
         for row in rows:
@@ -2002,16 +2182,18 @@ class ContentAssembler:
             "incomePayoutPolicy": INCOME_PAYOUT_POLICY,
             "hours": hours,
             "pveWinBonusXp": globals_int["pve_win_bonus_xp"],
-            "prestigeLoss": {
-                "pveLoss": globals_int["pve_loss_prestige"],
-                "pveDraw": globals_int["pve_draw_prestige"],
-                "ghostLoss": globals_int["ghost_loss_prestige"],
-                "ghostDraw": globals_int["ghost_draw_prestige"],
+            "prestigePolicy": {
+                "schema": PRESTIGE_POLICY_SCHEMA,
+                "schemaVersion": PRESTIGE_POLICY_SCHEMA_VERSION,
+                "affectedBattleKind": prestige_battle_kind,
+                "lossAmount": globals_int["ghost_loss_prestige"],
+                "drawAmount": globals_int["ghost_draw_prestige"],
             },
             "terminalRules": {
                 "winTarget": globals_int["win_target"],
-                "lastChanceEnabled": last_chance_text == "true",
+                "lastChancePolicyId": last_chance_policy_id,
             },
+            "lastChanceRules": last_chance_rules,
         }, identity
 
     def _ghost_snapshots(
@@ -2272,7 +2454,12 @@ class ContentAssembler:
             "run": {
                 "wins": 0,
                 "losses": 0,
-                "lastChance": False,
+                "lastChance": {
+                    "status": "available",
+                    "policyId": "",
+                    "optionIds": [],
+                    "selectedOptionId": "",
+                },
                 "terminal": {"ended": False, "victory": False, "reason": ""},
             },
             "board": {"placements": [
@@ -2367,7 +2554,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v11 runtime and display candidates from 17 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v12 runtime and display candidates from 18 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -2382,7 +2569,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v11 integration-pending candidate "
+            "PASS original-pirate v12 integration-pending candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "

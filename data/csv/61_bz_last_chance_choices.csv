@@ -1,0 +1,4 @@
+schema,schema_version,policy_id,max_uses_per_run,trigger_battle_kind,trigger_outcomes,trigger_prestige_at_or_below,option_id,option_order,name_zh,description_zh,restore_prestige,cost_type,cost_amount,catalog_status
+ysbzs.original-pirate-last-chance-rules.v1,1,last_chance_mistwake_v1,1,ghost,"draw,loss",0,last_chance_tidehold_ransom,1,潮仓赎航,支付十二枚补给金币并恢复十点威望。,10,spend_gold,12,formal
+ysbzs.original-pirate-last-chance-rules.v1,1,last_chance_mistwake_v1,1,ghost,"draw,loss",0,last_chance_cut_payroll,2,减薪续航,永久降低两点收入并恢复八点威望。,8,reduce_income,2,formal
+ysbzs.original-pirate-last-chance-rules.v1,1,last_chance_mistwake_v1,1,ghost,"draw,loss",0,last_chance_raise_torn_flag,3,残旗再举,不支付额外资源并恢复六点威望。,6,none,0,formal

@@ -48,6 +48,7 @@ ORIGINAL_PIRATE_EXPORTS = [
     ("BZ_ENCHANTMENTS", "58_bz_enchantments.csv"),
     ("BZ_LEVEL_UP_CHOICES", "59_bz_level_up_choices.csv"),
     ("BZ_GHOST_SNAPSHOTS", "60_bz_ghost_snapshots.csv"),
+    ("BZ_LAST_CHANCE_CHOICES", "61_bz_last_chance_choices.csv"),
 ]
 
 MASTER_ONLY_EXPORTS = [
@@ -928,7 +929,7 @@ def main(argv=None):
     parser.add_argument(
         "--original-pirate-only",
         action="store_true",
-        help="Export/check only BZ_GAMEPLAY through BZ_GHOST_SNAPSHOTS without evaluating legacy formula domains",
+        help="Export/check only BZ_GAMEPLAY through BZ_LAST_CHANCE_CHOICES without evaluating legacy formula domains",
     )
     args = parser.parse_args(argv)
 

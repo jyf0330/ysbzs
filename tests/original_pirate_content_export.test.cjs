@@ -18,6 +18,7 @@ const domainFiles = [
   '53_bz_encounters.csv', '54_bz_enemies.csv', '55_bz_rewards.csv',
   '56_bz_source_snapshot.csv', '57_bz_item_upgrades.csv', '58_bz_enchantments.csv',
   '59_bz_level_up_choices.csv', '60_bz_ghost_snapshots.csv',
+  '61_bz_last_chance_choices.csv',
 ];
 const sheets = domainFiles.map((name) => `BZ_${name.replace(/^\d+_bz_|\.csv$/g, '').toUpperCase()}`);
 
@@ -196,7 +197,7 @@ function reverseDataRows(dir, file) {
   fs.writeFileSync(target, encodeCsv([rows[0], ...rows.slice(1).reverse()]), 'utf8');
 }
 
-test('OPC01 workbook 的 17 个 BZ 页与 44..60 CSV 可逐字重建', () => {
+test('OPC01 workbook 的 18 个 BZ 页与 44..61 CSV 可逐字重建', () => {
   const code = `
 import csv, json, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(sys.argv[5]) / 'tools'))
@@ -217,7 +218,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v11/v9 正式 Ghost 快照、跨日收入、升级三选一与终局压力确定且 hash 兼容', () => {
+test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有规则确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -234,13 +235,13 @@ test('OPC02 v11/v9 正式 Ghost 快照、跨日收入、升级三选一与终局
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 11);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v7');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v8');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v8');
+  assert.equal(content.schemaVersion, 12);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v8');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v9');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v9');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 9);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v8');
+  assert.equal(content.runtimeBundle.schemaVersion, 10);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v9');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -292,17 +293,53 @@ test('OPC02 v11/v9 正式 Ghost 快照、跨日收入、升级三选一与终局
   assert.deepEqual(content.runtimeBundle.newRunTemplate.levelRewards, {
     pendingMilestoneIds: [], resolved: [],
   });
+  assert.deepEqual(content.runtimeBundle.newRunTemplate.run.lastChance, {
+    status: 'available', policyId: '', optionIds: [], selectedOptionId: '',
+  });
   assert.equal('skillIds' in content.runtimeBundle.newRunTemplate.hero, false);
   assert.deepEqual([
     content.runtimeBundle.scheduleConfig.schema,
     content.runtimeBundle.scheduleConfig.schemaVersion,
-  ], ['ysbzs.original-pirate-schedule-config.v3', 3]);
+  ], ['ysbzs.original-pirate-schedule-config.v4', 4]);
   assert.equal(content.runtimeBundle.scheduleConfig.incomePayoutPolicy, 'day_advance');
   assert.deepEqual(content.runtimeBundle.scheduleConfig.hours.map(({ hour, kind }) => [hour, kind]), [
     [1, 'choice'], [2, 'choice'], [3, 'pve'], [4, 'choice'], [5, 'choice'], [6, 'ghost'],
   ]);
   assert.deepEqual(content.runtimeBundle.scheduleConfig.hours.map(({ completionXp }) => completionXp), [1, 1, 1, 1, 1, 1]);
   assert.equal(content.runtimeBundle.scheduleConfig.pveWinBonusXp, 2);
+  assert.equal('prestigeLoss' in content.runtimeBundle.scheduleConfig, false);
+  assert.deepEqual(content.runtimeBundle.scheduleConfig.prestigePolicy, {
+    schema: 'ysbzs.original-pirate-prestige-policy.v1',
+    schemaVersion: 1,
+    affectedBattleKind: 'ghost',
+    lossAmount: 6,
+    drawAmount: 2,
+  });
+  assert.deepEqual(content.runtimeBundle.scheduleConfig.terminalRules, {
+    winTarget: 10,
+    lastChancePolicyId: 'last_chance_mistwake_v1',
+  });
+  assert.deepEqual(content.runtimeBundle.scheduleConfig.lastChanceRules, {
+    schema: 'ysbzs.original-pirate-last-chance-rules.v1',
+    schemaVersion: 1,
+    policyId: 'last_chance_mistwake_v1',
+    trigger: { battleKind: 'ghost', outcomes: ['draw', 'loss'], prestigeAtOrBelow: 0 },
+    maxUsesPerRun: 1,
+    options: [
+      {
+        optionId: 'last_chance_tidehold_ransom', restorePrestige: 10,
+        cost: { type: 'spend_gold', amount: 12 },
+      },
+      {
+        optionId: 'last_chance_cut_payroll', restorePrestige: 8,
+        cost: { type: 'reduce_income', amount: 2 },
+      },
+      {
+        optionId: 'last_chance_raise_torn_flag', restorePrestige: 6,
+        cost: { type: 'none', amount: 0 },
+      },
+    ],
+  });
   assert.equal('levelThresholds' in content.runtimeBundle.scheduleConfig, false);
   const generation = content.runtimeBundle.generation;
   assert.deepEqual([generation.schema, generation.schemaVersion, generation.algorithmId], [
@@ -426,9 +463,9 @@ test('OPC02 v11/v9 正式 Ghost 快照、跨日收入、升级三选一与终局
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 1);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v8');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v8');
-  assert.equal(display.entries.length, 67);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v9');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v9');
+  assert.equal(display.entries.length, 70);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -439,6 +476,13 @@ test('OPC02 v11/v9 正式 Ghost 快照、跨日收入、升级三选一与终局
     displayId: 'level_up_options.level_option_2_upgrade', domain: 'level_up_options',
     sourceId: 'level_option_2_upgrade', nameZh: '精调一件装备',
     descriptionZh: '选择一件自有且仍可升阶的物品，提升一个品质阶段。',
+  });
+  assert.deepEqual(display.entries.find(({ displayId }) => (
+    displayId === 'last_chance_options.last_chance_raise_torn_flag'
+  )), {
+    displayId: 'last_chance_options.last_chance_raise_torn_flag', domain: 'last_chance_options',
+    sourceId: 'last_chance_raise_torn_flag', nameZh: '残旗再举',
+    descriptionZh: '不支付额外资源并恢复六点威望。',
   });
   assert.equal('displayDirectory' in content || 'display' in content, false);
   const source = fs.readFileSync(path.join(csvDir, '56_bz_source_snapshot.csv'), 'utf8');
@@ -489,6 +533,8 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
     ['terminal-pressure-initial', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_initial_damage', '0')],
     ['terminal-pressure-increment', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_increment_damage', '-1')],
     ['income-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'income_payout_policy', 'hour_complete')],
+    ['prestige-scope', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'prestige_battle_kind', 'pve')],
+    ['last-chance-policy-link', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'last_chance_policy_id', 'last_chance_missing')],
     ['progression-disabled', (dir) => mutateColumn(dir, '59_bz_level_up_choices.csv', 'enabled', 'false')],
     ['progression-option-duplicate', (dir) => mutateCell(dir, '59_bz_level_up_choices.csv', 2, 'option_id', 'level_option_2_gold')],
     ['progression-order-duplicate', (dir) => mutateCell(dir, '59_bz_level_up_choices.csv', 2, 'option_order', '1')],
@@ -505,6 +551,20 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
       fs.writeFileSync(target, encodeCsv(rows.filter((row, index) => (
         index === 0 || row[milestoneColumn] !== 'milestone_level_4'
       ))));
+    }],
+    ['last-chance-schema', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 1, 'schema_version', '2')],
+    ['last-chance-trigger-kind', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 1, 'trigger_battle_kind', 'pve')],
+    ['last-chance-trigger-outcome', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 1, 'trigger_outcomes', 'loss,win')],
+    ['last-chance-trigger-threshold', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 1, 'trigger_prestige_at_or_below', '1')],
+    ['last-chance-option-duplicate', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 2, 'option_id', 'last_chance_tidehold_ransom')],
+    ['last-chance-order-duplicate', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 2, 'option_order', '1')],
+    ['last-chance-restore-zero', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 1, 'restore_prestige', '0')],
+    ['last-chance-cost-type', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 1, 'cost_type', 'remove_item')],
+    ['last-chance-paid-cost-zero', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 1, 'cost_amount', '0')],
+    ['last-chance-fallback-cost', (dir) => mutateCell(dir, '61_bz_last_chance_choices.csv', 3, 'cost_amount', '1')],
+    ['last-chance-fallback-missing', (dir) => {
+      mutateCell(dir, '61_bz_last_chance_choices.csv', 3, 'cost_type', 'spend_gold');
+      mutateCell(dir, '61_bz_last_chance_choices.csv', 3, 'cost_amount', '1');
     }],
   ];
   for (const [name, mutation] of cases) {
@@ -550,7 +610,7 @@ test('OPC04 缺任一声明刷新层或日程战斗槽时整包拒绝', () => {
   assert.equal(fs.existsSync(battleOut), false);
 });
 
-test('OPC05 17 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
+test('OPC05 18 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
   const baselineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-canonical-baseline-'));
   const baselineOut = path.join(baselineDir, 'content.json');
   const baselineDisplay = path.join(baselineDir, 'display.json');
@@ -566,8 +626,8 @@ test('OPC05 17 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v11/v9 forged Ghost、progression、schedule、catalog 或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v11-forgery-'));
+test('OPC06 v12/v10 forged Ghost、最后机会、progression、schedule、catalog 或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v12-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -614,10 +674,48 @@ test('OPC06 v11/v9 forged Ghost、progression、schedule、catalog 或 hash 整�
     }],
     ['schedule-level-threshold-double-authority', (value) => { value.runtimeBundle.scheduleConfig.levelThresholds = []; }],
     ['schedule-income-policy-forged', (value) => { value.runtimeBundle.scheduleConfig.incomePayoutPolicy = 'hour_complete'; }],
+    ['prestige-policy-old-pve-field', (value) => { value.runtimeBundle.scheduleConfig.prestigePolicy.pveLoss = 4; }],
+    ['prestige-policy-schema', (value) => { value.runtimeBundle.scheduleConfig.prestigePolicy.schemaVersion = 2; }],
+    ['prestige-policy-scope', (value) => { value.runtimeBundle.scheduleConfig.prestigePolicy.affectedBattleKind = 'pve'; }],
+    ['prestige-policy-loss-zero', (value) => { value.runtimeBundle.scheduleConfig.prestigePolicy.lossAmount = 0; }],
+    ['prestige-loss-double-authority', (value) => {
+      value.runtimeBundle.scheduleConfig.prestigeLoss = { pveLoss: 0, pveDraw: 0, ghostLoss: 6, ghostDraw: 2 };
+    }],
+    ['last-chance-rules-missing', (value) => { delete value.runtimeBundle.scheduleConfig.lastChanceRules; }],
+    ['last-chance-rules-extra-field', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.fallback = true; }],
+    ['last-chance-schema', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.schemaVersion = 2; }],
+    ['last-chance-policy-link', (value) => { value.runtimeBundle.scheduleConfig.terminalRules.lastChancePolicyId = 'last_chance_missing'; }],
+    ['last-chance-max-uses', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.maxUsesPerRun = 2; }],
+    ['last-chance-trigger-extra-field', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.trigger.hour = 6; }],
+    ['last-chance-trigger-kind', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.trigger.battleKind = 'pve'; }],
+    ['last-chance-trigger-outcomes', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.trigger.outcomes = ['loss']; }],
+    ['last-chance-trigger-threshold', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.trigger.prestigeAtOrBelow = 1; }],
+    ['last-chance-option-count', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options.pop(); }],
+    ['last-chance-option-extra-field', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options[0].title = 'forged'; }],
+    ['last-chance-option-duplicate', (value) => {
+      value.runtimeBundle.scheduleConfig.lastChanceRules.options[1].optionId = value.runtimeBundle.scheduleConfig.lastChanceRules.options[0].optionId;
+    }],
+    ['last-chance-restore-zero', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options[0].restorePrestige = 0; }],
+    ['last-chance-restore-over-start', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options[0].restorePrestige = 21; }],
+    ['last-chance-cost-extra-field', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options[0].cost.currency = 'gold'; }],
+    ['last-chance-cost-type', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options[0].cost.type = 'remove_item'; }],
+    ['last-chance-paid-cost-zero', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options[0].cost.amount = 0; }],
+    ['last-chance-fallback-cost', (value) => { value.runtimeBundle.scheduleConfig.lastChanceRules.options[2].cost.amount = 1; }],
+    ['last-chance-fallback-missing', (value) => {
+      value.runtimeBundle.scheduleConfig.lastChanceRules.options[2].cost = { type: 'spend_gold', amount: 1 };
+    }],
+    ['last-chance-fallback-duplicate', (value) => {
+      value.runtimeBundle.scheduleConfig.lastChanceRules.options[1].cost = { type: 'none', amount: 0 };
+    }],
     ['new-run-level-rewards-missing', (value) => { delete value.runtimeBundle.newRunTemplate.levelRewards; }],
     ['new-run-level-rewards-extra-field', (value) => { value.runtimeBundle.newRunTemplate.levelRewards.pendingOptionIds = []; }],
     ['new-run-level-rewards-prepopulated', (value) => {
       value.runtimeBundle.newRunTemplate.levelRewards.pendingMilestoneIds = ['milestone_level_2'];
+    }],
+    ['new-run-last-chance-boolean', (value) => { value.runtimeBundle.newRunTemplate.run.lastChance = false; }],
+    ['new-run-last-chance-extra-field', (value) => { value.runtimeBundle.newRunTemplate.run.lastChance.usedCount = 0; }],
+    ['new-run-last-chance-prepopulated', (value) => {
+      value.runtimeBundle.newRunTemplate.run.lastChance.policyId = 'last_chance_mistwake_v1';
     }],
     ['battle-rules-missing', (value) => { delete value.runtimeBundle.battleRules; }],
     ['battle-rules-extra-field', (value) => { value.runtimeBundle.battleRules.formula = 'forged'; }],

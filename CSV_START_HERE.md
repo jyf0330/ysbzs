@@ -31,7 +31,8 @@
 - 物品的 `tags` 是非空、唯一、字典序 canonical 的稳定 ID，当前正式词表为 `ammo / aquatic / relic / tool / vehicle / weapon`。
 - `47_bz_item_effects.csv` 逐效果声明 `trigger_event`。`condition_source_relation` 必须显式写 `any|adjacent`：`item_ready` 只能为 `any`；`another_friendly_item_used` 先用 `source_item_has_any_tag + condition_tags` 筛选来源，若为 `adjacent` 再追加无参数的 `source_item_adjacent_to_self` 条件。运行时不解析中文技能说明。
 - 四种确定性友方物品目标 `left_adjacent_item / right_adjacent_item / leftmost_friendly_item / rightmost_friendly_item` 当前只允许 `item_ready + always + charge`。四者均限定同 owner 并排除触发源自身：左右相邻按多尺寸占用区间的端点接壤，最左/最右在排除自身后的友方物品中按稳定格位顺序选择；没有合法目标时该效果合法 no-op，不回退到自身或其他目标。每条 effect identity 独立结算，多个 selector 命中同一物品时按 `priority/effectId` 的确定性顺序分别生效。
-- `gain_damage_for_fight` 只用于 `another_friendly_item_used + source_item_has_any_tag` 的当场战斗自身伤害成长；target 固定为 `self_item`、`amount` 必须为正整数，且同品质 profile 必须另有 `item_ready -> selected_enemy -> deal_damage` 主动效果。该 operation 可与 `any|adjacent` 来源关系组合，但条件顺序仍固定为标签在前、相邻关系在后。
+- `gain_damage_for_fight` 只用于 `another_friendly_item_used + source_item_has_any_tag` 的当场战斗物品伤害成长，`amount` 必须为正整数。`self_item` 变体要求接收方同品质 profile 另有 `item_ready -> selected_enemy -> deal_damage` 主动效果；`trigger_source_item` 变体遵守下一条动态来源合同。两者都可与 `any|adjacent` 来源关系组合，但条件顺序仍固定为标签在前、相邻关系在后。
+- `trigger_source_item` 是无参数动态 target，只允许 `another_friendly_item_used + source_item_has_any_tag (+ source_item_adjacent_to_self) -> gain_damage_for_fight`。它指向刚完成本次 `USE` 的真实来源物品：响应在该次 `USE` 完成后结算，成长只影响其后续 `USE`。权威上下文缺少该来源或来源身份被伪造时必须整条命令 fail closed；不得静默 no-op，也不得通过参数配置自身或其他 fallback。
 - 英雄防御资源统一用 `target_type=owner_hero`：`heal` 的正整数 `amount` 恢复生命且不超过最大生命，`gain_shield` 的正整数 `amount` 获得一比一抵挡直接伤害的护盾；二者当前只允许 `item_ready + always`，不暗示尚未实现的周期伤害特例。
 - `48_bz_item_skills.csv` 用 canonical `trigger_events` 汇总该技能实际拥有的触发集合；每个正式物品的每个品质仍必须至少有一项 `item_ready` 主动效果。
 - 专项门禁：`python3 tools/export_master_to_csv.py --check --original-pirate-only` 与 `python3 tools/export_original_pirate_content.py --check`。

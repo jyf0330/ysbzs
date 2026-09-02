@@ -6,7 +6,7 @@ package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_wake_echo_drum,item_
 package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_quadrant_linkage,item_quadrant_linkage,bronze,,5,false,2,formal
 package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_mistline_ratchet,item_mistline_ratchet,bronze,,4,false,3,formal
 package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_saltwind_capstan,item_saltwind_capstan,bronze,,4,false,1,formal
-package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_signal_flare,item_signal_flare,gold,,9,false,2,formal
+package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_followwake_calibrator,item_followwake_calibrator,bronze,,4,false,2,formal
 package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_reef_hook,item_reef_hook,silver,,5,false,3,formal
 package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_tidefin_launcher,item_tidefin_launcher,bronze,,3,false,1,formal
 package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_patchwork_ram,item_patchwork_ram,gold,,10,false,2,formal

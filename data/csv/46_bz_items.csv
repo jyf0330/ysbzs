@@ -53,3 +53,7 @@ item_quadrant_linkage,四缆联动轮,"tool, vehicle",2,bronze,bronze,5,2,8,fals
 item_quadrant_linkage,四缆联动轮,"tool, vehicle",2,bronze,silver,8,4,7,false,0,0,skill_quadrant_linkage,,,,formal
 item_quadrant_linkage,四缆联动轮,"tool, vehicle",2,bronze,gold,12,6,6,false,0,0,skill_quadrant_linkage,,,,formal
 item_quadrant_linkage,四缆联动轮,"tool, vehicle",2,bronze,diamond,17,8,5,false,0,0,skill_quadrant_linkage,,,,formal
+item_followwake_calibrator,继航校炮仪,"relic, tool",1,bronze,bronze,4,2,9,false,0,0,skill_followwake_calibrator,,,,formal
+item_followwake_calibrator,继航校炮仪,"relic, tool",1,bronze,silver,7,3,8,false,0,0,skill_followwake_calibrator,,,,formal
+item_followwake_calibrator,继航校炮仪,"relic, tool",1,bronze,gold,11,5,7,false,0,0,skill_followwake_calibrator,,,,formal
+item_followwake_calibrator,继航校炮仪,"relic, tool",1,bronze,diamond,16,8,6,false,0,0,skill_followwake_calibrator,,,,formal

@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_deterministic_item_targets` 收口刷新。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_trigger_source_target` 验证收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_trigger_source_target.md` — data content: 无参数 `trigger_source_item` 动态目标与原创“继航校炮仪”已完成真相链及 fail-closed 门禁。
 
 - `tasks/done/2026-09-03_original_pirate_deterministic_item_targets.md` — data content: 一件原创正式物品逐品质覆盖 left/right adjacent 与 leftmost/rightmost friendly-item 四种确定性目标，并锁定空目标 no-op 与可达报价。
 

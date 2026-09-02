@@ -198,7 +198,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v9/v7 正式升级三选一、终局压力与中文 sidecar 确定且 hash 兼容', () => {
+test('OPC02 v10/v8 正式跨日收入、升级三选一、终局压力与中文 sidecar 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -215,13 +215,13 @@ test('OPC02 v9/v7 正式升级三选一、终局压力与中文 sidecar 确定�
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 9);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v5');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v6');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v6');
+  assert.equal(content.schemaVersion, 10);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v6');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v7');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v7');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 7);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v6');
+  assert.equal(content.runtimeBundle.schemaVersion, 8);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v7');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -277,7 +277,8 @@ test('OPC02 v9/v7 正式升级三选一、终局压力与中文 sidecar 确定�
   assert.deepEqual([
     content.runtimeBundle.scheduleConfig.schema,
     content.runtimeBundle.scheduleConfig.schemaVersion,
-  ], ['ysbzs.original-pirate-schedule-config.v2', 2]);
+  ], ['ysbzs.original-pirate-schedule-config.v3', 3]);
+  assert.equal(content.runtimeBundle.scheduleConfig.incomePayoutPolicy, 'day_advance');
   assert.deepEqual(content.runtimeBundle.scheduleConfig.hours.map(({ hour, kind }) => [hour, kind]), [
     [1, 'choice'], [2, 'choice'], [3, 'pve'], [4, 'choice'], [5, 'choice'], [6, 'ghost'],
   ]);
@@ -379,8 +380,8 @@ test('OPC02 v9/v7 正式升级三选一、终局压力与中文 sidecar 确定�
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 1);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v6');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v6');
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v7');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v7');
   assert.equal(display.entries.length, 68);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
@@ -429,6 +430,7 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
     ['terminal-pressure-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_interval_ticks', '')],
     ['terminal-pressure-initial', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_initial_damage', '0')],
     ['terminal-pressure-increment', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_increment_damage', '-1')],
+    ['income-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'income_payout_policy', 'hour_complete')],
     ['progression-disabled', (dir) => mutateColumn(dir, '59_bz_level_up_choices.csv', 'enabled', 'false')],
     ['progression-option-duplicate', (dir) => mutateCell(dir, '59_bz_level_up_choices.csv', 2, 'option_id', 'level_option_2_gold')],
     ['progression-order-duplicate', (dir) => mutateCell(dir, '59_bz_level_up_choices.csv', 2, 'option_order', '1')],
@@ -506,8 +508,8 @@ test('OPC05 16 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v9/v7 forged progression、schedule、catalog 或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v9-forgery-'));
+test('OPC06 v10/v8 forged progression、schedule、catalog 或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v10-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -553,6 +555,7 @@ test('OPC06 v9/v7 forged progression、schedule、catalog 或 hash 整包拒绝'
       delete value.runtimeBundle.progressionRules.options.find(({ effect }) => effect.type === 'change_gold').effect.amount;
     }],
     ['schedule-level-threshold-double-authority', (value) => { value.runtimeBundle.scheduleConfig.levelThresholds = []; }],
+    ['schedule-income-policy-forged', (value) => { value.runtimeBundle.scheduleConfig.incomePayoutPolicy = 'hour_complete'; }],
     ['new-run-level-rewards-missing', (value) => { delete value.runtimeBundle.newRunTemplate.levelRewards; }],
     ['new-run-level-rewards-extra-field', (value) => { value.runtimeBundle.newRunTemplate.levelRewards.pendingOptionIds = []; }],
     ['new-run-level-rewards-prepopulated', (value) => {

@@ -187,7 +187,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v6/v4 升阶附魔 catalogs、generation 与独立中文 sidecar 确定且 hash 兼容', () => {
+test('OPC02 v7/v5 正式时间状态、升阶附魔 catalogs 与中文 sidecar 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -204,13 +204,13 @@ test('OPC02 v6/v4 升阶附魔 catalogs、generation 与独立中文 sidecar 确
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 6);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v2');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v3');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v3');
+  assert.equal(content.schemaVersion, 7);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v3');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v4');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v4');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 4);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v3');
+  assert.equal(content.runtimeBundle.schemaVersion, 5);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v4');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -267,6 +267,17 @@ test('OPC02 v6/v4 升阶附魔 catalogs、generation 与独立中文 sidecar 确
   assert.deepEqual(catalogs.heroes[0].skillIds, ['skill_brine_cannon', 'skill_patchwork_ram']);
   const profileEffectIds = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
+  const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
+    .flatMap(({ effects }) => effects));
+  assert.equal(executableEffects.length, 32);
+  assert.deepEqual([...new Set(executableEffects.map(({ operation }) => operation.type))].sort(), [
+    'apply_status', 'charge', 'deal_damage', 'reload',
+  ]);
+  assert.deepEqual([...new Set(executableEffects.map(({ target }) => target.type))].sort(), [
+    'first_enemy_item', 'selected_enemy', 'self_item',
+  ]);
+  assert.deepEqual([...new Set(executableEffects.filter(({ operation }) => operation.type === 'apply_status')
+    .map(({ operation }) => operation.params.status))].sort(), ['freeze', 'haste', 'slow']);
   assert.deepEqual(catalogs.skills.flatMap(({ effectIds }) => effectIds).sort(), profileEffectIds);
   const stall = catalogs.stalls[0];
   assert.deepEqual(Object.keys(stall).sort(), ['offerCount', 'shopTemplateIds', 'stallId']);
@@ -303,8 +314,8 @@ test('OPC02 v6/v4 升阶附魔 catalogs、generation 与独立中文 sidecar 确
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 1);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v3');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v3');
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v4');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v4');
   assert.equal(display.entries.length, 61);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
@@ -326,6 +337,8 @@ test('OPC03 缺关系、冷却、品质、弹药、价格、trigger、effect 或
     ['price', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'price', '')],
     ['trigger', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'trigger_event', '')],
     ['effect', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'amount', '')],
+    ['status', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 14, 'status', 'burn')],
+    ['effect-target-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 6, 'target_type', 'first_enemy_item')],
     ['encounter', (dir) => mutateCell(dir, '53_bz_encounters.csv', 1, 'enemy_id', '')],
     ['relation', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_missing')],
     ['level-reward-forged-as-event', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_level_2')],
@@ -400,8 +413,8 @@ test('OPC05 15 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v6/v4 forged catalog、升阶、附魔、奖励、摊位或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v6-forgery-'));
+test('OPC06 v7/v5 forged effect、catalog、升阶、附魔、奖励或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v7-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -423,6 +436,15 @@ test('OPC06 v6/v4 forged catalog、升阶、附魔、奖励、摊位或 hash 整
     }],
     ['item-profile-extra-field', (value) => {
       value.items.find(({ itemId }) => itemId === 'item_brine_cannon').qualityProfiles.bronze.formula = 'forged';
+    }],
+    ['item-effect-extra-param', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_signal_flare')
+        .qualityProfiles.silver.effects.find(({ operation }) => operation.type === 'apply_status')
+        .operation.params.amount = 1;
+    }],
+    ['item-effect-target-operation-mismatch', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_brine_cannon')
+        .qualityProfiles.bronze.effects[0].target.type = 'self_item';
     }],
     ['active-node-forged', (value) => { value.runtimeBundle.newRunTemplate.activeNode = { nodeId: 'event_driftwood_cache', kind: 'event', rewardId: '' }; }],
     ['battle-reward-unknown', (value) => { value.runtimeBundle.generation.battle.templates[0].rewardId = 'reward_missing'; }],

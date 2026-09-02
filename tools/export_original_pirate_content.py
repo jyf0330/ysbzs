@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 6
+CONTENT_SCHEMA_VERSION = 7
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 4
-SOURCE_CONTENT_SCHEMA_VERSION = 4
-SOURCE_RUNTIME_SCHEMA_VERSION = 2
+RUNTIME_SCHEMA_VERSION = 5
+SOURCE_CONTENT_SCHEMA_VERSION = 5
+SOURCE_RUNTIME_SCHEMA_VERSION = 3
 NEW_RUN_SCHEMA_VERSION = 1
 BATTLE_PACKAGE_SCHEMA_VERSION = 1
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -42,8 +42,11 @@ EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
 EXECUTABLE_CATALOGS_SCHEMA_VERSION = 2
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v1"
 SCHEDULE_SCHEMA_VERSION = 1
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v2"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v3"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
+ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
+ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status"}
+ITEM_STATUSES = {"haste", "slow", "freeze"}
 EXPECTED_HOUR_KINDS = {1: "choice", 2: "choice", 3: "pve", 4: "choice", 5: "choice", 6: "ghost"}
 CHOICE_HOURS = {1, 2, 4, 5}
 STABLE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -74,7 +77,8 @@ DOMAIN_HEADERS = OrderedDict([
     ]),
     ("47_bz_item_effects.csv", [
         "effect_id", "item_id", "quality", "skill_id", "priority", "trigger_event",
-        "condition_type", "target_type", "operation_type", "amount", "catalog_status",
+        "condition_type", "target_type", "operation_type", "amount", "status", "ticks",
+        "catalog_status",
     ]),
     ("48_bz_skills.csv", [
         "skill_id", "name_zh", "description_zh", "trigger_event", "effect_ids",
@@ -346,6 +350,49 @@ def _expect_integer(value: Any, context: str, minimum: int | None = None) -> int
     return value
 
 
+def _validate_executable_item_effect(value: Any, context: str) -> str:
+    effect = _expect_exact_fields(value, {
+        "effectId", "priority", "trigger", "target", "operation",
+    }, context)
+    effect_id = _expect_stable_id(effect["effectId"], f"{context}:effectId")
+    _expect_integer(effect["priority"], f"{context}:priority", 0)
+    trigger = _expect_exact_fields(effect["trigger"], {"event", "conditions"}, f"{context}:trigger")
+    if trigger["event"] != "item_ready":
+        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TRIGGER_INVALID:{effect_id}")
+    conditions = _expect_list(trigger["conditions"], f"{context}:trigger:conditions")
+    if conditions != [{"type": "always", "params": {}}]:
+        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+    target = _expect_exact_fields(effect["target"], {"type", "params"}, f"{context}:target")
+    target_type = target["type"]
+    if target_type not in ITEM_EFFECT_TARGETS or target["params"] != {}:
+        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TARGET_INVALID:{effect_id}")
+    operation = _expect_exact_fields(effect["operation"], {"type", "params"}, f"{context}:operation")
+    operation_type = operation["type"]
+    if operation_type not in ITEM_EFFECT_OPERATIONS:
+        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_OPERATION_INVALID:{effect_id}")
+    if operation_type == "deal_damage":
+        params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
+        _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
+        valid_target = target_type == "selected_enemy"
+    elif operation_type == "reload":
+        params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
+        _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
+        valid_target = target_type == "self_item"
+    elif operation_type == "charge":
+        params = _expect_exact_fields(operation["params"], {"ticks"}, f"{context}:operation:params")
+        _expect_integer(params["ticks"], f"{context}:operation:params:ticks", 1)
+        valid_target = target_type == "self_item"
+    else:
+        params = _expect_exact_fields(operation["params"], {"status", "ticks"}, f"{context}:operation:params")
+        if params["status"] not in ITEM_STATUSES:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_STATUS_INVALID:{effect_id}")
+        _expect_integer(params["ticks"], f"{context}:operation:params:ticks", 1)
+        valid_target = target_type in {"self_item", "first_enemy_item"}
+    if not valid_target:
+        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
+    return effect_id
+
+
 def _directory(records: list[Any], id_field: str, fields: set[str], context: str) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     for index, value in enumerate(records):
@@ -358,7 +405,7 @@ def _directory(records: list[Any], id_field: str, fields: set[str], context: str
 
 
 def validate_package(package: Any) -> None:
-    """Validate the integration-pending v6/v4 package without accepting partial data."""
+    """Validate the integration-pending v7/v5 package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -408,9 +455,9 @@ def validate_package(package: Any) -> None:
             item_profiles.add((item_id, quality))
             item_profile_values[(item_id, quality)] = profile
             for effect_index, effect in enumerate(_expect_list(profile.get("effects"), f"items:{item_id}:{quality}:effects")):
-                if not isinstance(effect, dict):
-                    raise ExportError(f"EXECUTABLE_ITEM_EFFECT_INVALID:{item_id}:{quality}:{effect_index}")
-                effect_id = _expect_stable_id(effect.get("effectId"), f"items:{item_id}:{quality}:effectId")
+                effect_id = _validate_executable_item_effect(
+                    effect, f"items:{item_id}:{quality}:effects:{effect_index}"
+                )
                 if effect_id in item_effect_ids:
                     raise ExportError(f"EXECUTABLE_EFFECT_ID_DUPLICATE:{effect_id}")
                 item_effect_ids.add(effect_id)
@@ -620,6 +667,11 @@ def validate_package(package: Any) -> None:
                 raise ExportError(f"EXECUTABLE_ENCHANTMENT_COOLDOWN_INVALID:{enchantment_id}:{item_id}:{quality}")
             if ammo_delta > 0 and not item_profile["ammo"]["enabled"]:
                 raise ExportError(f"EXECUTABLE_ENCHANTMENT_AMMO_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
+            if damage_delta > 0 and not any(
+                effect.get("operation", {}).get("type") == "deal_damage"
+                for effect in item_profile["effects"]
+            ):
+                raise ExportError(f"EXECUTABLE_ENCHANTMENT_DAMAGE_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
 
     reachable_profiles: set[tuple[str, str]] = set()
     for instance_value in _expect_list(new_run.get("itemInstances"), "newRunTemplate:itemInstances"):
@@ -1057,6 +1109,11 @@ class ContentAssembler:
                 ammo = item_profile["ammo"]
                 if ammo_delta > 0 and not bool(ammo["enabled"]):
                     raise ExportError(f"ENCHANTMENT_AMMO_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
+                if damage_delta > 0 and not any(
+                    effect.get("operation", {}).get("type") == "deal_damage"
+                    for effect in item_profile["effects"]
+                ):
+                    raise ExportError(f"ENCHANTMENT_DAMAGE_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
                 stall_id = _require_id(filename, row, "source_stall_id")
                 if stall_id not in stalls:
                     raise ExportError(f"ENCHANTMENT_STALL_UNKNOWN:{enchantment_id}:{stall_id}")
@@ -1128,16 +1185,40 @@ class ContentAssembler:
                 raise ExportError(f"EFFECT_TRIGGER_INVALID:{effect_id}")
             if _require_text(filename, row, "condition_type") != "always":
                 raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
-            if _require_text(filename, row, "target_type") != "selected_enemy":
+            target_type = _require_text(filename, row, "target_type")
+            operation_type = _require_text(filename, row, "operation_type")
+            if target_type not in ITEM_EFFECT_TARGETS:
                 raise ExportError(f"EFFECT_TARGET_INVALID:{effect_id}")
-            if _require_text(filename, row, "operation_type") != "deal_damage":
+            if operation_type not in ITEM_EFFECT_OPERATIONS:
                 raise ExportError(f"EFFECT_OPERATION_INVALID:{effect_id}")
+            if operation_type == "deal_damage" and target_type != "selected_enemy":
+                raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
+            if operation_type in {"reload", "charge"} and target_type != "self_item":
+                raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
+            if operation_type == "apply_status" and target_type not in {"self_item", "first_enemy_item"}:
+                raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
+            params: dict[str, Any]
+            if operation_type in {"deal_damage", "reload"}:
+                params = {"amount": _integer(filename, row, "amount", 1)}
+                if row.get("status", "").strip() or row.get("ticks", "").strip():
+                    raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
+            elif operation_type == "charge":
+                params = {"ticks": _integer(filename, row, "ticks", 1)}
+                if row.get("amount", "").strip() or row.get("status", "").strip():
+                    raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
+            else:
+                status = _require_text(filename, row, "status")
+                if status not in ITEM_STATUSES:
+                    raise ExportError(f"EFFECT_STATUS_INVALID:{effect_id}")
+                params = {"status": status, "ticks": _integer(filename, row, "ticks", 1)}
+                if row.get("amount", "").strip():
+                    raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             effect = {
                 "effectId": effect_id,
                 "priority": _integer(filename, row, "priority", 0),
                 "trigger": {"event": "item_ready", "conditions": [{"type": "always", "params": {}}]},
-                "target": {"type": "selected_enemy", "params": {}},
-                "operation": {"type": "deal_damage", "params": {"amount": _integer(filename, row, "amount", 1)}},
+                "target": {"type": target_type, "params": {}},
+                "operation": {"type": operation_type, "params": params},
             }
             profile["effects"].append(effect)
             actual_skill_effects[skill_id].add(effect_id)
@@ -1379,8 +1460,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 15-domain workbook is the finite v4 candidate source.
-            # This adapter is its explicit one-way projection into executable v6.
+            # The current 15-domain workbook is the finite v5 candidate source.
+            # This adapter is its explicit one-way projection into executable v7.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -1702,7 +1783,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v6 runtime and display candidates from 15 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v7 runtime and display candidates from 15 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -1717,7 +1798,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v6 integration-pending candidate "
+            "PASS original-pirate v7 integration-pending candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -1728,7 +1809,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v6 integration-pending candidate to {output}")
+        print(f"exported original-pirate v7 integration-pending candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

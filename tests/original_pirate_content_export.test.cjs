@@ -245,7 +245,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定且 hash 兼容', () => {
+test('OPC02 v18/v16 雾索棘轮相邻响应、战内成长、防御资源与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -262,13 +262,13 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 17);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v13');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v14');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v14');
-  assert.equal(content.items.length, 13);
-  assert.equal(content.runtimeBundle.schemaVersion, 15);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v14');
+  assert.equal(content.schemaVersion, 18);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v14');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v15');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v15');
+  assert.equal(content.items.length, 14);
+  assert.equal(content.runtimeBundle.schemaVersion, 16);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v15');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -441,14 +441,14 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 8,
+    'ysbzs.original-pirate-executable-catalogs.v1', 9,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
     catalogs.heroSkillTrainers.length, catalogs.heroSkillOffers.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 13, 2, 2, 7, 1, 4, 8, 8, 33, 3]);
+  ], [1, 14, 2, 2, 7, 1, 4, 8, 8, 36, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
     'heroId', 'heroSkillIds', 'startingHeroSkills',
   ]);
@@ -546,6 +546,9 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   assert.deepEqual(itemById.item_tidescar_matchlock.tags, ['tool', 'weapon']);
   assert.equal(itemById.item_tidescar_matchlock.slotWidth, 2);
   assert.equal(itemById.item_tidescar_matchlock.baseQuality, 'bronze');
+  assert.deepEqual(itemById.item_mistline_ratchet.tags, ['tool', 'weapon']);
+  assert.equal(itemById.item_mistline_ratchet.slotWidth, 1);
+  assert.equal(itemById.item_mistline_ratchet.baseQuality, 'bronze');
   const itemProfileStats = (item) => ['bronze', 'silver', 'gold', 'diamond'].map((quality) => {
     const profile = item.qualityProfiles[quality];
     return [profile.buyPrice, profile.sellPrice, profile.baseCooldownTicks,
@@ -567,6 +570,10 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
     [5, 2, 7, false, 0, 0], [8, 4, 6, false, 0, 0],
     [12, 6, 5, false, 0, 0], [17, 8, 4, false, 0, 0],
   ]);
+  assert.deepEqual(itemProfileStats(itemById.item_mistline_ratchet), [
+    [4, 2, 7, false, 0, 0], [7, 3, 6, false, 0, 0],
+    [11, 5, 5, false, 0, 0], [16, 8, 4, false, 0, 0],
+  ]);
   assert.deepEqual(Object.keys(itemById.item_tidefin_launcher.qualityProfiles), [
     'bronze', 'diamond', 'gold', 'silver',
   ]);
@@ -580,7 +587,7 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects));
-  assert.equal(executableEffects.length, 80);
+  assert.equal(executableEffects.length, 88);
   assert.deepEqual([...new Set(executableEffects.map(({ operation }) => operation.type))].sort(), [
     'apply_status', 'charge', 'deal_damage', 'gain_damage_for_fight', 'gain_shield', 'heal', 'reload',
   ]);
@@ -590,16 +597,21 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   assert.deepEqual([...new Set(executableEffects.filter(({ operation }) => operation.type === 'apply_status')
     .map(({ operation }) => operation.params.status))].sort(), ['freeze', 'haste', 'slow']);
   const reactiveEffects = executableEffects.filter(({ trigger }) => trigger.event === 'another_friendly_item_used');
-  assert.equal(reactiveEffects.length, 16);
+  assert.equal(reactiveEffects.length, 20);
   assert.deepEqual([...new Set(reactiveEffects.map(({ operation }) => operation.type))].sort(), [
     'charge', 'deal_damage', 'gain_damage_for_fight', 'reload',
   ]);
   assert.equal(reactiveEffects.every(({ trigger }) => (
-    trigger.conditions.length === 1
+    [1, 2].includes(trigger.conditions.length)
       && trigger.conditions[0].type === 'source_item_has_any_tag'
       && trigger.conditions[0].params.tags.length > 0
       && trigger.conditions[0].params.tags.join(',') === [...trigger.conditions[0].params.tags].sort().join(',')
+      && (trigger.conditions.length === 1 || (
+        trigger.conditions[1].type === 'source_item_adjacent_to_self'
+        && Object.keys(trigger.conditions[1].params).length === 0
+      ))
   )), true);
+  assert.equal(reactiveEffects.filter(({ trigger }) => trigger.conditions.length === 2).length, 4);
   assert.equal(content.items.every(({ qualityProfiles }) => Object.values(qualityProfiles).every(({ effects }) => (
     effects.some(({ trigger }) => trigger.event === 'item_ready')
   ))), true);
@@ -629,6 +641,35 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
     [
       { priority: 20, event: 'item_ready', condition: [{ type: 'always', params: {} }], target: 'selected_enemy', operation: 'deal_damage', amount: 16 },
       { priority: 30, event: 'another_friendly_item_used', condition: [{ type: 'source_item_has_any_tag', params: { tags: ['ammo'] } }], target: 'self_item', operation: 'gain_damage_for_fight', amount: 6 },
+    ],
+  ]);
+  const mistlineProfiles = ['bronze', 'silver', 'gold', 'diamond'].map((quality) => (
+    itemById.item_mistline_ratchet.qualityProfiles[quality]
+  ));
+  assert.deepEqual(mistlineProfiles.map(({ effects }) => effects.map(({ priority, trigger, target, operation }) => ({
+    priority,
+    event: trigger.event,
+    conditions: trigger.conditions,
+    target: target.type,
+    operation: operation.type,
+    amount: operation.params.amount,
+    ticks: operation.params.ticks,
+  }))), [
+    [
+      { priority: 20, event: 'item_ready', conditions: [{ type: 'always', params: {} }], target: 'selected_enemy', operation: 'deal_damage', amount: 3, ticks: undefined },
+      { priority: 30, event: 'another_friendly_item_used', conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['ammo'] } }, { type: 'source_item_adjacent_to_self', params: {} }], target: 'self_item', operation: 'charge', amount: undefined, ticks: 1 },
+    ],
+    [
+      { priority: 20, event: 'item_ready', conditions: [{ type: 'always', params: {} }], target: 'selected_enemy', operation: 'deal_damage', amount: 5, ticks: undefined },
+      { priority: 30, event: 'another_friendly_item_used', conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['ammo'] } }, { type: 'source_item_adjacent_to_self', params: {} }], target: 'self_item', operation: 'charge', amount: undefined, ticks: 1 },
+    ],
+    [
+      { priority: 20, event: 'item_ready', conditions: [{ type: 'always', params: {} }], target: 'selected_enemy', operation: 'deal_damage', amount: 8, ticks: undefined },
+      { priority: 30, event: 'another_friendly_item_used', conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['ammo'] } }, { type: 'source_item_adjacent_to_self', params: {} }], target: 'self_item', operation: 'charge', amount: undefined, ticks: 2 },
+    ],
+    [
+      { priority: 20, event: 'item_ready', conditions: [{ type: 'always', params: {} }], target: 'selected_enemy', operation: 'deal_damage', amount: 12, ticks: undefined },
+      { priority: 30, event: 'another_friendly_item_used', conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['ammo'] } }, { type: 'source_item_adjacent_to_self', params: {} }], target: 'self_item', operation: 'charge', amount: undefined, ticks: 2 },
     ],
   ]);
   const defensiveQualities = ['bronze', 'silver', 'gold', 'diamond'];
@@ -670,6 +711,9 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   assert.deepEqual(catalogs.itemSkills.find(({ itemSkillId }) => (
     itemSkillId === 'skill_tidescar_matchlock'
   )).triggerEvents, ['another_friendly_item_used', 'item_ready']);
+  assert.deepEqual(catalogs.itemSkills.find(({ itemSkillId }) => (
+    itemSkillId === 'skill_mistline_ratchet'
+  )).triggerEvents, ['another_friendly_item_used', 'item_ready']);
   assert.deepEqual(catalogs.itemSkills.flatMap(({ effectIds }) => effectIds).sort(), profileEffectIds);
   const stall = catalogs.stalls[0];
   assert.deepEqual(Object.keys(stall).sort(), ['offerCount', 'shopTemplateIds', 'stallId']);
@@ -688,6 +732,11 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
     { upgradeId: 'upgrade_tidescar_matchlock_bronze_silver', itemId: 'item_tidescar_matchlock', fromQuality: 'bronze', toQuality: 'silver', price: 4, stallId: 'stall_mistwake' },
     { upgradeId: 'upgrade_tidescar_matchlock_gold_diamond', itemId: 'item_tidescar_matchlock', fromQuality: 'gold', toQuality: 'diamond', price: 11, stallId: 'stall_mistwake' },
     { upgradeId: 'upgrade_tidescar_matchlock_silver_gold', itemId: 'item_tidescar_matchlock', fromQuality: 'silver', toQuality: 'gold', price: 7, stallId: 'stall_mistwake' },
+  ]);
+  assert.deepEqual(catalogs.upgrades.filter(({ itemId }) => itemId === 'item_mistline_ratchet'), [
+    { upgradeId: 'upgrade_mistline_ratchet_bronze_silver', itemId: 'item_mistline_ratchet', fromQuality: 'bronze', toQuality: 'silver', price: 4, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_mistline_ratchet_gold_diamond', itemId: 'item_mistline_ratchet', fromQuality: 'gold', toQuality: 'diamond', price: 10, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_mistline_ratchet_silver_gold', itemId: 'item_mistline_ratchet', fromQuality: 'silver', toQuality: 'gold', price: 7, stallId: 'stall_mistwake' },
   ]);
   assert.deepEqual([...new Set(generation.shop.templates.filter(({ itemId }) => [
     'item_wake_echo_drum', 'item_saltwind_capstan', 'item_tidefin_launcher',
@@ -708,6 +757,15 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   ]);
   assert.deepEqual(generation.shop.templates.filter(({ itemId }) => itemId === 'item_tidescar_matchlock'), [
     { offerTemplateId: 'offer_refresh_10_tidescar_matchlock', itemId: 'item_tidescar_matchlock', quality: 'bronze', enchantment: '' },
+  ]);
+  assert.deepEqual(generation.shop.templates.filter(({ itemId }) => itemId === 'item_mistline_ratchet'), [
+    { offerTemplateId: 'offer_refresh_1_mistline_ratchet', itemId: 'item_mistline_ratchet', quality: 'bronze', enchantment: '' },
+  ]);
+  assert.deepEqual(generation.shop.layers.find(({ fromRefreshIndex }) => fromRefreshIndex === 1).templateIds, [
+    'offer_refresh_1_wake_echo_drum', 'offer_refresh_1_storm_compass', 'offer_refresh_1_mistline_ratchet',
+  ]);
+  assert.deepEqual(generation.shop.templates.filter(({ itemId }) => itemId === 'item_abyss_bell'), [
+    { offerTemplateId: 'offer_refresh_8_abyss_bell', itemId: 'item_abyss_bell', quality: 'diamond', enchantment: '' },
   ]);
   const defensiveUpgradePrices = Object.fromEntries(catalogs.upgrades.filter(({ itemId }) => [
     'item_mistkelp_remedy_kit', 'item_tidefold_bulwark', 'item_homeglow_beacon',
@@ -757,6 +815,21 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
     ['gold', 10, 0, 4, 0], ['diamond', 13, 0, 6, 0],
   ]);
   assert.equal(reserve.profiles.some(({ itemId }) => itemId === 'item_tidescar_matchlock'), false);
+  const mistlineTailwind = tailwind.profiles.filter(({ itemId }) => itemId === 'item_mistline_ratchet');
+  const mistlineBreaker = breaker.profiles.filter(({ itemId }) => itemId === 'item_mistline_ratchet');
+  assert.deepEqual(mistlineTailwind.map(({ quality, price, cooldownDeltaTicks, damageDelta, ammoDelta }) => (
+    [quality, price, cooldownDeltaTicks, damageDelta, ammoDelta]
+  )), [
+    ['bronze', 4, -1, 0, 0], ['silver', 6, -1, 0, 0],
+    ['gold', 9, -1, 0, 0], ['diamond', 12, -1, 0, 0],
+  ]);
+  assert.deepEqual(mistlineBreaker.map(({ quality, price, cooldownDeltaTicks, damageDelta, ammoDelta }) => (
+    [quality, price, cooldownDeltaTicks, damageDelta, ammoDelta]
+  )), [
+    ['bronze', 5, 0, 2, 0], ['silver', 7, 0, 3, 0],
+    ['gold', 10, 0, 4, 0], ['diamond', 13, 0, 6, 0],
+  ]);
+  assert.equal(reserve.profiles.some(({ itemId }) => itemId === 'item_mistline_ratchet'), false);
   assert.equal(catalogs.eventOptions.every((option) => (
     assert.deepEqual(Object.keys(option).sort(), ['eventId', 'goldDelta', 'optionId', 'rewardId']), true
   )), true);
@@ -802,9 +875,9 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v14');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v14');
-  assert.equal(display.entries.length, 103);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v15');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v15');
+  assert.equal(display.entries.length, 105);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -837,7 +910,7 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   )).descriptionZh, /学习青铜品质/);
   assert.equal(display.entries.filter(({ domain }) => domain === 'hero_skill_quality_profiles').length, 8);
   assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
-  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 13);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 14);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_tidefin_launcher'), {
     displayId: 'items.item_tidefin_launcher', domain: 'items', sourceId: 'item_tidefin_launcher',
     nameZh: '潮鳍投筒', descriptionZh: '',
@@ -852,6 +925,13 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   assert.match(display.entries.find(({ displayId }) => (
     displayId === 'item_skills.skill_tidescar_matchlock'
   )).descriptionZh, /弹药标签.*本场战斗增加伤害/);
+  assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_mistline_ratchet'), {
+    displayId: 'items.item_mistline_ratchet', domain: 'items', sourceId: 'item_mistline_ratchet',
+    nameZh: '雾索棘轮', descriptionZh: '',
+  });
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'item_skills.skill_mistline_ratchet'
+  )).descriptionZh, /相邻.*弹药标签.*推进充能/);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_mistkelp_remedy_kit'), {
     displayId: 'items.item_mistkelp_remedy_kit', domain: 'items', sourceId: 'item_mistkelp_remedy_kit',
     nameZh: '雾藻疗匣', descriptionZh: '',
@@ -884,6 +964,21 @@ test('OPC02 v17/v15 潮痕火绳枪战内成长、防御资源与 Ghost 确定�
   const source = fs.readFileSync(path.join(csvDir, '56_bz_source_snapshot.csv'), 'utf8');
   assert.match(source, /local_original/);
   assert.match(source, /原创本地内容/);
+  const [effectHeaders, ...effectSourceRows] = parseCsv(
+    fs.readFileSync(path.join(csvDir, '47_bz_item_effects.csv'), 'utf8').replace(/^\uFEFF/, ''),
+  );
+  const relationColumn = effectHeaders.indexOf('condition_source_relation');
+  const itemColumn = effectHeaders.indexOf('item_id');
+  const triggerColumn = effectHeaders.indexOf('trigger_event');
+  assert.notEqual(relationColumn, -1);
+  assert.equal(effectSourceRows.length, 88);
+  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 84);
+  const adjacentSourceRows = effectSourceRows.filter((row) => row[relationColumn] === 'adjacent');
+  assert.equal(adjacentSourceRows.length, 4);
+  assert.equal(adjacentSourceRows.every((row) => (
+    row[itemColumn] === 'item_mistline_ratchet'
+      && row[triggerColumn] === 'another_friendly_item_used'
+  )), true);
 });
 
 test('OPC03 缺战内成长/防御效果字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
@@ -896,6 +991,10 @@ test('OPC03 缺战内成长/防御效果字段、tags、主动效果、关系、
     ['ammo', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'ammo_maximum', '')],
     ['price', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'price', '')],
     ['trigger', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'trigger_event', '')],
+    ['source-relation-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'condition_source_relation', '')],
+    ['source-relation-unknown', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_source_relation', 'nearby')],
+    ['source-relation-ready-adjacent', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'condition_source_relation', 'adjacent')],
+    ['source-relation-adjacent-illegal-condition', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 82, 'condition_type', 'always')],
     ['response-condition-tags-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_tags', '')],
     ['response-condition-tags-duplicate', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_tags', 'weapon, weapon')],
     ['response-condition-type', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_type', 'always')],
@@ -1158,18 +1257,18 @@ test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () =
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v17/v15 forged 战内成长、防御资源、tags、英雄技能或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v17-forgery-'));
+test('OPC06 v18/v16 forged 相邻条件、战内成长、防御资源、tags、英雄技能或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v18-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
   assert.equal(validatePackageFile(baseline).status, 0);
   const cases = [
-    ['old-root-schema', (value) => { value.schemaVersion = 16; }],
-    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 14; }],
-    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 7; }],
+    ['old-root-schema', (value) => { value.schemaVersion = 17; }],
+    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 15; }],
+    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 8; }],
     ['old-rules-version', (value) => {
-      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v12';
+      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v13';
       value.runtimeBundle.rulesVersion = value.rulesVersion;
     }],
     ['progression-rules-missing', (value) => { delete value.runtimeBundle.progressionRules; }],
@@ -1388,6 +1487,26 @@ test('OPC06 v17/v15 forged 战内成长、防御资源、tags、英雄技能或 
       const effect = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
         .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
       effect.trigger.conditions[0] = { type: 'always', params: {} };
+    }],
+    ['adjacent-condition-reordered', (value) => {
+      const effect = value.items.find(({ itemId }) => itemId === 'item_mistline_ratchet')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
+      effect.trigger.conditions.reverse();
+    }],
+    ['adjacent-condition-duplicate', (value) => {
+      const effect = value.items.find(({ itemId }) => itemId === 'item_mistline_ratchet')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
+      effect.trigger.conditions.push({ type: 'source_item_adjacent_to_self', params: {} });
+    }],
+    ['adjacent-condition-params-forged', (value) => {
+      const effect = value.items.find(({ itemId }) => itemId === 'item_mistline_ratchet')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
+      effect.trigger.conditions[1].params = { maximumGap: 1 };
+    }],
+    ['adjacent-condition-tag-duplicated', (value) => {
+      const effect = value.items.find(({ itemId }) => itemId === 'item_mistline_ratchet')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
+      effect.trigger.conditions[0].params.tags.push('ammo');
     }],
     ['reactive-operation-unsupported', (value) => {
       const effect = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')

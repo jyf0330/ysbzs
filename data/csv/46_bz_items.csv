@@ -45,3 +45,7 @@ item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,bronze,5,2,7,fal
 item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,silver,8,4,6,false,0,0,skill_tidescar_matchlock,,,,formal
 item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,gold,12,6,5,false,0,0,skill_tidescar_matchlock,,,,formal
 item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,diamond,17,8,4,false,0,0,skill_tidescar_matchlock,,,,formal
+item_mistline_ratchet,雾索棘轮,"tool, weapon",1,bronze,bronze,4,2,7,false,0,0,skill_mistline_ratchet,,,,formal
+item_mistline_ratchet,雾索棘轮,"tool, weapon",1,bronze,silver,7,3,6,false,0,0,skill_mistline_ratchet,,,,formal
+item_mistline_ratchet,雾索棘轮,"tool, weapon",1,bronze,gold,11,5,5,false,0,0,skill_mistline_ratchet,,,,formal
+item_mistline_ratchet,雾索棘轮,"tool, weapon",1,bronze,diamond,16,8,4,false,0,0,skill_mistline_ratchet,,,,formal

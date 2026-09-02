@@ -27,6 +27,9 @@
 - `63_bz_hero_skill_loadouts.csv`：英雄起始与离线 Ghost 的规范化英雄技能实例；起始仅携带雾线追炮，`starter` 与 `ghost_snapshot` 分别投影到英雄目录和 Ghost build，并共同参与运行包 hash。
 - `64_bz_hero_skill_trainers.csv`：英雄技能训练师目录；训练师归属英雄并绑定正式摊位，和物品商店目录保持独立。
 - `65_bz_hero_skill_offers.csv`：英雄技能学习与相邻品质升阶入口；`offer_id` 是命令内容身份，价格、日窗、顺序和 `learn|upgrade` action 均由正式数据冻结。学习所得实例来源固定为 `sourceType=hero_skill_trainer`、`sourceId=trainer_id`。
+- `66_bazaar_reference_snapshots.csv`：外部参考来源锁。`current_version_boundary` 只冻结 Steam 官方当前 Patch 公告身份和公告正文 hash，不证明 `34_bazaar_objects.csv` 的旧效果属于该 Patch；`legacy_catalog_binding` 以 canonical 行集合 hash 绑定 369 条旧参考记录，其 patch/build 保持空值。两类记录均为 `reference_only`，license 未确认，不能进入 `original_pirate` 可执行目录。
+
+`34_bazaar_objects.csv` 的 `identity_confirmed=true` 只表示旧对象身份映射仍被保留；`rule_verified=false` 与非空 `rule_unresolved_fields` 表示现行精确规则尚未核验。全部 369 条当前均为 `reference_reserved`，`current_version_boundary_snapshot_id` 只是审计对照，不是规则来源关系。
 
 ## 注意
 

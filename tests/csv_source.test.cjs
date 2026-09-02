@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
@@ -115,6 +116,7 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   const enchantments = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '32_enchantment_types.csv'), 'utf8'));
   const petEnchantments = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '33_pet_enchantments.csv'), 'utf8'));
   const objects = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '34_bazaar_objects.csv'), 'utf8'));
+  const referenceSnapshots = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '66_bazaar_reference_snapshots.csv'), 'utf8'));
   const shopMapping = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '35_bazaar_shop_mapping.csv'), 'utf8'));
   const heroCatalog = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '41_hero_catalog.csv'), 'utf8'));
   const tagCatalog = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '42_bazaar_tag_catalog.csv'), 'utf8'));
@@ -134,11 +136,63 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
     note: '第一英雄只开放138个物品来源宠物；技能与商人包映射保留为内部记录。'
   }]);
   assert.ok(tagCatalog.length > 0, 'formal Bazaar build-tag catalog should be exported');
-  assert.equal(objects.filter(row => row.source_status === 'confirmed').length, 369);
+  assert.deepEqual(referenceSnapshots.map(row => row.source_snapshot_id), [
+    'snapshot_the_bazaar_patch_18_0_boundary',
+    'snapshot_vanessa_legacy_catalog_v1',
+  ]);
+  const currentBoundary = referenceSnapshots[0];
+  assert.equal(currentBoundary.snapshot_role, 'current_version_boundary');
+  assert.equal(currentBoundary.game_patch, '18.0');
+  assert.equal(currentBoundary.game_build, null);
+  assert.equal(currentBoundary.steam_app_id, '1617400');
+  assert.equal(currentBoundary.steam_announcement_gid, '1842846814441157');
+  assert.equal(currentBoundary.published_at_utc, '2026-09-02T17:45:15Z');
+  assert.equal(currentBoundary.raw_content_hash_subject, 'steam_newsitem.contents_utf8');
+  assert.equal(currentBoundary.raw_content_sha256, 'c3d70877395c8fcd6b64f36a72cfd2ce46583f4b493588bd8e4e955ca6d71681');
+  assert.equal(currentBoundary.record_count, '0');
+  assert.equal(currentBoundary.license_status, 'unverified');
+  assert.equal(currentBoundary.usage_scope, 'reference_only');
+  assert.equal(currentBoundary.rule_verification_policy, 'boundary_only_no_catalog_binding');
+  const legacySnapshot = referenceSnapshots[1];
+  assert.equal(legacySnapshot.snapshot_role, 'legacy_catalog_binding');
+  assert.equal(legacySnapshot.game_patch, null);
+  assert.equal(legacySnapshot.game_build, null);
+  assert.equal(legacySnapshot.official_api_url, null);
+  assert.equal(legacySnapshot.official_announcement_url, null);
+  assert.equal(legacySnapshot.record_count, '369');
+  assert.equal(legacySnapshot.raw_content_hash_subject, 'canonical_csv_utf8:34_bazaar_objects:legacy_fields_v1');
+  assert.equal(legacySnapshot.raw_content_sha256, '44d1f157bd4f27d4fe3cd12827f67a9b2cd8d64fbd2e03032c10fff1dd7c4cb9');
+  assert.equal(legacySnapshot.license_status, 'unverified');
+  assert.equal(legacySnapshot.usage_scope, 'reference_only');
+  assert.equal(legacySnapshot.rule_verification_policy, 'per_record_required');
+  assert.ok(objects.every(row => row.source_snapshot_id === legacySnapshot.source_snapshot_id));
+  assert.ok(objects.every(row => row.current_version_boundary_snapshot_id === currentBoundary.source_snapshot_id));
+  assert.ok(objects.every(row => row.identity_confirmed === 'true'));
+  assert.ok(objects.every(row => row.rule_verified === 'false'));
+  assert.ok(objects.every(row => String(row.rule_unresolved_fields || '').trim()));
+  assert.ok(objects.every(row => row.catalog_status === 'reference_reserved'));
+  assert.ok(objects.every(row => !Object.hasOwn(row, 'source_status')));
   assert.equal(objects.filter(row => row.source_type === 'item').length, 138);
   assert.equal(objects.filter(row => row.source_type === 'merchant_package').length, 93);
   assert.equal(objects.filter(row => row.source_type === 'skill').length, 138);
-  assert.equal(objects.filter(row => row.source_status === 'derived_gap_profile').length, 0);
+  const legacyHashFields = [
+    'object_id', 'object_no', 'source_type', 'source_slug', 'source_name', 'source_tier',
+    'source_size', 'source_tags', 'source_relation_count', 'source_stall_ids',
+    'local_shop_count', 'local_shop_ids', 'primary_enchant', 'pet_id', 'pet_name',
+    'source_url', 'source_effect', 'design_note', 'owner_hero_id', 'build_tags',
+    'tag_references',
+  ];
+  const escapeCsv = value => {
+    const text = value == null ? '' : String(value);
+    return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  };
+  const canonicalLegacy = `${legacyHashFields.join(',')}\n${objects.map(row => (
+    legacyHashFields.map(field => escapeCsv(row[field])).join(',')
+  )).join('\n')}\n`;
+  assert.equal(
+    crypto.createHash('sha256').update(canonicalLegacy, 'utf8').digest('hex'),
+    legacySnapshot.raw_content_sha256,
+  );
   const stallIds = new Set(shopMapping.map(row => row.stall_id));
   assert.ok(objects.every(row => String(row.source_stall_ids || '').trim()), 'every object keeps exact source stall ids');
   for (const row of objects) {
@@ -169,6 +223,43 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   assert.equal(Number(curio?.free_rerolls), 1);
   assert.equal(Number(curio?.source_object_count), 31, '30 bronze packages plus Curio silver package');
   assert.deepEqual(new Set(shapes.map(row => Number(row['命中格数']))), new Set([1, 2, 3]));
+});
+
+test('CSV02H 外部参考来源锁伪造快照、版本绑定或规则状态时 fail closed', () => {
+  const code = String.raw`
+from copy import deepcopy
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(sys.argv[1]) / 'tools'))
+import export_master_to_csv as exporter
+
+csv_dir = Path(sys.argv[2])
+object_rows, object_headers = exporter.read_csv(csv_dir / '34_bazaar_objects.csv')
+snapshot_rows, snapshot_headers = exporter.read_csv(csv_dir / '66_bazaar_reference_snapshots.csv')
+base = {
+    '34_bazaar_objects.csv': (object_rows, object_headers),
+    '66_bazaar_reference_snapshots.csv': (snapshot_rows, snapshot_headers),
+}
+exporter.validate_bazaar_reference_source_lock(base)
+
+def forged(mutator, expected):
+    tables = deepcopy(base)
+    mutator(tables)
+    try:
+        exporter.validate_bazaar_reference_source_lock(tables)
+    except ValueError as exc:
+        assert expected in str(exc), (expected, str(exc))
+        return
+    raise AssertionError(expected)
+
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][0].__setitem__('raw_content_sha256', '0' * 64), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('source_snapshot_id', exporter.CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID), 'LEGACY_BINDING_INVALID')
+forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('rule_verified', 'true'), 'VERIFICATION_INVALID')
+forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('catalog_status', 'playable'), 'STATUS_INVALID')
+forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('rule_unresolved_fields', ''), 'UNRESOLVED_REQUIRED')
+forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('source_effect', 'forged'), 'LEGACY_CATALOG_HASH_INVALID')
+`;
+  execFileSync('python3', ['-c', code, root, csvDir], { cwd: root, stdio: 'pipe' });
 });
 
 test('CSV02G 第一英雄目录只开放 138 个物品映射，标签严格区分拥有与引用', () => {
@@ -312,7 +403,7 @@ visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
 assert visible == [
     'README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY',
-    'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS',
+    'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'BAZAAR_REFERENCE_SNAPSHOTS', 'SHOP_MAPPING', 'ENCHANTMENTS',
     'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES', 'ROUTE',
     'HERO_CATALOG', 'TAG_CATALOG', 'HERO_SKILLS',
     'BZ_GAMEPLAY', 'BZ_HEROES', 'BZ_ITEMS', 'BZ_ITEM_EFFECTS', 'BZ_ITEM_SKILLS',

@@ -8,6 +8,7 @@ columns, so a thin workbook can safely drive the current full CSV schema.
 
 import argparse
 import csv
+import hashlib
 import posixpath
 import re
 import shutil
@@ -55,6 +56,96 @@ ORIGINAL_PIRATE_EXPORTS = [
     ("BZ_HERO_SKILL_OFFERS", "65_bz_hero_skill_offers.csv"),
 ]
 
+REFERENCE_SOURCE_EXPORTS = [
+    ("BAZAAR_OBJECTS", "34_bazaar_objects.csv"),
+    ("BAZAAR_REFERENCE_SNAPSHOTS", "66_bazaar_reference_snapshots.csv"),
+]
+
+REFERENCE_SNAPSHOT_HEADERS = [
+    "source_snapshot_id", "snapshot_role", "source_kind", "source_namespace",
+    "game_id", "hero_scope", "game_patch", "game_build", "steam_app_id",
+    "steam_announcement_gid", "published_at_utc", "captured_on", "official_api_url",
+    "official_announcement_url", "raw_content_hash_algorithm", "raw_content_hash_subject",
+    "raw_content_sha256", "record_count", "license_status", "usage_scope",
+    "rule_verification_policy", "catalog_status", "unresolved_fields",
+]
+
+REFERENCE_OBJECT_HEADERS = [
+    "object_id", "object_no", "source_type", "source_snapshot_id",
+    "current_version_boundary_snapshot_id", "identity_confirmed", "rule_verified",
+    "rule_unresolved_fields", "source_slug", "source_name", "source_tier", "source_size",
+    "source_tags", "source_relation_count", "source_stall_ids", "local_shop_count",
+    "local_shop_ids", "primary_enchant", "pet_id", "pet_name", "source_url",
+    "source_effect", "design_note", "owner_hero_id", "catalog_status", "build_tags",
+    "tag_references",
+]
+
+LEGACY_CATALOG_HASH_FIELDS = [
+    "object_id", "object_no", "source_type", "source_slug", "source_name", "source_tier",
+    "source_size", "source_tags", "source_relation_count", "source_stall_ids",
+    "local_shop_count", "local_shop_ids", "primary_enchant", "pet_id", "pet_name",
+    "source_url", "source_effect", "design_note", "owner_hero_id", "build_tags",
+    "tag_references",
+]
+
+CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID = "snapshot_the_bazaar_patch_18_0_boundary"
+LEGACY_CATALOG_SNAPSHOT_ID = "snapshot_vanessa_legacy_catalog_v1"
+OFFICIAL_PATCH_18_CONTENT_SHA256 = "c3d70877395c8fcd6b64f36a72cfd2ce46583f4b493588bd8e4e955ca6d71681"
+LEGACY_CATALOG_SHA256 = "44d1f157bd4f27d4fe3cd12827f67a9b2cd8d64fbd2e03032c10fff1dd7c4cb9"
+
+REFERENCE_SNAPSHOT_ROWS = {
+    CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID: {
+        "source_snapshot_id": CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID,
+        "snapshot_role": "current_version_boundary",
+        "source_kind": "official_steam_announcement",
+        "source_namespace": "steam_community_announcements",
+        "game_id": "the_bazaar",
+        "hero_scope": "",
+        "game_patch": "18.0",
+        "game_build": "",
+        "steam_app_id": "1617400",
+        "steam_announcement_gid": "1842846814441157",
+        "published_at_utc": "2026-09-02T17:45:15Z",
+        "captured_on": "2026-09-03",
+        "official_api_url": "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1617400&count=100&maxlength=0&format=json",
+        "official_announcement_url": "https://store.steampowered.com/news/app/1617400/view/1842846814441157",
+        "raw_content_hash_algorithm": "sha256",
+        "raw_content_hash_subject": "steam_newsitem.contents_utf8",
+        "raw_content_sha256": OFFICIAL_PATCH_18_CONTENT_SHA256,
+        "record_count": "0",
+        "license_status": "unverified",
+        "usage_scope": "reference_only",
+        "rule_verification_policy": "boundary_only_no_catalog_binding",
+        "catalog_status": "reference_reserved",
+        "unresolved_fields": "game_build,license_terms",
+    },
+    LEGACY_CATALOG_SNAPSHOT_ID: {
+        "source_snapshot_id": LEGACY_CATALOG_SNAPSHOT_ID,
+        "snapshot_role": "legacy_catalog_binding",
+        "source_kind": "external_legacy_catalog",
+        "source_namespace": "bazaar_source_audit",
+        "game_id": "the_bazaar",
+        "hero_scope": "vanessa",
+        "game_patch": "",
+        "game_build": "",
+        "steam_app_id": "",
+        "steam_announcement_gid": "",
+        "published_at_utc": "",
+        "captured_on": "2026-09-03",
+        "official_api_url": "",
+        "official_announcement_url": "",
+        "raw_content_hash_algorithm": "sha256",
+        "raw_content_hash_subject": "canonical_csv_utf8:34_bazaar_objects:legacy_fields_v1",
+        "raw_content_sha256": LEGACY_CATALOG_SHA256,
+        "record_count": "369",
+        "license_status": "unverified",
+        "usage_scope": "reference_only",
+        "rule_verification_policy": "per_record_required",
+        "catalog_status": "reference_reserved",
+        "unresolved_fields": "game_patch,game_build,published_at_utc,official_rule_source,license_terms",
+    },
+}
+
 MASTER_ONLY_EXPORTS = [
     ("SHOP_STORES", "30_shop_stores.csv"),
     ("SHAPE_CATALOG", "27_shape_catalog.csv"),
@@ -62,7 +153,7 @@ MASTER_ONLY_EXPORTS = [
     ("QUALITY_UPGRADES", "29_quality_upgrades.csv"),
     ("ENCHANTMENTS", "32_enchantment_types.csv"),
     ("PET_ENCHANTMENTS", "33_pet_enchantments.csv"),
-    ("BAZAAR_OBJECTS", "34_bazaar_objects.csv"),
+    *REFERENCE_SOURCE_EXPORTS,
     ("SHOP_MAPPING", "35_bazaar_shop_mapping.csv"),
     ("HERO_CATALOG", "41_hero_catalog.csv"),
     ("TAG_CATALOG", "42_bazaar_tag_catalog.csv"),
@@ -209,6 +300,70 @@ def csv_text(rows, headers):
     for row in rows:
         writer.writerow({h: row.get(h, "") for h in headers})
     return buf.getvalue()
+
+
+def validate_bazaar_reference_source_lock(tables):
+    object_filename = "34_bazaar_objects.csv"
+    snapshot_filename = "66_bazaar_reference_snapshots.csv"
+    if object_filename not in tables or snapshot_filename not in tables:
+        raise ValueError("BAZAAR_REFERENCE_SOURCE_LOCK_TABLES_REQUIRED")
+    object_rows, object_headers = tables[object_filename]
+    snapshot_rows, snapshot_headers = tables[snapshot_filename]
+    if object_headers != REFERENCE_OBJECT_HEADERS:
+        raise ValueError("BAZAAR_REFERENCE_OBJECT_SCHEMA_INVALID")
+    if snapshot_headers != REFERENCE_SNAPSHOT_HEADERS:
+        raise ValueError("BAZAAR_REFERENCE_SNAPSHOT_SCHEMA_INVALID")
+    if [row.get("source_snapshot_id", "") for row in snapshot_rows] != [
+        CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID,
+        LEGACY_CATALOG_SNAPSHOT_ID,
+    ]:
+        raise ValueError("BAZAAR_REFERENCE_SNAPSHOT_IDENTITY_INVALID")
+    for row in snapshot_rows:
+        snapshot_id = row.get("source_snapshot_id", "")
+        if row != REFERENCE_SNAPSHOT_ROWS.get(snapshot_id):
+            raise ValueError(f"BAZAAR_REFERENCE_SNAPSHOT_FIELDS_INVALID:{snapshot_id}")
+
+    if len(object_rows) != 369:
+        raise ValueError("BAZAAR_REFERENCE_OBJECT_COUNT_INVALID")
+    object_ids = [row.get("object_id", "") for row in object_rows]
+    if len(set(object_ids)) != len(object_ids) or any(not object_id for object_id in object_ids):
+        raise ValueError("BAZAAR_REFERENCE_OBJECT_ID_INVALID")
+    try:
+        object_numbers = [int(row.get("object_no", "")) for row in object_rows]
+    except ValueError as exc:
+        raise ValueError("BAZAAR_REFERENCE_OBJECT_NUMBER_INVALID") from exc
+    if object_numbers != list(range(1, 370)):
+        raise ValueError("BAZAAR_REFERENCE_OBJECT_ORDER_INVALID")
+    type_counts = {
+        source_type: sum(row.get("source_type") == source_type for row in object_rows)
+        for source_type in ("item", "skill", "merchant_package")
+    }
+    if type_counts != {"item": 138, "skill": 138, "merchant_package": 93}:
+        raise ValueError("BAZAAR_REFERENCE_OBJECT_TYPE_COVERAGE_INVALID")
+    for row in object_rows:
+        object_id = row.get("object_id", "")
+        if row.get("source_snapshot_id") != LEGACY_CATALOG_SNAPSHOT_ID:
+            raise ValueError(f"BAZAAR_REFERENCE_OBJECT_LEGACY_BINDING_INVALID:{object_id}")
+        if row.get("current_version_boundary_snapshot_id") != CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID:
+            raise ValueError(f"BAZAAR_REFERENCE_OBJECT_BOUNDARY_BINDING_INVALID:{object_id}")
+        if row.get("identity_confirmed") != "true" or row.get("rule_verified") != "false":
+            raise ValueError(f"BAZAAR_REFERENCE_OBJECT_VERIFICATION_INVALID:{object_id}")
+        if not row.get("rule_unresolved_fields", "").strip():
+            raise ValueError(f"BAZAAR_REFERENCE_OBJECT_UNRESOLVED_REQUIRED:{object_id}")
+        if row.get("catalog_status") != "reference_reserved":
+            raise ValueError(f"BAZAAR_REFERENCE_OBJECT_STATUS_INVALID:{object_id}")
+        if not row.get("source_url", "").strip() or not row.get("source_effect", "").strip():
+            raise ValueError(f"BAZAAR_REFERENCE_OBJECT_EVIDENCE_REQUIRED:{object_id}")
+
+    legacy_payload = [
+        {field: row.get(field, "") for field in LEGACY_CATALOG_HASH_FIELDS}
+        for row in object_rows
+    ]
+    actual_hash = hashlib.sha256(
+        csv_text(legacy_payload, LEGACY_CATALOG_HASH_FIELDS).encode("utf-8")
+    ).hexdigest()
+    if actual_hash != LEGACY_CATALOG_SHA256:
+        raise ValueError("BAZAAR_REFERENCE_LEGACY_CATALOG_HASH_INVALID")
 
 
 def write_csv(path, rows, headers, bom=False):
@@ -900,6 +1055,7 @@ def generated_tables(master_path, baseline_dir):
         rows, headers = generated_sheet_table(master_path, sheet_name)
         if rows and headers:
             result[filename] = (rows, headers)
+    validate_bazaar_reference_source_lock(result)
     for baseline_file in sorted(baseline_dir.glob("*.csv")):
         if baseline_file.name not in result:
             result[baseline_file.name] = read_csv(baseline_file)
@@ -913,6 +1069,17 @@ def generated_original_pirate_tables(master_path):
         if not rows or not headers:
             raise ValueError(f"master workbook missing original-pirate sheet rows: {sheet_name}")
         result[filename] = (rows, headers)
+    return result
+
+
+def generated_reference_source_tables(master_path):
+    result = {}
+    for sheet_name, filename in REFERENCE_SOURCE_EXPORTS:
+        rows, headers = generated_sheet_table(master_path, sheet_name)
+        if not rows or not headers:
+            raise ValueError(f"master workbook missing reference-source sheet rows: {sheet_name}")
+        result[filename] = (rows, headers)
+    validate_bazaar_reference_source_lock(result)
     return result
 
 
@@ -935,6 +1102,11 @@ def main(argv=None):
         action="store_true",
         help="Export/check only the original-pirate BZ domains without evaluating legacy formula domains",
     )
+    parser.add_argument(
+        "--reference-source-lock-only",
+        action="store_true",
+        help="Export/check only the strict Bazaar external-reference source-lock domains",
+    )
     args = parser.parse_args(argv)
 
     master_path = Path(args.master)
@@ -945,16 +1117,17 @@ def main(argv=None):
     if not baseline_dir.exists():
         raise SystemExit(f"missing baseline csv dir: {baseline_dir}")
 
-    generated = (
-        generated_original_pirate_tables(master_path)
-        if args.original_pirate_only
-        else generated_tables(master_path, baseline_dir)
-    )
-    baseline_csv_files = (
-        sorted(filename for _sheet_name, filename in ORIGINAL_PIRATE_EXPORTS)
-        if args.original_pirate_only
-        else sorted(path.name for path in baseline_dir.glob("*.csv"))
-    )
+    if args.original_pirate_only and args.reference_source_lock_only:
+        parser.error("--original-pirate-only and --reference-source-lock-only are mutually exclusive")
+    if args.original_pirate_only:
+        generated = generated_original_pirate_tables(master_path)
+        baseline_csv_files = sorted(filename for _sheet_name, filename in ORIGINAL_PIRATE_EXPORTS)
+    elif args.reference_source_lock_only:
+        generated = generated_reference_source_tables(master_path)
+        baseline_csv_files = sorted(filename for _sheet_name, filename in REFERENCE_SOURCE_EXPORTS)
+    else:
+        generated = generated_tables(master_path, baseline_dir)
+        baseline_csv_files = sorted(path.name for path in baseline_dir.glob("*.csv"))
     missing_exports = [filename for filename in baseline_csv_files if filename not in generated]
     if missing_exports:
         print("FAIL master workbook missing CSV source sheets:", ", ".join(missing_exports), file=sys.stderr)
@@ -973,7 +1146,7 @@ def main(argv=None):
         print("PASS master export matches generated CSV tables")
         return 0
 
-    if not args.original_pirate_only:
+    if not args.original_pirate_only and not args.reference_source_lock_only:
         copy_baseline_if_needed(baseline_dir, out_dir)
     for filename, (rows, headers) in generated.items():
         baseline_file = baseline_dir / filename

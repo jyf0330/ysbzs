@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_hero_defense_items` 收口。
+最后刷新：2026-09-03，由 `2026-09-03_bazaar_external_reference_source_lock` 收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_bazaar_external_reference_source_lock.md` — data source: 分离 Steam Patch 18.0 live 边界与未知版本 legacy catalog，369 条旧来源记录全部严格绑定为 reference-only。
 
 - `tasks/done/2026-09-03_original_pirate_hero_defense_items.md` — data contract: 英雄治疗/护盾物品效果与三件原创防御物品。
 

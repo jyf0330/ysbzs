@@ -55,7 +55,10 @@ test('HERO_SKILLS workbook domain exports a rebuildable first slice', () => {
     const source = sourceById.get(skill.source_object_id);
     assert.ok(source, `${skill.skill_id} source exists`);
     assert.equal(source.source_type, 'skill', `${skill.skill_id} points only to a reserved skill audit row`);
-    assert.equal(source.catalog_status, 'reserved', `${skill.skill_id} does not rewrite source catalog status`);
+    assert.equal(source.catalog_status, 'reference_reserved', `${skill.skill_id} remains reference-only`);
+    assert.equal(source.identity_confirmed, 'true', `${skill.skill_id} keeps the source identity audit`);
+    assert.equal(source.rule_verified, 'false', `${skill.skill_id} does not claim current-rule verification`);
+    assert.ok(String(source.rule_unresolved_fields || '').trim(), `${skill.skill_id} keeps unresolved rule fields explicit`);
     assert.equal(String(source.owner_hero_id ?? ''), '', `${skill.skill_id} hero ownership stays explicit in the new catalog`);
     assert.equal(source.source_tier, skill.base_quality, `${skill.skill_id} preserves source base quality`);
     const sourceTrainers = ids(skill.source_trainer_ids);

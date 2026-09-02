@@ -1,0 +1,10 @@
+enabled,milestone_id,level,required_xp,option_id,option_order,name_zh,description_zh,effect_type,amount,item_id,quality,target_rule,catalog_status
+true,milestone_level_2,2,4,level_option_2_gold,1,油布零钱包,结算后获得五枚补给金币。,change_gold,5,,,,formal
+true,milestone_level_2,2,4,level_option_2_item,2,星火备件箱,获得一件白银品质的星火信标并放入储藏。,grant_item,1,item_signal_flare,silver,,formal
+true,milestone_level_2,2,4,level_option_2_upgrade,3,精调一件装备,选择一件自有且仍可升阶的物品，提升一个品质阶段。,upgrade_owned_item,1,,,player_selected_owned_instance,formal
+true,milestone_level_3,3,8,level_option_3_gold,1,暗潮薪饷袋,结算后获得七枚补给金币。,change_gold,7,,,,formal
+true,milestone_level_3,3,8,level_option_3_item,2,风眼罗盘匣,获得一件黄金品质的风暴罗盘并放入储藏。,grant_item,1,item_storm_compass,gold,,formal
+true,milestone_level_3,3,8,level_option_3_upgrade,3,船坞精调,选择一件自有且仍可升阶的物品，提升一个品质阶段。,upgrade_owned_item,1,,,player_selected_owned_instance,formal
+true,milestone_level_4,4,12,level_option_4_gold,1,深航储金筒,结算后获得九枚补给金币。,change_gold,9,,,,formal
+true,milestone_level_4,4,12,level_option_4_item,2,深潮钟匣,获得一件钻石品质的深潮钟并放入储藏。,grant_item,1,item_abyss_bell,diamond,,formal
+true,milestone_level_4,4,12,level_option_4_upgrade,3,旗舰精调,选择一件自有且仍可升阶的物品，提升一个品质阶段。,upgrade_owned_item,1,,,player_selected_owned_instance,formal

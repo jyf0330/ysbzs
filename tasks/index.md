@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-02，由 `2026-09-02_original_pirate_terminal_pressure` 收口。
+最后刷新：2026-09-02，由 `2026-09-02_original_pirate_level_up_choices` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-02_original_pirate_level_up_choices.md` — data contract: 新增 3 个正式等级里程碑与每级金币、物品、定向升阶三选一，迁移到 root v9/runtimeBundle v7 单一 progressionRules 真相。
 
 - `tasks/done/2026-09-02_original_pirate_terminal_pressure.md` — data contract: 将正式终局压力从 BZ_GAMEPLAY 投影到 root v8/runtimeBundle v6，并以 exact schema、完整 hash 与 forged vectors fail-closed。
 

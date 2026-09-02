@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 15 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 16 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the integration-pending v6 runtime package while still validating every
+outside the integration-pending v7 runtime package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 8
+CONTENT_SCHEMA_VERSION = 9
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 6
-SOURCE_CONTENT_SCHEMA_VERSION = 6
-SOURCE_RUNTIME_SCHEMA_VERSION = 4
+RUNTIME_SCHEMA_VERSION = 7
+SOURCE_CONTENT_SCHEMA_VERSION = 7
+SOURCE_RUNTIME_SCHEMA_VERSION = 5
 NEW_RUN_SCHEMA_VERSION = 1
 BATTLE_PACKAGE_SCHEMA_VERSION = 1
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,10 +39,12 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 1
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 2
-SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v1"
-SCHEDULE_SCHEMA_VERSION = 1
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v4"
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 3
+PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
+PROGRESSION_SCHEMA_VERSION = 1
+SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v2"
+SCHEDULE_SCHEMA_VERSION = 2
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v5"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
 ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status"}
@@ -111,7 +113,7 @@ DOMAIN_HEADERS = OrderedDict([
     ]),
     ("55_bz_rewards.csv", [
         "reward_id", "name_zh", "reward_type", "amount", "item_id", "quality",
-        "unlock_level", "required_xp", "description_zh", "catalog_status",
+        "description_zh", "catalog_status",
     ]),
     ("56_bz_source_snapshot.csv", [
         "snapshot_id", "source_kind", "source_revision", "captured_on", "license_note",
@@ -126,6 +128,11 @@ DOMAIN_HEADERS = OrderedDict([
         "cooldown_delta_ticks", "damage_delta", "ammo_delta", "source_stall_id",
         "catalog_status",
     ]),
+    ("59_bz_level_up_choices.csv", [
+        "enabled", "milestone_id", "level", "required_xp", "option_id", "option_order",
+        "name_zh", "description_zh", "effect_type", "amount", "item_id", "quality",
+        "target_rule", "catalog_status",
+    ]),
 ])
 
 DISPLAY_DOMAINS = [
@@ -139,6 +146,7 @@ DISPLAY_DOMAINS = [
     ("54_bz_enemies.csv", "enemies", "enemy_id"),
     ("55_bz_rewards.csv", "rewards", "reward_id"),
     ("58_bz_enchantments.csv", "enchantments", "enchantment_id"),
+    ("59_bz_level_up_choices.csv", "level_up_options", "option_id"),
 ]
 
 
@@ -292,7 +300,9 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     battle.get("layers", []).sort(key=lambda value: value.get("fromDay", -1))
     schedule = result.get("scheduleConfig", {})
     schedule.get("hours", []).sort(key=lambda value: value.get("hour", -1))
-    schedule.get("levelThresholds", []).sort(key=lambda value: value.get("level", -1))
+    progression = result.get("progressionRules", {})
+    progression.get("milestones", []).sort(key=lambda value: value.get("level", -1))
+    progression.get("options", []).sort(key=lambda value: value.get("optionId", ""))
     catalogs = result.get("executableCatalogs", {})
     for hero in catalogs.get("heroes", []):
         hero.get("skillIds", []).sort()
@@ -408,7 +418,7 @@ def _directory(records: list[Any], id_field: str, fields: set[str], context: str
 
 
 def validate_package(package: Any) -> None:
-    """Validate the integration-pending v8/v6 package without accepting partial data."""
+    """Validate the integration-pending v9/v7 package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -467,8 +477,8 @@ def validate_package(package: Any) -> None:
 
     bundle = _expect_exact_fields(root["runtimeBundle"], {
         "schema", "schemaVersion", "bundleRevision", "rulesVersion", "contentRevision",
-        "bundleHash", "newRunTemplate", "scheduleConfig", "shopRules", "battleRules", "generation",
-        "executableCatalogs",
+        "bundleHash", "newRunTemplate", "scheduleConfig", "shopRules", "battleRules",
+        "progressionRules", "generation", "executableCatalogs",
     }, "runtimeBundle")
     if bundle["schema"] != RUNTIME_SCHEMA or bundle["schemaVersion"] != RUNTIME_SCHEMA_VERSION \
             or bundle["rulesVersion"] != root["rulesVersion"] \
@@ -488,6 +498,89 @@ def validate_package(package: Any) -> None:
     _expect_integer(terminal_pressure["intervalTicks"], "battleRules:terminalPressure:intervalTicks", 1)
     _expect_integer(terminal_pressure["initialDamage"], "battleRules:terminalPressure:initialDamage", 1)
     _expect_integer(terminal_pressure["incrementDamage"], "battleRules:terminalPressure:incrementDamage", 0)
+
+    progression = _expect_exact_fields(bundle["progressionRules"], {
+        "schema", "schemaVersion", "enabled", "milestones", "options",
+    }, "progressionRules")
+    if progression["schema"] != PROGRESSION_SCHEMA \
+            or progression["schemaVersion"] != PROGRESSION_SCHEMA_VERSION \
+            or progression["enabled"] is not True:
+        raise ExportError("EXECUTABLE_PROGRESSION_IDENTITY_INVALID")
+    progression_options = _directory(
+        _expect_list(progression["options"], "progressionRules:options"),
+        "optionId",
+        {"optionId", "milestoneId", "effect"},
+        "progressionOptions",
+    )
+    option_effect_types: dict[str, str] = {}
+    for option_id, option in progression_options.items():
+        milestone_id = _expect_stable_id(option["milestoneId"], f"progressionOptions:{option_id}:milestoneId")
+        effect = option["effect"]
+        if not isinstance(effect, dict):
+            raise ExportError(f"EXECUTABLE_PROGRESSION_EFFECT_INVALID:{option_id}")
+        effect_type = effect.get("type")
+        if effect_type == "change_gold":
+            _expect_exact_fields(effect, {"type", "amount"}, f"progressionOptions:{option_id}:effect")
+            _expect_integer(effect["amount"], f"progressionOptions:{option_id}:amount", 1)
+        elif effect_type == "grant_item":
+            _expect_exact_fields(effect, {
+                "type", "itemId", "quality", "quantity", "destination",
+            }, f"progressionOptions:{option_id}:effect")
+            item_id = _expect_stable_id(effect["itemId"], f"progressionOptions:{option_id}:itemId")
+            if (item_id, effect["quality"]) not in item_profiles or effect["destination"] != "stash":
+                raise ExportError(f"EXECUTABLE_PROGRESSION_ITEM_INVALID:{option_id}")
+            _expect_integer(effect["quantity"], f"progressionOptions:{option_id}:quantity", 1)
+        elif effect_type == "upgrade_owned_item":
+            _expect_exact_fields(effect, {
+                "type", "targetRule", "steps",
+            }, f"progressionOptions:{option_id}:effect")
+            if effect["targetRule"] != "player_selected_owned_instance" or effect["steps"] != 1:
+                raise ExportError(f"EXECUTABLE_PROGRESSION_UPGRADE_INVALID:{option_id}")
+        else:
+            raise ExportError(f"EXECUTABLE_PROGRESSION_EFFECT_INVALID:{option_id}")
+        option_effect_types[option_id] = str(effect_type)
+
+    milestones = _directory(
+        _expect_list(progression["milestones"], "progressionRules:milestones"),
+        "milestoneId",
+        {"milestoneId", "level", "requiredXp", "optionIds"},
+        "progressionMilestones",
+    )
+    if len(milestones) < 3:
+        raise ExportError("EXECUTABLE_PROGRESSION_MILESTONES_INCOMPLETE")
+    milestone_records = list(milestones.values())
+    levels_by_id = {
+        value["milestoneId"]: _expect_integer(
+            value["level"], f"progressionMilestones:{value['milestoneId']}:level", 2
+        )
+        for value in milestone_records
+    }
+    milestone_records.sort(key=lambda value: levels_by_id[value["milestoneId"]])
+    levels = [levels_by_id[value["milestoneId"]] for value in milestone_records]
+    if levels != list(range(2, 2 + len(levels))):
+        raise ExportError("EXECUTABLE_PROGRESSION_LEVEL_COVERAGE_INVALID")
+    required_xp = [
+        _expect_integer(value["requiredXp"], "progressionMilestones:requiredXp", 1)
+        for value in milestone_records
+    ]
+    if any(required_xp[index] <= required_xp[index - 1] for index in range(1, len(required_xp))):
+        raise ExportError("EXECUTABLE_PROGRESSION_XP_ORDER_INVALID")
+    owned_option_ids: set[str] = set()
+    required_types = {"change_gold", "grant_item", "upgrade_owned_item"}
+    for milestone_id, milestone in milestones.items():
+        option_ids = [
+            _expect_stable_id(value, f"progressionMilestones:{milestone_id}:optionIds")
+            for value in _expect_list(milestone["optionIds"], f"progressionMilestones:{milestone_id}:optionIds")
+        ]
+        if len(option_ids) != 3 or len(option_ids) != len(set(option_ids)) \
+                or any(value not in progression_options for value in option_ids) \
+                or any(progression_options[value]["milestoneId"] != milestone_id for value in option_ids) \
+                or {option_effect_types[value] for value in option_ids} != required_types \
+                or owned_option_ids.intersection(option_ids):
+            raise ExportError(f"EXECUTABLE_PROGRESSION_OPTIONS_INVALID:{milestone_id}")
+        owned_option_ids.update(option_ids)
+    if owned_option_ids != set(progression_options):
+        raise ExportError("EXECUTABLE_PROGRESSION_OPTION_COVERAGE_INVALID")
 
     catalogs = _expect_exact_fields(bundle["executableCatalogs"], {
         "schema", "schemaVersion", "heroes", "skills", "stalls", "events",
@@ -529,6 +622,7 @@ def validate_package(package: Any) -> None:
     new_run = _expect_exact_fields(bundle["newRunTemplate"], {
         "schemaVersion", "stateVersion", "phase", "day", "hour", "activeNode", "seed",
         "hero", "economy", "run", "board", "stash", "itemInstances", "shop", "battle",
+        "levelRewards",
     }, "newRunTemplate")
     if new_run.get("phase") != "schedule":
         raise ExportError("EXECUTABLE_NEW_RUN_INVALID")
@@ -542,14 +636,18 @@ def validate_package(package: Any) -> None:
         raise ExportError("EXECUTABLE_NEW_RUN_HERO_REFERENCE_INVALID")
     if active_node != {"nodeId": "", "kind": "", "rewardId": ""}:
         raise ExportError("EXECUTABLE_NEW_RUN_ACTIVE_NODE_INVALID")
+    level_rewards = _expect_exact_fields(new_run["levelRewards"], {
+        "pendingMilestoneIds", "resolved",
+    }, "newRunTemplate:levelRewards")
+    if level_rewards["pendingMilestoneIds"] != [] or level_rewards["resolved"] != []:
+        raise ExportError("EXECUTABLE_NEW_RUN_LEVEL_REWARDS_INVALID")
 
     rewards = _directory(_expect_list(catalogs["rewards"], "catalogs:rewards"), "rewardId", {
         "rewardId", "trigger", "effects",
     }, "rewards")
-    reward_kinds: dict[str, str] = {}
     for reward_id, reward in rewards.items():
         trigger = _expect_exact_fields(reward["trigger"], {"scope", "event"}, f"rewards:{reward_id}:trigger")
-        if trigger["scope"] != "system" or trigger["event"] not in {"LEVEL_UP", "REWARD_RESOLUTION"}:
+        if trigger != {"scope": "system", "event": "REWARD_RESOLUTION"}:
             raise ExportError(f"EXECUTABLE_REWARD_TRIGGER_INVALID:{reward_id}")
         effects = _expect_list(reward["effects"], f"rewards:{reward_id}:effects")
         if len(effects) != 1 or not isinstance(effects[0], dict):
@@ -559,7 +657,6 @@ def validate_package(package: Any) -> None:
         if effect_type == "change_gold":
             _expect_exact_fields(effect, {"type", "amount"}, f"rewards:{reward_id}:effect")
             _expect_integer(effect["amount"], f"rewards:{reward_id}:amount", 1)
-            reward_kinds[reward_id] = "currency"
         elif effect_type == "grant_item":
             _expect_exact_fields(effect, {
                 "type", "itemId", "quality", "quantity", "destination",
@@ -568,16 +665,8 @@ def validate_package(package: Any) -> None:
             if (item_id, effect["quality"]) not in item_profiles or effect["destination"] != "stash":
                 raise ExportError(f"EXECUTABLE_REWARD_ITEM_INVALID:{reward_id}")
             _expect_integer(effect["quantity"], f"rewards:{reward_id}:quantity", 1)
-            reward_kinds[reward_id] = "item"
-        elif effect_type == "record_level_reward":
-            _expect_exact_fields(effect, {"type", "amount"}, f"rewards:{reward_id}:effect")
-            _expect_integer(effect["amount"], f"rewards:{reward_id}:amount", 1)
-            reward_kinds[reward_id] = "level"
         else:
             raise ExportError(f"EXECUTABLE_REWARD_EFFECT_INVALID:{reward_id}")
-        expected_trigger = "LEVEL_UP" if reward_kinds[reward_id] == "level" else "REWARD_RESOLUTION"
-        if trigger["event"] != expected_trigger:
-            raise ExportError(f"EXECUTABLE_REWARD_TRIGGER_KIND_MISMATCH:{reward_id}")
 
     _expect_exact_fields(bundle["shopRules"], {"refreshCost"}, "shopRules")
     generation = _expect_exact_fields(bundle["generation"], {
@@ -699,6 +788,10 @@ def validate_package(package: Any) -> None:
         effects = reward.get("effects", [])
         if effects and isinstance(effects[0], dict) and effects[0].get("type") == "grant_item":
             reachable_profiles.add((effects[0].get("itemId"), effects[0].get("quality")))
+    for option in progression_options.values():
+        effect = option.get("effect", {})
+        if isinstance(effect, dict) and effect.get("type") == "grant_item":
+            reachable_profiles.add((effect.get("itemId"), effect.get("quality")))
     changed = True
     while changed:
         changed = False
@@ -737,37 +830,52 @@ def validate_package(package: Any) -> None:
         _expect_stable_id(option["eventId"], f"eventOptions:{option_id}:eventId")
         reward_id = _expect_stable_id(option["rewardId"], f"eventOptions:{option_id}:rewardId")
         _expect_integer(option["goldDelta"], f"eventOptions:{option_id}:goldDelta")
-        if reward_id not in rewards or reward_kinds[reward_id] == "level":
+        if reward_id not in rewards:
             raise ExportError(f"EXECUTABLE_EVENT_REWARD_INVALID:{option_id}")
         referenced_rewards.add(reward_id)
 
-    schedule = bundle["scheduleConfig"]
-    if not isinstance(schedule, dict):
-        raise ExportError("EXECUTABLE_SCHEDULE_INVALID")
-    level_reward_refs: set[str] = set()
-    for threshold in _expect_list(schedule.get("levelThresholds"), "schedule:levelThresholds"):
-        if not isinstance(threshold, dict):
-            raise ExportError("EXECUTABLE_LEVEL_THRESHOLD_INVALID")
-        reward_id = _expect_stable_id(threshold.get("rewardId"), "schedule:levelThresholds:rewardId")
-        if reward_id not in rewards or reward_kinds[reward_id] != "level":
-            raise ExportError(f"EXECUTABLE_LEVEL_REWARD_INVALID:{reward_id}")
-        level_reward_refs.add(reward_id)
-    if level_reward_refs != {reward_id for reward_id, kind in reward_kinds.items() if kind == "level"}:
-        raise ExportError("EXECUTABLE_LEVEL_REWARD_COVERAGE_INVALID")
+    schedule = _expect_exact_fields(bundle["scheduleConfig"], {
+        "schema", "schemaVersion", "rulesVersion", "contentRevision", "hours",
+        "pveWinBonusXp", "prestigeLoss", "terminalRules",
+    }, "scheduleConfig")
+    if schedule["schema"] != SCHEDULE_SCHEMA or schedule["schemaVersion"] != SCHEDULE_SCHEMA_VERSION \
+            or schedule["rulesVersion"] != root["rulesVersion"] \
+            or schedule["contentRevision"] != root["contentRevision"]:
+        raise ExportError("EXECUTABLE_SCHEDULE_IDENTITY_INVALID")
+    _expect_integer(schedule["pveWinBonusXp"], "schedule:pveWinBonusXp", 0)
+    prestige_loss = _expect_exact_fields(schedule["prestigeLoss"], {
+        "pveLoss", "pveDraw", "ghostLoss", "ghostDraw",
+    }, "schedule:prestigeLoss")
+    for field in ["pveLoss", "pveDraw", "ghostLoss", "ghostDraw"]:
+        _expect_integer(prestige_loss[field], f"schedule:prestigeLoss:{field}", 0)
+    terminal_rules = _expect_exact_fields(schedule["terminalRules"], {
+        "winTarget", "lastChanceEnabled",
+    }, "schedule:terminalRules")
+    _expect_integer(terminal_rules["winTarget"], "schedule:terminalRules:winTarget", 1)
+    if not isinstance(terminal_rules["lastChanceEnabled"], bool):
+        raise ExportError("EXECUTABLE_SCHEDULE_LAST_CHANCE_INVALID")
 
     event_hour_refs: dict[str, set[int]] = defaultdict(set)
+    seen_schedule_hours: set[int] = set()
     for hour_record in _expect_list(schedule.get("hours"), "schedule:hours"):
-        if not isinstance(hour_record, dict):
-            raise ExportError("EXECUTABLE_SCHEDULE_HOUR_INVALID")
-        hour = _expect_integer(hour_record.get("hour"), "schedule:hours:hour", 1)
-        for node_id in _expect_list(hour_record.get("nodeTypes"), f"schedule:hours:{hour}:nodeTypes"):
+        hour_record = _expect_exact_fields(hour_record, {
+            "hour", "kind", "completionXp", "nodeTypes",
+        }, "schedule:hour")
+        hour = _expect_integer(hour_record["hour"], "schedule:hours:hour", 1)
+        if hour in seen_schedule_hours or hour_record["kind"] != EXPECTED_HOUR_KINDS.get(hour):
+            raise ExportError(f"EXECUTABLE_SCHEDULE_HOUR_KIND_INVALID:{hour}")
+        seen_schedule_hours.add(hour)
+        _expect_integer(hour_record["completionXp"], f"schedule:hours:{hour}:completionXp", 0)
+        for node_id in _expect_list(hour_record["nodeTypes"], f"schedule:hours:{hour}:nodeTypes"):
             _expect_stable_id(node_id, f"schedule:hours:{hour}:nodeType")
             if node_id in events:
                 event_hour_refs[node_id].add(hour)
             elif node_id in rewards:
-                if reward_kinds[node_id] == "level":
-                    raise ExportError(f"EXECUTABLE_LEVEL_REWARD_PLAYER_NODE_FORBIDDEN:{node_id}")
                 referenced_rewards.add(node_id)
+            elif node_id not in stalls:
+                raise ExportError(f"EXECUTABLE_SCHEDULE_NODE_UNKNOWN:{node_id}")
+    if seen_schedule_hours != set(EXPECTED_HOUR_KINDS):
+        raise ExportError("EXECUTABLE_SCHEDULE_HOUR_COVERAGE_INVALID")
     for event_id, event in events.items():
         if event_hour_refs.get(event_id, set()) != set(event["hourSlots"]):
             raise ExportError(f"EXECUTABLE_EVENT_SCHEDULE_MISMATCH:{event_id}")
@@ -777,10 +885,10 @@ def validate_package(package: Any) -> None:
         record = _expect_exact_fields(template, {"encounterTemplateId", "rewardId", "enemy"}, "battleTemplate")
         _expect_stable_id(record["encounterTemplateId"], "battleTemplate:encounterTemplateId")
         reward_id = _expect_stable_id(record["rewardId"], "battleTemplate:rewardId")
-        if reward_id not in rewards or reward_kinds[reward_id] == "level":
+        if reward_id not in rewards:
             raise ExportError(f"EXECUTABLE_BATTLE_REWARD_INVALID:{reward_id}")
         referenced_rewards.add(reward_id)
-    if referenced_rewards != {reward_id for reward_id, kind in reward_kinds.items() if kind != "level"}:
+    if referenced_rewards != set(rewards):
         raise ExportError("EXECUTABLE_REWARD_REFERENCE_COVERAGE_INVALID")
 
     expected_hash = _runtime_bundle_hash(bundle, items)
@@ -800,7 +908,8 @@ class ContentAssembler:
         skills = self._skills()
         items, starters = self._items(skills)
         self._effects(items, skills)
-        rewards, thresholds = self._rewards()
+        rewards = self._rewards()
+        progression_rules = self._progression_rules()
         hero = self._hero(skills)
         stalls = self._stalls()
         upgrades = self._upgrades(stalls)
@@ -808,12 +917,14 @@ class ContentAssembler:
         shop_generation, source_refresh_max = self._offers(stalls)
         events = self._events(rewards)
         node_ids = set(stalls) | set(events) | set(rewards)
-        schedule, identity = self._gameplay(source_revision, thresholds, node_ids)
+        schedule, identity = self._gameplay(source_revision, node_ids)
         if source_refresh_max != identity["refreshPackageMax"]:
             raise ExportError("STALL_REFRESH_DECLARED_COVERAGE_INVALID")
         battle_generation = self._encounters(rewards, identity["runDayMax"])
         new_run = self._new_run(hero, starters)
-        self._validate_player_profile_reachability(starters, shop_generation, rewards, upgrades)
+        self._validate_player_profile_reachability(
+            starters, shop_generation, rewards, progression_rules, upgrades
+        )
         executable_catalogs = self._executable_catalogs(
             hero,
             skills,
@@ -835,6 +946,7 @@ class ContentAssembler:
             "scheduleConfig": schedule,
             "shopRules": {"refreshCost": next(iter(stalls.values()))["refreshCost"]},
             "battleRules": {"terminalPressure": identity["terminalPressure"]},
+            "progressionRules": progression_rules,
             "generation": {
                 "schema": GENERATION_SCHEMA,
                 "schemaVersion": GENERATION_SCHEMA_VERSION,
@@ -876,15 +988,14 @@ class ContentAssembler:
             raise ExportError("SOURCE_COMPLETENESS_MUST_BE_BOOTSTRAP")
         return revision
 
-    def _rewards(self) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    def _rewards(self) -> dict[str, dict[str, Any]]:
         filename = "55_bz_rewards.csv"
         rows_by_id = _unique(self.tables[filename], filename, "reward_id")
         rewards: dict[str, dict[str, Any]] = {}
-        thresholds = []
         for reward_id, row in rows_by_id.items():
             _formal(filename, row)
             reward_type = _require_text(filename, row, "reward_type")
-            if reward_type not in {"level", "currency", "item"}:
+            if reward_type not in {"currency", "item"}:
                 raise ExportError(f"REWARD_TYPE_INVALID:{reward_id}")
             _require_chinese(filename, row, "name_zh")
             _require_chinese(filename, row, "description_zh")
@@ -898,18 +1009,9 @@ class ContentAssembler:
                     raise ExportError(f"REWARD_ITEM_QUALITY_UNKNOWN:{reward_id}")
             elif item_id != "" or quality != "":
                 raise ExportError(f"REWARD_ITEM_FIELDS_UNEXPECTED:{reward_id}")
-            level = _optional_integer(filename, row, "unlock_level")
-            required_xp = _optional_integer(filename, row, "required_xp")
-            if reward_type == "level":
-                if level is None or level < 2 or required_xp is None or required_xp <= 0:
-                    raise ExportError(f"LEVEL_REWARD_INVALID:{reward_id}")
-                thresholds.append({"level": level, "requiredXp": required_xp, "rewardId": reward_id})
-            elif level is not None or required_xp is not None:
-                raise ExportError(f"LEVEL_FIELDS_UNEXPECTED:{reward_id}")
             if reward_type == "currency":
                 effects = [{"type": "change_gold", "amount": amount}]
-                trigger_event = "REWARD_RESOLUTION"
-            elif reward_type == "item":
+            else:
                 effects = [{
                     "type": "grant_item",
                     "itemId": item_id,
@@ -917,21 +1019,111 @@ class ContentAssembler:
                     "quantity": amount,
                     "destination": "stash",
                 }]
-                trigger_event = "REWARD_RESOLUTION"
-            else:
-                effects = [{"type": "record_level_reward", "amount": amount}]
-                trigger_event = "LEVEL_UP"
             rewards[reward_id] = {
                 "type": reward_type,
-                "trigger": {"scope": "system", "event": trigger_event},
+                "trigger": {"scope": "system", "event": "REWARD_RESOLUTION"},
                 "effects": effects,
             }
-        thresholds.sort(key=lambda value: value["level"])
-        if not thresholds or [value["level"] for value in thresholds] != list(range(2, 2 + len(thresholds))):
-            raise ExportError("LEVEL_REWARD_COVERAGE_INVALID")
-        if any(thresholds[index]["requiredXp"] <= thresholds[index - 1]["requiredXp"] for index in range(1, len(thresholds))):
-            raise ExportError("LEVEL_REWARD_XP_ORDER_INVALID")
-        return rewards, thresholds
+        return rewards
+
+    def _progression_rules(self) -> dict[str, Any]:
+        filename = "59_bz_level_up_choices.csv"
+        rows = self.tables[filename]
+        if _same(rows, filename, "enabled") != "true":
+            raise ExportError("PROGRESSION_ENABLED_REQUIRED")
+        milestones: dict[str, dict[str, Any]] = {}
+        seen_option_ids: set[str] = set()
+        for row in rows:
+            _formal(filename, row)
+            milestone_id = _require_id(filename, row, "milestone_id")
+            level = _integer(filename, row, "level", 2)
+            required_xp = _integer(filename, row, "required_xp", 1)
+            option_id = _require_id(filename, row, "option_id")
+            if option_id in seen_option_ids:
+                raise ExportError(f"PROGRESSION_OPTION_ID_DUPLICATE:{option_id}")
+            seen_option_ids.add(option_id)
+            option_order = _integer(filename, row, "option_order", 1)
+            _require_chinese(filename, row, "name_zh")
+            _require_chinese(filename, row, "description_zh")
+            effect_type = _require_text(filename, row, "effect_type")
+            amount = _integer(filename, row, "amount", 1)
+            item_id = row.get("item_id", "")
+            quality = row.get("quality", "")
+            target_rule = row.get("target_rule", "")
+            if effect_type == "change_gold":
+                if item_id != "" or quality != "" or target_rule != "":
+                    raise ExportError(f"PROGRESSION_GOLD_FIELDS_UNEXPECTED:{option_id}")
+                effect = {"type": effect_type, "amount": amount}
+            elif effect_type == "grant_item":
+                if not STABLE_ID_RE.fullmatch(item_id) or (item_id, quality) not in self.item_profiles \
+                        or target_rule != "":
+                    raise ExportError(f"PROGRESSION_ITEM_INVALID:{option_id}")
+                effect = {
+                    "type": effect_type,
+                    "itemId": item_id,
+                    "quality": quality,
+                    "quantity": amount,
+                    "destination": "stash",
+                }
+            elif effect_type == "upgrade_owned_item":
+                if amount != 1 or item_id != "" or quality != "" \
+                        or target_rule != "player_selected_owned_instance":
+                    raise ExportError(f"PROGRESSION_UPGRADE_INVALID:{option_id}")
+                effect = {
+                    "type": effect_type,
+                    "targetRule": target_rule,
+                    "steps": amount,
+                }
+            else:
+                raise ExportError(f"PROGRESSION_EFFECT_TYPE_INVALID:{option_id}")
+            milestone = milestones.setdefault(milestone_id, {
+                "milestoneId": milestone_id,
+                "level": level,
+                "requiredXp": required_xp,
+                "options": [],
+            })
+            if milestone["level"] != level or milestone["requiredXp"] != required_xp:
+                raise ExportError(f"PROGRESSION_MILESTONE_INCONSISTENT:{milestone_id}")
+            milestone["options"].append({
+                "optionId": option_id,
+                "milestoneId": milestone_id,
+                "optionOrder": option_order,
+                "effect": effect,
+            })
+        if len(milestones) < 3:
+            raise ExportError("PROGRESSION_MILESTONES_INCOMPLETE")
+        ordered = sorted(milestones.values(), key=lambda value: value["level"])
+        if [value["level"] for value in ordered] != list(range(2, 2 + len(ordered))):
+            raise ExportError("PROGRESSION_LEVEL_COVERAGE_INVALID")
+        if any(ordered[index]["requiredXp"] <= ordered[index - 1]["requiredXp"] for index in range(1, len(ordered))):
+            raise ExportError("PROGRESSION_XP_ORDER_INVALID")
+        runtime_milestones = []
+        runtime_options = []
+        required_types = {"change_gold", "grant_item", "upgrade_owned_item"}
+        for milestone in ordered:
+            options = sorted(milestone["options"], key=lambda value: value["optionOrder"])
+            if len(options) != 3 or [value["optionOrder"] for value in options] != [1, 2, 3] \
+                    or {value["effect"]["type"] for value in options} != required_types:
+                raise ExportError(f"PROGRESSION_OPTIONS_INVALID:{milestone['milestoneId']}")
+            runtime_milestones.append({
+                "milestoneId": milestone["milestoneId"],
+                "level": milestone["level"],
+                "requiredXp": milestone["requiredXp"],
+                "optionIds": [value["optionId"] for value in options],
+            })
+            runtime_options.extend({
+                "optionId": value["optionId"],
+                "milestoneId": value["milestoneId"],
+                "effect": value["effect"],
+            } for value in options)
+        runtime_options.sort(key=lambda value: value["optionId"])
+        return {
+            "schema": PROGRESSION_SCHEMA,
+            "schemaVersion": PROGRESSION_SCHEMA_VERSION,
+            "enabled": True,
+            "milestones": runtime_milestones,
+            "options": runtime_options,
+        }
 
     def _skills(self) -> dict[str, dict[str, Any]]:
         filename = "48_bz_skills.csv"
@@ -1158,6 +1350,7 @@ class ContentAssembler:
         starters: list[dict[str, Any]],
         shop_generation: dict[str, Any],
         rewards: dict[str, dict[str, Any]],
+        progression_rules: dict[str, Any],
         upgrades: list[dict[str, Any]],
     ) -> None:
         reachable = {(item["itemId"], item["quality"]) for item in starters}
@@ -1166,6 +1359,10 @@ class ContentAssembler:
             for effect in reward["effects"]:
                 if effect.get("type") == "grant_item":
                     reachable.add((effect["itemId"], effect["quality"]))
+        for option in progression_rules["options"]:
+            effect = option["effect"]
+            if effect.get("type") == "grant_item":
+                reachable.add((effect["itemId"], effect["quality"]))
         changed = True
         while changed:
             changed = False
@@ -1465,7 +1662,6 @@ class ContentAssembler:
     def _gameplay(
         self,
         source_revision: str,
-        thresholds: list[dict[str, Any]],
         node_ids: set[str],
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         filename = "44_bz_gameplay.csv"
@@ -1477,8 +1673,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 15-domain workbook is the finite v6 candidate source.
-            # This adapter is its explicit one-way projection into executable v8.
+            # The current 16-domain workbook is the finite v7 candidate source.
+            # This adapter is its explicit one-way projection into executable v9.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -1583,7 +1779,6 @@ class ContentAssembler:
             "contentRevision": identity["contentRevision"],
             "hours": hours,
             "pveWinBonusXp": globals_int["pve_win_bonus_xp"],
-            "levelThresholds": thresholds,
             "prestigeLoss": {
                 "pveLoss": globals_int["pve_loss_prestige"],
                 "pveDraw": globals_int["pve_draw_prestige"],
@@ -1737,6 +1932,7 @@ class ContentAssembler:
             ],
             "shop": {"nextInstanceOrdinal": 1, "refreshIndex": 0},
             "battle": {"kind": "idle", "kernelState": {}},
+            "levelRewards": {"pendingMilestoneIds": [], "resolved": []},
         }
 
     def _validate_placements(self, instances: list[dict[str, Any]], context: str) -> None:
@@ -1817,7 +2013,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v8 runtime and display candidates from 15 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v9 runtime and display candidates from 16 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -1832,7 +2028,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v8 integration-pending candidate "
+            "PASS original-pirate v9 integration-pending candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -1843,7 +2039,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v8 integration-pending candidate to {output}")
+        print(f"exported original-pirate v9 integration-pending candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

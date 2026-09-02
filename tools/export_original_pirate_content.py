@@ -3,8 +3,8 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the executable Godot package while still validating every domain and
-every reference before emitting any output.
+outside the integration-pending v5 runtime package while still validating every
+domain and every reference before emitting any output.
 """
 
 from __future__ import annotations
@@ -25,10 +25,10 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 4
+CONTENT_SCHEMA_VERSION = 5
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 2
+RUNTIME_SCHEMA_VERSION = 3
 SOURCE_CONTENT_SCHEMA_VERSION = 3
 SOURCE_RUNTIME_SCHEMA_VERSION = 1
 NEW_RUN_SCHEMA_VERSION = 1
@@ -38,9 +38,11 @@ GENERATION_SCHEMA_VERSION = 1
 GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 1
+EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v1"
 SCHEDULE_SCHEMA_VERSION = 1
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-development-v1"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v1"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 EXPECTED_HOUR_KINDS = {1: "choice", 2: "choice", 3: "pve", 4: "choice", 5: "choice", 6: "ghost"}
 CHOICE_HOURS = {1, 2, 4, 5}
@@ -274,6 +276,24 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     schedule = result.get("scheduleConfig", {})
     schedule.get("hours", []).sort(key=lambda value: value.get("hour", -1))
     schedule.get("levelThresholds", []).sort(key=lambda value: value.get("level", -1))
+    catalogs = result.get("executableCatalogs", {})
+    for hero in catalogs.get("heroes", []):
+        hero.get("skillIds", []).sort()
+    catalogs.get("heroes", []).sort(key=lambda value: value.get("heroId", ""))
+    for skill in catalogs.get("skills", []):
+        skill.get("effectIds", []).sort()
+    catalogs.get("skills", []).sort(key=lambda value: value.get("skillId", ""))
+    for stall in catalogs.get("stalls", []):
+        stall.get("shopTemplateIds", []).sort()
+    catalogs.get("stalls", []).sort(key=lambda value: value.get("stallId", ""))
+    for event in catalogs.get("events", []):
+        event.get("hourSlots", []).sort()
+        event.get("optionIds", []).sort()
+    catalogs.get("events", []).sort(key=lambda value: value.get("eventId", ""))
+    catalogs.get("eventOptions", []).sort(key=lambda value: value.get("optionId", ""))
+    for reward in catalogs.get("rewards", []):
+        reward.get("effects", []).sort(key=_canonical_json)
+    catalogs.get("rewards", []).sort(key=lambda value: value.get("rewardId", ""))
     return result
 
 
@@ -283,6 +303,293 @@ def _runtime_bundle_hash(bundle: dict[str, Any], items: list[dict[str, Any]]) ->
         "runtimeBundle": _canonical_runtime_bundle(bundle),
     }
     return hashlib.sha256(_canonical_json(source).encode("utf-8")).hexdigest()
+
+
+def _expect_exact_fields(value: Any, fields: set[str], context: str) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != fields:
+        raise ExportError(f"EXECUTABLE_FIELDS_INVALID:{context}")
+    return value
+
+
+def _expect_list(value: Any, context: str, maximum: int = 100_000) -> list[Any]:
+    if not isinstance(value, list) or len(value) > maximum:
+        raise ExportError(f"EXECUTABLE_LIST_INVALID:{context}")
+    return value
+
+
+def _expect_stable_id(value: Any, context: str) -> str:
+    if not isinstance(value, str) or not STABLE_ID_RE.fullmatch(value):
+        raise ExportError(f"EXECUTABLE_STABLE_ID_INVALID:{context}")
+    return value
+
+
+def _expect_integer(value: Any, context: str, minimum: int | None = None) -> int:
+    if not isinstance(value, int) or isinstance(value, bool) or (minimum is not None and value < minimum):
+        raise ExportError(f"EXECUTABLE_INTEGER_INVALID:{context}")
+    return value
+
+
+def _directory(records: list[Any], id_field: str, fields: set[str], context: str) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for index, value in enumerate(records):
+        record = _expect_exact_fields(value, fields, f"{context}:{index}")
+        stable_id = _expect_stable_id(record.get(id_field), f"{context}:{index}:{id_field}")
+        if stable_id in result:
+            raise ExportError(f"EXECUTABLE_ID_DUPLICATE:{context}:{stable_id}")
+        result[stable_id] = record
+    return result
+
+
+def validate_package(package: Any) -> None:
+    """Validate the integration-pending v5/v3 package without accepting partial data."""
+    root = _expect_exact_fields(package, {
+        "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
+        "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
+    }, "root")
+    if root["gameplayId"] != GAMEPLAY_ID or root["contentSchema"] != CONTENT_SCHEMA \
+            or root["schemaVersion"] != CONTENT_SCHEMA_VERSION \
+            or root["qualityProfileSchema"] != QUALITY_PROFILE_SCHEMA \
+            or root["rulesVersion"] != RULES_VERSION:
+        raise ExportError("EXECUTABLE_ROOT_IDENTITY_INVALID")
+    _expect_stable_id(root["sourceRevision"], "root:sourceRevision")
+    _expect_stable_id(root["contentRevision"], "root:contentRevision")
+
+    items = _expect_list(root["items"], "root:items")
+    item_profiles: set[tuple[str, str]] = set()
+    item_effect_ids: set[str] = set()
+    for item_index, item_value in enumerate(items):
+        item = _expect_exact_fields(item_value, {
+            "itemId", "slotWidth", "baseQuality", "qualityProfiles",
+        }, f"items:{item_index}")
+        item_id = _expect_stable_id(item["itemId"], f"items:{item_index}:itemId")
+        profiles = item["qualityProfiles"]
+        if not isinstance(profiles, dict) or not profiles:
+            raise ExportError(f"EXECUTABLE_ITEM_PROFILES_INVALID:{item_id}")
+        for quality, profile in profiles.items():
+            if quality not in QUALITIES or not isinstance(profile, dict):
+                raise ExportError(f"EXECUTABLE_ITEM_PROFILE_INVALID:{item_id}:{quality}")
+            item_profiles.add((item_id, quality))
+            for effect_index, effect in enumerate(_expect_list(profile.get("effects"), f"items:{item_id}:{quality}:effects")):
+                if not isinstance(effect, dict):
+                    raise ExportError(f"EXECUTABLE_ITEM_EFFECT_INVALID:{item_id}:{quality}:{effect_index}")
+                effect_id = _expect_stable_id(effect.get("effectId"), f"items:{item_id}:{quality}:effectId")
+                if effect_id in item_effect_ids:
+                    raise ExportError(f"EXECUTABLE_EFFECT_ID_DUPLICATE:{effect_id}")
+                item_effect_ids.add(effect_id)
+
+    bundle = _expect_exact_fields(root["runtimeBundle"], {
+        "schema", "schemaVersion", "bundleRevision", "rulesVersion", "contentRevision",
+        "bundleHash", "newRunTemplate", "scheduleConfig", "shopRules", "generation",
+        "executableCatalogs",
+    }, "runtimeBundle")
+    if bundle["schema"] != RUNTIME_SCHEMA or bundle["schemaVersion"] != RUNTIME_SCHEMA_VERSION \
+            or bundle["rulesVersion"] != root["rulesVersion"] \
+            or bundle["contentRevision"] != root["contentRevision"]:
+        raise ExportError("EXECUTABLE_RUNTIME_IDENTITY_INVALID")
+    _expect_stable_id(bundle["bundleRevision"], "runtimeBundle:bundleRevision")
+
+    catalogs = _expect_exact_fields(bundle["executableCatalogs"], {
+        "schema", "schemaVersion", "heroes", "skills", "stalls", "events",
+        "eventOptions", "rewards",
+    }, "executableCatalogs")
+    if catalogs["schema"] != EXECUTABLE_CATALOGS_SCHEMA \
+            or catalogs["schemaVersion"] != EXECUTABLE_CATALOGS_SCHEMA_VERSION:
+        raise ExportError("EXECUTABLE_CATALOG_IDENTITY_INVALID")
+
+    skills = _directory(_expect_list(catalogs["skills"], "catalogs:skills"), "skillId", {
+        "skillId", "triggerEvent", "effectIds",
+    }, "skills")
+    referenced_effects: set[str] = set()
+    for skill_id, skill in skills.items():
+        if skill["triggerEvent"] != "item_ready":
+            raise ExportError(f"EXECUTABLE_SKILL_TRIGGER_INVALID:{skill_id}")
+        effect_ids = [
+            _expect_stable_id(effect_id, f"skills:{skill_id}:effectIds")
+            for effect_id in _expect_list(skill["effectIds"], f"skills:{skill_id}:effectIds")
+        ]
+        if not effect_ids or len(effect_ids) != len(set(effect_ids)) or any(effect_id not in item_effect_ids for effect_id in effect_ids):
+            raise ExportError(f"EXECUTABLE_SKILL_EFFECT_REFERENCE_INVALID:{skill_id}")
+        if referenced_effects.intersection(effect_ids):
+            raise ExportError(f"EXECUTABLE_SKILL_EFFECT_OWNERSHIP_INVALID:{skill_id}")
+        referenced_effects.update(effect_ids)
+    if referenced_effects != item_effect_ids:
+        raise ExportError("EXECUTABLE_SKILL_EFFECT_COVERAGE_INVALID")
+
+    heroes = _directory(_expect_list(catalogs["heroes"], "catalogs:heroes"), "heroId", {
+        "heroId", "skillIds",
+    }, "heroes")
+    for hero_id, hero in heroes.items():
+        skill_ids = [
+            _expect_stable_id(skill_id, f"heroes:{hero_id}:skillIds")
+            for skill_id in _expect_list(hero["skillIds"], f"heroes:{hero_id}:skillIds")
+        ]
+        if not skill_ids or len(skill_ids) != len(set(skill_ids)) or any(skill_id not in skills for skill_id in skill_ids):
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_REFERENCE_INVALID:{hero_id}")
+    new_run = _expect_exact_fields(bundle["newRunTemplate"], {
+        "schemaVersion", "stateVersion", "phase", "day", "hour", "activeNode", "seed",
+        "hero", "economy", "run", "board", "stash", "itemInstances", "shop", "battle",
+    }, "newRunTemplate")
+    if new_run.get("phase") != "schedule":
+        raise ExportError("EXECUTABLE_NEW_RUN_INVALID")
+    new_run_hero = _expect_exact_fields(new_run["hero"], {
+        "heroId", "level", "experience", "prestige", "maxHp",
+    }, "newRunTemplate:hero")
+    active_node = _expect_exact_fields(new_run["activeNode"], {
+        "nodeId", "kind", "rewardId",
+    }, "newRunTemplate:activeNode")
+    if new_run_hero.get("heroId") not in heroes:
+        raise ExportError("EXECUTABLE_NEW_RUN_HERO_REFERENCE_INVALID")
+    if active_node != {"nodeId": "", "kind": "", "rewardId": ""}:
+        raise ExportError("EXECUTABLE_NEW_RUN_ACTIVE_NODE_INVALID")
+
+    rewards = _directory(_expect_list(catalogs["rewards"], "catalogs:rewards"), "rewardId", {
+        "rewardId", "trigger", "effects",
+    }, "rewards")
+    reward_kinds: dict[str, str] = {}
+    for reward_id, reward in rewards.items():
+        trigger = _expect_exact_fields(reward["trigger"], {"scope", "event"}, f"rewards:{reward_id}:trigger")
+        if trigger["scope"] != "system" or trigger["event"] not in {"LEVEL_UP", "REWARD_RESOLUTION"}:
+            raise ExportError(f"EXECUTABLE_REWARD_TRIGGER_INVALID:{reward_id}")
+        effects = _expect_list(reward["effects"], f"rewards:{reward_id}:effects")
+        if len(effects) != 1 or not isinstance(effects[0], dict):
+            raise ExportError(f"EXECUTABLE_REWARD_EFFECT_COUNT_INVALID:{reward_id}")
+        effect = effects[0]
+        effect_type = effect.get("type")
+        if effect_type == "change_gold":
+            _expect_exact_fields(effect, {"type", "amount"}, f"rewards:{reward_id}:effect")
+            _expect_integer(effect["amount"], f"rewards:{reward_id}:amount", 1)
+            reward_kinds[reward_id] = "currency"
+        elif effect_type == "grant_item":
+            _expect_exact_fields(effect, {
+                "type", "itemId", "quality", "quantity", "destination",
+            }, f"rewards:{reward_id}:effect")
+            item_id = _expect_stable_id(effect["itemId"], f"rewards:{reward_id}:itemId")
+            if (item_id, effect["quality"]) not in item_profiles or effect["destination"] != "stash":
+                raise ExportError(f"EXECUTABLE_REWARD_ITEM_INVALID:{reward_id}")
+            _expect_integer(effect["quantity"], f"rewards:{reward_id}:quantity", 1)
+            reward_kinds[reward_id] = "item"
+        elif effect_type == "record_level_reward":
+            _expect_exact_fields(effect, {"type", "amount"}, f"rewards:{reward_id}:effect")
+            _expect_integer(effect["amount"], f"rewards:{reward_id}:amount", 1)
+            reward_kinds[reward_id] = "level"
+        else:
+            raise ExportError(f"EXECUTABLE_REWARD_EFFECT_INVALID:{reward_id}")
+        expected_trigger = "LEVEL_UP" if reward_kinds[reward_id] == "level" else "REWARD_RESOLUTION"
+        if trigger["event"] != expected_trigger:
+            raise ExportError(f"EXECUTABLE_REWARD_TRIGGER_KIND_MISMATCH:{reward_id}")
+
+    _expect_exact_fields(bundle["shopRules"], {"refreshCost"}, "shopRules")
+    generation = _expect_exact_fields(bundle["generation"], {
+        "schema", "schemaVersion", "algorithmId", "shop", "battle",
+    }, "generation")
+    shop = _expect_exact_fields(generation["shop"], {
+        "offerCount", "templates", "layers",
+    }, "generation:shop")
+    shop_templates = _directory(_expect_list(shop.get("templates"), "generation:shop:templates"), "offerTemplateId", {
+        "offerTemplateId", "itemId", "quality", "enchantment",
+    }, "shopTemplates")
+    stalls = _directory(_expect_list(catalogs["stalls"], "catalogs:stalls"), "stallId", {
+        "stallId", "offerCount", "shopTemplateIds",
+    }, "stalls")
+    catalog_template_refs: set[str] = set()
+    for stall_id, stall in stalls.items():
+        offer_count = _expect_integer(stall["offerCount"], f"stalls:{stall_id}:offerCount", 1)
+        refs = [
+            _expect_stable_id(ref, f"stalls:{stall_id}:shopTemplateIds")
+            for ref in _expect_list(stall["shopTemplateIds"], f"stalls:{stall_id}:shopTemplateIds")
+        ]
+        if len(refs) != len(set(refs)) or any(ref not in shop_templates for ref in refs):
+            raise ExportError(f"EXECUTABLE_STALL_TEMPLATE_REFERENCE_INVALID:{stall_id}")
+        if catalog_template_refs.intersection(refs):
+            raise ExportError(f"EXECUTABLE_STALL_TEMPLATE_OWNERSHIP_INVALID:{stall_id}")
+        catalog_template_refs.update(refs)
+        if shop.get("offerCount") != offer_count:
+            raise ExportError(f"EXECUTABLE_STALL_OFFER_COUNT_INVALID:{stall_id}")
+        for layer in _expect_list(shop.get("layers"), "generation:shop:layers"):
+            if not isinstance(layer, dict):
+                raise ExportError(f"EXECUTABLE_STALL_LAYER_INVALID:{stall_id}")
+            layer_refs = layer.get("templateIds")
+            if not isinstance(layer_refs, list) or len(layer_refs) != offer_count \
+                    or any(ref not in refs for ref in layer_refs):
+                raise ExportError(f"EXECUTABLE_STALL_LAYER_INVALID:{stall_id}")
+    if catalog_template_refs != set(shop_templates):
+        raise ExportError("EXECUTABLE_STALL_TEMPLATE_COVERAGE_INVALID")
+
+    events = _directory(_expect_list(catalogs["events"], "catalogs:events"), "eventId", {
+        "eventId", "hourSlots", "optionIds",
+    }, "events")
+    options = _directory(_expect_list(catalogs["eventOptions"], "catalogs:eventOptions"), "optionId", {
+        "optionId", "eventId", "rewardId", "goldDelta",
+    }, "eventOptions")
+    option_membership: set[str] = set()
+    for event_id, event in events.items():
+        hours = [_expect_integer(hour, f"events:{event_id}:hourSlots", 1) for hour in _expect_list(event["hourSlots"], f"events:{event_id}:hourSlots")]
+        option_ids = [_expect_stable_id(option_id, f"events:{event_id}:optionIds") for option_id in _expect_list(event["optionIds"], f"events:{event_id}:optionIds")]
+        if not hours or len(hours) != len(set(hours)) or any(hour not in CHOICE_HOURS for hour in hours):
+            raise ExportError(f"EXECUTABLE_EVENT_HOURS_INVALID:{event_id}")
+        if len(option_ids) < 2 or len(option_ids) != len(set(option_ids)) \
+                or any(option_id not in options or options[option_id]["eventId"] != event_id for option_id in option_ids):
+            raise ExportError(f"EXECUTABLE_EVENT_OPTIONS_INVALID:{event_id}")
+        if option_membership.intersection(option_ids):
+            raise ExportError(f"EXECUTABLE_EVENT_OPTION_OWNERSHIP_INVALID:{event_id}")
+        option_membership.update(option_ids)
+    if option_membership != set(options):
+        raise ExportError("EXECUTABLE_EVENT_OPTION_COVERAGE_INVALID")
+
+    referenced_rewards: set[str] = set()
+    for option_id, option in options.items():
+        _expect_stable_id(option["eventId"], f"eventOptions:{option_id}:eventId")
+        reward_id = _expect_stable_id(option["rewardId"], f"eventOptions:{option_id}:rewardId")
+        _expect_integer(option["goldDelta"], f"eventOptions:{option_id}:goldDelta")
+        if reward_id not in rewards or reward_kinds[reward_id] == "level":
+            raise ExportError(f"EXECUTABLE_EVENT_REWARD_INVALID:{option_id}")
+        referenced_rewards.add(reward_id)
+
+    schedule = bundle["scheduleConfig"]
+    if not isinstance(schedule, dict):
+        raise ExportError("EXECUTABLE_SCHEDULE_INVALID")
+    level_reward_refs: set[str] = set()
+    for threshold in _expect_list(schedule.get("levelThresholds"), "schedule:levelThresholds"):
+        if not isinstance(threshold, dict):
+            raise ExportError("EXECUTABLE_LEVEL_THRESHOLD_INVALID")
+        reward_id = _expect_stable_id(threshold.get("rewardId"), "schedule:levelThresholds:rewardId")
+        if reward_id not in rewards or reward_kinds[reward_id] != "level":
+            raise ExportError(f"EXECUTABLE_LEVEL_REWARD_INVALID:{reward_id}")
+        level_reward_refs.add(reward_id)
+    if level_reward_refs != {reward_id for reward_id, kind in reward_kinds.items() if kind == "level"}:
+        raise ExportError("EXECUTABLE_LEVEL_REWARD_COVERAGE_INVALID")
+
+    event_hour_refs: dict[str, set[int]] = defaultdict(set)
+    for hour_record in _expect_list(schedule.get("hours"), "schedule:hours"):
+        if not isinstance(hour_record, dict):
+            raise ExportError("EXECUTABLE_SCHEDULE_HOUR_INVALID")
+        hour = _expect_integer(hour_record.get("hour"), "schedule:hours:hour", 1)
+        for node_id in _expect_list(hour_record.get("nodeTypes"), f"schedule:hours:{hour}:nodeTypes"):
+            _expect_stable_id(node_id, f"schedule:hours:{hour}:nodeType")
+            if node_id in events:
+                event_hour_refs[node_id].add(hour)
+            elif node_id in rewards:
+                if reward_kinds[node_id] == "level":
+                    raise ExportError(f"EXECUTABLE_LEVEL_REWARD_PLAYER_NODE_FORBIDDEN:{node_id}")
+                referenced_rewards.add(node_id)
+    for event_id, event in events.items():
+        if event_hour_refs.get(event_id, set()) != set(event["hourSlots"]):
+            raise ExportError(f"EXECUTABLE_EVENT_SCHEDULE_MISMATCH:{event_id}")
+
+    battle = _expect_exact_fields(generation["battle"], {"templates", "layers"}, "generation:battle")
+    for template in _expect_list(battle.get("templates"), "generation:battle:templates"):
+        record = _expect_exact_fields(template, {"encounterTemplateId", "rewardId", "enemy"}, "battleTemplate")
+        _expect_stable_id(record["encounterTemplateId"], "battleTemplate:encounterTemplateId")
+        reward_id = _expect_stable_id(record["rewardId"], "battleTemplate:rewardId")
+        if reward_id not in rewards or reward_kinds[reward_id] == "level":
+            raise ExportError(f"EXECUTABLE_BATTLE_REWARD_INVALID:{reward_id}")
+        referenced_rewards.add(reward_id)
+    if referenced_rewards != {reward_id for reward_id, kind in reward_kinds.items() if kind != "level"}:
+        raise ExportError("EXECUTABLE_REWARD_REFERENCE_COVERAGE_INVALID")
+
+    expected_hash = _runtime_bundle_hash(bundle, items)
+    if not isinstance(bundle["bundleHash"], str) or bundle["bundleHash"] != expected_hash:
+        raise ExportError("EXECUTABLE_BUNDLE_HASH_INVALID")
 
 
 class ContentAssembler:
@@ -308,6 +615,14 @@ class ContentAssembler:
             raise ExportError("STALL_REFRESH_DECLARED_COVERAGE_INVALID")
         battle_generation = self._encounters(rewards, identity["runDayMax"])
         new_run = self._new_run(hero, starters)
+        executable_catalogs = self._executable_catalogs(
+            hero,
+            skills,
+            stalls,
+            shop_generation,
+            events,
+            rewards,
+        )
         bundle = {
             "schema": identity["runtimeSchema"],
             "schemaVersion": identity["runtimeSchemaVersion"],
@@ -325,6 +640,7 @@ class ContentAssembler:
                 "shop": shop_generation,
                 "battle": battle_generation,
             },
+            "executableCatalogs": executable_catalogs,
         }
         bundle["bundleHash"] = _runtime_bundle_hash(bundle, items)
         return {
@@ -388,7 +704,26 @@ class ContentAssembler:
                 thresholds.append({"level": level, "requiredXp": required_xp, "rewardId": reward_id})
             elif level is not None or required_xp is not None:
                 raise ExportError(f"LEVEL_FIELDS_UNEXPECTED:{reward_id}")
-            rewards[reward_id] = {"type": reward_type, "amount": amount, "itemId": item_id, "quality": quality}
+            if reward_type == "currency":
+                effects = [{"type": "change_gold", "amount": amount}]
+                trigger_event = "REWARD_RESOLUTION"
+            elif reward_type == "item":
+                effects = [{
+                    "type": "grant_item",
+                    "itemId": item_id,
+                    "quality": quality,
+                    "quantity": amount,
+                    "destination": "stash",
+                }]
+                trigger_event = "REWARD_RESOLUTION"
+            else:
+                effects = [{"type": "record_level_reward", "amount": amount}]
+                trigger_event = "LEVEL_UP"
+            rewards[reward_id] = {
+                "type": reward_type,
+                "trigger": {"scope": "system", "event": trigger_event},
+                "effects": effects,
+            }
         thresholds.sort(key=lambda value: value["level"])
         if not thresholds or [value["level"] for value in thresholds] != list(range(2, 2 + len(thresholds))):
             raise ExportError("LEVEL_REWARD_COVERAGE_INVALID")
@@ -411,7 +746,7 @@ class ContentAssembler:
             if seen_effects.intersection(effect_ids):
                 raise ExportError(f"SKILL_EFFECT_OWNERSHIP_DUPLICATE:{skill_id}")
             seen_effects.update(effect_ids)
-            skills[skill_id] = {"effectIds": set(effect_ids)}
+            skills[skill_id] = {"triggerEvent": "item_ready", "effectIds": set(effect_ids)}
         return skills
 
     def _items(self, skills: dict[str, dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -691,12 +1026,81 @@ class ContentAssembler:
             reward_id = _require_id(option_file, row, "reward_id")
             if reward_id not in rewards:
                 raise ExportError(f"EVENT_OPTION_REWARD_UNKNOWN:{option_id}")
-            _integer(option_file, row, "gold_delta")
-            events[event_id]["options"].append(option_id)
+            if rewards[reward_id]["type"] == "level":
+                raise ExportError(f"EVENT_OPTION_LEVEL_REWARD_FORBIDDEN:{option_id}")
+            events[event_id]["options"].append({
+                "optionId": option_id,
+                "eventId": event_id,
+                "rewardId": reward_id,
+                "goldDelta": _integer(option_file, row, "gold_delta"),
+            })
         for event_id, event in events.items():
             if len(event["options"]) < 2:
                 raise ExportError(f"EVENT_OPTIONS_INCOMPLETE:{event_id}")
         return events
+
+    def _executable_catalogs(
+        self,
+        hero: dict[str, Any],
+        skills: dict[str, dict[str, Any]],
+        stalls: dict[str, dict[str, Any]],
+        shop_generation: dict[str, Any],
+        events: dict[str, dict[str, Any]],
+        rewards: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
+        template_ids = sorted(template["offerTemplateId"] for template in shop_generation["templates"])
+        if len(template_ids) != len(set(template_ids)):
+            raise ExportError("EXECUTABLE_STALL_TEMPLATE_ID_DUPLICATE")
+        stall_records = []
+        for stall_id in sorted(stalls):
+            offer_count = stalls[stall_id]["offerSlots"]
+            for layer in shop_generation["layers"]:
+                refs = layer["templateIds"]
+                if len(refs) != offer_count or any(ref not in template_ids for ref in refs):
+                    raise ExportError(f"EXECUTABLE_STALL_LAYER_INVALID:{stall_id}")
+            stall_records.append({
+                "stallId": stall_id,
+                "offerCount": offer_count,
+                "shopTemplateIds": template_ids,
+            })
+        event_records = []
+        option_records = []
+        for event_id in sorted(events):
+            event = events[event_id]
+            options = sorted(event["options"], key=lambda value: value["optionId"])
+            event_records.append({
+                "eventId": event_id,
+                "hourSlots": sorted(event["hours"]),
+                "optionIds": [option["optionId"] for option in options],
+            })
+            option_records.extend(options)
+        return {
+            "schema": EXECUTABLE_CATALOGS_SCHEMA,
+            "schemaVersion": EXECUTABLE_CATALOGS_SCHEMA_VERSION,
+            "heroes": [{
+                "heroId": hero["heroId"],
+                "skillIds": sorted(hero["skillIds"]),
+            }],
+            "skills": [
+                {
+                    "skillId": skill_id,
+                    "triggerEvent": skills[skill_id]["triggerEvent"],
+                    "effectIds": sorted(skills[skill_id]["effectIds"]),
+                }
+                for skill_id in sorted(skills)
+            ],
+            "stalls": stall_records,
+            "events": event_records,
+            "eventOptions": sorted(option_records, key=lambda value: value["optionId"]),
+            "rewards": [
+                {
+                    "rewardId": reward_id,
+                    "trigger": rewards[reward_id]["trigger"],
+                    "effects": rewards[reward_id]["effects"],
+                }
+                for reward_id in sorted(rewards)
+            ],
+        }
 
     def _gameplay(
         self,
@@ -714,7 +1118,7 @@ class ContentAssembler:
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
             # The current 13-domain workbook is the finite v3 candidate source.
-            # This adapter is its explicit one-way projection into executable v4.
+            # This adapter is its explicit one-way projection into executable v5.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -725,7 +1129,7 @@ class ContentAssembler:
             "battle_package_schema_version": str(BATTLE_PACKAGE_SCHEMA_VERSION),
             "schedule_schema": SCHEDULE_SCHEMA,
             "schedule_schema_version": str(SCHEDULE_SCHEMA_VERSION),
-            "phase": "shop",
+            "phase": "schedule",
             "start_day": "1",
             "start_hour": "1",
             "board_size": "10",
@@ -898,6 +1302,7 @@ class ContentAssembler:
                 raise ExportError(f"ENCOUNTER_REWARD_UNKNOWN:{encounter_id}")
             templates.append({
                 "encounterTemplateId": encounter_id,
+                "rewardId": reward_id,
                 "enemy": enemies[enemy_id],
             })
             layer_references[day][kind].append(encounter_id)
@@ -924,15 +1329,17 @@ class ContentAssembler:
         return {"templates": templates, "layers": layers}
 
     def _new_run(self, hero: dict[str, Any], starters: list[dict[str, Any]]) -> dict[str, Any]:
-        hero_payload = {key: hero[key] for key in ["heroId", "level", "experience", "prestige", "skillIds", "maxHp"]}
+        # v5 makes executableCatalogs the sole owner of hero -> skill bindings.
+        hero_payload = {key: hero[key] for key in ["heroId", "level", "experience", "prestige", "maxHp"]}
         board_items = sorted((item for item in starters if item["location"] == "board"), key=lambda value: value["startSlot"])
         stash_items = sorted((item for item in starters if item["location"] == "stash"), key=lambda value: value["instanceId"])
         return {
             "schemaVersion": NEW_RUN_SCHEMA_VERSION,
             "stateVersion": 0,
-            "phase": "shop",
+            "phase": "schedule",
             "day": 1,
             "hour": 1,
+            "activeNode": {"nodeId": "", "kind": "", "rewardId": ""},
             "seed": _same(self.tables["44_bz_gameplay.csv"], "44_bz_gameplay.csv", "seed"),
             "hero": hero_payload,
             "economy": {"gold": hero["startGold"], "income": hero["startIncome"]},
@@ -1016,6 +1423,7 @@ def build_exports(csv_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     # JSON round-trip is the final type gate. NaN and non-string dictionary keys
     # cannot enter from CSV, but this also isolates the returned value.
     package = json.loads(_canonical_json(package))
+    validate_package(package)
     display = json.loads(_canonical_json(_build_display_directory(tables, package)))
     return package, display
 
@@ -1032,7 +1440,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate generation and display candidates from BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v5 runtime and display candidates from BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -1047,7 +1455,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate generation candidate "
+            "PASS original-pirate v5 integration-pending candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -1058,7 +1466,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate generation candidate to {output}")
+        print(f"exported original-pirate v5 integration-pending candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

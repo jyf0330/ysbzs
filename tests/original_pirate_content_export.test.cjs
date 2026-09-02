@@ -62,7 +62,15 @@ function expectedBundleHash(content) {
   delete bundle.bundleHash;
   const items = structuredClone(content.items);
   for (const item of items) {
+    if (item.tags) item.tags.sort();
     for (const profile of Object.values(item.qualityProfiles)) {
+      for (const effect of profile.effects) {
+        for (const condition of effect.trigger.conditions) {
+          if (condition.type === 'source_item_has_any_tag' && Array.isArray(condition.params.tags)) {
+            condition.params.tags.sort();
+          }
+        }
+      }
       profile.effects.sort((left, right) => (left.priority - right.priority) || stableIdCompare(left.effectId, right.effectId));
     }
   }
@@ -92,7 +100,10 @@ function expectedBundleHash(content) {
       || stableIdCompare(left.instanceId, right.instanceId));
   }
   catalogs.heroes.sort((left, right) => stableIdCompare(left.heroId, right.heroId));
-  for (const skill of catalogs.itemSkills) skill.effectIds.sort();
+  for (const skill of catalogs.itemSkills) {
+    if (skill.triggerEvents) skill.triggerEvents.sort();
+    skill.effectIds.sort();
+  }
   catalogs.itemSkills.sort((left, right) => stableIdCompare(left.itemSkillId, right.itemSkillId));
   for (const skill of catalogs.heroSkills) {
     for (const profile of Object.values(skill.qualityProfiles)) {
@@ -234,7 +245,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 hash 兼容', () => {
+test('OPC02 v15/v13 canonical tags、跨物品响应、英雄技能与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -251,13 +262,13 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 14);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v10');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v11');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v11');
-  assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 12);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v11');
+  assert.equal(content.schemaVersion, 15);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v11');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v12');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v12');
+  assert.equal(content.items.length, 9);
+  assert.equal(content.runtimeBundle.schemaVersion, 13);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v12');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -430,14 +441,14 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 5,
+    'ysbzs.original-pirate-executable-catalogs.v1', 6,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
     catalogs.heroSkillTrainers.length, catalogs.heroSkillOffers.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 6, 2, 2, 7, 1, 4, 8, 8, 12, 3]);
+  ], [1, 9, 2, 2, 7, 1, 4, 8, 8, 21, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
     'heroId', 'heroSkillIds', 'startingHeroSkills',
   ]);
@@ -518,11 +529,31 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
     { maxTriggersPerBattle: 3, ticks: 1, amount: 0 },
     { maxTriggersPerBattle: 2, ticks: 1, amount: 0 },
   ]);
+  const itemById = Object.fromEntries(content.items.map((item) => [item.itemId, item]));
+  const itemTagVocab = ['ammo', 'aquatic', 'relic', 'tool', 'vehicle', 'weapon'];
+  assert.equal(content.items.every((item) => (
+    assert.deepEqual(Object.keys(item).sort(), ['baseQuality', 'itemId', 'qualityProfiles', 'slotWidth', 'tags']),
+    item.tags.length > 0 && new Set(item.tags).size === item.tags.length
+      && item.tags.every((tag) => itemTagVocab.includes(tag))
+      && item.tags.join(',') === [...item.tags].sort().join(',')
+  )), true);
+  assert.deepEqual(itemById.item_wake_echo_drum.tags, ['relic', 'weapon']);
+  assert.deepEqual(itemById.item_saltwind_capstan.tags, ['tool', 'vehicle']);
+  assert.deepEqual(itemById.item_tidefin_launcher.tags, ['ammo', 'aquatic']);
+  assert.deepEqual(Object.keys(itemById.item_tidefin_launcher.qualityProfiles), [
+    'bronze', 'diamond', 'gold', 'silver',
+  ]);
+  assert.deepEqual(
+    ['bronze', 'silver', 'gold', 'diamond'].map((quality) => (
+      itemById.item_tidefin_launcher.qualityProfiles[quality].ammo.enabled
+    )),
+    [true, true, true, true],
+  );
   const profileEffectIds = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects));
-  assert.equal(executableEffects.length, 32);
+  assert.equal(executableEffects.length, 56);
   assert.deepEqual([...new Set(executableEffects.map(({ operation }) => operation.type))].sort(), [
     'apply_status', 'charge', 'deal_damage', 'reload',
   ]);
@@ -531,6 +562,27 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
   ]);
   assert.deepEqual([...new Set(executableEffects.filter(({ operation }) => operation.type === 'apply_status')
     .map(({ operation }) => operation.params.status))].sort(), ['freeze', 'haste', 'slow']);
+  const reactiveEffects = executableEffects.filter(({ trigger }) => trigger.event === 'another_friendly_item_used');
+  assert.equal(reactiveEffects.length, 12);
+  assert.deepEqual([...new Set(reactiveEffects.map(({ operation }) => operation.type))].sort(), [
+    'charge', 'deal_damage', 'reload',
+  ]);
+  assert.equal(reactiveEffects.every(({ trigger }) => (
+    trigger.conditions.length === 1
+      && trigger.conditions[0].type === 'source_item_has_any_tag'
+      && trigger.conditions[0].params.tags.length > 0
+      && trigger.conditions[0].params.tags.join(',') === [...trigger.conditions[0].params.tags].sort().join(',')
+  )), true);
+  assert.equal(content.items.every(({ qualityProfiles }) => Object.values(qualityProfiles).every(({ effects }) => (
+    effects.some(({ trigger }) => trigger.event === 'item_ready')
+  ))), true);
+  assert.equal(catalogs.itemSkills.every((skill) => (
+    assert.deepEqual(Object.keys(skill).sort(), ['effectIds', 'itemSkillId', 'triggerEvents']),
+    skill.triggerEvents.join(',') === [...skill.triggerEvents].sort().join(',')
+  )), true);
+  assert.deepEqual(catalogs.itemSkills.find(({ itemSkillId }) => (
+    itemSkillId === 'skill_wake_echo_drum'
+  )).triggerEvents, ['another_friendly_item_used', 'item_ready']);
   assert.deepEqual(catalogs.itemSkills.flatMap(({ effectIds }) => effectIds).sort(), profileEffectIds);
   const stall = catalogs.stalls[0];
   assert.deepEqual(Object.keys(stall).sort(), ['offerCount', 'shopTemplateIds', 'stallId']);
@@ -539,11 +591,19 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
   assert.equal(generation.shop.layers.every(({ templateIds }) => templateIds.length === stall.offerCount
     && templateIds.every((templateId) => stall.shopTemplateIds.includes(templateId))), true);
   assert.equal(catalogs.upgrades.every((upgrade) => upgrade.stallId === 'stall_mistwake' && upgrade.price > 0), true);
+  assert.equal(catalogs.upgrades.filter(({ itemId }) => [
+    'item_wake_echo_drum', 'item_saltwind_capstan', 'item_tidefin_launcher',
+  ].includes(itemId)).length, 9);
+  assert.deepEqual([...new Set(generation.shop.templates.filter(({ itemId }) => [
+    'item_wake_echo_drum', 'item_saltwind_capstan', 'item_tidefin_launcher',
+  ].includes(itemId)).map(({ itemId }) => itemId))].sort(), [
+    'item_saltwind_capstan', 'item_tidefin_launcher', 'item_wake_echo_drum',
+  ]);
   assert.deepEqual(catalogs.enchantments.map(({ enchantmentId }) => enchantmentId), [
     'enchant_breaker', 'enchant_reserve', 'enchant_tailwind',
   ]);
   const reserve = catalogs.enchantments.find(({ enchantmentId }) => enchantmentId === 'enchant_reserve');
-  assert.equal(reserve.profiles.length, 8);
+  assert.equal(reserve.profiles.length, 12);
   assert.equal(reserve.profiles.every(({ ammoDelta, damageDelta, cooldownDeltaTicks }) => (
     ammoDelta === 1 && damageDelta === 0 && cooldownDeltaTicks === 0
   )), true);
@@ -562,6 +622,19 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
   assert.deepEqual(rewardById.reward_pve_patrol.effects[0], { type: 'change_gold', amount: 4 });
   assert.equal(content.runtimeBundle.bundleHash, expectedBundleHash(content));
   const identityReordered = structuredClone(content);
+  for (const item of identityReordered.items) {
+    item.tags.reverse();
+    for (const profile of Object.values(item.qualityProfiles)) {
+      for (const effect of profile.effects) {
+        for (const condition of effect.trigger.conditions) {
+          if (condition.type === 'source_item_has_any_tag') condition.params.tags.reverse();
+        }
+      }
+    }
+  }
+  for (const skill of identityReordered.runtimeBundle.executableCatalogs.itemSkills) {
+    skill.triggerEvents.reverse();
+  }
   identityReordered.runtimeBundle.executableCatalogs.heroSkillTrainers.reverse();
   identityReordered.runtimeBundle.executableCatalogs.heroSkillOffers.reverse();
   for (const trainer of identityReordered.runtimeBundle.executableCatalogs.heroSkillTrainers) {
@@ -579,9 +652,9 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v11');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v11');
-  assert.equal(display.entries.length, 89);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v12');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v12');
+  assert.equal(display.entries.length, 95);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -614,7 +687,14 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
   )).descriptionZh, /学习青铜品质/);
   assert.equal(display.entries.filter(({ domain }) => domain === 'hero_skill_quality_profiles').length, 8);
   assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
-  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 6);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 9);
+  assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_tidefin_launcher'), {
+    displayId: 'items.item_tidefin_launcher', domain: 'items', sourceId: 'item_tidefin_launcher',
+    nameZh: '潮鳍投筒', descriptionZh: '',
+  });
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'item_skills.skill_tidefin_launcher'
+  )).descriptionZh, /水生标签.*补充弹药/);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'level_up_options.level_option_2_upgrade'), {
     displayId: 'level_up_options.level_option_2_upgrade', domain: 'level_up_options',
     sourceId: 'level_option_2_upgrade', nameZh: '精调一件装备',
@@ -633,13 +713,26 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
   assert.match(source, /原创本地内容/);
 });
 
-test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇时整包拒绝', () => {
+test('OPC03 缺 tags、响应条件、主动效果、关系、品质或遭遇时整包拒绝', () => {
   const cases = [
     ['cooldown', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'cooldown_ticks', '')],
+    ['item-tags-missing', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'tags', '')],
+    ['item-tags-unknown', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'tags', 'weapon, cannon')],
+    ['item-tags-duplicate', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'tags', 'weapon, weapon')],
     ['quality', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'quality', '')],
     ['ammo', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'ammo_maximum', '')],
     ['price', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'price', '')],
     ['trigger', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'trigger_event', '')],
+    ['response-condition-tags-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_tags', '')],
+    ['response-condition-tags-duplicate', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_tags', 'weapon, weapon')],
+    ['response-condition-type', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_type', 'always')],
+    ['response-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'operation_type', 'apply_status')],
+    ['item-skill-trigger-coverage', (dir) => mutateCell(dir, '48_bz_item_skills.csv', 7, 'trigger_events', 'item_ready')],
+    ['item-ready-effect-required', (dir) => {
+      mutateCell(dir, '47_bz_item_effects.csv', 33, 'trigger_event', 'another_friendly_item_used');
+      mutateCell(dir, '47_bz_item_effects.csv', 33, 'condition_type', 'source_item_has_any_tag');
+      mutateCell(dir, '47_bz_item_effects.csv', 33, 'condition_tags', 'weapon');
+    }],
     ['item-skill-cross-directory', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'item_skill_id', 'hero_skill_mist_salvo')],
     ['item-effect-cross-directory', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'item_skill_id', 'hero_skill_mist_salvo')],
     ['effect', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'amount', '')],
@@ -830,8 +923,8 @@ test('OPC05B starter 与 Ghost 允许非空合法英雄技能子集', () => {
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v14/v12 forged hero skill training、Ghost、catalog 或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v14-forgery-'));
+test('OPC06 v15/v13 forged tags、响应效果、英雄技能、Ghost、catalog 或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v15-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -934,6 +1027,19 @@ test('OPC06 v14/v12 forged hero skill training、Ghost、catalog 或 hash 整包
     ['extra-catalog-field', (value) => { value.runtimeBundle.executableCatalogs.auditText = 'not-runtime'; }],
     ['retired-skills-catalog', (value) => { value.runtimeBundle.executableCatalogs.skills = []; }],
     ['item-skill-extra-field', (value) => { value.runtimeBundle.executableCatalogs.itemSkills[0].heroId = 'hero_mistwake_captain'; }],
+    ['item-skill-old-trigger-field', (value) => {
+      const skill = value.runtimeBundle.executableCatalogs.itemSkills[0];
+      skill.triggerEvent = skill.triggerEvents[0];
+      delete skill.triggerEvents;
+    }],
+    ['item-skill-trigger-events-unsorted', (value) => {
+      value.runtimeBundle.executableCatalogs.itemSkills
+        .find(({ itemSkillId }) => itemSkillId === 'skill_wake_echo_drum').triggerEvents.reverse();
+    }],
+    ['item-skill-trigger-coverage', (value) => {
+      value.runtimeBundle.executableCatalogs.itemSkills
+        .find(({ itemSkillId }) => itemSkillId === 'skill_wake_echo_drum').triggerEvents = ['item_ready'];
+    }],
     ['hero-item-skill-cross-reference', (value) => {
       value.runtimeBundle.executableCatalogs.heroes[0].heroSkillIds[0] = 'skill_brine_cannon';
     }],
@@ -1013,6 +1119,34 @@ test('OPC06 v14/v12 forged hero skill training、Ghost、catalog 或 hash 整包
     }],
     ['item-profile-extra-field', (value) => {
       value.items.find(({ itemId }) => itemId === 'item_brine_cannon').qualityProfiles.bronze.formula = 'forged';
+    }],
+    ['item-tags-missing', (value) => { delete value.items[0].tags; }],
+    ['item-tags-extra', (value) => { value.items[0].tagText = 'weapon'; }],
+    ['item-tags-unknown', (value) => { value.items[0].tags = ['cannon']; }],
+    ['item-tags-duplicate', (value) => { value.items[0].tags = ['weapon', 'weapon']; }],
+    ['item-tags-unsorted', (value) => { value.items[0].tags.reverse(); }],
+    ['reactive-condition-tags-unsorted', (value) => {
+      const effect = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
+      effect.trigger.conditions[0].params.tags.reverse();
+    }],
+    ['reactive-condition-type', (value) => {
+      const effect = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
+      effect.trigger.conditions[0] = { type: 'always', params: {} };
+    }],
+    ['reactive-operation-unsupported', (value) => {
+      const effect = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'another_friendly_item_used');
+      effect.operation = { type: 'apply_status', params: { status: 'haste', ticks: 1 } };
+    }],
+    ['item-ready-effect-required', (value) => {
+      const profile = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum').qualityProfiles.bronze;
+      const effect = profile.effects.find(({ trigger }) => trigger.event === 'item_ready');
+      effect.trigger = {
+        event: 'another_friendly_item_used',
+        conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['weapon'] } }],
+      };
     }],
     ['item-effect-extra-param', (value) => {
       value.items.find(({ itemId }) => itemId === 'item_signal_flare')

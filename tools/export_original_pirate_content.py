@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v14 candidate package while still validating every
+outside the formal v15 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 14
+CONTENT_SCHEMA_VERSION = 15
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 12
-SOURCE_CONTENT_SCHEMA_VERSION = 12
-SOURCE_RUNTIME_SCHEMA_VERSION = 10
+RUNTIME_SCHEMA_VERSION = 13
+SOURCE_CONTENT_SCHEMA_VERSION = 13
+SOURCE_RUNTIME_SCHEMA_VERSION = 11
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 5
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 6
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,13 +51,17 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v10"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v11"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
 ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
 ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status"}
+REACTIVE_ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge"}
 ITEM_STATUSES = {"haste", "slow", "freeze"}
+ITEM_TAGS = {"ammo", "aquatic", "relic", "tool", "vehicle", "weapon"}
+ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used"}
+ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag"}
 HERO_SKILL_TRIGGER = "friendly_item_used"
 HERO_SKILL_TARGETS = {"opponent_hero", "source_item"}
 HERO_SKILL_OPERATIONS = {"deal_damage", "charge"}
@@ -88,18 +92,18 @@ DOMAIN_HEADERS = OrderedDict([
         "start_gold", "start_income", "catalog_status",
     ]),
     ("46_bz_items.csv", [
-        "item_id", "name_zh", "slot_width", "base_quality", "quality", "buy_price",
+        "item_id", "name_zh", "tags", "slot_width", "base_quality", "quality", "buy_price",
         "sell_price", "cooldown_ticks", "ammo_enabled", "ammo_initial", "ammo_maximum",
         "item_skill_id", "starter_instance_id", "starter_location", "starter_start_slot",
         "catalog_status",
     ]),
     ("47_bz_item_effects.csv", [
         "effect_id", "item_id", "quality", "item_skill_id", "priority", "trigger_event",
-        "condition_type", "target_type", "operation_type", "amount", "status", "ticks",
+        "condition_type", "condition_tags", "target_type", "operation_type", "amount", "status", "ticks",
         "catalog_status",
     ]),
     ("48_bz_item_skills.csv", [
-        "item_skill_id", "name_zh", "description_zh", "trigger_event", "effect_ids",
+        "item_skill_id", "name_zh", "description_zh", "trigger_events", "effect_ids",
         "catalog_status",
     ]),
     ("49_bz_stalls.csv", [
@@ -284,6 +288,13 @@ def _ids(filename: str, row: dict[str, str], field: str, allow_empty: bool = Fal
     return values
 
 
+def _item_tags(filename: str, row: dict[str, str], field: str) -> list[str]:
+    values = _ids(filename, row, field)
+    if any(value not in ITEM_TAGS for value in values):
+        raise ExportError(f"ITEM_TAG_INVALID:{_location(filename, row)}:{field}")
+    return sorted(values)
+
+
 def _hours(filename: str, row: dict[str, str], field: str) -> list[int]:
     raw_values = [part.strip() for part in re.split(r"[,，、]", row.get(field, "")) if part.strip()]
     if not raw_values:
@@ -325,7 +336,12 @@ def _canonical_json(value: Any) -> str:
 def _canonical_runtime_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result = json.loads(json.dumps(items, ensure_ascii=False))
     for item in result:
+        item.get("tags", []).sort()
         for profile in item.get("qualityProfiles", {}).values():
+            for effect in profile.get("effects", []):
+                for condition in effect.get("trigger", {}).get("conditions", []):
+                    if condition.get("type") == "source_item_has_any_tag":
+                        condition.get("params", {}).get("tags", []).sort()
             profile.get("effects", []).sort(key=lambda value: (value.get("priority", 0), value.get("effectId", "")))
     result.sort(key=lambda value: value.get("itemId", ""))
     return result
@@ -379,6 +395,7 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
         )
     catalogs.get("heroes", []).sort(key=lambda value: value.get("heroId", ""))
     for skill in catalogs.get("itemSkills", []):
+        skill.get("triggerEvents", []).sort()
         skill.get("effectIds", []).sort()
     catalogs.get("itemSkills", []).sort(key=lambda value: value.get("itemSkillId", ""))
     for skill in catalogs.get("heroSkills", []):
@@ -436,24 +453,46 @@ def _expect_stable_id(value: Any, context: str) -> str:
     return value
 
 
+def _expect_canonical_item_tags(value: Any, context: str) -> list[str]:
+    tags = _expect_list(value, context)
+    if not tags or any(not isinstance(tag, str) or tag not in ITEM_TAGS for tag in tags) \
+            or len(tags) != len(set(tags)) or tags != sorted(tags):
+        raise ExportError(f"EXECUTABLE_ITEM_TAGS_INVALID:{context}")
+    return tags
+
+
 def _expect_integer(value: Any, context: str, minimum: int | None = None) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or (minimum is not None and value < minimum):
         raise ExportError(f"EXECUTABLE_INTEGER_INVALID:{context}")
     return value
 
 
-def _validate_executable_item_effect(value: Any, context: str) -> str:
+def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str]:
     effect = _expect_exact_fields(value, {
         "effectId", "priority", "trigger", "target", "operation",
     }, context)
     effect_id = _expect_stable_id(effect["effectId"], f"{context}:effectId")
     _expect_integer(effect["priority"], f"{context}:priority", 0)
     trigger = _expect_exact_fields(effect["trigger"], {"event", "conditions"}, f"{context}:trigger")
-    if trigger["event"] != "item_ready":
+    trigger_event = trigger["event"]
+    if trigger_event not in ITEM_EFFECT_TRIGGERS:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TRIGGER_INVALID:{effect_id}")
     conditions = _expect_list(trigger["conditions"], f"{context}:trigger:conditions")
-    if conditions != [{"type": "always", "params": {}}]:
-        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+    if trigger_event == "item_ready":
+        if conditions != [{"type": "always", "params": {}}]:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+    else:
+        if len(conditions) != 1:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+        condition = _expect_exact_fields(
+            conditions[0], {"type", "params"}, f"{context}:trigger:conditions:0"
+        )
+        if condition["type"] != "source_item_has_any_tag":
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+        params = _expect_exact_fields(
+            condition["params"], {"tags"}, f"{context}:trigger:conditions:0:params"
+        )
+        _expect_canonical_item_tags(params["tags"], f"{context}:trigger:conditions:0:params:tags")
     target = _expect_exact_fields(effect["target"], {"type", "params"}, f"{context}:target")
     target_type = target["type"]
     if target_type not in ITEM_EFFECT_TARGETS or target["params"] != {}:
@@ -462,6 +501,9 @@ def _validate_executable_item_effect(value: Any, context: str) -> str:
     operation_type = operation["type"]
     if operation_type not in ITEM_EFFECT_OPERATIONS:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_OPERATION_INVALID:{effect_id}")
+    if trigger_event == "another_friendly_item_used" \
+            and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
+        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
     if operation_type == "deal_damage":
         params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
         _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
@@ -482,7 +524,7 @@ def _validate_executable_item_effect(value: Any, context: str) -> str:
         valid_target = target_type in {"self_item", "first_enemy_item"}
     if not valid_target:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
-    return effect_id
+    return effect_id, trigger_event
 
 
 def _validate_executable_hero_skill_effect(value: Any, context: str) -> str:
@@ -653,7 +695,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v14/v12 candidate package without accepting partial data."""
+    """Validate the formal v15/v13 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -672,13 +714,15 @@ def validate_package(package: Any) -> None:
     item_qualities: dict[str, list[str]] = {}
     item_widths: dict[str, int] = {}
     item_effect_ids: set[str] = set()
+    item_effect_events: dict[str, str] = {}
     for item_index, item_value in enumerate(items):
         item = _expect_exact_fields(item_value, {
-            "itemId", "slotWidth", "baseQuality", "qualityProfiles",
+            "itemId", "tags", "slotWidth", "baseQuality", "qualityProfiles",
         }, f"items:{item_index}")
         item_id = _expect_stable_id(item["itemId"], f"items:{item_index}:itemId")
         if item_id in item_widths:
             raise ExportError(f"EXECUTABLE_ITEM_ID_DUPLICATE:{item_id}")
+        _expect_canonical_item_tags(item["tags"], f"items:{item_id}:tags")
         item_widths[item_id] = _expect_integer(item["slotWidth"], f"items:{item_id}:slotWidth", 1)
         if item_widths[item_id] > 3:
             raise ExportError(f"EXECUTABLE_ITEM_SLOT_WIDTH_INVALID:{item_id}")
@@ -708,13 +752,18 @@ def validate_package(package: Any) -> None:
             _expect_integer(ammo["maximum"], f"items:{item_id}:{quality}:ammo.maximum", 0)
             item_profiles.add((item_id, quality))
             item_profile_values[(item_id, quality)] = profile
+            profile_events: set[str] = set()
             for effect_index, effect in enumerate(_expect_list(profile.get("effects"), f"items:{item_id}:{quality}:effects")):
-                effect_id = _validate_executable_item_effect(
+                effect_id, trigger_event = _validate_executable_item_effect(
                     effect, f"items:{item_id}:{quality}:effects:{effect_index}"
                 )
                 if effect_id in item_effect_ids:
                     raise ExportError(f"EXECUTABLE_EFFECT_ID_DUPLICATE:{effect_id}")
                 item_effect_ids.add(effect_id)
+                item_effect_events[effect_id] = trigger_event
+                profile_events.add(trigger_event)
+            if "item_ready" not in profile_events:
+                raise ExportError(f"EXECUTABLE_ITEM_READY_EFFECT_REQUIRED:{item_id}:{quality}")
 
     bundle = _expect_exact_fields(root["runtimeBundle"], {
         "schema", "schemaVersion", "bundleRevision", "rulesVersion", "contentRevision",
@@ -834,12 +883,15 @@ def validate_package(package: Any) -> None:
 
     item_skills = _directory(
         _expect_list(catalogs["itemSkills"], "catalogs:itemSkills"), "itemSkillId", {
-            "itemSkillId", "triggerEvent", "effectIds",
+            "itemSkillId", "triggerEvents", "effectIds",
         }, "itemSkills"
     )
     referenced_effects: set[str] = set()
     for item_skill_id, skill in item_skills.items():
-        if skill["triggerEvent"] != "item_ready":
+        trigger_events = _expect_list(skill["triggerEvents"], f"itemSkills:{item_skill_id}:triggerEvents")
+        if not trigger_events or trigger_events != sorted(trigger_events) \
+                or len(trigger_events) != len(set(trigger_events)) \
+                or any(event not in ITEM_EFFECT_TRIGGERS for event in trigger_events):
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_TRIGGER_INVALID:{item_skill_id}")
         effect_ids = [
             _expect_stable_id(effect_id, f"itemSkills:{item_skill_id}:effectIds")
@@ -849,6 +901,8 @@ def validate_package(package: Any) -> None:
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_EFFECT_REFERENCE_INVALID:{item_skill_id}")
         if referenced_effects.intersection(effect_ids):
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_EFFECT_OWNERSHIP_INVALID:{item_skill_id}")
+        if set(trigger_events) != {item_effect_events[effect_id] for effect_id in effect_ids}:
+            raise ExportError(f"EXECUTABLE_ITEM_SKILL_TRIGGER_COVERAGE_INVALID:{item_skill_id}")
         referenced_effects.update(effect_ids)
     if referenced_effects != item_effect_ids:
         raise ExportError("EXECUTABLE_ITEM_SKILL_EFFECT_COVERAGE_INVALID")
@@ -1924,14 +1978,16 @@ class ContentAssembler:
             _formal(filename, row)
             _require_chinese(filename, row, "name_zh")
             _require_chinese(filename, row, "description_zh")
-            if _require_text(filename, row, "trigger_event") != "item_ready":
+            trigger_events = _ids(filename, row, "trigger_events")
+            if "item_ready" not in trigger_events \
+                    or any(event not in ITEM_EFFECT_TRIGGERS for event in trigger_events):
                 raise ExportError(f"ITEM_SKILL_TRIGGER_INVALID:{item_skill_id}")
             effect_ids = _ids(filename, row, "effect_ids")
             if seen_effects.intersection(effect_ids):
                 raise ExportError(f"ITEM_SKILL_EFFECT_OWNERSHIP_DUPLICATE:{item_skill_id}")
             seen_effects.update(effect_ids)
             item_skills[item_skill_id] = {
-                "triggerEvent": "item_ready", "effectIds": set(effect_ids),
+                "triggerEvents": set(trigger_events), "effectIds": set(effect_ids),
             }
         return item_skills
 
@@ -1980,6 +2036,8 @@ class ContentAssembler:
             name = _same(rows, filename, "name_zh")
             if not CJK_RE.search(name):
                 raise ExportError(f"ITEM_CHINESE_NAME_REQUIRED:{item_id}")
+            _same(rows, filename, "tags")
+            tags = _item_tags(filename, rows[0], "tags")
             slot_width = int(_same(rows, filename, "slot_width")) if INTEGER_RE.fullmatch(_same(rows, filename, "slot_width")) else 0
             if slot_width not in {1, 2, 3}:
                 raise ExportError(f"ITEM_SLOT_WIDTH_INVALID:{item_id}")
@@ -2021,6 +2079,7 @@ class ContentAssembler:
             self.item_skills[item_id] = item_skill_id
             items.append({
                 "itemId": item_id,
+                "tags": tags,
                 "slotWidth": slot_width,
                 "baseQuality": base_quality,
                 "qualityProfiles": profiles,
@@ -2173,6 +2232,7 @@ class ContentAssembler:
         filename = "47_bz_item_effects.csv"
         seen_ids: set[str] = set()
         actual_item_skill_effects: dict[str, set[str]] = defaultdict(set)
+        actual_item_skill_triggers: dict[str, set[str]] = defaultdict(set)
         for row in self.tables[filename]:
             _formal(filename, row)
             effect_id = _require_id(filename, row, "effect_id")
@@ -2187,16 +2247,33 @@ class ContentAssembler:
             item_skill_id = _require_id(filename, row, "item_skill_id")
             if self.item_skills.get(item_id) != item_skill_id or item_skill_id not in item_skills:
                 raise ExportError(f"EFFECT_ITEM_SKILL_MISMATCH:{effect_id}")
-            if _require_text(filename, row, "trigger_event") != "item_ready":
+            trigger_event = _require_text(filename, row, "trigger_event")
+            if trigger_event not in ITEM_EFFECT_TRIGGERS:
                 raise ExportError(f"EFFECT_TRIGGER_INVALID:{effect_id}")
-            if _require_text(filename, row, "condition_type") != "always":
+            condition_type = _require_text(filename, row, "condition_type")
+            if condition_type not in ITEM_EFFECT_CONDITIONS:
                 raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
+            if trigger_event == "item_ready":
+                if condition_type != "always" or row.get("condition_tags", "").strip():
+                    raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
+                conditions = [{"type": "always", "params": {}}]
+            else:
+                if condition_type != "source_item_has_any_tag":
+                    raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
+                condition_tags = _item_tags(filename, row, "condition_tags")
+                conditions = [{
+                    "type": "source_item_has_any_tag",
+                    "params": {"tags": condition_tags},
+                }]
             target_type = _require_text(filename, row, "target_type")
             operation_type = _require_text(filename, row, "operation_type")
             if target_type not in ITEM_EFFECT_TARGETS:
                 raise ExportError(f"EFFECT_TARGET_INVALID:{effect_id}")
             if operation_type not in ITEM_EFFECT_OPERATIONS:
                 raise ExportError(f"EFFECT_OPERATION_INVALID:{effect_id}")
+            if trigger_event == "another_friendly_item_used" \
+                    and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
+                raise ExportError(f"EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
             if operation_type == "deal_damage" and target_type != "selected_enemy":
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type in {"reload", "charge"} and target_type != "self_item":
@@ -2222,19 +2299,24 @@ class ContentAssembler:
             effect = {
                 "effectId": effect_id,
                 "priority": _integer(filename, row, "priority", 0),
-                "trigger": {"event": "item_ready", "conditions": [{"type": "always", "params": {}}]},
+                "trigger": {"event": trigger_event, "conditions": conditions},
                 "target": {"type": target_type, "params": {}},
                 "operation": {"type": operation_type, "params": params},
             }
             profile["effects"].append(effect)
             actual_item_skill_effects[item_skill_id].add(effect_id)
+            actual_item_skill_triggers[item_skill_id].add(trigger_event)
         for key, profile in self.item_profiles.items():
             if not profile["effects"]:
                 raise ExportError(f"EFFECT_REQUIRED:{key[0]}:{key[1]}")
+            if not any(effect["trigger"]["event"] == "item_ready" for effect in profile["effects"]):
+                raise ExportError(f"ITEM_READY_EFFECT_REQUIRED:{key[0]}:{key[1]}")
             profile["effects"].sort(key=lambda value: (value["priority"], value["effectId"]))
         for item_skill_id, skill in item_skills.items():
             if actual_item_skill_effects.get(item_skill_id, set()) != skill["effectIds"]:
                 raise ExportError(f"ITEM_SKILL_EFFECT_DIRECTORY_MISMATCH:{item_skill_id}")
+            if actual_item_skill_triggers.get(item_skill_id, set()) != skill["triggerEvents"]:
+                raise ExportError(f"ITEM_SKILL_TRIGGER_DIRECTORY_MISMATCH:{item_skill_id}")
 
     def _hero_skills(self) -> dict[str, dict[str, Any]]:
         filename = "62_bz_hero_skills.csv"
@@ -2793,7 +2875,7 @@ class ContentAssembler:
             "itemSkills": [
                 {
                     "itemSkillId": item_skill_id,
-                    "triggerEvent": item_skills[item_skill_id]["triggerEvent"],
+                    "triggerEvents": sorted(item_skills[item_skill_id]["triggerEvents"]),
                     "effectIds": sorted(item_skills[item_skill_id]["effectIds"]),
                 }
                 for item_skill_id in sorted(item_skills)
@@ -2831,8 +2913,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v12 candidate source.
-            # This adapter is its explicit one-way projection into executable v14.
+            # The current 22-domain workbook is the finite v13 candidate source.
+            # This adapter is its explicit one-way projection into executable v15.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3353,7 +3435,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v14 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v15 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3368,7 +3450,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v14 candidate "
+            "PASS original-pirate v15 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3381,7 +3463,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v14 candidate to {output}")
+        print(f"exported original-pirate v15 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

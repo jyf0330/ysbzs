@@ -25,6 +25,14 @@
 - 改试炼动作脚本/胜负规则/触发器展开：`data/csv/16_*` 到 `23_*`
 - 改我方初始阵容和站位：`data/csv/10_initial_roster.csv`
 
+## Original Pirate 独立内容域
+
+- `original_pirate` 只从 `xlsx/ysbzs_master.xlsx` 的 `BZ_*` 页机械导出到 `data/csv/44_bz_gameplay.csv` 至 `65_bz_hero_skill_offers.csv`；不要从 `element_grid` 的宠物、来源审计或英文效果文案补值。
+- 物品的 `tags` 是非空、唯一、字典序 canonical 的稳定 ID，当前正式词表为 `ammo / aquatic / relic / tool / vehicle / weapon`。
+- `47_bz_item_effects.csv` 逐效果声明 `trigger_event`。`another_friendly_item_used` 只接受 `source_item_has_any_tag` 与显式 `condition_tags`；运行时不解析中文技能说明。
+- `48_bz_item_skills.csv` 用 canonical `trigger_events` 汇总该技能实际拥有的触发集合；每个正式物品的每个品质仍必须至少有一项 `item_ready` 主动效果。
+- 专项门禁：`python3 tools/export_master_to_csv.py --check --original-pirate-only` 与 `python3 tools/export_original_pirate_content.py --check`。
+
 ## 波次写法
 
 - 旧写法：`宠物ID=pal_001`、`数量=1`。

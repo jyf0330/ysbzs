@@ -2582,7 +2582,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v11 integration-pending candidate to {output}")
+        print(f"exported original-pirate v12 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

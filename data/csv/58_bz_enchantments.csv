@@ -83,3 +83,11 @@ enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item
 enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_homeglow_beacon,silver,6,-1,0,0,stall_mistwake,formal
 enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_homeglow_beacon,gold,9,-1,0,0,stall_mistwake,formal
 enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_homeglow_beacon,diamond,12,-1,0,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_tidescar_matchlock,bronze,4,-1,0,0,stall_mistwake,formal
+enchant_breaker,破浪铭刻,把破浪冲势转化为明确的伤害增量。,item_tidescar_matchlock,bronze,5,0,2,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_tidescar_matchlock,silver,6,-1,0,0,stall_mistwake,formal
+enchant_breaker,破浪铭刻,把破浪冲势转化为明确的伤害增量。,item_tidescar_matchlock,silver,7,0,3,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_tidescar_matchlock,gold,9,-1,0,0,stall_mistwake,formal
+enchant_breaker,破浪铭刻,把破浪冲势转化为明确的伤害增量。,item_tidescar_matchlock,gold,10,0,4,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_tidescar_matchlock,diamond,12,-1,0,0,stall_mistwake,formal
+enchant_breaker,破浪铭刻,把破浪冲势转化为明确的伤害增量。,item_tidescar_matchlock,diamond,13,0,6,0,stall_mistwake,formal

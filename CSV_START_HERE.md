@@ -30,6 +30,7 @@
 - `original_pirate` 只从 `xlsx/ysbzs_master.xlsx` 的 `BZ_*` 页机械导出到 `data/csv/44_bz_gameplay.csv` 至 `65_bz_hero_skill_offers.csv`；不要从 `element_grid` 的宠物、来源审计或英文效果文案补值。
 - 物品的 `tags` 是非空、唯一、字典序 canonical 的稳定 ID，当前正式词表为 `ammo / aquatic / relic / tool / vehicle / weapon`。
 - `47_bz_item_effects.csv` 逐效果声明 `trigger_event`。`another_friendly_item_used` 只接受 `source_item_has_any_tag` 与显式 `condition_tags`；运行时不解析中文技能说明。
+- `gain_damage_for_fight` 只用于 `another_friendly_item_used + source_item_has_any_tag` 的当场战斗自身伤害成长；target 固定为 `self_item`、`amount` 必须为正整数，且同品质 profile 必须另有 `item_ready -> selected_enemy -> deal_damage` 主动效果。
 - 英雄防御资源统一用 `target_type=owner_hero`：`heal` 的正整数 `amount` 恢复生命且不超过最大生命，`gain_shield` 的正整数 `amount` 获得一比一抵挡直接伤害的护盾；二者当前只允许 `item_ready + always`，不暗示尚未实现的周期伤害特例。
 - `48_bz_item_skills.csv` 用 canonical `trigger_events` 汇总该技能实际拥有的触发集合；每个正式物品的每个品质仍必须至少有一项 `item_ready` 主动效果。
 - 专项门禁：`python3 tools/export_master_to_csv.py --check --original-pirate-only` 与 `python3 tools/export_original_pirate_content.py --check`。

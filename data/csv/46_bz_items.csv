@@ -41,3 +41,7 @@ item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,bronze,6,3,8,false,0,0,
 item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,silver,9,4,7,false,0,0,skill_homeglow_beacon,,,,formal
 item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,gold,14,7,6,false,0,0,skill_homeglow_beacon,,,,formal
 item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,diamond,19,9,5,false,0,0,skill_homeglow_beacon,,,,formal
+item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,bronze,5,2,7,false,0,0,skill_tidescar_matchlock,,,,formal
+item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,silver,8,4,6,false,0,0,skill_tidescar_matchlock,,,,formal
+item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,gold,12,6,5,false,0,0,skill_tidescar_matchlock,,,,formal
+item_tidescar_matchlock,潮痕火绳枪,"tool, weapon",2,bronze,diamond,17,8,4,false,0,0,skill_tidescar_matchlock,,,,formal

@@ -29,6 +29,6 @@ package_mistwake_refresh_8,stall_mistwake,8,offer_refresh_8_abyss_bell,item_abys
 package_mistwake_refresh_9,stall_mistwake,9,offer_refresh_9_tidefin_launcher,item_tidefin_launcher,gold,,8,false,1,formal
 package_mistwake_refresh_9,stall_mistwake,9,offer_refresh_9_signal_flare,item_signal_flare,silver,,6,false,2,formal
 package_mistwake_refresh_9,stall_mistwake,9,offer_refresh_9_reef_hook,item_reef_hook,gold,,8,false,3,formal
-package_mistwake_refresh_10,stall_mistwake,10,offer_refresh_10_brine_cannon,item_brine_cannon,gold,,13,false,1,formal
+package_mistwake_refresh_10,stall_mistwake,10,offer_refresh_10_tidescar_matchlock,item_tidescar_matchlock,bronze,,5,false,1,formal
 package_mistwake_refresh_10,stall_mistwake,10,offer_refresh_10_patchwork_ram,item_patchwork_ram,diamond,,14,false,2,formal
 package_mistwake_refresh_10,stall_mistwake,10,offer_refresh_10_storm_compass,item_storm_compass,diamond,,16,false,3,formal

@@ -310,7 +310,15 @@ wb = load_workbook(sys.argv[1], read_only=True, data_only=True)
 csv_files = sys.argv[2:]
 visible = [ws.title for ws in wb.worksheets if ws.sheet_state == 'visible']
 hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != 'visible']
-assert visible == ['README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY', 'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS', 'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES', 'ROUTE', 'HERO_CATALOG', 'TAG_CATALOG'], visible
+assert visible == [
+    'README', 'PETS', 'SHOP_STORES', 'WAVES', 'SHOP_ITEMS', 'MECHANICS_QUALITY',
+    'SHAPES_TRIALS', 'BAZAAR_OBJECTS', 'SHOP_MAPPING', 'ENCHANTMENTS',
+    'PET_ENCHANTMENTS', 'AUDIT', 'ATTRIBUTES_EFFECTS', 'PET_STAT_RULES', 'ROUTE',
+    'HERO_CATALOG', 'TAG_CATALOG', 'HERO_SKILLS',
+    'BZ_GAMEPLAY', 'BZ_HEROES', 'BZ_ITEMS', 'BZ_ITEM_EFFECTS', 'BZ_SKILLS',
+    'BZ_STALLS', 'BZ_STALL_OFFERS', 'BZ_EVENTS', 'BZ_EVENT_OPTIONS',
+    'BZ_ENCOUNTERS', 'BZ_ENEMIES', 'BZ_REWARDS', 'BZ_SOURCE_SNAPSHOT',
+], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]
 assert not raw_csv_sheets, raw_csv_sheets

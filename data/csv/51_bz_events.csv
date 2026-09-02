@@ -1,0 +1,5 @@
+event_id,name_zh,description_zh,hour_slots,catalog_status
+event_driftwood_cache,漂木藏箱,潮线推来一只绑着蓝布的旧木箱。船员可以选择拆取补给或保留完整锁扣换钱。,1,formal
+event_compass_echo,罗盘回声,失灵罗盘在无风处轻响。沿着指针寻找可以带回一件航具。,2,formal
+event_quiet_cove,静湾修整,背风海湾给船队短暂喘息。可以补足船体物资或整理零钱。,4,formal
+event_starlit_chart,星痕海图,星光把旧海图上的隐线照亮。可以追索风暴航具或先补足口粮。,5,formal

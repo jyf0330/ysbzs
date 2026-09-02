@@ -1,0 +1,9 @@
+option_id,event_id,name_zh,description_zh,reward_id,gold_delta,catalog_status
+option_driftwood_rations,event_driftwood_cache,拆取干粮,拆下防水内衬并收好仍能食用的补给。,reward_ration_crate,0,formal
+option_driftwood_coins,event_driftwood_cache,出售锁扣,保留完整铜锁并交给港边修匠换取零钱。,reward_coin_pouch,1,formal
+option_compass_patch,event_compass_echo,追踪船板声,沿指针找到一副能加固冲角的拼接船板。,reward_sailcloth_patch,0,formal
+option_compass_flare,event_compass_echo,追踪微光,沿指针找到一枚仍可点燃的星火信标。,reward_signal_flare,0,formal
+option_cove_coins,event_quiet_cove,整理零钱,清点舱底散落的硬币并补入公用钱袋。,reward_coin_pouch,0,formal
+option_cove_hull,event_quiet_cove,补强船壳,用湾内漂木修补最薄弱的一段船壳。,reward_hull_plating,0,formal
+option_chart_compass,event_starlit_chart,追逐风眼,按隐线驶向短暂风眼并取回风暴罗盘。,reward_storm_compass,0,formal
+option_chart_rations,event_starlit_chart,标记补给点,放弃远航并在近岸标出可靠的口粮补给点。,reward_ration_crate,0,formal

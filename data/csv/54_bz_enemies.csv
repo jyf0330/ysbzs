@@ -1,0 +1,5 @@
+enemy_id,name_zh,hero_hp,hero_max_hp,instance_id,item_id,quality,enchantment,start_slot,catalog_status
+enemy_breakwater_raider,折浪巡艇,22,22,enemy_breakwater_cannon,item_brine_cannon,bronze,,0,formal
+enemy_breakwater_raider,折浪巡艇,22,22,enemy_breakwater_hook,item_reef_hook,bronze,,3,formal
+enemy_mirror_skiff,镜潮轻舟,30,30,enemy_mirror_ram,item_patchwork_ram,silver,,0,formal
+enemy_mirror_skiff,镜潮轻舟,30,30,enemy_mirror_flare,item_signal_flare,silver,,2,formal

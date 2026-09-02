@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-08-31，由 `2026-08-31_godot_hero_skill_slice_data` 收口。
+最后刷新：2026-09-02，由 `2026-09-02_original_pirate_content_domains` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-02_original_pirate_content_domains.md` — data: 建立原创海盗 13 域 workbook/CSV 真相链，导出 open-ended generation.v1 与独立中文显示目录。
 
 - `tasks/done/2026-09-01_bazaar_shop_reward_profiles.md` — data: 为 56 个 Vanessa 商店事件逐条冻结本地奖励档案，服务摊位显式映射当前可执行商品并 fail-closed。
 

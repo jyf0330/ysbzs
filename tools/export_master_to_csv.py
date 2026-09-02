@@ -30,6 +30,22 @@ GENERATED_FILES = [
     "13_day7_beast_trial.csv",
 ]
 
+ORIGINAL_PIRATE_EXPORTS = [
+    ("BZ_GAMEPLAY", "44_bz_gameplay.csv"),
+    ("BZ_HEROES", "45_bz_heroes.csv"),
+    ("BZ_ITEMS", "46_bz_items.csv"),
+    ("BZ_ITEM_EFFECTS", "47_bz_item_effects.csv"),
+    ("BZ_SKILLS", "48_bz_skills.csv"),
+    ("BZ_STALLS", "49_bz_stalls.csv"),
+    ("BZ_STALL_OFFERS", "50_bz_stall_offers.csv"),
+    ("BZ_EVENTS", "51_bz_events.csv"),
+    ("BZ_EVENT_OPTIONS", "52_bz_event_options.csv"),
+    ("BZ_ENCOUNTERS", "53_bz_encounters.csv"),
+    ("BZ_ENEMIES", "54_bz_enemies.csv"),
+    ("BZ_REWARDS", "55_bz_rewards.csv"),
+    ("BZ_SOURCE_SNAPSHOT", "56_bz_source_snapshot.csv"),
+]
+
 MASTER_ONLY_EXPORTS = [
     ("SHOP_STORES", "30_shop_stores.csv"),
     ("SHAPE_CATALOG", "27_shape_catalog.csv"),
@@ -42,6 +58,7 @@ MASTER_ONLY_EXPORTS = [
     ("HERO_CATALOG", "41_hero_catalog.csv"),
     ("TAG_CATALOG", "42_bazaar_tag_catalog.csv"),
     ("HERO_SKILLS", "43_hero_skills.csv"),
+    *ORIGINAL_PIRATE_EXPORTS,
 ]
 
 DOMAIN_SECTION_SHEETS = [
@@ -880,6 +897,16 @@ def generated_tables(master_path, baseline_dir):
     return result
 
 
+def generated_original_pirate_tables(master_path):
+    result = {}
+    for sheet_name, filename in ORIGINAL_PIRATE_EXPORTS:
+        rows, headers = generated_sheet_table(master_path, sheet_name)
+        if not rows or not headers:
+            raise ValueError(f"master workbook missing original-pirate sheet rows: {sheet_name}")
+        result[filename] = (rows, headers)
+    return result
+
+
 def copy_baseline_if_needed(baseline_dir, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
     if baseline_dir.resolve() == out_dir.resolve():
@@ -894,6 +921,11 @@ def main(argv=None):
     parser.add_argument("--baseline-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--check", action="store_true", help="Fail if generated CSV differs from baseline files")
+    parser.add_argument(
+        "--original-pirate-only",
+        action="store_true",
+        help="Export/check only BZ_GAMEPLAY through BZ_SOURCE_SNAPSHOT without evaluating legacy formula domains",
+    )
     args = parser.parse_args(argv)
 
     master_path = Path(args.master)
@@ -904,8 +936,16 @@ def main(argv=None):
     if not baseline_dir.exists():
         raise SystemExit(f"missing baseline csv dir: {baseline_dir}")
 
-    generated = generated_tables(master_path, baseline_dir)
-    baseline_csv_files = sorted(path.name for path in baseline_dir.glob("*.csv"))
+    generated = (
+        generated_original_pirate_tables(master_path)
+        if args.original_pirate_only
+        else generated_tables(master_path, baseline_dir)
+    )
+    baseline_csv_files = (
+        sorted(filename for _sheet_name, filename in ORIGINAL_PIRATE_EXPORTS)
+        if args.original_pirate_only
+        else sorted(path.name for path in baseline_dir.glob("*.csv"))
+    )
     missing_exports = [filename for filename in baseline_csv_files if filename not in generated]
     if missing_exports:
         print("FAIL master workbook missing CSV source sheets:", ", ".join(missing_exports), file=sys.stderr)
@@ -924,7 +964,8 @@ def main(argv=None):
         print("PASS master export matches generated CSV tables")
         return 0
 
-    copy_baseline_if_needed(baseline_dir, out_dir)
+    if not args.original_pirate_only:
+        copy_baseline_if_needed(baseline_dir, out_dir)
     for filename, (rows, headers) in generated.items():
         baseline_file = baseline_dir / filename
         has_bom = baseline_file.exists() and baseline_file.read_bytes().startswith(b"\xef\xbb\xbf")

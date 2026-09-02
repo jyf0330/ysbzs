@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 13 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 15 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 5
+CONTENT_SCHEMA_VERSION = 6
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 3
-SOURCE_CONTENT_SCHEMA_VERSION = 3
-SOURCE_RUNTIME_SCHEMA_VERSION = 1
+RUNTIME_SCHEMA_VERSION = 4
+SOURCE_CONTENT_SCHEMA_VERSION = 4
+SOURCE_RUNTIME_SCHEMA_VERSION = 2
 NEW_RUN_SCHEMA_VERSION = 1
 BATTLE_PACKAGE_SCHEMA_VERSION = 1
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,10 +39,10 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 1
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 1
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 2
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v1"
 SCHEDULE_SCHEMA_VERSION = 1
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v1"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v2"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 EXPECTED_HOUR_KINDS = {1: "choice", 2: "choice", 3: "pve", 4: "choice", 5: "choice", 6: "ghost"}
 CHOICE_HOURS = {1, 2, 4, 5}
@@ -110,6 +110,15 @@ DOMAIN_HEADERS = OrderedDict([
         "snapshot_id", "source_kind", "source_revision", "captured_on", "license_note",
         "catalog_scope", "completeness", "catalog_status",
     ]),
+    ("57_bz_item_upgrades.csv", [
+        "upgrade_id", "item_id", "from_quality", "to_quality", "price",
+        "source_stall_id", "catalog_status",
+    ]),
+    ("58_bz_enchantments.csv", [
+        "enchantment_id", "name_zh", "description_zh", "item_id", "quality", "price",
+        "cooldown_delta_ticks", "damage_delta", "ammo_delta", "source_stall_id",
+        "catalog_status",
+    ]),
 ])
 
 DISPLAY_DOMAINS = [
@@ -122,6 +131,7 @@ DISPLAY_DOMAINS = [
     ("53_bz_encounters.csv", "encounters", "encounter_id"),
     ("54_bz_enemies.csv", "enemies", "enemy_id"),
     ("55_bz_rewards.csv", "rewards", "reward_id"),
+    ("58_bz_enchantments.csv", "enchantments", "enchantment_id"),
 ]
 
 
@@ -286,6 +296,13 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     for stall in catalogs.get("stalls", []):
         stall.get("shopTemplateIds", []).sort()
     catalogs.get("stalls", []).sort(key=lambda value: value.get("stallId", ""))
+    catalogs.get("upgrades", []).sort(key=lambda value: value.get("upgradeId", ""))
+    for enchantment in catalogs.get("enchantments", []):
+        enchantment.get("stallIds", []).sort()
+        enchantment.get("profiles", []).sort(
+            key=lambda value: (value.get("itemId", ""), QUALITIES.index(value.get("quality", "")))
+        )
+    catalogs.get("enchantments", []).sort(key=lambda value: value.get("enchantmentId", ""))
     for event in catalogs.get("events", []):
         event.get("hourSlots", []).sort()
         event.get("optionIds", []).sort()
@@ -341,7 +358,7 @@ def _directory(records: list[Any], id_field: str, fields: set[str], context: str
 
 
 def validate_package(package: Any) -> None:
-    """Validate the integration-pending v5/v3 package without accepting partial data."""
+    """Validate the integration-pending v6/v4 package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -356,6 +373,8 @@ def validate_package(package: Any) -> None:
 
     items = _expect_list(root["items"], "root:items")
     item_profiles: set[tuple[str, str]] = set()
+    item_profile_values: dict[tuple[str, str], dict[str, Any]] = {}
+    item_qualities: dict[str, list[str]] = {}
     item_effect_ids: set[str] = set()
     for item_index, item_value in enumerate(items):
         item = _expect_exact_fields(item_value, {
@@ -365,10 +384,29 @@ def validate_package(package: Any) -> None:
         profiles = item["qualityProfiles"]
         if not isinstance(profiles, dict) or not profiles:
             raise ExportError(f"EXECUTABLE_ITEM_PROFILES_INVALID:{item_id}")
+        qualities = sorted(profiles, key=QUALITIES.index)
+        base_quality = item.get("baseQuality")
+        if base_quality not in QUALITIES or qualities != QUALITIES[QUALITIES.index(base_quality):]:
+            raise ExportError(f"EXECUTABLE_ITEM_PROFILE_COVERAGE_INVALID:{item_id}")
+        item_qualities[item_id] = qualities
         for quality, profile in profiles.items():
             if quality not in QUALITIES or not isinstance(profile, dict):
                 raise ExportError(f"EXECUTABLE_ITEM_PROFILE_INVALID:{item_id}:{quality}")
+            _expect_exact_fields(profile, {
+                "buyPrice", "sellPrice", "baseCooldownTicks", "ammo", "effects",
+            }, f"items:{item_id}:{quality}")
+            _expect_integer(profile["buyPrice"], f"items:{item_id}:{quality}:buyPrice", 1)
+            _expect_integer(profile["sellPrice"], f"items:{item_id}:{quality}:sellPrice", 0)
+            _expect_integer(profile["baseCooldownTicks"], f"items:{item_id}:{quality}:baseCooldownTicks", 1)
+            ammo = _expect_exact_fields(profile["ammo"], {
+                "enabled", "initial", "maximum",
+            }, f"items:{item_id}:{quality}:ammo")
+            if not isinstance(ammo["enabled"], bool):
+                raise ExportError(f"EXECUTABLE_ITEM_AMMO_ENABLED_INVALID:{item_id}:{quality}")
+            _expect_integer(ammo["initial"], f"items:{item_id}:{quality}:ammo.initial", 0)
+            _expect_integer(ammo["maximum"], f"items:{item_id}:{quality}:ammo.maximum", 0)
             item_profiles.add((item_id, quality))
+            item_profile_values[(item_id, quality)] = profile
             for effect_index, effect in enumerate(_expect_list(profile.get("effects"), f"items:{item_id}:{quality}:effects")):
                 if not isinstance(effect, dict):
                     raise ExportError(f"EXECUTABLE_ITEM_EFFECT_INVALID:{item_id}:{quality}:{effect_index}")
@@ -390,7 +428,7 @@ def validate_package(package: Any) -> None:
 
     catalogs = _expect_exact_fields(bundle["executableCatalogs"], {
         "schema", "schemaVersion", "heroes", "skills", "stalls", "events",
-        "eventOptions", "rewards",
+        "eventOptions", "rewards", "upgrades", "enchantments",
     }, "executableCatalogs")
     if catalogs["schema"] != EXECUTABLE_CATALOGS_SCHEMA \
             or catalogs["schemaVersion"] != EXECUTABLE_CATALOGS_SCHEMA_VERSION:
@@ -515,6 +553,96 @@ def validate_package(package: Any) -> None:
     if catalog_template_refs != set(shop_templates):
         raise ExportError("EXECUTABLE_STALL_TEMPLATE_COVERAGE_INVALID")
 
+    upgrades = _directory(_expect_list(catalogs["upgrades"], "catalogs:upgrades"), "upgradeId", {
+        "upgradeId", "itemId", "fromQuality", "toQuality", "price", "stallId",
+    }, "upgrades")
+    upgrade_transitions: set[tuple[str, str, str]] = set()
+    for upgrade_id, upgrade in upgrades.items():
+        item_id = _expect_stable_id(upgrade["itemId"], f"upgrades:{upgrade_id}:itemId")
+        from_quality = upgrade["fromQuality"]
+        to_quality = upgrade["toQuality"]
+        if (item_id, from_quality) not in item_profiles or (item_id, to_quality) not in item_profiles \
+                or from_quality not in QUALITIES or QUALITIES.index(from_quality) + 1 >= len(QUALITIES) \
+                or QUALITIES[QUALITIES.index(from_quality) + 1] != to_quality:
+            raise ExportError(f"EXECUTABLE_UPGRADE_TRANSITION_INVALID:{upgrade_id}")
+        transition = (item_id, from_quality, to_quality)
+        if transition in upgrade_transitions:
+            raise ExportError(f"EXECUTABLE_UPGRADE_TRANSITION_DUPLICATE:{upgrade_id}")
+        upgrade_transitions.add(transition)
+        _expect_integer(upgrade["price"], f"upgrades:{upgrade_id}:price", 1)
+        stall_id = _expect_stable_id(upgrade["stallId"], f"upgrades:{upgrade_id}:stallId")
+        if stall_id not in stalls:
+            raise ExportError(f"EXECUTABLE_UPGRADE_STALL_UNKNOWN:{upgrade_id}")
+    expected_transitions = {
+        (item_id, qualities[index], qualities[index + 1])
+        for item_id, qualities in item_qualities.items()
+        for index in range(len(qualities) - 1)
+    }
+    if upgrade_transitions != expected_transitions:
+        raise ExportError("EXECUTABLE_UPGRADE_TRANSITION_COVERAGE_INVALID")
+
+    enchantments = _directory(
+        _expect_list(catalogs["enchantments"], "catalogs:enchantments"), "enchantmentId", {
+            "enchantmentId", "stallIds", "profiles",
+        }, "enchantments"
+    )
+    if not enchantments:
+        raise ExportError("EXECUTABLE_ENCHANTMENT_CATALOG_REQUIRED")
+    for enchantment_id, enchantment in enchantments.items():
+        stall_ids = [
+            _expect_stable_id(value, f"enchantments:{enchantment_id}:stallIds")
+            for value in _expect_list(enchantment["stallIds"], f"enchantments:{enchantment_id}:stallIds")
+        ]
+        if not stall_ids or len(stall_ids) != len(set(stall_ids)) or any(value not in stalls for value in stall_ids):
+            raise ExportError(f"EXECUTABLE_ENCHANTMENT_STALLS_INVALID:{enchantment_id}")
+        profile_keys: set[tuple[str, str]] = set()
+        profiles = _expect_list(enchantment["profiles"], f"enchantments:{enchantment_id}:profiles")
+        if not profiles:
+            raise ExportError(f"EXECUTABLE_ENCHANTMENT_PROFILES_REQUIRED:{enchantment_id}")
+        for profile_index, profile_value in enumerate(profiles):
+            profile = _expect_exact_fields(profile_value, {
+                "itemId", "quality", "price", "cooldownDeltaTicks", "damageDelta", "ammoDelta",
+            }, f"enchantments:{enchantment_id}:profiles:{profile_index}")
+            item_id = _expect_stable_id(profile["itemId"], f"enchantments:{enchantment_id}:profiles:{profile_index}:itemId")
+            quality = profile["quality"]
+            profile_key = (item_id, quality)
+            if profile_key not in item_profiles or profile_key in profile_keys:
+                raise ExportError(f"EXECUTABLE_ENCHANTMENT_PROFILE_REFERENCE_INVALID:{enchantment_id}:{item_id}:{quality}")
+            profile_keys.add(profile_key)
+            _expect_integer(profile["price"], f"enchantments:{enchantment_id}:{item_id}:{quality}:price", 1)
+            cooldown_delta = _expect_integer(profile["cooldownDeltaTicks"], f"enchantments:{enchantment_id}:{item_id}:{quality}:cooldownDeltaTicks")
+            damage_delta = _expect_integer(profile["damageDelta"], f"enchantments:{enchantment_id}:{item_id}:{quality}:damageDelta", 0)
+            ammo_delta = _expect_integer(profile["ammoDelta"], f"enchantments:{enchantment_id}:{item_id}:{quality}:ammoDelta", 0)
+            if cooldown_delta == 0 and damage_delta == 0 and ammo_delta == 0:
+                raise ExportError(f"EXECUTABLE_ENCHANTMENT_PROFILE_NOOP:{enchantment_id}:{item_id}:{quality}")
+            item_profile = item_profile_values[profile_key]
+            if item_profile["baseCooldownTicks"] + cooldown_delta <= 0:
+                raise ExportError(f"EXECUTABLE_ENCHANTMENT_COOLDOWN_INVALID:{enchantment_id}:{item_id}:{quality}")
+            if ammo_delta > 0 and not item_profile["ammo"]["enabled"]:
+                raise ExportError(f"EXECUTABLE_ENCHANTMENT_AMMO_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
+
+    reachable_profiles: set[tuple[str, str]] = set()
+    for instance_value in _expect_list(new_run.get("itemInstances"), "newRunTemplate:itemInstances"):
+        if isinstance(instance_value, dict):
+            reachable_profiles.add((instance_value.get("itemId"), instance_value.get("quality")))
+    for template in shop_templates.values():
+        reachable_profiles.add((template.get("itemId"), template.get("quality")))
+    for reward in rewards.values():
+        effects = reward.get("effects", [])
+        if effects and isinstance(effects[0], dict) and effects[0].get("type") == "grant_item":
+            reachable_profiles.add((effects[0].get("itemId"), effects[0].get("quality")))
+    changed = True
+    while changed:
+        changed = False
+        for upgrade in upgrades.values():
+            source = (upgrade["itemId"], upgrade["fromQuality"])
+            target = (upgrade["itemId"], upgrade["toQuality"])
+            if source in reachable_profiles and target not in reachable_profiles:
+                reachable_profiles.add(target)
+                changed = True
+    if reachable_profiles.intersection(item_profiles) != item_profiles:
+        raise ExportError("EXECUTABLE_PLAYER_ITEM_PROFILE_REACHABILITY_INVALID")
+
     events = _directory(_expect_list(catalogs["events"], "catalogs:events"), "eventId", {
         "eventId", "hourSlots", "optionIds",
     }, "events")
@@ -607,6 +735,8 @@ class ContentAssembler:
         rewards, thresholds = self._rewards()
         hero = self._hero(skills)
         stalls = self._stalls()
+        upgrades = self._upgrades(stalls)
+        enchantments = self._enchantments(stalls)
         shop_generation, source_refresh_max = self._offers(stalls)
         events = self._events(rewards)
         node_ids = set(stalls) | set(events) | set(rewards)
@@ -615,6 +745,7 @@ class ContentAssembler:
             raise ExportError("STALL_REFRESH_DECLARED_COVERAGE_INVALID")
         battle_generation = self._encounters(rewards, identity["runDayMax"])
         new_run = self._new_run(hero, starters)
+        self._validate_player_profile_reachability(starters, shop_generation, rewards, upgrades)
         executable_catalogs = self._executable_catalogs(
             hero,
             skills,
@@ -622,6 +753,8 @@ class ContentAssembler:
             shop_generation,
             events,
             rewards,
+            upgrades,
+            enchantments,
         )
         bundle = {
             "schema": identity["runtimeSchema"],
@@ -847,6 +980,131 @@ class ContentAssembler:
         self._validate_placements(starters, "STARTER")
         return items, starters
 
+    def _upgrades(self, stalls: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+        filename = "57_bz_item_upgrades.csv"
+        rows_by_id = _unique(self.tables[filename], filename, "upgrade_id")
+        recipes: list[dict[str, Any]] = []
+        transitions: set[tuple[str, str, str]] = set()
+        for upgrade_id, row in rows_by_id.items():
+            _formal(filename, row)
+            item_id = _require_id(filename, row, "item_id")
+            from_quality = _require_text(filename, row, "from_quality")
+            to_quality = _require_text(filename, row, "to_quality")
+            if (item_id, from_quality) not in self.item_profiles or (item_id, to_quality) not in self.item_profiles:
+                raise ExportError(f"UPGRADE_PROFILE_UNKNOWN:{upgrade_id}")
+            if from_quality not in QUALITIES or QUALITIES.index(from_quality) + 1 >= len(QUALITIES) \
+                    or QUALITIES[QUALITIES.index(from_quality) + 1] != to_quality:
+                raise ExportError(f"UPGRADE_QUALITY_TRANSITION_INVALID:{upgrade_id}")
+            transition = (item_id, from_quality, to_quality)
+            if transition in transitions:
+                raise ExportError(f"UPGRADE_TRANSITION_DUPLICATE:{item_id}:{from_quality}")
+            transitions.add(transition)
+            stall_id = _require_id(filename, row, "source_stall_id")
+            if stall_id not in stalls:
+                raise ExportError(f"UPGRADE_STALL_UNKNOWN:{upgrade_id}:{stall_id}")
+            recipes.append({
+                "upgradeId": upgrade_id,
+                "itemId": item_id,
+                "fromQuality": from_quality,
+                "toQuality": to_quality,
+                "price": _integer(filename, row, "price", 1),
+                "stallId": stall_id,
+            })
+        expected: set[tuple[str, str, str]] = set()
+        for item_id in sorted(self.item_widths):
+            qualities = [quality for quality in QUALITIES if (item_id, quality) in self.item_profiles]
+            for index in range(len(qualities) - 1):
+                expected.add((item_id, qualities[index], qualities[index + 1]))
+        if transitions != expected:
+            raise ExportError("UPGRADE_TRANSITION_COVERAGE_INVALID")
+        recipes.sort(key=lambda value: value["upgradeId"])
+        return recipes
+
+    def _enchantments(self, stalls: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+        filename = "58_bz_enchantments.csv"
+        grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
+        seen_profiles: set[tuple[str, str, str]] = set()
+        for row in self.tables[filename]:
+            _formal(filename, row)
+            enchantment_id = _require_id(filename, row, "enchantment_id")
+            grouped[enchantment_id].append(row)
+        result: list[dict[str, Any]] = []
+        for enchantment_id in sorted(grouped):
+            rows = grouped[enchantment_id]
+            _require_chinese(filename, rows[0], "name_zh")
+            _require_chinese(filename, rows[0], "description_zh")
+            _same(rows, filename, "name_zh")
+            _same(rows, filename, "description_zh")
+            profiles: list[dict[str, Any]] = []
+            stall_ids: set[str] = set()
+            for row in rows:
+                item_id = _require_id(filename, row, "item_id")
+                quality = _require_text(filename, row, "quality")
+                profile_key = (enchantment_id, item_id, quality)
+                if profile_key in seen_profiles:
+                    raise ExportError(f"ENCHANTMENT_PROFILE_DUPLICATE:{enchantment_id}:{item_id}:{quality}")
+                seen_profiles.add(profile_key)
+                item_profile = self.item_profiles.get((item_id, quality))
+                if item_profile is None:
+                    raise ExportError(f"ENCHANTMENT_ITEM_PROFILE_UNKNOWN:{enchantment_id}:{item_id}:{quality}")
+                cooldown_delta = _integer(filename, row, "cooldown_delta_ticks")
+                damage_delta = _integer(filename, row, "damage_delta", 0)
+                ammo_delta = _integer(filename, row, "ammo_delta", 0)
+                if cooldown_delta == 0 and damage_delta == 0 and ammo_delta == 0:
+                    raise ExportError(f"ENCHANTMENT_PROFILE_NOOP:{enchantment_id}:{item_id}:{quality}")
+                if int(item_profile["baseCooldownTicks"]) + cooldown_delta <= 0:
+                    raise ExportError(f"ENCHANTMENT_COOLDOWN_INVALID:{enchantment_id}:{item_id}:{quality}")
+                ammo = item_profile["ammo"]
+                if ammo_delta > 0 and not bool(ammo["enabled"]):
+                    raise ExportError(f"ENCHANTMENT_AMMO_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
+                stall_id = _require_id(filename, row, "source_stall_id")
+                if stall_id not in stalls:
+                    raise ExportError(f"ENCHANTMENT_STALL_UNKNOWN:{enchantment_id}:{stall_id}")
+                stall_ids.add(stall_id)
+                profiles.append({
+                    "itemId": item_id,
+                    "quality": quality,
+                    "price": _integer(filename, row, "price", 1),
+                    "cooldownDeltaTicks": cooldown_delta,
+                    "damageDelta": damage_delta,
+                    "ammoDelta": ammo_delta,
+                })
+            profiles.sort(key=lambda value: (value["itemId"], QUALITIES.index(value["quality"])))
+            result.append({
+                "enchantmentId": enchantment_id,
+                "stallIds": sorted(stall_ids),
+                "profiles": profiles,
+            })
+        if not result:
+            raise ExportError("ENCHANTMENT_CATALOG_REQUIRED")
+        return result
+
+    def _validate_player_profile_reachability(
+        self,
+        starters: list[dict[str, Any]],
+        shop_generation: dict[str, Any],
+        rewards: dict[str, dict[str, Any]],
+        upgrades: list[dict[str, Any]],
+    ) -> None:
+        reachable = {(item["itemId"], item["quality"]) for item in starters}
+        reachable.update((value["itemId"], value["quality"]) for value in shop_generation["templates"])
+        for reward in rewards.values():
+            for effect in reward["effects"]:
+                if effect.get("type") == "grant_item":
+                    reachable.add((effect["itemId"], effect["quality"]))
+        changed = True
+        while changed:
+            changed = False
+            for recipe in upgrades:
+                source = (recipe["itemId"], recipe["fromQuality"])
+                target = (recipe["itemId"], recipe["toQuality"])
+                if source in reachable and target not in reachable:
+                    reachable.add(target)
+                    changed = True
+        missing = sorted(set(self.item_profiles) - reachable)
+        if missing:
+            raise ExportError("PLAYER_ITEM_PROFILE_UNREACHABLE:" + ",".join(f"{item_id}:{quality}" for item_id, quality in missing))
+
     def _effects(self, items: list[dict[str, Any]], skills: dict[str, dict[str, Any]]) -> None:
         del items
         filename = "47_bz_item_effects.csv"
@@ -1047,6 +1305,8 @@ class ContentAssembler:
         shop_generation: dict[str, Any],
         events: dict[str, dict[str, Any]],
         rewards: dict[str, dict[str, Any]],
+        upgrades: list[dict[str, Any]],
+        enchantments: list[dict[str, Any]],
     ) -> dict[str, Any]:
         template_ids = sorted(template["offerTemplateId"] for template in shop_generation["templates"])
         if len(template_ids) != len(set(template_ids)):
@@ -1090,6 +1350,8 @@ class ContentAssembler:
                 for skill_id in sorted(skills)
             ],
             "stalls": stall_records,
+            "upgrades": upgrades,
+            "enchantments": enchantments,
             "events": event_records,
             "eventOptions": sorted(option_records, key=lambda value: value["optionId"]),
             "rewards": [
@@ -1117,8 +1379,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 13-domain workbook is the finite v3 candidate source.
-            # This adapter is its explicit one-way projection into executable v5.
+            # The current 15-domain workbook is the finite v4 candidate source.
+            # This adapter is its explicit one-way projection into executable v6.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -1440,7 +1702,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v5 runtime and display candidates from BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v6 runtime and display candidates from 15 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -1455,7 +1717,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v5 integration-pending candidate "
+            "PASS original-pirate v6 integration-pending candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -1466,7 +1728,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v5 integration-pending candidate to {output}")
+        print(f"exported original-pirate v6 integration-pending candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

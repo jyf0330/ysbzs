@@ -16,7 +16,7 @@ const domainFiles = [
   '47_bz_item_effects.csv', '48_bz_skills.csv', '49_bz_stalls.csv',
   '50_bz_stall_offers.csv', '51_bz_events.csv', '52_bz_event_options.csv',
   '53_bz_encounters.csv', '54_bz_enemies.csv', '55_bz_rewards.csv',
-  '56_bz_source_snapshot.csv',
+  '56_bz_source_snapshot.csv', '57_bz_item_upgrades.csv', '58_bz_enchantments.csv',
 ];
 const sheets = domainFiles.map((name) => `BZ_${name.replace(/^\d+_bz_|\.csv$/g, '').toUpperCase()}`);
 
@@ -67,6 +67,14 @@ function expectedBundleHash(content) {
   catalogs.skills.sort((left, right) => stableIdCompare(left.skillId, right.skillId));
   for (const stall of catalogs.stalls) stall.shopTemplateIds.sort();
   catalogs.stalls.sort((left, right) => stableIdCompare(left.stallId, right.stallId));
+  catalogs.upgrades.sort((left, right) => stableIdCompare(left.upgradeId, right.upgradeId));
+  for (const enchantment of catalogs.enchantments) {
+    enchantment.stallIds.sort();
+    enchantment.profiles.sort((left, right) => stableIdCompare(left.itemId, right.itemId)
+      || ['bronze', 'silver', 'gold', 'diamond'].indexOf(left.quality)
+        - ['bronze', 'silver', 'gold', 'diamond'].indexOf(right.quality));
+  }
+  catalogs.enchantments.sort((left, right) => stableIdCompare(left.enchantmentId, right.enchantmentId));
   for (const event of catalogs.events) {
     event.hourSlots.sort((left, right) => left - right);
     event.optionIds.sort();
@@ -158,7 +166,7 @@ function reverseDataRows(dir, file) {
   fs.writeFileSync(target, encodeCsv([rows[0], ...rows.slice(1).reverse()]), 'utf8');
 }
 
-test('OPC01 workbook 的 13 个 BZ 页与 44..56 CSV 可逐字重建', () => {
+test('OPC01 workbook 的 15 个 BZ 页与 44..58 CSV 可逐字重建', () => {
   const code = `
 import csv, json, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(sys.argv[5]) / 'tools'))
@@ -179,7 +187,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v5/v3 executable catalogs、generation 与独立中文 sidecar 确定且 hash 兼容', () => {
+test('OPC02 v6/v4 升阶附魔 catalogs、generation 与独立中文 sidecar 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -196,13 +204,13 @@ test('OPC02 v5/v3 executable catalogs、generation 与独立中文 sidecar 确�
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 5);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v1');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v2');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v2');
+  assert.equal(content.schemaVersion, 6);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v2');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v3');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v3');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 3);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v2');
+  assert.equal(content.runtimeBundle.schemaVersion, 4);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v3');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -244,15 +252,17 @@ test('OPC02 v5/v3 executable catalogs、generation 与独立中文 sidecar 确�
   assert.equal('maxDay' in generation.battle || 'maxRefreshIndex' in generation.shop, false);
   const catalogs = content.runtimeBundle.executableCatalogs;
   assert.deepEqual(Object.keys(catalogs).sort(), [
-    'eventOptions', 'events', 'heroes', 'rewards', 'schema', 'schemaVersion', 'skills', 'stalls',
+    'enchantments', 'eventOptions', 'events', 'heroes', 'rewards', 'schema', 'schemaVersion',
+    'skills', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 1,
+    'ysbzs.original-pirate-executable-catalogs.v1', 2,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.skills.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
-  ], [1, 6, 1, 4, 8, 10]);
+    catalogs.upgrades.length, catalogs.enchantments.length,
+  ], [1, 6, 1, 4, 8, 10, 12, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), ['heroId', 'skillIds']);
   assert.deepEqual(catalogs.heroes[0].skillIds, ['skill_brine_cannon', 'skill_patchwork_ram']);
   const profileEffectIds = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
@@ -264,6 +274,15 @@ test('OPC02 v5/v3 executable catalogs、generation 与独立中文 sidecar 确�
   assert.deepEqual(stall.shopTemplateIds, generation.shop.templates.map(({ offerTemplateId }) => offerTemplateId).sort());
   assert.equal(generation.shop.layers.every(({ templateIds }) => templateIds.length === stall.offerCount
     && templateIds.every((templateId) => stall.shopTemplateIds.includes(templateId))), true);
+  assert.equal(catalogs.upgrades.every((upgrade) => upgrade.stallId === 'stall_mistwake' && upgrade.price > 0), true);
+  assert.deepEqual(catalogs.enchantments.map(({ enchantmentId }) => enchantmentId), [
+    'enchant_breaker', 'enchant_reserve', 'enchant_tailwind',
+  ]);
+  const reserve = catalogs.enchantments.find(({ enchantmentId }) => enchantmentId === 'enchant_reserve');
+  assert.equal(reserve.profiles.length, 8);
+  assert.equal(reserve.profiles.every(({ ammoDelta, damageDelta, cooldownDeltaTicks }) => (
+    ammoDelta === 1 && damageDelta === 0 && cooldownDeltaTicks === 0
+  )), true);
   assert.equal(catalogs.eventOptions.every((option) => (
     assert.deepEqual(Object.keys(option).sort(), ['eventId', 'goldDelta', 'optionId', 'rewardId']), true
   )), true);
@@ -284,14 +303,15 @@ test('OPC02 v5/v3 executable catalogs、generation 与独立中文 sidecar 确�
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 1);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v2');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v2');
-  assert.equal(display.entries.length, 58);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v3');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v3');
+  assert.equal(display.entries.length, 61);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
   });
   assert.match(display.entries.find(({ displayId }) => displayId === 'events.event_driftwood_cache').descriptionZh, /潮线/);
+  assert.match(display.entries.find(({ displayId }) => displayId === 'enchantments.enchant_tailwind').descriptionZh, /充能/);
   assert.equal('displayDirectory' in content || 'display' in content, false);
   const source = fs.readFileSync(path.join(csvDir, '56_bz_source_snapshot.csv'), 'utf8');
   assert.match(source, /local_original/);
@@ -310,6 +330,14 @@ test('OPC03 缺关系、冷却、品质、弹药、价格、trigger、effect 或
     ['relation', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_missing')],
     ['level-reward-forged-as-event', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_level_2')],
     ['display-description', (dir) => mutateCell(dir, '51_bz_events.csv', 1, 'description_zh', '')],
+    ['upgrade-transition', (dir) => mutateCell(dir, '57_bz_item_upgrades.csv', 1, 'to_quality', 'gold')],
+    ['enchantment-noop', (dir) => {
+      mutateCell(dir, '58_bz_enchantments.csv', 1, 'cooldown_delta_ticks', '0');
+    }],
+    ['enchantment-ammo-incompatible', (dir) => {
+      mutateCell(dir, '58_bz_enchantments.csv', 1, 'item_id', 'item_patchwork_ram');
+      mutateCell(dir, '58_bz_enchantments.csv', 1, 'ammo_delta', '1');
+    }],
     ['unsupported-enchantment', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'enchantment', 'fiery')],
     ['source-frozen', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'frozen', 'true')],
   ];
@@ -356,7 +384,7 @@ test('OPC04 缺任一声明刷新层或日程战斗槽时整包拒绝', () => {
   assert.equal(fs.existsSync(battleOut), false);
 });
 
-test('OPC05 13 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
+test('OPC05 15 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
   const baselineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-canonical-baseline-'));
   const baselineOut = path.join(baselineDir, 'content.json');
   const baselineDisplay = path.join(baselineDir, 'display.json');
@@ -372,8 +400,8 @@ test('OPC05 13 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v5/v3 forged catalog、奖励、摊位、activeNode、battle reward 或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v5-forgery-'));
+test('OPC06 v6/v4 forged catalog、升阶、附魔、奖励、摊位或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v6-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -385,6 +413,17 @@ test('OPC06 v5/v3 forged catalog、奖励、摊位、activeNode、battle reward 
     ['level-reward-player-trigger', (value) => { value.runtimeBundle.executableCatalogs.rewards.find(({ rewardId }) => rewardId === 'reward_level_2').trigger.event = 'REWARD_RESOLUTION'; }],
     ['stall-template-missing', (value) => { value.runtimeBundle.executableCatalogs.stalls[0].shopTemplateIds.pop(); }],
     ['stall-offer-count-drift', (value) => { value.runtimeBundle.executableCatalogs.stalls[0].offerCount = 2; value.runtimeBundle.generation.shop.offerCount = 2; }],
+    ['upgrade-price-forged', (value) => { value.runtimeBundle.executableCatalogs.upgrades[0].price = 0; }],
+    ['upgrade-transition-forged', (value) => { value.runtimeBundle.executableCatalogs.upgrades[0].toQuality = 'diamond'; }],
+    ['enchantment-profile-extra-field', (value) => { value.runtimeBundle.executableCatalogs.enchantments[0].profiles[0].formula = 'forged'; }],
+    ['enchantment-profile-noop', (value) => {
+      Object.assign(value.runtimeBundle.executableCatalogs.enchantments[0].profiles[0], {
+        cooldownDeltaTicks: 0, damageDelta: 0, ammoDelta: 0,
+      });
+    }],
+    ['item-profile-extra-field', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_brine_cannon').qualityProfiles.bronze.formula = 'forged';
+    }],
     ['active-node-forged', (value) => { value.runtimeBundle.newRunTemplate.activeNode = { nodeId: 'event_driftwood_cache', kind: 'event', rewardId: '' }; }],
     ['battle-reward-unknown', (value) => { value.runtimeBundle.generation.battle.templates[0].rewardId = 'reward_missing'; }],
     ['hero-skill-double-authority', (value) => { value.runtimeBundle.newRunTemplate.hero.skillIds = ['skill_brine_cannon']; }],

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 18 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 20 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v12 candidate package while still validating every
+outside the formal v13 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,21 +25,21 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 12
+CONTENT_SCHEMA_VERSION = 13
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 10
-SOURCE_CONTENT_SCHEMA_VERSION = 10
-SOURCE_RUNTIME_SCHEMA_VERSION = 8
-NEW_RUN_SCHEMA_VERSION = 2
-BATTLE_PACKAGE_SCHEMA_VERSION = 2
+RUNTIME_SCHEMA_VERSION = 11
+SOURCE_CONTENT_SCHEMA_VERSION = 11
+SOURCE_RUNTIME_SCHEMA_VERSION = 9
+NEW_RUN_SCHEMA_VERSION = 3
+BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
-GENERATION_SCHEMA_VERSION = 2
+GENERATION_SCHEMA_VERSION = 3
 GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
-DISPLAY_SCHEMA_VERSION = 1
+DISPLAY_SCHEMA_VERSION = 2
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 3
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 4
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -49,14 +49,17 @@ PRESTIGE_POLICY_SCHEMA_VERSION = 1
 LAST_CHANCE_SCHEMA = "ysbzs.original-pirate-last-chance-rules.v1"
 LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
-GHOST_SNAPSHOT_SCHEMA_VERSION = 1
+GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v8"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v9"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
 ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status"}
 ITEM_STATUSES = {"haste", "slow", "freeze"}
+HERO_SKILL_TRIGGER = "friendly_item_used"
+HERO_SKILL_TARGETS = {"opponent_hero", "source_item"}
+HERO_SKILL_OPERATIONS = {"deal_damage", "charge"}
 EXPECTED_HOUR_KINDS = {1: "choice", 2: "choice", 3: "pve", 4: "choice", 5: "choice", 6: "ghost"}
 CHOICE_HOURS = {1, 2, 4, 5}
 STABLE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -81,21 +84,21 @@ DOMAIN_HEADERS = OrderedDict([
     ]),
     ("45_bz_heroes.csv", [
         "hero_id", "name_zh", "max_hp", "start_level", "start_xp", "start_prestige",
-        "start_gold", "start_income", "skill_ids", "catalog_status",
+        "start_gold", "start_income", "catalog_status",
     ]),
     ("46_bz_items.csv", [
         "item_id", "name_zh", "slot_width", "base_quality", "quality", "buy_price",
         "sell_price", "cooldown_ticks", "ammo_enabled", "ammo_initial", "ammo_maximum",
-        "skill_id", "starter_instance_id", "starter_location", "starter_start_slot",
+        "item_skill_id", "starter_instance_id", "starter_location", "starter_start_slot",
         "catalog_status",
     ]),
     ("47_bz_item_effects.csv", [
-        "effect_id", "item_id", "quality", "skill_id", "priority", "trigger_event",
+        "effect_id", "item_id", "quality", "item_skill_id", "priority", "trigger_event",
         "condition_type", "target_type", "operation_type", "amount", "status", "ticks",
         "catalog_status",
     ]),
-    ("48_bz_skills.csv", [
-        "skill_id", "name_zh", "description_zh", "trigger_event", "effect_ids",
+    ("48_bz_item_skills.csv", [
+        "item_skill_id", "name_zh", "description_zh", "trigger_event", "effect_ids",
         "catalog_status",
     ]),
     ("49_bz_stalls.csv", [
@@ -144,7 +147,7 @@ DOMAIN_HEADERS = OrderedDict([
     ]),
     ("60_bz_ghost_snapshots.csv", [
         "schema", "schema_version", "snapshot_id", "match_source",
-        "opponent_content_revision", "hero_id", "hero_level", "hero_skill_ids",
+        "opponent_content_revision", "hero_id", "hero_level",
         "hero_hp", "hero_max_hp", "instance_id", "item_id", "quality",
         "enchantment", "start_slot", "catalog_status",
     ]),
@@ -154,12 +157,22 @@ DOMAIN_HEADERS = OrderedDict([
         "option_id", "option_order", "name_zh", "description_zh",
         "restore_prestige", "cost_type", "cost_amount", "catalog_status",
     ]),
+    ("62_bz_hero_skills.csv", [
+        "hero_skill_id", "hero_id", "quality", "name_zh", "description_zh",
+        "priority", "trigger_event", "reentrant", "max_triggers_per_battle",
+        "effect_id", "target_type", "operation_type", "amount", "ticks",
+        "catalog_status",
+    ]),
+    ("63_bz_hero_skill_loadouts.csv", [
+        "loadout_kind", "loadout_id", "instance_id", "hero_skill_id", "quality",
+        "source_type", "source_id", "acquired_day", "acquired_seq", "catalog_status",
+    ]),
 ])
 
 DISPLAY_DOMAINS = [
     ("45_bz_heroes.csv", "heroes", "hero_id"),
     ("46_bz_items.csv", "items", "item_id"),
-    ("48_bz_skills.csv", "skills", "skill_id"),
+    ("48_bz_item_skills.csv", "item_skills", "item_skill_id"),
     ("49_bz_stalls.csv", "stalls", "stall_id"),
     ("51_bz_events.csv", "events", "event_id"),
     ("52_bz_event_options.csv", "event_options", "option_id"),
@@ -169,6 +182,7 @@ DISPLAY_DOMAINS = [
     ("58_bz_enchantments.csv", "enchantments", "enchantment_id"),
     ("59_bz_level_up_choices.csv", "level_up_options", "option_id"),
     ("61_bz_last_chance_choices.csv", "last_chance_options", "option_id"),
+    ("62_bz_hero_skills.csv", "hero_skills", "hero_skill_id"),
 ]
 
 
@@ -307,7 +321,9 @@ def _canonical_runtime_items(items: list[dict[str, Any]]) -> list[dict[str, Any]
 
 def _canonical_combat_build(build: dict[str, Any]) -> dict[str, Any]:
     result = json.loads(json.dumps(build, ensure_ascii=False))
-    result.get("hero", {}).get("skillIds", []).sort()
+    result.get("heroSkills", []).sort(
+        key=lambda value: (value.get("acquiredSeq", -1), value.get("instanceId", ""))
+    )
     result.get("itemInstances", []).sort(key=lambda value: value.get("instanceId", ""))
     result.get("board", {}).get("placements", []).sort(
         key=lambda value: (value.get("startSlot", -1), value.get("instanceId", ""))
@@ -345,11 +361,18 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     progression.get("options", []).sort(key=lambda value: value.get("optionId", ""))
     catalogs = result.get("executableCatalogs", {})
     for hero in catalogs.get("heroes", []):
-        hero.get("skillIds", []).sort()
+        hero.get("heroSkillIds", []).sort()
+        hero.get("startingHeroSkills", []).sort(
+            key=lambda value: (value.get("acquiredSeq", -1), value.get("instanceId", ""))
+        )
     catalogs.get("heroes", []).sort(key=lambda value: value.get("heroId", ""))
-    for skill in catalogs.get("skills", []):
+    for skill in catalogs.get("itemSkills", []):
         skill.get("effectIds", []).sort()
-    catalogs.get("skills", []).sort(key=lambda value: value.get("skillId", ""))
+    catalogs.get("itemSkills", []).sort(key=lambda value: value.get("itemSkillId", ""))
+    for skill in catalogs.get("heroSkills", []):
+        for profile in skill.get("qualityProfiles", {}).values():
+            profile.get("effects", []).sort(key=lambda value: value.get("effectId", ""))
+    catalogs.get("heroSkills", []).sort(key=lambda value: value.get("heroSkillId", ""))
     for stall in catalogs.get("stalls", []):
         stall.get("shopTemplateIds", []).sort()
     catalogs.get("stalls", []).sort(key=lambda value: value.get("stallId", ""))
@@ -446,6 +469,59 @@ def _validate_executable_item_effect(value: Any, context: str) -> str:
     return effect_id
 
 
+def _validate_executable_hero_skill_effect(value: Any, context: str) -> str:
+    effect = _expect_exact_fields(value, {
+        "effectId", "targetType", "operationType", "amount", "ticks",
+    }, context)
+    effect_id = _expect_stable_id(effect["effectId"], f"{context}:effectId")
+    target_type = effect["targetType"]
+    operation_type = effect["operationType"]
+    if target_type not in HERO_SKILL_TARGETS:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_TARGET_INVALID:{effect_id}")
+    if operation_type not in HERO_SKILL_OPERATIONS:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_OPERATION_INVALID:{effect_id}")
+    amount = _expect_integer(effect["amount"], f"{context}:amount", 0)
+    ticks = _expect_integer(effect["ticks"], f"{context}:ticks", 0)
+    if operation_type == "deal_damage":
+        valid = target_type == "opponent_hero" and amount > 0 and ticks == 0
+    else:
+        valid = target_type == "source_item" and amount == 0 and ticks > 0
+    if not valid:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_EFFECT_PARAMS_INVALID:{effect_id}")
+    return effect_id
+
+
+def _validate_executable_hero_skill_instance(
+    value: Any,
+    context: str,
+    hero_id: str,
+    hero_skills: dict[str, dict[str, Any]],
+    expected_source_type: str,
+    expected_source_id: str,
+    expected_day: int,
+) -> dict[str, Any]:
+    instance = _expect_exact_fields(value, {
+        "instanceId", "heroSkillId", "quality", "sourceType", "sourceId",
+        "acquiredDay", "acquiredSeq",
+    }, context)
+    _expect_stable_id(instance["instanceId"], f"{context}:instanceId")
+    hero_skill_id = _expect_stable_id(instance["heroSkillId"], f"{context}:heroSkillId")
+    skill = hero_skills.get(hero_skill_id)
+    if skill is None:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_INSTANCE_UNKNOWN:{hero_skill_id}")
+    if skill["heroId"] != hero_id:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_INSTANCE_OWNER_MISMATCH:{hero_skill_id}")
+    if instance["quality"] not in skill["qualityProfiles"]:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_INSTANCE_QUALITY_INVALID:{hero_skill_id}")
+    if instance["sourceType"] != expected_source_type \
+            or instance["sourceId"] != expected_source_id:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_INSTANCE_SOURCE_INVALID:{instance['instanceId']}")
+    if _expect_integer(instance["acquiredDay"], f"{context}:acquiredDay", 1) != expected_day:
+        raise ExportError(f"EXECUTABLE_HERO_SKILL_INSTANCE_DAY_INVALID:{instance['instanceId']}")
+    _expect_integer(instance["acquiredSeq"], f"{context}:acquiredSeq", 1)
+    return instance
+
+
 def _directory(records: list[Any], id_field: str, fields: set[str], context: str) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     for index, value in enumerate(records):
@@ -463,25 +539,50 @@ def _validate_combat_build(
     item_profiles: set[tuple[str, str]],
     item_widths: dict[str, int],
     enchantment_profiles: set[tuple[str, str, str]],
-    hero_skill_ids: dict[str, set[str]] | None = None,
+    hero_skills: dict[str, dict[str, Any]] | None = None,
+    expected_source_id: str = "",
+    expected_day: int = 0,
 ) -> None:
-    build = _expect_exact_fields(value, {"hero", "board", "itemInstances"}, context)
-    if hero_skill_ids is None:
+    fields = {"hero", "board", "itemInstances"}
+    if hero_skills is not None:
+        fields.add("heroSkills")
+    build = _expect_exact_fields(value, fields, context)
+    if hero_skills is None:
         hero = _expect_exact_fields(build["hero"], {"hp", "maxHp"}, f"{context}:hero")
     else:
         hero = _expect_exact_fields(
-            build["hero"], {"heroId", "level", "skillIds", "hp", "maxHp"}, f"{context}:hero"
+            build["hero"], {"heroId", "level", "hp", "maxHp"}, f"{context}:hero"
         )
         hero_id = _expect_stable_id(hero["heroId"], f"{context}:hero:heroId")
-        if hero_id not in hero_skill_ids:
+        owned_hero_skill_ids = {
+            skill_id for skill_id, skill in hero_skills.items() if skill["heroId"] == hero_id
+        }
+        if not owned_hero_skill_ids:
             raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_UNKNOWN:{context}:{hero_id}")
         _expect_integer(hero["level"], f"{context}:hero:level", 1)
-        skill_ids = [
-            _expect_stable_id(skill_id, f"{context}:hero:skillIds")
-            for skill_id in _expect_list(hero["skillIds"], f"{context}:hero:skillIds")
-        ]
-        if not skill_ids or skill_ids != sorted(skill_ids) or len(skill_ids) != len(set(skill_ids)) \
-                or any(skill_id not in hero_skill_ids[hero_id] for skill_id in skill_ids):
+        skill_instances = _expect_list(build["heroSkills"], f"{context}:heroSkills")
+        expected_quality = (
+            "bronze" if expected_day <= 3 else "silver" if expected_day <= 6
+            else "gold" if expected_day <= 9 else "diamond"
+        )
+        instance_ids: set[str] = set()
+        skill_ids: set[str] = set()
+        sequences: list[int] = []
+        for index, instance_value in enumerate(skill_instances):
+            instance = _validate_executable_hero_skill_instance(
+                instance_value, f"{context}:heroSkills:{index}", hero_id, hero_skills,
+                "offline_snapshot", expected_source_id, expected_day,
+            )
+            if instance["quality"] != expected_quality:
+                raise ExportError(
+                    f"EXECUTABLE_COMBAT_BUILD_HERO_SKILL_QUALITY_INVALID:{context}:{instance['instanceId']}"
+                )
+            if instance["instanceId"] in instance_ids or instance["heroSkillId"] in skill_ids:
+                raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_SKILL_DUPLICATE:{context}")
+            instance_ids.add(instance["instanceId"])
+            skill_ids.add(instance["heroSkillId"])
+            sequences.append(instance["acquiredSeq"])
+        if skill_ids != owned_hero_skill_ids or sequences != list(range(1, len(sequences) + 1)):
             raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_SKILLS_INVALID:{context}:{hero_id}")
     hp = _expect_integer(hero["hp"], f"{context}:hero:hp", 1)
     max_hp = _expect_integer(hero["maxHp"], f"{context}:hero:maxHp", 1)
@@ -535,7 +636,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v12/v10 candidate package without accepting partial data."""
+    """Validate the formal v13/v11 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -706,50 +807,113 @@ def validate_package(package: Any) -> None:
         raise ExportError("EXECUTABLE_PROGRESSION_OPTION_COVERAGE_INVALID")
 
     catalogs = _expect_exact_fields(bundle["executableCatalogs"], {
-        "schema", "schemaVersion", "heroes", "skills", "stalls", "events",
+        "schema", "schemaVersion", "heroes", "itemSkills", "heroSkills", "stalls", "events",
         "eventOptions", "rewards", "upgrades", "enchantments",
     }, "executableCatalogs")
     if catalogs["schema"] != EXECUTABLE_CATALOGS_SCHEMA \
             or catalogs["schemaVersion"] != EXECUTABLE_CATALOGS_SCHEMA_VERSION:
         raise ExportError("EXECUTABLE_CATALOG_IDENTITY_INVALID")
 
-    skills = _directory(_expect_list(catalogs["skills"], "catalogs:skills"), "skillId", {
-        "skillId", "triggerEvent", "effectIds",
-    }, "skills")
+    item_skills = _directory(
+        _expect_list(catalogs["itemSkills"], "catalogs:itemSkills"), "itemSkillId", {
+            "itemSkillId", "triggerEvent", "effectIds",
+        }, "itemSkills"
+    )
     referenced_effects: set[str] = set()
-    for skill_id, skill in skills.items():
+    for item_skill_id, skill in item_skills.items():
         if skill["triggerEvent"] != "item_ready":
-            raise ExportError(f"EXECUTABLE_SKILL_TRIGGER_INVALID:{skill_id}")
+            raise ExportError(f"EXECUTABLE_ITEM_SKILL_TRIGGER_INVALID:{item_skill_id}")
         effect_ids = [
-            _expect_stable_id(effect_id, f"skills:{skill_id}:effectIds")
-            for effect_id in _expect_list(skill["effectIds"], f"skills:{skill_id}:effectIds")
+            _expect_stable_id(effect_id, f"itemSkills:{item_skill_id}:effectIds")
+            for effect_id in _expect_list(skill["effectIds"], f"itemSkills:{item_skill_id}:effectIds")
         ]
         if not effect_ids or len(effect_ids) != len(set(effect_ids)) or any(effect_id not in item_effect_ids for effect_id in effect_ids):
-            raise ExportError(f"EXECUTABLE_SKILL_EFFECT_REFERENCE_INVALID:{skill_id}")
+            raise ExportError(f"EXECUTABLE_ITEM_SKILL_EFFECT_REFERENCE_INVALID:{item_skill_id}")
         if referenced_effects.intersection(effect_ids):
-            raise ExportError(f"EXECUTABLE_SKILL_EFFECT_OWNERSHIP_INVALID:{skill_id}")
+            raise ExportError(f"EXECUTABLE_ITEM_SKILL_EFFECT_OWNERSHIP_INVALID:{item_skill_id}")
         referenced_effects.update(effect_ids)
     if referenced_effects != item_effect_ids:
-        raise ExportError("EXECUTABLE_SKILL_EFFECT_COVERAGE_INVALID")
+        raise ExportError("EXECUTABLE_ITEM_SKILL_EFFECT_COVERAGE_INVALID")
+
+    hero_skills = _directory(
+        _expect_list(catalogs["heroSkills"], "catalogs:heroSkills"), "heroSkillId", {
+            "heroSkillId", "heroId", "priority", "triggerEvent", "reentrant",
+            "qualityProfiles",
+        }, "heroSkills"
+    )
+    if len(hero_skills) != 2 or set(item_skills).intersection(hero_skills):
+        raise ExportError("EXECUTABLE_HERO_SKILL_CATALOG_INVALID")
+    hero_effect_ids: set[str] = set()
+    priorities: set[int] = set()
+    for hero_skill_id, skill in hero_skills.items():
+        _expect_stable_id(skill["heroId"], f"heroSkills:{hero_skill_id}:heroId")
+        priority = _expect_integer(skill["priority"], f"heroSkills:{hero_skill_id}:priority", 0)
+        if priority in priorities:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_PRIORITY_DUPLICATE:{priority}")
+        priorities.add(priority)
+        if skill["triggerEvent"] != HERO_SKILL_TRIGGER or skill["reentrant"] is not False:
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_TRIGGER_INVALID:{hero_skill_id}")
+        profiles = skill["qualityProfiles"]
+        if not isinstance(profiles, dict) or set(profiles) != set(QUALITIES):
+            raise ExportError(f"EXECUTABLE_HERO_SKILL_QUALITY_COVERAGE_INVALID:{hero_skill_id}")
+        for quality, profile_value in profiles.items():
+            profile = _expect_exact_fields(profile_value, {
+                "maxTriggersPerBattle", "effects",
+            }, f"heroSkills:{hero_skill_id}:{quality}")
+            _expect_integer(
+                profile["maxTriggersPerBattle"],
+                f"heroSkills:{hero_skill_id}:{quality}:maxTriggersPerBattle", 1,
+            )
+            effects = _expect_list(profile["effects"], f"heroSkills:{hero_skill_id}:{quality}:effects")
+            if len(effects) != 1:
+                raise ExportError(f"EXECUTABLE_HERO_SKILL_EFFECT_COUNT_INVALID:{hero_skill_id}:{quality}")
+            effect_id = _validate_executable_hero_skill_effect(
+                effects[0], f"heroSkills:{hero_skill_id}:{quality}:effects:0"
+            )
+            if effect_id in hero_effect_ids or effect_id in item_effect_ids:
+                raise ExportError(f"EXECUTABLE_HERO_SKILL_EFFECT_ID_DUPLICATE:{effect_id}")
+            hero_effect_ids.add(effect_id)
 
     heroes = _directory(_expect_list(catalogs["heroes"], "catalogs:heroes"), "heroId", {
-        "heroId", "skillIds",
+        "heroId", "heroSkillIds", "startingHeroSkills",
     }, "heroes")
-    hero_skill_ids: dict[str, set[str]] = {}
     for hero_id, hero in heroes.items():
-        skill_ids = [
-            _expect_stable_id(skill_id, f"heroes:{hero_id}:skillIds")
-            for skill_id in _expect_list(hero["skillIds"], f"heroes:{hero_id}:skillIds")
+        hero_skill_ids = [
+            _expect_stable_id(skill_id, f"heroes:{hero_id}:heroSkillIds")
+            for skill_id in _expect_list(hero["heroSkillIds"], f"heroes:{hero_id}:heroSkillIds")
         ]
-        if not skill_ids or len(skill_ids) != len(set(skill_ids)) or any(skill_id not in skills for skill_id in skill_ids):
+        expected_skill_ids = sorted(
+            skill_id for skill_id, skill in hero_skills.items() if skill["heroId"] == hero_id
+        )
+        if hero_skill_ids != expected_skill_ids:
             raise ExportError(f"EXECUTABLE_HERO_SKILL_REFERENCE_INVALID:{hero_id}")
-        hero_skill_ids[hero_id] = set(skill_ids)
+        starting = _expect_list(hero["startingHeroSkills"], f"heroes:{hero_id}:startingHeroSkills")
+        starting_ids: set[str] = set()
+        starting_skill_ids: set[str] = set()
+        starting_sequences: list[int] = []
+        for index, instance_value in enumerate(starting):
+            instance = _validate_executable_hero_skill_instance(
+                instance_value, f"heroes:{hero_id}:startingHeroSkills:{index}", hero_id,
+                hero_skills, "starting_loadout", hero_id, 1,
+            )
+            if instance["quality"] != "bronze" \
+                    or instance["instanceId"] in starting_ids \
+                    or instance["heroSkillId"] in starting_skill_ids:
+                raise ExportError(f"EXECUTABLE_HERO_STARTING_SKILLS_INVALID:{hero_id}")
+            starting_ids.add(instance["instanceId"])
+            starting_skill_ids.add(instance["heroSkillId"])
+            starting_sequences.append(instance["acquiredSeq"])
+        if starting_skill_ids != set(hero_skill_ids) \
+                or starting_sequences != list(range(1, len(starting) + 1)):
+            raise ExportError(f"EXECUTABLE_HERO_STARTING_SKILLS_INVALID:{hero_id}")
     new_run = _expect_exact_fields(bundle["newRunTemplate"], {
         "schemaVersion", "stateVersion", "phase", "day", "hour", "activeNode", "seed",
         "hero", "economy", "run", "board", "stash", "itemInstances", "shop", "battle",
         "levelRewards",
     }, "newRunTemplate")
-    if new_run.get("phase") != "schedule":
+    if new_run.get("schemaVersion") != NEW_RUN_SCHEMA_VERSION \
+            or new_run.get("stateVersion") != 0 \
+            or new_run.get("phase") != "schedule":
         raise ExportError("EXECUTABLE_NEW_RUN_INVALID")
     new_run_hero = _expect_exact_fields(new_run["hero"], {
         "heroId", "level", "experience", "prestige", "maxHp",
@@ -1117,9 +1281,13 @@ def validate_package(package: Any) -> None:
                 or snapshot["matchSource"] != GHOST_MATCH_SOURCE \
                 or snapshot["opponentContentRevision"] != root["contentRevision"]:
             raise ExportError(f"EXECUTABLE_GHOST_SNAPSHOT_IDENTITY_INVALID:{snapshot_id}")
+        day_match = re.fullmatch(r"ghost_snapshot_day_([0-9]{2})", snapshot_id)
+        if day_match is None:
+            raise ExportError(f"EXECUTABLE_GHOST_SNAPSHOT_ID_INVALID:{snapshot_id}")
         _validate_combat_build(
             snapshot["build"], f"ghostSnapshots:{snapshot_id}:build",
-            item_profiles, item_widths, enchantment_profiles, hero_skill_ids,
+            item_profiles, item_widths, enchantment_profiles, hero_skills,
+            snapshot_id, int(day_match.group(1)),
         )
         expected_build_hash = hashlib.sha256(
             _canonical_json(_canonical_combat_build(snapshot["build"])).encode("utf-8")
@@ -1221,12 +1389,14 @@ class ContentAssembler:
 
     def build(self) -> dict[str, Any]:
         source_revision = self._source_snapshot()
-        skills = self._skills()
-        items, starters = self._items(skills)
-        self._effects(items, skills)
+        item_skills = self._item_skills()
+        items, starters = self._items(item_skills)
+        self._effects(items, item_skills)
+        hero_skills = self._hero_skills()
         rewards = self._rewards()
         progression_rules = self._progression_rules()
-        hero = self._hero(skills)
+        hero = self._hero()
+        hero_skill_loadouts = self._hero_skill_loadouts(hero, hero_skills)
         last_chance_rules = self._last_chance_rules(hero)
         stalls = self._stalls()
         upgrades = self._upgrades(stalls)
@@ -1237,7 +1407,10 @@ class ContentAssembler:
         schedule, identity = self._gameplay(source_revision, node_ids, last_chance_rules)
         if source_refresh_max != identity["refreshPackageMax"]:
             raise ExportError("STALL_REFRESH_DECLARED_COVERAGE_INVALID")
-        ghost_snapshots = self._ghost_snapshots(identity["contentRevision"], hero, skills)
+        ghost_snapshots = self._ghost_snapshots(
+            identity["contentRevision"], hero, hero_skills,
+            hero_skill_loadouts["ghost_snapshot"],
+        )
         battle_generation = self._encounters(rewards, identity["runDayMax"], ghost_snapshots)
         new_run = self._new_run(hero, starters)
         self._validate_player_profile_reachability(
@@ -1245,7 +1418,9 @@ class ContentAssembler:
         )
         executable_catalogs = self._executable_catalogs(
             hero,
-            skills,
+            item_skills,
+            hero_skills,
+            hero_skill_loadouts["starter"].get(hero["heroId"], []),
             stalls,
             shop_generation,
             events,
@@ -1520,25 +1695,27 @@ class ContentAssembler:
             ],
         }
 
-    def _skills(self) -> dict[str, dict[str, Any]]:
-        filename = "48_bz_skills.csv"
-        rows_by_id = _unique(self.tables[filename], filename, "skill_id")
-        skills: dict[str, dict[str, Any]] = {}
+    def _item_skills(self) -> dict[str, dict[str, Any]]:
+        filename = "48_bz_item_skills.csv"
+        rows_by_id = _unique(self.tables[filename], filename, "item_skill_id")
+        item_skills: dict[str, dict[str, Any]] = {}
         seen_effects: set[str] = set()
-        for skill_id, row in rows_by_id.items():
+        for item_skill_id, row in rows_by_id.items():
             _formal(filename, row)
             _require_chinese(filename, row, "name_zh")
             _require_chinese(filename, row, "description_zh")
             if _require_text(filename, row, "trigger_event") != "item_ready":
-                raise ExportError(f"SKILL_TRIGGER_INVALID:{skill_id}")
+                raise ExportError(f"ITEM_SKILL_TRIGGER_INVALID:{item_skill_id}")
             effect_ids = _ids(filename, row, "effect_ids")
             if seen_effects.intersection(effect_ids):
-                raise ExportError(f"SKILL_EFFECT_OWNERSHIP_DUPLICATE:{skill_id}")
+                raise ExportError(f"ITEM_SKILL_EFFECT_OWNERSHIP_DUPLICATE:{item_skill_id}")
             seen_effects.update(effect_ids)
-            skills[skill_id] = {"triggerEvent": "item_ready", "effectIds": set(effect_ids)}
-        return skills
+            item_skills[item_skill_id] = {
+                "triggerEvent": "item_ready", "effectIds": set(effect_ids),
+            }
+        return item_skills
 
-    def _items(self, skills: dict[str, dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    def _items(self, item_skills: dict[str, dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         filename = "46_bz_items.csv"
         grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
         seen_profile_keys: set[tuple[str, str]] = set()
@@ -1589,9 +1766,9 @@ class ContentAssembler:
             base_quality = _same(rows, filename, "base_quality")
             if base_quality not in QUALITIES:
                 raise ExportError(f"ITEM_BASE_QUALITY_INVALID:{item_id}")
-            skill_id = _same(rows, filename, "skill_id")
-            if not STABLE_ID_RE.fullmatch(skill_id) or skill_id not in skills:
-                raise ExportError(f"ITEM_SKILL_UNKNOWN:{item_id}:{skill_id}")
+            item_skill_id = _same(rows, filename, "item_skill_id")
+            if not STABLE_ID_RE.fullmatch(item_skill_id) or item_skill_id not in item_skills:
+                raise ExportError(f"ITEM_SKILL_UNKNOWN:{item_id}:{item_skill_id}")
             expected_qualities = QUALITIES[QUALITIES.index(base_quality):]
             actual_qualities = sorted((row["quality"] for row in rows), key=QUALITIES.index)
             if actual_qualities != expected_qualities:
@@ -1621,7 +1798,7 @@ class ContentAssembler:
                 profiles[quality] = profile
                 self.item_profiles[(item_id, quality)] = profile
             self.item_widths[item_id] = slot_width
-            self.item_skills[item_id] = skill_id
+            self.item_skills[item_id] = item_skill_id
             items.append({
                 "itemId": item_id,
                 "slotWidth": slot_width,
@@ -1771,11 +1948,11 @@ class ContentAssembler:
         if missing:
             raise ExportError("PLAYER_ITEM_PROFILE_UNREACHABLE:" + ",".join(f"{item_id}:{quality}" for item_id, quality in missing))
 
-    def _effects(self, items: list[dict[str, Any]], skills: dict[str, dict[str, Any]]) -> None:
+    def _effects(self, items: list[dict[str, Any]], item_skills: dict[str, dict[str, Any]]) -> None:
         del items
         filename = "47_bz_item_effects.csv"
         seen_ids: set[str] = set()
-        actual_skill_effects: dict[str, set[str]] = defaultdict(set)
+        actual_item_skill_effects: dict[str, set[str]] = defaultdict(set)
         for row in self.tables[filename]:
             _formal(filename, row)
             effect_id = _require_id(filename, row, "effect_id")
@@ -1787,9 +1964,9 @@ class ContentAssembler:
             profile = self.item_profiles.get((item_id, quality))
             if profile is None:
                 raise ExportError(f"EFFECT_ITEM_QUALITY_UNKNOWN:{effect_id}")
-            skill_id = _require_id(filename, row, "skill_id")
-            if self.item_skills.get(item_id) != skill_id or skill_id not in skills:
-                raise ExportError(f"EFFECT_SKILL_MISMATCH:{effect_id}")
+            item_skill_id = _require_id(filename, row, "item_skill_id")
+            if self.item_skills.get(item_id) != item_skill_id or item_skill_id not in item_skills:
+                raise ExportError(f"EFFECT_ITEM_SKILL_MISMATCH:{effect_id}")
             if _require_text(filename, row, "trigger_event") != "item_ready":
                 raise ExportError(f"EFFECT_TRIGGER_INVALID:{effect_id}")
             if _require_text(filename, row, "condition_type") != "always":
@@ -1830,16 +2007,166 @@ class ContentAssembler:
                 "operation": {"type": operation_type, "params": params},
             }
             profile["effects"].append(effect)
-            actual_skill_effects[skill_id].add(effect_id)
+            actual_item_skill_effects[item_skill_id].add(effect_id)
         for key, profile in self.item_profiles.items():
             if not profile["effects"]:
                 raise ExportError(f"EFFECT_REQUIRED:{key[0]}:{key[1]}")
             profile["effects"].sort(key=lambda value: (value["priority"], value["effectId"]))
-        for skill_id, skill in skills.items():
-            if actual_skill_effects.get(skill_id, set()) != skill["effectIds"]:
-                raise ExportError(f"SKILL_EFFECT_DIRECTORY_MISMATCH:{skill_id}")
+        for item_skill_id, skill in item_skills.items():
+            if actual_item_skill_effects.get(item_skill_id, set()) != skill["effectIds"]:
+                raise ExportError(f"ITEM_SKILL_EFFECT_DIRECTORY_MISMATCH:{item_skill_id}")
 
-    def _hero(self, skills: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    def _hero_skills(self) -> dict[str, dict[str, Any]]:
+        filename = "62_bz_hero_skills.csv"
+        grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
+        seen_profile_effects: set[tuple[str, str, str]] = set()
+        global_effect_ids: set[str] = set()
+        for row in self.tables[filename]:
+            _formal(filename, row)
+            hero_skill_id = _require_id(filename, row, "hero_skill_id")
+            grouped[hero_skill_id].append(row)
+        if len(grouped) != 2 or set(grouped).intersection(self.item_skills.values()):
+            raise ExportError("HERO_SKILL_CATALOG_INVALID")
+        result: dict[str, dict[str, Any]] = {}
+        priorities: set[int] = set()
+        for hero_skill_id in sorted(grouped):
+            rows = grouped[hero_skill_id]
+            hero_id = _same(rows, filename, "hero_id")
+            if not STABLE_ID_RE.fullmatch(hero_id):
+                raise ExportError(f"HERO_SKILL_OWNER_INVALID:{hero_skill_id}")
+            _require_chinese(filename, rows[0], "name_zh")
+            _require_chinese(filename, rows[0], "description_zh")
+            _same(rows, filename, "name_zh")
+            _same(rows, filename, "description_zh")
+            priority_text = _same(rows, filename, "priority")
+            if not INTEGER_RE.fullmatch(priority_text) or int(priority_text) < 0:
+                raise ExportError(f"HERO_SKILL_PRIORITY_INVALID:{hero_skill_id}")
+            priority = int(priority_text)
+            if priority in priorities:
+                raise ExportError(f"HERO_SKILL_PRIORITY_DUPLICATE:{priority}")
+            priorities.add(priority)
+            if _same(rows, filename, "trigger_event") != HERO_SKILL_TRIGGER:
+                raise ExportError(f"HERO_SKILL_TRIGGER_INVALID:{hero_skill_id}")
+            if any(_boolean(filename, row, "reentrant") for row in rows):
+                raise ExportError(f"HERO_SKILL_REENTRANT_FORBIDDEN:{hero_skill_id}")
+            profiles: dict[str, dict[str, Any]] = {}
+            for row in rows:
+                quality = _require_text(filename, row, "quality")
+                effect_id = _require_id(filename, row, "effect_id")
+                profile_key = (hero_skill_id, quality, effect_id)
+                if quality not in QUALITIES or profile_key in seen_profile_effects:
+                    raise ExportError(f"HERO_SKILL_PROFILE_INVALID:{hero_skill_id}:{quality}")
+                seen_profile_effects.add(profile_key)
+                if effect_id in global_effect_ids:
+                    raise ExportError(f"HERO_SKILL_EFFECT_ID_DUPLICATE:{effect_id}")
+                global_effect_ids.add(effect_id)
+                if quality in profiles:
+                    raise ExportError(f"HERO_SKILL_PROFILE_EFFECT_COUNT_INVALID:{hero_skill_id}:{quality}")
+                target_type = _require_text(filename, row, "target_type")
+                operation_type = _require_text(filename, row, "operation_type")
+                if target_type not in HERO_SKILL_TARGETS:
+                    raise ExportError(f"HERO_SKILL_TARGET_INVALID:{effect_id}")
+                if operation_type not in HERO_SKILL_OPERATIONS:
+                    raise ExportError(f"HERO_SKILL_OPERATION_INVALID:{effect_id}")
+                amount = _integer(filename, row, "amount", 0)
+                ticks = _integer(filename, row, "ticks", 0)
+                if operation_type == "deal_damage":
+                    valid = target_type == "opponent_hero" and amount > 0 and ticks == 0
+                else:
+                    valid = target_type == "source_item" and amount == 0 and ticks > 0
+                if not valid:
+                    raise ExportError(f"HERO_SKILL_EFFECT_PARAMS_INVALID:{effect_id}")
+                profiles[quality] = {
+                    "maxTriggersPerBattle": _integer(
+                        filename, row, "max_triggers_per_battle", 1
+                    ),
+                    "effects": [{
+                        "effectId": effect_id,
+                        "targetType": target_type,
+                        "operationType": operation_type,
+                        "amount": amount,
+                        "ticks": ticks,
+                    }],
+                }
+            if sorted(profiles, key=QUALITIES.index) != QUALITIES:
+                raise ExportError(f"HERO_SKILL_QUALITY_COVERAGE_INVALID:{hero_skill_id}")
+            result[hero_skill_id] = {
+                "heroSkillId": hero_skill_id,
+                "heroId": hero_id,
+                "priority": priority,
+                "triggerEvent": HERO_SKILL_TRIGGER,
+                "reentrant": False,
+                "qualityProfiles": {quality: profiles[quality] for quality in QUALITIES},
+            }
+        return result
+
+    def _hero_skill_loadouts(
+        self,
+        hero: dict[str, Any],
+        hero_skills: dict[str, dict[str, Any]],
+    ) -> dict[str, dict[str, list[dict[str, Any]]]]:
+        filename = "63_bz_hero_skill_loadouts.csv"
+        grouped: dict[str, dict[str, list[dict[str, Any]]]] = {
+            "starter": defaultdict(list),
+            "ghost_snapshot": defaultdict(list),
+        }
+        instance_ids: set[str] = set()
+        for row in self.tables[filename]:
+            _formal(filename, row)
+            loadout_kind = _require_text(filename, row, "loadout_kind")
+            if loadout_kind not in grouped:
+                raise ExportError(f"HERO_SKILL_LOADOUT_KIND_INVALID:{loadout_kind}")
+            loadout_id = _require_id(filename, row, "loadout_id")
+            instance_id = _require_id(filename, row, "instance_id")
+            if instance_id in instance_ids:
+                raise ExportError(f"HERO_SKILL_INSTANCE_ID_DUPLICATE:{instance_id}")
+            instance_ids.add(instance_id)
+            hero_skill_id = _require_id(filename, row, "hero_skill_id")
+            skill = hero_skills.get(hero_skill_id)
+            if skill is None:
+                raise ExportError(f"HERO_SKILL_LOADOUT_SKILL_UNKNOWN:{hero_skill_id}")
+            quality = _require_text(filename, row, "quality")
+            if quality not in skill["qualityProfiles"]:
+                raise ExportError(f"HERO_SKILL_LOADOUT_QUALITY_INVALID:{instance_id}")
+            source_type = _require_text(filename, row, "source_type")
+            expected_source_type = (
+                "starting_loadout" if loadout_kind == "starter" else "offline_snapshot"
+            )
+            source_id = _require_id(filename, row, "source_id")
+            if source_type != expected_source_type or source_id != loadout_id:
+                raise ExportError(f"HERO_SKILL_LOADOUT_SOURCE_INVALID:{instance_id}")
+            if loadout_kind == "starter" and (
+                loadout_id != hero["heroId"] or skill["heroId"] != hero["heroId"]
+                or quality != "bronze"
+            ):
+                raise ExportError(f"HERO_STARTING_SKILL_INVALID:{instance_id}")
+            grouped[loadout_kind][loadout_id].append({
+                "instanceId": instance_id,
+                "heroSkillId": hero_skill_id,
+                "quality": quality,
+                "sourceType": source_type,
+                "sourceId": source_id,
+                "acquiredDay": _integer(filename, row, "acquired_day", 1),
+                "acquiredSeq": _integer(filename, row, "acquired_seq", 1),
+            })
+        expected_hero_skill_ids = set(hero_skills)
+        starter_groups = grouped["starter"]
+        if set(starter_groups) != {hero["heroId"]}:
+            raise ExportError("HERO_STARTING_SKILL_LOADOUT_INVALID")
+        for kind_groups in grouped.values():
+            for loadout_id, instances in kind_groups.items():
+                instances.sort(key=lambda value: (value["acquiredSeq"], value["instanceId"]))
+                sequences = [value["acquiredSeq"] for value in instances]
+                skill_ids = [value["heroSkillId"] for value in instances]
+                if sequences != list(range(1, len(instances) + 1)) \
+                        or len(skill_ids) != len(set(skill_ids)):
+                    raise ExportError(f"HERO_SKILL_LOADOUT_ORDER_INVALID:{loadout_id}")
+        if {value["heroSkillId"] for value in starter_groups[hero["heroId"]]} \
+                != expected_hero_skill_ids:
+            raise ExportError("HERO_STARTING_SKILL_COVERAGE_INVALID")
+        return grouped
+
+    def _hero(self) -> dict[str, Any]:
         filename = "45_bz_heroes.csv"
         rows = self.tables[filename]
         if len(rows) != 1:
@@ -1848,15 +2175,11 @@ class ContentAssembler:
         _formal(filename, row)
         hero_id = _require_id(filename, row, "hero_id")
         _require_chinese(filename, row, "name_zh")
-        skill_ids = _ids(filename, row, "skill_ids")
-        if any(skill_id not in skills for skill_id in skill_ids):
-            raise ExportError("HERO_SKILL_REFERENCE_INVALID")
         hero = {
             "heroId": hero_id,
             "level": _integer(filename, row, "start_level", 1),
             "experience": _integer(filename, row, "start_xp", 0),
             "prestige": _integer(filename, row, "start_prestige", 0),
-            "skillIds": skill_ids,
             "maxHp": _integer(filename, row, "max_hp", 1),
         }
         hero["startGold"] = _integer(filename, row, "start_gold", 0)
@@ -1990,7 +2313,9 @@ class ContentAssembler:
     def _executable_catalogs(
         self,
         hero: dict[str, Any],
-        skills: dict[str, dict[str, Any]],
+        item_skills: dict[str, dict[str, Any]],
+        hero_skills: dict[str, dict[str, Any]],
+        starting_hero_skills: list[dict[str, Any]],
         stalls: dict[str, dict[str, Any]],
         shop_generation: dict[str, Any],
         events: dict[str, dict[str, Any]],
@@ -2029,16 +2354,18 @@ class ContentAssembler:
             "schemaVersion": EXECUTABLE_CATALOGS_SCHEMA_VERSION,
             "heroes": [{
                 "heroId": hero["heroId"],
-                "skillIds": sorted(hero["skillIds"]),
+                "heroSkillIds": sorted(hero_skills),
+                "startingHeroSkills": starting_hero_skills,
             }],
-            "skills": [
+            "itemSkills": [
                 {
-                    "skillId": skill_id,
-                    "triggerEvent": skills[skill_id]["triggerEvent"],
-                    "effectIds": sorted(skills[skill_id]["effectIds"]),
+                    "itemSkillId": item_skill_id,
+                    "triggerEvent": item_skills[item_skill_id]["triggerEvent"],
+                    "effectIds": sorted(item_skills[item_skill_id]["effectIds"]),
                 }
-                for skill_id in sorted(skills)
+                for item_skill_id in sorted(item_skills)
             ],
+            "heroSkills": [hero_skills[hero_skill_id] for hero_skill_id in sorted(hero_skills)],
             "stalls": stall_records,
             "upgrades": upgrades,
             "enchantments": enchantments,
@@ -2069,8 +2396,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 18-domain workbook is the finite v10 candidate source.
-            # This adapter is its explicit one-way projection into executable v12.
+            # The current 20-domain workbook is the finite v11 candidate source.
+            # This adapter is its explicit one-way projection into executable v13.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -2200,7 +2527,8 @@ class ContentAssembler:
         self,
         content_revision: str,
         hero: dict[str, Any],
-        skills: dict[str, dict[str, Any]],
+        hero_skills: dict[str, dict[str, Any]],
+        ghost_loadouts: dict[str, list[dict[str, Any]]],
     ) -> dict[str, dict[str, Any]]:
         filename = "60_bz_ghost_snapshots.csv"
         grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
@@ -2225,13 +2553,24 @@ class ContentAssembler:
             hero_level_text = _same(rows, filename, "hero_level")
             if not INTEGER_RE.fullmatch(hero_level_text) or int(hero_level_text) < 1:
                 raise ExportError(f"GHOST_SNAPSHOT_HERO_LEVEL_INVALID:{snapshot_id}")
-            hero_skill_ids = sorted(_ids(filename, rows[0], "hero_skill_ids"))
-            for row in rows[1:]:
-                if sorted(_ids(filename, row, "hero_skill_ids")) != hero_skill_ids:
-                    raise ExportError(f"GHOST_SNAPSHOT_HERO_SKILLS_INCONSISTENT:{snapshot_id}")
-            if not hero_skill_ids or any(skill_id not in skills for skill_id in hero_skill_ids) \
-                    or any(skill_id not in hero["skillIds"] for skill_id in hero_skill_ids):
-                raise ExportError(f"GHOST_SNAPSHOT_HERO_SKILLS_INVALID:{snapshot_id}")
+            day_match = re.fullmatch(r"ghost_snapshot_day_([0-9]{2})", snapshot_id)
+            if day_match is None:
+                raise ExportError(f"GHOST_SNAPSHOT_ID_INVALID:{snapshot_id}")
+            day = int(day_match.group(1))
+            expected_quality = (
+                "bronze" if day <= 3 else "silver" if day <= 6
+                else "gold" if day <= 9 else "diamond"
+            )
+            hero_skill_instances = ghost_loadouts.get(snapshot_id, [])
+            if len(hero_skill_instances) != len(hero_skills) \
+                    or {value["heroSkillId"] for value in hero_skill_instances} != set(hero_skills):
+                raise ExportError(f"GHOST_HERO_SKILL_LOADOUT_INVALID:{snapshot_id}")
+            for value in hero_skill_instances:
+                skill = hero_skills[value["heroSkillId"]]
+                if skill["heroId"] != hero_id or value["sourceType"] != "offline_snapshot" \
+                        or value["sourceId"] != snapshot_id or value["acquiredDay"] != day \
+                        or value["quality"] != expected_quality:
+                    raise ExportError(f"GHOST_HERO_SKILL_INSTANCE_INVALID:{value['instanceId']}")
             hero_hp_text = _same(rows, filename, "hero_hp")
             hero_max_text = _same(rows, filename, "hero_max_hp")
             if not INTEGER_RE.fullmatch(hero_hp_text) or not INTEGER_RE.fullmatch(hero_max_text):
@@ -2266,10 +2605,10 @@ class ContentAssembler:
                 "hero": {
                     "heroId": hero_id,
                     "level": int(hero_level_text),
-                    "skillIds": hero_skill_ids,
                     "hp": hero_hp,
                     "maxHp": hero_max,
                 },
+                "heroSkills": hero_skill_instances,
                 "board": {"placements": [
                     {"instanceId": item["instanceId"], "itemId": item["itemId"], "startSlot": item["startSlot"]}
                     for item in instances
@@ -2292,6 +2631,8 @@ class ContentAssembler:
             }
         if not snapshots:
             raise ExportError("GHOST_SNAPSHOT_CATALOG_REQUIRED")
+        if set(ghost_loadouts) != set(snapshots):
+            raise ExportError("GHOST_HERO_SKILL_LOADOUT_COVERAGE_INVALID")
         return snapshots
 
     def _encounters(
@@ -2437,7 +2778,8 @@ class ContentAssembler:
         }
 
     def _new_run(self, hero: dict[str, Any], starters: list[dict[str, Any]]) -> dict[str, Any]:
-        # v5 makes executableCatalogs the sole owner of hero -> skill bindings.
+        # v3 intentionally leaves ownedHeroSkills to the runtime initial-state builder;
+        # executableCatalogs.heroes owns the formal starting instances.
         hero_payload = {key: hero[key] for key in ["heroId", "level", "experience", "prestige", "maxHp"]}
         board_items = sorted((item for item in starters if item["location"] == "board"), key=lambda value: value["startSlot"])
         stash_items = sorted((item for item in starters if item["location"] == "stash"), key=lambda value: value["instanceId"])
@@ -2554,7 +2896,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v12 runtime and display candidates from 18 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v13 runtime and display candidates from 20 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -2569,7 +2911,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v12 candidate "
+            "PASS original-pirate v13 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -2582,7 +2924,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v12 candidate to {output}")
+        print(f"exported original-pirate v13 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

@@ -13,12 +13,13 @@ const masterExporter = path.join(root, 'tools', 'export_master_to_csv.py');
 const workbook = path.join(root, 'xlsx', 'ysbzs_master.xlsx');
 const domainFiles = [
   '44_bz_gameplay.csv', '45_bz_heroes.csv', '46_bz_items.csv',
-  '47_bz_item_effects.csv', '48_bz_skills.csv', '49_bz_stalls.csv',
+  '47_bz_item_effects.csv', '48_bz_item_skills.csv', '49_bz_stalls.csv',
   '50_bz_stall_offers.csv', '51_bz_events.csv', '52_bz_event_options.csv',
   '53_bz_encounters.csv', '54_bz_enemies.csv', '55_bz_rewards.csv',
   '56_bz_source_snapshot.csv', '57_bz_item_upgrades.csv', '58_bz_enchantments.csv',
   '59_bz_level_up_choices.csv', '60_bz_ghost_snapshots.csv',
-  '61_bz_last_chance_choices.csv',
+  '61_bz_last_chance_choices.csv', '62_bz_hero_skills.csv',
+  '63_bz_hero_skill_loadouts.csv',
 ];
 const sheets = domainFiles.map((name) => `BZ_${name.replace(/^\d+_bz_|\.csv$/g, '').toUpperCase()}`);
 
@@ -43,7 +44,8 @@ const stableIdCompare = (left, right) => (left < right ? -1 : left > right ? 1 :
 
 function canonicalCombatBuild(build) {
   const result = structuredClone(build);
-  if (result.hero.skillIds) result.hero.skillIds.sort();
+  if (result.heroSkills) result.heroSkills.sort((left, right) => (left.acquiredSeq - right.acquiredSeq)
+    || stableIdCompare(left.instanceId, right.instanceId));
   result.itemInstances.sort((left, right) => stableIdCompare(left.instanceId, right.instanceId));
   result.board.placements.sort((left, right) => (left.startSlot - right.startSlot)
     || stableIdCompare(left.instanceId, right.instanceId));
@@ -83,10 +85,20 @@ function expectedBundleHash(content) {
   bundle.progressionRules.milestones.sort((left, right) => left.level - right.level);
   bundle.progressionRules.options.sort((left, right) => stableIdCompare(left.optionId, right.optionId));
   const catalogs = bundle.executableCatalogs;
-  for (const hero of catalogs.heroes) hero.skillIds.sort();
+  for (const hero of catalogs.heroes) {
+    hero.heroSkillIds.sort();
+    hero.startingHeroSkills.sort((left, right) => (left.acquiredSeq - right.acquiredSeq)
+      || stableIdCompare(left.instanceId, right.instanceId));
+  }
   catalogs.heroes.sort((left, right) => stableIdCompare(left.heroId, right.heroId));
-  for (const skill of catalogs.skills) skill.effectIds.sort();
-  catalogs.skills.sort((left, right) => stableIdCompare(left.skillId, right.skillId));
+  for (const skill of catalogs.itemSkills) skill.effectIds.sort();
+  catalogs.itemSkills.sort((left, right) => stableIdCompare(left.itemSkillId, right.itemSkillId));
+  for (const skill of catalogs.heroSkills) {
+    for (const profile of Object.values(skill.qualityProfiles)) {
+      profile.effects.sort((left, right) => stableIdCompare(left.effectId, right.effectId));
+    }
+  }
+  catalogs.heroSkills.sort((left, right) => stableIdCompare(left.heroSkillId, right.heroSkillId));
   for (const stall of catalogs.stalls) stall.shopTemplateIds.sort();
   catalogs.stalls.sort((left, right) => stableIdCompare(left.stallId, right.stallId));
   catalogs.upgrades.sort((left, right) => stableIdCompare(left.upgradeId, right.upgradeId));
@@ -197,7 +209,7 @@ function reverseDataRows(dir, file) {
   fs.writeFileSync(target, encodeCsv([rows[0], ...rows.slice(1).reverse()]), 'utf8');
 }
 
-test('OPC01 workbook 的 18 个 BZ 页与 44..61 CSV 可逐字重建', () => {
+test('OPC01 workbook 的 20 个 original-pirate BZ 页与 CSV 可逐字重建', () => {
   const code = `
 import csv, json, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(sys.argv[5]) / 'tools'))
@@ -218,7 +230,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有规则确定且 hash 兼容', () => {
+test('OPC02 v13/v11 物品技能与英雄技能分域、Ghost 实例和既有规则确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -235,13 +247,13 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 12);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v8');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v9');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v9');
+  assert.equal(content.schemaVersion, 13);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v9');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v10');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v10');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 10);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v9');
+  assert.equal(content.runtimeBundle.schemaVersion, 11);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v10');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -289,6 +301,7 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
     'change_gold', 'grant_item', 'upgrade_owned_item',
   ]);
   assert.equal(content.runtimeBundle.newRunTemplate.phase, 'schedule');
+  assert.equal(content.runtimeBundle.newRunTemplate.schemaVersion, 3);
   assert.deepEqual(content.runtimeBundle.newRunTemplate.activeNode, { nodeId: '', kind: '', rewardId: '' });
   assert.deepEqual(content.runtimeBundle.newRunTemplate.levelRewards, {
     pendingMilestoneIds: [], resolved: [],
@@ -297,6 +310,7 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
     status: 'available', policyId: '', optionIds: [], selectedOptionId: '',
   });
   assert.equal('skillIds' in content.runtimeBundle.newRunTemplate.hero, false);
+  assert.equal('ownedHeroSkills' in content.runtimeBundle.newRunTemplate, false);
   assert.deepEqual([
     content.runtimeBundle.scheduleConfig.schema,
     content.runtimeBundle.scheduleConfig.schemaVersion,
@@ -343,7 +357,7 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
   assert.equal('levelThresholds' in content.runtimeBundle.scheduleConfig, false);
   const generation = content.runtimeBundle.generation;
   assert.deepEqual([generation.schema, generation.schemaVersion, generation.algorithmId], [
-    'ysbzs.original-pirate-generation.v1', 2, 'sha256-ranked-selection-v1',
+    'ysbzs.original-pirate-generation.v1', 3, 'sha256-ranked-selection-v1',
   ]);
   assert.equal(generation.shop.offerCount, 3);
   assert.equal(generation.shop.templates.length, 33);
@@ -379,13 +393,21 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
     'build', 'buildHash', 'matchSource', 'opponentContentRevision', 'schema', 'schemaVersion', 'snapshotId',
   ].sort());
   assert.deepEqual([ghostSnapshot.schema, ghostSnapshot.schemaVersion, ghostSnapshot.matchSource], [
-    'ysbzs.original-pirate-ghost-snapshot.v1', 1, 'offline_content',
+    'ysbzs.original-pirate-ghost-snapshot.v1', 2, 'offline_content',
   ]);
   assert.equal(ghostSnapshot.opponentContentRevision, content.contentRevision);
   assert.equal(ghostSnapshot.buildHash, expectedBuildHash(ghostSnapshot.build));
-  assert.deepEqual(Object.keys(ghostSnapshot.build).sort(), ['board', 'hero', 'itemInstances']);
-  assert.deepEqual(Object.keys(ghostSnapshot.build.hero).sort(), ['heroId', 'hp', 'level', 'maxHp', 'skillIds']);
-  assert.deepEqual(ghostSnapshot.build.hero.skillIds, ['skill_brine_cannon', 'skill_patchwork_ram']);
+  assert.deepEqual(Object.keys(ghostSnapshot.build).sort(), ['board', 'hero', 'heroSkills', 'itemInstances']);
+  assert.deepEqual(Object.keys(ghostSnapshot.build.hero).sort(), ['heroId', 'hp', 'level', 'maxHp']);
+  assert.deepEqual(ghostSnapshot.build.heroSkills.map(({ heroSkillId, quality, sourceType, acquiredDay, acquiredSeq }) => ({
+    heroSkillId, quality, sourceType, acquiredDay, acquiredSeq,
+  })), [
+    { heroSkillId: 'hero_skill_mist_salvo', quality: 'bronze', sourceType: 'offline_snapshot', acquiredDay: 1, acquiredSeq: 1 },
+    { heroSkillId: 'hero_skill_tailwind_return', quality: 'bronze', sourceType: 'offline_snapshot', acquiredDay: 1, acquiredSeq: 2 },
+  ]);
+  assert.deepEqual(generation.battle.ghostSnapshots.at(-1).build.heroSkills.map(({ quality }) => quality), [
+    'diamond', 'diamond',
+  ]);
   assert.equal(generation.battle.ghostEncounters.find(({ encounterId }) => (
     encounterId === 'encounter_day_01_mirror_skiff'
   )).snapshotId, ghostSnapshot.snapshotId);
@@ -399,19 +421,61 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
   assert.equal('maxDay' in generation.battle || 'maxRefreshIndex' in generation.shop, false);
   const catalogs = content.runtimeBundle.executableCatalogs;
   assert.deepEqual(Object.keys(catalogs).sort(), [
-    'enchantments', 'eventOptions', 'events', 'heroes', 'rewards', 'schema', 'schemaVersion',
-    'skills', 'stalls', 'upgrades',
+    'enchantments', 'eventOptions', 'events', 'heroes', 'heroSkills', 'itemSkills',
+    'rewards', 'schema', 'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 3,
+    'ysbzs.original-pirate-executable-catalogs.v1', 4,
   ]);
   assert.deepEqual([
-    catalogs.heroes.length, catalogs.skills.length, catalogs.stalls.length,
+    catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 6, 1, 4, 8, 8, 12, 3]);
-  assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), ['heroId', 'skillIds']);
-  assert.deepEqual(catalogs.heroes[0].skillIds, ['skill_brine_cannon', 'skill_patchwork_ram']);
+  ], [1, 6, 2, 1, 4, 8, 8, 12, 3]);
+  assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
+    'heroId', 'heroSkillIds', 'startingHeroSkills',
+  ]);
+  assert.deepEqual(catalogs.heroes[0].heroSkillIds, [
+    'hero_skill_mist_salvo', 'hero_skill_tailwind_return',
+  ]);
+  assert.deepEqual(catalogs.heroes[0].startingHeroSkills, [
+    {
+      instanceId: 'starter_hero_skill_mist_salvo', heroSkillId: 'hero_skill_mist_salvo',
+      quality: 'bronze', sourceType: 'starting_loadout', sourceId: 'hero_mistwake_captain',
+      acquiredDay: 1, acquiredSeq: 1,
+    },
+    {
+      instanceId: 'starter_hero_skill_tailwind_return', heroSkillId: 'hero_skill_tailwind_return',
+      quality: 'bronze', sourceType: 'starting_loadout', sourceId: 'hero_mistwake_captain',
+      acquiredDay: 1, acquiredSeq: 2,
+    },
+  ]);
+  const heroSkillById = Object.fromEntries(catalogs.heroSkills.map((skill) => [skill.heroSkillId, skill]));
+  assert.deepEqual(Object.keys(heroSkillById.hero_skill_mist_salvo).sort(), [
+    'heroId', 'heroSkillId', 'priority', 'qualityProfiles', 'reentrant', 'triggerEvent',
+  ]);
+  assert.deepEqual([
+    heroSkillById.hero_skill_mist_salvo.heroId,
+    heroSkillById.hero_skill_mist_salvo.priority,
+    heroSkillById.hero_skill_mist_salvo.triggerEvent,
+    heroSkillById.hero_skill_mist_salvo.reentrant,
+  ], ['hero_mistwake_captain', 10, 'friendly_item_used', false]);
+  assert.deepEqual(heroSkillById.hero_skill_mist_salvo.qualityProfiles, {
+    bronze: { maxTriggersPerBattle: 1, effects: [{ effectId: 'hero_effect_mist_salvo_bronze_damage', targetType: 'opponent_hero', operationType: 'deal_damage', amount: 1, ticks: 0 }] },
+    silver: { maxTriggersPerBattle: 2, effects: [{ effectId: 'hero_effect_mist_salvo_silver_damage', targetType: 'opponent_hero', operationType: 'deal_damage', amount: 1, ticks: 0 }] },
+    gold: { maxTriggersPerBattle: 2, effects: [{ effectId: 'hero_effect_mist_salvo_gold_damage', targetType: 'opponent_hero', operationType: 'deal_damage', amount: 2, ticks: 0 }] },
+    diamond: { maxTriggersPerBattle: 3, effects: [{ effectId: 'hero_effect_mist_salvo_diamond_damage', targetType: 'opponent_hero', operationType: 'deal_damage', amount: 2, ticks: 0 }] },
+  });
+  assert.deepEqual(Object.values(heroSkillById.hero_skill_tailwind_return.qualityProfiles).map((profile) => ({
+    maxTriggersPerBattle: profile.maxTriggersPerBattle,
+    ticks: profile.effects[0].ticks,
+    amount: profile.effects[0].amount,
+  })), [
+    { maxTriggersPerBattle: 1, ticks: 1, amount: 0 },
+    { maxTriggersPerBattle: 3, ticks: 2, amount: 0 },
+    { maxTriggersPerBattle: 3, ticks: 1, amount: 0 },
+    { maxTriggersPerBattle: 2, ticks: 1, amount: 0 },
+  ]);
   const profileEffectIds = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
@@ -425,7 +489,7 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
   ]);
   assert.deepEqual([...new Set(executableEffects.filter(({ operation }) => operation.type === 'apply_status')
     .map(({ operation }) => operation.params.status))].sort(), ['freeze', 'haste', 'slow']);
-  assert.deepEqual(catalogs.skills.flatMap(({ effectIds }) => effectIds).sort(), profileEffectIds);
+  assert.deepEqual(catalogs.itemSkills.flatMap(({ effectIds }) => effectIds).sort(), profileEffectIds);
   const stall = catalogs.stalls[0];
   assert.deepEqual(Object.keys(stall).sort(), ['offerCount', 'shopTemplateIds', 'stallId']);
   assert.equal(stall.offerCount, generation.shop.offerCount);
@@ -461,17 +525,24 @@ test('OPC02 v12/v10 Ghost-only Prestige、最后机会、Ghost 快照与既有�
     'contentRevision', 'entries', 'gameplayId', 'schema', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
-  assert.equal(display.schemaVersion, 1);
+  assert.equal(display.schemaVersion, 2);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v9');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v9');
-  assert.equal(display.entries.length, 70);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v10');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v10');
+  assert.equal(display.entries.length, 72);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
   });
   assert.match(display.entries.find(({ displayId }) => displayId === 'events.event_driftwood_cache').descriptionZh, /潮线/);
   assert.match(display.entries.find(({ displayId }) => displayId === 'enchantments.enchant_tailwind').descriptionZh, /充能/);
+  assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'hero_skills.hero_skill_mist_salvo'), {
+    displayId: 'hero_skills.hero_skill_mist_salvo', domain: 'hero_skills',
+    sourceId: 'hero_skill_mist_salvo', nameZh: '雾线追炮',
+    descriptionZh: '英雄被动：每当我方物品完成一次使用，雾航船长向敌方英雄追加追击炮火；每场触发次数与伤害由品质决定。',
+  });
+  assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 6);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'level_up_options.level_option_2_upgrade'), {
     displayId: 'level_up_options.level_option_2_upgrade', domain: 'level_up_options',
     sourceId: 'level_option_2_upgrade', nameZh: '精调一件装备',
@@ -497,6 +568,8 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
     ['ammo', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'ammo_maximum', '')],
     ['price', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'price', '')],
     ['trigger', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'trigger_event', '')],
+    ['item-skill-cross-directory', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'item_skill_id', 'hero_skill_mist_salvo')],
+    ['item-effect-cross-directory', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'item_skill_id', 'hero_skill_mist_salvo')],
     ['effect', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'amount', '')],
     ['status', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 14, 'status', 'burn')],
     ['effect-target-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 6, 'target_type', 'first_enemy_item')],
@@ -504,13 +577,29 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
     ['ghost-encounter-enemy-mixed', (dir) => mutateCell(dir, '53_bz_encounters.csv', 2, 'enemy_id', 'enemy_breakwater_raider')],
     ['ghost-encounter-snapshot-missing', (dir) => mutateCell(dir, '53_bz_encounters.csv', 2, 'snapshot_id', '')],
     ['pve-encounter-snapshot-mixed', (dir) => mutateCell(dir, '53_bz_encounters.csv', 1, 'snapshot_id', 'ghost_snapshot_day_01')],
-    ['ghost-snapshot-schema', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'schema_version', '2')],
+    ['ghost-snapshot-schema', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'schema_version', '1')],
     ['ghost-snapshot-source', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'match_source', 'fixture')],
     ['ghost-snapshot-content-revision', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'opponent_content_revision', 'stale')],
     ['ghost-snapshot-hero-unknown', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'hero_id', 'hero_missing')],
     ['ghost-snapshot-hero-level', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'hero_level', '0')],
-    ['ghost-snapshot-hero-skill-unknown', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'hero_skill_ids', 'skill_missing')],
-    ['ghost-snapshot-hero-skill-drift', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 2, 'hero_skill_ids', 'skill_brine_cannon')],
+    ['hero-skill-trigger', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'trigger_event', 'item_ready')],
+    ['hero-skill-reentrant', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'reentrant', 'true')],
+    ['hero-skill-owner-drift', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'hero_id', 'hero_missing')],
+    ['hero-skill-quality-missing', (dir) => {
+      const target = path.join(dir, '62_bz_hero_skills.csv');
+      const rows = parseCsv(fs.readFileSync(target, 'utf8'));
+      rows.splice(4, 1);
+      fs.writeFileSync(target, encodeCsv(rows));
+    }],
+    ['hero-skill-target-operation', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'target_type', 'source_item')],
+    ['hero-skill-effect-params', (dir) => mutateCell(dir, '62_bz_hero_skills.csv', 1, 'ticks', '1')],
+    ['hero-skill-loadout-unknown', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 1, 'hero_skill_id', 'skill_brine_cannon')],
+    ['hero-skill-loadout-quality', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 1, 'quality', 'silver')],
+    ['hero-skill-loadout-order', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 2, 'acquired_seq', '1')],
+    ['hero-skill-loadout-instance-duplicate', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 2, 'instance_id', 'starter_hero_skill_mist_salvo')],
+    ['hero-skill-loadout-source', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'source_type', 'starting_loadout')],
+    ['ghost-hero-skill-day', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'acquired_day', '2')],
+    ['ghost-hero-skill-quality-band', (dir) => mutateCell(dir, '63_bz_hero_skill_loadouts.csv', 3, 'quality', 'silver')],
     ['ghost-snapshot-item', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'item_id', 'item_missing')],
     ['ghost-snapshot-instance-duplicate', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 2, 'instance_id', 'ghost_d01_ram')],
     ['relation', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_missing')],
@@ -610,7 +699,7 @@ test('OPC04 缺任一声明刷新层或日程战斗槽时整包拒绝', () => {
   assert.equal(fs.existsSync(battleOut), false);
 });
 
-test('OPC05 18 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
+test('OPC05 20 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
   const baselineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-canonical-baseline-'));
   const baselineOut = path.join(baselineDir, 'content.json');
   const baselineDisplay = path.join(baselineDir, 'display.json');
@@ -626,8 +715,8 @@ test('OPC05 18 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v12/v10 forged Ghost、最后机会、progression、schedule、catalog 或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v12-forgery-'));
+test('OPC06 v13/v11 forged hero skill、Ghost、catalog 或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v13-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -728,6 +817,33 @@ test('OPC06 v12/v10 forged Ghost、最后机会、progression、schedule、catal
     ['terminal-pressure-initial-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.initialDamage = 0; }],
     ['terminal-pressure-increment-negative', (value) => { value.runtimeBundle.battleRules.terminalPressure.incrementDamage = -1; }],
     ['extra-catalog-field', (value) => { value.runtimeBundle.executableCatalogs.auditText = 'not-runtime'; }],
+    ['retired-skills-catalog', (value) => { value.runtimeBundle.executableCatalogs.skills = []; }],
+    ['item-skill-extra-field', (value) => { value.runtimeBundle.executableCatalogs.itemSkills[0].heroId = 'hero_mistwake_captain'; }],
+    ['hero-item-skill-cross-reference', (value) => {
+      value.runtimeBundle.executableCatalogs.heroes[0].heroSkillIds[0] = 'skill_brine_cannon';
+    }],
+    ['hero-skill-extra-field', (value) => { value.runtimeBundle.executableCatalogs.heroSkills[0].sourceText = 'forged'; }],
+    ['hero-skill-trigger', (value) => { value.runtimeBundle.executableCatalogs.heroSkills[0].triggerEvent = 'item_ready'; }],
+    ['hero-skill-reentrant', (value) => { value.runtimeBundle.executableCatalogs.heroSkills[0].reentrant = true; }],
+    ['hero-skill-profile-missing', (value) => { delete value.runtimeBundle.executableCatalogs.heroSkills[0].qualityProfiles.diamond; }],
+    ['hero-skill-profile-unknown', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkills[0].qualityProfiles.mythic = structuredClone(
+        value.runtimeBundle.executableCatalogs.heroSkills[0].qualityProfiles.diamond,
+      );
+    }],
+    ['hero-skill-profile-extra-field', (value) => { value.runtimeBundle.executableCatalogs.heroSkills[0].qualityProfiles.bronze.cooldown = 1; }],
+    ['hero-skill-effect-target', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkills[0].qualityProfiles.bronze.effects[0].targetType = 'source_item';
+    }],
+    ['hero-skill-effect-forged-ticks', (value) => {
+      value.runtimeBundle.executableCatalogs.heroSkills[0].qualityProfiles.bronze.effects[0].ticks = 1;
+    }],
+    ['starting-hero-skill-source', (value) => {
+      value.runtimeBundle.executableCatalogs.heroes[0].startingHeroSkills[0].sourceType = 'offline_snapshot';
+    }],
+    ['starting-hero-skill-order', (value) => {
+      value.runtimeBundle.executableCatalogs.heroes[0].startingHeroSkills[1].acquiredSeq = 1;
+    }],
     ['retired-level-placeholder-through-event', (value) => { value.runtimeBundle.executableCatalogs.eventOptions[0].rewardId = 'reward_level_2'; }],
     ['item-reward-board-slot', (value) => { value.runtimeBundle.executableCatalogs.rewards.find(({ rewardId }) => rewardId === 'reward_signal_flare').effects[0].startSlot = 4; }],
     ['reward-level-trigger', (value) => { value.runtimeBundle.executableCatalogs.rewards[0].trigger.event = 'LEVEL_UP'; }],
@@ -778,12 +894,22 @@ test('OPC06 v12/v10 forged Ghost、最后机会、progression、schedule、catal
     }],
     ['ghost-snapshot-hero-skill-unknown', (value) => {
       const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
-      snapshot.build.hero.skillIds = ['skill_missing'];
+      snapshot.build.heroSkills[0].heroSkillId = 'skill_missing';
       snapshot.buildHash = expectedBuildHash(snapshot.build);
     }],
     ['ghost-snapshot-hero-skills-unsorted', (value) => {
       const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
-      snapshot.build.hero.skillIds.reverse();
+      snapshot.build.heroSkills.reverse();
+      snapshot.buildHash = expectedBuildHash(snapshot.build);
+    }],
+    ['ghost-snapshot-hero-skill-quality', (value) => {
+      const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
+      snapshot.build.heroSkills[0].quality = 'silver';
+      snapshot.buildHash = expectedBuildHash(snapshot.build);
+    }],
+    ['ghost-snapshot-hero-skill-source', (value) => {
+      const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
+      snapshot.build.heroSkills[0].sourceId = 'ghost_snapshot_day_02';
       snapshot.buildHash = expectedBuildHash(snapshot.build);
     }],
     ['ghost-encounter-mixed-authority', (value) => {
@@ -800,7 +926,8 @@ test('OPC06 v12/v10 forged Ghost、最后机会、progression、schedule、catal
     ['ghost-layer-uses-pve-template', (value) => {
       value.runtimeBundle.generation.battle.layers[0].ghostEncounterIds = [value.runtimeBundle.generation.battle.layers[0].pveTemplateIds[0]];
     }],
-    ['hero-skill-double-authority', (value) => { value.runtimeBundle.newRunTemplate.hero.skillIds = ['skill_brine_cannon']; }],
+    ['hero-skill-old-field-double-authority', (value) => { value.runtimeBundle.newRunTemplate.hero.skillIds = ['skill_brine_cannon']; }],
+    ['hero-skill-template-double-authority', (value) => { value.runtimeBundle.newRunTemplate.ownedHeroSkills = []; }],
     ['hash-forged', (value) => { value.runtimeBundle.bundleHash = '0'.repeat(64); }],
   ];
   for (const [name, mutate] of cases) {

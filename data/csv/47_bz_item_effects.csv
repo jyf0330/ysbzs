@@ -1,4 +1,4 @@
-effect_id,item_id,quality,skill_id,priority,trigger_event,condition_type,target_type,operation_type,amount,status,ticks,catalog_status
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,target_type,operation_type,amount,status,ticks,catalog_status
 effect_brine_cannon_bronze_hit,item_brine_cannon,bronze,skill_brine_cannon,20,item_ready,always,selected_enemy,deal_damage,6,,,formal
 effect_brine_cannon_silver_hit,item_brine_cannon,silver,skill_brine_cannon,20,item_ready,always,selected_enemy,deal_damage,9,,,formal
 effect_brine_cannon_gold_hit,item_brine_cannon,gold,skill_brine_cannon,20,item_ready,always,selected_enemy,deal_damage,13,,,formal

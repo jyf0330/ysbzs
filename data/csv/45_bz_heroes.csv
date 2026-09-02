@@ -1,2 +1,2 @@
-hero_id,name_zh,max_hp,start_level,start_xp,start_prestige,start_gold,start_income,skill_ids,catalog_status
-hero_mistwake_captain,雾航船长,40,1,0,20,12,5,"skill_brine_cannon,skill_patchwork_ram",formal
+hero_id,name_zh,max_hp,start_level,start_xp,start_prestige,start_gold,start_income,catalog_status
+hero_mistwake_captain,雾航船长,40,1,0,20,12,5,formal

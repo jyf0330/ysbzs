@@ -1,4 +1,4 @@
-item_id,name_zh,slot_width,base_quality,quality,buy_price,sell_price,cooldown_ticks,ammo_enabled,ammo_initial,ammo_maximum,skill_id,starter_instance_id,starter_location,starter_start_slot,catalog_status
+item_id,name_zh,slot_width,base_quality,quality,buy_price,sell_price,cooldown_ticks,ammo_enabled,ammo_initial,ammo_maximum,item_skill_id,starter_instance_id,starter_location,starter_start_slot,catalog_status
 item_brine_cannon,盐雾炮,3,bronze,bronze,6,3,6,true,2,2,skill_brine_cannon,starter_brine_cannon,board,0,formal
 item_brine_cannon,盐雾炮,3,bronze,silver,9,4,5,true,3,3,skill_brine_cannon,,,,formal
 item_brine_cannon,盐雾炮,3,bronze,gold,13,6,4,true,3,4,skill_brine_cannon,,,,formal

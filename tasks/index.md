@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-02，由 `2026-09-02_original_pirate_last_chance_choices` 收口。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_hero_skill_content` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_hero_skill_content.md` — data contract: 物品技能与英雄技能正式分域，新增两项原创雾航英雄被动、起始实例与十日 Ghost 品质实例。
 
 - `tasks/done/2026-09-02_original_pirate_last_chance_choices.md` — data contract: Ghost-only Prestige 与首次归零后一次性正式最后机会三选一，冻结三项原创代价和恢复量。
 

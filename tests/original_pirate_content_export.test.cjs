@@ -100,6 +100,7 @@ function expectedBundleHash(content) {
     }
   }
   catalogs.heroSkills.sort((left, right) => stableIdCompare(left.heroSkillId, right.heroSkillId));
+  for (const trainer of catalogs.heroSkillTrainers) trainer.offerIds.sort();
   catalogs.heroSkillTrainers.sort((left, right) => stableIdCompare(left.trainerId, right.trainerId));
   catalogs.heroSkillOffers.sort((left, right) => stableIdCompare(left.offerId, right.offerId));
   for (const stall of catalogs.stalls) stall.shopTemplateIds.sort();
@@ -560,6 +561,16 @@ test('OPC02 v14/v12 英雄技能训练、Ghost 实例和既有规则确定且 ha
   assert.equal('startSlot' in rewardById.reward_signal_flare.effects[0], false);
   assert.deepEqual(rewardById.reward_pve_patrol.effects[0], { type: 'change_gold', amount: 4 });
   assert.equal(content.runtimeBundle.bundleHash, expectedBundleHash(content));
+  const identityReordered = structuredClone(content);
+  identityReordered.runtimeBundle.executableCatalogs.heroSkillTrainers.reverse();
+  identityReordered.runtimeBundle.executableCatalogs.heroSkillOffers.reverse();
+  for (const trainer of identityReordered.runtimeBundle.executableCatalogs.heroSkillTrainers) {
+    trainer.offerIds.reverse();
+  }
+  for (const hero of identityReordered.runtimeBundle.executableCatalogs.heroes) {
+    hero.startingHeroSkills.reverse();
+  }
+  assert.equal(expectedBundleHash(identityReordered), content.runtimeBundle.bundleHash);
   assert.equal(validatePackageFile(first).status, 0);
 
   assert.deepEqual(Object.keys(display).sort(), [

@@ -385,6 +385,8 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
         for profile in skill.get("qualityProfiles", {}).values():
             profile.get("effects", []).sort(key=lambda value: value.get("effectId", ""))
     catalogs.get("heroSkills", []).sort(key=lambda value: value.get("heroSkillId", ""))
+    for trainer in catalogs.get("heroSkillTrainers", []):
+        trainer.get("offerIds", []).sort()
     catalogs.get("heroSkillTrainers", []).sort(key=lambda value: value.get("trainerId", ""))
     catalogs.get("heroSkillOffers", []).sort(key=lambda value: value.get("offerId", ""))
     for stall in catalogs.get("stalls", []):

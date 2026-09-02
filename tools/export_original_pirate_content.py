@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v15 candidate package while still validating every
+outside the formal v16 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 15
+CONTENT_SCHEMA_VERSION = 16
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 13
-SOURCE_CONTENT_SCHEMA_VERSION = 13
-SOURCE_RUNTIME_SCHEMA_VERSION = 11
+RUNTIME_SCHEMA_VERSION = 14
+SOURCE_CONTENT_SCHEMA_VERSION = 14
+SOURCE_RUNTIME_SCHEMA_VERSION = 12
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 6
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 7
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,20 +51,20 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v11"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v12"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
-ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
-ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status"}
+ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item", "owner_hero"}
+ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status", "heal", "gain_shield"}
 REACTIVE_ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge"}
 ITEM_STATUSES = {"haste", "slow", "freeze"}
 ITEM_TAGS = {"ammo", "aquatic", "relic", "tool", "vehicle", "weapon"}
 ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used"}
 ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag"}
 HERO_SKILL_TRIGGER = "friendly_item_used"
-HERO_SKILL_TARGETS = {"opponent_hero", "source_item"}
-HERO_SKILL_OPERATIONS = {"deal_damage", "charge"}
+HERO_SKILL_TARGETS = {"opponent_hero", "source_item", "owner_hero"}
+HERO_SKILL_OPERATIONS = {"deal_damage", "charge", "heal", "gain_shield"}
 EXPECTED_HOUR_KINDS = {1: "choice", 2: "choice", 3: "pve", 4: "choice", 5: "choice", 6: "ghost"}
 CHOICE_HOURS = {1, 2, 4, 5}
 STABLE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -508,10 +508,10 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
         _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
         valid_target = target_type == "selected_enemy"
-    elif operation_type == "reload":
+    elif operation_type in {"reload", "heal", "gain_shield"}:
         params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
         _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
-        valid_target = target_type == "self_item"
+        valid_target = target_type == ("self_item" if operation_type == "reload" else "owner_hero")
     elif operation_type == "charge":
         params = _expect_exact_fields(operation["params"], {"ticks"}, f"{context}:operation:params")
         _expect_integer(params["ticks"], f"{context}:operation:params:ticks", 1)
@@ -542,8 +542,10 @@ def _validate_executable_hero_skill_effect(value: Any, context: str) -> str:
     ticks = _expect_integer(effect["ticks"], f"{context}:ticks", 0)
     if operation_type == "deal_damage":
         valid = target_type == "opponent_hero" and amount > 0 and ticks == 0
-    else:
+    elif operation_type == "charge":
         valid = target_type == "source_item" and amount == 0 and ticks > 0
+    else:
+        valid = target_type == "owner_hero" and amount > 0 and ticks == 0
     if not valid:
         raise ExportError(f"EXECUTABLE_HERO_SKILL_EFFECT_PARAMS_INVALID:{effect_id}")
     return effect_id
@@ -695,7 +697,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v15/v13 candidate package without accepting partial data."""
+    """Validate the formal v16/v14 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -2280,8 +2282,10 @@ class ContentAssembler:
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type == "apply_status" and target_type not in {"self_item", "first_enemy_item"}:
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
+            if operation_type in {"heal", "gain_shield"} and target_type != "owner_hero":
+                raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             params: dict[str, Any]
-            if operation_type in {"deal_damage", "reload"}:
+            if operation_type in {"deal_damage", "reload", "heal", "gain_shield"}:
                 params = {"amount": _integer(filename, row, "amount", 1)}
                 if row.get("status", "").strip() or row.get("ticks", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
@@ -2375,8 +2379,10 @@ class ContentAssembler:
                 ticks = _integer(filename, row, "ticks", 0)
                 if operation_type == "deal_damage":
                     valid = target_type == "opponent_hero" and amount > 0 and ticks == 0
-                else:
+                elif operation_type == "charge":
                     valid = target_type == "source_item" and amount == 0 and ticks > 0
+                else:
+                    valid = target_type == "owner_hero" and amount > 0 and ticks == 0
                 if not valid:
                     raise ExportError(f"HERO_SKILL_EFFECT_PARAMS_INVALID:{effect_id}")
                 profiles[quality] = {
@@ -2913,8 +2919,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v13 candidate source.
-            # This adapter is its explicit one-way projection into executable v15.
+            # The current 22-domain workbook is the finite v14 candidate source.
+            # This adapter is its explicit one-way projection into executable v16.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3435,7 +3441,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v15 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v16 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3450,7 +3456,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v15 candidate "
+            "PASS original-pirate v16 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3463,7 +3469,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v15 candidate to {output}")
+        print(f"exported original-pirate v16 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

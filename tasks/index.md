@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_item_tag_reactions` 收口。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_hero_defense_items` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_hero_defense_items.md` — data contract: 英雄治疗/护盾物品效果与三件原创防御物品。
 
 - `tasks/done/2026-09-03_original_pirate_item_tag_reactions.md` — data contract: canonical 物品标签、跨物品标签响应与三件原创正式物品。
 

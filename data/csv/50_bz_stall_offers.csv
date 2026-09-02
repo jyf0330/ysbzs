@@ -12,13 +12,13 @@ package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_tidefin_launcher,ite
 package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_patchwork_ram,item_patchwork_ram,gold,,10,false,2,formal
 package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_storm_compass,item_storm_compass,gold,,11,false,3,formal
 package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_wake_echo_drum,item_wake_echo_drum,silver,,8,false,1,formal
-package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_reef_hook,item_reef_hook,gold,,8,false,2,formal
+package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_mistkelp_remedy_kit,item_mistkelp_remedy_kit,bronze,,4,false,2,formal
 package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_brine_cannon,item_brine_cannon,gold,,13,false,3,formal
 package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_saltwind_capstan,item_saltwind_capstan,silver,,7,false,1,formal
-package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_abyss_bell,item_abyss_bell,diamond,,20,false,2,formal
+package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_tidefold_bulwark,item_tidefold_bulwark,bronze,,5,false,2,formal
 package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_signal_flare,item_signal_flare,diamond,,13,false,3,formal
 package_mistwake_refresh_6,stall_mistwake,6,offer_refresh_6_tidefin_launcher,item_tidefin_launcher,silver,,5,false,1,formal
-package_mistwake_refresh_6,stall_mistwake,6,offer_refresh_6_patchwork_ram,item_patchwork_ram,silver,,7,false,2,formal
+package_mistwake_refresh_6,stall_mistwake,6,offer_refresh_6_homeglow_beacon,item_homeglow_beacon,bronze,,6,false,2,formal
 package_mistwake_refresh_6,stall_mistwake,6,offer_refresh_6_storm_compass,item_storm_compass,diamond,,16,false,3,formal
 package_mistwake_refresh_7,stall_mistwake,7,offer_refresh_7_wake_echo_drum,item_wake_echo_drum,gold,,12,false,1,formal
 package_mistwake_refresh_7,stall_mistwake,7,offer_refresh_7_signal_flare,item_signal_flare,gold,,9,false,2,formal

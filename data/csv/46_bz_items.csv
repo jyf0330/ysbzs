@@ -29,3 +29,15 @@ item_tidefin_launcher,潮鳍投筒,"ammo, aquatic",1,bronze,bronze,3,1,5,true,1,
 item_tidefin_launcher,潮鳍投筒,"ammo, aquatic",1,bronze,silver,5,2,4,true,2,3,skill_tidefin_launcher,,,,formal
 item_tidefin_launcher,潮鳍投筒,"ammo, aquatic",1,bronze,gold,8,4,3,true,2,4,skill_tidefin_launcher,,,,formal
 item_tidefin_launcher,潮鳍投筒,"ammo, aquatic",1,bronze,diamond,12,6,2,true,3,5,skill_tidefin_launcher,,,,formal
+item_mistkelp_remedy_kit,雾藻疗匣,"aquatic, tool",1,bronze,bronze,4,2,7,false,0,0,skill_mistkelp_remedy_kit,,,,formal
+item_mistkelp_remedy_kit,雾藻疗匣,"aquatic, tool",1,bronze,silver,7,3,6,false,0,0,skill_mistkelp_remedy_kit,,,,formal
+item_mistkelp_remedy_kit,雾藻疗匣,"aquatic, tool",1,bronze,gold,10,5,5,false,0,0,skill_mistkelp_remedy_kit,,,,formal
+item_mistkelp_remedy_kit,雾藻疗匣,"aquatic, tool",1,bronze,diamond,14,7,4,false,0,0,skill_mistkelp_remedy_kit,,,,formal
+item_tidefold_bulwark,叠潮护舷,"relic, vehicle",2,bronze,bronze,5,2,7,false,0,0,skill_tidefold_bulwark,,,,formal
+item_tidefold_bulwark,叠潮护舷,"relic, vehicle",2,bronze,silver,8,4,6,false,0,0,skill_tidefold_bulwark,,,,formal
+item_tidefold_bulwark,叠潮护舷,"relic, vehicle",2,bronze,gold,12,6,5,false,0,0,skill_tidefold_bulwark,,,,formal
+item_tidefold_bulwark,叠潮护舷,"relic, vehicle",2,bronze,diamond,17,8,4,false,0,0,skill_tidefold_bulwark,,,,formal
+item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,bronze,6,3,8,false,0,0,skill_homeglow_beacon,,,,formal
+item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,silver,9,4,7,false,0,0,skill_homeglow_beacon,,,,formal
+item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,gold,14,7,6,false,0,0,skill_homeglow_beacon,,,,formal
+item_homeglow_beacon,归辉航标,"relic, tool",2,bronze,diamond,19,9,5,false,0,0,skill_homeglow_beacon,,,,formal

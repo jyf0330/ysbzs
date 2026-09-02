@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 16 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 17 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the integration-pending v8 runtime package while still validating every
+outside the integration-pending v9 runtime package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,16 +25,16 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 10
+CONTENT_SCHEMA_VERSION = 11
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 8
-SOURCE_CONTENT_SCHEMA_VERSION = 8
-SOURCE_RUNTIME_SCHEMA_VERSION = 6
+RUNTIME_SCHEMA_VERSION = 9
+SOURCE_CONTENT_SCHEMA_VERSION = 9
+SOURCE_RUNTIME_SCHEMA_VERSION = 7
 NEW_RUN_SCHEMA_VERSION = 1
-BATTLE_PACKAGE_SCHEMA_VERSION = 1
+BATTLE_PACKAGE_SCHEMA_VERSION = 2
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
-GENERATION_SCHEMA_VERSION = 1
+GENERATION_SCHEMA_VERSION = 2
 GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 1
@@ -44,7 +44,10 @@ PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v3"
 SCHEDULE_SCHEMA_VERSION = 3
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v6"
+GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
+GHOST_SNAPSHOT_SCHEMA_VERSION = 1
+GHOST_MATCH_SOURCE = "offline_content"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v7"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
@@ -106,8 +109,8 @@ DOMAIN_HEADERS = OrderedDict([
         "catalog_status",
     ]),
     ("53_bz_encounters.csv", [
-        "encounter_id", "name_zh", "day", "hour", "kind", "enemy_id", "reward_id",
-        "catalog_status",
+        "encounter_id", "name_zh", "day", "hour", "kind", "enemy_id", "snapshot_id",
+        "reward_id", "catalog_status",
     ]),
     ("54_bz_enemies.csv", [
         "enemy_id", "name_zh", "hero_hp", "hero_max_hp", "instance_id", "item_id",
@@ -134,6 +137,12 @@ DOMAIN_HEADERS = OrderedDict([
         "enabled", "milestone_id", "level", "required_xp", "option_id", "option_order",
         "name_zh", "description_zh", "effect_type", "amount", "item_id", "quality",
         "target_rule", "catalog_status",
+    ]),
+    ("60_bz_ghost_snapshots.csv", [
+        "schema", "schema_version", "snapshot_id", "match_source",
+        "opponent_content_revision", "hero_id", "hero_level", "hero_skill_ids",
+        "hero_hp", "hero_max_hp", "instance_id", "item_id", "quality",
+        "enchantment", "start_slot", "catalog_status",
     ]),
 ])
 
@@ -285,6 +294,16 @@ def _canonical_runtime_items(items: list[dict[str, Any]]) -> list[dict[str, Any]
     return result
 
 
+def _canonical_combat_build(build: dict[str, Any]) -> dict[str, Any]:
+    result = json.loads(json.dumps(build, ensure_ascii=False))
+    result.get("hero", {}).get("skillIds", []).sort()
+    result.get("itemInstances", []).sort(key=lambda value: value.get("instanceId", ""))
+    result.get("board", {}).get("placements", []).sort(
+        key=lambda value: (value.get("startSlot", -1), value.get("instanceId", ""))
+    )
+    return result
+
+
 def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     result = json.loads(json.dumps(bundle, ensure_ascii=False))
     result.pop("bundleHash", None)
@@ -295,10 +314,18 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
         layer.get("templateIds", []).sort()
     shop.get("layers", []).sort(key=lambda value: value.get("fromRefreshIndex", -1))
     battle = generation.get("battle", {})
+    for template in battle.get("templates", []):
+        if isinstance(template.get("enemy"), dict):
+            template["enemy"] = _canonical_combat_build(template["enemy"])
     battle.get("templates", []).sort(key=lambda value: value.get("encounterTemplateId", ""))
+    battle.get("ghostEncounters", []).sort(key=lambda value: value.get("encounterId", ""))
+    for snapshot in battle.get("ghostSnapshots", []):
+        if isinstance(snapshot.get("build"), dict):
+            snapshot["build"] = _canonical_combat_build(snapshot["build"])
+    battle.get("ghostSnapshots", []).sort(key=lambda value: value.get("snapshotId", ""))
     for layer in battle.get("layers", []):
         layer.get("pveTemplateIds", []).sort()
-        layer.get("ghostTemplateIds", []).sort()
+        layer.get("ghostEncounterIds", []).sort()
     battle.get("layers", []).sort(key=lambda value: value.get("fromDay", -1))
     schedule = result.get("scheduleConfig", {})
     schedule.get("hours", []).sort(key=lambda value: value.get("hour", -1))
@@ -419,8 +446,85 @@ def _directory(records: list[Any], id_field: str, fields: set[str], context: str
     return result
 
 
+def _validate_combat_build(
+    value: Any,
+    context: str,
+    item_profiles: set[tuple[str, str]],
+    item_widths: dict[str, int],
+    enchantment_profiles: set[tuple[str, str, str]],
+    hero_skill_ids: dict[str, set[str]] | None = None,
+) -> None:
+    build = _expect_exact_fields(value, {"hero", "board", "itemInstances"}, context)
+    if hero_skill_ids is None:
+        hero = _expect_exact_fields(build["hero"], {"hp", "maxHp"}, f"{context}:hero")
+    else:
+        hero = _expect_exact_fields(
+            build["hero"], {"heroId", "level", "skillIds", "hp", "maxHp"}, f"{context}:hero"
+        )
+        hero_id = _expect_stable_id(hero["heroId"], f"{context}:hero:heroId")
+        if hero_id not in hero_skill_ids:
+            raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_UNKNOWN:{context}:{hero_id}")
+        _expect_integer(hero["level"], f"{context}:hero:level", 1)
+        skill_ids = [
+            _expect_stable_id(skill_id, f"{context}:hero:skillIds")
+            for skill_id in _expect_list(hero["skillIds"], f"{context}:hero:skillIds")
+        ]
+        if not skill_ids or skill_ids != sorted(skill_ids) or len(skill_ids) != len(set(skill_ids)) \
+                or any(skill_id not in hero_skill_ids[hero_id] for skill_id in skill_ids):
+            raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_SKILLS_INVALID:{context}:{hero_id}")
+    hp = _expect_integer(hero["hp"], f"{context}:hero:hp", 1)
+    max_hp = _expect_integer(hero["maxHp"], f"{context}:hero:maxHp", 1)
+    if hp > max_hp:
+        raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_HP_INVALID:{context}")
+    instances = _directory(
+        _expect_list(build["itemInstances"], f"{context}:itemInstances"),
+        "instanceId",
+        {"instanceId", "itemId", "quality", "enchantment"},
+        f"{context}:itemInstances",
+    )
+    if not instances:
+        raise ExportError(f"EXECUTABLE_COMBAT_BUILD_ITEMS_REQUIRED:{context}")
+    for instance_id, instance in instances.items():
+        item_id = _expect_stable_id(instance["itemId"], f"{context}:itemInstances:{instance_id}:itemId")
+        quality = instance["quality"]
+        if (item_id, quality) not in item_profiles:
+            raise ExportError(f"EXECUTABLE_COMBAT_BUILD_ITEM_PROFILE_INVALID:{context}:{instance_id}")
+        enchantment = instance["enchantment"]
+        if not isinstance(enchantment, str) or (
+            enchantment != "" and (enchantment, item_id, quality) not in enchantment_profiles
+        ):
+            raise ExportError(f"EXECUTABLE_COMBAT_BUILD_ENCHANTMENT_INVALID:{context}:{instance_id}")
+    board = _expect_exact_fields(build["board"], {"placements"}, f"{context}:board")
+    placements = _expect_list(board["placements"], f"{context}:board:placements")
+    if len(placements) != len(instances):
+        raise ExportError(f"EXECUTABLE_COMBAT_BUILD_PLACEMENT_COVERAGE_INVALID:{context}")
+    occupied: set[int] = set()
+    placed: set[str] = set()
+    for index, value in enumerate(placements):
+        placement = _expect_exact_fields(
+            value, {"instanceId", "itemId", "startSlot"}, f"{context}:board:placements:{index}"
+        )
+        instance_id = _expect_stable_id(
+            placement["instanceId"], f"{context}:board:placements:{index}:instanceId"
+        )
+        if instance_id not in instances or instance_id in placed \
+                or placement["itemId"] != instances[instance_id]["itemId"]:
+            raise ExportError(f"EXECUTABLE_COMBAT_BUILD_PLACEMENT_REFERENCE_INVALID:{context}:{instance_id}")
+        placed.add(instance_id)
+        start_slot = _expect_integer(
+            placement["startSlot"], f"{context}:board:placements:{index}:startSlot", 0
+        )
+        width = item_widths[instances[instance_id]["itemId"]]
+        slots = set(range(start_slot, start_slot + width))
+        if start_slot + width > 10 or occupied.intersection(slots):
+            raise ExportError(f"EXECUTABLE_COMBAT_BUILD_PLACEMENT_INVALID:{context}:{instance_id}")
+        occupied.update(slots)
+    if placed != set(instances):
+        raise ExportError(f"EXECUTABLE_COMBAT_BUILD_PLACEMENT_COVERAGE_INVALID:{context}")
+
+
 def validate_package(package: Any) -> None:
-    """Validate the integration-pending v10/v8 package without accepting partial data."""
+    """Validate the integration-pending v11/v9 package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -437,12 +541,18 @@ def validate_package(package: Any) -> None:
     item_profiles: set[tuple[str, str]] = set()
     item_profile_values: dict[tuple[str, str], dict[str, Any]] = {}
     item_qualities: dict[str, list[str]] = {}
+    item_widths: dict[str, int] = {}
     item_effect_ids: set[str] = set()
     for item_index, item_value in enumerate(items):
         item = _expect_exact_fields(item_value, {
             "itemId", "slotWidth", "baseQuality", "qualityProfiles",
         }, f"items:{item_index}")
         item_id = _expect_stable_id(item["itemId"], f"items:{item_index}:itemId")
+        if item_id in item_widths:
+            raise ExportError(f"EXECUTABLE_ITEM_ID_DUPLICATE:{item_id}")
+        item_widths[item_id] = _expect_integer(item["slotWidth"], f"items:{item_id}:slotWidth", 1)
+        if item_widths[item_id] > 3:
+            raise ExportError(f"EXECUTABLE_ITEM_SLOT_WIDTH_INVALID:{item_id}")
         profiles = item["qualityProfiles"]
         if not isinstance(profiles, dict) or not profiles:
             raise ExportError(f"EXECUTABLE_ITEM_PROFILES_INVALID:{item_id}")
@@ -614,6 +724,7 @@ def validate_package(package: Any) -> None:
     heroes = _directory(_expect_list(catalogs["heroes"], "catalogs:heroes"), "heroId", {
         "heroId", "skillIds",
     }, "heroes")
+    hero_skill_ids: dict[str, set[str]] = {}
     for hero_id, hero in heroes.items():
         skill_ids = [
             _expect_stable_id(skill_id, f"heroes:{hero_id}:skillIds")
@@ -621,6 +732,7 @@ def validate_package(package: Any) -> None:
         ]
         if not skill_ids or len(skill_ids) != len(set(skill_ids)) or any(skill_id not in skills for skill_id in skill_ids):
             raise ExportError(f"EXECUTABLE_HERO_SKILL_REFERENCE_INVALID:{hero_id}")
+        hero_skill_ids[hero_id] = set(skill_ids)
     new_run = _expect_exact_fields(bundle["newRunTemplate"], {
         "schemaVersion", "stateVersion", "phase", "day", "hour", "activeNode", "seed",
         "hero", "economy", "run", "board", "stash", "itemInstances", "shop", "battle",
@@ -674,6 +786,10 @@ def validate_package(package: Any) -> None:
     generation = _expect_exact_fields(bundle["generation"], {
         "schema", "schemaVersion", "algorithmId", "shop", "battle",
     }, "generation")
+    if generation["schema"] != GENERATION_SCHEMA \
+            or generation["schemaVersion"] != GENERATION_SCHEMA_VERSION \
+            or generation["algorithmId"] != GENERATION_ALGORITHM:
+        raise ExportError("EXECUTABLE_GENERATION_IDENTITY_INVALID")
     shop = _expect_exact_fields(generation["shop"], {
         "offerCount", "templates", "layers",
     }, "generation:shop")
@@ -742,6 +858,7 @@ def validate_package(package: Any) -> None:
     )
     if not enchantments:
         raise ExportError("EXECUTABLE_ENCHANTMENT_CATALOG_REQUIRED")
+    enchantment_profiles: set[tuple[str, str, str]] = set()
     for enchantment_id, enchantment in enchantments.items():
         stall_ids = [
             _expect_stable_id(value, f"enchantments:{enchantment_id}:stallIds")
@@ -763,6 +880,7 @@ def validate_package(package: Any) -> None:
             if profile_key not in item_profiles or profile_key in profile_keys:
                 raise ExportError(f"EXECUTABLE_ENCHANTMENT_PROFILE_REFERENCE_INVALID:{enchantment_id}:{item_id}:{quality}")
             profile_keys.add(profile_key)
+            enchantment_profiles.add((enchantment_id, item_id, quality))
             _expect_integer(profile["price"], f"enchantments:{enchantment_id}:{item_id}:{quality}:price", 1)
             cooldown_delta = _expect_integer(profile["cooldownDeltaTicks"], f"enchantments:{enchantment_id}:{item_id}:{quality}:cooldownDeltaTicks")
             damage_delta = _expect_integer(profile["damageDelta"], f"enchantments:{enchantment_id}:{item_id}:{quality}:damageDelta", 0)
@@ -884,14 +1002,112 @@ def validate_package(package: Any) -> None:
         if event_hour_refs.get(event_id, set()) != set(event["hourSlots"]):
             raise ExportError(f"EXECUTABLE_EVENT_SCHEDULE_MISMATCH:{event_id}")
 
-    battle = _expect_exact_fields(generation["battle"], {"templates", "layers"}, "generation:battle")
-    for template in _expect_list(battle.get("templates"), "generation:battle:templates"):
-        record = _expect_exact_fields(template, {"encounterTemplateId", "rewardId", "enemy"}, "battleTemplate")
-        _expect_stable_id(record["encounterTemplateId"], "battleTemplate:encounterTemplateId")
-        reward_id = _expect_stable_id(record["rewardId"], "battleTemplate:rewardId")
+    battle = _expect_exact_fields(
+        generation["battle"], {"templates", "ghostEncounters", "ghostSnapshots", "layers"},
+        "generation:battle"
+    )
+    ghost_snapshots = _directory(
+        _expect_list(battle["ghostSnapshots"], "generation:battle:ghostSnapshots"),
+        "snapshotId",
+        {
+            "schema", "schemaVersion", "snapshotId", "matchSource",
+            "opponentContentRevision", "buildHash", "build",
+        },
+        "ghostSnapshots",
+    )
+    for snapshot_id, snapshot in ghost_snapshots.items():
+        if snapshot["schema"] != GHOST_SNAPSHOT_SCHEMA \
+                or snapshot["schemaVersion"] != GHOST_SNAPSHOT_SCHEMA_VERSION \
+                or snapshot["matchSource"] != GHOST_MATCH_SOURCE \
+                or snapshot["opponentContentRevision"] != root["contentRevision"]:
+            raise ExportError(f"EXECUTABLE_GHOST_SNAPSHOT_IDENTITY_INVALID:{snapshot_id}")
+        _validate_combat_build(
+            snapshot["build"], f"ghostSnapshots:{snapshot_id}:build",
+            item_profiles, item_widths, enchantment_profiles, hero_skill_ids,
+        )
+        expected_build_hash = hashlib.sha256(
+            _canonical_json(_canonical_combat_build(snapshot["build"])).encode("utf-8")
+        ).hexdigest()
+        if snapshot["buildHash"] != expected_build_hash:
+            raise ExportError(f"EXECUTABLE_GHOST_SNAPSHOT_HASH_INVALID:{snapshot_id}")
+
+    battle_templates = _directory(
+        _expect_list(battle.get("templates"), "generation:battle:templates"),
+        "encounterTemplateId",
+        {"encounterTemplateId", "rewardId", "enemy"},
+        "battleTemplates",
+    )
+    pve_template_ids = set(battle_templates)
+    for template_id, record in battle_templates.items():
+        template_id = _expect_stable_id(
+            record["encounterTemplateId"], f"battleTemplate:{template_id}:encounterTemplateId"
+        )
+        reward_id = _expect_stable_id(record["rewardId"], f"battleTemplate:{template_id}:rewardId")
         if reward_id not in rewards:
             raise ExportError(f"EXECUTABLE_BATTLE_REWARD_INVALID:{reward_id}")
         referenced_rewards.add(reward_id)
+        _validate_combat_build(
+            record["enemy"], f"battleTemplate:{template_id}:enemy",
+            item_profiles, item_widths, enchantment_profiles,
+        )
+
+    ghost_encounters = _directory(
+        _expect_list(battle.get("ghostEncounters"), "generation:battle:ghostEncounters"),
+        "encounterId",
+        {"encounterId", "rewardId", "snapshotId"},
+        "ghostEncounters",
+    )
+    if pve_template_ids.intersection(ghost_encounters):
+        raise ExportError("EXECUTABLE_BATTLE_ENCOUNTER_KIND_OWNERSHIP_INVALID")
+    referenced_snapshot_ids: set[str] = set()
+    for encounter_id, encounter in ghost_encounters.items():
+        reward_id = _expect_stable_id(
+            encounter["rewardId"], f"ghostEncounter:{encounter_id}:rewardId"
+        )
+        if reward_id not in rewards:
+            raise ExportError(f"EXECUTABLE_GHOST_ENCOUNTER_REWARD_INVALID:{encounter_id}")
+        referenced_rewards.add(reward_id)
+        snapshot_id = _expect_stable_id(
+            encounter["snapshotId"], f"ghostEncounter:{encounter_id}:snapshotId"
+        )
+        if snapshot_id not in ghost_snapshots:
+            raise ExportError(f"EXECUTABLE_GHOST_SNAPSHOT_REFERENCE_INVALID:{encounter_id}")
+        if snapshot_id in referenced_snapshot_ids:
+            raise ExportError(f"EXECUTABLE_GHOST_SNAPSHOT_REFERENCE_DUPLICATE:{snapshot_id}")
+        referenced_snapshot_ids.add(snapshot_id)
+    if referenced_snapshot_ids != set(ghost_snapshots):
+        raise ExportError("EXECUTABLE_GHOST_SNAPSHOT_REFERENCE_COVERAGE_INVALID")
+
+    layer_pve_refs: set[str] = set()
+    layer_ghost_refs: set[str] = set()
+    layers = _expect_list(battle.get("layers"), "generation:battle:layers")
+    for layer_index, layer_value in enumerate(layers):
+        layer = _expect_exact_fields(layer_value, {
+            "fromDay", "toDay", "pveTemplateIds", "ghostEncounterIds",
+        }, f"battleLayer:{layer_index}")
+        day = _expect_integer(layer["fromDay"], f"battleLayer:{layer_index}:fromDay", 1)
+        if day != layer_index + 1 or layer["toDay"] != (None if layer_index == len(layers) - 1 else day):
+            raise ExportError(f"EXECUTABLE_BATTLE_LAYER_RANGE_INVALID:{day}")
+        pve_refs = [
+            _expect_stable_id(value, f"battleLayer:{day}:pveTemplateIds")
+            for value in _expect_list(layer["pveTemplateIds"], f"battleLayer:{day}:pveTemplateIds")
+        ]
+        ghost_refs = [
+            _expect_stable_id(value, f"battleLayer:{day}:ghostEncounterIds")
+            for value in _expect_list(layer["ghostEncounterIds"], f"battleLayer:{day}:ghostEncounterIds")
+        ]
+        if not pve_refs or len(pve_refs) != len(set(pve_refs)) \
+                or any(value not in pve_template_ids for value in pve_refs) \
+                or layer_pve_refs.intersection(pve_refs):
+            raise ExportError(f"EXECUTABLE_BATTLE_LAYER_PVE_INVALID:{day}")
+        if not ghost_refs or len(ghost_refs) != len(set(ghost_refs)) \
+                or any(value not in ghost_encounters for value in ghost_refs) \
+                or layer_ghost_refs.intersection(ghost_refs):
+            raise ExportError(f"EXECUTABLE_BATTLE_LAYER_GHOST_INVALID:{day}")
+        layer_pve_refs.update(pve_refs)
+        layer_ghost_refs.update(ghost_refs)
+    if layer_pve_refs != pve_template_ids or layer_ghost_refs != set(ghost_encounters):
+        raise ExportError("EXECUTABLE_BATTLE_LAYER_TEMPLATE_COVERAGE_INVALID")
     if referenced_rewards != set(rewards):
         raise ExportError("EXECUTABLE_REWARD_REFERENCE_COVERAGE_INVALID")
 
@@ -924,7 +1140,8 @@ class ContentAssembler:
         schedule, identity = self._gameplay(source_revision, node_ids)
         if source_refresh_max != identity["refreshPackageMax"]:
             raise ExportError("STALL_REFRESH_DECLARED_COVERAGE_INVALID")
-        battle_generation = self._encounters(rewards, identity["runDayMax"])
+        ghost_snapshots = self._ghost_snapshots(identity["contentRevision"], hero, skills)
+        battle_generation = self._encounters(rewards, identity["runDayMax"], ghost_snapshots)
         new_run = self._new_run(hero, starters)
         self._validate_player_profile_reachability(
             starters, shop_generation, rewards, progression_rules, upgrades
@@ -1677,8 +1894,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 16-domain workbook is the finite v8 candidate source.
-            # This adapter is its explicit one-way projection into executable v10.
+            # The current 17-domain workbook is the finite v9 candidate source.
+            # This adapter is its explicit one-way projection into executable v11.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -1797,10 +2014,109 @@ class ContentAssembler:
             },
         }, identity
 
+    def _ghost_snapshots(
+        self,
+        content_revision: str,
+        hero: dict[str, Any],
+        skills: dict[str, dict[str, Any]],
+    ) -> dict[str, dict[str, Any]]:
+        filename = "60_bz_ghost_snapshots.csv"
+        grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
+        global_instances: set[str] = set()
+        for row in self.tables[filename]:
+            _formal(filename, row)
+            snapshot_id = _require_id(filename, row, "snapshot_id")
+            grouped[snapshot_id].append(row)
+        snapshots: dict[str, dict[str, Any]] = {}
+        for snapshot_id in sorted(grouped):
+            rows = grouped[snapshot_id]
+            if _same(rows, filename, "schema") != GHOST_SNAPSHOT_SCHEMA \
+                    or _same(rows, filename, "schema_version") != str(GHOST_SNAPSHOT_SCHEMA_VERSION):
+                raise ExportError(f"GHOST_SNAPSHOT_SCHEMA_INVALID:{snapshot_id}")
+            if _same(rows, filename, "match_source") != GHOST_MATCH_SOURCE:
+                raise ExportError(f"GHOST_SNAPSHOT_MATCH_SOURCE_INVALID:{snapshot_id}")
+            if _same(rows, filename, "opponent_content_revision") != content_revision:
+                raise ExportError(f"GHOST_SNAPSHOT_CONTENT_REVISION_INVALID:{snapshot_id}")
+            hero_id = _same(rows, filename, "hero_id")
+            if hero_id != hero["heroId"]:
+                raise ExportError(f"GHOST_SNAPSHOT_HERO_UNKNOWN:{snapshot_id}:{hero_id}")
+            hero_level_text = _same(rows, filename, "hero_level")
+            if not INTEGER_RE.fullmatch(hero_level_text) or int(hero_level_text) < 1:
+                raise ExportError(f"GHOST_SNAPSHOT_HERO_LEVEL_INVALID:{snapshot_id}")
+            hero_skill_ids = sorted(_ids(filename, rows[0], "hero_skill_ids"))
+            for row in rows[1:]:
+                if sorted(_ids(filename, row, "hero_skill_ids")) != hero_skill_ids:
+                    raise ExportError(f"GHOST_SNAPSHOT_HERO_SKILLS_INCONSISTENT:{snapshot_id}")
+            if not hero_skill_ids or any(skill_id not in skills for skill_id in hero_skill_ids) \
+                    or any(skill_id not in hero["skillIds"] for skill_id in hero_skill_ids):
+                raise ExportError(f"GHOST_SNAPSHOT_HERO_SKILLS_INVALID:{snapshot_id}")
+            hero_hp_text = _same(rows, filename, "hero_hp")
+            hero_max_text = _same(rows, filename, "hero_max_hp")
+            if not INTEGER_RE.fullmatch(hero_hp_text) or not INTEGER_RE.fullmatch(hero_max_text):
+                raise ExportError(f"GHOST_SNAPSHOT_HERO_HP_INVALID:{snapshot_id}")
+            hero_hp, hero_max = int(hero_hp_text), int(hero_max_text)
+            if hero_hp <= 0 or hero_max <= 0 or hero_hp > hero_max:
+                raise ExportError(f"GHOST_SNAPSHOT_HERO_HP_INVALID:{snapshot_id}")
+            instances: list[dict[str, Any]] = []
+            for row in rows:
+                instance_id = _require_id(filename, row, "instance_id")
+                if instance_id in global_instances:
+                    raise ExportError(f"GHOST_SNAPSHOT_INSTANCE_ID_DUPLICATE:{instance_id}")
+                global_instances.add(instance_id)
+                item_id = _require_id(filename, row, "item_id")
+                quality = _require_text(filename, row, "quality")
+                if (item_id, quality) not in self.item_profiles:
+                    raise ExportError(f"GHOST_SNAPSHOT_ITEM_QUALITY_UNKNOWN:{snapshot_id}:{instance_id}")
+                enchantment = row.get("enchantment", "")
+                if enchantment != "":
+                    raise ExportError(f"GHOST_SNAPSHOT_ENCHANTMENT_UNSUPPORTED:{snapshot_id}:{instance_id}")
+                instances.append({
+                    "instanceId": instance_id,
+                    "itemId": item_id,
+                    "quality": quality,
+                    "enchantment": enchantment,
+                    "location": "board",
+                    "startSlot": _integer(filename, row, "start_slot", 0),
+                })
+            instances.sort(key=lambda value: (value["startSlot"], value["instanceId"]))
+            self._validate_placements(instances, f"GHOST_SNAPSHOT:{snapshot_id}")
+            build = {
+                "hero": {
+                    "heroId": hero_id,
+                    "level": int(hero_level_text),
+                    "skillIds": hero_skill_ids,
+                    "hp": hero_hp,
+                    "maxHp": hero_max,
+                },
+                "board": {"placements": [
+                    {"instanceId": item["instanceId"], "itemId": item["itemId"], "startSlot": item["startSlot"]}
+                    for item in instances
+                ]},
+                "itemInstances": [
+                    {key: item[key] for key in ["instanceId", "itemId", "quality", "enchantment"]}
+                    for item in instances
+                ],
+            }
+            snapshots[snapshot_id] = {
+                "schema": GHOST_SNAPSHOT_SCHEMA,
+                "schemaVersion": GHOST_SNAPSHOT_SCHEMA_VERSION,
+                "snapshotId": snapshot_id,
+                "matchSource": GHOST_MATCH_SOURCE,
+                "opponentContentRevision": content_revision,
+                "buildHash": hashlib.sha256(
+                    _canonical_json(_canonical_combat_build(build)).encode("utf-8")
+                ).hexdigest(),
+                "build": build,
+            }
+        if not snapshots:
+            raise ExportError("GHOST_SNAPSHOT_CATALOG_REQUIRED")
+        return snapshots
+
     def _encounters(
         self,
         rewards: dict[str, dict[str, Any]],
         run_day_max: int,
+        ghost_snapshots: dict[str, dict[str, Any]],
     ) -> dict[str, Any]:
         encounter_file = "53_bz_encounters.csv"
         enemy_file = "54_bz_enemies.csv"
@@ -1858,6 +2174,7 @@ class ContentAssembler:
             }
         encounter_rows = _unique(self.tables[encounter_file], encounter_file, "encounter_id")
         templates = []
+        ghost_encounters = []
         layer_references: dict[int, dict[str, list[str]]] = defaultdict(lambda: {"pve": [], "ghost": []})
         seen_keys: set[tuple[int, int, str]] = set()
         for encounter_id, row in encounter_rows.items():
@@ -1872,17 +2189,32 @@ class ContentAssembler:
             if key in seen_keys:
                 raise ExportError(f"ENCOUNTER_SLOT_DUPLICATE:{day}:{hour}:{kind}")
             seen_keys.add(key)
-            enemy_id = _require_id(encounter_file, row, "enemy_id")
-            if enemy_id not in enemies:
-                raise ExportError(f"ENCOUNTER_ENEMY_UNKNOWN:{encounter_id}")
+            enemy_id = row.get("enemy_id", "")
+            snapshot_id = row.get("snapshot_id", "")
+            if kind == "pve":
+                if not STABLE_ID_RE.fullmatch(enemy_id) or snapshot_id != "":
+                    raise ExportError(f"ENCOUNTER_PVE_REFERENCE_INVALID:{encounter_id}")
+                if enemy_id not in enemies:
+                    raise ExportError(f"ENCOUNTER_ENEMY_UNKNOWN:{encounter_id}")
+            elif not STABLE_ID_RE.fullmatch(snapshot_id) or enemy_id != "":
+                raise ExportError(f"ENCOUNTER_GHOST_REFERENCE_INVALID:{encounter_id}")
+            elif snapshot_id not in ghost_snapshots:
+                raise ExportError(f"ENCOUNTER_GHOST_SNAPSHOT_UNKNOWN:{encounter_id}")
             reward_id = _require_id(encounter_file, row, "reward_id")
             if reward_id not in rewards:
                 raise ExportError(f"ENCOUNTER_REWARD_UNKNOWN:{encounter_id}")
-            templates.append({
-                "encounterTemplateId": encounter_id,
-                "rewardId": reward_id,
-                "enemy": enemies[enemy_id],
-            })
+            if kind == "pve":
+                templates.append({
+                    "encounterTemplateId": encounter_id,
+                    "rewardId": reward_id,
+                    "enemy": enemies[enemy_id],
+                })
+            else:
+                ghost_encounters.append({
+                    "encounterId": encounter_id,
+                    "rewardId": reward_id,
+                    "snapshotId": snapshot_id,
+                })
             layer_references[day][kind].append(encounter_id)
         required_keys = {
             (day, hour, "pve" if hour == 3 else "ghost")
@@ -1891,7 +2223,18 @@ class ContentAssembler:
         }
         if seen_keys != required_keys:
             raise ExportError("BOOTSTRAP_ENCOUNTER_COVERAGE_INVALID")
+        referenced_enemy_ids = {
+            row["enemy_id"] for row in encounter_rows.values() if row.get("kind") == "pve"
+        }
+        if referenced_enemy_ids != set(enemies):
+            raise ExportError("ENCOUNTER_ENEMY_REFERENCE_COVERAGE_INVALID")
+        referenced_snapshot_ids = {
+            row["snapshot_id"] for row in encounter_rows.values() if row.get("kind") == "ghost"
+        }
+        if referenced_snapshot_ids != set(ghost_snapshots):
+            raise ExportError("ENCOUNTER_GHOST_SNAPSHOT_COVERAGE_INVALID")
         templates.sort(key=lambda value: value["encounterTemplateId"])
+        ghost_encounters.sort(key=lambda value: value["encounterId"])
         layers = []
         for day in range(1, run_day_max + 1):
             pve_ids = sorted(layer_references[day]["pve"])
@@ -1902,9 +2245,14 @@ class ContentAssembler:
                 "fromDay": day,
                 "toDay": None if day == run_day_max else day,
                 "pveTemplateIds": pve_ids,
-                "ghostTemplateIds": ghost_ids,
+                "ghostEncounterIds": ghost_ids,
             })
-        return {"templates": templates, "layers": layers}
+        return {
+            "templates": templates,
+            "ghostEncounters": ghost_encounters,
+            "layers": layers,
+            "ghostSnapshots": [ghost_snapshots[snapshot_id] for snapshot_id in sorted(ghost_snapshots)],
+        }
 
     def _new_run(self, hero: dict[str, Any], starters: list[dict[str, Any]]) -> dict[str, Any]:
         # v5 makes executableCatalogs the sole owner of hero -> skill bindings.
@@ -2019,7 +2367,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v10 runtime and display candidates from 16 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v11 runtime and display candidates from 17 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -2034,10 +2382,12 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v10 integration-pending candidate "
+            "PASS original-pirate v11 integration-pending candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
+            f"ghostEncounters={len(package['runtimeBundle']['generation']['battle']['ghostEncounters'])} "
+            f"ghostSnapshots={len(package['runtimeBundle']['generation']['battle']['ghostSnapshots'])} "
             f"displayEntries={len(display['entries'])} "
             f"revision={package['contentRevision']}"
         )
@@ -2045,7 +2395,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v10 integration-pending candidate to {output}")
+        print(f"exported original-pirate v11 integration-pending candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

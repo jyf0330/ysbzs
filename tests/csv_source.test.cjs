@@ -318,6 +318,8 @@ assert visible == [
     'BZ_GAMEPLAY', 'BZ_HEROES', 'BZ_ITEMS', 'BZ_ITEM_EFFECTS', 'BZ_SKILLS',
     'BZ_STALLS', 'BZ_STALL_OFFERS', 'BZ_EVENTS', 'BZ_EVENT_OPTIONS',
     'BZ_ENCOUNTERS', 'BZ_ENEMIES', 'BZ_REWARDS', 'BZ_SOURCE_SNAPSHOT',
+    'BZ_ITEM_UPGRADES', 'BZ_ENCHANTMENTS', 'BZ_LEVEL_UP_CHOICES',
+    'BZ_GHOST_SNAPSHOTS',
 ], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]

@@ -17,7 +17,7 @@ const domainFiles = [
   '50_bz_stall_offers.csv', '51_bz_events.csv', '52_bz_event_options.csv',
   '53_bz_encounters.csv', '54_bz_enemies.csv', '55_bz_rewards.csv',
   '56_bz_source_snapshot.csv', '57_bz_item_upgrades.csv', '58_bz_enchantments.csv',
-  '59_bz_level_up_choices.csv',
+  '59_bz_level_up_choices.csv', '60_bz_ghost_snapshots.csv',
 ];
 const sheets = domainFiles.map((name) => `BZ_${name.replace(/^\d+_bz_|\.csv$/g, '').toUpperCase()}`);
 
@@ -40,6 +40,19 @@ function canonicalJson(value) {
 
 const stableIdCompare = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
+function canonicalCombatBuild(build) {
+  const result = structuredClone(build);
+  if (result.hero.skillIds) result.hero.skillIds.sort();
+  result.itemInstances.sort((left, right) => stableIdCompare(left.instanceId, right.instanceId));
+  result.board.placements.sort((left, right) => (left.startSlot - right.startSlot)
+    || stableIdCompare(left.instanceId, right.instanceId));
+  return result;
+}
+
+function expectedBuildHash(build) {
+  return crypto.createHash('sha256').update(canonicalJson(canonicalCombatBuild(build))).digest('hex');
+}
+
 function expectedBundleHash(content) {
   const bundle = structuredClone(content.runtimeBundle);
   delete bundle.bundleHash;
@@ -53,10 +66,16 @@ function expectedBundleHash(content) {
   bundle.generation.shop.templates.sort((left, right) => stableIdCompare(left.offerTemplateId, right.offerTemplateId));
   for (const layer of bundle.generation.shop.layers) layer.templateIds.sort();
   bundle.generation.shop.layers.sort((left, right) => left.fromRefreshIndex - right.fromRefreshIndex);
+  for (const template of bundle.generation.battle.templates) {
+    if (template.enemy) template.enemy = canonicalCombatBuild(template.enemy);
+  }
   bundle.generation.battle.templates.sort((left, right) => stableIdCompare(left.encounterTemplateId, right.encounterTemplateId));
+  bundle.generation.battle.ghostEncounters.sort((left, right) => stableIdCompare(left.encounterId, right.encounterId));
+  for (const snapshot of bundle.generation.battle.ghostSnapshots) snapshot.build = canonicalCombatBuild(snapshot.build);
+  bundle.generation.battle.ghostSnapshots.sort((left, right) => stableIdCompare(left.snapshotId, right.snapshotId));
   for (const layer of bundle.generation.battle.layers) {
     layer.pveTemplateIds.sort();
-    layer.ghostTemplateIds.sort();
+    layer.ghostEncounterIds.sort();
   }
   bundle.generation.battle.layers.sort((left, right) => left.fromDay - right.fromDay);
   bundle.scheduleConfig.hours.sort((left, right) => left.hour - right.hour);
@@ -177,7 +196,7 @@ function reverseDataRows(dir, file) {
   fs.writeFileSync(target, encodeCsv([rows[0], ...rows.slice(1).reverse()]), 'utf8');
 }
 
-test('OPC01 workbook 的 16 个 BZ 页与 44..59 CSV 可逐字重建', () => {
+test('OPC01 workbook 的 17 个 BZ 页与 44..60 CSV 可逐字重建', () => {
   const code = `
 import csv, json, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(sys.argv[5]) / 'tools'))
@@ -198,7 +217,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v10/v8 正式跨日收入、升级三选一、终局压力与中文 sidecar 确定且 hash 兼容', () => {
+test('OPC02 v11/v9 正式 Ghost 快照、跨日收入、升级三选一与终局压力确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -215,13 +234,13 @@ test('OPC02 v10/v8 正式跨日收入、升级三选一、终局压力与中文 
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 10);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v6');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v7');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v7');
+  assert.equal(content.schemaVersion, 11);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v7');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v8');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v8');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 8);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v7');
+  assert.equal(content.runtimeBundle.schemaVersion, 9);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v8');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -287,7 +306,7 @@ test('OPC02 v10/v8 正式跨日收入、升级三选一、终局压力与中文 
   assert.equal('levelThresholds' in content.runtimeBundle.scheduleConfig, false);
   const generation = content.runtimeBundle.generation;
   assert.deepEqual([generation.schema, generation.schemaVersion, generation.algorithmId], [
-    'ysbzs.original-pirate-generation.v1', 1, 'sha256-ranked-selection-v1',
+    'ysbzs.original-pirate-generation.v1', 2, 'sha256-ranked-selection-v1',
   ]);
   assert.equal(generation.shop.offerCount, 3);
   assert.equal(generation.shop.templates.length, 33);
@@ -304,14 +323,41 @@ test('OPC02 v10/v8 正式跨日收入、升级三选一、终局压力与中文 
   assert.equal(generation.shop.templates.some((template) => 'price' in template || 'frozen' in template), false);
   const generatedSource = generation.shop.templates.find(({ offerTemplateId }) => offerTemplateId === 'offer_initial_signal_flare');
   assert.equal(content.items.find(({ itemId }) => itemId === generatedSource.itemId).qualityProfiles[generatedSource.quality].buyPrice, 6);
-  assert.equal(generation.battle.templates.length, 20);
-  assert.equal(generation.battle.templates.every(({ rewardId }) => ['reward_pve_patrol', 'reward_ghost_skirmish'].includes(rewardId)), true);
+  assert.deepEqual(Object.keys(generation.battle).sort(), [
+    'ghostEncounters', 'ghostSnapshots', 'layers', 'templates',
+  ]);
+  assert.equal(generation.battle.templates.length, 10);
+  assert.equal(generation.battle.templates.every(({ rewardId }) => rewardId === 'reward_pve_patrol'), true);
+  assert.equal(generation.battle.templates.every((template) => (
+    assert.deepEqual(Object.keys(template).sort(), ['encounterTemplateId', 'enemy', 'rewardId']), true
+  )), true);
+  assert.equal(generation.battle.ghostEncounters.length, 10);
+  assert.equal(generation.battle.ghostEncounters.every((encounter) => (
+    assert.deepEqual(Object.keys(encounter).sort(), ['encounterId', 'rewardId', 'snapshotId']),
+    encounter.rewardId === 'reward_ghost_skirmish'
+  )), true);
+  assert.equal(generation.battle.ghostSnapshots.length, 10);
+  const ghostSnapshot = generation.battle.ghostSnapshots[0];
+  assert.deepEqual(Object.keys(ghostSnapshot).sort(), [
+    'build', 'buildHash', 'matchSource', 'opponentContentRevision', 'schema', 'schemaVersion', 'snapshotId',
+  ].sort());
+  assert.deepEqual([ghostSnapshot.schema, ghostSnapshot.schemaVersion, ghostSnapshot.matchSource], [
+    'ysbzs.original-pirate-ghost-snapshot.v1', 1, 'offline_content',
+  ]);
+  assert.equal(ghostSnapshot.opponentContentRevision, content.contentRevision);
+  assert.equal(ghostSnapshot.buildHash, expectedBuildHash(ghostSnapshot.build));
+  assert.deepEqual(Object.keys(ghostSnapshot.build).sort(), ['board', 'hero', 'itemInstances']);
+  assert.deepEqual(Object.keys(ghostSnapshot.build.hero).sort(), ['heroId', 'hp', 'level', 'maxHp', 'skillIds']);
+  assert.deepEqual(ghostSnapshot.build.hero.skillIds, ['skill_brine_cannon', 'skill_patchwork_ram']);
+  assert.equal(generation.battle.ghostEncounters.find(({ encounterId }) => (
+    encounterId === 'encounter_day_01_mirror_skiff'
+  )).snapshotId, ghostSnapshot.snapshotId);
   assert.equal(generation.battle.layers.length, 10);
   assert.deepEqual(generation.battle.layers.at(-1), {
     fromDay: 10,
     toDay: null,
     pveTemplateIds: ['encounter_day_10_breakwater_patrol'],
-    ghostTemplateIds: ['encounter_day_10_mirror_skiff'],
+    ghostEncounterIds: ['encounter_day_10_mirror_skiff'],
   });
   assert.equal('maxDay' in generation.battle || 'maxRefreshIndex' in generation.shop, false);
   const catalogs = content.runtimeBundle.executableCatalogs;
@@ -380,9 +426,9 @@ test('OPC02 v10/v8 正式跨日收入、升级三选一、终局压力与中文 
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 1);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v7');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v7');
-  assert.equal(display.entries.length, 68);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v8');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v8');
+  assert.equal(display.entries.length, 67);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -411,6 +457,18 @@ test('OPC03 缺关系、成长选项、品质、数量、target rule 或遭遇�
     ['status', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 14, 'status', 'burn')],
     ['effect-target-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 6, 'target_type', 'first_enemy_item')],
     ['encounter', (dir) => mutateCell(dir, '53_bz_encounters.csv', 1, 'enemy_id', '')],
+    ['ghost-encounter-enemy-mixed', (dir) => mutateCell(dir, '53_bz_encounters.csv', 2, 'enemy_id', 'enemy_breakwater_raider')],
+    ['ghost-encounter-snapshot-missing', (dir) => mutateCell(dir, '53_bz_encounters.csv', 2, 'snapshot_id', '')],
+    ['pve-encounter-snapshot-mixed', (dir) => mutateCell(dir, '53_bz_encounters.csv', 1, 'snapshot_id', 'ghost_snapshot_day_01')],
+    ['ghost-snapshot-schema', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'schema_version', '2')],
+    ['ghost-snapshot-source', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'match_source', 'fixture')],
+    ['ghost-snapshot-content-revision', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'opponent_content_revision', 'stale')],
+    ['ghost-snapshot-hero-unknown', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'hero_id', 'hero_missing')],
+    ['ghost-snapshot-hero-level', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'hero_level', '0')],
+    ['ghost-snapshot-hero-skill-unknown', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'hero_skill_ids', 'skill_missing')],
+    ['ghost-snapshot-hero-skill-drift', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 2, 'hero_skill_ids', 'skill_brine_cannon')],
+    ['ghost-snapshot-item', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 1, 'item_id', 'item_missing')],
+    ['ghost-snapshot-instance-duplicate', (dir) => mutateCell(dir, '60_bz_ghost_snapshots.csv', 2, 'instance_id', 'ghost_d01_ram')],
     ['relation', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_missing')],
     ['retired-level-placeholder-as-event', (dir) => mutateCell(dir, '52_bz_event_options.csv', 1, 'reward_id', 'reward_level_2')],
     ['display-description', (dir) => mutateCell(dir, '51_bz_events.csv', 1, 'description_zh', '')],
@@ -492,7 +550,7 @@ test('OPC04 缺任一声明刷新层或日程战斗槽时整包拒绝', () => {
   assert.equal(fs.existsSync(battleOut), false);
 });
 
-test('OPC05 16 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
+test('OPC05 17 域行重排不改变 canonical runtime、hash 或 display sidecar', () => {
   const baselineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-canonical-baseline-'));
   const baselineOut = path.join(baselineDir, 'content.json');
   const baselineDisplay = path.join(baselineDir, 'display.json');
@@ -508,8 +566,8 @@ test('OPC05 16 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v10/v8 forged progression、schedule、catalog 或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v10-forgery-'));
+test('OPC06 v11/v9 forged Ghost、progression、schedule、catalog 或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v11-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -599,13 +657,58 @@ test('OPC06 v10/v8 forged progression、schedule、catalog 或 hash 整包拒绝
     }],
     ['active-node-forged', (value) => { value.runtimeBundle.newRunTemplate.activeNode = { nodeId: 'event_driftwood_cache', kind: 'event', rewardId: '' }; }],
     ['battle-reward-unknown', (value) => { value.runtimeBundle.generation.battle.templates[0].rewardId = 'reward_missing'; }],
+    ['ghost-snapshots-missing', (value) => { delete value.runtimeBundle.generation.battle.ghostSnapshots; }],
+    ['ghost-snapshot-extra-field', (value) => { value.runtimeBundle.generation.battle.ghostSnapshots[0].capturedAt = 'forged'; }],
+    ['ghost-snapshot-source-forged', (value) => { value.runtimeBundle.generation.battle.ghostSnapshots[0].matchSource = 'fixture'; }],
+    ['ghost-snapshot-revision-forged', (value) => { value.runtimeBundle.generation.battle.ghostSnapshots[0].opponentContentRevision = 'stale'; }],
+    ['ghost-snapshot-build-extra-field', (value) => { value.runtimeBundle.generation.battle.ghostSnapshots[0].build.stash = []; }],
+    ['ghost-snapshot-build-hash-forged', (value) => { value.runtimeBundle.generation.battle.ghostSnapshots[0].buildHash = '0'.repeat(64); }],
+    ['ghost-snapshot-hero-extra-field', (value) => {
+      const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
+      snapshot.build.hero.prestige = 20;
+      snapshot.buildHash = expectedBuildHash(snapshot.build);
+    }],
+    ['ghost-snapshot-hero-unknown', (value) => {
+      const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
+      snapshot.build.hero.heroId = 'hero_missing';
+      snapshot.buildHash = expectedBuildHash(snapshot.build);
+    }],
+    ['ghost-snapshot-hero-level-zero', (value) => {
+      const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
+      snapshot.build.hero.level = 0;
+      snapshot.buildHash = expectedBuildHash(snapshot.build);
+    }],
+    ['ghost-snapshot-hero-skill-unknown', (value) => {
+      const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
+      snapshot.build.hero.skillIds = ['skill_missing'];
+      snapshot.buildHash = expectedBuildHash(snapshot.build);
+    }],
+    ['ghost-snapshot-hero-skills-unsorted', (value) => {
+      const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
+      snapshot.build.hero.skillIds.reverse();
+      snapshot.buildHash = expectedBuildHash(snapshot.build);
+    }],
+    ['ghost-encounter-mixed-authority', (value) => {
+      value.runtimeBundle.generation.battle.ghostEncounters[0].enemy = structuredClone(
+        value.runtimeBundle.generation.battle.templates[0].enemy,
+      );
+    }],
+    ['ghost-encounter-snapshot-unknown', (value) => {
+      value.runtimeBundle.generation.battle.ghostEncounters[0].snapshotId = 'ghost_snapshot_missing';
+    }],
+    ['ghost-encounter-snapshot-reused', (value) => {
+      value.runtimeBundle.generation.battle.ghostEncounters[1].snapshotId = value.runtimeBundle.generation.battle.ghostEncounters[0].snapshotId;
+    }],
+    ['ghost-layer-uses-pve-template', (value) => {
+      value.runtimeBundle.generation.battle.layers[0].ghostEncounterIds = [value.runtimeBundle.generation.battle.layers[0].pveTemplateIds[0]];
+    }],
     ['hero-skill-double-authority', (value) => { value.runtimeBundle.newRunTemplate.hero.skillIds = ['skill_brine_cannon']; }],
     ['hash-forged', (value) => { value.runtimeBundle.bundleHash = '0'.repeat(64); }],
   ];
   for (const [name, mutate] of cases) {
     const forged = structuredClone(content);
     mutate(forged);
-    if (!['hash-forged', 'progression-rules-missing'].includes(name)) {
+    if (!['hash-forged', 'progression-rules-missing', 'ghost-snapshots-missing'].includes(name)) {
       forged.runtimeBundle.bundleHash = expectedBundleHash(forged);
     }
     const target = path.join(dir, `${name}.json`);

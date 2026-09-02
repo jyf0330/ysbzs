@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-02，由 `2026-09-02_original_pirate_content_domains` 收口。
+最后刷新：2026-09-02，由 `2026-09-02_original_pirate_terminal_pressure` 收口。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-02_original_pirate_terminal_pressure.md` — data contract: 将正式终局压力从 BZ_GAMEPLAY 投影到 root v8/runtimeBundle v6，并以 exact schema、完整 hash 与 forged vectors fail-closed。
 
 - `tasks/done/2026-09-02_original_pirate_content_domains.md` — data: 建立原创海盗 13 域 workbook/CSV 真相链，导出 open-ended generation.v1 与独立中文显示目录。
 

@@ -160,6 +160,15 @@ function mutateCell(dir, file, rowIndex, field, value) {
   fs.writeFileSync(target, encodeCsv(rows), 'utf8');
 }
 
+function mutateColumn(dir, file, field, value) {
+  const target = path.join(dir, file);
+  const rows = parseCsv(fs.readFileSync(target, 'utf8').replace(/^\uFEFF/, ''));
+  const column = rows[0].indexOf(field);
+  assert.notEqual(column, -1, `${file}.${field}`);
+  for (const row of rows.slice(1)) row[column] = value;
+  fs.writeFileSync(target, encodeCsv(rows), 'utf8');
+}
+
 function reverseDataRows(dir, file) {
   const target = path.join(dir, file);
   const rows = parseCsv(fs.readFileSync(target, 'utf8').replace(/^\uFEFF/, ''));
@@ -187,7 +196,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v7/v5 正式时间状态、升阶附魔 catalogs 与中文 sidecar 确定且 hash 兼容', () => {
+test('OPC02 v8/v6 正式终局压力、升阶附魔 catalogs 与中文 sidecar 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -204,17 +213,26 @@ test('OPC02 v7/v5 正式时间状态、升阶附魔 catalogs 与中文 sidecar �
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 7);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v3');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v4');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v4');
+  assert.equal(content.schemaVersion, 8);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-02-v4');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v5');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v5');
   assert.equal(content.items.length, 6);
-  assert.equal(content.runtimeBundle.schemaVersion, 5);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v4');
+  assert.equal(content.runtimeBundle.schemaVersion, 6);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v5');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
-    'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
+    'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
   ].sort());
+  assert.deepEqual(content.runtimeBundle.battleRules, {
+    terminalPressure: {
+      enabled: true,
+      startTick: 60,
+      intervalTicks: 5,
+      initialDamage: 1,
+      incrementDamage: 1,
+    },
+  });
   assert.equal(content.runtimeBundle.newRunTemplate.phase, 'schedule');
   assert.deepEqual(content.runtimeBundle.newRunTemplate.activeNode, { nodeId: '', kind: '', rewardId: '' });
   assert.equal('skillIds' in content.runtimeBundle.newRunTemplate.hero, false);
@@ -314,8 +332,8 @@ test('OPC02 v7/v5 正式时间状态、升阶附魔 catalogs 与中文 sidecar �
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 1);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v4');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v4');
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-02-v5');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-02-v5');
   assert.equal(display.entries.length, 61);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
@@ -353,6 +371,12 @@ test('OPC03 缺关系、冷却、品质、弹药、价格、trigger、effect 或
     }],
     ['unsupported-enchantment', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'enchantment', 'fiery')],
     ['source-frozen', (dir) => mutateCell(dir, '50_bz_stall_offers.csv', 1, 'frozen', 'true')],
+    ['terminal-pressure-enabled', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_enabled', 'yes')],
+    ['terminal-pressure-disabled', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_enabled', 'false')],
+    ['terminal-pressure-start', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_start_tick', '0')],
+    ['terminal-pressure-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_interval_ticks', '')],
+    ['terminal-pressure-initial', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_initial_damage', '0')],
+    ['terminal-pressure-increment', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_increment_damage', '-1')],
   ];
   for (const [name, mutation] of cases) {
     const dir = mutateDomain(mutation);
@@ -413,13 +437,23 @@ test('OPC05 15 域行重排不改变 canonical runtime、hash 或 display sideca
   assert.equal(fs.readFileSync(reorderedDisplay, 'utf8'), fs.readFileSync(baselineDisplay, 'utf8'));
 });
 
-test('OPC06 v7/v5 forged effect、catalog、升阶、附魔、奖励或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v7-forgery-'));
+test('OPC06 v8/v6 forged battleRules、effect、catalog、升阶、附魔、奖励或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v8-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
   assert.equal(validatePackageFile(baseline).status, 0);
   const cases = [
+    ['battle-rules-missing', (value) => { delete value.runtimeBundle.battleRules; }],
+    ['battle-rules-extra-field', (value) => { value.runtimeBundle.battleRules.formula = 'forged'; }],
+    ['terminal-pressure-missing-field', (value) => { delete value.runtimeBundle.battleRules.terminalPressure.intervalTicks; }],
+    ['terminal-pressure-extra-field', (value) => { value.runtimeBundle.battleRules.terminalPressure.maxDamage = 99; }],
+    ['terminal-pressure-enabled-string', (value) => { value.runtimeBundle.battleRules.terminalPressure.enabled = 'true'; }],
+    ['terminal-pressure-disabled', (value) => { value.runtimeBundle.battleRules.terminalPressure.enabled = false; }],
+    ['terminal-pressure-start-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.startTick = 0; }],
+    ['terminal-pressure-interval-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.intervalTicks = 0; }],
+    ['terminal-pressure-initial-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.initialDamage = 0; }],
+    ['terminal-pressure-increment-negative', (value) => { value.runtimeBundle.battleRules.terminalPressure.incrementDamage = -1; }],
     ['extra-catalog-field', (value) => { value.runtimeBundle.executableCatalogs.auditText = 'not-runtime'; }],
     ['level-reward-through-event', (value) => { value.runtimeBundle.executableCatalogs.eventOptions[0].rewardId = 'reward_level_2'; }],
     ['item-reward-board-slot', (value) => { value.runtimeBundle.executableCatalogs.rewards.find(({ rewardId }) => rewardId === 'reward_signal_flare').effects[0].startSlot = 4; }],

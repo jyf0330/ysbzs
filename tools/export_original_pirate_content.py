@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the integration-pending v5 runtime package while still validating every
+outside the integration-pending v6 runtime package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 7
+CONTENT_SCHEMA_VERSION = 8
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 5
-SOURCE_CONTENT_SCHEMA_VERSION = 5
-SOURCE_RUNTIME_SCHEMA_VERSION = 3
+RUNTIME_SCHEMA_VERSION = 6
+SOURCE_CONTENT_SCHEMA_VERSION = 6
+SOURCE_RUNTIME_SCHEMA_VERSION = 4
 NEW_RUN_SCHEMA_VERSION = 1
 BATTLE_PACKAGE_SCHEMA_VERSION = 1
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -42,7 +42,7 @@ EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
 EXECUTABLE_CATALOGS_SCHEMA_VERSION = 2
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v1"
 SCHEDULE_SCHEMA_VERSION = 1
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v3"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-02-v4"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 ITEM_EFFECT_TARGETS = {"selected_enemy", "self_item", "first_enemy_item"}
 ITEM_EFFECT_OPERATIONS = {"deal_damage", "reload", "charge", "apply_status"}
@@ -59,7 +59,10 @@ DOMAIN_HEADERS = OrderedDict([
         "rules_version", "source_revision", "bundle_revision", "content_revision",
         "runtime_schema", "runtime_schema_version", "new_run_schema_version",
         "battle_package_schema_version", "schedule_schema", "schedule_schema_version",
-        "seed", "phase", "start_day", "start_hour", "board_size", "pve_win_bonus_xp",
+        "seed", "phase", "start_day", "start_hour", "board_size",
+        "terminal_pressure_enabled", "terminal_pressure_start_tick",
+        "terminal_pressure_interval_ticks", "terminal_pressure_initial_damage",
+        "terminal_pressure_increment_damage", "pve_win_bonus_xp",
         "pve_loss_prestige", "pve_draw_prestige", "ghost_loss_prestige",
         "ghost_draw_prestige", "win_target", "last_chance_enabled",
         "bootstrap_run_day_coverage", "bootstrap_refresh_package_coverage", "hour", "kind",
@@ -405,7 +408,7 @@ def _directory(records: list[Any], id_field: str, fields: set[str], context: str
 
 
 def validate_package(package: Any) -> None:
-    """Validate the integration-pending v7/v5 package without accepting partial data."""
+    """Validate the integration-pending v8/v6 package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -464,7 +467,7 @@ def validate_package(package: Any) -> None:
 
     bundle = _expect_exact_fields(root["runtimeBundle"], {
         "schema", "schemaVersion", "bundleRevision", "rulesVersion", "contentRevision",
-        "bundleHash", "newRunTemplate", "scheduleConfig", "shopRules", "generation",
+        "bundleHash", "newRunTemplate", "scheduleConfig", "shopRules", "battleRules", "generation",
         "executableCatalogs",
     }, "runtimeBundle")
     if bundle["schema"] != RUNTIME_SCHEMA or bundle["schemaVersion"] != RUNTIME_SCHEMA_VERSION \
@@ -472,6 +475,19 @@ def validate_package(package: Any) -> None:
             or bundle["contentRevision"] != root["contentRevision"]:
         raise ExportError("EXECUTABLE_RUNTIME_IDENTITY_INVALID")
     _expect_stable_id(bundle["bundleRevision"], "runtimeBundle:bundleRevision")
+
+    battle_rules = _expect_exact_fields(bundle["battleRules"], {
+        "terminalPressure",
+    }, "battleRules")
+    terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
+        "enabled", "startTick", "intervalTicks", "initialDamage", "incrementDamage",
+    }, "battleRules:terminalPressure")
+    if terminal_pressure["enabled"] is not True:
+        raise ExportError("EXECUTABLE_TERMINAL_PRESSURE_ENABLED_INVALID")
+    _expect_integer(terminal_pressure["startTick"], "battleRules:terminalPressure:startTick", 1)
+    _expect_integer(terminal_pressure["intervalTicks"], "battleRules:terminalPressure:intervalTicks", 1)
+    _expect_integer(terminal_pressure["initialDamage"], "battleRules:terminalPressure:initialDamage", 1)
+    _expect_integer(terminal_pressure["incrementDamage"], "battleRules:terminalPressure:incrementDamage", 0)
 
     catalogs = _expect_exact_fields(bundle["executableCatalogs"], {
         "schema", "schemaVersion", "heroes", "skills", "stalls", "events",
@@ -818,6 +834,7 @@ class ContentAssembler:
             "newRunTemplate": new_run,
             "scheduleConfig": schedule,
             "shopRules": {"refreshCost": next(iter(stalls.values()))["refreshCost"]},
+            "battleRules": {"terminalPressure": identity["terminalPressure"]},
             "generation": {
                 "schema": GENERATION_SCHEMA,
                 "schemaVersion": GENERATION_SCHEMA_VERSION,
@@ -1460,8 +1477,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 15-domain workbook is the finite v5 candidate source.
-            # This adapter is its explicit one-way projection into executable v7.
+            # The current 15-domain workbook is the finite v6 candidate source.
+            # This adapter is its explicit one-way projection into executable v8.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -1476,6 +1493,7 @@ class ContentAssembler:
             "start_day": "1",
             "start_hour": "1",
             "board_size": "10",
+            "terminal_pressure_enabled": "true",
         }
         for field, expected in expected_constants.items():
             actual = _same(rows, filename, field)
@@ -1496,6 +1514,8 @@ class ContentAssembler:
             if not STABLE_ID_RE.fullmatch(identity[field]):
                 raise ExportError(f"GAMEPLAY_IDENTITY_INVALID:{field}")
         global_integer_fields = [
+            "terminal_pressure_start_tick", "terminal_pressure_interval_ticks",
+            "terminal_pressure_initial_damage", "terminal_pressure_increment_damage",
             "pve_win_bonus_xp", "pve_loss_prestige", "pve_draw_prestige",
             "ghost_loss_prestige", "ghost_draw_prestige", "win_target",
             "bootstrap_run_day_coverage", "bootstrap_refresh_package_coverage",
@@ -1506,7 +1526,14 @@ class ContentAssembler:
             if not INTEGER_RE.fullmatch(text):
                 raise ExportError(f"GAMEPLAY_INTEGER_INVALID:{field}")
             globals_int[field] = int(text)
-        if any(globals_int[field] < 0 for field in global_integer_fields[:-3]) \
+        if globals_int["terminal_pressure_start_tick"] <= 0 \
+                or globals_int["terminal_pressure_interval_ticks"] <= 0 \
+                or globals_int["terminal_pressure_initial_damage"] <= 0 \
+                or globals_int["terminal_pressure_increment_damage"] < 0 \
+                or any(globals_int[field] < 0 for field in [
+                    "pve_win_bonus_xp", "pve_loss_prestige", "pve_draw_prestige",
+                    "ghost_loss_prestige", "ghost_draw_prestige",
+                ]) \
                 or any(globals_int[field] <= 0 for field in [
                     "win_target", "bootstrap_run_day_coverage", "bootstrap_refresh_package_coverage",
                 ]):
@@ -1515,6 +1542,13 @@ class ContentAssembler:
             raise ExportError("GAMEPLAY_RUN_DAY_RANGE_INCOMPLETE")
         identity["runDayMax"] = globals_int["bootstrap_run_day_coverage"]
         identity["refreshPackageMax"] = globals_int["bootstrap_refresh_package_coverage"]
+        identity["terminalPressure"] = {
+            "enabled": _boolean(filename, rows[0], "terminal_pressure_enabled"),
+            "startTick": globals_int["terminal_pressure_start_tick"],
+            "intervalTicks": globals_int["terminal_pressure_interval_ticks"],
+            "initialDamage": globals_int["terminal_pressure_initial_damage"],
+            "incrementDamage": globals_int["terminal_pressure_increment_damage"],
+        }
         last_chance_text = _same(rows, filename, "last_chance_enabled")
         if last_chance_text not in {"true", "false"}:
             raise ExportError("GAMEPLAY_LAST_CHANCE_INVALID")
@@ -1783,7 +1817,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v7 runtime and display candidates from 15 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v8 runtime and display candidates from 15 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -1798,7 +1832,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v7 integration-pending candidate "
+            "PASS original-pirate v8 integration-pending candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -1809,7 +1843,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v7 integration-pending candidate to {output}")
+        print(f"exported original-pirate v8 integration-pending candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

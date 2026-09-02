@@ -24,6 +24,7 @@
 - `43_hero_skills.csv`：第一英雄被动技能正式定义；当前 `completeness=slice` 只表示已接入切片，来源关系仍以 `34_bazaar_objects.csv` 的 reserved skill 审计记录为准，不与宠物 A/B 技能目录混用。
 - `48_bz_item_skills.csv`：`original_pirate` 的物品技能目录，只能由 `46_bz_items.csv.item_skill_id` 与 `47_bz_item_effects.csv.item_skill_id` 引用；不得作为英雄技能。
 - `47_bz_item_effects.csv` 的 `condition_source_relation` 必须显式为 `any|adjacent`；旧效果全部写 `any`，`adjacent` 只允许用于“另一件友方物品使用 + 来源物品命中 canonical tag”，并按 `[source_item_has_any_tag, source_item_adjacent_to_self]` 固定顺序导出。相邻条件本身不带参数，实际格位关系由权威战斗内核解释。`gain_damage_for_fight` 对 `self_item` 增加正整数当场伤害；同 profile 必须保留 `item_ready` 主动伤害，该成长不写入跨局基础数值。
+- `47_bz_item_effects.csv.target_type` 的 `left_adjacent_item / right_adjacent_item / leftmost_friendly_item / rightmost_friendly_item` 当前只与 `item_ready + always + charge` 配对；同 owner、排除 source/self，左右相邻按多尺寸占用区间端点接壤，最左/最右从排除自身后的友方物品中按稳定格位顺序选择。空目标是合法 no-op，不生成 fallback；四条 effect identity 独立，目标重合时按 `priority/effectId` 顺序分别结算。
 - `62_bz_hero_skills.csv`：雾航船长的原创英雄被动技能，按技能与品质冻结 `friendly_item_used` 触发次数、正式效果数值和逐品质中文效果文案；不复用 `43_hero_skills.csv` 的 `hero_001` 参考审计切片。
 - `63_bz_hero_skill_loadouts.csv`：英雄起始与离线 Ghost 的规范化英雄技能实例；起始仅携带雾线追炮，`starter` 与 `ghost_snapshot` 分别投影到英雄目录和 Ghost build，并共同参与运行包 hash。
 - `64_bz_hero_skill_trainers.csv`：英雄技能训练师目录；训练师归属英雄并绑定正式摊位，和物品商店目录保持独立。
@@ -31,6 +32,8 @@
 - `66_bazaar_reference_snapshots.csv`：外部参考来源锁。`current_version_boundary` 只冻结 Steam 官方当前 Patch 公告身份和公告正文 hash，不证明 `34_bazaar_objects.csv` 的旧效果属于该 Patch；`legacy_catalog_binding` 以 canonical 行集合 hash 绑定 369 条旧参考记录，其 patch/build 保持空值；`build_bound_catalog_candidate` 只冻结本机已安装客户端的 Steam build、客户端版本、缓存 ETag、`GameData.db` 原始字节 hash，以及 Vanessa `Always` 物品/技能各 138 个 UUID 的排序集合 hash。三类记录均为 `reference_only`、`license_status=unverified`，不得提交数据库、压缩包、专有原文或数值，也不能进入 `original_pirate` 可执行目录。构建绑定快照没有显式 Patch 字段，因此不能称为 Patch 18 规则来源；其每条规则仍须独立核验语义和正式 Trace。
 
 `34_bazaar_objects.csv` 的 `identity_confirmed=true` 只表示旧对象身份映射仍被保留；`rule_verified=false` 与非空 `rule_unresolved_fields` 表示现行精确规则尚未核验。全部 369 条当前均为 `reference_reserved`，`current_version_boundary_snapshot_id` 只是审计对照，不是规则来源关系。
+
+`original_pirate` 的原创物品及上述确定性 target 原语不计入构建绑定 Vanessa 目录的正式可执行映射；该映射仍为 Item `0/138`、Skill `0/138`。
 
 ## 注意
 

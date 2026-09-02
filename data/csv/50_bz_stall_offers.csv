@@ -3,7 +3,7 @@ package_mistwake_initial,stall_mistwake,0,offer_initial_signal_flare,item_signal
 package_mistwake_initial,stall_mistwake,0,offer_initial_patchwork_ram,item_patchwork_ram,bronze,,4,false,2,formal
 package_mistwake_initial,stall_mistwake,0,offer_initial_reef_hook,item_reef_hook,bronze,,3,false,3,formal
 package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_wake_echo_drum,item_wake_echo_drum,bronze,,5,false,1,formal
-package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_storm_compass,item_storm_compass,gold,,11,false,2,formal
+package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_quadrant_linkage,item_quadrant_linkage,bronze,,5,false,2,formal
 package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_mistline_ratchet,item_mistline_ratchet,bronze,,4,false,3,formal
 package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_saltwind_capstan,item_saltwind_capstan,bronze,,4,false,1,formal
 package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_signal_flare,item_signal_flare,gold,,9,false,2,formal

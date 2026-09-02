@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_item_adjacency` 收口刷新。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_deterministic_item_targets` 收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_deterministic_item_targets.md` — data content: 一件原创正式物品逐品质覆盖 left/right adjacent 与 leftmost/rightmost friendly-item 四种确定性目标，并锁定空目标 no-op 与可达报价。
 
 - `tasks/done/2026-09-03_original_pirate_item_adjacency.md` — data content: 新增原创“雾索棘轮”与 `condition_source_relation=any|adjacent` 复合条件真相链。
 

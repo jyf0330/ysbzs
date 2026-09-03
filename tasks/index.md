@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_random_friendly_item_target` 验证收口刷新。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_critical_damage` 数据侧验证收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_critical_damage.md` — data content: 项目原创 Crit v1 与“潮镜短铳”已完成 workbook→CSV→exporter 真相链、自然初始商店可达、双层 fail-closed 门禁与隔离生成验证。
 
 - `tasks/done/2026-09-03_original_pirate_random_friendly_item_target.md` — data content: 原创“侧风择发器”与 `random_friendly_item_with_any_tag(tags=[weapon], excludeSelf=true, count=1)` 已完成 workbook→CSV→exporter 真相链、自然商店可达性与 fail-closed 门禁。
 

@@ -1,6 +1,6 @@
 package_id,stall_id,refresh_index,offer_id,item_id,quality,enchantment,price,frozen,slot_order,catalog_status
 package_mistwake_initial,stall_mistwake,0,offer_initial_signal_flare,item_signal_flare,silver,,6,false,1,formal
-package_mistwake_initial,stall_mistwake,0,offer_initial_patchwork_ram,item_patchwork_ram,bronze,,4,false,2,formal
+package_mistwake_initial,stall_mistwake,0,offer_initial_tideglass_sidearm,item_tideglass_sidearm,bronze,,4,false,2,formal
 package_mistwake_initial,stall_mistwake,0,offer_initial_reef_hook,item_reef_hook,bronze,,3,false,3,formal
 package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_wake_echo_drum,item_wake_echo_drum,bronze,,5,false,1,formal
 package_mistwake_refresh_1,stall_mistwake,1,offer_refresh_1_quadrant_linkage,item_quadrant_linkage,bronze,,5,false,2,formal

@@ -222,6 +222,31 @@ function mutateColumn(dir, file, field, value) {
   fs.writeFileSync(target, encodeCsv(rows), 'utf8');
 }
 
+function appendTideglassBronzeDamage(dir, effectId, canCrit) {
+  const effectPath = path.join(dir, '47_bz_item_effects.csv');
+  const effectRows = parseCsv(fs.readFileSync(effectPath, 'utf8').replace(/^\uFEFF/, ''));
+  const effectIdColumn = effectRows[0].indexOf('effect_id');
+  const priorityColumn = effectRows[0].indexOf('priority');
+  const canCritColumn = effectRows[0].indexOf('can_crit');
+  const source = effectRows.find((row) => (
+    row[effectIdColumn] === 'effect_tideglass_sidearm_bronze_shot'
+  ));
+  const extra = [...source];
+  extra[effectIdColumn] = effectId;
+  extra[priorityColumn] = '21';
+  extra[canCritColumn] = canCrit ? 'true' : 'false';
+  effectRows.push(extra);
+  fs.writeFileSync(effectPath, encodeCsv(effectRows), 'utf8');
+
+  const skillPath = path.join(dir, '48_bz_item_skills.csv');
+  const skillRows = parseCsv(fs.readFileSync(skillPath, 'utf8').replace(/^\uFEFF/, ''));
+  const skillIdColumn = skillRows[0].indexOf('item_skill_id');
+  const effectIdsColumn = skillRows[0].indexOf('effect_ids');
+  const skill = skillRows.find((row) => row[skillIdColumn] === 'skill_tideglass_sidearm');
+  skill[effectIdsColumn] += `,${effectId}`;
+  fs.writeFileSync(skillPath, encodeCsv(skillRows), 'utf8');
+}
+
 function reverseDataRows(dir, file) {
   const target = path.join(dir, file);
   const rows = parseCsv(fs.readFileSync(target, 'utf8').replace(/^\uFEFF/, ''));
@@ -249,7 +274,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
+test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -266,18 +291,26 @@ test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 23);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v19');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v20');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v20');
-  assert.equal(content.items.length, 19);
-  assert.equal(content.runtimeBundle.schemaVersion, 21);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v20');
+  assert.equal(content.schemaVersion, 24);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v20');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v21');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v21');
+  assert.equal(content.items.length, 20);
+  assert.equal(content.runtimeBundle.schemaVersion, 22);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v21');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
   ].sort());
   assert.deepEqual(content.runtimeBundle.battleRules, {
+    critRules: {
+      contractId: 'ysbzs.original-pirate-critical-damage.v1',
+      chanceScaleBps: 10000,
+      damageMultiplierBps: 20000,
+      roundingMode: 'floor',
+      rollScope: 'item_use',
+      drawPolicy: 'once_if_eligible_damage_effect',
+    },
     terminalPressure: {
       enabled: true,
       startTick: 60,
@@ -445,14 +478,14 @@ test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 14,
+    'ysbzs.original-pirate-executable-catalogs.v1', 15,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
     catalogs.heroSkillTrainers.length, catalogs.heroSkillOffers.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 19, 2, 2, 7, 1, 4, 8, 8, 51, 3]);
+  ], [1, 20, 2, 2, 7, 1, 4, 8, 8, 54, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
     'heroId', 'heroSkillIds', 'startingHeroSkills',
   ]);
@@ -534,6 +567,11 @@ test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发
     { maxTriggersPerBattle: 2, ticks: 1, amount: 0 },
   ]);
   const itemById = Object.fromEntries(content.items.map((item) => [item.itemId, item]));
+  const allQualityProfiles = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles));
+  assert.equal(allQualityProfiles.length, 74);
+  assert.equal(content.items.filter(({ itemId }) => itemId !== 'item_tideglass_sidearm')
+    .every(({ qualityProfiles }) => Object.values(qualityProfiles)
+      .every(({ critChanceBps }) => critChanceBps === 0)), true);
   const itemTagVocab = ['ammo', 'aquatic', 'relic', 'tool', 'vehicle', 'weapon'];
   assert.equal(content.items.every((item) => (
     assert.deepEqual(Object.keys(item).sort(), ['baseQuality', 'itemId', 'qualityProfiles', 'slotWidth', 'tags']),
@@ -591,7 +629,14 @@ test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects));
-  assert.equal(executableEffects.length, 132);
+  assert.equal(executableEffects.length, 136);
+  const executableDamageEffects = executableEffects.filter(({ operation }) => operation.type === 'deal_damage');
+  assert.equal(executableDamageEffects.every(({ operation }) => (
+    typeof operation.params.canCrit === 'boolean'
+  )), true);
+  assert.equal(executableDamageEffects.filter(({ operation }) => operation.params.canCrit).length, 4);
+  assert.equal(executableEffects.filter(({ operation }) => operation.type !== 'deal_damage')
+    .every(({ operation }) => !Object.hasOwn(operation.params, 'canCrit')), true);
   assert.deepEqual([...new Set(executableEffects.map(({ operation }) => operation.type))].sort(), [
     'apply_status', 'charge', 'deal_damage', 'gain_damage_for_fight', 'gain_shield', 'heal', 'reload',
   ]);
@@ -885,9 +930,9 @@ test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v20');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v20');
-  assert.equal(display.entries.length, 115);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v21');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v21');
+  assert.equal(display.entries.length, 117);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -920,7 +965,7 @@ test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发
   )).descriptionZh, /学习青铜品质/);
   assert.equal(display.entries.filter(({ domain }) => domain === 'hero_skill_quality_profiles').length, 8);
   assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
-  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 19);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 20);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_tidefin_launcher'), {
     displayId: 'items.item_tidefin_launcher', domain: 'items', sourceId: 'item_tidefin_launcher',
     nameZh: '潮鳍投筒', descriptionZh: '',
@@ -983,15 +1028,36 @@ test('OPC02 v23/v21 随机单目标、标签集合、战斗开始、动态触发
   const targetTagsColumn = effectHeaders.indexOf('target_tags');
   const targetExcludeSelfColumn = effectHeaders.indexOf('target_exclude_self');
   const targetCountColumn = effectHeaders.indexOf('target_count');
+  const operationColumn = effectHeaders.indexOf('operation_type');
+  const canCritColumn = effectHeaders.indexOf('can_crit');
   assert.notEqual(relationColumn, -1);
   assert.notEqual(targetTagsColumn, -1);
   assert.notEqual(targetExcludeSelfColumn, -1);
   assert.notEqual(targetCountColumn, -1);
-  assert.equal(effectSourceRows.length, 132);
-  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 128);
+  assert.notEqual(canCritColumn, -1);
+  assert.equal(effectSourceRows.length, 136);
+  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 132);
   assert.equal(effectSourceRows.filter((row) => row[targetTagsColumn] !== '').length, 8);
   assert.equal(effectSourceRows.filter((row) => row[targetExcludeSelfColumn] !== '').length, 4);
   assert.equal(effectSourceRows.filter((row) => row[targetCountColumn] !== '').length, 4);
+  const sourceDamageEffects = effectSourceRows.filter((row) => row[operationColumn] === 'deal_damage');
+  assert.equal(sourceDamageEffects.every((row) => ['true', 'false'].includes(row[canCritColumn])), true);
+  assert.equal(sourceDamageEffects.filter((row) => row[canCritColumn] === 'true').length, 4);
+  assert.equal(sourceDamageEffects.filter((row) => row[canCritColumn] === 'true')
+    .every((row) => row[itemColumn] === 'item_tideglass_sidearm'), true);
+  assert.equal(effectSourceRows.filter((row) => row[operationColumn] !== 'deal_damage')
+    .every((row) => row[canCritColumn] === ''), true);
+  const [itemHeaders, ...itemSourceRows] = parseCsv(
+    fs.readFileSync(path.join(csvDir, '46_bz_items.csv'), 'utf8').replace(/^\uFEFF/, ''),
+  );
+  const itemIdColumn = itemHeaders.indexOf('item_id');
+  const critChanceColumn = itemHeaders.indexOf('crit_chance_bps');
+  assert.notEqual(critChanceColumn, -1);
+  assert.equal(itemSourceRows.length, 74);
+  assert.equal(itemSourceRows.filter((row) => row[itemIdColumn] !== 'item_tideglass_sidearm')
+    .every((row) => row[critChanceColumn] === '0'), true);
+  assert.deepEqual(itemSourceRows.filter((row) => row[itemIdColumn] === 'item_tideglass_sidearm')
+    .map((row) => Number(row[critChanceColumn])), [2500, 4000, 5500, 7000]);
   const adjacentSourceRows = effectSourceRows.filter((row) => row[relationColumn] === 'adjacent');
   assert.equal(adjacentSourceRows.length, 4);
   assert.equal(adjacentSourceRows.every((row) => (
@@ -1012,7 +1078,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [23, 21, 14, 'ysbzs.original-pirate-rules.2026-09-03-v19']);
+  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
   const item = content.items.find(({ itemId }) => itemId === 'item_quadrant_linkage');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['tool', 'vehicle']]);
@@ -1042,7 +1108,9 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
     const effects = item.qualityProfiles[quality].effects;
     assert.deepEqual(effects.map(({ priority }) => priority), [20, 30, 31, 32, 33]);
     assert.deepEqual(effects[0].target, { type: 'selected_enemy', params: {} });
-    assert.deepEqual(effects[0].operation, { type: 'deal_damage', params: { amount: damage[quality] } });
+    assert.deepEqual(effects[0].operation, {
+      type: 'deal_damage', params: { amount: damage[quality], canCrit: false },
+    });
     assert.deepEqual(effects.slice(1).map(({ trigger, target, operation }) => ({ trigger, target, operation })),
       targetOrder.map((target, index) => ({
         trigger: { event: 'item_ready', conditions: [{ type: 'always', params: {} }] },
@@ -1088,7 +1156,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
   )).descriptionZh, /左邻.*右邻.*最左.*最右.*自身/);
 });
 
-test('OPC02B v23 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
+test('OPC02B v24 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-trigger-source-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1100,7 +1168,7 @@ test('OPC02B v23 继航校炮仪把响应伤害成长绑定到无参数动态触
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [23, 21, 14, 'ysbzs.original-pirate-rules.2026-09-03-v19']);
+  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
   const item = content.items.find(({ itemId }) => itemId === 'item_followwake_calibrator');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1124,7 +1192,7 @@ test('OPC02B v23 继航校炮仪把响应伤害成长绑定到无参数动态触
       effectId: `effect_followwake_calibrator_${quality}_ready`, priority: 20,
       trigger: { event: 'item_ready', conditions: [{ type: 'always', params: {} }] },
       target: { type: 'selected_enemy', params: {} },
-      operation: { type: 'deal_damage', params: { amount: damage[quality] } },
+      operation: { type: 'deal_damage', params: { amount: damage[quality], canCrit: false } },
     });
     assert.deepEqual(effects[1], {
       effectId: `effect_followwake_calibrator_${quality}_response`, priority: 30,
@@ -1193,7 +1261,7 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [23, 21, 14, 'ysbzs.original-pirate-rules.2026-09-03-v19']);
+  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
   const item = content.items.find(({ itemId }) => itemId === 'item_dawntide_timer');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1222,7 +1290,7 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
         effectId: `effect_dawntide_timer_${quality}_ready`, priority: 20,
         trigger: { event: 'item_ready', conditions: [{ type: 'always', params: {} }] },
         target: { type: 'selected_enemy', params: {} },
-        operation: { type: 'deal_damage', params: { amount: damage[quality] } },
+        operation: { type: 'deal_damage', params: { amount: damage[quality], canCrit: false } },
       },
     ]);
   }
@@ -1292,7 +1360,7 @@ test('OPC02D 齐射传令台逐品质只为己方武器标签集合推进充能'
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [23, 21, 14, 'ysbzs.original-pirate-rules.2026-09-03-v19']);
+  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
   const item = content.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['relic', 'tool']]);
@@ -1380,7 +1448,7 @@ test('OPC02E 侧风择发器逐品质随机选择一件非自身己方武器推�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [23, 21, 14, 'ysbzs.original-pirate-rules.2026-09-03-v19']);
+  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
   const item = content.items.find(({ itemId }) => itemId === 'item_crosswind_selector');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['tool', 'weapon']]);
@@ -1479,8 +1547,182 @@ test('OPC02F 随机单目标显式 canonical excludeSelf false 可经 CSV 导出
   assert.equal(validatePackageFile(output).status, 0);
 });
 
+test('OPC02G v24 潮镜短铳以品质暴击率和伤害效果资格共用唯一 Crit 合同', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-critical-damage-'));
+  const output = path.join(dir, 'content.json');
+  const displayOutput = path.join(dir, 'display.json');
+  assert.equal(runExporter(csvDir, output, displayOutput).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  const display = JSON.parse(fs.readFileSync(displayOutput, 'utf8'));
+  assert.deepEqual([
+    content.schemaVersion,
+    content.runtimeBundle.schemaVersion,
+    content.runtimeBundle.executableCatalogs.schemaVersion,
+    content.rulesVersion,
+  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
+  assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
+    contractId: 'ysbzs.original-pirate-critical-damage.v1',
+    chanceScaleBps: 10000,
+    damageMultiplierBps: 20000,
+    roundingMode: 'floor',
+    rollScope: 'item_use',
+    drawPolicy: 'once_if_eligible_damage_effect',
+  });
+
+  const item = content.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm');
+  assert.ok(item);
+  assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['tool', 'weapon']]);
+  const qualities = ['bronze', 'silver', 'gold', 'diamond'];
+  const profiles = {
+    bronze: [4, 2, 5, 2500, 2],
+    silver: [7, 3, 4, 4000, 3],
+    gold: [11, 5, 3, 5500, 5],
+    diamond: [16, 8, 2, 7000, 7],
+  };
+  for (const quality of qualities) {
+    const profile = item.qualityProfiles[quality];
+    const [buyPrice, sellPrice, cooldown, critChanceBps, damage] = profiles[quality];
+    assert.deepEqual([
+      profile.buyPrice, profile.sellPrice, profile.baseCooldownTicks,
+      profile.critChanceBps, profile.ammo.enabled, profile.ammo.initial, profile.ammo.maximum,
+    ], [buyPrice, sellPrice, cooldown, critChanceBps, false, 0, 0]);
+    assert.deepEqual(profile.effects, [{
+      effectId: `effect_tideglass_sidearm_${quality}_shot`, priority: 20,
+      trigger: { event: 'item_ready', conditions: [{ type: 'always', params: {} }] },
+      target: { type: 'selected_enemy', params: {} },
+      operation: { type: 'deal_damage', params: { amount: damage, canCrit: true } },
+    }]);
+  }
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.itemSkills.find(({ itemSkillId }) => (
+    itemSkillId === 'skill_tideglass_sidearm'
+  )), {
+    itemSkillId: 'skill_tideglass_sidearm', triggerEvents: ['item_ready'],
+    effectIds: qualities.map((quality) => `effect_tideglass_sidearm_${quality}_shot`).sort(),
+  });
+  assert.deepEqual(content.runtimeBundle.generation.shop.templates.filter(({ itemId }) => (
+    itemId === 'item_tideglass_sidearm'
+  )), [{
+    offerTemplateId: 'offer_initial_tideglass_sidearm',
+    itemId: 'item_tideglass_sidearm', quality: 'bronze', enchantment: '',
+  }]);
+  assert.equal(content.runtimeBundle.generation.shop.templates.some(({ offerTemplateId }) => (
+    offerTemplateId === 'offer_initial_patchwork_ram'
+  )), false);
+  assert.equal(content.runtimeBundle.newRunTemplate.economy.gold - 4, 8);
+
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.upgrades.filter(({ itemId }) => (
+    itemId === 'item_tideglass_sidearm'
+  )), [
+    { upgradeId: 'upgrade_tideglass_sidearm_bronze_silver', itemId: 'item_tideglass_sidearm', fromQuality: 'bronze', toQuality: 'silver', price: 4, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_tideglass_sidearm_gold_diamond', itemId: 'item_tideglass_sidearm', fromQuality: 'gold', toQuality: 'diamond', price: 10, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_tideglass_sidearm_silver_gold', itemId: 'item_tideglass_sidearm', fromQuality: 'silver', toQuality: 'gold', price: 7, stallId: 'stall_mistwake' },
+  ]);
+  const enchantments = content.runtimeBundle.executableCatalogs.enchantments;
+  assert.deepEqual(enchantments.filter(({ enchantmentId }) => (
+    ['enchant_tailwind', 'enchant_breaker'].includes(enchantmentId)
+  )).flatMap(({ enchantmentId, profiles: enchantmentProfiles }) => (
+    enchantmentProfiles.filter(({ itemId }) => itemId === 'item_tideglass_sidearm')
+      .map((profile) => [enchantmentId, profile.quality, profile.price,
+        profile.cooldownDeltaTicks, profile.damageDelta, profile.ammoDelta])
+  )), [
+    ['enchant_breaker', 'bronze', 5, 0, 2, 0],
+    ['enchant_breaker', 'silver', 7, 0, 3, 0],
+    ['enchant_breaker', 'gold', 10, 0, 4, 0],
+    ['enchant_breaker', 'diamond', 13, 0, 6, 0],
+    ['enchant_tailwind', 'bronze', 4, -1, 0, 0],
+    ['enchant_tailwind', 'silver', 6, -1, 0, 0],
+    ['enchant_tailwind', 'gold', 9, -1, 0, 0],
+    ['enchant_tailwind', 'diamond', 12, -1, 0, 0],
+  ]);
+  assert.equal(enchantments.find(({ enchantmentId }) => enchantmentId === 'enchant_reserve')
+    .profiles.some(({ itemId }) => itemId === 'item_tideglass_sidearm'), false);
+  assert.deepEqual(display.entries.find(({ displayId }) => (
+    displayId === 'items.item_tideglass_sidearm'
+  )), {
+    displayId: 'items.item_tideglass_sidearm', domain: 'items',
+    sourceId: 'item_tideglass_sidearm', nameZh: '潮镜短铳', descriptionZh: '',
+  });
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'item_skills.skill_tideglass_sidearm'
+  )).descriptionZh, /25%.*40%.*55%.*70%.*暴击.*两倍/);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC02H Crit chance basis-points 满值 10000 可显式导出并通过包校验', () => {
+  const dir = mutateDomain((domainDir) => (
+    mutateCell(domainDir, '46_bz_items.csv', 74, 'crit_chance_bps', '10000')
+  ));
+  const output = path.join(dir, 'crit-full-scale.json');
+  assert.equal(runExporter(dir, output).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  assert.equal(content.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+    .qualityProfiles.diamond.critChanceBps, 10000);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC02I Crit 伤害倍率在合法范围内可随正式内容迁移', () => {
+  const dir = mutateDomain((domainDir) => (
+    mutateColumn(domainDir, '44_bz_gameplay.csv', 'damage_multiplier_bps', '15000')
+  ));
+  const output = path.join(dir, 'crit-multiplier-migration.json');
+  assert.equal(runExporter(dir, output).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  assert.equal(content.runtimeBundle.battleRules.critRules.damageMultiplierBps, 15000);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC02J Crit authored damage 接受与 Godot 一致的最大安全整数', () => {
+  const dir = mutateDomain((domainDir) => (
+    mutateCell(domainDir, '47_bz_item_effects.csv', 133, 'amount', '922337203685477580')
+  ));
+  const output = path.join(dir, 'crit-damage-max.json');
+  assert.equal(runExporter(dir, output).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  assert.equal(content.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+    .qualityProfiles.bronze.effects[0].operation.params.amount, 922337203685477580);
+  assert.match(fs.readFileSync(output, 'utf8'), /"amount":922337203685477580/);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC02K 0% profile 保留显式 eligible damage 并继续由运行时消费 draw', () => {
+  const dir = mutateDomain((domainDir) => (
+    mutateCell(domainDir, '46_bz_items.csv', 71, 'crit_chance_bps', '0')
+  ));
+  const output = path.join(dir, 'zero-percent-eligible-crit.json');
+  assert.equal(runExporter(dir, output).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  const profile = content.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+    .qualityProfiles.bronze;
+  assert.equal(profile.critChanceBps, 0);
+  assert.equal(profile.effects.length, 1);
+  assert.equal(profile.effects[0].operation.params.canCrit, true);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
 test('OPC03 缺随机或集合目标/战内成长/防御字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
   const cases = [
+    ['crit-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'crit_contract', 'ysbzs.original-pirate-critical-damage.v2')],
+    ['crit-scale', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'chance_scale_bps', '1000')],
+    ['crit-multiplier-at-scale', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'damage_multiplier_bps', '10000')],
+    ['crit-multiplier-over-cap', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'damage_multiplier_bps', '100001')],
+    ['crit-rounding', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'rounding_mode', 'ceil')],
+    ['crit-roll-scope', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'roll_scope', 'damage_effect')],
+    ['crit-draw-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'draw_policy', 'per_damage_effect')],
+    ['crit-chance-missing', (dir) => mutateCell(dir, '46_bz_items.csv', 71, 'crit_chance_bps', '')],
+    ['crit-chance-negative', (dir) => mutateCell(dir, '46_bz_items.csv', 71, 'crit_chance_bps', '-1')],
+    ['crit-chance-over-scale', (dir) => mutateCell(dir, '46_bz_items.csv', 74, 'crit_chance_bps', '10001')],
+    ['crit-chance-not-integer', (dir) => mutateCell(dir, '46_bz_items.csv', 71, 'crit_chance_bps', '25%')],
+    ['crit-profile-positive-without-eligible-effect', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'can_crit', 'false')],
+    ['crit-effect-flag-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'can_crit', '')],
+    ['crit-effect-flag-noncanonical', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'can_crit', 'True')],
+    ['crit-effect-damage-over-safe-max', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'amount', '922337203685477581')],
+    ['crit-profile-second-noneligible-damage', (dir) => appendTideglassBronzeDamage(
+      dir, 'effect_tideglass_sidearm_bronze_second_damage', false,
+    )],
+    ['crit-profile-second-eligible-damage', (dir) => appendTideglassBronzeDamage(
+      dir, 'effect_tideglass_sidearm_bronze_second_crit', true,
+    )],
+    ['crit-flag-on-nondamage', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 6, 'can_crit', 'false')],
     ['cooldown', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'cooldown_ticks', '')],
     ['item-tags-missing', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'tags', '')],
     ['item-tags-unknown', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'tags', 'weapon, cannon')],
@@ -1887,18 +2129,18 @@ test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () =
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v23/v21 forged 随机/集合/开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v23-forgery-'));
+test('OPC06 v24/v22 forged Crit/随机/集合/开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v24-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
   assert.equal(validatePackageFile(baseline).status, 0);
   const cases = [
-    ['old-root-schema', (value) => { value.schemaVersion = 22; }],
-    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 20; }],
-    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 13; }],
+    ['old-root-schema', (value) => { value.schemaVersion = 23; }],
+    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 21; }],
+    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 14; }],
     ['old-rules-version', (value) => {
-      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v18';
+      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v19';
       value.runtimeBundle.rulesVersion = value.rulesVersion;
     }],
     ['progression-rules-missing', (value) => { delete value.runtimeBundle.progressionRules; }],
@@ -1995,6 +2237,15 @@ test('OPC06 v23/v21 forged 随机/集合/开场触发、动态/四向目标、�
     ['terminal-pressure-interval-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.intervalTicks = 0; }],
     ['terminal-pressure-initial-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.initialDamage = 0; }],
     ['terminal-pressure-increment-negative', (value) => { value.runtimeBundle.battleRules.terminalPressure.incrementDamage = -1; }],
+    ['crit-rules-missing', (value) => { delete value.runtimeBundle.battleRules.critRules; }],
+    ['crit-rules-extra-field', (value) => { value.runtimeBundle.battleRules.critRules.seed = 'forged'; }],
+    ['crit-rules-contract', (value) => { value.runtimeBundle.battleRules.critRules.contractId = 'ysbzs.original-pirate-critical-damage.v2'; }],
+    ['crit-rules-scale', (value) => { value.runtimeBundle.battleRules.critRules.chanceScaleBps = 1000; }],
+    ['crit-rules-multiplier-at-scale', (value) => { value.runtimeBundle.battleRules.critRules.damageMultiplierBps = 10000; }],
+    ['crit-rules-multiplier-over-cap', (value) => { value.runtimeBundle.battleRules.critRules.damageMultiplierBps = 100001; }],
+    ['crit-rules-rounding', (value) => { value.runtimeBundle.battleRules.critRules.roundingMode = 'ceil'; }],
+    ['crit-rules-scope', (value) => { value.runtimeBundle.battleRules.critRules.rollScope = 'damage_effect'; }],
+    ['crit-rules-draw-policy', (value) => { value.runtimeBundle.battleRules.critRules.drawPolicy = 'per_damage_effect'; }],
     ['extra-catalog-field', (value) => { value.runtimeBundle.executableCatalogs.auditText = 'not-runtime'; }],
     ['retired-skills-catalog', (value) => { value.runtimeBundle.executableCatalogs.skills = []; }],
     ['item-skill-extra-field', (value) => { value.runtimeBundle.executableCatalogs.itemSkills[0].heroId = 'hero_mistwake_captain'; }],
@@ -2105,6 +2356,60 @@ test('OPC06 v23/v21 forged 随机/集合/开场触发、动态/四向目标、�
     }],
     ['item-profile-extra-field', (value) => {
       value.items.find(({ itemId }) => itemId === 'item_brine_cannon').qualityProfiles.bronze.formula = 'forged';
+    }],
+    ['item-profile-crit-missing', (value) => {
+      delete value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze.critChanceBps;
+    }],
+    ['item-profile-crit-over-scale', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze.critChanceBps = 10001;
+    }],
+    ['item-profile-positive-without-crit-effect', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze.effects[0].operation.params.canCrit = false;
+    }],
+    ['item-damage-can-crit-missing', (value) => {
+      delete value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze.effects[0].operation.params.canCrit;
+    }],
+    ['item-damage-can-crit-not-bool', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze.effects[0].operation.params.canCrit = 'true';
+    }],
+    ['item-crit-damage-over-safe-max', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze.effects[0].operation.params.amount = 922337203685477600;
+    }],
+    ['item-profile-second-noneligible-damage', (value) => {
+      const profile = value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze;
+      const extra = structuredClone(profile.effects[0]);
+      extra.effectId = 'effect_tideglass_sidearm_bronze_second_damage';
+      extra.priority = 21;
+      extra.operation.params.canCrit = false;
+      profile.effects.push(extra);
+      value.runtimeBundle.executableCatalogs.itemSkills
+        .find(({ itemSkillId }) => itemSkillId === 'skill_tideglass_sidearm')
+        .effectIds.push(extra.effectId);
+    }],
+    ['item-profile-second-eligible-damage', (value) => {
+      const profile = value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze;
+      const extra = structuredClone(profile.effects[0]);
+      extra.effectId = 'effect_tideglass_sidearm_bronze_second_crit';
+      extra.priority = 21;
+      profile.effects.push(extra);
+      value.runtimeBundle.executableCatalogs.itemSkills
+        .find(({ itemSkillId }) => itemSkillId === 'skill_tideglass_sidearm')
+        .effectIds.push(extra.effectId);
+    }],
+    ['crit-effect-trigger-forged', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_tideglass_sidearm')
+        .qualityProfiles.bronze.effects[0].trigger = {
+          event: 'another_friendly_item_used',
+          conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['weapon'] } }],
+        };
     }],
     ['item-tags-missing', (value) => { delete value.items[0].tags; }],
     ['item-tags-extra', (value) => { value.items[0].tagText = 'weapon'; }],

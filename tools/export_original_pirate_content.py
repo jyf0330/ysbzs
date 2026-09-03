@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v23 candidate package while still validating every
+outside the formal v24 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 23
+CONTENT_SCHEMA_VERSION = 24
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 21
-SOURCE_CONTENT_SCHEMA_VERSION = 21
-SOURCE_RUNTIME_SCHEMA_VERSION = 19
+RUNTIME_SCHEMA_VERSION = 22
+SOURCE_CONTENT_SCHEMA_VERSION = 22
+SOURCE_RUNTIME_SCHEMA_VERSION = 20
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 14
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 15
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,14 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v19"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v20"
+CRIT_CONTRACT = "ysbzs.original-pirate-critical-damage.v1"
+CRIT_CHANCE_SCALE_BPS = 10000
+CRIT_DAMAGE_MULTIPLIER_MAX_BPS = 100000
+CRIT_DAMAGE_AMOUNT_MAX = 922337203685477580
+CRIT_ROUNDING_MODE = "floor"
+CRIT_ROLL_SCOPE = "item_use"
+CRIT_DRAW_POLICY = "once_if_eligible_damage_effect"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
@@ -102,7 +109,9 @@ DOMAIN_HEADERS = OrderedDict([
         "seed", "phase", "start_day", "start_hour", "board_size",
         "terminal_pressure_enabled", "terminal_pressure_start_tick",
         "terminal_pressure_interval_ticks", "terminal_pressure_initial_damage",
-        "terminal_pressure_increment_damage", "pve_win_bonus_xp",
+        "terminal_pressure_increment_damage", "crit_contract", "chance_scale_bps",
+        "damage_multiplier_bps", "rounding_mode", "roll_scope", "draw_policy",
+        "pve_win_bonus_xp",
         "prestige_battle_kind", "ghost_loss_prestige", "ghost_draw_prestige",
         "win_target", "last_chance_policy_id",
         "bootstrap_run_day_coverage", "bootstrap_refresh_package_coverage", "hour", "kind",
@@ -114,7 +123,7 @@ DOMAIN_HEADERS = OrderedDict([
     ]),
     ("46_bz_items.csv", [
         "item_id", "name_zh", "tags", "slot_width", "base_quality", "quality", "buy_price",
-        "sell_price", "cooldown_ticks", "ammo_enabled", "ammo_initial", "ammo_maximum",
+        "sell_price", "cooldown_ticks", "crit_chance_bps", "ammo_enabled", "ammo_initial", "ammo_maximum",
         "item_skill_id", "starter_instance_id", "starter_location", "starter_start_slot",
         "catalog_status",
     ]),
@@ -122,7 +131,7 @@ DOMAIN_HEADERS = OrderedDict([
         "effect_id", "item_id", "quality", "item_skill_id", "priority", "trigger_event",
         "condition_type", "condition_tags", "condition_source_relation", "target_type", "target_tags",
         "target_exclude_self", "target_count",
-        "operation_type", "amount", "status", "ticks", "catalog_status",
+        "operation_type", "amount", "can_crit", "status", "ticks", "catalog_status",
     ]),
     ("48_bz_item_skills.csv", [
         "item_skill_id", "name_zh", "description_zh", "trigger_events", "effect_ids",
@@ -554,8 +563,22 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
             and (target_type != "owner_hero" or operation_type != "gain_shield"):
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
     if operation_type == "deal_damage":
-        params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
-        _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
+        params = _expect_exact_fields(
+            operation["params"], {"amount", "canCrit"}, f"{context}:operation:params"
+        )
+        damage_amount = _expect_integer(
+            params["amount"], f"{context}:operation:params:amount", 1
+        )
+        if type(params["canCrit"]) is not bool:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CAN_CRIT_INVALID:{effect_id}")
+        if params["canCrit"] and damage_amount > CRIT_DAMAGE_AMOUNT_MAX:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CRIT_DAMAGE_AMOUNT_INVALID:{effect_id}")
+        if params["canCrit"] and (
+            trigger_event != "item_ready"
+            or conditions != [{"type": "always", "params": {}}]
+            or target_type != "selected_enemy"
+        ):
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CRIT_CONTRACT_INVALID:{effect_id}")
         valid_target = target_type == "selected_enemy"
     elif operation_type in {"reload", "heal", "gain_shield", "gain_damage_for_fight"}:
         params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
@@ -755,7 +778,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v23/v21 candidate package without accepting partial data."""
+    """Validate the formal v24/v22 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -798,11 +821,16 @@ def validate_package(package: Any) -> None:
             if quality not in QUALITIES or not isinstance(profile, dict):
                 raise ExportError(f"EXECUTABLE_ITEM_PROFILE_INVALID:{item_id}:{quality}")
             _expect_exact_fields(profile, {
-                "buyPrice", "sellPrice", "baseCooldownTicks", "ammo", "effects",
+                "buyPrice", "sellPrice", "baseCooldownTicks", "critChanceBps", "ammo", "effects",
             }, f"items:{item_id}:{quality}")
             _expect_integer(profile["buyPrice"], f"items:{item_id}:{quality}:buyPrice", 1)
             _expect_integer(profile["sellPrice"], f"items:{item_id}:{quality}:sellPrice", 0)
             _expect_integer(profile["baseCooldownTicks"], f"items:{item_id}:{quality}:baseCooldownTicks", 1)
+            crit_chance_bps = _expect_integer(
+                profile["critChanceBps"], f"items:{item_id}:{quality}:critChanceBps", 0
+            )
+            if crit_chance_bps > CRIT_CHANCE_SCALE_BPS:
+                raise ExportError(f"EXECUTABLE_ITEM_CRIT_CHANCE_INVALID:{item_id}:{quality}")
             ammo = _expect_exact_fields(profile["ammo"], {
                 "enabled", "initial", "maximum",
             }, f"items:{item_id}:{quality}:ammo")
@@ -822,6 +850,18 @@ def validate_package(package: Any) -> None:
                 item_effect_ids.add(effect_id)
                 item_effect_events[effect_id] = trigger_event
                 profile_events.add(trigger_event)
+            damage_effects = [
+                effect for effect in profile["effects"]
+                if effect.get("operation", {}).get("type") == "deal_damage"
+            ]
+            crit_effects = [
+                effect for effect in damage_effects
+                if effect.get("operation", {}).get("params", {}).get("canCrit") is True
+            ]
+            if len(crit_effects) > 1 \
+                    or (crit_chance_bps > 0 and len(crit_effects) != 1) \
+                    or (crit_effects and len(damage_effects) != 1):
+                raise ExportError(f"EXECUTABLE_ITEM_CRIT_PROFILE_MISMATCH:{item_id}:{quality}")
             if "item_ready" not in profile_events:
                 raise ExportError(f"EXECUTABLE_ITEM_READY_EFFECT_REQUIRED:{item_id}:{quality}")
             if any(
@@ -848,7 +888,7 @@ def validate_package(package: Any) -> None:
     _expect_stable_id(bundle["bundleRevision"], "runtimeBundle:bundleRevision")
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
-        "terminalPressure",
+        "terminalPressure", "critRules",
     }, "battleRules")
     terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
         "enabled", "startTick", "intervalTicks", "initialDamage", "incrementDamage",
@@ -859,6 +899,21 @@ def validate_package(package: Any) -> None:
     _expect_integer(terminal_pressure["intervalTicks"], "battleRules:terminalPressure:intervalTicks", 1)
     _expect_integer(terminal_pressure["initialDamage"], "battleRules:terminalPressure:initialDamage", 1)
     _expect_integer(terminal_pressure["incrementDamage"], "battleRules:terminalPressure:incrementDamage", 0)
+    crit_rules = _expect_exact_fields(battle_rules["critRules"], {
+        "contractId", "chanceScaleBps", "damageMultiplierBps", "roundingMode",
+        "rollScope", "drawPolicy",
+    }, "battleRules:critRules")
+    damage_multiplier_bps = _expect_integer(
+        crit_rules["damageMultiplierBps"], "battleRules:critRules:damageMultiplierBps",
+        CRIT_CHANCE_SCALE_BPS + 1,
+    )
+    if damage_multiplier_bps > CRIT_DAMAGE_MULTIPLIER_MAX_BPS \
+            or crit_rules["contractId"] != CRIT_CONTRACT \
+            or crit_rules["chanceScaleBps"] != CRIT_CHANCE_SCALE_BPS \
+            or crit_rules["roundingMode"] != CRIT_ROUNDING_MODE \
+            or crit_rules["rollScope"] != CRIT_ROLL_SCOPE \
+            or crit_rules["drawPolicy"] != CRIT_DRAW_POLICY:
+        raise ExportError("EXECUTABLE_CRIT_RULES_INVALID")
 
     progression = _expect_exact_fields(bundle["progressionRules"], {
         "schema", "schemaVersion", "enabled", "milestones", "options",
@@ -1783,7 +1838,10 @@ class ContentAssembler:
             "newRunTemplate": new_run,
             "scheduleConfig": schedule,
             "shopRules": {"refreshCost": next(iter(stalls.values()))["refreshCost"]},
-            "battleRules": {"terminalPressure": identity["terminalPressure"]},
+            "battleRules": {
+                "terminalPressure": identity["terminalPressure"],
+                "critRules": identity["critRules"],
+            },
             "progressionRules": progression_rules,
             "generation": {
                 "schema": GENERATION_SCHEMA,
@@ -2130,6 +2188,9 @@ class ContentAssembler:
                 if sell_price > buy_price:
                     raise ExportError(f"ITEM_PRICE_ORDER_INVALID:{item_id}:{quality}")
                 cooldown = _integer(filename, row, "cooldown_ticks", 1)
+                crit_chance_bps = _integer(filename, row, "crit_chance_bps", 0)
+                if crit_chance_bps > CRIT_CHANCE_SCALE_BPS:
+                    raise ExportError(f"ITEM_CRIT_CHANCE_INVALID:{item_id}:{quality}")
                 ammo_enabled = _boolean(filename, row, "ammo_enabled")
                 ammo_initial = _integer(filename, row, "ammo_initial", 0)
                 ammo_maximum = _integer(filename, row, "ammo_maximum", 0)
@@ -2141,6 +2202,7 @@ class ContentAssembler:
                     "buyPrice": buy_price,
                     "sellPrice": sell_price,
                     "baseCooldownTicks": cooldown,
+                    "critChanceBps": crit_chance_bps,
                     "ammo": {"enabled": ammo_enabled, "initial": ammo_initial, "maximum": ammo_maximum},
                     "effects": [],
                 }
@@ -2407,19 +2469,33 @@ class ContentAssembler:
             if operation_type in {
                 "deal_damage", "reload", "heal", "gain_shield", "gain_damage_for_fight",
             }:
-                params = {"amount": _integer(filename, row, "amount", 1)}
+                amount = _integer(filename, row, "amount", 1)
+                params = {"amount": amount}
+                if operation_type == "deal_damage":
+                    params["canCrit"] = _boolean(filename, row, "can_crit")
+                    if params["canCrit"] and amount > CRIT_DAMAGE_AMOUNT_MAX:
+                        raise ExportError(f"EFFECT_CRIT_DAMAGE_AMOUNT_INVALID:{effect_id}")
+                    if params["canCrit"] and (
+                        trigger_event != "item_ready"
+                        or conditions != [{"type": "always", "params": {}}]
+                        or target_type != "selected_enemy"
+                    ):
+                        raise ExportError(f"EFFECT_CRIT_CONTRACT_INVALID:{effect_id}")
+                elif row.get("can_crit", "").strip():
+                    raise ExportError(f"EFFECT_CAN_CRIT_UNEXPECTED:{effect_id}")
                 if row.get("status", "").strip() or row.get("ticks", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             elif operation_type == "charge":
                 params = {"ticks": _integer(filename, row, "ticks", 1)}
-                if row.get("amount", "").strip() or row.get("status", "").strip():
+                if row.get("amount", "").strip() or row.get("can_crit", "").strip() \
+                        or row.get("status", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             else:
                 status = _require_text(filename, row, "status")
                 if status not in ITEM_STATUSES:
                     raise ExportError(f"EFFECT_STATUS_INVALID:{effect_id}")
                 params = {"status": status, "ticks": _integer(filename, row, "ticks", 1)}
-                if row.get("amount", "").strip():
+                if row.get("amount", "").strip() or row.get("can_crit", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             effect = {
                 "effectId": effect_id,
@@ -2445,6 +2521,19 @@ class ContentAssembler:
                 for effect in profile["effects"]
             ):
                 raise ExportError(f"ITEM_DAMAGE_GROWTH_ACTIVE_DAMAGE_REQUIRED:{key[0]}:{key[1]}")
+            damage_effects = [
+                effect for effect in profile["effects"]
+                if effect["operation"]["type"] == "deal_damage"
+            ]
+            crit_effects = [
+                effect for effect in damage_effects
+                if effect["operation"]["params"].get("canCrit") is True
+            ]
+            crit_chance_bps = profile["critChanceBps"]
+            if len(crit_effects) > 1 \
+                    or (crit_chance_bps > 0 and len(crit_effects) != 1) \
+                    or (crit_effects and len(damage_effects) != 1):
+                raise ExportError(f"ITEM_CRIT_PROFILE_MISMATCH:{key[0]}:{key[1]}")
             profile["effects"].sort(key=lambda value: (value["priority"], value["effectId"]))
         for item_skill_id, skill in item_skills.items():
             if actual_item_skill_effects.get(item_skill_id, set()) != skill["effectIds"]:
@@ -3049,8 +3138,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v21 candidate source.
-            # This adapter is its explicit one-way projection into executable v23.
+            # The current 22-domain workbook is the finite v22 candidate source.
+            # This adapter is its explicit one-way projection into executable v24.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3067,6 +3156,11 @@ class ContentAssembler:
             "start_hour": "1",
             "board_size": "10",
             "terminal_pressure_enabled": "true",
+            "crit_contract": CRIT_CONTRACT,
+            "chance_scale_bps": str(CRIT_CHANCE_SCALE_BPS),
+            "rounding_mode": CRIT_ROUNDING_MODE,
+            "roll_scope": CRIT_ROLL_SCOPE,
+            "draw_policy": CRIT_DRAW_POLICY,
         }
         for field, expected in expected_constants.items():
             actual = _same(rows, filename, field)
@@ -3120,6 +3214,21 @@ class ContentAssembler:
             "intervalTicks": globals_int["terminal_pressure_interval_ticks"],
             "initialDamage": globals_int["terminal_pressure_initial_damage"],
             "incrementDamage": globals_int["terminal_pressure_increment_damage"],
+        }
+        damage_multiplier_text = _same(rows, filename, "damage_multiplier_bps")
+        if not INTEGER_RE.fullmatch(damage_multiplier_text):
+            raise ExportError("GAMEPLAY_INTEGER_INVALID:damage_multiplier_bps")
+        damage_multiplier_bps = int(damage_multiplier_text)
+        if damage_multiplier_bps <= CRIT_CHANCE_SCALE_BPS \
+                or damage_multiplier_bps > CRIT_DAMAGE_MULTIPLIER_MAX_BPS:
+            raise ExportError("GAMEPLAY_CRIT_DAMAGE_MULTIPLIER_INVALID")
+        identity["critRules"] = {
+            "contractId": CRIT_CONTRACT,
+            "chanceScaleBps": CRIT_CHANCE_SCALE_BPS,
+            "damageMultiplierBps": damage_multiplier_bps,
+            "roundingMode": CRIT_ROUNDING_MODE,
+            "rollScope": CRIT_ROLL_SCOPE,
+            "drawPolicy": CRIT_DRAW_POLICY,
         }
         prestige_battle_kind = _same(rows, filename, "prestige_battle_kind")
         if prestige_battle_kind != "ghost":
@@ -3571,7 +3680,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v23 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v24 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3586,7 +3695,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v23 candidate "
+            "PASS original-pirate v24 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3599,7 +3708,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v23 candidate to {output}")
+        print(f"exported original-pirate v24 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

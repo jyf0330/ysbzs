@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_bazaar_local_gamedata_source_relock_v2` 来源锁交付刷新。
+最后刷新：2026-09-04，由 `2026-09-04_original_pirate_crit_success_response` 数据规则交付刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-04_original_pirate_crit_success_response.md` — data rules: Crit v3 与另一件友方物品成功暴击后驱动继航校炮仪自充能的数据真相链已完成，并保持原有正式报价、升级与铭刻可达。
 
 - `tasks/done/2026-09-03_bazaar_local_gamedata_source_relock_v2.md` — data source: 保留旧 build 快照并追加 `25079259/db8914ab` reference-only GameData 身份锁，固定 Vanessa 140 Item / 138 Skill 集合及不可再分发边界。
 

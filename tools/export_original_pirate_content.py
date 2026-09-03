@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v31 candidate package while still validating every
+outside the formal v32 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 31
+CONTENT_SCHEMA_VERSION = 32
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 29
-SOURCE_CONTENT_SCHEMA_VERSION = 29
-SOURCE_RUNTIME_SCHEMA_VERSION = 27
+RUNTIME_SCHEMA_VERSION = 30
+SOURCE_CONTENT_SCHEMA_VERSION = 30
+SOURCE_RUNTIME_SCHEMA_VERSION = 28
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 21
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 22
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v27"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v28"
 AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
 AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
 AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
@@ -103,7 +103,7 @@ HEAL_STATUS_CLEANSE_POISON_SCHEDULE_POLICY = "clear_due_if_zero_else_preserve"
 HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY = "only_when_effective_heal_and_any_status_present"
 HEAL_STATUS_CLEANSE_CRIT_POLICY = "never"
 HEAL_STATUS_CLEANSE_RNG_POLICY = "never"
-CRIT_CONTRACT = "ysbzs.original-pirate-critical-damage.v2"
+CRIT_CONTRACT = "ysbzs.original-pirate-critical-damage.v3"
 CRIT_CHANCE_SCALE_BPS = 10000
 CRIT_DAMAGE_MULTIPLIER_MAX_BPS = 100000
 CRIT_DAMAGE_AMOUNT_MAX = 922337203685477580
@@ -116,6 +116,13 @@ CRIT_GROWTH_TIMING_POLICY = "after_source_use_for_subsequent_uses"
 CRIT_GROWTH_ELIGIBLE_TARGET_POLICY = \
     "trigger_source_item_with_exactly_one_can_crit_item_ready_direct_damage"
 CRIT_GROWTH_RNG_POLICY = "never"
+CRIT_SUCCESS_RESPONSE_EVIDENCE_POLICY = \
+    "crit_resolve_is_critical_with_bound_committed_damage"
+CRIT_SUCCESS_RESPONSE_SOURCE_POLICY = "another_same_owner_active_board_item"
+CRIT_SUCCESS_RESPONSE_TIMING_POLICY = "after_source_use_effects_in_item_response_phase"
+CRIT_SUCCESS_RESPONSE_REPEAT_POLICY = "once_per_qualifying_item_use"
+CRIT_SUCCESS_RESPONSE_TERMINAL_POLICY = "skip_after_terminal"
+CRIT_SUCCESS_RESPONSE_RNG_POLICY = "never"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
@@ -146,8 +153,10 @@ REACTIVE_ITEM_EFFECT_OPERATIONS = {
 ITEM_STATUSES = {"haste", "slow", "freeze"}
 ITEM_TAGS = {"ammo", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "weapon"}
 BURN_RESPONSE_TRIGGER = "another_friendly_item_applied_burn"
+CRIT_SUCCESS_RESPONSE_TRIGGER = "another_friendly_item_crit"
 ITEM_EFFECT_TRIGGERS = {
-    "item_ready", "another_friendly_item_used", BURN_RESPONSE_TRIGGER, "battle_start",
+    "item_ready", "another_friendly_item_used", BURN_RESPONSE_TRIGGER,
+    CRIT_SUCCESS_RESPONSE_TRIGGER, "battle_start",
 }
 ITEM_EFFECT_CONDITIONS = {
     "always", "source_item_has_any_tag", "source_item_can_crit", "source_item_ammo_depleted",
@@ -179,6 +188,9 @@ DOMAIN_HEADERS = OrderedDict([
         "crit_growth_stacking_policy", "crit_growth_cap_policy",
         "crit_growth_timing_policy", "crit_growth_eligible_target_policy",
         "crit_growth_rng_policy",
+        "crit_success_response_evidence_policy", "crit_success_response_source_policy",
+        "crit_success_response_timing_policy", "crit_success_response_repeat_policy",
+        "crit_success_response_terminal_policy", "crit_success_response_rng_policy",
         "ammo_depletion_contract", "ammo_depletion_trigger_policy",
         "ammo_depletion_evaluation_phase", "ammo_depletion_snapshot_policy",
         "ammo_depletion_repeat_policy", "ammo_depletion_non_ammo_policy",
@@ -630,6 +642,9 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
             "params": {"tags": ["burn"]},
         }]:
             raise ExportError(f"EXECUTABLE_ITEM_BURN_RESPONSE_TRIGGER_INVALID:{effect_id}")
+    elif trigger_event == CRIT_SUCCESS_RESPONSE_TRIGGER:
+        if conditions != [{"type": "always", "params": {}}]:
+            raise ExportError(f"EXECUTABLE_ITEM_CRIT_SUCCESS_RESPONSE_TRIGGER_INVALID:{effect_id}")
     else:
         if len(conditions) not in {1, 2}:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
@@ -685,6 +700,10 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         target_type != "self_item" or operation_type != "charge"
     ):
         raise ExportError(f"EXECUTABLE_ITEM_BURN_RESPONSE_CONTRACT_INVALID:{effect_id}")
+    if trigger_event == CRIT_SUCCESS_RESPONSE_TRIGGER and (
+        target_type != "self_item" or operation_type != "charge"
+    ):
+        raise ExportError(f"EXECUTABLE_ITEM_CRIT_SUCCESS_RESPONSE_CONTRACT_INVALID:{effect_id}")
     if conditions and conditions[0].get("type") == "source_item_can_crit" \
             and operation_type != "gain_crit_chance_for_fight":
         raise ExportError(f"EXECUTABLE_ITEM_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
@@ -970,7 +989,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v31/v29 candidate package without accepting partial data."""
+    """Validate the formal v32/v30 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -1133,6 +1152,9 @@ def validate_package(package: Any) -> None:
         "contractId", "chanceScaleBps", "damageMultiplierBps", "roundingMode",
         "rollScope", "drawPolicy", "growthStackingPolicy", "growthCapPolicy",
         "growthTimingPolicy", "growthEligibleTargetPolicy", "growthRngPolicy",
+        "successResponseEvidencePolicy", "successResponseSourcePolicy",
+        "successResponseTimingPolicy", "successResponseRepeatPolicy",
+        "successResponseTerminalPolicy", "successResponseRngPolicy",
     }, "battleRules:critRules")
     damage_multiplier_bps = _expect_integer(
         crit_rules["damageMultiplierBps"], "battleRules:critRules:damageMultiplierBps",
@@ -1148,7 +1170,14 @@ def validate_package(package: Any) -> None:
             or crit_rules["growthCapPolicy"] != CRIT_GROWTH_CAP_POLICY \
             or crit_rules["growthTimingPolicy"] != CRIT_GROWTH_TIMING_POLICY \
             or crit_rules["growthEligibleTargetPolicy"] != CRIT_GROWTH_ELIGIBLE_TARGET_POLICY \
-            or crit_rules["growthRngPolicy"] != CRIT_GROWTH_RNG_POLICY:
+            or crit_rules["growthRngPolicy"] != CRIT_GROWTH_RNG_POLICY \
+            or crit_rules["successResponseEvidencePolicy"] \
+                != CRIT_SUCCESS_RESPONSE_EVIDENCE_POLICY \
+            or crit_rules["successResponseSourcePolicy"] != CRIT_SUCCESS_RESPONSE_SOURCE_POLICY \
+            or crit_rules["successResponseTimingPolicy"] != CRIT_SUCCESS_RESPONSE_TIMING_POLICY \
+            or crit_rules["successResponseRepeatPolicy"] != CRIT_SUCCESS_RESPONSE_REPEAT_POLICY \
+            or crit_rules["successResponseTerminalPolicy"] != CRIT_SUCCESS_RESPONSE_TERMINAL_POLICY \
+            or crit_rules["successResponseRngPolicy"] != CRIT_SUCCESS_RESPONSE_RNG_POLICY:
         raise ExportError("EXECUTABLE_CRIT_RULES_INVALID")
     burn_rules = _expect_exact_fields(battle_rules["burnRules"], {
         "contractId", "pulseIntervalTicks", "firstPulsePolicy", "pulsePhase",
@@ -2781,6 +2810,11 @@ class ContentAssembler:
                     "type": "source_item_has_any_tag",
                     "params": {"tags": condition_tags},
                 }]
+            elif trigger_event == CRIT_SUCCESS_RESPONSE_TRIGGER:
+                if condition_type != "always" or row.get("condition_tags", "").strip() \
+                        or source_relation != "any":
+                    raise ExportError(f"EFFECT_CRIT_SUCCESS_RESPONSE_TRIGGER_INVALID:{effect_id}")
+                conditions = [{"type": "always", "params": {}}]
             else:
                 if condition_type == "source_item_can_crit":
                     if row.get("condition_tags", "").strip() or source_relation != "any":
@@ -2837,6 +2871,10 @@ class ContentAssembler:
                 target_type != "self_item" or operation_type != "charge"
             ):
                 raise ExportError(f"EFFECT_BURN_RESPONSE_CONTRACT_INVALID:{effect_id}")
+            if trigger_event == CRIT_SUCCESS_RESPONSE_TRIGGER and (
+                target_type != "self_item" or operation_type != "charge"
+            ):
+                raise ExportError(f"EFFECT_CRIT_SUCCESS_RESPONSE_CONTRACT_INVALID:{effect_id}")
             if condition_type == "source_item_can_crit" \
                     and operation_type != "gain_crit_chance_for_fight":
                 raise ExportError(f"EFFECT_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
@@ -3661,8 +3699,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v29 candidate source.
-            # This adapter is its explicit one-way projection into executable v31.
+            # The current 23-domain workbook is the finite v30 candidate source.
+            # This adapter is its explicit one-way projection into executable v32.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3689,6 +3727,12 @@ class ContentAssembler:
             "crit_growth_timing_policy": CRIT_GROWTH_TIMING_POLICY,
             "crit_growth_eligible_target_policy": CRIT_GROWTH_ELIGIBLE_TARGET_POLICY,
             "crit_growth_rng_policy": CRIT_GROWTH_RNG_POLICY,
+            "crit_success_response_evidence_policy": CRIT_SUCCESS_RESPONSE_EVIDENCE_POLICY,
+            "crit_success_response_source_policy": CRIT_SUCCESS_RESPONSE_SOURCE_POLICY,
+            "crit_success_response_timing_policy": CRIT_SUCCESS_RESPONSE_TIMING_POLICY,
+            "crit_success_response_repeat_policy": CRIT_SUCCESS_RESPONSE_REPEAT_POLICY,
+            "crit_success_response_terminal_policy": CRIT_SUCCESS_RESPONSE_TERMINAL_POLICY,
+            "crit_success_response_rng_policy": CRIT_SUCCESS_RESPONSE_RNG_POLICY,
             "ammo_depletion_contract": AMMO_DEPLETION_CONTRACT,
             "ammo_depletion_trigger_policy": AMMO_DEPLETION_TRIGGER_POLICY,
             "ammo_depletion_evaluation_phase": AMMO_DEPLETION_EVALUATION_PHASE,
@@ -3813,6 +3857,12 @@ class ContentAssembler:
             "growthTimingPolicy": CRIT_GROWTH_TIMING_POLICY,
             "growthEligibleTargetPolicy": CRIT_GROWTH_ELIGIBLE_TARGET_POLICY,
             "growthRngPolicy": CRIT_GROWTH_RNG_POLICY,
+            "successResponseEvidencePolicy": CRIT_SUCCESS_RESPONSE_EVIDENCE_POLICY,
+            "successResponseSourcePolicy": CRIT_SUCCESS_RESPONSE_SOURCE_POLICY,
+            "successResponseTimingPolicy": CRIT_SUCCESS_RESPONSE_TIMING_POLICY,
+            "successResponseRepeatPolicy": CRIT_SUCCESS_RESPONSE_REPEAT_POLICY,
+            "successResponseTerminalPolicy": CRIT_SUCCESS_RESPONSE_TERMINAL_POLICY,
+            "successResponseRngPolicy": CRIT_SUCCESS_RESPONSE_RNG_POLICY,
         }
         identity["ammoDepletionRules"] = {
             "contractId": AMMO_DEPLETION_CONTRACT,
@@ -4325,7 +4375,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v31 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v32 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4340,7 +4390,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v31 candidate "
+            "PASS original-pirate v32 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4353,7 +4403,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v31 candidate to {output}")
+        print(f"exported original-pirate v32 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

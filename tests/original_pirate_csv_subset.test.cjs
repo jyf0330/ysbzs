@@ -45,7 +45,7 @@ function readCsv(filename) {
   };
 }
 
-test('OPCSV01 Ammo depletion、Crit v2、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
+test('OPCSV01 Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
   const gameplay = readCsv('44_bz_gameplay.csv');
   const effects = readCsv('47_bz_item_effects.csv');
   assert.deepEqual(gameplay.rows.map((row) => ({
@@ -61,6 +61,12 @@ test('OPCSV01 Ammo depletion、Crit v2、Heal/Cleanse、Poison v2、Burn source 
     critGrowthTimingPolicy: row.crit_growth_timing_policy,
     critGrowthEligibleTargetPolicy: row.crit_growth_eligible_target_policy,
     critGrowthRngPolicy: row.crit_growth_rng_policy,
+    critSuccessResponseEvidencePolicy: row.crit_success_response_evidence_policy,
+    critSuccessResponseSourcePolicy: row.crit_success_response_source_policy,
+    critSuccessResponseTimingPolicy: row.crit_success_response_timing_policy,
+    critSuccessResponseRepeatPolicy: row.crit_success_response_repeat_policy,
+    critSuccessResponseTerminalPolicy: row.crit_success_response_terminal_policy,
+    critSuccessResponseRngPolicy: row.crit_success_response_rng_policy,
     burnContract: row.burn_contract,
     pulseIntervalTicks: row.burn_pulse_interval_ticks,
     firstPulsePolicy: row.burn_first_pulse_policy,
@@ -104,18 +110,24 @@ test('OPCSV01 Ammo depletion、Crit v2、Heal/Cleanse、Poison v2、Burn source 
     ammoDepletionReloadPolicy: row.ammo_depletion_reload_policy,
     ammoDepletionRngPolicy: row.ammo_depletion_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '29',
-    runtimeSchemaVersion: '27',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v27',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v28',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v28',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v28',
-    critContract: 'ysbzs.original-pirate-critical-damage.v2',
+    schemaVersion: '30',
+    runtimeSchemaVersion: '28',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v28',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v29',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v29',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v29',
+    critContract: 'ysbzs.original-pirate-critical-damage.v3',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
     critGrowthTimingPolicy: 'after_source_use_for_subsequent_uses',
     critGrowthEligibleTargetPolicy: 'trigger_source_item_with_exactly_one_can_crit_item_ready_direct_damage',
     critGrowthRngPolicy: 'never',
+    critSuccessResponseEvidencePolicy: 'crit_resolve_is_critical_with_bound_committed_damage',
+    critSuccessResponseSourcePolicy: 'another_same_owner_active_board_item',
+    critSuccessResponseTimingPolicy: 'after_source_use_effects_in_item_response_phase',
+    critSuccessResponseRepeatPolicy: 'once_per_qualifying_item_use',
+    critSuccessResponseTerminalPolicy: 'skip_after_terminal',
+    critSuccessResponseRngPolicy: 'never',
     burnContract: 'ysbzs.original-pirate-burn.v2',
     pulseIntervalTicks: '1',
     firstPulsePolicy: 'next_tick',
@@ -362,4 +374,48 @@ test('OPCSV07 尾潮回响鼓四品质只在另一件燃烧物品成功施加 Bu
   assert.equal(skill.trigger_events, 'another_friendly_item_applied_burn, another_friendly_item_used, item_ready');
   assert.match(skill.description_zh, /另一件.*燃烧.*成功施加.*自身.*充能/);
   for (const { effect_id: effectId } of effects) assert.match(skill.effect_ids, new RegExp(effectId));
+});
+
+test('OPCSV08 继航校炮仪四品质只在另一件友方物品成功暴击后推进自身', () => {
+  const gameplay = readCsv('44_bz_gameplay.csv').rows;
+  assert.equal(gameplay.every((row) => (
+    row.schema_version === '30'
+      && row.runtime_schema_version === '28'
+      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v28'
+      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-03-v29'
+      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-03-v29'
+      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v29'
+      && row.crit_contract === 'ysbzs.original-pirate-critical-damage.v3'
+      && row.crit_success_response_evidence_policy === 'crit_resolve_is_critical_with_bound_committed_damage'
+      && row.crit_success_response_source_policy === 'another_same_owner_active_board_item'
+      && row.crit_success_response_timing_policy === 'after_source_use_effects_in_item_response_phase'
+      && row.crit_success_response_repeat_policy === 'once_per_qualifying_item_use'
+      && row.crit_success_response_terminal_policy === 'skip_after_terminal'
+      && row.crit_success_response_rng_policy === 'never'
+  )), true);
+  const effects = readCsv('47_bz_item_effects.csv').rows.filter(({ trigger_event: triggerEvent }) => (
+    triggerEvent === 'another_friendly_item_crit'
+  ));
+  assert.deepEqual(effects.map((row) => [
+    row.effect_id, row.item_id, row.quality, row.item_skill_id, row.priority,
+    row.trigger_event, row.condition_type, row.condition_tags,
+    row.condition_source_relation, row.target_type, row.target_tags,
+    row.target_exclude_self, row.target_count, row.operation_type, row.amount,
+    row.crit_chance_bps_delta, row.stacks, row.can_crit, row.status, row.ticks,
+  ]), [
+    ['effect_followwake_calibrator_bronze_crit_success_charge', 'item_followwake_calibrator', 'bronze', 'skill_followwake_calibrator', '50', 'another_friendly_item_crit', 'always', '', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '1'],
+    ['effect_followwake_calibrator_silver_crit_success_charge', 'item_followwake_calibrator', 'silver', 'skill_followwake_calibrator', '50', 'another_friendly_item_crit', 'always', '', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '1'],
+    ['effect_followwake_calibrator_gold_crit_success_charge', 'item_followwake_calibrator', 'gold', 'skill_followwake_calibrator', '50', 'another_friendly_item_crit', 'always', '', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '2'],
+    ['effect_followwake_calibrator_diamond_crit_success_charge', 'item_followwake_calibrator', 'diamond', 'skill_followwake_calibrator', '50', 'another_friendly_item_crit', 'always', '', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '2'],
+  ]);
+  const skill = readCsv('48_bz_item_skills.csv').rows.find(({ item_skill_id: itemSkillId }) => (
+    itemSkillId === 'skill_followwake_calibrator'
+  ));
+  assert.equal(skill.trigger_events, 'another_friendly_item_crit, another_friendly_item_used, item_ready');
+  assert.match(skill.description_zh, /另一件友方物品.*成功暴击.*自身.*充能/);
+  for (const { effect_id: effectId } of effects) assert.match(skill.effect_ids, new RegExp(effectId));
+  const offer = readCsv('50_bz_stall_offers.csv').rows.find(({ offer_id: offerId }) => (
+    offerId === 'offer_refresh_2_followwake_calibrator'
+  ));
+  assert.deepEqual([offer.refresh_index, offer.slot_order, offer.quality, offer.price], ['2', '2', 'bronze', '4']);
 });

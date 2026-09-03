@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v30 candidate package while still validating every
+outside the formal v31 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 30
+CONTENT_SCHEMA_VERSION = 31
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 28
-SOURCE_CONTENT_SCHEMA_VERSION = 28
-SOURCE_RUNTIME_SCHEMA_VERSION = 26
+RUNTIME_SCHEMA_VERSION = 29
+SOURCE_CONTENT_SCHEMA_VERSION = 29
+SOURCE_RUNTIME_SCHEMA_VERSION = 27
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 20
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 21
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v26"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v27"
 AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
 AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
 AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
@@ -69,7 +69,7 @@ DAMAGE_AURA_DAMAGE_PHASE = "before_crit"
 DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY = "compiled_board_source_for_battle"
 DAMAGE_AURA_OVERFLOW_POLICY = "reject_advance"
 DAMAGE_AURA_RNG_POLICY = "never"
-BURN_CONTRACT = "ysbzs.original-pirate-burn.v1"
+BURN_CONTRACT = "ysbzs.original-pirate-burn.v2"
 BURN_PULSE_INTERVAL_TICKS = 1
 BURN_FIRST_PULSE_POLICY = "next_tick"
 BURN_PULSE_PHASE = "tick_start_before_item_progress"
@@ -145,7 +145,10 @@ REACTIVE_ITEM_EFFECT_OPERATIONS = {
 }
 ITEM_STATUSES = {"haste", "slow", "freeze"}
 ITEM_TAGS = {"ammo", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "weapon"}
-ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used", "battle_start"}
+BURN_RESPONSE_TRIGGER = "another_friendly_item_applied_burn"
+ITEM_EFFECT_TRIGGERS = {
+    "item_ready", "another_friendly_item_used", BURN_RESPONSE_TRIGGER, "battle_start",
+}
 ITEM_EFFECT_CONDITIONS = {
     "always", "source_item_has_any_tag", "source_item_can_crit", "source_item_ammo_depleted",
 }
@@ -621,6 +624,12 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
             pass
         else:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+    elif trigger_event == BURN_RESPONSE_TRIGGER:
+        if conditions != [{
+            "type": "source_item_has_any_tag",
+            "params": {"tags": ["burn"]},
+        }]:
+            raise ExportError(f"EXECUTABLE_ITEM_BURN_RESPONSE_TRIGGER_INVALID:{effect_id}")
     else:
         if len(conditions) not in {1, 2}:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
@@ -672,6 +681,10 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     if trigger_event == "another_friendly_item_used" \
             and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
+    if trigger_event == BURN_RESPONSE_TRIGGER and (
+        target_type != "self_item" or operation_type != "charge"
+    ):
+        raise ExportError(f"EXECUTABLE_ITEM_BURN_RESPONSE_CONTRACT_INVALID:{effect_id}")
     if conditions and conditions[0].get("type") == "source_item_can_crit" \
             and operation_type != "gain_crit_chance_for_fight":
         raise ExportError(f"EXECUTABLE_ITEM_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
@@ -957,7 +970,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v30/v28 candidate package without accepting partial data."""
+    """Validate the formal v31/v29 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -2758,6 +2771,16 @@ class ContentAssembler:
                     conditions = [{"type": "source_item_ammo_depleted", "params": {}}]
                 else:
                     raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
+            elif trigger_event == BURN_RESPONSE_TRIGGER:
+                if condition_type != "source_item_has_any_tag" or source_relation != "any":
+                    raise ExportError(f"EFFECT_BURN_RESPONSE_TRIGGER_INVALID:{effect_id}")
+                condition_tags = _item_tags(filename, row, "condition_tags")
+                if condition_tags != ["burn"]:
+                    raise ExportError(f"EFFECT_BURN_RESPONSE_TRIGGER_INVALID:{effect_id}")
+                conditions = [{
+                    "type": "source_item_has_any_tag",
+                    "params": {"tags": condition_tags},
+                }]
             else:
                 if condition_type == "source_item_can_crit":
                     if row.get("condition_tags", "").strip() or source_relation != "any":
@@ -2810,6 +2833,10 @@ class ContentAssembler:
             if trigger_event == "another_friendly_item_used" \
                     and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
                 raise ExportError(f"EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
+            if trigger_event == BURN_RESPONSE_TRIGGER and (
+                target_type != "self_item" or operation_type != "charge"
+            ):
+                raise ExportError(f"EFFECT_BURN_RESPONSE_CONTRACT_INVALID:{effect_id}")
             if condition_type == "source_item_can_crit" \
                     and operation_type != "gain_crit_chance_for_fight":
                 raise ExportError(f"EFFECT_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
@@ -3634,8 +3661,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v28 candidate source.
-            # This adapter is its explicit one-way projection into executable v30.
+            # The current 23-domain workbook is the finite v29 candidate source.
+            # This adapter is its explicit one-way projection into executable v31.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -4298,7 +4325,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v30 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v31 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4313,7 +4340,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v30 candidate "
+            "PASS original-pirate v31 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4326,7 +4353,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v30 candidate to {output}")
+        print(f"exported original-pirate v31 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

@@ -33,12 +33,16 @@ effect_abyss_bell_diamond_hit,item_abyss_bell,diamond,skill_abyss_bell,5,item_re
 effect_abyss_bell_diamond_reload,item_abyss_bell,diamond,skill_abyss_bell,6,item_ready,always,,any,self_item,,,,reload,1,,,,,,formal
 effect_wake_echo_drum_bronze_ready,item_wake_echo_drum,bronze,skill_wake_echo_drum,20,item_ready,always,,any,selected_enemy,,,,deal_damage,2,,,false,,,formal
 effect_wake_echo_drum_bronze_response,item_wake_echo_drum,bronze,skill_wake_echo_drum,30,another_friendly_item_used,source_item_has_any_tag,"ammo, weapon",any,selected_enemy,,,,deal_damage,2,,,false,,,formal
+effect_wake_echo_drum_bronze_burn_response_charge,item_wake_echo_drum,bronze,skill_wake_echo_drum,40,another_friendly_item_applied_burn,source_item_has_any_tag,burn,any,self_item,,,,charge,,,,,,1,formal
 effect_wake_echo_drum_silver_ready,item_wake_echo_drum,silver,skill_wake_echo_drum,20,item_ready,always,,any,selected_enemy,,,,deal_damage,3,,,false,,,formal
 effect_wake_echo_drum_silver_response,item_wake_echo_drum,silver,skill_wake_echo_drum,30,another_friendly_item_used,source_item_has_any_tag,"ammo, weapon",any,selected_enemy,,,,deal_damage,3,,,false,,,formal
+effect_wake_echo_drum_silver_burn_response_charge,item_wake_echo_drum,silver,skill_wake_echo_drum,40,another_friendly_item_applied_burn,source_item_has_any_tag,burn,any,self_item,,,,charge,,,,,,1,formal
 effect_wake_echo_drum_gold_ready,item_wake_echo_drum,gold,skill_wake_echo_drum,20,item_ready,always,,any,selected_enemy,,,,deal_damage,5,,,false,,,formal
 effect_wake_echo_drum_gold_response,item_wake_echo_drum,gold,skill_wake_echo_drum,30,another_friendly_item_used,source_item_has_any_tag,"ammo, weapon",any,selected_enemy,,,,deal_damage,5,,,false,,,formal
+effect_wake_echo_drum_gold_burn_response_charge,item_wake_echo_drum,gold,skill_wake_echo_drum,40,another_friendly_item_applied_burn,source_item_has_any_tag,burn,any,self_item,,,,charge,,,,,,2,formal
 effect_wake_echo_drum_diamond_ready,item_wake_echo_drum,diamond,skill_wake_echo_drum,20,item_ready,always,,any,selected_enemy,,,,deal_damage,7,,,false,,,formal
 effect_wake_echo_drum_diamond_response,item_wake_echo_drum,diamond,skill_wake_echo_drum,30,another_friendly_item_used,source_item_has_any_tag,"ammo, weapon",any,selected_enemy,,,,deal_damage,8,,,false,,,formal
+effect_wake_echo_drum_diamond_burn_response_charge,item_wake_echo_drum,diamond,skill_wake_echo_drum,40,another_friendly_item_applied_burn,source_item_has_any_tag,burn,any,self_item,,,,charge,,,,,,2,formal
 effect_saltwind_capstan_bronze_ready,item_saltwind_capstan,bronze,skill_saltwind_capstan,20,item_ready,always,,any,selected_enemy,,,,deal_damage,2,,,false,,,formal
 effect_saltwind_capstan_bronze_response,item_saltwind_capstan,bronze,skill_saltwind_capstan,30,another_friendly_item_used,source_item_has_any_tag,tool,any,self_item,,,,charge,,,,,,1,formal
 effect_saltwind_capstan_silver_ready,item_saltwind_capstan,silver,skill_saltwind_capstan,20,item_ready,always,,any,selected_enemy,,,,deal_damage,4,,,false,,,formal

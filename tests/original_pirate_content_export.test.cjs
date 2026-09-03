@@ -314,7 +314,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn、随机/集合/确定性目标与 Ghost 确定且 hash 兼容', () => {
+test('OPC02 v31/v29 Burn成功响应、Ammo depletion、Crit成长、Heal/Cleanse、Poison、随机/集合/确定性目标与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -331,13 +331,13 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 30);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v26');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v27');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v27');
+  assert.equal(content.schemaVersion, 31);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v27');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v28');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v28');
   assert.equal(content.items.length, 22);
-  assert.equal(content.runtimeBundle.schemaVersion, 28);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v27');
+  assert.equal(content.runtimeBundle.schemaVersion, 29);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v28');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -354,7 +354,7 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
       rngPolicy: 'never',
     },
     burnRules: {
-      contractId: 'ysbzs.original-pirate-burn.v1',
+      contractId: 'ysbzs.original-pirate-burn.v2',
       pulseIntervalTicks: 1,
       firstPulsePolicy: 'next_tick',
       pulsePhase: 'tick_start_before_item_progress',
@@ -593,7 +593,7 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 20,
+    'ysbzs.original-pirate-executable-catalogs.v1', 21,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
@@ -744,7 +744,7 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects));
-  assert.equal(executableEffects.length, 152);
+  assert.equal(executableEffects.length, 156);
   const executableDamageEffects = executableEffects.filter(({ operation }) => operation.type === 'deal_damage');
   assert.equal(executableDamageEffects.every(({ operation }) => (
     typeof operation.params.canCrit === 'boolean'
@@ -787,6 +787,18 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
   assert.equal(reactiveEffects.filter(({ trigger }) => (
     trigger.conditions[0].type === 'source_item_can_crit'
   )).length, 4);
+  const burnResponseEffects = executableEffects.filter(({ trigger }) => (
+    trigger.event === 'another_friendly_item_applied_burn'
+  ));
+  assert.equal(burnResponseEffects.length, 4);
+  assert.equal(burnResponseEffects.every(({ trigger, target, operation }) => (
+    trigger.conditions.length === 1
+      && trigger.conditions[0].type === 'source_item_has_any_tag'
+      && trigger.conditions[0].params.tags.length === 1
+      && trigger.conditions[0].params.tags[0] === 'burn'
+      && target.type === 'self_item' && Object.keys(target.params).length === 0
+      && operation.type === 'charge' && operation.params.ticks > 0
+  )), true);
   assert.equal(content.items.every(({ qualityProfiles }) => Object.values(qualityProfiles).every(({ effects }) => (
     effects.some(({ trigger }) => trigger.event === 'item_ready')
   ))), true);
@@ -888,7 +900,7 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
   )), true);
   assert.deepEqual(catalogs.itemSkills.find(({ itemSkillId }) => (
     itemSkillId === 'skill_wake_echo_drum'
-  )).triggerEvents, ['another_friendly_item_used', 'item_ready']);
+  )).triggerEvents, ['another_friendly_item_applied_burn', 'another_friendly_item_used', 'item_ready']);
   assert.deepEqual(catalogs.itemSkills.find(({ itemSkillId }) => (
     itemSkillId === 'skill_tidescar_matchlock'
   )).triggerEvents, ['another_friendly_item_used', 'item_ready']);
@@ -1056,8 +1068,8 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v27');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v27');
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v28');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v28');
   assert.equal(display.entries.length, 121);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
@@ -1163,8 +1175,8 @@ test('OPC02 v30/v28 Ammo depletion、Crit成长、Heal/Cleanse、Poison、Burn�
   assert.notEqual(targetCountColumn, -1);
   assert.notEqual(critChanceDeltaColumn, -1);
   assert.notEqual(canCritColumn, -1);
-  assert.equal(effectSourceRows.length, 152);
-  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 148);
+  assert.equal(effectSourceRows.length, 156);
+  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 152);
   assert.equal(effectSourceRows.filter((row) => row[targetTagsColumn] !== '').length, 8);
   assert.equal(effectSourceRows.filter((row) => row[targetExcludeSelfColumn] !== '').length, 4);
   assert.equal(effectSourceRows.filter((row) => row[targetCountColumn] !== '').length, 4);
@@ -1212,7 +1224,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   const item = content.items.find(({ itemId }) => itemId === 'item_quadrant_linkage');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['tool', 'vehicle']]);
@@ -1290,7 +1302,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
   )).descriptionZh, /左邻.*右邻.*最左.*最右.*自身/);
 });
 
-test('OPC02B v30 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
+test('OPC02B v31 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-trigger-source-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1302,7 +1314,7 @@ test('OPC02B v30 继航校炮仪把响应伤害成长绑定到无参数动态触
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   const item = content.items.find(({ itemId }) => itemId === 'item_followwake_calibrator');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1400,7 +1412,7 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   const item = content.items.find(({ itemId }) => itemId === 'item_dawntide_timer');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1500,7 +1512,7 @@ test('OPC02D 齐射传令台逐品质只为己方武器标签集合推进充能'
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   const item = content.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['relic', 'tool']]);
@@ -1589,7 +1601,7 @@ test('OPC02E 侧风择发器逐品质随机选择一件非自身己方武器推�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   const item = content.items.find(({ itemId }) => itemId === 'item_crosswind_selector');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['tool', 'weapon']]);
@@ -1679,7 +1691,8 @@ test('OPC02E 侧风择发器逐品质随机选择一件非自身己方武器推�
 
 test('OPC02F 随机单目标显式 canonical excludeSelf false 可经 CSV 导出并通过包校验', () => {
   const dir = mutateDomain((domainDir) => (
-    mutateCell(domainDir, '47_bz_item_effects.csv', 129, 'target_exclude_self', 'false')
+    mutateRowById(domainDir, '47_bz_item_effects.csv', 'effect_id',
+      'effect_crosswind_selector_bronze_charge_random_weapon', 'target_exclude_self', 'false')
   ));
   const output = path.join(dir, 'exclude-self-false.json');
   assert.equal(runExporter(dir, output).status, 0);
@@ -1689,7 +1702,7 @@ test('OPC02F 随机单目标显式 canonical excludeSelf false 可经 CSV 导出
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02G v30 潮镜短铳以品质暴击率和伤害效果资格共用唯一 Crit v2 合同', () => {
+test('OPC02G v31 潮镜短铳以品质暴击率和伤害效果资格共用唯一 Crit v2 合同', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-critical-damage-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1701,7 +1714,7 @@ test('OPC02G v30 潮镜短铳以品质暴击率和伤害效果资格共用唯一
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
     contractId: 'ysbzs.original-pirate-critical-damage.v2',
     chanceScaleBps: 10000,
@@ -1821,7 +1834,8 @@ test('OPC02I Crit 伤害倍率在合法范围内可随正式内容迁移', () =>
 
 test('OPC02J Crit authored damage 接受与 Godot 一致的最大安全整数', () => {
   const dir = mutateDomain((domainDir) => (
-    mutateCell(domainDir, '47_bz_item_effects.csv', 133, 'amount', '922337203685477580')
+    mutateRowById(domainDir, '47_bz_item_effects.csv', 'effect_id',
+      'effect_tideglass_sidearm_bronze_shot', 'amount', '922337203685477580')
   ));
   const output = path.join(dir, 'crit-damage-max.json');
   assert.equal(runExporter(dir, output).status, 0);
@@ -1847,7 +1861,7 @@ test('OPC02K 0% profile 保留显式 eligible damage 并继续由运行时消费
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02L v30 烬航灯逐品质只以就绪效果向敌方英雄施加项目原创 Burn', () => {
+test('OPC02L v31 烬航灯逐品质只以就绪效果向敌方英雄施加项目原创 Burn v2', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-burn-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1859,9 +1873,9 @@ test('OPC02L v30 烬航灯逐品质只以就绪效果向敌方英雄施加项目
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   assert.deepEqual(content.runtimeBundle.battleRules.burnRules, {
-    contractId: 'ysbzs.original-pirate-burn.v1',
+    contractId: 'ysbzs.original-pirate-burn.v2',
     pulseIntervalTicks: 1,
     firstPulsePolicy: 'next_tick',
     pulsePhase: 'tick_start_before_item_progress',
@@ -1943,12 +1957,12 @@ test('OPC02L v30 烬航灯逐品质只以就绪效果向敌方英雄施加项目
   assert.equal(content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)).length, 82);
   assert.equal(content.items.flatMap(({ qualityProfiles }) => (
     Object.values(qualityProfiles).flatMap(({ effects }) => effects)
-  )).length, 152);
+  )).length, 156);
   assert.equal(enchantments.flatMap(({ profiles: values }) => values).length, 148);
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02M v30 墨航滴液器逐品质只以就绪效果向敌方英雄施加项目原创 Poison v2', () => {
+test('OPC02M v31 墨航滴液器逐品质只以就绪效果向敌方英雄施加项目原创 Poison v2', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-poison-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1960,7 +1974,7 @@ test('OPC02M v30 墨航滴液器逐品质只以就绪效果向敌方英雄施加
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   assert.deepEqual(content.runtimeBundle.battleRules.poisonRules, {
     contractId: 'ysbzs.original-pirate-poison.v2',
     pulseIntervalTicks: 10,
@@ -2055,7 +2069,7 @@ test('OPC02M v30 墨航滴液器逐品质只以就绪效果向敌方英雄施加
   assert.equal(content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)).length, 82);
   assert.equal(content.items.flatMap(({ qualityProfiles }) => (
     Object.values(qualityProfiles).flatMap(({ effects }) => effects)
-  )).length, 152);
+  )).length, 156);
   assert.equal(content.runtimeBundle.executableCatalogs.itemSkills.length, 22);
   assert.equal(content.runtimeBundle.executableCatalogs.upgrades.length, 60);
   assert.equal(enchantments.flatMap(({ profiles: values }) => values).length, 148);
@@ -2064,7 +2078,7 @@ test('OPC02M v30 墨航滴液器逐品质只以就绪效果向敌方英雄施加
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02N v30 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武器增加固定伤害', () => {
+test('OPC02N v31 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武器增加固定伤害', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-damage-aura-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -2076,7 +2090,7 @@ test('OPC02N v30 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   assert.deepEqual(content.runtimeBundle.battleRules.damageAuraRules, {
     contractId: 'ysbzs.original-pirate-damage-aura.v1',
     evaluationPolicy: 'per_damage_from_compiled_sources',
@@ -2124,7 +2138,7 @@ test('OPC02N v30 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02O v30 继航校炮仪为真实可暴击触发源增加仅后续 USE 生效的本场暴击率', () => {
+test('OPC02O v31 继航校炮仪为真实可暴击触发源增加仅后续 USE 生效的本场暴击率', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-crit-growth-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -2135,7 +2149,7 @@ test('OPC02O v30 继航校炮仪为真实可暴击触发源增加仅后续 USE �
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
     contractId: 'ysbzs.original-pirate-critical-damage.v2',
     chanceScaleBps: 10000,
@@ -2172,11 +2186,11 @@ test('OPC02O v30 继航校炮仪为真实可暴击触发源增加仅后续 USE �
   }
   assert.equal(content.items.flatMap(({ qualityProfiles }) => (
     Object.values(qualityProfiles).flatMap(({ effects }) => effects)
-  )).length, 152);
+  )).length, 156);
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02P v30 潮鳍投筒在同次 USE 正弹药归零时获得品质护盾', () => {
+test('OPC02P v31 潮鳍投筒在同次 USE 正弹药归零时获得品质护盾', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-ammo-depletion-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -2188,7 +2202,7 @@ test('OPC02P v30 潮鳍投筒在同次 USE 正弹药归零时获得品质护盾'
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [30, 28, 20, 'ysbzs.original-pirate-rules.2026-09-03-v26']);
+  ], [31, 29, 21, 'ysbzs.original-pirate-rules.2026-09-03-v27']);
   assert.deepEqual(content.runtimeBundle.battleRules.ammoDepletionRules, {
     contractId: 'ysbzs.original-pirate-ammo-depletion.v1',
     triggerPolicy: 'current_item_use_positive_to_zero',
@@ -2232,6 +2246,43 @@ test('OPC02P v30 潮鳍投筒在同次 USE 正弹药归零时获得品质护盾'
   assert.match(display.entries.find(({ displayId }) => (
     displayId === 'item_skills.skill_tidefin_launcher'
   )).descriptionZh, /弹药耗尽.*护盾/);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC02Q v31 尾潮回响鼓以另一件燃烧物品的成功施加结果推进自身', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-burn-response-'));
+  const output = path.join(dir, 'content.json');
+  const displayOutput = path.join(dir, 'display.json');
+  assert.equal(runExporter(csvDir, output, displayOutput).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  const display = JSON.parse(fs.readFileSync(displayOutput, 'utf8'));
+  const item = content.items.find(({ itemId }) => itemId === 'item_wake_echo_drum');
+  const ticksByQuality = { bronze: 1, silver: 1, gold: 2, diamond: 2 };
+  for (const [quality, ticks] of Object.entries(ticksByQuality)) {
+    const effect = item.qualityProfiles[quality].effects.find(({ trigger }) => (
+      trigger.event === 'another_friendly_item_applied_burn'
+    ));
+    assert.deepEqual(effect, {
+      effectId: `effect_wake_echo_drum_${quality}_burn_response_charge`,
+      priority: 40,
+      trigger: {
+        event: 'another_friendly_item_applied_burn',
+        conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['burn'] } }],
+      },
+      target: { type: 'self_item', params: {} },
+      operation: { type: 'charge', params: { ticks } },
+    });
+  }
+  const skill = content.runtimeBundle.executableCatalogs.itemSkills.find(({ itemSkillId }) => (
+    itemSkillId === 'skill_wake_echo_drum'
+  ));
+  assert.deepEqual(skill.triggerEvents, [
+    'another_friendly_item_applied_burn', 'another_friendly_item_used', 'item_ready',
+  ]);
+  assert.equal(skill.effectIds.filter((effectId) => effectId.endsWith('_burn_response_charge')).length, 4);
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'item_skills.skill_wake_echo_drum'
+  )).descriptionZh, /另一件.*燃烧.*成功施加.*自身.*充能/);
   assert.equal(validatePackageFile(output).status, 0);
 });
 
@@ -2317,7 +2368,7 @@ test('OPC03 缺 Ammo depletion、Crit成长、Aura、Heal/Cleanse、Poison/Burn�
     ['poison-operation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'operation_type', 'deal_damage')],
     ['poison-profile-crit-forged', (dir) => mutateRowById(dir, '46_bz_items.csv', 'item_id', 'item_inkwake_doser', 'crit_chance_bps', '1')],
     ['poison-profile-second-effect-forged', (dir) => appendInkwakeBronzePoison(dir)],
-    ['burn-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_contract', 'ysbzs.original-pirate-burn.v2')],
+    ['burn-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_contract', 'ysbzs.original-pirate-burn.v1')],
     ['burn-pulse-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_pulse_interval_ticks', '2')],
     ['burn-first-pulse', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_first_pulse_policy', 'same_tick')],
     ['burn-pulse-phase', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_pulse_phase', 'tick_end')],
@@ -2338,6 +2389,13 @@ test('OPC03 缺 Ammo depletion、Crit成长、Aura、Heal/Cleanse、Poison/Burn�
     ['burn-relation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'condition_source_relation', 'adjacent')],
     ['burn-target-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'target_type', 'owner_hero')],
     ['burn-operation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'operation_type', 'deal_damage')],
+    ['burn-response-condition-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_wake_echo_drum_bronze_burn_response_charge', 'condition_type', 'always')],
+    ['burn-response-tag-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_wake_echo_drum_bronze_burn_response_charge', 'condition_tags', 'weapon')],
+    ['burn-response-relation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_wake_echo_drum_bronze_burn_response_charge', 'condition_source_relation', 'adjacent')],
+    ['burn-response-target-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_wake_echo_drum_bronze_burn_response_charge', 'target_type', 'trigger_source_item')],
+    ['burn-response-operation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_wake_echo_drum_bronze_burn_response_charge', 'operation_type', 'reload')],
+    ['burn-response-ticks-zero', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_wake_echo_drum_bronze_burn_response_charge', 'ticks', '0')],
+    ['burn-response-directory-missing', (dir) => mutateRowById(dir, '48_bz_item_skills.csv', 'item_skill_id', 'skill_wake_echo_drum', 'effect_ids', 'effect_wake_echo_drum_bronze_ready')],
     ['crit-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'crit_contract', 'ysbzs.original-pirate-critical-damage.v1')],
     ['crit-scale', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'chance_scale_bps', '1000')],
     ['crit-multiplier-at-scale', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'damage_multiplier_bps', '10000')],
@@ -2366,10 +2424,10 @@ test('OPC03 缺 Ammo depletion、Crit成长、Aura、Heal/Cleanse、Poison/Burn�
     ['crit-chance-negative', (dir) => mutateCell(dir, '46_bz_items.csv', 71, 'crit_chance_bps', '-1')],
     ['crit-chance-over-scale', (dir) => mutateCell(dir, '46_bz_items.csv', 74, 'crit_chance_bps', '10001')],
     ['crit-chance-not-integer', (dir) => mutateCell(dir, '46_bz_items.csv', 71, 'crit_chance_bps', '25%')],
-    ['crit-profile-positive-without-eligible-effect', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'can_crit', 'false')],
-    ['crit-effect-flag-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'can_crit', '')],
-    ['crit-effect-flag-noncanonical', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'can_crit', 'True')],
-    ['crit-effect-damage-over-safe-max', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 133, 'amount', '922337203685477581')],
+    ['crit-profile-positive-without-eligible-effect', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 137, 'can_crit', 'false')],
+    ['crit-effect-flag-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 137, 'can_crit', '')],
+    ['crit-effect-flag-noncanonical', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 137, 'can_crit', 'True')],
+    ['crit-effect-damage-over-safe-max', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 137, 'amount', '922337203685477581')],
     ['crit-profile-second-noneligible-damage', (dir) => appendTideglassBronzeDamage(
       dir, 'effect_tideglass_sidearm_bronze_second_damage', false,
     )],
@@ -2388,23 +2446,23 @@ test('OPC03 缺 Ammo depletion、Crit成长、Aura、Heal/Cleanse、Poison/Burn�
     ['source-relation-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'condition_source_relation', '')],
     ['source-relation-unknown', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_source_relation', 'nearby')],
     ['source-relation-ready-adjacent', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'condition_source_relation', 'adjacent')],
-    ['source-relation-adjacent-illegal-condition', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 82, 'condition_type', 'always')],
+    ['source-relation-adjacent-illegal-condition', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 86, 'condition_type', 'always')],
     ['response-condition-tags-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_tags', '')],
     ['response-condition-tags-duplicate', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_tags', 'weapon, weapon')],
     ['response-condition-type', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'condition_type', 'always')],
     ['response-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 34, 'operation_type', 'apply_status')],
-    ['damage-growth-target', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 74, 'target_type', 'selected_enemy')],
-    ['damage-growth-trigger', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 74, 'trigger_event', 'item_ready')],
-    ['damage-growth-condition', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 74, 'condition_type', 'always')],
-    ['damage-growth-condition-tags-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 74, 'condition_tags', '')],
-    ['damage-growth-condition-tags-unknown', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 74, 'condition_tags', 'powder')],
-    ['damage-growth-amount-zero', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 74, 'amount', '0')],
-    ['damage-growth-extra-ticks', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 74, 'ticks', '1')],
+    ['damage-growth-target', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 78, 'target_type', 'selected_enemy')],
+    ['damage-growth-trigger', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 78, 'trigger_event', 'item_ready')],
+    ['damage-growth-condition', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 78, 'condition_type', 'always')],
+    ['damage-growth-condition-tags-missing', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 78, 'condition_tags', '')],
+    ['damage-growth-condition-tags-unknown', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 78, 'condition_tags', 'powder')],
+    ['damage-growth-amount-zero', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 78, 'amount', '0')],
+    ['damage-growth-extra-ticks', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 78, 'ticks', '1')],
     ['damage-growth-active-damage-required', (dir) => {
-      mutateCell(dir, '47_bz_item_effects.csv', 73, 'target_type', 'self_item');
-      mutateCell(dir, '47_bz_item_effects.csv', 73, 'operation_type', 'charge');
-      mutateCell(dir, '47_bz_item_effects.csv', 73, 'amount', '');
-      mutateCell(dir, '47_bz_item_effects.csv', 73, 'ticks', '1');
+      mutateCell(dir, '47_bz_item_effects.csv', 77, 'target_type', 'self_item');
+      mutateCell(dir, '47_bz_item_effects.csv', 77, 'operation_type', 'charge');
+      mutateCell(dir, '47_bz_item_effects.csv', 77, 'amount', '');
+      mutateCell(dir, '47_bz_item_effects.csv', 77, 'ticks', '1');
     }],
     ['item-skill-trigger-coverage', (dir) => mutateCell(dir, '48_bz_item_skills.csv', 7, 'trigger_events', 'item_ready')],
     ['item-ready-effect-required', (dir) => {
@@ -2417,145 +2475,145 @@ test('OPC03 缺 Ammo depletion、Crit成长、Aura、Heal/Cleanse、Poison/Burn�
     ['effect', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 1, 'amount', '')],
     ['status', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 14, 'status', 'burn')],
     ['effect-target-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 6, 'target_type', 'first_enemy_item')],
-    ['deterministic-target-unknown', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 90, 'target_type', 'nearest_friendly_item')],
-    ['deterministic-target-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 90, 'operation_type', 'deal_damage')],
+    ['deterministic-target-unknown', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 94, 'target_type', 'nearest_friendly_item')],
+    ['deterministic-target-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 94, 'operation_type', 'deal_damage')],
     ['deterministic-target-trigger', (dir) => {
-      mutateCell(dir, '47_bz_item_effects.csv', 90, 'trigger_event', 'another_friendly_item_used');
-      mutateCell(dir, '47_bz_item_effects.csv', 90, 'condition_type', 'source_item_has_any_tag');
-      mutateCell(dir, '47_bz_item_effects.csv', 90, 'condition_tags', 'tool');
+      mutateCell(dir, '47_bz_item_effects.csv', 94, 'trigger_event', 'another_friendly_item_used');
+      mutateCell(dir, '47_bz_item_effects.csv', 94, 'condition_type', 'source_item_has_any_tag');
+      mutateCell(dir, '47_bz_item_effects.csv', 94, 'condition_tags', 'tool');
     }],
     ['collection-target-tags-missing', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_tags', '')
+      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_tags', '')
     )],
     ['collection-target-tags-unknown', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_tags', 'powder')
+      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_tags', 'powder')
     )],
     ['collection-target-tags-duplicate', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_tags', 'weapon, weapon')
+      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_tags', 'weapon, weapon')
     )],
     ['collection-target-tags-on-static', (dir) => (
       mutateCell(dir, '47_bz_item_effects.csv', 1, 'target_tags', 'weapon')
     )],
     ['collection-target-alias', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_type', 'all_friendly_items')
+      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_type', 'all_friendly_items')
     )],
     ['collection-target-operation', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'operation_type', 'reload')
-    )],
-    ['collection-target-trigger', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'trigger_event', 'battle_start')
-    )],
-    ['collection-target-condition', (dir) => {
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'condition_type', 'source_item_has_any_tag');
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'condition_tags', 'weapon');
-    }],
-    ['collection-target-adjacency', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'condition_source_relation', 'adjacent')
-    )],
-    ['random-target-tags-missing', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_tags', '')
-    )],
-    ['random-target-tags-unknown', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_tags', 'powder')
-    )],
-    ['random-target-tags-duplicate', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_tags', 'weapon, weapon')
-    )],
-    ['random-target-tags-unsorted', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_tags', 'weapon, tool')
-    )],
-    ['random-target-exclude-self-missing', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_exclude_self', '')
-    )],
-    ['random-target-exclude-self-zero', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_exclude_self', '0')
-    )],
-    ['random-target-exclude-self-one', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_exclude_self', '1')
-    )],
-    ['random-target-exclude-self-noncanonical-string', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_exclude_self', 'False')
-    )],
-    ['random-target-count-missing', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_count', '')
-    )],
-    ['random-target-count-zero', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_count', '0')
-    )],
-    ['random-target-count-more-than-one', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_count', '2')
-    )],
-    ['random-target-count-not-integer', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_count', 'true')
-    )],
-    ['random-target-alias', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_type', 'random_friendly_weapon')
-    )],
-    ['random-target-operation', (dir) => (
       mutateCell(dir, '47_bz_item_effects.csv', 129, 'operation_type', 'reload')
     )],
-    ['random-target-trigger', (dir) => (
+    ['collection-target-trigger', (dir) => (
       mutateCell(dir, '47_bz_item_effects.csv', 129, 'trigger_event', 'battle_start')
     )],
-    ['random-target-condition', (dir) => {
+    ['collection-target-condition', (dir) => {
       mutateCell(dir, '47_bz_item_effects.csv', 129, 'condition_type', 'source_item_has_any_tag');
       mutateCell(dir, '47_bz_item_effects.csv', 129, 'condition_tags', 'weapon');
     }],
-    ['random-target-adjacency', (dir) => (
+    ['collection-target-adjacency', (dir) => (
       mutateCell(dir, '47_bz_item_effects.csv', 129, 'condition_source_relation', 'adjacent')
     )],
+    ['random-target-tags-missing', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_tags', '')
+    )],
+    ['random-target-tags-unknown', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_tags', 'powder')
+    )],
+    ['random-target-tags-duplicate', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_tags', 'weapon, weapon')
+    )],
+    ['random-target-tags-unsorted', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_tags', 'weapon, tool')
+    )],
+    ['random-target-exclude-self-missing', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_exclude_self', '')
+    )],
+    ['random-target-exclude-self-zero', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_exclude_self', '0')
+    )],
+    ['random-target-exclude-self-one', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_exclude_self', '1')
+    )],
+    ['random-target-exclude-self-noncanonical-string', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_exclude_self', 'False')
+    )],
+    ['random-target-count-missing', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_count', '')
+    )],
+    ['random-target-count-zero', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_count', '0')
+    )],
+    ['random-target-count-more-than-one', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_count', '2')
+    )],
+    ['random-target-count-not-integer', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_count', 'true')
+    )],
+    ['random-target-alias', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'target_type', 'random_friendly_weapon')
+    )],
+    ['random-target-operation', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'operation_type', 'reload')
+    )],
+    ['random-target-trigger', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'trigger_event', 'battle_start')
+    )],
+    ['random-target-condition', (dir) => {
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'condition_type', 'source_item_has_any_tag');
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'condition_tags', 'weapon');
+    }],
+    ['random-target-adjacency', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 133, 'condition_source_relation', 'adjacent')
+    )],
     ['collection-target-random-param-forbidden', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_exclude_self', 'true')
+      mutateCell(dir, '47_bz_item_effects.csv', 129, 'target_exclude_self', 'true')
     )],
     ['static-target-random-count-forbidden', (dir) => (
       mutateCell(dir, '47_bz_item_effects.csv', 1, 'target_count', '1')
     )],
     ['trigger-source-target-ready-forbidden', (dir) => {
-      mutateCell(dir, '47_bz_item_effects.csv', 110, 'trigger_event', 'item_ready');
-      mutateCell(dir, '47_bz_item_effects.csv', 110, 'condition_type', 'always');
-      mutateCell(dir, '47_bz_item_effects.csv', 110, 'condition_tags', '');
+      mutateCell(dir, '47_bz_item_effects.csv', 114, 'trigger_event', 'item_ready');
+      mutateCell(dir, '47_bz_item_effects.csv', 114, 'condition_type', 'always');
+      mutateCell(dir, '47_bz_item_effects.csv', 114, 'condition_tags', '');
     }],
     ['trigger-source-target-operation-forbidden', (dir) => {
-      mutateCell(dir, '47_bz_item_effects.csv', 110, 'operation_type', 'charge');
-      mutateCell(dir, '47_bz_item_effects.csv', 110, 'amount', '');
-      mutateCell(dir, '47_bz_item_effects.csv', 110, 'ticks', '1');
+      mutateCell(dir, '47_bz_item_effects.csv', 114, 'operation_type', 'charge');
+      mutateCell(dir, '47_bz_item_effects.csv', 114, 'amount', '');
+      mutateCell(dir, '47_bz_item_effects.csv', 114, 'ticks', '1');
     }],
     ['trigger-source-target-ready-damage-forbidden', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 109, 'target_type', 'trigger_source_item')
+      mutateCell(dir, '47_bz_item_effects.csv', 113, 'target_type', 'trigger_source_item')
     )],
     ['battle-start-condition-forbidden', (dir) => {
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'condition_type', 'source_item_has_any_tag');
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'condition_tags', 'tool');
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'condition_type', 'source_item_has_any_tag');
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'condition_tags', 'tool');
     }],
     ['battle-start-adjacency-forbidden', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'condition_source_relation', 'adjacent')
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'condition_source_relation', 'adjacent')
     )],
     ['battle-start-target-forbidden', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'target_type', 'self_item')
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'target_type', 'self_item')
     )],
     ['battle-start-operation-forbidden', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'operation_type', 'heal')
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'operation_type', 'heal')
     )],
     ['battle-start-extra-param-forbidden', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'ticks', '1')
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'ticks', '1')
     )],
     ['battle-start-amount-zero', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'amount', '0')
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'amount', '0')
     )],
     ['battle-start-ready-damage-forbidden', (dir) => (
       mutateCell(dir, '47_bz_item_effects.csv', 1, 'trigger_event', 'battle_start')
     )],
     ['battle-start-collection-forbidden', (dir) => (
-      mutateCell(dir, '47_bz_item_effects.csv', 117, 'target_type', 'all_friendly_items')
+      mutateCell(dir, '47_bz_item_effects.csv', 121, 'target_type', 'all_friendly_items')
     )],
-    ['defense-effect-target', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 57, 'target_type', 'self_item')],
-    ['defense-effect-amount-zero', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 57, 'amount', '0')],
-    ['defense-effect-extra-ticks', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 57, 'ticks', '1')],
-    ['defense-effect-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 57, 'operation_type', 'restore_health')],
+    ['defense-effect-target', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 61, 'target_type', 'self_item')],
+    ['defense-effect-amount-zero', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 61, 'amount', '0')],
+    ['defense-effect-extra-ticks', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 61, 'ticks', '1')],
+    ['defense-effect-operation', (dir) => mutateCell(dir, '47_bz_item_effects.csv', 61, 'operation_type', 'restore_health')],
     ['defense-effect-reactive-forbidden', (dir) => {
-      mutateCell(dir, '47_bz_item_effects.csv', 57, 'trigger_event', 'another_friendly_item_used');
-      mutateCell(dir, '47_bz_item_effects.csv', 57, 'condition_type', 'source_item_has_any_tag');
-      mutateCell(dir, '47_bz_item_effects.csv', 57, 'condition_tags', 'tool');
+      mutateCell(dir, '47_bz_item_effects.csv', 61, 'trigger_event', 'another_friendly_item_used');
+      mutateCell(dir, '47_bz_item_effects.csv', 61, 'condition_type', 'source_item_has_any_tag');
+      mutateCell(dir, '47_bz_item_effects.csv', 61, 'condition_tags', 'tool');
     }],
     ['encounter', (dir) => mutateCell(dir, '53_bz_encounters.csv', 1, 'enemy_id', '')],
     ['ghost-encounter-enemy-mixed', (dir) => mutateCell(dir, '53_bz_encounters.csv', 2, 'enemy_id', 'enemy_breakwater_raider')],
@@ -2770,7 +2828,8 @@ test('OPC05C validator fixture 接受英雄技能复用 owner_hero 防御操作 
 
 test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () => {
   const sourceDir = mutateDomain((dir) => {
-    mutateCell(dir, '47_bz_item_effects.csv', 74, 'condition_tags', 'tool');
+    mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id',
+      'effect_tidescar_matchlock_bronze_growth', 'condition_tags', 'tool');
   });
   const out = path.join(sourceDir, 'generic-growth-tag.json');
   assert.equal(runExporter(sourceDir, out).status, 0);
@@ -2783,8 +2842,8 @@ test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () =
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v30/v28 forged Ammo depletion、Heal/Cleanse、Poison/Burn/Crit、随机/集合/开场触发或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v30-forgery-'));
+test('OPC06 v31/v29 forged Burn成功响应、Ammo depletion、Heal/Cleanse、Poison/Burn/Crit、随机/集合/开场触发或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v31-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -2966,7 +3025,7 @@ test('OPC06 v30/v28 forged Ammo depletion、Heal/Cleanse、Poison/Burn/Crit、�
     ['poison-rules-overflow-policy', (value) => { value.runtimeBundle.battleRules.poisonRules.stackOverflowPolicy = 'clamp'; }],
     ['burn-rules-missing', (value) => { delete value.runtimeBundle.battleRules.burnRules; }],
     ['burn-rules-extra-field', (value) => { value.runtimeBundle.battleRules.burnRules.source = 'forged'; }],
-    ['burn-rules-contract', (value) => { value.runtimeBundle.battleRules.burnRules.contractId = 'ysbzs.original-pirate-burn.v2'; }],
+    ['burn-rules-contract', (value) => { value.runtimeBundle.battleRules.burnRules.contractId = 'ysbzs.original-pirate-burn.v1'; }],
     ['burn-rules-pulse-interval', (value) => { value.runtimeBundle.battleRules.burnRules.pulseIntervalTicks = 2; }],
     ['burn-rules-pulse-interval-bool', (value) => { value.runtimeBundle.battleRules.burnRules.pulseIntervalTicks = true; }],
     ['burn-rules-first-pulse', (value) => { value.runtimeBundle.battleRules.burnRules.firstPulsePolicy = 'same_tick'; }],
@@ -3386,6 +3445,42 @@ test('OPC06 v30/v28 forged Ammo depletion、Heal/Cleanse、Poison/Burn/Crit、�
       Object.assign(effect, {
         targetType: 'opponent_hero', operationType: 'apply_burn', amount: 3, ticks: 0,
       });
+    }],
+    ['burn-response-condition-forged', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => (
+          trigger.event === 'another_friendly_item_applied_burn'
+        )).trigger.conditions = [{ type: 'always', params: {} }];
+    }],
+    ['burn-response-tag-forged', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => (
+          trigger.event === 'another_friendly_item_applied_burn'
+        )).trigger.conditions[0].params.tags = ['weapon'];
+    }],
+    ['burn-response-adjacency-forged', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => (
+          trigger.event === 'another_friendly_item_applied_burn'
+        )).trigger.conditions.push({ type: 'source_item_adjacent_to_self', params: {} });
+    }],
+    ['burn-response-target-forged', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => (
+          trigger.event === 'another_friendly_item_applied_burn'
+        )).target.type = 'trigger_source_item';
+    }],
+    ['burn-response-operation-forged', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => (
+          trigger.event === 'another_friendly_item_applied_burn'
+        )).operation.type = 'reload';
+    }],
+    ['burn-response-ticks-zero', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum')
+        .qualityProfiles.bronze.effects.find(({ trigger }) => (
+          trigger.event === 'another_friendly_item_applied_burn'
+        )).operation.params.ticks = 0;
     }],
     ['item-ready-effect-required', (value) => {
       const profile = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum').qualityProfiles.bronze;

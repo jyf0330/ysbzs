@@ -104,19 +104,19 @@ test('OPCSV01 Ammo depletion、Crit v2、Heal/Cleanse、Poison v2、Burn source 
     ammoDepletionReloadPolicy: row.ammo_depletion_reload_policy,
     ammoDepletionRngPolicy: row.ammo_depletion_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '28',
-    runtimeSchemaVersion: '26',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v26',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v27',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v27',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v27',
+    schemaVersion: '29',
+    runtimeSchemaVersion: '27',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v27',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v28',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v28',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v28',
     critContract: 'ysbzs.original-pirate-critical-damage.v2',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
     critGrowthTimingPolicy: 'after_source_use_for_subsequent_uses',
     critGrowthEligibleTargetPolicy: 'trigger_source_item_with_exactly_one_can_crit_item_ready_direct_damage',
     critGrowthRngPolicy: 'never',
-    burnContract: 'ysbzs.original-pirate-burn.v1',
+    burnContract: 'ysbzs.original-pirate-burn.v2',
     pulseIntervalTicks: '1',
     firstPulsePolicy: 'next_tick',
     pulsePhase: 'tick_start_before_item_progress',
@@ -338,4 +338,28 @@ test('OPCSV06 潮鳍投筒四品质弹药耗尽效果与 refresh 3 正式报价�
     offerId === 'offer_refresh_3_tidefin_launcher'
   ));
   assert.deepEqual([offer.refresh_index, offer.slot_order, offer.quality, offer.price], ['3', '1', 'bronze', '3']);
+});
+
+test('OPCSV07 尾潮回响鼓四品质只在另一件燃烧物品成功施加 Burn 后推进自身', () => {
+  const effects = readCsv('47_bz_item_effects.csv').rows.filter(({ trigger_event: triggerEvent }) => (
+    triggerEvent === 'another_friendly_item_applied_burn'
+  ));
+  assert.deepEqual(effects.map((row) => [
+    row.effect_id, row.item_id, row.quality, row.item_skill_id, row.priority,
+    row.trigger_event, row.condition_type, row.condition_tags,
+    row.condition_source_relation, row.target_type, row.target_tags,
+    row.target_exclude_self, row.target_count, row.operation_type, row.amount,
+    row.crit_chance_bps_delta, row.stacks, row.can_crit, row.status, row.ticks,
+  ]), [
+    ['effect_wake_echo_drum_bronze_burn_response_charge', 'item_wake_echo_drum', 'bronze', 'skill_wake_echo_drum', '40', 'another_friendly_item_applied_burn', 'source_item_has_any_tag', 'burn', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '1'],
+    ['effect_wake_echo_drum_silver_burn_response_charge', 'item_wake_echo_drum', 'silver', 'skill_wake_echo_drum', '40', 'another_friendly_item_applied_burn', 'source_item_has_any_tag', 'burn', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '1'],
+    ['effect_wake_echo_drum_gold_burn_response_charge', 'item_wake_echo_drum', 'gold', 'skill_wake_echo_drum', '40', 'another_friendly_item_applied_burn', 'source_item_has_any_tag', 'burn', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '2'],
+    ['effect_wake_echo_drum_diamond_burn_response_charge', 'item_wake_echo_drum', 'diamond', 'skill_wake_echo_drum', '40', 'another_friendly_item_applied_burn', 'source_item_has_any_tag', 'burn', 'any', 'self_item', '', '', '', 'charge', '', '', '', '', '', '2'],
+  ]);
+  const skill = readCsv('48_bz_item_skills.csv').rows.find(({ item_skill_id: itemSkillId }) => (
+    itemSkillId === 'skill_wake_echo_drum'
+  ));
+  assert.equal(skill.trigger_events, 'another_friendly_item_applied_burn, another_friendly_item_used, item_ready');
+  assert.match(skill.description_zh, /另一件.*燃烧.*成功施加.*自身.*充能/);
+  for (const { effect_id: effectId } of effects) assert.match(skill.effect_ids, new RegExp(effectId));
 });

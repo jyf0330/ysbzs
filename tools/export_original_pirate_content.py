@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v32 candidate package while still validating every
+outside the formal v33 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 32
+CONTENT_SCHEMA_VERSION = 33
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 30
-SOURCE_CONTENT_SCHEMA_VERSION = 30
-SOURCE_RUNTIME_SCHEMA_VERSION = 28
+RUNTIME_SCHEMA_VERSION = 31
+SOURCE_CONTENT_SCHEMA_VERSION = 31
+SOURCE_RUNTIME_SCHEMA_VERSION = 29
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 22
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 23
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v28"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v29"
 AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
 AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
 AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
@@ -69,6 +69,21 @@ DAMAGE_AURA_DAMAGE_PHASE = "before_crit"
 DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY = "compiled_board_source_for_battle"
 DAMAGE_AURA_OVERFLOW_POLICY = "reject_advance"
 DAMAGE_AURA_RNG_POLICY = "never"
+LIFESTEAL_CONTRACT = "ysbzs.original-pirate-lifesteal.v1"
+LIFESTEAL_ELIGIBLE_SOURCE_POLICY = "item_ready_always_selected_enemy_direct_damage"
+LIFESTEAL_HEAL_BASIS = "committed_hp_damage"
+LIFESTEAL_BASIS_POINTS_SCALE = 10000
+LIFESTEAL_ROUNDING_MODE = "floor"
+LIFESTEAL_AURA_STACKING_POLICY = "sum_then_cap_at_basis_points_scale"
+LIFESTEAL_TARGET_POLICY = "friendly_weapon_exclude_self_active_board_snapshot"
+LIFESTEAL_RESOLUTION_TIMING_POLICY = "immediately_after_nonterminal_damage_before_next_effect"
+LIFESTEAL_REPEAT_POLICY = "once_per_eligible_damage_effect"
+LIFESTEAL_SHIELD_POLICY = "defender_shield_reduces_basis_source_shield_unchanged"
+LIFESTEAL_OVERHEAL_POLICY = "cap_at_max_hp_record_overheal"
+LIFESTEAL_STATUS_CLEANSE_POLICY = "never"
+LIFESTEAL_TERMINAL_POLICY = "skip_if_source_damage_is_lethal"
+LIFESTEAL_TRACE_EMIT_POLICY = "always_for_eligible_nonterminal_damage_even_zero"
+LIFESTEAL_RNG_POLICY = "never"
 BURN_CONTRACT = "ysbzs.original-pirate-burn.v2"
 BURN_PULSE_INTERVAL_TICKS = 1
 BURN_FIRST_PULSE_POLICY = "next_tick"
@@ -164,6 +179,7 @@ ITEM_EFFECT_CONDITIONS = {
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
 DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
 DAMAGE_AURA_OPERATION = "grant_damage"
+LIFESTEAL_AURA_OPERATION = "grant_lifesteal_bps"
 HERO_SKILL_TRIGGER = "friendly_item_used"
 HERO_SKILL_TARGETS = {"opponent_hero", "source_item", "owner_hero"}
 HERO_SKILL_OPERATIONS = {"deal_damage", "charge", "heal", "gain_shield"}
@@ -216,6 +232,14 @@ DOMAIN_HEADERS = OrderedDict([
         "damage_aura_stacking_policy", "damage_aura_damage_phase",
         "damage_aura_source_lifecycle_policy", "damage_aura_overflow_policy",
         "damage_aura_rng_policy",
+        "lifesteal_contract", "lifesteal_eligible_source_policy",
+        "lifesteal_heal_basis", "lifesteal_basis_points_scale",
+        "lifesteal_rounding_mode", "lifesteal_aura_stacking_policy",
+        "lifesteal_target_policy", "lifesteal_resolution_timing_policy",
+        "lifesteal_repeat_policy", "lifesteal_shield_policy",
+        "lifesteal_overheal_policy", "lifesteal_status_cleanse_policy",
+        "lifesteal_terminal_policy", "lifesteal_trace_emit_policy",
+        "lifesteal_rng_policy",
         "pve_win_bonus_xp",
         "prestige_battle_kind", "ghost_loss_prestige", "ghost_draw_prestige",
         "win_target", "last_chance_policy_id",
@@ -321,7 +345,7 @@ DOMAIN_HEADERS = OrderedDict([
     ("66_bz_item_auras.csv", [
         "aura_id", "item_id", "quality", "item_skill_id", "priority",
         "target_type", "target_tags", "target_exclude_self", "operation_type",
-        "amount", "catalog_status",
+        "amount", "lifesteal_bps", "catalog_status",
     ]),
 ])
 
@@ -792,7 +816,7 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     return effect_id, trigger_event
 
 
-def _validate_executable_damage_aura(value: Any, context: str) -> str:
+def _validate_executable_aura(value: Any, context: str) -> str:
     aura = _expect_exact_fields(value, {
         "auraId", "priority", "target", "operation",
     }, context)
@@ -810,12 +834,27 @@ def _validate_executable_damage_aura(value: Any, context: str) -> str:
     operation = _expect_exact_fields(
         aura["operation"], {"type", "params"}, f"{context}:operation"
     )
-    if operation["type"] != DAMAGE_AURA_OPERATION:
-        raise ExportError(f"EXECUTABLE_DAMAGE_AURA_OPERATION_INVALID:{aura_id}")
-    params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
-    amount = _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
-    if amount > CRIT_DAMAGE_AMOUNT_MAX:
-        raise ExportError(f"EXECUTABLE_DAMAGE_AURA_AMOUNT_INVALID:{aura_id}")
+    operation_type = operation["type"]
+    if operation_type == DAMAGE_AURA_OPERATION:
+        params = _expect_exact_fields(
+            operation["params"], {"amount"}, f"{context}:operation:params"
+        )
+        amount = _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
+        if amount > CRIT_DAMAGE_AMOUNT_MAX:
+            raise ExportError(f"EXECUTABLE_DAMAGE_AURA_AMOUNT_INVALID:{aura_id}")
+    elif operation_type == LIFESTEAL_AURA_OPERATION:
+        if target_params["tags"] != ["weapon"]:
+            raise ExportError(f"EXECUTABLE_LIFESTEAL_AURA_TARGET_INVALID:{aura_id}")
+        params = _expect_exact_fields(
+            operation["params"], {"lifestealBps"}, f"{context}:operation:params"
+        )
+        lifesteal_bps = _expect_integer(
+            params["lifestealBps"], f"{context}:operation:params:lifestealBps", 1
+        )
+        if lifesteal_bps > LIFESTEAL_BASIS_POINTS_SCALE:
+            raise ExportError(f"EXECUTABLE_LIFESTEAL_AURA_VALUE_INVALID:{aura_id}")
+    else:
+        raise ExportError(f"EXECUTABLE_AURA_OPERATION_INVALID:{aura_id}")
     return aura_id
 
 
@@ -989,7 +1028,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v32/v30 candidate package without accepting partial data."""
+    """Validate the formal v33/v31 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -1074,11 +1113,11 @@ def validate_package(package: Any) -> None:
             for aura_index, aura in enumerate(
                 _expect_list(profile.get("auras"), f"items:{item_id}:{quality}:auras")
             ):
-                aura_id = _validate_executable_damage_aura(
+                aura_id = _validate_executable_aura(
                     aura, f"items:{item_id}:{quality}:auras:{aura_index}"
                 )
                 if aura_id in item_aura_ids:
-                    raise ExportError(f"EXECUTABLE_DAMAGE_AURA_ID_DUPLICATE:{aura_id}")
+                    raise ExportError(f"EXECUTABLE_AURA_ID_DUPLICATE:{aura_id}")
                 item_aura_ids.add(aura_id)
             damage_effects = [
                 effect for effect in profile["effects"]
@@ -1137,7 +1176,8 @@ def validate_package(package: Any) -> None:
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
         "terminalPressure", "critRules", "burnRules", "poisonRules",
-        "healStatusCleanseRules", "damageAuraRules", "ammoDepletionRules",
+        "healStatusCleanseRules", "damageAuraRules", "lifestealRules",
+        "ammoDepletionRules",
     }, "battleRules")
     terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
         "enabled", "startTick", "intervalTicks", "initialDamage", "incrementDamage",
@@ -1273,6 +1313,35 @@ def validate_package(package: Any) -> None:
         "rngPolicy": DAMAGE_AURA_RNG_POLICY,
     }:
         raise ExportError("EXECUTABLE_DAMAGE_AURA_RULES_INVALID")
+    lifesteal_rules = _expect_exact_fields(battle_rules["lifestealRules"], {
+        "contractId", "eligibleSourcePolicy", "healBasis", "basisPointsScale",
+        "roundingMode", "auraStackingPolicy", "targetPolicy",
+        "resolutionTimingPolicy", "repeatPolicy", "shieldPolicy", "overhealPolicy",
+        "statusCleansePolicy", "terminalPolicy", "traceEmitPolicy", "rngPolicy",
+    }, "battleRules:lifestealRules")
+    _expect_integer(
+        lifesteal_rules["basisPointsScale"],
+        "battleRules:lifestealRules:basisPointsScale",
+        1,
+    )
+    if lifesteal_rules != {
+        "contractId": LIFESTEAL_CONTRACT,
+        "eligibleSourcePolicy": LIFESTEAL_ELIGIBLE_SOURCE_POLICY,
+        "healBasis": LIFESTEAL_HEAL_BASIS,
+        "basisPointsScale": LIFESTEAL_BASIS_POINTS_SCALE,
+        "roundingMode": LIFESTEAL_ROUNDING_MODE,
+        "auraStackingPolicy": LIFESTEAL_AURA_STACKING_POLICY,
+        "targetPolicy": LIFESTEAL_TARGET_POLICY,
+        "resolutionTimingPolicy": LIFESTEAL_RESOLUTION_TIMING_POLICY,
+        "repeatPolicy": LIFESTEAL_REPEAT_POLICY,
+        "shieldPolicy": LIFESTEAL_SHIELD_POLICY,
+        "overhealPolicy": LIFESTEAL_OVERHEAL_POLICY,
+        "statusCleansePolicy": LIFESTEAL_STATUS_CLEANSE_POLICY,
+        "terminalPolicy": LIFESTEAL_TERMINAL_POLICY,
+        "traceEmitPolicy": LIFESTEAL_TRACE_EMIT_POLICY,
+        "rngPolicy": LIFESTEAL_RNG_POLICY,
+    }:
+        raise ExportError("EXECUTABLE_LIFESTEAL_RULES_INVALID")
     ammo_depletion_rules = _expect_exact_fields(battle_rules["ammoDepletionRules"], {
         "contractId", "triggerPolicy", "evaluationPhase", "snapshotPolicy",
         "repeatPolicy", "nonAmmoPolicy", "reloadPolicy", "rngPolicy",
@@ -2236,6 +2305,7 @@ class ContentAssembler:
                 "poisonRules": identity["poisonRules"],
                 "healStatusCleanseRules": identity["healStatusCleanseRules"],
                 "damageAuraRules": identity["damageAuraRules"],
+                "lifestealRules": identity["lifestealRules"],
             },
             "progressionRules": progression_rules,
             "generation": {
@@ -3060,29 +3130,43 @@ class ContentAssembler:
             _formal(filename, row)
             aura_id = _require_id(filename, row, "aura_id")
             if aura_id in seen_ids:
-                raise ExportError(f"DAMAGE_AURA_ID_DUPLICATE:{aura_id}")
+                raise ExportError(f"AURA_ID_DUPLICATE:{aura_id}")
             seen_ids.add(aura_id)
             item_id = _require_id(filename, row, "item_id")
             quality = _require_text(filename, row, "quality")
             profile = self.item_profiles.get((item_id, quality))
             if profile is None:
-                raise ExportError(f"DAMAGE_AURA_ITEM_QUALITY_UNKNOWN:{aura_id}")
+                raise ExportError(f"AURA_ITEM_QUALITY_UNKNOWN:{aura_id}")
             item_skill_id = _require_id(filename, row, "item_skill_id")
             if self.item_skills.get(item_id) != item_skill_id or item_skill_id not in item_skills:
-                raise ExportError(f"DAMAGE_AURA_ITEM_SKILL_MISMATCH:{aura_id}")
+                raise ExportError(f"AURA_ITEM_SKILL_MISMATCH:{aura_id}")
             target_type = _require_text(filename, row, "target_type")
             if target_type != DAMAGE_AURA_TARGET:
-                raise ExportError(f"DAMAGE_AURA_TARGET_INVALID:{aura_id}")
+                raise ExportError(f"AURA_TARGET_INVALID:{aura_id}")
             target_tags = _item_tags(filename, row, "target_tags")
             exclude_self = _boolean(filename, row, "target_exclude_self")
             if not exclude_self:
-                raise ExportError(f"DAMAGE_AURA_EXCLUDE_SELF_INVALID:{aura_id}")
+                raise ExportError(f"AURA_EXCLUDE_SELF_INVALID:{aura_id}")
             operation_type = _require_text(filename, row, "operation_type")
-            if operation_type != DAMAGE_AURA_OPERATION:
-                raise ExportError(f"DAMAGE_AURA_OPERATION_INVALID:{aura_id}")
-            amount = _integer(filename, row, "amount", 1)
-            if amount > CRIT_DAMAGE_AMOUNT_MAX:
-                raise ExportError(f"DAMAGE_AURA_AMOUNT_INVALID:{aura_id}")
+            operation_params: dict[str, int]
+            if operation_type == DAMAGE_AURA_OPERATION:
+                amount = _integer(filename, row, "amount", 1)
+                if amount > CRIT_DAMAGE_AMOUNT_MAX:
+                    raise ExportError(f"DAMAGE_AURA_AMOUNT_INVALID:{aura_id}")
+                if row["lifesteal_bps"] != "":
+                    raise ExportError(f"DAMAGE_AURA_LIFESTEAL_PARAM_FORBIDDEN:{aura_id}")
+                operation_params = {"amount": amount}
+            elif operation_type == LIFESTEAL_AURA_OPERATION:
+                if target_tags != ["weapon"]:
+                    raise ExportError(f"LIFESTEAL_AURA_TARGET_INVALID:{aura_id}")
+                lifesteal_bps = _integer(filename, row, "lifesteal_bps", 1)
+                if lifesteal_bps > LIFESTEAL_BASIS_POINTS_SCALE:
+                    raise ExportError(f"LIFESTEAL_AURA_VALUE_INVALID:{aura_id}")
+                if row["amount"] != "":
+                    raise ExportError(f"LIFESTEAL_AURA_AMOUNT_PARAM_FORBIDDEN:{aura_id}")
+                operation_params = {"lifestealBps": lifesteal_bps}
+            else:
+                raise ExportError(f"AURA_OPERATION_INVALID:{aura_id}")
             profile["auras"].append({
                 "auraId": aura_id,
                 "priority": _integer(filename, row, "priority", 0),
@@ -3090,11 +3174,11 @@ class ContentAssembler:
                     "type": target_type,
                     "params": {"tags": target_tags, "excludeSelf": exclude_self},
                 },
-                "operation": {"type": operation_type, "params": {"amount": amount}},
+                "operation": {"type": operation_type, "params": operation_params},
             })
             actual_item_skill_auras[item_skill_id].add(aura_id)
         if not seen_ids:
-            raise ExportError("DAMAGE_AURA_CATALOG_REQUIRED")
+            raise ExportError("AURA_CATALOG_REQUIRED")
         for profile in self.item_profiles.values():
             profile["auras"].sort(key=lambda value: (value["priority"], value["auraId"]))
         for item_skill_id, skill in item_skills.items():
@@ -3699,8 +3783,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v30 candidate source.
-            # This adapter is its explicit one-way projection into executable v32.
+            # The current 23-domain workbook is the finite v31 candidate source.
+            # This adapter is its explicit one-way projection into executable v33.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3784,6 +3868,21 @@ class ContentAssembler:
             "damage_aura_source_lifecycle_policy": DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY,
             "damage_aura_overflow_policy": DAMAGE_AURA_OVERFLOW_POLICY,
             "damage_aura_rng_policy": DAMAGE_AURA_RNG_POLICY,
+            "lifesteal_contract": LIFESTEAL_CONTRACT,
+            "lifesteal_eligible_source_policy": LIFESTEAL_ELIGIBLE_SOURCE_POLICY,
+            "lifesteal_heal_basis": LIFESTEAL_HEAL_BASIS,
+            "lifesteal_basis_points_scale": str(LIFESTEAL_BASIS_POINTS_SCALE),
+            "lifesteal_rounding_mode": LIFESTEAL_ROUNDING_MODE,
+            "lifesteal_aura_stacking_policy": LIFESTEAL_AURA_STACKING_POLICY,
+            "lifesteal_target_policy": LIFESTEAL_TARGET_POLICY,
+            "lifesteal_resolution_timing_policy": LIFESTEAL_RESOLUTION_TIMING_POLICY,
+            "lifesteal_repeat_policy": LIFESTEAL_REPEAT_POLICY,
+            "lifesteal_shield_policy": LIFESTEAL_SHIELD_POLICY,
+            "lifesteal_overheal_policy": LIFESTEAL_OVERHEAL_POLICY,
+            "lifesteal_status_cleanse_policy": LIFESTEAL_STATUS_CLEANSE_POLICY,
+            "lifesteal_terminal_policy": LIFESTEAL_TERMINAL_POLICY,
+            "lifesteal_trace_emit_policy": LIFESTEAL_TRACE_EMIT_POLICY,
+            "lifesteal_rng_policy": LIFESTEAL_RNG_POLICY,
         }
         for field, expected in expected_constants.items():
             actual = _same(rows, filename, field)
@@ -3924,6 +4023,23 @@ class ContentAssembler:
             "sourceLifecyclePolicy": DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY,
             "overflowPolicy": DAMAGE_AURA_OVERFLOW_POLICY,
             "rngPolicy": DAMAGE_AURA_RNG_POLICY,
+        }
+        identity["lifestealRules"] = {
+            "contractId": LIFESTEAL_CONTRACT,
+            "eligibleSourcePolicy": LIFESTEAL_ELIGIBLE_SOURCE_POLICY,
+            "healBasis": LIFESTEAL_HEAL_BASIS,
+            "basisPointsScale": LIFESTEAL_BASIS_POINTS_SCALE,
+            "roundingMode": LIFESTEAL_ROUNDING_MODE,
+            "auraStackingPolicy": LIFESTEAL_AURA_STACKING_POLICY,
+            "targetPolicy": LIFESTEAL_TARGET_POLICY,
+            "resolutionTimingPolicy": LIFESTEAL_RESOLUTION_TIMING_POLICY,
+            "repeatPolicy": LIFESTEAL_REPEAT_POLICY,
+            "shieldPolicy": LIFESTEAL_SHIELD_POLICY,
+            "overhealPolicy": LIFESTEAL_OVERHEAL_POLICY,
+            "statusCleansePolicy": LIFESTEAL_STATUS_CLEANSE_POLICY,
+            "terminalPolicy": LIFESTEAL_TERMINAL_POLICY,
+            "traceEmitPolicy": LIFESTEAL_TRACE_EMIT_POLICY,
+            "rngPolicy": LIFESTEAL_RNG_POLICY,
         }
         prestige_battle_kind = _same(rows, filename, "prestige_battle_kind")
         if prestige_battle_kind != "ghost":
@@ -4375,7 +4491,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v32 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v33 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4390,7 +4506,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v32 candidate "
+            "PASS original-pirate v33 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4403,7 +4519,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v32 candidate to {output}")
+        print(f"exported original-pirate v33 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

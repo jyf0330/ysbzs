@@ -45,7 +45,7 @@ function readCsv(filename) {
   };
 }
 
-test('OPCSV01 Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
+test('OPCSV01 Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
   const gameplay = readCsv('44_bz_gameplay.csv');
   const effects = readCsv('47_bz_item_effects.csv');
   assert.deepEqual(gameplay.rows.map((row) => ({
@@ -109,13 +109,28 @@ test('OPCSV01 Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source 
     ammoDepletionNonAmmoPolicy: row.ammo_depletion_non_ammo_policy,
     ammoDepletionReloadPolicy: row.ammo_depletion_reload_policy,
     ammoDepletionRngPolicy: row.ammo_depletion_rng_policy,
+    lifestealContract: row.lifesteal_contract,
+    lifestealEligibleSourcePolicy: row.lifesteal_eligible_source_policy,
+    lifestealHealBasis: row.lifesteal_heal_basis,
+    lifestealBasisPointsScale: row.lifesteal_basis_points_scale,
+    lifestealRoundingMode: row.lifesteal_rounding_mode,
+    lifestealAuraStackingPolicy: row.lifesteal_aura_stacking_policy,
+    lifestealTargetPolicy: row.lifesteal_target_policy,
+    lifestealResolutionTimingPolicy: row.lifesteal_resolution_timing_policy,
+    lifestealRepeatPolicy: row.lifesteal_repeat_policy,
+    lifestealShieldPolicy: row.lifesteal_shield_policy,
+    lifestealOverhealPolicy: row.lifesteal_overheal_policy,
+    lifestealStatusCleansePolicy: row.lifesteal_status_cleanse_policy,
+    lifestealTerminalPolicy: row.lifesteal_terminal_policy,
+    lifestealTraceEmitPolicy: row.lifesteal_trace_emit_policy,
+    lifestealRngPolicy: row.lifesteal_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '30',
-    runtimeSchemaVersion: '28',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v28',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v29',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v29',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v29',
+    schemaVersion: '31',
+    runtimeSchemaVersion: '29',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v29',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v30',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v30',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v30',
     critContract: 'ysbzs.original-pirate-critical-damage.v3',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
@@ -170,6 +185,21 @@ test('OPCSV01 Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source 
     ammoDepletionNonAmmoPolicy: 'not_eligible',
     ammoDepletionReloadPolicy: 'later_reload_does_not_cancel',
     ammoDepletionRngPolicy: 'never',
+    lifestealContract: 'ysbzs.original-pirate-lifesteal.v1',
+    lifestealEligibleSourcePolicy: 'item_ready_always_selected_enemy_direct_damage',
+    lifestealHealBasis: 'committed_hp_damage',
+    lifestealBasisPointsScale: '10000',
+    lifestealRoundingMode: 'floor',
+    lifestealAuraStackingPolicy: 'sum_then_cap_at_basis_points_scale',
+    lifestealTargetPolicy: 'friendly_weapon_exclude_self_active_board_snapshot',
+    lifestealResolutionTimingPolicy: 'immediately_after_nonterminal_damage_before_next_effect',
+    lifestealRepeatPolicy: 'once_per_eligible_damage_effect',
+    lifestealShieldPolicy: 'defender_shield_reduces_basis_source_shield_unchanged',
+    lifestealOverhealPolicy: 'cap_at_max_hp_record_overheal',
+    lifestealStatusCleansePolicy: 'never',
+    lifestealTerminalPolicy: 'skip_if_source_damage_is_lethal',
+    lifestealTraceEmitPolicy: 'always_for_eligible_nonterminal_damage_even_zero',
+    lifestealRngPolicy: 'never',
   })));
   assert.equal(effects.headers.includes('stacks'), true);
   assert.equal(effects.headers.includes('crit_chance_bps_delta'), true);
@@ -265,7 +295,7 @@ test('OPCSV03 墨航滴液器四品质、refresh 5 报价、升级与单铭刻�
   assert.equal(dayOneGhost.some(({ item_id: itemId }) => itemId === 'item_patchwork_ram'), false);
 });
 
-test('OPCSV04 伤害 Aura 独立域、规则合同与雾藻疗匣四品质绑定完整', () => {
+test('OPCSV04 伤害与 Lifesteal Aura 语义分离、规则合同与雾藻疗匣四品质绑定完整', () => {
   const gameplay = readCsv('44_bz_gameplay.csv').rows;
   assert.equal(gameplay.every((row) => (
     row.damage_aura_contract === 'ysbzs.original-pirate-damage-aura.v1'
@@ -277,27 +307,47 @@ test('OPCSV04 伤害 Aura 独立域、规则合同与雾藻疗匣四品质绑定
       && row.damage_aura_source_lifecycle_policy === 'compiled_board_source_for_battle'
       && row.damage_aura_overflow_policy === 'reject_advance'
       && row.damage_aura_rng_policy === 'never'
+      && row.lifesteal_contract === 'ysbzs.original-pirate-lifesteal.v1'
+      && row.lifesteal_eligible_source_policy === 'item_ready_always_selected_enemy_direct_damage'
+      && row.lifesteal_heal_basis === 'committed_hp_damage'
+      && row.lifesteal_basis_points_scale === '10000'
+      && row.lifesteal_rounding_mode === 'floor'
+      && row.lifesteal_aura_stacking_policy === 'sum_then_cap_at_basis_points_scale'
+      && row.lifesteal_target_policy === 'friendly_weapon_exclude_self_active_board_snapshot'
+      && row.lifesteal_resolution_timing_policy === 'immediately_after_nonterminal_damage_before_next_effect'
+      && row.lifesteal_repeat_policy === 'once_per_eligible_damage_effect'
+      && row.lifesteal_shield_policy === 'defender_shield_reduces_basis_source_shield_unchanged'
+      && row.lifesteal_overheal_policy === 'cap_at_max_hp_record_overheal'
+      && row.lifesteal_status_cleanse_policy === 'never'
+      && row.lifesteal_terminal_policy === 'skip_if_source_damage_is_lethal'
+      && row.lifesteal_trace_emit_policy === 'always_for_eligible_nonterminal_damage_even_zero'
+      && row.lifesteal_rng_policy === 'never'
   )), true);
   const auras = readCsv('66_bz_item_auras.csv');
   assert.deepEqual(auras.headers, [
     'aura_id', 'item_id', 'quality', 'item_skill_id', 'priority', 'target_type',
-    'target_tags', 'target_exclude_self', 'operation_type', 'amount', 'catalog_status',
+    'target_tags', 'target_exclude_self', 'operation_type', 'amount',
+    'lifesteal_bps', 'catalog_status',
   ]);
   assert.deepEqual(auras.rows.map((row) => [
     row.aura_id, row.item_id, row.quality, row.item_skill_id, row.priority,
     row.target_type, row.target_tags, row.target_exclude_self,
-    row.operation_type, row.amount, row.catalog_status,
+    row.operation_type, row.amount, row.lifesteal_bps, row.catalog_status,
   ]), [
-    ['aura_mistkelp_remedy_kit_bronze_weapon_damage', 'item_mistkelp_remedy_kit', 'bronze', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '1', 'formal'],
-    ['aura_mistkelp_remedy_kit_silver_weapon_damage', 'item_mistkelp_remedy_kit', 'silver', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '2', 'formal'],
-    ['aura_mistkelp_remedy_kit_gold_weapon_damage', 'item_mistkelp_remedy_kit', 'gold', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '3', 'formal'],
-    ['aura_mistkelp_remedy_kit_diamond_weapon_damage', 'item_mistkelp_remedy_kit', 'diamond', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '4', 'formal'],
+    ['aura_mistkelp_remedy_kit_bronze_weapon_damage', 'item_mistkelp_remedy_kit', 'bronze', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '1', '', 'formal'],
+    ['aura_mistkelp_remedy_kit_silver_weapon_damage', 'item_mistkelp_remedy_kit', 'silver', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '2', '', 'formal'],
+    ['aura_mistkelp_remedy_kit_gold_weapon_damage', 'item_mistkelp_remedy_kit', 'gold', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '3', '', 'formal'],
+    ['aura_mistkelp_remedy_kit_diamond_weapon_damage', 'item_mistkelp_remedy_kit', 'diamond', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '4', '', 'formal'],
+    ['aura_mistkelp_remedy_kit_bronze_weapon_lifesteal', 'item_mistkelp_remedy_kit', 'bronze', 'skill_mistkelp_remedy_kit', '30', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_lifesteal_bps', '', '2500', 'formal'],
+    ['aura_mistkelp_remedy_kit_silver_weapon_lifesteal', 'item_mistkelp_remedy_kit', 'silver', 'skill_mistkelp_remedy_kit', '30', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_lifesteal_bps', '', '4000', 'formal'],
+    ['aura_mistkelp_remedy_kit_gold_weapon_lifesteal', 'item_mistkelp_remedy_kit', 'gold', 'skill_mistkelp_remedy_kit', '30', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_lifesteal_bps', '', '5500', 'formal'],
+    ['aura_mistkelp_remedy_kit_diamond_weapon_lifesteal', 'item_mistkelp_remedy_kit', 'diamond', 'skill_mistkelp_remedy_kit', '30', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_lifesteal_bps', '', '7000', 'formal'],
   ]);
   const skill = readCsv('48_bz_item_skills.csv').rows.find(({ item_skill_id: id }) => (
     id === 'skill_mistkelp_remedy_kit'
   ));
   assert.equal(skill.aura_ids, auras.rows.map(({ aura_id: id }) => id).join(','));
-  assert.match(skill.description_zh, /恢复生命.*武器.*伤害/);
+  assert.match(skill.description_zh, /恢复生命.*武器.*伤害.*吸血.*实际造成的生命伤害/);
 });
 
 test('OPCSV05 继航校炮仪四品质 Crit growth 行仅使用动态触发源和独立 bps 参数', () => {
@@ -379,12 +429,12 @@ test('OPCSV07 尾潮回响鼓四品质只在另一件燃烧物品成功施加 Bu
 test('OPCSV08 继航校炮仪四品质只在另一件友方物品成功暴击后推进自身', () => {
   const gameplay = readCsv('44_bz_gameplay.csv').rows;
   assert.equal(gameplay.every((row) => (
-    row.schema_version === '30'
-      && row.runtime_schema_version === '28'
-      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v28'
-      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-03-v29'
-      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-03-v29'
-      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v29'
+    row.schema_version === '31'
+      && row.runtime_schema_version === '29'
+      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v29'
+      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v30'
+      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v30'
+      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v30'
       && row.crit_contract === 'ysbzs.original-pirate-critical-damage.v3'
       && row.crit_success_response_evidence_policy === 'crit_resolve_is_critical_with_bound_committed_damage'
       && row.crit_success_response_source_policy === 'another_same_owner_active_board_item'

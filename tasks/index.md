@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-04，由 `2026-09-04_original_pirate_crit_success_response` 数据规则交付刷新。
+最后刷新：2026-09-04，由 `2026-09-04_original_pirate_lifesteal_aura` 数据规则实现刷新。
 
 ## 使用规则
 
@@ -10,6 +10,8 @@
 - `READY_TO_MERGE` 不应长期停在 `doing/`；继续新共享 UI/core 改动前，优先做 `git-c` 或 Lead 收口。
 
 ## ACTIVE_IMPL
+
+- `tasks/done/2026-09-04_original_pirate_lifesteal_aura.md` — data rules: 项目原创武器吸血 Aura v1 已完成 workbook→CSV→exporter 真相链、严格 fail-closed 校验与确定性生成。
 
 - `tasks/done/2026-08-28_run_health_outer_loop.md` — outer-run rule: 战败改为按当前天数扣英雄耐久，移除城堡扣线与经济衰减口径。
 

@@ -314,7 +314,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v32/v30 Burn成功响应、Ammo depletion、Crit成长、Heal/Cleanse、Poison、随机/集合/确定性目标与 Ghost 确定且 hash 兼容', () => {
+test('OPC02 v33/v31 Lifesteal、Burn成功响应、Ammo depletion、Crit成长、Heal/Cleanse、Poison、随机/集合/确定性目标与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -331,13 +331,13 @@ test('OPC02 v32/v30 Burn成功响应、Ammo depletion、Crit成长、Heal/Cleans
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 32);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-04-v28');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v29');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v29');
+  assert.equal(content.schemaVersion, 33);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-04-v29');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-04-v30');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-04-v30');
   assert.equal(content.items.length, 22);
-  assert.equal(content.runtimeBundle.schemaVersion, 30);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v29');
+  assert.equal(content.runtimeBundle.schemaVersion, 31);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v30');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -421,6 +421,23 @@ test('OPC02 v32/v30 Burn成功响应、Ammo depletion、Crit成长、Heal/Cleans
       damagePhase: 'before_crit',
       sourceLifecyclePolicy: 'compiled_board_source_for_battle',
       overflowPolicy: 'reject_advance',
+      rngPolicy: 'never',
+    },
+    lifestealRules: {
+      contractId: 'ysbzs.original-pirate-lifesteal.v1',
+      eligibleSourcePolicy: 'item_ready_always_selected_enemy_direct_damage',
+      healBasis: 'committed_hp_damage',
+      basisPointsScale: 10000,
+      roundingMode: 'floor',
+      auraStackingPolicy: 'sum_then_cap_at_basis_points_scale',
+      targetPolicy: 'friendly_weapon_exclude_self_active_board_snapshot',
+      resolutionTimingPolicy: 'immediately_after_nonterminal_damage_before_next_effect',
+      repeatPolicy: 'once_per_eligible_damage_effect',
+      shieldPolicy: 'defender_shield_reduces_basis_source_shield_unchanged',
+      overhealPolicy: 'cap_at_max_hp_record_overheal',
+      statusCleansePolicy: 'never',
+      terminalPolicy: 'skip_if_source_damage_is_lethal',
+      traceEmitPolicy: 'always_for_eligible_nonterminal_damage_even_zero',
       rngPolicy: 'never',
     },
     terminalPressure: {
@@ -599,7 +616,7 @@ test('OPC02 v32/v30 Burn成功响应、Ammo depletion、Crit成长、Heal/Cleans
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 22,
+    'ysbzs.original-pirate-executable-catalogs.v1', 23,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
@@ -1074,8 +1091,8 @@ test('OPC02 v32/v30 Burn成功响应、Ammo depletion、Crit成长、Heal/Cleans
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v29');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v29');
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-04-v30');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-04-v30');
   assert.equal(display.entries.length, 121);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
@@ -1230,7 +1247,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   const item = content.items.find(({ itemId }) => itemId === 'item_quadrant_linkage');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['tool', 'vehicle']]);
@@ -1320,7 +1337,7 @@ test('OPC02B v32 继航校炮仪把响应伤害成长绑定到无参数动态触
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   const item = content.items.find(({ itemId }) => itemId === 'item_followwake_calibrator');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1418,7 +1435,7 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   const item = content.items.find(({ itemId }) => itemId === 'item_dawntide_timer');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1518,7 +1535,7 @@ test('OPC02D 齐射传令台逐品质只为己方武器标签集合推进充能'
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   const item = content.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['relic', 'tool']]);
@@ -1607,7 +1624,7 @@ test('OPC02E 侧风择发器逐品质随机选择一件非自身己方武器推�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   const item = content.items.find(({ itemId }) => itemId === 'item_crosswind_selector');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['tool', 'weapon']]);
@@ -1720,7 +1737,7 @@ test('OPC02G v32 潮镜短铳以品质暴击率和伤害效果资格共用唯一
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
     contractId: 'ysbzs.original-pirate-critical-damage.v3',
     chanceScaleBps: 10000,
@@ -1885,7 +1902,7 @@ test('OPC02L v32 烬航灯逐品质只以就绪效果向敌方英雄施加项目
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   assert.deepEqual(content.runtimeBundle.battleRules.burnRules, {
     contractId: 'ysbzs.original-pirate-burn.v2',
     pulseIntervalTicks: 1,
@@ -1986,7 +2003,7 @@ test('OPC02M v32 墨航滴液器逐品质只以就绪效果向敌方英雄施加
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   assert.deepEqual(content.runtimeBundle.battleRules.poisonRules, {
     contractId: 'ysbzs.original-pirate-poison.v2',
     pulseIntervalTicks: 10,
@@ -2090,7 +2107,7 @@ test('OPC02M v32 墨航滴液器逐品质只以就绪效果向敌方英雄施加
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02N v32 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武器增加固定伤害', () => {
+test('OPC02N v33 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武器增加伤害与吸血', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-damage-aura-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -2102,7 +2119,7 @@ test('OPC02N v32 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   assert.deepEqual(content.runtimeBundle.battleRules.damageAuraRules, {
     contractId: 'ysbzs.original-pirate-damage-aura.v1',
     evaluationPolicy: 'per_damage_from_compiled_sources',
@@ -2114,30 +2131,61 @@ test('OPC02N v32 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武
     overflowPolicy: 'reject_advance',
     rngPolicy: 'never',
   });
+  assert.deepEqual(content.runtimeBundle.battleRules.lifestealRules, {
+    contractId: 'ysbzs.original-pirate-lifesteal.v1',
+    eligibleSourcePolicy: 'item_ready_always_selected_enemy_direct_damage',
+    healBasis: 'committed_hp_damage',
+    basisPointsScale: 10000,
+    roundingMode: 'floor',
+    auraStackingPolicy: 'sum_then_cap_at_basis_points_scale',
+    targetPolicy: 'friendly_weapon_exclude_self_active_board_snapshot',
+    resolutionTimingPolicy: 'immediately_after_nonterminal_damage_before_next_effect',
+    repeatPolicy: 'once_per_eligible_damage_effect',
+    shieldPolicy: 'defender_shield_reduces_basis_source_shield_unchanged',
+    overhealPolicy: 'cap_at_max_hp_record_overheal',
+    statusCleansePolicy: 'never',
+    terminalPolicy: 'skip_if_source_damage_is_lethal',
+    traceEmitPolicy: 'always_for_eligible_nonterminal_damage_even_zero',
+    rngPolicy: 'never',
+  });
   const item = content.items.find(({ itemId }) => itemId === 'item_mistkelp_remedy_kit');
   const qualities = ['bronze', 'silver', 'gold', 'diamond'];
   for (const [index, quality] of qualities.entries()) {
     const profile = item.qualityProfiles[quality];
     assert.deepEqual(profile.effects.map(({ operation }) => operation.type), ['heal']);
-    assert.deepEqual(profile.auras, [{
-      auraId: `aura_mistkelp_remedy_kit_${quality}_weapon_damage`,
-      priority: 20,
-      target: {
-        type: 'friendly_items_with_any_tag',
-        params: { tags: ['weapon'], excludeSelf: true },
+    assert.deepEqual(profile.auras, [
+      {
+        auraId: `aura_mistkelp_remedy_kit_${quality}_weapon_damage`,
+        priority: 20,
+        target: {
+          type: 'friendly_items_with_any_tag',
+          params: { tags: ['weapon'], excludeSelf: true },
+        },
+        operation: { type: 'grant_damage', params: { amount: index + 1 } },
       },
-      operation: { type: 'grant_damage', params: { amount: index + 1 } },
-    }]);
+      {
+        auraId: `aura_mistkelp_remedy_kit_${quality}_weapon_lifesteal`,
+        priority: 30,
+        target: {
+          type: 'friendly_items_with_any_tag',
+          params: { tags: ['weapon'], excludeSelf: true },
+        },
+        operation: {
+          type: 'grant_lifesteal_bps', params: { lifestealBps: [2500, 4000, 5500, 7000][index] },
+        },
+      },
+    ]);
   }
   const itemSkill = content.runtimeBundle.executableCatalogs.itemSkills.find(({ itemSkillId }) => (
     itemSkillId === 'skill_mistkelp_remedy_kit'
   ));
-  assert.deepEqual(itemSkill.auraIds, qualities.map((quality) => (
-    `aura_mistkelp_remedy_kit_${quality}_weapon_damage`
-  )).sort());
+  assert.deepEqual(itemSkill.auraIds, qualities.flatMap((quality) => [
+    `aura_mistkelp_remedy_kit_${quality}_weapon_damage`,
+    `aura_mistkelp_remedy_kit_${quality}_weapon_lifesteal`,
+  ]).sort());
   assert.equal(content.items.flatMap(({ qualityProfiles }) => (
     Object.values(qualityProfiles).flatMap(({ auras }) => auras)
-  )).length, 4);
+  )).length, 8);
   assert.deepEqual(content.runtimeBundle.generation.shop.templates.filter(({ itemId }) => (
     itemId === 'item_mistkelp_remedy_kit'
   )), [{
@@ -2146,7 +2194,7 @@ test('OPC02N v32 雾藻疗匣保留主动治疗并以独立 Aura 域为友方武
   }]);
   assert.match(display.entries.find(({ displayId }) => (
     displayId === 'item_skills.skill_mistkelp_remedy_kit'
-  )).descriptionZh, /恢复生命.*武器标签.*伤害加成/);
+  )).descriptionZh, /恢复生命.*武器标签.*伤害加成.*吸血.*实际造成的生命伤害/);
   assert.equal(validatePackageFile(output).status, 0);
 });
 
@@ -2161,7 +2209,7 @@ test('OPC02O v32 继航校炮仪为真实可暴击触发源增加仅后续 USE �
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
     contractId: 'ysbzs.original-pirate-critical-damage.v3',
     chanceScaleBps: 10000,
@@ -2220,7 +2268,7 @@ test('OPC02P v32 潮鳍投筒在同次 USE 正弹药归零时获得品质护盾'
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   assert.deepEqual(content.runtimeBundle.battleRules.ammoDepletionRules, {
     contractId: 'ysbzs.original-pirate-ammo-depletion.v1',
     triggerPolicy: 'current_item_use_positive_to_zero',
@@ -2316,7 +2364,7 @@ test('OPC02R v32 继航校炮仪在另一件友方物品成功暴击后推进自
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [32, 30, 22, 'ysbzs.original-pirate-rules.2026-09-04-v28']);
+  ], [33, 31, 23, 'ysbzs.original-pirate-rules.2026-09-04-v29']);
   assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
     contractId: 'ysbzs.original-pirate-critical-damage.v3',
     chanceScaleBps: 10000,
@@ -2411,6 +2459,14 @@ test('OPC03 缺 Crit成功响应、Ammo depletion、Crit成长、Aura、Heal/Cle
     ['damage-aura-operation-alias', (dir) => mutateCell(dir, '66_bz_item_auras.csv', 1, 'operation_type', 'gain_damage_for_fight')],
     ['damage-aura-amount-zero', (dir) => mutateCell(dir, '66_bz_item_auras.csv', 1, 'amount', '0')],
     ['damage-aura-amount-over-safe-max', (dir) => mutateCell(dir, '66_bz_item_auras.csv', 1, 'amount', '922337203685477581')],
+    ['lifesteal-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'lifesteal_contract', 'ysbzs.original-pirate-lifesteal.v2')],
+    ['lifesteal-basis', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'lifesteal_heal_basis', 'authored_damage')],
+    ['lifesteal-timing', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'lifesteal_resolution_timing_policy', 'after_item_use')],
+    ['lifesteal-target-tag', (dir) => mutateRowById(dir, '66_bz_item_auras.csv', 'aura_id', 'aura_mistkelp_remedy_kit_bronze_weapon_lifesteal', 'target_tags', 'tool')],
+    ['lifesteal-bps-zero', (dir) => mutateRowById(dir, '66_bz_item_auras.csv', 'aura_id', 'aura_mistkelp_remedy_kit_bronze_weapon_lifesteal', 'lifesteal_bps', '0')],
+    ['lifesteal-bps-over-scale', (dir) => mutateRowById(dir, '66_bz_item_auras.csv', 'aura_id', 'aura_mistkelp_remedy_kit_bronze_weapon_lifesteal', 'lifesteal_bps', '10001')],
+    ['lifesteal-amount-forbidden', (dir) => mutateRowById(dir, '66_bz_item_auras.csv', 'aura_id', 'aura_mistkelp_remedy_kit_bronze_weapon_lifesteal', 'amount', '1')],
+    ['damage-aura-lifesteal-param-forbidden', (dir) => mutateRowById(dir, '66_bz_item_auras.csv', 'aura_id', 'aura_mistkelp_remedy_kit_bronze_weapon_damage', 'lifesteal_bps', '2500')],
     ['damage-aura-directory-missing', (dir) => mutateRowById(dir, '48_bz_item_skills.csv', 'item_skill_id', 'skill_mistkelp_remedy_kit', 'aura_ids', 'aura_mistkelp_remedy_kit_silver_weapon_damage')],
     ['heal-cleanse-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'heal_status_cleanse_contract', 'ysbzs.original-pirate-heal-status-cleanse.v2')],
     ['heal-cleanse-trigger', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'heal_status_cleanse_trigger_policy', 'after_authored_heal')],
@@ -2940,8 +2996,8 @@ test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () =
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v32/v30 forged Crit/Burn成功响应、Ammo depletion、Heal/Cleanse、Poison/Burn/Crit、随机/集合/开场触发或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v32-forgery-'));
+test('OPC06 v33/v31 forged Lifesteal/Crit/Burn成功响应、Ammo depletion、Heal/Cleanse、Poison/Burn/Crit、随机/集合/开场触发或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v33-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
@@ -3081,6 +3137,21 @@ test('OPC06 v32/v30 forged Crit/Burn成功响应、Ammo depletion、Heal/Cleanse
       value.runtimeBundle.executableCatalogs.itemSkills.find(({ itemSkillId }) => (
         itemSkillId === 'skill_mistkelp_remedy_kit'
       )).auraIds.pop();
+    }],
+    ['lifesteal-rules-missing', (value) => { delete value.runtimeBundle.battleRules.lifestealRules; }],
+    ['lifesteal-rules-extra-field', (value) => { value.runtimeBundle.battleRules.lifestealRules.formula = 'forged'; }],
+    ['lifesteal-rules-basis', (value) => { value.runtimeBundle.battleRules.lifestealRules.healBasis = 'authored_damage'; }],
+    ['lifesteal-aura-target-tag', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_mistkelp_remedy_kit')
+        .qualityProfiles.bronze.auras[1].target.params.tags = ['tool'];
+    }],
+    ['lifesteal-aura-bps-zero', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_mistkelp_remedy_kit')
+        .qualityProfiles.bronze.auras[1].operation.params.lifestealBps = 0;
+    }],
+    ['lifesteal-aura-bps-over-scale', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_mistkelp_remedy_kit')
+        .qualityProfiles.bronze.auras[1].operation.params.lifestealBps = 10001;
     }],
     ['terminal-pressure-missing-field', (value) => { delete value.runtimeBundle.battleRules.terminalPressure.intervalTicks; }],
     ['terminal-pressure-extra-field', (value) => { value.runtimeBundle.battleRules.terminalPressure.maxDamage = 99; }],

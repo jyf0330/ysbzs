@@ -25,6 +25,7 @@
 - `48_bz_item_skills.csv`：`original_pirate` 的物品技能目录，只能由 `46_bz_items.csv.item_skill_id` 与 `47_bz_item_effects.csv.item_skill_id` 引用；不得作为英雄技能。
 - `47_bz_item_effects.csv` 的 `condition_source_relation` 必须显式为 `any|adjacent`；旧效果全部写 `any`，`adjacent` 只允许用于“另一件友方物品使用 + 来源物品命中 canonical tag”，并按 `[source_item_has_any_tag, source_item_adjacent_to_self]` 固定顺序导出。相邻条件本身不带参数，实际格位关系由权威战斗内核解释。`gain_damage_for_fight` 对 `self_item` 增加正整数当场伤害；同 profile 必须保留 `item_ready` 主动伤害，该成长不写入跨局基础数值。
 - `trigger_source_item` 只允许作为上述响应链的无参数 target，并仅与 `gain_damage_for_fight` 配对；它解析为刚完成本次 `USE` 的真实来源物品。响应发生在当前 `USE` 完成后，所以增量只进入来源物品的后续 `USE`。动态来源缺失或身份与权威上下文不符属于损坏输入，必须 fail closed；不可按空目标 no-op，也不可声明 fallback 参数。
+- `battle_start` 首版仅允许物品效果的 `[always] -> owner_hero + gain_shield`，`target.params={}` 且 `amount` 为正整数；禁止英雄技能、响应标签、相邻/集合/随机目标、aura 和其他 operation。原创“晨潮校时器”逐品质恰含一条该开场护盾和一条既有 `item_ready + always -> selected_enemy + deal_damage`，用于保持主动物品合同。
 - `47_bz_item_effects.csv.target_type` 的 `left_adjacent_item / right_adjacent_item / leftmost_friendly_item / rightmost_friendly_item` 当前只与 `item_ready + always + charge` 配对；同 owner、排除 source/self，左右相邻按多尺寸占用区间端点接壤，最左/最右从排除自身后的友方物品中按稳定格位顺序选择。空目标是合法 no-op，不生成 fallback；四条 effect identity 独立，目标重合时按 `priority/effectId` 顺序分别结算。
 - `62_bz_hero_skills.csv`：雾航船长的原创英雄被动技能，按技能与品质冻结 `friendly_item_used` 触发次数、正式效果数值和逐品质中文效果文案；不复用 `43_hero_skills.csv` 的 `hero_001` 参考审计切片。
 - `63_bz_hero_skill_loadouts.csv`：英雄起始与离线 Ghost 的规范化英雄技能实例；起始仅携带雾线追炮，`starter` 与 `ghost_snapshot` 分别投影到英雄目录和 Ghost build，并共同参与运行包 hash。

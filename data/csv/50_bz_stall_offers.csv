@@ -10,7 +10,7 @@ package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_followwake_calibrato
 package_mistwake_refresh_2,stall_mistwake,2,offer_refresh_2_reef_hook,item_reef_hook,silver,,5,false,3,formal
 package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_tidefin_launcher,item_tidefin_launcher,bronze,,3,false,1,formal
 package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_patchwork_ram,item_patchwork_ram,gold,,10,false,2,formal
-package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_storm_compass,item_storm_compass,gold,,11,false,3,formal
+package_mistwake_refresh_3,stall_mistwake,3,offer_refresh_3_dawntide_timer,item_dawntide_timer,bronze,,4,false,3,formal
 package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_wake_echo_drum,item_wake_echo_drum,silver,,8,false,1,formal
 package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_mistkelp_remedy_kit,item_mistkelp_remedy_kit,bronze,,4,false,2,formal
 package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_brine_cannon,item_brine_cannon,gold,,13,false,3,formal

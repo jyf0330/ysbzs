@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_trigger_source_target` 验证收口刷新。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_battle_start_item` 验证收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_battle_start_item.md` — data content: 原创“晨潮校时器”和首版 `battle_start + always -> owner_hero + gain_shield` 已完成 workbook→CSV→exporter 真相链与 fail-closed 门禁。
 
 - `tasks/done/2026-09-03_original_pirate_trigger_source_target.md` — data content: 无参数 `trigger_source_item` 动态目标与原创“继航校炮仪”已完成真相链及 fail-closed 门禁。
 

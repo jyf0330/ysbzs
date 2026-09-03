@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v20 candidate package while still validating every
+outside the formal v21 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 20
+CONTENT_SCHEMA_VERSION = 21
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 18
-SOURCE_CONTENT_SCHEMA_VERSION = 18
-SOURCE_RUNTIME_SCHEMA_VERSION = 16
+RUNTIME_SCHEMA_VERSION = 19
+SOURCE_CONTENT_SCHEMA_VERSION = 19
+SOURCE_RUNTIME_SCHEMA_VERSION = 17
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 11
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 12
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v16"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v17"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
@@ -73,7 +73,7 @@ REACTIVE_ITEM_EFFECT_OPERATIONS = {
 }
 ITEM_STATUSES = {"haste", "slow", "freeze"}
 ITEM_TAGS = {"ammo", "aquatic", "relic", "tool", "vehicle", "weapon"}
-ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used"}
+ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used", "battle_start"}
 ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag"}
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
 HERO_SKILL_TRIGGER = "friendly_item_used"
@@ -492,7 +492,7 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     if trigger_event not in ITEM_EFFECT_TRIGGERS:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TRIGGER_INVALID:{effect_id}")
     conditions = _expect_list(trigger["conditions"], f"{context}:trigger:conditions")
-    if trigger_event == "item_ready":
+    if trigger_event in {"item_ready", "battle_start"}:
         if conditions != [{"type": "always", "params": {}}]:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
     else:
@@ -524,6 +524,9 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     if trigger_event == "another_friendly_item_used" \
             and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
+    if trigger_event == "battle_start" \
+            and (target_type != "owner_hero" or operation_type != "gain_shield"):
+        raise ExportError(f"EXECUTABLE_ITEM_EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
     if operation_type == "deal_damage":
         params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
         _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
@@ -726,7 +729,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v20/v18 candidate package without accepting partial data."""
+    """Validate the formal v21/v19 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -2298,7 +2301,7 @@ class ContentAssembler:
             source_relation = _require_text(filename, row, "condition_source_relation")
             if source_relation not in ITEM_EFFECT_SOURCE_RELATIONS:
                 raise ExportError(f"EFFECT_SOURCE_RELATION_INVALID:{effect_id}")
-            if trigger_event == "item_ready":
+            if trigger_event in {"item_ready", "battle_start"}:
                 if condition_type != "always" or row.get("condition_tags", "").strip() \
                         or source_relation != "any":
                     raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
@@ -2325,6 +2328,9 @@ class ContentAssembler:
             if trigger_event == "another_friendly_item_used" \
                     and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
                 raise ExportError(f"EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
+            if trigger_event == "battle_start" \
+                    and (target_type != "owner_hero" or operation_type != "gain_shield"):
+                raise ExportError(f"EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
             if operation_type == "deal_damage" and target_type != "selected_enemy":
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type == "reload" and target_type != "self_item":
@@ -2992,8 +2998,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v18 candidate source.
-            # This adapter is its explicit one-way projection into executable v20.
+            # The current 22-domain workbook is the finite v19 candidate source.
+            # This adapter is its explicit one-way projection into executable v21.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3514,7 +3520,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v20 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v21 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3529,7 +3535,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v20 candidate "
+            "PASS original-pirate v21 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3542,7 +3548,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v20 candidate to {output}")
+        print(f"exported original-pirate v21 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

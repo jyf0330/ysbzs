@@ -139,3 +139,7 @@ effect_emberwake_lantern_bronze_burn,item_emberwake_lantern,bronze,skill_emberwa
 effect_emberwake_lantern_silver_burn,item_emberwake_lantern,silver,skill_emberwake_lantern,20,item_ready,always,,any,selected_enemy,,,,apply_burn,,5,,,,formal
 effect_emberwake_lantern_gold_burn,item_emberwake_lantern,gold,skill_emberwake_lantern,20,item_ready,always,,any,selected_enemy,,,,apply_burn,,8,,,,formal
 effect_emberwake_lantern_diamond_burn,item_emberwake_lantern,diamond,skill_emberwake_lantern,20,item_ready,always,,any,selected_enemy,,,,apply_burn,,12,,,,formal
+effect_inkwake_doser_bronze_poison,item_inkwake_doser,bronze,skill_inkwake_doser,20,item_ready,always,,any,selected_enemy,,,,apply_poison,,2,,,,formal
+effect_inkwake_doser_silver_poison,item_inkwake_doser,silver,skill_inkwake_doser,20,item_ready,always,,any,selected_enemy,,,,apply_poison,,3,,,,formal
+effect_inkwake_doser_gold_poison,item_inkwake_doser,gold,skill_inkwake_doser,20,item_ready,always,,any,selected_enemy,,,,apply_poison,,5,,,,formal
+effect_inkwake_doser_diamond_poison,item_inkwake_doser,diamond,skill_inkwake_doser,20,item_ready,always,,any,selected_enemy,,,,apply_poison,,7,,,,formal

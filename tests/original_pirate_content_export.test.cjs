@@ -260,6 +260,29 @@ function appendTideglassBronzeDamage(dir, effectId, canCrit) {
   fs.writeFileSync(skillPath, encodeCsv(skillRows), 'utf8');
 }
 
+function appendInkwakeBronzePoison(dir) {
+  const effectPath = path.join(dir, '47_bz_item_effects.csv');
+  const effectRows = parseCsv(fs.readFileSync(effectPath, 'utf8').replace(/^\uFEFF/, ''));
+  const effectIdColumn = effectRows[0].indexOf('effect_id');
+  const priorityColumn = effectRows[0].indexOf('priority');
+  const source = effectRows.find((row) => (
+    row[effectIdColumn] === 'effect_inkwake_doser_bronze_poison'
+  ));
+  const extra = [...source];
+  extra[effectIdColumn] = 'effect_inkwake_doser_bronze_second_poison';
+  extra[priorityColumn] = '21';
+  effectRows.push(extra);
+  fs.writeFileSync(effectPath, encodeCsv(effectRows), 'utf8');
+
+  const skillPath = path.join(dir, '48_bz_item_skills.csv');
+  const skillRows = parseCsv(fs.readFileSync(skillPath, 'utf8').replace(/^\uFEFF/, ''));
+  const skillIdColumn = skillRows[0].indexOf('item_skill_id');
+  const effectIdsColumn = skillRows[0].indexOf('effect_ids');
+  const skill = skillRows.find((row) => row[skillIdColumn] === 'skill_inkwake_doser');
+  skill[effectIdsColumn] += ',effect_inkwake_doser_bronze_second_poison';
+  fs.writeFileSync(skillPath, encodeCsv(skillRows), 'utf8');
+}
+
 function reverseDataRows(dir, file) {
   const target = path.join(dir, file);
   const rows = parseCsv(fs.readFileSync(target, 'utf8').replace(/^\uFEFF/, ''));
@@ -287,7 +310,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
+test('OPC02 v26/v24 Poison、Burn、Crit、随机单目标、标签集合、战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -304,13 +327,13 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 25);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v21');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v22');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v22');
-  assert.equal(content.items.length, 21);
-  assert.equal(content.runtimeBundle.schemaVersion, 23);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v22');
+  assert.equal(content.schemaVersion, 26);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v22');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v23');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v23');
+  assert.equal(content.items.length, 22);
+  assert.equal(content.runtimeBundle.schemaVersion, 24);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v23');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -335,6 +358,21 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
       roundingMode: 'floor',
       rollScope: 'item_use',
       drawPolicy: 'once_if_eligible_damage_effect',
+    },
+    poisonRules: {
+      contractId: 'ysbzs.original-pirate-poison.v1',
+      pulseIntervalTicks: 10,
+      firstPulsePolicy: 'after_full_interval',
+      reapplySchedulePolicy: 'preserve_existing_due_tick',
+      pulsePhase: 'tick_start_after_burn_terminal_before_item_progress',
+      damagePerStack: 1,
+      decayStacksPerPulse: 0,
+      shieldPolicy: 'bypass_without_consuming',
+      resolutionOrder: 'due_sides_snapshot_then_terminal',
+      healCleansePolicy: 'none',
+      critPolicy: 'never',
+      maxStacks: 1000000,
+      stackOverflowPolicy: 'reject_advance',
     },
     terminalPressure: {
       enabled: true,
@@ -504,14 +542,14 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 16,
+    'ysbzs.original-pirate-executable-catalogs.v1', 17,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
     catalogs.heroSkillTrainers.length, catalogs.heroSkillOffers.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 21, 2, 2, 7, 1, 4, 8, 8, 57, 3]);
+  ], [1, 22, 2, 2, 7, 1, 4, 8, 8, 60, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
     'heroId', 'heroSkillIds', 'startingHeroSkills',
   ]);
@@ -594,11 +632,11 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
   ]);
   const itemById = Object.fromEntries(content.items.map((item) => [item.itemId, item]));
   const allQualityProfiles = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles));
-  assert.equal(allQualityProfiles.length, 78);
+  assert.equal(allQualityProfiles.length, 82);
   assert.equal(content.items.filter(({ itemId }) => itemId !== 'item_tideglass_sidearm')
     .every(({ qualityProfiles }) => Object.values(qualityProfiles)
       .every(({ critChanceBps }) => critChanceBps === 0)), true);
-  const itemTagVocab = ['ammo', 'aquatic', 'burn', 'relic', 'tool', 'vehicle', 'weapon'];
+  const itemTagVocab = ['ammo', 'aquatic', 'burn', 'poison', 'relic', 'tool', 'vehicle', 'weapon'];
   assert.equal(content.items.every((item) => (
     assert.deepEqual(Object.keys(item).sort(), ['baseQuality', 'itemId', 'qualityProfiles', 'slotWidth', 'tags']),
     item.tags.length > 0 && new Set(item.tags).size === item.tags.length
@@ -655,7 +693,7 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects));
-  assert.equal(executableEffects.length, 140);
+  assert.equal(executableEffects.length, 144);
   const executableDamageEffects = executableEffects.filter(({ operation }) => operation.type === 'deal_damage');
   assert.equal(executableDamageEffects.every(({ operation }) => (
     typeof operation.params.canCrit === 'boolean'
@@ -664,7 +702,7 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
   assert.equal(executableEffects.filter(({ operation }) => operation.type !== 'deal_damage')
     .every(({ operation }) => !Object.hasOwn(operation.params, 'canCrit')), true);
   assert.deepEqual([...new Set(executableEffects.map(({ operation }) => operation.type))].sort(), [
-    'apply_burn', 'apply_status', 'charge', 'deal_damage', 'gain_damage_for_fight', 'gain_shield', 'heal', 'reload',
+    'apply_burn', 'apply_poison', 'apply_status', 'charge', 'deal_damage', 'gain_damage_for_fight', 'gain_shield', 'heal', 'reload',
   ]);
   assert.deepEqual([...new Set(executableEffects.map(({ target }) => target.type))].sort(), [
     'first_enemy_item', 'friendly_items_with_any_tag', 'left_adjacent_item', 'leftmost_friendly_item', 'owner_hero',
@@ -956,9 +994,9 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v22');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v22');
-  assert.equal(display.entries.length, 119);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v23');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v23');
+  assert.equal(display.entries.length, 121);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -991,7 +1029,7 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
   )).descriptionZh, /学习青铜品质/);
   assert.equal(display.entries.filter(({ domain }) => domain === 'hero_skill_quality_profiles').length, 8);
   assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
-  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 21);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 22);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_tidefin_launcher'), {
     displayId: 'items.item_tidefin_launcher', domain: 'items', sourceId: 'item_tidefin_launcher',
     nameZh: '潮鳍投筒', descriptionZh: '',
@@ -1061,8 +1099,8 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
   assert.notEqual(targetExcludeSelfColumn, -1);
   assert.notEqual(targetCountColumn, -1);
   assert.notEqual(canCritColumn, -1);
-  assert.equal(effectSourceRows.length, 140);
-  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 136);
+  assert.equal(effectSourceRows.length, 144);
+  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 140);
   assert.equal(effectSourceRows.filter((row) => row[targetTagsColumn] !== '').length, 8);
   assert.equal(effectSourceRows.filter((row) => row[targetExcludeSelfColumn] !== '').length, 4);
   assert.equal(effectSourceRows.filter((row) => row[targetCountColumn] !== '').length, 4);
@@ -1079,7 +1117,7 @@ test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始�
   const itemIdColumn = itemHeaders.indexOf('item_id');
   const critChanceColumn = itemHeaders.indexOf('crit_chance_bps');
   assert.notEqual(critChanceColumn, -1);
-  assert.equal(itemSourceRows.length, 78);
+  assert.equal(itemSourceRows.length, 82);
   assert.equal(itemSourceRows.filter((row) => row[itemIdColumn] !== 'item_tideglass_sidearm')
     .every((row) => row[critChanceColumn] === '0'), true);
   assert.deepEqual(itemSourceRows.filter((row) => row[itemIdColumn] === 'item_tideglass_sidearm')
@@ -1104,7 +1142,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
   const item = content.items.find(({ itemId }) => itemId === 'item_quadrant_linkage');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['tool', 'vehicle']]);
@@ -1182,7 +1220,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
   )).descriptionZh, /左邻.*右邻.*最左.*最右.*自身/);
 });
 
-test('OPC02B v25 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
+test('OPC02B v26 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-trigger-source-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1194,7 +1232,7 @@ test('OPC02B v25 继航校炮仪把响应伤害成长绑定到无参数动态触
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
   const item = content.items.find(({ itemId }) => itemId === 'item_followwake_calibrator');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1287,7 +1325,7 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
   const item = content.items.find(({ itemId }) => itemId === 'item_dawntide_timer');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1386,7 +1424,7 @@ test('OPC02D 齐射传令台逐品质只为己方武器标签集合推进充能'
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
   const item = content.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['relic', 'tool']]);
@@ -1474,7 +1512,7 @@ test('OPC02E 侧风择发器逐品质随机选择一件非自身己方武器推�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
   const item = content.items.find(({ itemId }) => itemId === 'item_crosswind_selector');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['tool', 'weapon']]);
@@ -1523,7 +1561,7 @@ test('OPC02E 侧风择发器逐品质随机选择一件非自身己方武器推�
     refreshFiveLayer.templateIds.length,
   ], [5, 5, 3]);
   assert.deepEqual([...refreshFiveLayer.templateIds].sort(), [
-    'offer_refresh_5_saltwind_capstan',
+    'offer_refresh_5_inkwake_doser',
     'offer_refresh_5_tidefold_bulwark',
     'offer_refresh_5_crosswind_selector',
   ].sort());
@@ -1573,7 +1611,7 @@ test('OPC02F 随机单目标显式 canonical excludeSelf false 可经 CSV 导出
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02G v25 潮镜短铳以品质暴击率和伤害效果资格共用唯一 Crit 合同', () => {
+test('OPC02G v26 潮镜短铳以品质暴击率和伤害效果资格共用唯一 Crit 合同', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-critical-damage-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1585,7 +1623,7 @@ test('OPC02G v25 潮镜短铳以品质暴击率和伤害效果资格共用唯一
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
   assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
     contractId: 'ysbzs.original-pirate-critical-damage.v1',
     chanceScaleBps: 10000,
@@ -1725,7 +1763,7 @@ test('OPC02K 0% profile 保留显式 eligible damage 并继续由运行时消费
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02L v25 烬航灯逐品质只以就绪效果向敌方英雄施加项目原创 Burn', () => {
+test('OPC02L v26 烬航灯逐品质只以就绪效果向敌方英雄施加项目原创 Burn', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-burn-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1737,7 +1775,7 @@ test('OPC02L v25 烬航灯逐品质只以就绪效果向敌方英雄施加项目
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
   assert.deepEqual(content.runtimeBundle.battleRules.burnRules, {
     contractId: 'ysbzs.original-pirate-burn.v1',
     pulseIntervalTicks: 1,
@@ -1817,16 +1855,158 @@ test('OPC02L v25 烬航灯逐品质只以就绪效果向敌方英雄施加项目
   assert.match(display.entries.find(({ displayId }) => (
     displayId === 'item_skills.skill_emberwake_lantern'
   )).descriptionZh, /燃烧.*下一个.*时钟刻.*伤害.*减少一层.*不暴击/);
-  assert.equal(content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)).length, 78);
+  assert.equal(content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)).length, 82);
   assert.equal(content.items.flatMap(({ qualityProfiles }) => (
     Object.values(qualityProfiles).flatMap(({ effects }) => effects)
-  )).length, 140);
-  assert.equal(enchantments.flatMap(({ profiles: values }) => values).length, 144);
+  )).length, 144);
+  assert.equal(enchantments.flatMap(({ profiles: values }) => values).length, 148);
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC03 缺 Burn/随机或集合目标/战内成长/防御字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
+test('OPC02M v26 墨航滴液器逐品质只以就绪效果向敌方英雄施加项目原创 Poison', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-poison-'));
+  const output = path.join(dir, 'content.json');
+  const displayOutput = path.join(dir, 'display.json');
+  assert.equal(runExporter(csvDir, output, displayOutput).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  const display = JSON.parse(fs.readFileSync(displayOutput, 'utf8'));
+  assert.deepEqual([
+    content.schemaVersion,
+    content.runtimeBundle.schemaVersion,
+    content.runtimeBundle.executableCatalogs.schemaVersion,
+    content.rulesVersion,
+  ], [26, 24, 17, 'ysbzs.original-pirate-rules.2026-09-03-v22']);
+  assert.deepEqual(content.runtimeBundle.battleRules.poisonRules, {
+    contractId: 'ysbzs.original-pirate-poison.v1',
+    pulseIntervalTicks: 10,
+    firstPulsePolicy: 'after_full_interval',
+    reapplySchedulePolicy: 'preserve_existing_due_tick',
+    pulsePhase: 'tick_start_after_burn_terminal_before_item_progress',
+    damagePerStack: 1,
+    decayStacksPerPulse: 0,
+    shieldPolicy: 'bypass_without_consuming',
+    resolutionOrder: 'due_sides_snapshot_then_terminal',
+    healCleansePolicy: 'none',
+    critPolicy: 'never',
+    maxStacks: 1000000,
+    stackOverflowPolicy: 'reject_advance',
+  });
+
+  const item = content.items.find(({ itemId }) => itemId === 'item_inkwake_doser');
+  assert.ok(item);
+  assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['poison', 'relic', 'tool']]);
+  const profiles = {
+    bronze: [2, 1, 10, 2],
+    silver: [4, 2, 9, 3],
+    gold: [7, 3, 8, 5],
+    diamond: [11, 5, 7, 7],
+  };
+  for (const [quality, [buyPrice, sellPrice, cooldown, stacks]] of Object.entries(profiles)) {
+    const profile = item.qualityProfiles[quality];
+    assert.deepEqual([
+      profile.buyPrice, profile.sellPrice, profile.baseCooldownTicks,
+      profile.critChanceBps, profile.ammo.enabled, profile.ammo.initial, profile.ammo.maximum,
+    ], [buyPrice, sellPrice, cooldown, 0, false, 0, 0]);
+    assert.deepEqual(profile.effects, [{
+      effectId: `effect_inkwake_doser_${quality}_poison`, priority: 20,
+      trigger: { event: 'item_ready', conditions: [{ type: 'always', params: {} }] },
+      target: { type: 'selected_enemy', params: {} },
+      operation: { type: 'apply_poison', params: { stacks } },
+    }]);
+  }
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.itemSkills.find(({ itemSkillId }) => (
+    itemSkillId === 'skill_inkwake_doser'
+  )), {
+    itemSkillId: 'skill_inkwake_doser', triggerEvents: ['item_ready'],
+    effectIds: Object.keys(profiles).map((quality) => `effect_inkwake_doser_${quality}_poison`).sort(),
+  });
+  assert.deepEqual(content.runtimeBundle.generation.shop.templates.filter(({ itemId }) => (
+    itemId === 'item_inkwake_doser'
+  )), [{
+    offerTemplateId: 'offer_refresh_5_inkwake_doser',
+    itemId: 'item_inkwake_doser', quality: 'bronze', enchantment: '',
+  }]);
+  const refreshFiveLayer = content.runtimeBundle.generation.shop.layers.find(({ fromRefreshIndex }) => (
+    fromRefreshIndex === 5
+  ));
+  assert.deepEqual(refreshFiveLayer.templateIds, [
+    'offer_refresh_5_inkwake_doser',
+    'offer_refresh_5_tidefold_bulwark',
+    'offer_refresh_5_crosswind_selector',
+  ]);
+  assert.equal(content.runtimeBundle.newRunTemplate.economy.gold, 12);
+  assert.equal(content.runtimeBundle.shopRules.refreshCost, 2);
+  assert.equal(12 - 5 * content.runtimeBundle.shopRules.refreshCost - profiles.bronze[0], 0);
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.upgrades.filter(({ itemId }) => (
+    itemId === 'item_inkwake_doser'
+  )), [
+    { upgradeId: 'upgrade_inkwake_doser_bronze_silver', itemId: 'item_inkwake_doser', fromQuality: 'bronze', toQuality: 'silver', price: 3, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_inkwake_doser_gold_diamond', itemId: 'item_inkwake_doser', fromQuality: 'gold', toQuality: 'diamond', price: 9, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_inkwake_doser_silver_gold', itemId: 'item_inkwake_doser', fromQuality: 'silver', toQuality: 'gold', price: 6, stallId: 'stall_mistwake' },
+  ]);
+  const enchantments = content.runtimeBundle.executableCatalogs.enchantments;
+  assert.deepEqual(enchantments.find(({ enchantmentId }) => enchantmentId === 'enchant_tailwind')
+    .profiles.filter(({ itemId }) => itemId === 'item_inkwake_doser')
+    .map(({ quality, price, cooldownDeltaTicks, damageDelta, ammoDelta }) => (
+      [quality, price, cooldownDeltaTicks, damageDelta, ammoDelta]
+    )), [
+    ['bronze', 4, -1, 0, 0], ['silver', 6, -1, 0, 0],
+    ['gold', 9, -1, 0, 0], ['diamond', 12, -1, 0, 0],
+  ]);
+  assert.equal(enchantments.filter(({ enchantmentId }) => enchantmentId !== 'enchant_tailwind')
+    .some(({ profiles: values }) => values.some(({ itemId }) => itemId === 'item_inkwake_doser')), false);
+  assert.equal(content.runtimeBundle.generation.battle.ghostSnapshots.some(({ build }) => (
+    build.itemInstances.some(({ itemId }) => itemId === 'item_inkwake_doser')
+  )), false);
+  assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_inkwake_doser'), {
+    displayId: 'items.item_inkwake_doser', domain: 'items',
+    sourceId: 'item_inkwake_doser', nameZh: '墨航滴液器', descriptionZh: '',
+  });
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'item_skills.skill_inkwake_doser'
+  )).descriptionZh, /中毒.*完整间隔.*生命伤害.*不衰减.*不消耗护盾.*不暴击/);
+  assert.equal(content.items.length, 22);
+  assert.equal(content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)).length, 82);
+  assert.equal(content.items.flatMap(({ qualityProfiles }) => (
+    Object.values(qualityProfiles).flatMap(({ effects }) => effects)
+  )).length, 144);
+  assert.equal(content.runtimeBundle.executableCatalogs.itemSkills.length, 22);
+  assert.equal(content.runtimeBundle.executableCatalogs.upgrades.length, 60);
+  assert.equal(enchantments.flatMap(({ profiles: values }) => values).length, 148);
+  assert.equal(content.runtimeBundle.generation.shop.templates.length, 33);
+  assert.equal(display.entries.length, 121);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC03 缺 Poison/Burn/随机或集合目标/战内成长/防御字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
   const cases = [
+    ['poison-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_contract', 'ysbzs.original-pirate-poison.v2')],
+    ['poison-pulse-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_pulse_interval_ticks', '9')],
+    ['poison-first-pulse', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_first_pulse_policy', 'next_tick')],
+    ['poison-reapply-schedule', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_reapply_schedule_policy', 'restart_full_interval')],
+    ['poison-pulse-phase', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_pulse_phase', 'tick_end')],
+    ['poison-damage-per-stack', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_damage_per_stack', '2')],
+    ['poison-decay', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_decay_stacks_per_pulse', '1')],
+    ['poison-shield-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_shield_policy', 'shield_first_consuming')],
+    ['poison-resolution-order', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_resolution_order', 'player_then_enemy')],
+    ['poison-heal-cleanse', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_heal_cleanse_policy', 'ten_percent')],
+    ['poison-crit-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_crit_policy', 'profile')],
+    ['poison-max-stacks', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_max_stacks', '999999')],
+    ['poison-overflow-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'poison_stack_overflow_policy', 'clamp')],
+    ['poison-stacks-missing', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'stacks', '')],
+    ['poison-stacks-zero', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'stacks', '0')],
+    ['poison-stacks-over-max', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'stacks', '1000001')],
+    ['poison-stacks-not-integer', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'stacks', '2.5')],
+    ['poison-amount-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'amount', '2')],
+    ['poison-can-crit-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'can_crit', 'false')],
+    ['poison-ticks-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'ticks', '10')],
+    ['poison-trigger-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'trigger_event', 'battle_start')],
+    ['poison-condition-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'condition_type', 'source_item_has_any_tag')],
+    ['poison-relation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'condition_source_relation', 'adjacent')],
+    ['poison-target-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'target_type', 'owner_hero')],
+    ['poison-operation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_inkwake_doser_bronze_poison', 'operation_type', 'deal_damage')],
+    ['poison-profile-crit-forged', (dir) => mutateRowById(dir, '46_bz_items.csv', 'item_id', 'item_inkwake_doser', 'crit_chance_bps', '1')],
+    ['poison-profile-second-effect-forged', (dir) => appendInkwakeBronzePoison(dir)],
     ['burn-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_contract', 'ysbzs.original-pirate-burn.v2')],
     ['burn-pulse-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_pulse_interval_ticks', '2')],
     ['burn-first-pulse', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_first_pulse_policy', 'same_tick')],
@@ -2276,18 +2456,18 @@ test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () =
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v25/v23 forged Burn/Crit/随机/集合/开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v25-forgery-'));
+test('OPC06 v26/v24 forged Poison/Burn/Crit/随机/集合/开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v26-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
   assert.equal(validatePackageFile(baseline).status, 0);
   const cases = [
-    ['old-root-schema', (value) => { value.schemaVersion = 24; }],
-    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 22; }],
-    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 15; }],
+    ['old-root-schema', (value) => { value.schemaVersion = 25; }],
+    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 23; }],
+    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 16; }],
     ['old-rules-version', (value) => {
-      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v20';
+      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v21';
       value.runtimeBundle.rulesVersion = value.rulesVersion;
     }],
     ['progression-rules-missing', (value) => { delete value.runtimeBundle.progressionRules; }],
@@ -2384,6 +2564,22 @@ test('OPC06 v25/v23 forged Burn/Crit/随机/集合/开场触发、动态/四向�
     ['terminal-pressure-interval-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.intervalTicks = 0; }],
     ['terminal-pressure-initial-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.initialDamage = 0; }],
     ['terminal-pressure-increment-negative', (value) => { value.runtimeBundle.battleRules.terminalPressure.incrementDamage = -1; }],
+    ['poison-rules-missing', (value) => { delete value.runtimeBundle.battleRules.poisonRules; }],
+    ['poison-rules-extra-field', (value) => { value.runtimeBundle.battleRules.poisonRules.source = 'forged'; }],
+    ['poison-rules-contract', (value) => { value.runtimeBundle.battleRules.poisonRules.contractId = 'ysbzs.original-pirate-poison.v2'; }],
+    ['poison-rules-pulse-interval', (value) => { value.runtimeBundle.battleRules.poisonRules.pulseIntervalTicks = 9; }],
+    ['poison-rules-pulse-interval-bool', (value) => { value.runtimeBundle.battleRules.poisonRules.pulseIntervalTicks = true; }],
+    ['poison-rules-first-pulse', (value) => { value.runtimeBundle.battleRules.poisonRules.firstPulsePolicy = 'next_tick'; }],
+    ['poison-rules-reapply-schedule', (value) => { value.runtimeBundle.battleRules.poisonRules.reapplySchedulePolicy = 'restart_full_interval'; }],
+    ['poison-rules-pulse-phase', (value) => { value.runtimeBundle.battleRules.poisonRules.pulsePhase = 'tick_end'; }],
+    ['poison-rules-damage-per-stack', (value) => { value.runtimeBundle.battleRules.poisonRules.damagePerStack = 2; }],
+    ['poison-rules-decay', (value) => { value.runtimeBundle.battleRules.poisonRules.decayStacksPerPulse = 1; }],
+    ['poison-rules-shield-policy', (value) => { value.runtimeBundle.battleRules.poisonRules.shieldPolicy = 'shield_first_consuming'; }],
+    ['poison-rules-resolution-order', (value) => { value.runtimeBundle.battleRules.poisonRules.resolutionOrder = 'player_then_enemy'; }],
+    ['poison-rules-heal-cleanse', (value) => { value.runtimeBundle.battleRules.poisonRules.healCleansePolicy = 'ten_percent'; }],
+    ['poison-rules-crit', (value) => { value.runtimeBundle.battleRules.poisonRules.critPolicy = 'profile'; }],
+    ['poison-rules-max-stacks', (value) => { value.runtimeBundle.battleRules.poisonRules.maxStacks = 999999; }],
+    ['poison-rules-overflow-policy', (value) => { value.runtimeBundle.battleRules.poisonRules.stackOverflowPolicy = 'clamp'; }],
     ['burn-rules-missing', (value) => { delete value.runtimeBundle.battleRules.burnRules; }],
     ['burn-rules-extra-field', (value) => { value.runtimeBundle.battleRules.burnRules.source = 'forged'; }],
     ['burn-rules-contract', (value) => { value.runtimeBundle.battleRules.burnRules.contractId = 'ysbzs.original-pirate-burn.v2'; }],
@@ -2641,6 +2837,55 @@ test('OPC06 v25/v23 forged Burn/Crit/随机/集合/开场触发、动态/四向�
         .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'item_ready');
       ready.target.type = 'self_item';
       ready.operation = { type: 'charge', params: { ticks: 1 } };
+    }],
+    ['poison-operation-extra-param', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze.effects[0].operation.params.amount = 2;
+    }],
+    ['poison-operation-stacks-zero', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze.effects[0].operation.params.stacks = 0;
+    }],
+    ['poison-operation-stacks-over-max', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze.effects[0].operation.params.stacks = 1000001;
+    }],
+    ['poison-operation-stacks-bool', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze.effects[0].operation.params.stacks = true;
+    }],
+    ['poison-operation-trigger', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze.effects[0].trigger = {
+          event: 'another_friendly_item_used',
+          conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['tool'] } }],
+        };
+    }],
+    ['poison-operation-target', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze.effects[0].target.type = 'owner_hero';
+    }],
+    ['poison-profile-crit-forbidden', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze.critChanceBps = 1;
+    }],
+    ['poison-profile-second-effect-forbidden', (value) => {
+      const profile = value.items.find(({ itemId }) => itemId === 'item_inkwake_doser')
+        .qualityProfiles.bronze;
+      const extra = structuredClone(profile.effects[0]);
+      extra.effectId = 'effect_inkwake_doser_bronze_second_poison';
+      extra.priority = 21;
+      profile.effects.push(extra);
+      value.runtimeBundle.executableCatalogs.itemSkills
+        .find(({ itemSkillId }) => itemSkillId === 'skill_inkwake_doser')
+        .effectIds.push(extra.effectId);
+    }],
+    ['poison-operation-hero-skill-forbidden', (value) => {
+      const effect = value.runtimeBundle.executableCatalogs.heroSkills[0]
+        .qualityProfiles.bronze.effects[0];
+      Object.assign(effect, {
+        targetType: 'opponent_hero', operationType: 'apply_poison', amount: 2, ticks: 0,
+      });
     }],
     ['burn-operation-extra-param', (value) => {
       value.items.find(({ itemId }) => itemId === 'item_emberwake_lantern')

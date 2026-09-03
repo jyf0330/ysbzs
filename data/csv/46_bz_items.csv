@@ -73,3 +73,7 @@ item_tideglass_sidearm,潮镜短铳,"tool, weapon",1,bronze,bronze,4,2,5,2500,fa
 item_tideglass_sidearm,潮镜短铳,"tool, weapon",1,bronze,silver,7,3,4,4000,false,0,0,skill_tideglass_sidearm,,,,formal
 item_tideglass_sidearm,潮镜短铳,"tool, weapon",1,bronze,gold,11,5,3,5500,false,0,0,skill_tideglass_sidearm,,,,formal
 item_tideglass_sidearm,潮镜短铳,"tool, weapon",1,bronze,diamond,16,8,2,7000,false,0,0,skill_tideglass_sidearm,,,,formal
+item_emberwake_lantern,烬航灯,"burn, relic, tool",1,bronze,bronze,3,1,9,0,false,0,0,skill_emberwake_lantern,,,,formal
+item_emberwake_lantern,烬航灯,"burn, relic, tool",1,bronze,silver,5,2,8,0,false,0,0,skill_emberwake_lantern,,,,formal
+item_emberwake_lantern,烬航灯,"burn, relic, tool",1,bronze,gold,8,4,7,0,false,0,0,skill_emberwake_lantern,,,,formal
+item_emberwake_lantern,烬航灯,"burn, relic, tool",1,bronze,diamond,12,6,6,0,false,0,0,skill_emberwake_lantern,,,,formal

@@ -222,6 +222,19 @@ function mutateColumn(dir, file, field, value) {
   fs.writeFileSync(target, encodeCsv(rows), 'utf8');
 }
 
+function mutateRowById(dir, file, idField, idValue, field, value) {
+  const target = path.join(dir, file);
+  const rows = parseCsv(fs.readFileSync(target, 'utf8').replace(/^\uFEFF/, ''));
+  const idColumn = rows[0].indexOf(idField);
+  const column = rows[0].indexOf(field);
+  assert.notEqual(idColumn, -1, `${file}.${idField}`);
+  assert.notEqual(column, -1, `${file}.${field}`);
+  const row = rows.find((candidate, index) => index > 0 && candidate[idColumn] === idValue);
+  assert.ok(row, `${file}.${idField}=${idValue}`);
+  row[column] = value;
+  fs.writeFileSync(target, encodeCsv(rows), 'utf8');
+}
+
 function appendTideglassBronzeDamage(dir, effectId, canCrit) {
   const effectPath = path.join(dir, '47_bz_item_effects.csv');
   const effectRows = parseCsv(fs.readFileSync(effectPath, 'utf8').replace(/^\uFEFF/, ''));
@@ -274,7 +287,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
+test('OPC02 v25/v23 Burn、Crit、随机单目标、标签集合、战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -291,18 +304,30 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 24);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v20');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v21');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v21');
-  assert.equal(content.items.length, 20);
-  assert.equal(content.runtimeBundle.schemaVersion, 22);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v21');
+  assert.equal(content.schemaVersion, 25);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v21');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v22');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v22');
+  assert.equal(content.items.length, 21);
+  assert.equal(content.runtimeBundle.schemaVersion, 23);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v22');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
   ].sort());
   assert.deepEqual(content.runtimeBundle.battleRules, {
+    burnRules: {
+      contractId: 'ysbzs.original-pirate-burn.v1',
+      pulseIntervalTicks: 1,
+      firstPulsePolicy: 'next_tick',
+      pulsePhase: 'tick_start_before_item_progress',
+      damagePerStack: 1,
+      decayStacksPerPulse: 1,
+      shieldPolicy: 'shield_first_consuming',
+      resolutionOrder: 'simultaneous_sides_then_terminal',
+      maxStacks: 1000000,
+      stackOverflowPolicy: 'reject_advance',
+    },
     critRules: {
       contractId: 'ysbzs.original-pirate-critical-damage.v1',
       chanceScaleBps: 10000,
@@ -424,8 +449,9 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
     ],
   });
   assert.equal(generation.shop.templates.some((template) => 'price' in template || 'frozen' in template), false);
-  const generatedSource = generation.shop.templates.find(({ offerTemplateId }) => offerTemplateId === 'offer_initial_signal_flare');
-  assert.equal(content.items.find(({ itemId }) => itemId === generatedSource.itemId).qualityProfiles[generatedSource.quality].buyPrice, 6);
+  const generatedSource = generation.shop.templates.find(({ offerTemplateId }) => offerTemplateId === 'offer_initial_emberwake_lantern');
+  assert.equal(content.items.find(({ itemId }) => itemId === generatedSource.itemId).qualityProfiles[generatedSource.quality].buyPrice, 3);
+  assert.equal(generation.shop.templates.some(({ offerTemplateId }) => offerTemplateId === 'offer_initial_signal_flare'), false);
   assert.deepEqual(Object.keys(generation.battle).sort(), [
     'ghostEncounters', 'ghostSnapshots', 'layers', 'templates',
   ]);
@@ -478,14 +504,14 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 15,
+    'ysbzs.original-pirate-executable-catalogs.v1', 16,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
     catalogs.heroSkillTrainers.length, catalogs.heroSkillOffers.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 20, 2, 2, 7, 1, 4, 8, 8, 54, 3]);
+  ], [1, 21, 2, 2, 7, 1, 4, 8, 8, 57, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
     'heroId', 'heroSkillIds', 'startingHeroSkills',
   ]);
@@ -568,11 +594,11 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
   ]);
   const itemById = Object.fromEntries(content.items.map((item) => [item.itemId, item]));
   const allQualityProfiles = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles));
-  assert.equal(allQualityProfiles.length, 74);
+  assert.equal(allQualityProfiles.length, 78);
   assert.equal(content.items.filter(({ itemId }) => itemId !== 'item_tideglass_sidearm')
     .every(({ qualityProfiles }) => Object.values(qualityProfiles)
       .every(({ critChanceBps }) => critChanceBps === 0)), true);
-  const itemTagVocab = ['ammo', 'aquatic', 'relic', 'tool', 'vehicle', 'weapon'];
+  const itemTagVocab = ['ammo', 'aquatic', 'burn', 'relic', 'tool', 'vehicle', 'weapon'];
   assert.equal(content.items.every((item) => (
     assert.deepEqual(Object.keys(item).sort(), ['baseQuality', 'itemId', 'qualityProfiles', 'slotWidth', 'tags']),
     item.tags.length > 0 && new Set(item.tags).size === item.tags.length
@@ -629,7 +655,7 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects));
-  assert.equal(executableEffects.length, 136);
+  assert.equal(executableEffects.length, 140);
   const executableDamageEffects = executableEffects.filter(({ operation }) => operation.type === 'deal_damage');
   assert.equal(executableDamageEffects.every(({ operation }) => (
     typeof operation.params.canCrit === 'boolean'
@@ -638,7 +664,7 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
   assert.equal(executableEffects.filter(({ operation }) => operation.type !== 'deal_damage')
     .every(({ operation }) => !Object.hasOwn(operation.params, 'canCrit')), true);
   assert.deepEqual([...new Set(executableEffects.map(({ operation }) => operation.type))].sort(), [
-    'apply_status', 'charge', 'deal_damage', 'gain_damage_for_fight', 'gain_shield', 'heal', 'reload',
+    'apply_burn', 'apply_status', 'charge', 'deal_damage', 'gain_damage_for_fight', 'gain_shield', 'heal', 'reload',
   ]);
   assert.deepEqual([...new Set(executableEffects.map(({ target }) => target.type))].sort(), [
     'first_enemy_item', 'friendly_items_with_any_tag', 'left_adjacent_item', 'leftmost_friendly_item', 'owner_hero',
@@ -930,9 +956,9 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v21');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v21');
-  assert.equal(display.entries.length, 117);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v22');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v22');
+  assert.equal(display.entries.length, 119);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -965,7 +991,7 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
   )).descriptionZh, /学习青铜品质/);
   assert.equal(display.entries.filter(({ domain }) => domain === 'hero_skill_quality_profiles').length, 8);
   assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
-  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 20);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 21);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_tidefin_launcher'), {
     displayId: 'items.item_tidefin_launcher', domain: 'items', sourceId: 'item_tidefin_launcher',
     nameZh: '潮鳍投筒', descriptionZh: '',
@@ -1035,8 +1061,8 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
   assert.notEqual(targetExcludeSelfColumn, -1);
   assert.notEqual(targetCountColumn, -1);
   assert.notEqual(canCritColumn, -1);
-  assert.equal(effectSourceRows.length, 136);
-  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 132);
+  assert.equal(effectSourceRows.length, 140);
+  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 136);
   assert.equal(effectSourceRows.filter((row) => row[targetTagsColumn] !== '').length, 8);
   assert.equal(effectSourceRows.filter((row) => row[targetExcludeSelfColumn] !== '').length, 4);
   assert.equal(effectSourceRows.filter((row) => row[targetCountColumn] !== '').length, 4);
@@ -1053,7 +1079,7 @@ test('OPC02 v24/v22 Crit、随机单目标、标签集合、战斗开始、动�
   const itemIdColumn = itemHeaders.indexOf('item_id');
   const critChanceColumn = itemHeaders.indexOf('crit_chance_bps');
   assert.notEqual(critChanceColumn, -1);
-  assert.equal(itemSourceRows.length, 74);
+  assert.equal(itemSourceRows.length, 78);
   assert.equal(itemSourceRows.filter((row) => row[itemIdColumn] !== 'item_tideglass_sidearm')
     .every((row) => row[critChanceColumn] === '0'), true);
   assert.deepEqual(itemSourceRows.filter((row) => row[itemIdColumn] === 'item_tideglass_sidearm')
@@ -1078,7 +1104,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
+  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
   const item = content.items.find(({ itemId }) => itemId === 'item_quadrant_linkage');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['tool', 'vehicle']]);
@@ -1156,7 +1182,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
   )).descriptionZh, /左邻.*右邻.*最左.*最右.*自身/);
 });
 
-test('OPC02B v24 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
+test('OPC02B v25 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-trigger-source-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1168,7 +1194,7 @@ test('OPC02B v24 继航校炮仪把响应伤害成长绑定到无参数动态触
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
+  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
   const item = content.items.find(({ itemId }) => itemId === 'item_followwake_calibrator');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1261,7 +1287,7 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
+  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
   const item = content.items.find(({ itemId }) => itemId === 'item_dawntide_timer');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1360,7 +1386,7 @@ test('OPC02D 齐射传令台逐品质只为己方武器标签集合推进充能'
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
+  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
   const item = content.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['relic', 'tool']]);
@@ -1448,7 +1474,7 @@ test('OPC02E 侧风择发器逐品质随机选择一件非自身己方武器推�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
+  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
   const item = content.items.find(({ itemId }) => itemId === 'item_crosswind_selector');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['tool', 'weapon']]);
@@ -1547,7 +1573,7 @@ test('OPC02F 随机单目标显式 canonical excludeSelf false 可经 CSV 导出
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC02G v24 潮镜短铳以品质暴击率和伤害效果资格共用唯一 Crit 合同', () => {
+test('OPC02G v25 潮镜短铳以品质暴击率和伤害效果资格共用唯一 Crit 合同', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-critical-damage-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1559,7 +1585,7 @@ test('OPC02G v24 潮镜短铳以品质暴击率和伤害效果资格共用唯一
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [24, 22, 15, 'ysbzs.original-pirate-rules.2026-09-03-v20']);
+  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
   assert.deepEqual(content.runtimeBundle.battleRules.critRules, {
     contractId: 'ysbzs.original-pirate-critical-damage.v1',
     chanceScaleBps: 10000,
@@ -1699,8 +1725,129 @@ test('OPC02K 0% profile 保留显式 eligible damage 并继续由运行时消费
   assert.equal(validatePackageFile(output).status, 0);
 });
 
-test('OPC03 缺随机或集合目标/战内成长/防御字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
+test('OPC02L v25 烬航灯逐品质只以就绪效果向敌方英雄施加项目原创 Burn', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-burn-'));
+  const output = path.join(dir, 'content.json');
+  const displayOutput = path.join(dir, 'display.json');
+  assert.equal(runExporter(csvDir, output, displayOutput).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  const display = JSON.parse(fs.readFileSync(displayOutput, 'utf8'));
+  assert.deepEqual([
+    content.schemaVersion,
+    content.runtimeBundle.schemaVersion,
+    content.runtimeBundle.executableCatalogs.schemaVersion,
+    content.rulesVersion,
+  ], [25, 23, 16, 'ysbzs.original-pirate-rules.2026-09-03-v21']);
+  assert.deepEqual(content.runtimeBundle.battleRules.burnRules, {
+    contractId: 'ysbzs.original-pirate-burn.v1',
+    pulseIntervalTicks: 1,
+    firstPulsePolicy: 'next_tick',
+    pulsePhase: 'tick_start_before_item_progress',
+    damagePerStack: 1,
+    decayStacksPerPulse: 1,
+    shieldPolicy: 'shield_first_consuming',
+    resolutionOrder: 'simultaneous_sides_then_terminal',
+    maxStacks: 1000000,
+    stackOverflowPolicy: 'reject_advance',
+  });
+
+  const item = content.items.find(({ itemId }) => itemId === 'item_emberwake_lantern');
+  assert.ok(item);
+  assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['burn', 'relic', 'tool']]);
+  const profiles = {
+    bronze: [3, 1, 9, 3],
+    silver: [5, 2, 8, 5],
+    gold: [8, 4, 7, 8],
+    diamond: [12, 6, 6, 12],
+  };
+  for (const [quality, [buyPrice, sellPrice, cooldown, stacks]] of Object.entries(profiles)) {
+    const profile = item.qualityProfiles[quality];
+    assert.deepEqual([
+      profile.buyPrice, profile.sellPrice, profile.baseCooldownTicks,
+      profile.critChanceBps, profile.ammo.enabled, profile.ammo.initial, profile.ammo.maximum,
+    ], [buyPrice, sellPrice, cooldown, 0, false, 0, 0]);
+    assert.deepEqual(profile.effects, [{
+      effectId: `effect_emberwake_lantern_${quality}_burn`, priority: 20,
+      trigger: { event: 'item_ready', conditions: [{ type: 'always', params: {} }] },
+      target: { type: 'selected_enemy', params: {} },
+      operation: { type: 'apply_burn', params: { stacks } },
+    }]);
+  }
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.itemSkills.find(({ itemSkillId }) => (
+    itemSkillId === 'skill_emberwake_lantern'
+  )), {
+    itemSkillId: 'skill_emberwake_lantern', triggerEvents: ['item_ready'],
+    effectIds: Object.keys(profiles).map((quality) => `effect_emberwake_lantern_${quality}_burn`).sort(),
+  });
+  assert.deepEqual(content.runtimeBundle.generation.shop.templates.filter(({ itemId }) => (
+    itemId === 'item_emberwake_lantern'
+  )), [{
+    offerTemplateId: 'offer_initial_emberwake_lantern',
+    itemId: 'item_emberwake_lantern', quality: 'bronze', enchantment: '',
+  }]);
+  assert.equal(content.runtimeBundle.generation.shop.templates.some(({ offerTemplateId }) => (
+    offerTemplateId === 'offer_initial_signal_flare'
+  )), false);
+  assert.equal(content.runtimeBundle.newRunTemplate.economy.gold - 3, 9);
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.upgrades.filter(({ itemId }) => (
+    itemId === 'item_emberwake_lantern'
+  )), [
+    { upgradeId: 'upgrade_emberwake_lantern_bronze_silver', itemId: 'item_emberwake_lantern', fromQuality: 'bronze', toQuality: 'silver', price: 4, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_emberwake_lantern_gold_diamond', itemId: 'item_emberwake_lantern', fromQuality: 'gold', toQuality: 'diamond', price: 10, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_emberwake_lantern_silver_gold', itemId: 'item_emberwake_lantern', fromQuality: 'silver', toQuality: 'gold', price: 7, stallId: 'stall_mistwake' },
+  ]);
+  const enchantments = content.runtimeBundle.executableCatalogs.enchantments;
+  assert.deepEqual(enchantments.find(({ enchantmentId }) => enchantmentId === 'enchant_tailwind')
+    .profiles.filter(({ itemId }) => itemId === 'item_emberwake_lantern')
+    .map(({ quality, price, cooldownDeltaTicks, damageDelta, ammoDelta }) => (
+      [quality, price, cooldownDeltaTicks, damageDelta, ammoDelta]
+    )), [
+    ['bronze', 4, -1, 0, 0], ['silver', 6, -1, 0, 0],
+    ['gold', 9, -1, 0, 0], ['diamond', 12, -1, 0, 0],
+  ]);
+  assert.equal(enchantments.filter(({ enchantmentId }) => enchantmentId !== 'enchant_tailwind')
+    .some(({ profiles: values }) => values.some(({ itemId }) => itemId === 'item_emberwake_lantern')), false);
+  assert.equal(content.runtimeBundle.generation.battle.ghostSnapshots.some(({ build }) => (
+    build.itemInstances.some(({ itemId }) => itemId === 'item_emberwake_lantern')
+  )), true);
+  assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_emberwake_lantern'), {
+    displayId: 'items.item_emberwake_lantern', domain: 'items',
+    sourceId: 'item_emberwake_lantern', nameZh: '烬航灯', descriptionZh: '',
+  });
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'item_skills.skill_emberwake_lantern'
+  )).descriptionZh, /燃烧.*下一个.*时钟刻.*伤害.*减少一层.*不暴击/);
+  assert.equal(content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)).length, 78);
+  assert.equal(content.items.flatMap(({ qualityProfiles }) => (
+    Object.values(qualityProfiles).flatMap(({ effects }) => effects)
+  )).length, 140);
+  assert.equal(enchantments.flatMap(({ profiles: values }) => values).length, 144);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC03 缺 Burn/随机或集合目标/战内成长/防御字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
   const cases = [
+    ['burn-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_contract', 'ysbzs.original-pirate-burn.v2')],
+    ['burn-pulse-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_pulse_interval_ticks', '2')],
+    ['burn-first-pulse', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_first_pulse_policy', 'same_tick')],
+    ['burn-pulse-phase', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_pulse_phase', 'tick_end')],
+    ['burn-damage-per-stack', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_damage_per_stack', '2')],
+    ['burn-decay', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_decay_stacks_per_pulse', '2')],
+    ['burn-shield-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_shield_policy', 'bypass')],
+    ['burn-resolution-order', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_resolution_order', 'player_then_enemy')],
+    ['burn-max-stacks', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_max_stacks', '999999')],
+    ['burn-overflow-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'burn_stack_overflow_policy', 'clamp')],
+    ['burn-stacks-missing', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'stacks', '')],
+    ['burn-stacks-zero', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'stacks', '0')],
+    ['burn-stacks-over-max', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'stacks', '1000001')],
+    ['burn-stacks-not-integer', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'stacks', '3.5')],
+    ['burn-amount-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'amount', '3')],
+    ['burn-can-crit-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'can_crit', 'false')],
+    ['burn-trigger-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'trigger_event', 'battle_start')],
+    ['burn-condition-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'condition_type', 'source_item_has_any_tag')],
+    ['burn-relation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'condition_source_relation', 'adjacent')],
+    ['burn-target-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'target_type', 'owner_hero')],
+    ['burn-operation-forged', (dir) => mutateRowById(dir, '47_bz_item_effects.csv', 'effect_id', 'effect_emberwake_lantern_bronze_burn', 'operation_type', 'deal_damage')],
     ['crit-contract', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'crit_contract', 'ysbzs.original-pirate-critical-damage.v2')],
     ['crit-scale', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'chance_scale_bps', '1000')],
     ['crit-multiplier-at-scale', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'damage_multiplier_bps', '10000')],
@@ -1935,7 +2082,7 @@ test('OPC03 缺随机或集合目标/战内成长/防御字段、tags、主动�
     ['hero-skill-trainer-owner', (dir) => mutateCell(dir, '64_bz_hero_skill_trainers.csv', 1, 'hero_id', 'hero_missing')],
     ['hero-skill-trainer-stall', (dir) => mutateCell(dir, '64_bz_hero_skill_trainers.csv', 1, 'stall_id', 'stall_missing')],
     ['hero-skill-trainer-slots', (dir) => mutateCell(dir, '64_bz_hero_skill_trainers.csv', 1, 'offer_slots', '4')],
-    ['hero-skill-offer-item-collision', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'offer_id', 'offer_initial_signal_flare')],
+    ['hero-skill-offer-item-collision', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'offer_id', 'offer_initial_emberwake_lantern')],
     ['hero-skill-offer-trainer', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'trainer_id', 'trainer_missing')],
     ['hero-skill-offer-skill', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 1, 'hero_skill_id', 'hero_skill_missing')],
     ['hero-skill-offer-action', (dir) => mutateCell(dir, '65_bz_hero_skill_offers.csv', 4, 'action_type', 'purchase')],
@@ -1974,8 +2121,8 @@ test('OPC03 缺随机或集合目标/战内成长/防御字段、tags、主动�
     ['terminal-pressure-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_interval_ticks', '')],
     ['terminal-pressure-initial', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_initial_damage', '0')],
     ['terminal-pressure-increment', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_increment_damage', '-1')],
-    ['old-source-content-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'schema_version', '20')],
-    ['old-source-runtime-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'runtime_schema_version', '18')],
+    ['old-source-content-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'schema_version', '22')],
+    ['old-source-runtime-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'runtime_schema_version', '20')],
     ['income-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'income_payout_policy', 'hour_complete')],
     ['prestige-scope', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'prestige_battle_kind', 'pve')],
     ['last-chance-policy-link', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'last_chance_policy_id', 'last_chance_missing')],
@@ -2129,18 +2276,18 @@ test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () =
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v24/v22 forged Crit/随机/集合/开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v24-forgery-'));
+test('OPC06 v25/v23 forged Burn/Crit/随机/集合/开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v25-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
   assert.equal(validatePackageFile(baseline).status, 0);
   const cases = [
-    ['old-root-schema', (value) => { value.schemaVersion = 23; }],
-    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 21; }],
-    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 14; }],
+    ['old-root-schema', (value) => { value.schemaVersion = 24; }],
+    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 22; }],
+    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 15; }],
     ['old-rules-version', (value) => {
-      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v19';
+      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v20';
       value.runtimeBundle.rulesVersion = value.rulesVersion;
     }],
     ['progression-rules-missing', (value) => { delete value.runtimeBundle.progressionRules; }],
@@ -2237,6 +2384,19 @@ test('OPC06 v24/v22 forged Crit/随机/集合/开场触发、动态/四向目标
     ['terminal-pressure-interval-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.intervalTicks = 0; }],
     ['terminal-pressure-initial-zero', (value) => { value.runtimeBundle.battleRules.terminalPressure.initialDamage = 0; }],
     ['terminal-pressure-increment-negative', (value) => { value.runtimeBundle.battleRules.terminalPressure.incrementDamage = -1; }],
+    ['burn-rules-missing', (value) => { delete value.runtimeBundle.battleRules.burnRules; }],
+    ['burn-rules-extra-field', (value) => { value.runtimeBundle.battleRules.burnRules.source = 'forged'; }],
+    ['burn-rules-contract', (value) => { value.runtimeBundle.battleRules.burnRules.contractId = 'ysbzs.original-pirate-burn.v2'; }],
+    ['burn-rules-pulse-interval', (value) => { value.runtimeBundle.battleRules.burnRules.pulseIntervalTicks = 2; }],
+    ['burn-rules-pulse-interval-bool', (value) => { value.runtimeBundle.battleRules.burnRules.pulseIntervalTicks = true; }],
+    ['burn-rules-first-pulse', (value) => { value.runtimeBundle.battleRules.burnRules.firstPulsePolicy = 'same_tick'; }],
+    ['burn-rules-pulse-phase', (value) => { value.runtimeBundle.battleRules.burnRules.pulsePhase = 'tick_end'; }],
+    ['burn-rules-damage-per-stack', (value) => { value.runtimeBundle.battleRules.burnRules.damagePerStack = 2; }],
+    ['burn-rules-decay', (value) => { value.runtimeBundle.battleRules.burnRules.decayStacksPerPulse = 2; }],
+    ['burn-rules-shield-policy', (value) => { value.runtimeBundle.battleRules.burnRules.shieldPolicy = 'bypass'; }],
+    ['burn-rules-resolution-order', (value) => { value.runtimeBundle.battleRules.burnRules.resolutionOrder = 'player_then_enemy'; }],
+    ['burn-rules-max-stacks', (value) => { value.runtimeBundle.battleRules.burnRules.maxStacks = 999999; }],
+    ['burn-rules-overflow-policy', (value) => { value.runtimeBundle.battleRules.burnRules.stackOverflowPolicy = 'clamp'; }],
     ['crit-rules-missing', (value) => { delete value.runtimeBundle.battleRules.critRules; }],
     ['crit-rules-extra-field', (value) => { value.runtimeBundle.battleRules.critRules.seed = 'forged'; }],
     ['crit-rules-contract', (value) => { value.runtimeBundle.battleRules.critRules.contractId = 'ysbzs.original-pirate-critical-damage.v2'; }],
@@ -2481,6 +2641,40 @@ test('OPC06 v24/v22 forged Crit/随机/集合/开场触发、动态/四向目标
         .qualityProfiles.bronze.effects.find(({ trigger }) => trigger.event === 'item_ready');
       ready.target.type = 'self_item';
       ready.operation = { type: 'charge', params: { ticks: 1 } };
+    }],
+    ['burn-operation-extra-param', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_emberwake_lantern')
+        .qualityProfiles.bronze.effects[0].operation.params.amount = 3;
+    }],
+    ['burn-operation-stacks-zero', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_emberwake_lantern')
+        .qualityProfiles.bronze.effects[0].operation.params.stacks = 0;
+    }],
+    ['burn-operation-stacks-over-max', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_emberwake_lantern')
+        .qualityProfiles.bronze.effects[0].operation.params.stacks = 1000001;
+    }],
+    ['burn-operation-stacks-bool', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_emberwake_lantern')
+        .qualityProfiles.bronze.effects[0].operation.params.stacks = true;
+    }],
+    ['burn-operation-trigger', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_emberwake_lantern')
+        .qualityProfiles.bronze.effects[0].trigger = {
+          event: 'another_friendly_item_used',
+          conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['tool'] } }],
+        };
+    }],
+    ['burn-operation-target', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_emberwake_lantern')
+        .qualityProfiles.bronze.effects[0].target.type = 'owner_hero';
+    }],
+    ['burn-operation-hero-skill-forbidden', (value) => {
+      const effect = value.runtimeBundle.executableCatalogs.heroSkills[0]
+        .qualityProfiles.bronze.effects[0];
+      Object.assign(effect, {
+        targetType: 'opponent_hero', operationType: 'apply_burn', amount: 3, ticks: 0,
+      });
     }],
     ['item-ready-effect-required', (value) => {
       const profile = value.items.find(({ itemId }) => itemId === 'item_wake_echo_drum').qualityProfiles.bronze;

@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v24 candidate package while still validating every
+outside the formal v25 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 24
+CONTENT_SCHEMA_VERSION = 25
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 22
-SOURCE_CONTENT_SCHEMA_VERSION = 22
-SOURCE_RUNTIME_SCHEMA_VERSION = 20
+RUNTIME_SCHEMA_VERSION = 23
+SOURCE_CONTENT_SCHEMA_VERSION = 23
+SOURCE_RUNTIME_SCHEMA_VERSION = 21
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 15
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 16
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,17 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v20"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v21"
+BURN_CONTRACT = "ysbzs.original-pirate-burn.v1"
+BURN_PULSE_INTERVAL_TICKS = 1
+BURN_FIRST_PULSE_POLICY = "next_tick"
+BURN_PULSE_PHASE = "tick_start_before_item_progress"
+BURN_DAMAGE_PER_STACK = 1
+BURN_DECAY_STACKS_PER_PULSE = 1
+BURN_SHIELD_POLICY = "shield_first_consuming"
+BURN_RESOLUTION_ORDER = "simultaneous_sides_then_terminal"
+BURN_MAX_STACKS = 1000000
+BURN_STACK_OVERFLOW_POLICY = "reject_advance"
 CRIT_CONTRACT = "ysbzs.original-pirate-critical-damage.v1"
 CRIT_CHANCE_SCALE_BPS = 10000
 CRIT_DAMAGE_MULTIPLIER_MAX_BPS = 100000
@@ -80,13 +90,13 @@ ITEM_EFFECT_TARGETS = {
 }
 ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "apply_status", "heal", "gain_shield",
-    "gain_damage_for_fight",
+    "gain_damage_for_fight", "apply_burn",
 }
 REACTIVE_ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "gain_damage_for_fight",
 }
 ITEM_STATUSES = {"haste", "slow", "freeze"}
-ITEM_TAGS = {"ammo", "aquatic", "relic", "tool", "vehicle", "weapon"}
+ITEM_TAGS = {"ammo", "aquatic", "burn", "relic", "tool", "vehicle", "weapon"}
 ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used", "battle_start"}
 ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag"}
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
@@ -111,6 +121,10 @@ DOMAIN_HEADERS = OrderedDict([
         "terminal_pressure_interval_ticks", "terminal_pressure_initial_damage",
         "terminal_pressure_increment_damage", "crit_contract", "chance_scale_bps",
         "damage_multiplier_bps", "rounding_mode", "roll_scope", "draw_policy",
+        "burn_contract", "burn_pulse_interval_ticks", "burn_first_pulse_policy",
+        "burn_pulse_phase", "burn_damage_per_stack", "burn_decay_stacks_per_pulse",
+        "burn_shield_policy", "burn_resolution_order", "burn_max_stacks",
+        "burn_stack_overflow_policy",
         "pve_win_bonus_xp",
         "prestige_battle_kind", "ghost_loss_prestige", "ghost_draw_prestige",
         "win_target", "last_chance_policy_id",
@@ -131,7 +145,7 @@ DOMAIN_HEADERS = OrderedDict([
         "effect_id", "item_id", "quality", "item_skill_id", "priority", "trigger_event",
         "condition_type", "condition_tags", "condition_source_relation", "target_type", "target_tags",
         "target_exclude_self", "target_count",
-        "operation_type", "amount", "can_crit", "status", "ticks", "catalog_status",
+        "operation_type", "amount", "stacks", "can_crit", "status", "ticks", "catalog_status",
     ]),
     ("48_bz_item_skills.csv", [
         "item_skill_id", "name_zh", "description_zh", "trigger_events", "effect_ids",
@@ -597,6 +611,14 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
             target_type in DETERMINISTIC_FRIENDLY_ITEM_TARGETS | PARAMETERIZED_FRIENDLY_ITEM_TARGETS
             and trigger_event == "item_ready"
         )
+    elif operation_type == "apply_burn":
+        params = _expect_exact_fields(operation["params"], {"stacks"}, f"{context}:operation:params")
+        stacks = _expect_integer(params["stacks"], f"{context}:operation:params:stacks", 1)
+        if stacks > BURN_MAX_STACKS:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_BURN_STACKS_INVALID:{effect_id}")
+        valid_target = trigger_event == "item_ready" \
+            and conditions == [{"type": "always", "params": {}}] \
+            and target_type == "selected_enemy"
     else:
         params = _expect_exact_fields(operation["params"], {"status", "ticks"}, f"{context}:operation:params")
         if params["status"] not in ITEM_STATUSES:
@@ -778,7 +800,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v24/v22 candidate package without accepting partial data."""
+    """Validate the formal v25/v23 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -888,7 +910,7 @@ def validate_package(package: Any) -> None:
     _expect_stable_id(bundle["bundleRevision"], "runtimeBundle:bundleRevision")
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
-        "terminalPressure", "critRules",
+        "terminalPressure", "critRules", "burnRules",
     }, "battleRules")
     terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
         "enabled", "startTick", "intervalTicks", "initialDamage", "incrementDamage",
@@ -914,6 +936,28 @@ def validate_package(package: Any) -> None:
             or crit_rules["rollScope"] != CRIT_ROLL_SCOPE \
             or crit_rules["drawPolicy"] != CRIT_DRAW_POLICY:
         raise ExportError("EXECUTABLE_CRIT_RULES_INVALID")
+    burn_rules = _expect_exact_fields(battle_rules["burnRules"], {
+        "contractId", "pulseIntervalTicks", "firstPulsePolicy", "pulsePhase",
+        "damagePerStack", "decayStacksPerPulse", "shieldPolicy", "resolutionOrder",
+        "maxStacks", "stackOverflowPolicy",
+    }, "battleRules:burnRules")
+    for field in [
+        "pulseIntervalTicks", "damagePerStack", "decayStacksPerPulse", "maxStacks",
+    ]:
+        _expect_integer(burn_rules[field], f"battleRules:burnRules:{field}", 1)
+    if burn_rules != {
+        "contractId": BURN_CONTRACT,
+        "pulseIntervalTicks": BURN_PULSE_INTERVAL_TICKS,
+        "firstPulsePolicy": BURN_FIRST_PULSE_POLICY,
+        "pulsePhase": BURN_PULSE_PHASE,
+        "damagePerStack": BURN_DAMAGE_PER_STACK,
+        "decayStacksPerPulse": BURN_DECAY_STACKS_PER_PULSE,
+        "shieldPolicy": BURN_SHIELD_POLICY,
+        "resolutionOrder": BURN_RESOLUTION_ORDER,
+        "maxStacks": BURN_MAX_STACKS,
+        "stackOverflowPolicy": BURN_STACK_OVERFLOW_POLICY,
+    }:
+        raise ExportError("EXECUTABLE_BURN_RULES_INVALID")
 
     progression = _expect_exact_fields(bundle["progressionRules"], {
         "schema", "schemaVersion", "enabled", "milestones", "options",
@@ -1841,6 +1885,7 @@ class ContentAssembler:
             "battleRules": {
                 "terminalPressure": identity["terminalPressure"],
                 "critRules": identity["critRules"],
+                "burnRules": identity["burnRules"],
             },
             "progressionRules": progression_rules,
             "generation": {
@@ -2446,6 +2491,12 @@ class ContentAssembler:
                 raise ExportError(f"EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
             if operation_type == "deal_damage" and target_type != "selected_enemy":
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
+            if operation_type == "apply_burn" and (
+                trigger_event != "item_ready"
+                or conditions != [{"type": "always", "params": {}}]
+                or target_type != "selected_enemy"
+            ):
+                raise ExportError(f"EFFECT_BURN_CONTRACT_INVALID:{effect_id}")
             if operation_type == "reload" and target_type != "self_item":
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type == "charge" and not (
@@ -2483,19 +2534,29 @@ class ContentAssembler:
                         raise ExportError(f"EFFECT_CRIT_CONTRACT_INVALID:{effect_id}")
                 elif row.get("can_crit", "").strip():
                     raise ExportError(f"EFFECT_CAN_CRIT_UNEXPECTED:{effect_id}")
-                if row.get("status", "").strip() or row.get("ticks", "").strip():
+                if row.get("stacks", "").strip() or row.get("status", "").strip() \
+                        or row.get("ticks", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             elif operation_type == "charge":
                 params = {"ticks": _integer(filename, row, "ticks", 1)}
                 if row.get("amount", "").strip() or row.get("can_crit", "").strip() \
-                        or row.get("status", "").strip():
+                        or row.get("stacks", "").strip() or row.get("status", "").strip():
+                    raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
+            elif operation_type == "apply_burn":
+                stacks = _integer(filename, row, "stacks", 1)
+                if stacks > BURN_MAX_STACKS:
+                    raise ExportError(f"EFFECT_BURN_STACKS_INVALID:{effect_id}")
+                params = {"stacks": stacks}
+                if row.get("amount", "").strip() or row.get("can_crit", "").strip() \
+                        or row.get("status", "").strip() or row.get("ticks", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             else:
                 status = _require_text(filename, row, "status")
                 if status not in ITEM_STATUSES:
                     raise ExportError(f"EFFECT_STATUS_INVALID:{effect_id}")
                 params = {"status": status, "ticks": _integer(filename, row, "ticks", 1)}
-                if row.get("amount", "").strip() or row.get("can_crit", "").strip():
+                if row.get("amount", "").strip() or row.get("stacks", "").strip() \
+                        or row.get("can_crit", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             effect = {
                 "effectId": effect_id,
@@ -3138,8 +3199,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v22 candidate source.
-            # This adapter is its explicit one-way projection into executable v24.
+            # The current 22-domain workbook is the finite v23 candidate source.
+            # This adapter is its explicit one-way projection into executable v25.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3161,6 +3222,16 @@ class ContentAssembler:
             "rounding_mode": CRIT_ROUNDING_MODE,
             "roll_scope": CRIT_ROLL_SCOPE,
             "draw_policy": CRIT_DRAW_POLICY,
+            "burn_contract": BURN_CONTRACT,
+            "burn_pulse_interval_ticks": str(BURN_PULSE_INTERVAL_TICKS),
+            "burn_first_pulse_policy": BURN_FIRST_PULSE_POLICY,
+            "burn_pulse_phase": BURN_PULSE_PHASE,
+            "burn_damage_per_stack": str(BURN_DAMAGE_PER_STACK),
+            "burn_decay_stacks_per_pulse": str(BURN_DECAY_STACKS_PER_PULSE),
+            "burn_shield_policy": BURN_SHIELD_POLICY,
+            "burn_resolution_order": BURN_RESOLUTION_ORDER,
+            "burn_max_stacks": str(BURN_MAX_STACKS),
+            "burn_stack_overflow_policy": BURN_STACK_OVERFLOW_POLICY,
         }
         for field, expected in expected_constants.items():
             actual = _same(rows, filename, field)
@@ -3229,6 +3300,18 @@ class ContentAssembler:
             "roundingMode": CRIT_ROUNDING_MODE,
             "rollScope": CRIT_ROLL_SCOPE,
             "drawPolicy": CRIT_DRAW_POLICY,
+        }
+        identity["burnRules"] = {
+            "contractId": BURN_CONTRACT,
+            "pulseIntervalTicks": BURN_PULSE_INTERVAL_TICKS,
+            "firstPulsePolicy": BURN_FIRST_PULSE_POLICY,
+            "pulsePhase": BURN_PULSE_PHASE,
+            "damagePerStack": BURN_DAMAGE_PER_STACK,
+            "decayStacksPerPulse": BURN_DECAY_STACKS_PER_PULSE,
+            "shieldPolicy": BURN_SHIELD_POLICY,
+            "resolutionOrder": BURN_RESOLUTION_ORDER,
+            "maxStacks": BURN_MAX_STACKS,
+            "stackOverflowPolicy": BURN_STACK_OVERFLOW_POLICY,
         }
         prestige_battle_kind = _same(rows, filename, "prestige_battle_kind")
         if prestige_battle_kind != "ghost":
@@ -3680,7 +3763,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v24 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v25 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3695,7 +3778,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v24 candidate "
+            "PASS original-pirate v25 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3708,7 +3791,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v24 candidate to {output}")
+        print(f"exported original-pirate v25 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

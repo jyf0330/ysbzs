@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_battle_start_item` 验证收口刷新。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_friendly_tag_collection_target` 验证收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_friendly_tag_collection_target.md` — data content: 原创“齐射传令台”与 `friendly_items_with_any_tag(tags=[weapon])` 已完成 workbook→CSV→exporter 真相链、自然商店可达性及 fail-closed 门禁。
 
 - `tasks/done/2026-09-03_original_pirate_battle_start_item.md` — data content: 原创“晨潮校时器”和首版 `battle_start + always -> owner_hero + gain_shield` 已完成 workbook→CSV→exporter 真相链与 fail-closed 门禁。
 

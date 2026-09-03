@@ -61,3 +61,7 @@ item_dawntide_timer,晨潮校时器,"relic, tool",1,bronze,bronze,4,2,9,false,0,
 item_dawntide_timer,晨潮校时器,"relic, tool",1,bronze,silver,7,3,8,false,0,0,skill_dawntide_timer,,,,formal
 item_dawntide_timer,晨潮校时器,"relic, tool",1,bronze,gold,11,5,7,false,0,0,skill_dawntide_timer,,,,formal
 item_dawntide_timer,晨潮校时器,"relic, tool",1,bronze,diamond,16,8,6,false,0,0,skill_dawntide_timer,,,,formal
+item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,bronze,4,2,9,false,0,0,skill_broadside_signal_relay,,,,formal
+item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,silver,7,3,8,false,0,0,skill_broadside_signal_relay,,,,formal
+item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,gold,11,5,7,false,0,0,skill_broadside_signal_relay,,,,formal
+item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,diamond,16,8,6,false,0,0,skill_broadside_signal_relay,,,,formal

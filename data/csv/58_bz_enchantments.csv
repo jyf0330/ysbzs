@@ -123,3 +123,7 @@ enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item
 enchant_breaker,破浪铭刻,把破浪冲势转化为明确的伤害增量。,item_dawntide_timer,gold,10,0,4,0,stall_mistwake,formal
 enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_dawntide_timer,diamond,12,-1,0,0,stall_mistwake,formal
 enchant_breaker,破浪铭刻,把破浪冲势转化为明确的伤害增量。,item_dawntide_timer,diamond,13,0,6,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_broadside_signal_relay,bronze,4,-1,0,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_broadside_signal_relay,silver,6,-1,0,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_broadside_signal_relay,gold,9,-1,0,0,stall_mistwake,formal
+enchant_tailwind,顺风铭刻,借顺风缩短物品的基础充能时间。,item_broadside_signal_relay,diamond,12,-1,0,0,stall_mistwake,formal

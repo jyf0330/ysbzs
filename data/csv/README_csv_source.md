@@ -27,6 +27,7 @@
 - `trigger_source_item` 只允许作为上述响应链的无参数 target，并仅与 `gain_damage_for_fight` 配对；它解析为刚完成本次 `USE` 的真实来源物品。响应发生在当前 `USE` 完成后，所以增量只进入来源物品的后续 `USE`。动态来源缺失或身份与权威上下文不符属于损坏输入，必须 fail closed；不可按空目标 no-op，也不可声明 fallback 参数。
 - `battle_start` 首版仅允许物品效果的 `[always] -> owner_hero + gain_shield`，`target.params={}` 且 `amount` 为正整数；禁止英雄技能、响应标签、相邻/集合/随机目标、aura 和其他 operation。原创“晨潮校时器”逐品质恰含一条该开场护盾和一条既有 `item_ready + always -> selected_enemy + deal_damage`，用于保持主动物品合同。
 - `47_bz_item_effects.csv.target_type` 的 `left_adjacent_item / right_adjacent_item / leftmost_friendly_item / rightmost_friendly_item` 当前只与 `item_ready + always + charge` 配对；同 owner、排除 source/self，左右相邻按多尺寸占用区间端点接壤，最左/最右从排除自身后的友方物品中按稳定格位顺序选择。空目标是合法 no-op，不生成 fallback；四条 effect identity 独立，目标重合时按 `priority/effectId` 顺序分别结算。
+- `friendly_items_with_any_tag` 是首个集合 target，筛选标签只写入独立的 `target_tags` 列并导出为 exact `target.params.tags`，不得复用响应条件的 `condition_tags`。当前只与 `item_ready + always + charge` 配对：匹配同 owner、战场内所有具备任一 canonical 标签的物品，source 自身若命中标签也包含；按 `boardSlot -> instanceId` 稳定排序，敌方与 stash 永不进入集合。空集合是合法 no-op，不回退自身、不生成静态 `targetInstanceId`。原创“齐射传令台”固定使用 `target_tags=weapon`，自身为非武器 `relic, tool`。
 - `62_bz_hero_skills.csv`：雾航船长的原创英雄被动技能，按技能与品质冻结 `friendly_item_used` 触发次数、正式效果数值和逐品质中文效果文案；不复用 `43_hero_skills.csv` 的 `hero_001` 参考审计切片。
 - `63_bz_hero_skill_loadouts.csv`：英雄起始与离线 Ghost 的规范化英雄技能实例；起始仅携带雾线追炮，`starter` 与 `ghost_snapshot` 分别投影到英雄目录和 Ghost build，并共同参与运行包 hash。
 - `64_bz_hero_skill_trainers.csv`：英雄技能训练师目录；训练师归属英雄并绑定正式摊位，和物品商店目录保持独立。

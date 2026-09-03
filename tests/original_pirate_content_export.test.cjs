@@ -70,6 +70,9 @@ function expectedBundleHash(content) {
             condition.params.tags.sort();
           }
         }
+        if (effect.target.type === 'friendly_items_with_any_tag' && Array.isArray(effect.target.params.tags)) {
+          effect.target.params.tags.sort();
+        }
       }
       profile.effects.sort((left, right) => (left.priority - right.priority) || stableIdCompare(left.effectId, right.effectId));
     }
@@ -245,7 +248,7 @@ for filename, sheet in zip(files, sheets):
   execFileSync('python3', [masterExporter, '--check', '--original-pirate-only'], { cwd: root, stdio: 'pipe' });
 });
 
-test('OPC02 v21/v19 战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
+test('OPC02 v22/v20 标签集合、战斗开始、动态触发源、确定性目标与 Ghost 确定且 hash 兼容', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-output-'));
   const first = path.join(dir, 'first.json');
   const second = path.join(dir, 'second.json');
@@ -262,13 +265,13 @@ test('OPC02 v21/v19 战斗开始、动态触发源、确定性目标与 Ghost �
     'rulesVersion', 'runtimeBundle', 'schemaVersion', 'sourceRevision',
   ].sort());
   assert.equal(content.gameplayId, 'original_pirate');
-  assert.equal(content.schemaVersion, 21);
-  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v17');
-  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v18');
-  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v18');
-  assert.equal(content.items.length, 17);
-  assert.equal(content.runtimeBundle.schemaVersion, 19);
-  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v18');
+  assert.equal(content.schemaVersion, 22);
+  assert.equal(content.rulesVersion, 'ysbzs.original-pirate-rules.2026-09-03-v18');
+  assert.equal(content.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v19');
+  assert.equal(content.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v19');
+  assert.equal(content.items.length, 18);
+  assert.equal(content.runtimeBundle.schemaVersion, 20);
+  assert.equal(content.runtimeBundle.bundleRevision, 'original_pirate_bootstrap_bundle_v19');
   assert.deepEqual(Object.keys(content.runtimeBundle).sort(), [
     'battleRules', 'bundleHash', 'bundleRevision', 'contentRevision', 'executableCatalogs', 'generation', 'newRunTemplate',
     'progressionRules', 'rulesVersion', 'scheduleConfig', 'schema', 'schemaVersion', 'shopRules',
@@ -441,14 +444,14 @@ test('OPC02 v21/v19 战斗开始、动态触发源、确定性目标与 Ghost �
     'schemaVersion', 'stalls', 'upgrades',
   ].sort());
   assert.deepEqual([catalogs.schema, catalogs.schemaVersion], [
-    'ysbzs.original-pirate-executable-catalogs.v1', 12,
+    'ysbzs.original-pirate-executable-catalogs.v1', 13,
   ]);
   assert.deepEqual([
     catalogs.heroes.length, catalogs.itemSkills.length, catalogs.heroSkills.length,
     catalogs.heroSkillTrainers.length, catalogs.heroSkillOffers.length, catalogs.stalls.length,
     catalogs.events.length, catalogs.eventOptions.length, catalogs.rewards.length,
     catalogs.upgrades.length, catalogs.enchantments.length,
-  ], [1, 17, 2, 2, 7, 1, 4, 8, 8, 45, 3]);
+  ], [1, 18, 2, 2, 7, 1, 4, 8, 8, 48, 3]);
   assert.deepEqual(Object.keys(catalogs.heroes[0]).sort(), [
     'heroId', 'heroSkillIds', 'startingHeroSkills',
   ]);
@@ -587,12 +590,12 @@ test('OPC02 v21/v19 战斗开始、动态触发源、确定性目标与 Ghost �
     .flatMap(({ effects }) => effects.map(({ effectId }) => effectId))).sort();
   const executableEffects = content.items.flatMap(({ qualityProfiles }) => Object.values(qualityProfiles)
     .flatMap(({ effects }) => effects));
-  assert.equal(executableEffects.length, 124);
+  assert.equal(executableEffects.length, 128);
   assert.deepEqual([...new Set(executableEffects.map(({ operation }) => operation.type))].sort(), [
     'apply_status', 'charge', 'deal_damage', 'gain_damage_for_fight', 'gain_shield', 'heal', 'reload',
   ]);
   assert.deepEqual([...new Set(executableEffects.map(({ target }) => target.type))].sort(), [
-    'first_enemy_item', 'left_adjacent_item', 'leftmost_friendly_item', 'owner_hero',
+    'first_enemy_item', 'friendly_items_with_any_tag', 'left_adjacent_item', 'leftmost_friendly_item', 'owner_hero',
     'right_adjacent_item', 'rightmost_friendly_item', 'selected_enemy', 'self_item',
     'trigger_source_item',
   ]);
@@ -880,9 +883,9 @@ test('OPC02 v21/v19 战斗开始、动态触发源、确定性目标与 Ghost �
   assert.equal(display.schema, 'ysbzs.original-pirate-display-directory.v1');
   assert.equal(display.schemaVersion, 3);
   assert.equal(display.gameplayId, 'original_pirate');
-  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v18');
-  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v18');
-  assert.equal(display.entries.length, 111);
+  assert.equal(display.sourceRevision, 'original-pirate-bootstrap-source-2026-09-03-v19');
+  assert.equal(display.contentRevision, 'original-pirate-bootstrap-content-2026-09-03-v19');
+  assert.equal(display.entries.length, 113);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_brine_cannon'), {
     displayId: 'items.item_brine_cannon', domain: 'items', sourceId: 'item_brine_cannon',
     nameZh: '盐雾炮', descriptionZh: '',
@@ -915,7 +918,7 @@ test('OPC02 v21/v19 战斗开始、动态触发源、确定性目标与 Ghost �
   )).descriptionZh, /学习青铜品质/);
   assert.equal(display.entries.filter(({ domain }) => domain === 'hero_skill_quality_profiles').length, 8);
   assert.equal(display.entries.some(({ domain }) => domain === 'skills'), false);
-  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 17);
+  assert.equal(display.entries.filter(({ domain }) => domain === 'item_skills').length, 18);
   assert.deepEqual(display.entries.find(({ displayId }) => displayId === 'items.item_tidefin_launcher'), {
     displayId: 'items.item_tidefin_launcher', domain: 'items', sourceId: 'item_tidefin_launcher',
     nameZh: '潮鳍投筒', descriptionZh: '',
@@ -975,9 +978,12 @@ test('OPC02 v21/v19 战斗开始、动态触发源、确定性目标与 Ghost �
   const relationColumn = effectHeaders.indexOf('condition_source_relation');
   const itemColumn = effectHeaders.indexOf('item_id');
   const triggerColumn = effectHeaders.indexOf('trigger_event');
+  const targetTagsColumn = effectHeaders.indexOf('target_tags');
   assert.notEqual(relationColumn, -1);
-  assert.equal(effectSourceRows.length, 124);
-  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 120);
+  assert.notEqual(targetTagsColumn, -1);
+  assert.equal(effectSourceRows.length, 128);
+  assert.equal(effectSourceRows.filter((row) => row[relationColumn] === 'any').length, 124);
+  assert.equal(effectSourceRows.filter((row) => row[targetTagsColumn] !== '').length, 4);
   const adjacentSourceRows = effectSourceRows.filter((row) => row[relationColumn] === 'adjacent');
   assert.equal(adjacentSourceRows.length, 4);
   assert.equal(adjacentSourceRows.every((row) => (
@@ -998,7 +1004,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [21, 19, 12, 'ysbzs.original-pirate-rules.2026-09-03-v17']);
+  ], [22, 20, 13, 'ysbzs.original-pirate-rules.2026-09-03-v18']);
   const item = content.items.find(({ itemId }) => itemId === 'item_quadrant_linkage');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['tool', 'vehicle']]);
@@ -1074,7 +1080,7 @@ test('OPC02A 四缆联动轮以正式逐品质效果覆盖四种确定性友方�
   )).descriptionZh, /左邻.*右邻.*最左.*最右.*自身/);
 });
 
-test('OPC02B v21 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
+test('OPC02B v22 继航校炮仪把响应伤害成长绑定到无参数动态触发源目标', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-trigger-source-'));
   const output = path.join(dir, 'content.json');
   const displayOutput = path.join(dir, 'display.json');
@@ -1086,7 +1092,7 @@ test('OPC02B v21 继航校炮仪把响应伤害成长绑定到无参数动态触
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [21, 19, 12, 'ysbzs.original-pirate-rules.2026-09-03-v17']);
+  ], [22, 20, 13, 'ysbzs.original-pirate-rules.2026-09-03-v18']);
   const item = content.items.find(({ itemId }) => itemId === 'item_followwake_calibrator');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1179,7 +1185,7 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
     content.runtimeBundle.schemaVersion,
     content.runtimeBundle.executableCatalogs.schemaVersion,
     content.rulesVersion,
-  ], [21, 19, 12, 'ysbzs.original-pirate-rules.2026-09-03-v17']);
+  ], [22, 20, 13, 'ysbzs.original-pirate-rules.2026-09-03-v18']);
   const item = content.items.find(({ itemId }) => itemId === 'item_dawntide_timer');
   assert.ok(item);
   assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [1, 'bronze', ['relic', 'tool']]);
@@ -1266,7 +1272,95 @@ test('OPC02C 晨潮校时器逐品质只以战斗开始获得护盾并保留就�
   )).descriptionZh, /战斗开始.*护盾.*就绪.*敌方船长/);
 });
 
-test('OPC03 缺战内成长/防御效果字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
+test('OPC02D 齐射传令台逐品质只为己方武器标签集合推进充能', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-friendly-tag-collection-'));
+  const output = path.join(dir, 'content.json');
+  const displayOutput = path.join(dir, 'display.json');
+  assert.equal(runExporter(csvDir, output, displayOutput).status, 0);
+  const content = JSON.parse(fs.readFileSync(output, 'utf8'));
+  const display = JSON.parse(fs.readFileSync(displayOutput, 'utf8'));
+  assert.deepEqual([
+    content.schemaVersion,
+    content.runtimeBundle.schemaVersion,
+    content.runtimeBundle.executableCatalogs.schemaVersion,
+    content.rulesVersion,
+  ], [22, 20, 13, 'ysbzs.original-pirate-rules.2026-09-03-v18']);
+  const item = content.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay');
+  assert.ok(item);
+  assert.deepEqual([item.slotWidth, item.baseQuality, item.tags], [2, 'bronze', ['relic', 'tool']]);
+  const qualities = ['bronze', 'silver', 'gold', 'diamond'];
+  const ticks = { bronze: 1, silver: 1, gold: 1, diamond: 2 };
+  assert.deepEqual(qualities.map((quality) => {
+    const profile = item.qualityProfiles[quality];
+    return [profile.buyPrice, profile.sellPrice, profile.baseCooldownTicks,
+      profile.ammo.enabled, profile.ammo.initial, profile.ammo.maximum];
+  }), [
+    [4, 2, 9, false, 0, 0],
+    [7, 3, 8, false, 0, 0],
+    [11, 5, 7, false, 0, 0],
+    [16, 8, 6, false, 0, 0],
+  ]);
+  for (const quality of qualities) {
+    assert.deepEqual(item.qualityProfiles[quality].effects, [{
+      effectId: `effect_broadside_signal_relay_${quality}_charge_weapons`, priority: 20,
+      trigger: { event: 'item_ready', conditions: [{ type: 'always', params: {} }] },
+      target: { type: 'friendly_items_with_any_tag', params: { tags: ['weapon'] } },
+      operation: { type: 'charge', params: { ticks: ticks[quality] } },
+    }]);
+  }
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.itemSkills.find(({ itemSkillId }) => (
+    itemSkillId === 'skill_broadside_signal_relay'
+  )), {
+    itemSkillId: 'skill_broadside_signal_relay', triggerEvents: ['item_ready'],
+    effectIds: qualities.map((quality) => (
+      `effect_broadside_signal_relay_${quality}_charge_weapons`
+    )).sort(),
+  });
+  assert.deepEqual(content.runtimeBundle.generation.shop.templates.filter(({ itemId }) => (
+    itemId === 'item_broadside_signal_relay'
+  )), [{
+    offerTemplateId: 'offer_refresh_4_broadside_signal_relay',
+    itemId: 'item_broadside_signal_relay', quality: 'bronze', enchantment: '',
+  }]);
+  assert.deepEqual(content.runtimeBundle.generation.shop.layers.find(({ fromRefreshIndex }) => (
+    fromRefreshIndex === 4
+  )).templateIds, [
+    'offer_refresh_4_wake_echo_drum',
+    'offer_refresh_4_mistkelp_remedy_kit',
+    'offer_refresh_4_broadside_signal_relay',
+  ]);
+  assert.deepEqual(content.runtimeBundle.executableCatalogs.upgrades.filter(({ itemId }) => (
+    itemId === 'item_broadside_signal_relay'
+  )), [
+    { upgradeId: 'upgrade_broadside_signal_relay_bronze_silver', itemId: 'item_broadside_signal_relay', fromQuality: 'bronze', toQuality: 'silver', price: 4, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_broadside_signal_relay_gold_diamond', itemId: 'item_broadside_signal_relay', fromQuality: 'gold', toQuality: 'diamond', price: 10, stallId: 'stall_mistwake' },
+    { upgradeId: 'upgrade_broadside_signal_relay_silver_gold', itemId: 'item_broadside_signal_relay', fromQuality: 'silver', toQuality: 'gold', price: 7, stallId: 'stall_mistwake' },
+  ]);
+  const enchantments = content.runtimeBundle.executableCatalogs.enchantments;
+  assert.deepEqual(enchantments.find(({ enchantmentId }) => enchantmentId === 'enchant_tailwind')
+    .profiles.filter(({ itemId }) => itemId === 'item_broadside_signal_relay')
+    .map((profile) => [profile.quality, profile.price, profile.cooldownDeltaTicks,
+      profile.damageDelta, profile.ammoDelta]), [
+      ['bronze', 4, -1, 0, 0],
+      ['silver', 6, -1, 0, 0],
+      ['gold', 9, -1, 0, 0],
+      ['diamond', 12, -1, 0, 0],
+    ]);
+  assert.equal(enchantments.filter(({ enchantmentId }) => enchantmentId !== 'enchant_tailwind')
+    .some(({ profiles }) => profiles.some(({ itemId }) => itemId === 'item_broadside_signal_relay')), false);
+  assert.deepEqual(display.entries.find(({ displayId }) => (
+    displayId === 'items.item_broadside_signal_relay'
+  )), {
+    displayId: 'items.item_broadside_signal_relay', domain: 'items',
+    sourceId: 'item_broadside_signal_relay', nameZh: '齐射传令台', descriptionZh: '',
+  });
+  assert.match(display.entries.find(({ displayId }) => (
+    displayId === 'item_skills.skill_broadside_signal_relay'
+  )).descriptionZh, /所有带武器标签的物品.*没有符合条件.*不生效/);
+  assert.equal(validatePackageFile(output).status, 0);
+});
+
+test('OPC03 缺集合目标/战内成长/防御字段、tags、主动效果、关系、品质或遭遇时整包拒绝', () => {
   const cases = [
     ['cooldown', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'cooldown_ticks', '')],
     ['item-tags-missing', (dir) => mutateCell(dir, '46_bz_items.csv', 1, 'tags', '')],
@@ -1315,6 +1409,34 @@ test('OPC03 缺战内成长/防御效果字段、tags、主动效果、关系、
       mutateCell(dir, '47_bz_item_effects.csv', 90, 'condition_type', 'source_item_has_any_tag');
       mutateCell(dir, '47_bz_item_effects.csv', 90, 'condition_tags', 'tool');
     }],
+    ['collection-target-tags-missing', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_tags', '')
+    )],
+    ['collection-target-tags-unknown', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_tags', 'powder')
+    )],
+    ['collection-target-tags-duplicate', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_tags', 'weapon, weapon')
+    )],
+    ['collection-target-tags-on-static', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 1, 'target_tags', 'weapon')
+    )],
+    ['collection-target-alias', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'target_type', 'all_friendly_items')
+    )],
+    ['collection-target-operation', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'operation_type', 'reload')
+    )],
+    ['collection-target-trigger', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'trigger_event', 'battle_start')
+    )],
+    ['collection-target-condition', (dir) => {
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'condition_type', 'source_item_has_any_tag');
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'condition_tags', 'weapon');
+    }],
+    ['collection-target-adjacency', (dir) => (
+      mutateCell(dir, '47_bz_item_effects.csv', 125, 'condition_source_relation', 'adjacent')
+    )],
     ['trigger-source-target-ready-forbidden', (dir) => {
       mutateCell(dir, '47_bz_item_effects.csv', 110, 'trigger_event', 'item_ready');
       mutateCell(dir, '47_bz_item_effects.csv', 110, 'condition_type', 'always');
@@ -1433,8 +1555,8 @@ test('OPC03 缺战内成长/防御效果字段、tags、主动效果、关系、
     ['terminal-pressure-interval', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_interval_ticks', '')],
     ['terminal-pressure-initial', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_initial_damage', '0')],
     ['terminal-pressure-increment', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'terminal_pressure_increment_damage', '-1')],
-    ['old-source-content-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'schema_version', '14')],
-    ['old-source-runtime-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'runtime_schema_version', '12')],
+    ['old-source-content-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'schema_version', '19')],
+    ['old-source-runtime-schema', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'runtime_schema_version', '17')],
     ['income-policy', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'income_payout_policy', 'hour_complete')],
     ['prestige-scope', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'prestige_battle_kind', 'pve')],
     ['last-chance-policy-link', (dir) => mutateColumn(dir, '44_bz_gameplay.csv', 'last_chance_policy_id', 'last_chance_missing')],
@@ -1588,18 +1710,18 @@ test('OPC05D gain_damage_for_fight 可复用 canonical 物品标签条件', () =
   assert.equal(validatePackageFile(out).status, 0);
 });
 
-test('OPC06 v21/v19 forged 开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v21-forgery-'));
+test('OPC06 v22/v20 forged 集合/开场触发、动态/四向目标、相邻条件或 hash 整包拒绝', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'original-pirate-v22-forgery-'));
   const baseline = path.join(dir, 'baseline.json');
   assert.equal(runExporter(csvDir, baseline).status, 0);
   const content = JSON.parse(fs.readFileSync(baseline, 'utf8'));
   assert.equal(validatePackageFile(baseline).status, 0);
   const cases = [
-    ['old-root-schema', (value) => { value.schemaVersion = 20; }],
-    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 18; }],
-    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 11; }],
+    ['old-root-schema', (value) => { value.schemaVersion = 21; }],
+    ['old-runtime-schema', (value) => { value.runtimeBundle.schemaVersion = 19; }],
+    ['old-executable-catalog-schema', (value) => { value.runtimeBundle.executableCatalogs.schemaVersion = 12; }],
     ['old-rules-version', (value) => {
-      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v16';
+      value.rulesVersion = 'ysbzs.original-pirate-rules.2026-09-03-v17';
       value.runtimeBundle.rulesVersion = value.rulesVersion;
     }],
     ['progression-rules-missing', (value) => { delete value.runtimeBundle.progressionRules; }],
@@ -1917,6 +2039,49 @@ test('OPC06 v21/v19 forged 开场触发、动态/四向目标、相邻条件或 
           event: 'another_friendly_item_used',
           conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['tool'] } }],
         };
+    }],
+    ['collection-target-tags-missing', (value) => {
+      delete value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].target.params.tags;
+    }],
+    ['collection-target-tags-empty', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].target.params.tags = [];
+    }],
+    ['collection-target-tags-unknown', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].target.params.tags = ['powder'];
+    }],
+    ['collection-target-tags-duplicate', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].target.params.tags = ['weapon', 'weapon'];
+    }],
+    ['collection-target-tags-unsorted', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].target.params.tags = ['weapon', 'tool'];
+    }],
+    ['collection-target-extra-param', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].target.params.fallback = 'self_item';
+    }],
+    ['collection-target-alias', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].target.type = 'all_friendly_items';
+    }],
+    ['collection-target-operation-mismatch', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].operation = { type: 'reload', params: { amount: 1 } };
+    }],
+    ['collection-target-trigger-mismatch', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_broadside_signal_relay')
+        .qualityProfiles.bronze.effects[0].trigger = {
+          event: 'another_friendly_item_used',
+          conditions: [{ type: 'source_item_has_any_tag', params: { tags: ['weapon'] } }],
+        };
+    }],
+    ['static-target-tags-forbidden', (value) => {
+      value.items.find(({ itemId }) => itemId === 'item_brine_cannon')
+        .qualityProfiles.bronze.effects[0].target.params = { tags: ['weapon'] };
     }],
     ['trigger-source-target-extra-param', (value) => {
       value.items.find(({ itemId }) => itemId === 'item_followwake_calibrator')

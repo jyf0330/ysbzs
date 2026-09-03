@@ -45,7 +45,7 @@ function readCsv(filename) {
   };
 }
 
-test('OPCSV01 Crit v2、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
+test('OPCSV01 Ammo depletion、Crit v2、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
   const gameplay = readCsv('44_bz_gameplay.csv');
   const effects = readCsv('47_bz_item_effects.csv');
   assert.deepEqual(gameplay.rows.map((row) => ({
@@ -95,13 +95,21 @@ test('OPCSV01 Crit v2、Heal/Cleanse、Poison v2、Burn source rules 与 operati
     healStatusCleanseTraceEmitPolicy: row.heal_status_cleanse_trace_emit_policy,
     healStatusCleanseCritPolicy: row.heal_status_cleanse_crit_policy,
     healStatusCleanseRngPolicy: row.heal_status_cleanse_rng_policy,
+    ammoDepletionContract: row.ammo_depletion_contract,
+    ammoDepletionTriggerPolicy: row.ammo_depletion_trigger_policy,
+    ammoDepletionEvaluationPhase: row.ammo_depletion_evaluation_phase,
+    ammoDepletionSnapshotPolicy: row.ammo_depletion_snapshot_policy,
+    ammoDepletionRepeatPolicy: row.ammo_depletion_repeat_policy,
+    ammoDepletionNonAmmoPolicy: row.ammo_depletion_non_ammo_policy,
+    ammoDepletionReloadPolicy: row.ammo_depletion_reload_policy,
+    ammoDepletionRngPolicy: row.ammo_depletion_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '27',
-    runtimeSchemaVersion: '25',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v25',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v26',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v26',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v26',
+    schemaVersion: '28',
+    runtimeSchemaVersion: '26',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v26',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v27',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v27',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v27',
     critContract: 'ysbzs.original-pirate-critical-damage.v2',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
@@ -142,6 +150,14 @@ test('OPCSV01 Crit v2、Heal/Cleanse、Poison v2、Burn source rules 与 operati
     healStatusCleanseTraceEmitPolicy: 'only_when_effective_heal_and_any_status_present',
     healStatusCleanseCritPolicy: 'never',
     healStatusCleanseRngPolicy: 'never',
+    ammoDepletionContract: 'ysbzs.original-pirate-ammo-depletion.v1',
+    ammoDepletionTriggerPolicy: 'current_item_use_positive_to_zero',
+    ammoDepletionEvaluationPhase: 'after_ammo_spend_before_item_effects',
+    ammoDepletionSnapshotPolicy: 'ammo_before_after_from_same_use',
+    ammoDepletionRepeatPolicy: 'once_per_depleting_use',
+    ammoDepletionNonAmmoPolicy: 'not_eligible',
+    ammoDepletionReloadPolicy: 'later_reload_does_not_cancel',
+    ammoDepletionRngPolicy: 'never',
   })));
   assert.equal(effects.headers.includes('stacks'), true);
   assert.equal(effects.headers.includes('crit_chance_bps_delta'), true);
@@ -295,4 +311,31 @@ test('OPCSV05 继航校炮仪四品质 Crit growth 行仅使用动态触发源�
     offerId === 'offer_refresh_2_followwake_calibrator'
   ));
   assert.deepEqual([offer.refresh_index, offer.slot_order, offer.quality, offer.price], ['2', '2', 'bronze', '4']);
+});
+
+test('OPCSV06 潮鳍投筒四品质弹药耗尽效果与 refresh 3 正式报价完整', () => {
+  const effects = readCsv('47_bz_item_effects.csv').rows.filter(({ condition_type: conditionType }) => (
+    conditionType === 'source_item_ammo_depleted'
+  ));
+  assert.deepEqual(effects.map((row) => [
+    row.effect_id, row.item_id, row.quality, row.priority, row.trigger_event,
+    row.condition_type, row.condition_tags, row.condition_source_relation,
+    row.target_type, row.target_tags, row.target_exclude_self, row.target_count,
+    row.operation_type, row.amount, row.crit_chance_bps_delta, row.stacks,
+    row.can_crit, row.status, row.ticks,
+  ]), [
+    ['effect_tidefin_launcher_bronze_depleted_shield', 'item_tidefin_launcher', 'bronze', '10', 'item_ready', 'source_item_ammo_depleted', '', 'any', 'owner_hero', '', '', '', 'gain_shield', '2', '', '', '', '', ''],
+    ['effect_tidefin_launcher_silver_depleted_shield', 'item_tidefin_launcher', 'silver', '10', 'item_ready', 'source_item_ammo_depleted', '', 'any', 'owner_hero', '', '', '', 'gain_shield', '3', '', '', '', '', ''],
+    ['effect_tidefin_launcher_gold_depleted_shield', 'item_tidefin_launcher', 'gold', '10', 'item_ready', 'source_item_ammo_depleted', '', 'any', 'owner_hero', '', '', '', 'gain_shield', '5', '', '', '', '', ''],
+    ['effect_tidefin_launcher_diamond_depleted_shield', 'item_tidefin_launcher', 'diamond', '10', 'item_ready', 'source_item_ammo_depleted', '', 'any', 'owner_hero', '', '', '', 'gain_shield', '7', '', '', '', '', ''],
+  ]);
+  const skill = readCsv('48_bz_item_skills.csv').rows.find(({ item_skill_id: itemSkillId }) => (
+    itemSkillId === 'skill_tidefin_launcher'
+  ));
+  assert.match(skill.description_zh, /弹药耗尽.*护盾/);
+  for (const { effect_id: effectId } of effects) assert.match(skill.effect_ids, new RegExp(effectId));
+  const offer = readCsv('50_bz_stall_offers.csv').rows.find(({ offer_id: offerId }) => (
+    offerId === 'offer_refresh_3_tidefin_launcher'
+  ));
+  assert.deepEqual([offer.refresh_index, offer.slot_order, offer.quality, offer.price], ['3', '1', 'bronze', '3']);
 });

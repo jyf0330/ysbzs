@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v29 candidate package while still validating every
+outside the formal v30 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 29
+CONTENT_SCHEMA_VERSION = 30
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 27
-SOURCE_CONTENT_SCHEMA_VERSION = 27
-SOURCE_RUNTIME_SCHEMA_VERSION = 25
+RUNTIME_SCHEMA_VERSION = 28
+SOURCE_CONTENT_SCHEMA_VERSION = 28
+SOURCE_RUNTIME_SCHEMA_VERSION = 26
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 19
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 20
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,15 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v25"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v26"
+AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
+AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
+AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
+AMMO_DEPLETION_SNAPSHOT_POLICY = "ammo_before_after_from_same_use"
+AMMO_DEPLETION_REPEAT_POLICY = "once_per_depleting_use"
+AMMO_DEPLETION_NON_AMMO_POLICY = "not_eligible"
+AMMO_DEPLETION_RELOAD_POLICY = "later_reload_does_not_cancel"
+AMMO_DEPLETION_RNG_POLICY = "never"
 DAMAGE_AURA_CONTRACT = "ysbzs.original-pirate-damage-aura.v1"
 DAMAGE_AURA_EVALUATION_POLICY = "per_damage_from_compiled_sources"
 DAMAGE_AURA_TARGET_SNAPSHOT_POLICY = "battle_start_board"
@@ -138,7 +146,9 @@ REACTIVE_ITEM_EFFECT_OPERATIONS = {
 ITEM_STATUSES = {"haste", "slow", "freeze"}
 ITEM_TAGS = {"ammo", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "weapon"}
 ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used", "battle_start"}
-ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag", "source_item_can_crit"}
+ITEM_EFFECT_CONDITIONS = {
+    "always", "source_item_has_any_tag", "source_item_can_crit", "source_item_ammo_depleted",
+}
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
 DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
 DAMAGE_AURA_OPERATION = "grant_damage"
@@ -166,6 +176,10 @@ DOMAIN_HEADERS = OrderedDict([
         "crit_growth_stacking_policy", "crit_growth_cap_policy",
         "crit_growth_timing_policy", "crit_growth_eligible_target_policy",
         "crit_growth_rng_policy",
+        "ammo_depletion_contract", "ammo_depletion_trigger_policy",
+        "ammo_depletion_evaluation_phase", "ammo_depletion_snapshot_policy",
+        "ammo_depletion_repeat_policy", "ammo_depletion_non_ammo_policy",
+        "ammo_depletion_reload_policy", "ammo_depletion_rng_policy",
         "burn_contract", "burn_pulse_interval_ticks", "burn_first_pulse_policy",
         "burn_pulse_phase", "burn_damage_per_stack", "burn_decay_stacks_per_pulse",
         "burn_shield_policy", "burn_resolution_order", "burn_max_stacks",
@@ -600,7 +614,12 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TRIGGER_INVALID:{effect_id}")
     conditions = _expect_list(trigger["conditions"], f"{context}:trigger:conditions")
     if trigger_event in {"item_ready", "battle_start"}:
-        if conditions != [{"type": "always", "params": {}}]:
+        if conditions == [{"type": "always", "params": {}}]:
+            pass
+        elif trigger_event == "item_ready" \
+                and conditions == [{"type": "source_item_ammo_depleted", "params": {}}]:
+            pass
+        else:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
     else:
         if len(conditions) not in {1, 2}:
@@ -656,6 +675,12 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     if conditions and conditions[0].get("type") == "source_item_can_crit" \
             and operation_type != "gain_crit_chance_for_fight":
         raise ExportError(f"EXECUTABLE_ITEM_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
+    if conditions and conditions[0].get("type") == "source_item_ammo_depleted" and (
+        trigger_event != "item_ready"
+        or target_type != "owner_hero"
+        or operation_type != "gain_shield"
+    ):
+        raise ExportError(f"EXECUTABLE_ITEM_AMMO_DEPLETION_CONTRACT_INVALID:{effect_id}")
     if trigger_event == "battle_start" \
             and (target_type != "owner_hero" or operation_type != "gain_shield"):
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
@@ -932,7 +957,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v29/v27 candidate package without accepting partial data."""
+    """Validate the formal v30/v28 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -992,8 +1017,16 @@ def validate_package(package: Any) -> None:
             }, f"items:{item_id}:{quality}:ammo")
             if not isinstance(ammo["enabled"], bool):
                 raise ExportError(f"EXECUTABLE_ITEM_AMMO_ENABLED_INVALID:{item_id}:{quality}")
-            _expect_integer(ammo["initial"], f"items:{item_id}:{quality}:ammo.initial", 0)
-            _expect_integer(ammo["maximum"], f"items:{item_id}:{quality}:ammo.maximum", 0)
+            ammo_initial = _expect_integer(
+                ammo["initial"], f"items:{item_id}:{quality}:ammo.initial", 0
+            )
+            ammo_maximum = _expect_integer(
+                ammo["maximum"], f"items:{item_id}:{quality}:ammo.maximum", 0
+            )
+            if ammo["enabled"] and (ammo_maximum <= 0 or ammo_initial > ammo_maximum):
+                raise ExportError(f"EXECUTABLE_ITEM_AMMO_RANGE_INVALID:{item_id}:{quality}")
+            if not ammo["enabled"] and (ammo_initial != 0 or ammo_maximum != 0):
+                raise ExportError(f"EXECUTABLE_ITEM_AMMO_DISABLED_INVALID:{item_id}:{quality}")
             item_profiles.add((item_id, quality))
             item_profile_values[(item_id, quality)] = profile
             profile_events: set[str] = set()
@@ -1034,6 +1067,17 @@ def validate_package(package: Any) -> None:
             if poison_effects and (len(poison_effects) != 1 \
                     or len(profile["effects"]) != 1 or crit_chance_bps != 0):
                 raise ExportError(f"EXECUTABLE_ITEM_POISON_PROFILE_MISMATCH:{item_id}:{quality}")
+            ammo_depletion_effects = [
+                effect for effect in profile["effects"]
+                if effect.get("trigger", {}).get("conditions")
+                and effect["trigger"]["conditions"][0].get("type") == "source_item_ammo_depleted"
+            ]
+            if ammo_depletion_effects and (
+                len(ammo_depletion_effects) != 1 or ammo["enabled"] is not True
+            ):
+                raise ExportError(
+                    f"EXECUTABLE_ITEM_AMMO_DEPLETION_PROFILE_MISMATCH:{item_id}:{quality}"
+                )
             if "item_ready" not in profile_events:
                 raise ExportError(f"EXECUTABLE_ITEM_READY_EFFECT_REQUIRED:{item_id}:{quality}")
             if any(
@@ -1061,7 +1105,7 @@ def validate_package(package: Any) -> None:
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
         "terminalPressure", "critRules", "burnRules", "poisonRules",
-        "healStatusCleanseRules", "damageAuraRules",
+        "healStatusCleanseRules", "damageAuraRules", "ammoDepletionRules",
     }, "battleRules")
     terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
         "enabled", "startTick", "intervalTicks", "initialDamage", "incrementDamage",
@@ -1187,6 +1231,21 @@ def validate_package(package: Any) -> None:
         "rngPolicy": DAMAGE_AURA_RNG_POLICY,
     }:
         raise ExportError("EXECUTABLE_DAMAGE_AURA_RULES_INVALID")
+    ammo_depletion_rules = _expect_exact_fields(battle_rules["ammoDepletionRules"], {
+        "contractId", "triggerPolicy", "evaluationPhase", "snapshotPolicy",
+        "repeatPolicy", "nonAmmoPolicy", "reloadPolicy", "rngPolicy",
+    }, "battleRules:ammoDepletionRules")
+    if ammo_depletion_rules != {
+        "contractId": AMMO_DEPLETION_CONTRACT,
+        "triggerPolicy": AMMO_DEPLETION_TRIGGER_POLICY,
+        "evaluationPhase": AMMO_DEPLETION_EVALUATION_PHASE,
+        "snapshotPolicy": AMMO_DEPLETION_SNAPSHOT_POLICY,
+        "repeatPolicy": AMMO_DEPLETION_REPEAT_POLICY,
+        "nonAmmoPolicy": AMMO_DEPLETION_NON_AMMO_POLICY,
+        "reloadPolicy": AMMO_DEPLETION_RELOAD_POLICY,
+        "rngPolicy": AMMO_DEPLETION_RNG_POLICY,
+    }:
+        raise ExportError("EXECUTABLE_AMMO_DEPLETION_RULES_INVALID")
 
     progression = _expect_exact_fields(bundle["progressionRules"], {
         "schema", "schemaVersion", "enabled", "milestones", "options",
@@ -2129,6 +2188,7 @@ class ContentAssembler:
             "shopRules": {"refreshCost": next(iter(stalls.values()))["refreshCost"]},
             "battleRules": {
                 "terminalPressure": identity["terminalPressure"],
+                "ammoDepletionRules": identity["ammoDepletionRules"],
                 "critRules": identity["critRules"],
                 "burnRules": identity["burnRules"],
                 "poisonRules": identity["poisonRules"],
@@ -2690,10 +2750,14 @@ class ContentAssembler:
             if source_relation not in ITEM_EFFECT_SOURCE_RELATIONS:
                 raise ExportError(f"EFFECT_SOURCE_RELATION_INVALID:{effect_id}")
             if trigger_event in {"item_ready", "battle_start"}:
-                if condition_type != "always" or row.get("condition_tags", "").strip() \
-                        or source_relation != "any":
+                if row.get("condition_tags", "").strip() or source_relation != "any":
                     raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
-                conditions = [{"type": "always", "params": {}}]
+                if condition_type == "always":
+                    conditions = [{"type": "always", "params": {}}]
+                elif trigger_event == "item_ready" and condition_type == "source_item_ammo_depleted":
+                    conditions = [{"type": "source_item_ammo_depleted", "params": {}}]
+                else:
+                    raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
             else:
                 if condition_type == "source_item_can_crit":
                     if row.get("condition_tags", "").strip() or source_relation != "any":
@@ -2749,6 +2813,12 @@ class ContentAssembler:
             if condition_type == "source_item_can_crit" \
                     and operation_type != "gain_crit_chance_for_fight":
                 raise ExportError(f"EFFECT_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
+            if condition_type == "source_item_ammo_depleted" and (
+                trigger_event != "item_ready"
+                or target_type != "owner_hero"
+                or operation_type != "gain_shield"
+            ):
+                raise ExportError(f"EFFECT_AMMO_DEPLETION_CONTRACT_INVALID:{effect_id}")
             if trigger_event == "battle_start" \
                     and (target_type != "owner_hero" or operation_type != "gain_shield"):
                 raise ExportError(f"EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
@@ -2900,6 +2970,15 @@ class ContentAssembler:
             if poison_effects and (len(poison_effects) != 1 \
                     or len(profile["effects"]) != 1 or crit_chance_bps != 0):
                 raise ExportError(f"ITEM_POISON_PROFILE_MISMATCH:{key[0]}:{key[1]}")
+            ammo_depletion_effects = [
+                effect for effect in profile["effects"]
+                if effect["trigger"]["conditions"]
+                and effect["trigger"]["conditions"][0].get("type") == "source_item_ammo_depleted"
+            ]
+            if ammo_depletion_effects and (
+                len(ammo_depletion_effects) != 1 or profile["ammo"].get("enabled") is not True
+            ):
+                raise ExportError(f"ITEM_AMMO_DEPLETION_PROFILE_MISMATCH:{key[0]}:{key[1]}")
             profile["effects"].sort(key=lambda value: (value["priority"], value["effectId"]))
         for item_skill_id, skill in item_skills.items():
             if actual_item_skill_effects.get(item_skill_id, set()) != skill["effectIds"]:
@@ -3555,8 +3634,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v27 candidate source.
-            # This adapter is its explicit one-way projection into executable v29.
+            # The current 23-domain workbook is the finite v28 candidate source.
+            # This adapter is its explicit one-way projection into executable v30.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3583,6 +3662,14 @@ class ContentAssembler:
             "crit_growth_timing_policy": CRIT_GROWTH_TIMING_POLICY,
             "crit_growth_eligible_target_policy": CRIT_GROWTH_ELIGIBLE_TARGET_POLICY,
             "crit_growth_rng_policy": CRIT_GROWTH_RNG_POLICY,
+            "ammo_depletion_contract": AMMO_DEPLETION_CONTRACT,
+            "ammo_depletion_trigger_policy": AMMO_DEPLETION_TRIGGER_POLICY,
+            "ammo_depletion_evaluation_phase": AMMO_DEPLETION_EVALUATION_PHASE,
+            "ammo_depletion_snapshot_policy": AMMO_DEPLETION_SNAPSHOT_POLICY,
+            "ammo_depletion_repeat_policy": AMMO_DEPLETION_REPEAT_POLICY,
+            "ammo_depletion_non_ammo_policy": AMMO_DEPLETION_NON_AMMO_POLICY,
+            "ammo_depletion_reload_policy": AMMO_DEPLETION_RELOAD_POLICY,
+            "ammo_depletion_rng_policy": AMMO_DEPLETION_RNG_POLICY,
             "burn_contract": BURN_CONTRACT,
             "burn_pulse_interval_ticks": str(BURN_PULSE_INTERVAL_TICKS),
             "burn_first_pulse_policy": BURN_FIRST_PULSE_POLICY,
@@ -3699,6 +3786,16 @@ class ContentAssembler:
             "growthTimingPolicy": CRIT_GROWTH_TIMING_POLICY,
             "growthEligibleTargetPolicy": CRIT_GROWTH_ELIGIBLE_TARGET_POLICY,
             "growthRngPolicy": CRIT_GROWTH_RNG_POLICY,
+        }
+        identity["ammoDepletionRules"] = {
+            "contractId": AMMO_DEPLETION_CONTRACT,
+            "triggerPolicy": AMMO_DEPLETION_TRIGGER_POLICY,
+            "evaluationPhase": AMMO_DEPLETION_EVALUATION_PHASE,
+            "snapshotPolicy": AMMO_DEPLETION_SNAPSHOT_POLICY,
+            "repeatPolicy": AMMO_DEPLETION_REPEAT_POLICY,
+            "nonAmmoPolicy": AMMO_DEPLETION_NON_AMMO_POLICY,
+            "reloadPolicy": AMMO_DEPLETION_RELOAD_POLICY,
+            "rngPolicy": AMMO_DEPLETION_RNG_POLICY,
         }
         identity["burnRules"] = {
             "contractId": BURN_CONTRACT,
@@ -4201,7 +4298,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v29 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v30 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4216,7 +4313,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v29 candidate "
+            "PASS original-pirate v30 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4229,7 +4326,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v29 candidate to {output}")
+        print(f"exported original-pirate v30 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

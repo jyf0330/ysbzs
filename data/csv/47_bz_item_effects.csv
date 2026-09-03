@@ -147,3 +147,7 @@ effect_followwake_calibrator_bronze_crit_response,item_followwake_calibrator,bro
 effect_followwake_calibrator_silver_crit_response,item_followwake_calibrator,silver,skill_followwake_calibrator,40,another_friendly_item_used,source_item_can_crit,,any,trigger_source_item,,,,gain_crit_chance_for_fight,,750,,,,,formal
 effect_followwake_calibrator_gold_crit_response,item_followwake_calibrator,gold,skill_followwake_calibrator,40,another_friendly_item_used,source_item_can_crit,,any,trigger_source_item,,,,gain_crit_chance_for_fight,,1000,,,,,formal
 effect_followwake_calibrator_diamond_crit_response,item_followwake_calibrator,diamond,skill_followwake_calibrator,40,another_friendly_item_used,source_item_can_crit,,any,trigger_source_item,,,,gain_crit_chance_for_fight,,1250,,,,,formal
+effect_tidefin_launcher_bronze_depleted_shield,item_tidefin_launcher,bronze,skill_tidefin_launcher,10,item_ready,source_item_ammo_depleted,,any,owner_hero,,,,gain_shield,2,,,,,,formal
+effect_tidefin_launcher_silver_depleted_shield,item_tidefin_launcher,silver,skill_tidefin_launcher,10,item_ready,source_item_ammo_depleted,,any,owner_hero,,,,gain_shield,3,,,,,,formal
+effect_tidefin_launcher_gold_depleted_shield,item_tidefin_launcher,gold,skill_tidefin_launcher,10,item_ready,source_item_ammo_depleted,,any,owner_hero,,,,gain_shield,5,,,,,,formal
+effect_tidefin_launcher_diamond_depleted_shield,item_tidefin_launcher,diamond,skill_tidefin_launcher,10,item_ready,source_item_ammo_depleted,,any,owner_hero,,,,gain_shield,7,,,,,,formal

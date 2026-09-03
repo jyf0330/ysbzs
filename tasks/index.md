@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_crit_growth` 数据侧交付刷新。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_ammo_depletion` 数据侧交付刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_ammo_depletion.md` — data rules: 项目原创 `source_item_ammo_depleted` 精确合同、潮鳍投筒四品质耗尽护盾与 152 effects 已完成 workbook→CSV→exporter 真相链、确定性生成和下游正式 Session 验证。
 
 - `tasks/done/2026-09-03_original_pirate_crit_growth.md` — data rules: Crit v2 本场暴击率成长、动态真实来源资格与继航校炮仪四品质数据已完成 workbook→CSV→exporter 真相链、确定性生成与下游 Godot 消费验证。
 

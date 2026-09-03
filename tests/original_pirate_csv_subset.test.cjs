@@ -90,12 +90,12 @@ test('OPCSV01 Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned s
     healStatusCleanseCritPolicy: row.heal_status_cleanse_crit_policy,
     healStatusCleanseRngPolicy: row.heal_status_cleanse_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '25',
-    runtimeSchemaVersion: '23',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v23',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v24',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v24',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v24',
+    schemaVersion: '26',
+    runtimeSchemaVersion: '24',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v24',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v25',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v25',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v25',
     burnContract: 'ysbzs.original-pirate-burn.v1',
     pulseIntervalTicks: '1',
     firstPulsePolicy: 'next_tick',
@@ -219,4 +219,39 @@ test('OPCSV03 墨航滴液器四品质、refresh 5 报价、升级与单铭刻�
     ['ghost_d01_inkwake', 'item_inkwake_doser', 'bronze', '3'],
   ]);
   assert.equal(dayOneGhost.some(({ item_id: itemId }) => itemId === 'item_patchwork_ram'), false);
+});
+
+test('OPCSV04 伤害 Aura 独立域、规则合同与雾藻疗匣四品质绑定完整', () => {
+  const gameplay = readCsv('44_bz_gameplay.csv').rows;
+  assert.equal(gameplay.every((row) => (
+    row.damage_aura_contract === 'ysbzs.original-pirate-damage-aura.v1'
+      && row.damage_aura_evaluation_policy === 'per_damage_from_compiled_sources'
+      && row.damage_aura_target_snapshot_policy === 'battle_start_board'
+      && row.damage_aura_target_order === 'board_slot_then_instance_id'
+      && row.damage_aura_stacking_policy === 'additive_per_source_effect'
+      && row.damage_aura_damage_phase === 'before_crit'
+      && row.damage_aura_source_lifecycle_policy === 'compiled_board_source_for_battle'
+      && row.damage_aura_overflow_policy === 'reject_advance'
+      && row.damage_aura_rng_policy === 'never'
+  )), true);
+  const auras = readCsv('66_bz_item_auras.csv');
+  assert.deepEqual(auras.headers, [
+    'aura_id', 'item_id', 'quality', 'item_skill_id', 'priority', 'target_type',
+    'target_tags', 'target_exclude_self', 'operation_type', 'amount', 'catalog_status',
+  ]);
+  assert.deepEqual(auras.rows.map((row) => [
+    row.aura_id, row.item_id, row.quality, row.item_skill_id, row.priority,
+    row.target_type, row.target_tags, row.target_exclude_self,
+    row.operation_type, row.amount, row.catalog_status,
+  ]), [
+    ['aura_mistkelp_remedy_kit_bronze_weapon_damage', 'item_mistkelp_remedy_kit', 'bronze', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '1', 'formal'],
+    ['aura_mistkelp_remedy_kit_silver_weapon_damage', 'item_mistkelp_remedy_kit', 'silver', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '2', 'formal'],
+    ['aura_mistkelp_remedy_kit_gold_weapon_damage', 'item_mistkelp_remedy_kit', 'gold', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '3', 'formal'],
+    ['aura_mistkelp_remedy_kit_diamond_weapon_damage', 'item_mistkelp_remedy_kit', 'diamond', 'skill_mistkelp_remedy_kit', '20', 'friendly_items_with_any_tag', 'weapon', 'true', 'grant_damage', '4', 'formal'],
+  ]);
+  const skill = readCsv('48_bz_item_skills.csv').rows.find(({ item_skill_id: id }) => (
+    id === 'skill_mistkelp_remedy_kit'
+  ));
+  assert.equal(skill.aura_ids, auras.rows.map(({ aura_id: id }) => id).join(','));
+  assert.match(skill.description_zh, /恢复生命.*武器.*伤害/);
 });

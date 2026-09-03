@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_heal_status_cleanse` 数据侧验证收口刷新。
+最后刷新：2026-09-03，由 `2026-09-03_original_pirate_damage_aura` 数据侧验证收口刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_original_pirate_damage_aura.md` — data rules: 独立固定伤害 Aura 域、雾藻疗匣四品质武器加伤、exact battle rules 与 effect/Aura 身份分域已完成 workbook→CSV→exporter 真相链及确定性生成验证。
 
 - `tasks/done/2026-09-03_original_pirate_heal_status_cleanse.md` — data rules: 有效治疗清除 Burn/Poison 的 exact v1 合同、Poison v2 委托关系与 Day 1 双状态 Ghost 已完成 workbook→CSV→exporter 真相链及确定性生成验证。
 

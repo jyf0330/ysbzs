@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 22 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 23 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v27 candidate package while still validating every
+outside the formal v28 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 27
+CONTENT_SCHEMA_VERSION = 28
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 25
-SOURCE_CONTENT_SCHEMA_VERSION = 25
-SOURCE_RUNTIME_SCHEMA_VERSION = 23
+RUNTIME_SCHEMA_VERSION = 26
+SOURCE_CONTENT_SCHEMA_VERSION = 26
+SOURCE_RUNTIME_SCHEMA_VERSION = 24
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 17
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 18
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,16 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v23"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v24"
+DAMAGE_AURA_CONTRACT = "ysbzs.original-pirate-damage-aura.v1"
+DAMAGE_AURA_EVALUATION_POLICY = "per_damage_from_compiled_sources"
+DAMAGE_AURA_TARGET_SNAPSHOT_POLICY = "battle_start_board"
+DAMAGE_AURA_TARGET_ORDER = "board_slot_then_instance_id"
+DAMAGE_AURA_STACKING_POLICY = "additive_per_source_effect"
+DAMAGE_AURA_DAMAGE_PHASE = "before_crit"
+DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY = "compiled_board_source_for_battle"
+DAMAGE_AURA_OVERFLOW_POLICY = "reject_advance"
+DAMAGE_AURA_RNG_POLICY = "never"
 BURN_CONTRACT = "ysbzs.original-pirate-burn.v1"
 BURN_PULSE_INTERVAL_TICKS = 1
 BURN_FIRST_PULSE_POLICY = "next_tick"
@@ -124,6 +133,8 @@ ITEM_TAGS = {"ammo", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "w
 ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used", "battle_start"}
 ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag"}
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
+DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
+DAMAGE_AURA_OPERATION = "grant_damage"
 HERO_SKILL_TRIGGER = "friendly_item_used"
 HERO_SKILL_TARGETS = {"opponent_hero", "source_item", "owner_hero"}
 HERO_SKILL_OPERATIONS = {"deal_damage", "charge", "heal", "gain_shield"}
@@ -161,6 +172,11 @@ DOMAIN_HEADERS = OrderedDict([
         "heal_status_cleanse_poison_schedule_policy",
         "heal_status_cleanse_trace_emit_policy", "heal_status_cleanse_crit_policy",
         "heal_status_cleanse_rng_policy",
+        "damage_aura_contract", "damage_aura_evaluation_policy",
+        "damage_aura_target_snapshot_policy", "damage_aura_target_order",
+        "damage_aura_stacking_policy", "damage_aura_damage_phase",
+        "damage_aura_source_lifecycle_policy", "damage_aura_overflow_policy",
+        "damage_aura_rng_policy",
         "pve_win_bonus_xp",
         "prestige_battle_kind", "ghost_loss_prestige", "ghost_draw_prestige",
         "win_target", "last_chance_policy_id",
@@ -185,7 +201,7 @@ DOMAIN_HEADERS = OrderedDict([
     ]),
     ("48_bz_item_skills.csv", [
         "item_skill_id", "name_zh", "description_zh", "trigger_events", "effect_ids",
-        "catalog_status",
+        "aura_ids", "catalog_status",
     ]),
     ("49_bz_stalls.csv", [
         "stall_id", "name_zh", "refresh_cost", "offer_slots", "catalog_status",
@@ -261,6 +277,11 @@ DOMAIN_HEADERS = OrderedDict([
         "offer_id", "trainer_id", "hero_skill_id", "action_type", "upgrade_id",
         "from_quality", "to_quality", "price_currency", "price_amount", "from_day",
         "to_day", "offer_order", "name_zh", "description_zh", "catalog_status",
+    ]),
+    ("66_bz_item_auras.csv", [
+        "aura_id", "item_id", "quality", "item_skill_id", "priority",
+        "target_type", "target_tags", "target_exclude_self", "operation_type",
+        "amount", "catalog_status",
     ]),
 ])
 
@@ -426,6 +447,11 @@ def _canonical_runtime_items(items: list[dict[str, Any]]) -> list[dict[str, Any]
                 if effect.get("target", {}).get("type") in PARAMETERIZED_FRIENDLY_ITEM_TARGETS:
                     effect.get("target", {}).get("params", {}).get("tags", []).sort()
             profile.get("effects", []).sort(key=lambda value: (value.get("priority", 0), value.get("effectId", "")))
+            for aura in profile.get("auras", []):
+                aura.get("target", {}).get("params", {}).get("tags", []).sort()
+            profile.get("auras", []).sort(
+                key=lambda value: (value.get("priority", 0), value.get("auraId", ""))
+            )
     result.sort(key=lambda value: value.get("itemId", ""))
     return result
 
@@ -480,6 +506,7 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     for skill in catalogs.get("itemSkills", []):
         skill.get("triggerEvents", []).sort()
         skill.get("effectIds", []).sort()
+        skill.get("auraIds", []).sort()
     catalogs.get("itemSkills", []).sort(key=lambda value: value.get("itemSkillId", ""))
     for skill in catalogs.get("heroSkills", []):
         for profile in skill.get("qualityProfiles", {}).values():
@@ -674,6 +701,33 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     return effect_id, trigger_event
 
 
+def _validate_executable_damage_aura(value: Any, context: str) -> str:
+    aura = _expect_exact_fields(value, {
+        "auraId", "priority", "target", "operation",
+    }, context)
+    aura_id = _expect_stable_id(aura["auraId"], f"{context}:auraId")
+    _expect_integer(aura["priority"], f"{context}:priority", 0)
+    target = _expect_exact_fields(aura["target"], {"type", "params"}, f"{context}:target")
+    if target["type"] != DAMAGE_AURA_TARGET:
+        raise ExportError(f"EXECUTABLE_DAMAGE_AURA_TARGET_INVALID:{aura_id}")
+    target_params = _expect_exact_fields(
+        target["params"], {"tags", "excludeSelf"}, f"{context}:target:params"
+    )
+    _expect_canonical_item_tags(target_params["tags"], f"{context}:target:params:tags")
+    if target_params["excludeSelf"] is not True:
+        raise ExportError(f"EXECUTABLE_DAMAGE_AURA_EXCLUDE_SELF_INVALID:{aura_id}")
+    operation = _expect_exact_fields(
+        aura["operation"], {"type", "params"}, f"{context}:operation"
+    )
+    if operation["type"] != DAMAGE_AURA_OPERATION:
+        raise ExportError(f"EXECUTABLE_DAMAGE_AURA_OPERATION_INVALID:{aura_id}")
+    params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
+    amount = _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
+    if amount > CRIT_DAMAGE_AMOUNT_MAX:
+        raise ExportError(f"EXECUTABLE_DAMAGE_AURA_AMOUNT_INVALID:{aura_id}")
+    return aura_id
+
+
 def _validate_executable_hero_skill_effect(value: Any, context: str) -> str:
     effect = _expect_exact_fields(value, {
         "effectId", "targetType", "operationType", "amount", "ticks",
@@ -844,7 +898,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v27/v25 candidate package without accepting partial data."""
+    """Validate the formal v28/v26 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -864,6 +918,7 @@ def validate_package(package: Any) -> None:
     item_widths: dict[str, int] = {}
     item_effect_ids: set[str] = set()
     item_effect_events: dict[str, str] = {}
+    item_aura_ids: set[str] = set()
     for item_index, item_value in enumerate(items):
         item = _expect_exact_fields(item_value, {
             "itemId", "tags", "slotWidth", "baseQuality", "qualityProfiles",
@@ -887,7 +942,8 @@ def validate_package(package: Any) -> None:
             if quality not in QUALITIES or not isinstance(profile, dict):
                 raise ExportError(f"EXECUTABLE_ITEM_PROFILE_INVALID:{item_id}:{quality}")
             _expect_exact_fields(profile, {
-                "buyPrice", "sellPrice", "baseCooldownTicks", "critChanceBps", "ammo", "effects",
+                "buyPrice", "sellPrice", "baseCooldownTicks", "critChanceBps", "ammo",
+                "effects", "auras",
             }, f"items:{item_id}:{quality}")
             _expect_integer(profile["buyPrice"], f"items:{item_id}:{quality}:buyPrice", 1)
             _expect_integer(profile["sellPrice"], f"items:{item_id}:{quality}:sellPrice", 0)
@@ -916,6 +972,15 @@ def validate_package(package: Any) -> None:
                 item_effect_ids.add(effect_id)
                 item_effect_events[effect_id] = trigger_event
                 profile_events.add(trigger_event)
+            for aura_index, aura in enumerate(
+                _expect_list(profile.get("auras"), f"items:{item_id}:{quality}:auras")
+            ):
+                aura_id = _validate_executable_damage_aura(
+                    aura, f"items:{item_id}:{quality}:auras:{aura_index}"
+                )
+                if aura_id in item_aura_ids:
+                    raise ExportError(f"EXECUTABLE_DAMAGE_AURA_ID_DUPLICATE:{aura_id}")
+                item_aura_ids.add(aura_id)
             damage_effects = [
                 effect for effect in profile["effects"]
                 if effect.get("operation", {}).get("type") == "deal_damage"
@@ -962,7 +1027,7 @@ def validate_package(package: Any) -> None:
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
         "terminalPressure", "critRules", "burnRules", "poisonRules",
-        "healStatusCleanseRules",
+        "healStatusCleanseRules", "damageAuraRules",
     }, "battleRules")
     terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
         "enabled", "startTick", "intervalTicks", "initialDamage", "incrementDamage",
@@ -1065,6 +1130,23 @@ def validate_package(package: Any) -> None:
         "rngPolicy": HEAL_STATUS_CLEANSE_RNG_POLICY,
     }:
         raise ExportError("EXECUTABLE_HEAL_STATUS_CLEANSE_RULES_INVALID")
+    damage_aura_rules = _expect_exact_fields(battle_rules["damageAuraRules"], {
+        "contractId", "evaluationPolicy", "targetSnapshotPolicy", "targetOrder",
+        "stackingPolicy", "damagePhase", "sourceLifecyclePolicy", "overflowPolicy",
+        "rngPolicy",
+    }, "battleRules:damageAuraRules")
+    if damage_aura_rules != {
+        "contractId": DAMAGE_AURA_CONTRACT,
+        "evaluationPolicy": DAMAGE_AURA_EVALUATION_POLICY,
+        "targetSnapshotPolicy": DAMAGE_AURA_TARGET_SNAPSHOT_POLICY,
+        "targetOrder": DAMAGE_AURA_TARGET_ORDER,
+        "stackingPolicy": DAMAGE_AURA_STACKING_POLICY,
+        "damagePhase": DAMAGE_AURA_DAMAGE_PHASE,
+        "sourceLifecyclePolicy": DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY,
+        "overflowPolicy": DAMAGE_AURA_OVERFLOW_POLICY,
+        "rngPolicy": DAMAGE_AURA_RNG_POLICY,
+    }:
+        raise ExportError("EXECUTABLE_DAMAGE_AURA_RULES_INVALID")
 
     progression = _expect_exact_fields(bundle["progressionRules"], {
         "schema", "schemaVersion", "enabled", "milestones", "options",
@@ -1160,10 +1242,11 @@ def validate_package(package: Any) -> None:
 
     item_skills = _directory(
         _expect_list(catalogs["itemSkills"], "catalogs:itemSkills"), "itemSkillId", {
-            "itemSkillId", "triggerEvents", "effectIds",
+            "itemSkillId", "triggerEvents", "effectIds", "auraIds",
         }, "itemSkills"
     )
     referenced_effects: set[str] = set()
+    referenced_auras: set[str] = set()
     for item_skill_id, skill in item_skills.items():
         trigger_events = _expect_list(skill["triggerEvents"], f"itemSkills:{item_skill_id}:triggerEvents")
         if not trigger_events or trigger_events != sorted(trigger_events) \
@@ -1181,8 +1264,22 @@ def validate_package(package: Any) -> None:
         if set(trigger_events) != {item_effect_events[effect_id] for effect_id in effect_ids}:
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_TRIGGER_COVERAGE_INVALID:{item_skill_id}")
         referenced_effects.update(effect_ids)
+        aura_ids = [
+            _expect_stable_id(aura_id, f"itemSkills:{item_skill_id}:auraIds")
+            for aura_id in _expect_list(
+                skill["auraIds"], f"itemSkills:{item_skill_id}:auraIds"
+            )
+        ]
+        if len(aura_ids) != len(set(aura_ids)) \
+                or any(aura_id not in item_aura_ids for aura_id in aura_ids):
+            raise ExportError(f"EXECUTABLE_ITEM_SKILL_AURA_REFERENCE_INVALID:{item_skill_id}")
+        if referenced_auras.intersection(aura_ids):
+            raise ExportError(f"EXECUTABLE_ITEM_SKILL_AURA_OWNERSHIP_INVALID:{item_skill_id}")
+        referenced_auras.update(aura_ids)
     if referenced_effects != item_effect_ids:
         raise ExportError("EXECUTABLE_ITEM_SKILL_EFFECT_COVERAGE_INVALID")
+    if referenced_auras != item_aura_ids:
+        raise ExportError("EXECUTABLE_ITEM_SKILL_AURA_COVERAGE_INVALID")
 
     hero_skills = _directory(
         _expect_list(catalogs["heroSkills"], "catalogs:heroSkills"), "heroSkillId", {
@@ -1925,6 +2022,7 @@ class ContentAssembler:
         item_skills = self._item_skills()
         items, starters = self._items(item_skills)
         self._effects(items, item_skills)
+        self._auras(items, item_skills)
         hero_skills = self._hero_skills()
         rewards = self._rewards()
         progression_rules = self._progression_rules()
@@ -1995,6 +2093,7 @@ class ContentAssembler:
                 "burnRules": identity["burnRules"],
                 "poisonRules": identity["poisonRules"],
                 "healStatusCleanseRules": identity["healStatusCleanseRules"],
+                "damageAuraRules": identity["damageAuraRules"],
             },
             "progressionRules": progression_rules,
             "generation": {
@@ -2257,6 +2356,7 @@ class ContentAssembler:
         rows_by_id = _unique(self.tables[filename], filename, "item_skill_id")
         item_skills: dict[str, dict[str, Any]] = {}
         seen_effects: set[str] = set()
+        seen_auras: set[str] = set()
         for item_skill_id, row in rows_by_id.items():
             _formal(filename, row)
             _require_chinese(filename, row, "name_zh")
@@ -2269,8 +2369,13 @@ class ContentAssembler:
             if seen_effects.intersection(effect_ids):
                 raise ExportError(f"ITEM_SKILL_EFFECT_OWNERSHIP_DUPLICATE:{item_skill_id}")
             seen_effects.update(effect_ids)
+            aura_ids = _ids(filename, row, "aura_ids", allow_empty=True)
+            if seen_auras.intersection(aura_ids):
+                raise ExportError(f"ITEM_SKILL_AURA_OWNERSHIP_DUPLICATE:{item_skill_id}")
+            seen_auras.update(aura_ids)
             item_skills[item_skill_id] = {
                 "triggerEvents": set(trigger_events), "effectIds": set(effect_ids),
+                "auraIds": set(aura_ids),
             }
         return item_skills
 
@@ -2359,6 +2464,7 @@ class ContentAssembler:
                     "critChanceBps": crit_chance_bps,
                     "ammo": {"enabled": ammo_enabled, "initial": ammo_initial, "maximum": ammo_maximum},
                     "effects": [],
+                    "auras": [],
                 }
                 profiles[quality] = profile
                 self.item_profiles[(item_id, quality)] = profile
@@ -2731,6 +2837,56 @@ class ContentAssembler:
                 raise ExportError(f"ITEM_SKILL_EFFECT_DIRECTORY_MISMATCH:{item_skill_id}")
             if actual_item_skill_triggers.get(item_skill_id, set()) != skill["triggerEvents"]:
                 raise ExportError(f"ITEM_SKILL_TRIGGER_DIRECTORY_MISMATCH:{item_skill_id}")
+
+    def _auras(self, items: list[dict[str, Any]], item_skills: dict[str, dict[str, Any]]) -> None:
+        del items
+        filename = "66_bz_item_auras.csv"
+        seen_ids: set[str] = set()
+        actual_item_skill_auras: dict[str, set[str]] = defaultdict(set)
+        for row in self.tables[filename]:
+            _formal(filename, row)
+            aura_id = _require_id(filename, row, "aura_id")
+            if aura_id in seen_ids:
+                raise ExportError(f"DAMAGE_AURA_ID_DUPLICATE:{aura_id}")
+            seen_ids.add(aura_id)
+            item_id = _require_id(filename, row, "item_id")
+            quality = _require_text(filename, row, "quality")
+            profile = self.item_profiles.get((item_id, quality))
+            if profile is None:
+                raise ExportError(f"DAMAGE_AURA_ITEM_QUALITY_UNKNOWN:{aura_id}")
+            item_skill_id = _require_id(filename, row, "item_skill_id")
+            if self.item_skills.get(item_id) != item_skill_id or item_skill_id not in item_skills:
+                raise ExportError(f"DAMAGE_AURA_ITEM_SKILL_MISMATCH:{aura_id}")
+            target_type = _require_text(filename, row, "target_type")
+            if target_type != DAMAGE_AURA_TARGET:
+                raise ExportError(f"DAMAGE_AURA_TARGET_INVALID:{aura_id}")
+            target_tags = _item_tags(filename, row, "target_tags")
+            exclude_self = _boolean(filename, row, "target_exclude_self")
+            if not exclude_self:
+                raise ExportError(f"DAMAGE_AURA_EXCLUDE_SELF_INVALID:{aura_id}")
+            operation_type = _require_text(filename, row, "operation_type")
+            if operation_type != DAMAGE_AURA_OPERATION:
+                raise ExportError(f"DAMAGE_AURA_OPERATION_INVALID:{aura_id}")
+            amount = _integer(filename, row, "amount", 1)
+            if amount > CRIT_DAMAGE_AMOUNT_MAX:
+                raise ExportError(f"DAMAGE_AURA_AMOUNT_INVALID:{aura_id}")
+            profile["auras"].append({
+                "auraId": aura_id,
+                "priority": _integer(filename, row, "priority", 0),
+                "target": {
+                    "type": target_type,
+                    "params": {"tags": target_tags, "excludeSelf": exclude_self},
+                },
+                "operation": {"type": operation_type, "params": {"amount": amount}},
+            })
+            actual_item_skill_auras[item_skill_id].add(aura_id)
+        if not seen_ids:
+            raise ExportError("DAMAGE_AURA_CATALOG_REQUIRED")
+        for profile in self.item_profiles.values():
+            profile["auras"].sort(key=lambda value: (value["priority"], value["auraId"]))
+        for item_skill_id, skill in item_skills.items():
+            if actual_item_skill_auras.get(item_skill_id, set()) != skill["auraIds"]:
+                raise ExportError(f"ITEM_SKILL_AURA_DIRECTORY_MISMATCH:{item_skill_id}")
 
     def _hero_skills(self) -> dict[str, dict[str, Any]]:
         filename = "62_bz_hero_skills.csv"
@@ -3293,6 +3449,7 @@ class ContentAssembler:
                     "itemSkillId": item_skill_id,
                     "triggerEvents": sorted(item_skills[item_skill_id]["triggerEvents"]),
                     "effectIds": sorted(item_skills[item_skill_id]["effectIds"]),
+                    "auraIds": sorted(item_skills[item_skill_id]["auraIds"]),
                 }
                 for item_skill_id in sorted(item_skills)
             ],
@@ -3329,8 +3486,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v25 candidate source.
-            # This adapter is its explicit one-way projection into executable v27.
+            # The current 23-domain workbook is the finite v26 candidate source.
+            # This adapter is its explicit one-way projection into executable v28.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3386,6 +3543,15 @@ class ContentAssembler:
             "heal_status_cleanse_trace_emit_policy": HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY,
             "heal_status_cleanse_crit_policy": HEAL_STATUS_CLEANSE_CRIT_POLICY,
             "heal_status_cleanse_rng_policy": HEAL_STATUS_CLEANSE_RNG_POLICY,
+            "damage_aura_contract": DAMAGE_AURA_CONTRACT,
+            "damage_aura_evaluation_policy": DAMAGE_AURA_EVALUATION_POLICY,
+            "damage_aura_target_snapshot_policy": DAMAGE_AURA_TARGET_SNAPSHOT_POLICY,
+            "damage_aura_target_order": DAMAGE_AURA_TARGET_ORDER,
+            "damage_aura_stacking_policy": DAMAGE_AURA_STACKING_POLICY,
+            "damage_aura_damage_phase": DAMAGE_AURA_DAMAGE_PHASE,
+            "damage_aura_source_lifecycle_policy": DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY,
+            "damage_aura_overflow_policy": DAMAGE_AURA_OVERFLOW_POLICY,
+            "damage_aura_rng_policy": DAMAGE_AURA_RNG_POLICY,
         }
         for field, expected in expected_constants.items():
             actual = _same(rows, filename, field)
@@ -3494,6 +3660,17 @@ class ContentAssembler:
             "traceEmitPolicy": HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY,
             "critPolicy": HEAL_STATUS_CLEANSE_CRIT_POLICY,
             "rngPolicy": HEAL_STATUS_CLEANSE_RNG_POLICY,
+        }
+        identity["damageAuraRules"] = {
+            "contractId": DAMAGE_AURA_CONTRACT,
+            "evaluationPolicy": DAMAGE_AURA_EVALUATION_POLICY,
+            "targetSnapshotPolicy": DAMAGE_AURA_TARGET_SNAPSHOT_POLICY,
+            "targetOrder": DAMAGE_AURA_TARGET_ORDER,
+            "stackingPolicy": DAMAGE_AURA_STACKING_POLICY,
+            "damagePhase": DAMAGE_AURA_DAMAGE_PHASE,
+            "sourceLifecyclePolicy": DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY,
+            "overflowPolicy": DAMAGE_AURA_OVERFLOW_POLICY,
+            "rngPolicy": DAMAGE_AURA_RNG_POLICY,
         }
         prestige_battle_kind = _same(rows, filename, "prestige_battle_kind")
         if prestige_battle_kind != "ghost":
@@ -3945,7 +4122,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v27 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v28 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3960,7 +4137,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v27 candidate "
+            "PASS original-pirate v28 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3973,7 +4150,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v27 candidate to {output}")
+        print(f"exported original-pirate v28 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

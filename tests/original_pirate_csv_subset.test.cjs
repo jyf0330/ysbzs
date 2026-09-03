@@ -215,7 +215,7 @@ test('OPCSV03 墨航滴液器四品质、refresh 5 报价、升级与单铭刻�
   assert.deepEqual(dayOneGhost.map(({
     instance_id: instanceId, item_id: itemId, quality, start_slot: startSlot,
   }) => [instanceId, itemId, quality, startSlot]), [
-    ['ghost_d01_emberwake', 'item_emberwake_lantern', 'gold', '2'],
+    ['ghost_d01_emberwake', 'item_emberwake_lantern', 'silver', '2'],
     ['ghost_d01_inkwake', 'item_inkwake_doser', 'bronze', '3'],
   ]);
   assert.equal(dayOneGhost.some(({ item_id: itemId }) => itemId === 'item_patchwork_ram'), false);

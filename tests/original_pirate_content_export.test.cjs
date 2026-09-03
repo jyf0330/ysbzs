@@ -529,7 +529,7 @@ test('OPC02 v27/v25 Heal/Cleanse、Poison、Burn、Crit、随机/集合/确定�
   assert.deepEqual(Object.keys(ghostSnapshot.build).sort(), ['board', 'hero', 'heroSkills', 'itemInstances']);
   assert.deepEqual(Object.keys(ghostSnapshot.build.hero).sort(), ['heroId', 'hp', 'level', 'maxHp']);
   assert.deepEqual(ghostSnapshot.build.itemInstances, [
-    { instanceId: 'ghost_d01_emberwake', itemId: 'item_emberwake_lantern', quality: 'gold', enchantment: '' },
+    { instanceId: 'ghost_d01_emberwake', itemId: 'item_emberwake_lantern', quality: 'silver', enchantment: '' },
     { instanceId: 'ghost_d01_inkwake', itemId: 'item_inkwake_doser', quality: 'bronze', enchantment: '' },
   ]);
   assert.deepEqual(ghostSnapshot.build.board.placements, [

@@ -45,7 +45,7 @@ function readCsv(filename) {
   };
 }
 
-test('OPCSV01 Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned stacks 严格落在 44/47', () => {
+test('OPCSV01 Crit v2、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
   const gameplay = readCsv('44_bz_gameplay.csv');
   const effects = readCsv('47_bz_item_effects.csv');
   assert.deepEqual(gameplay.rows.map((row) => ({
@@ -55,6 +55,12 @@ test('OPCSV01 Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned s
     sourceRevision: row.source_revision,
     contentRevision: row.content_revision,
     bundleRevision: row.bundle_revision,
+    critContract: row.crit_contract,
+    critGrowthStackingPolicy: row.crit_growth_stacking_policy,
+    critGrowthCapPolicy: row.crit_growth_cap_policy,
+    critGrowthTimingPolicy: row.crit_growth_timing_policy,
+    critGrowthEligibleTargetPolicy: row.crit_growth_eligible_target_policy,
+    critGrowthRngPolicy: row.crit_growth_rng_policy,
     burnContract: row.burn_contract,
     pulseIntervalTicks: row.burn_pulse_interval_ticks,
     firstPulsePolicy: row.burn_first_pulse_policy,
@@ -90,12 +96,18 @@ test('OPCSV01 Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned s
     healStatusCleanseCritPolicy: row.heal_status_cleanse_crit_policy,
     healStatusCleanseRngPolicy: row.heal_status_cleanse_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '26',
-    runtimeSchemaVersion: '24',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v24',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v25',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v25',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v25',
+    schemaVersion: '27',
+    runtimeSchemaVersion: '25',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v25',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v26',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v26',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v26',
+    critContract: 'ysbzs.original-pirate-critical-damage.v2',
+    critGrowthStackingPolicy: 'additive_bps_per_effect',
+    critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
+    critGrowthTimingPolicy: 'after_source_use_for_subsequent_uses',
+    critGrowthEligibleTargetPolicy: 'trigger_source_item_with_exactly_one_can_crit_item_ready_direct_damage',
+    critGrowthRngPolicy: 'never',
     burnContract: 'ysbzs.original-pirate-burn.v1',
     pulseIntervalTicks: '1',
     firstPulsePolicy: 'next_tick',
@@ -132,6 +144,7 @@ test('OPCSV01 Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned s
     healStatusCleanseRngPolicy: 'never',
   })));
   assert.equal(effects.headers.includes('stacks'), true);
+  assert.equal(effects.headers.includes('crit_chance_bps_delta'), true);
   const burnRows = effects.rows.filter(({ operation_type: operationType }) => operationType === 'apply_burn');
   assert.deepEqual(burnRows.map(({ effect_id: effectId, stacks, amount, can_crit: canCrit, status, ticks }) => (
     [effectId, stacks, amount, canCrit, status, ticks]
@@ -154,6 +167,9 @@ test('OPCSV01 Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned s
     !['apply_burn', 'apply_poison'].includes(operationType)
   ))
     .every(({ stacks }) => stacks === ''), true);
+  assert.equal(effects.rows.filter(({ operation_type: operationType }) => (
+    operationType !== 'gain_crit_chance_for_fight'
+  )).every(({ crit_chance_bps_delta: delta }) => delta === ''), true);
 });
 
 test('OPCSV02 烬航灯四品质、初始报价、升级、单铭刻与 Ghost 引用完整', () => {
@@ -254,4 +270,29 @@ test('OPCSV04 伤害 Aura 独立域、规则合同与雾藻疗匣四品质绑定
   ));
   assert.equal(skill.aura_ids, auras.rows.map(({ aura_id: id }) => id).join(','));
   assert.match(skill.description_zh, /恢复生命.*武器.*伤害/);
+});
+
+test('OPCSV05 继航校炮仪四品质 Crit growth 行仅使用动态触发源和独立 bps 参数', () => {
+  const effects = readCsv('47_bz_item_effects.csv').rows.filter(({ operation_type: operationType }) => (
+    operationType === 'gain_crit_chance_for_fight'
+  ));
+  assert.deepEqual(effects.map((row) => [
+    row.effect_id, row.item_id, row.quality, row.priority, row.trigger_event,
+    row.condition_type, row.condition_tags, row.condition_source_relation,
+    row.target_type, row.amount, row.crit_chance_bps_delta,
+  ]), [
+    ['effect_followwake_calibrator_bronze_crit_response', 'item_followwake_calibrator', 'bronze', '40', 'another_friendly_item_used', 'source_item_can_crit', '', 'any', 'trigger_source_item', '', '500'],
+    ['effect_followwake_calibrator_silver_crit_response', 'item_followwake_calibrator', 'silver', '40', 'another_friendly_item_used', 'source_item_can_crit', '', 'any', 'trigger_source_item', '', '750'],
+    ['effect_followwake_calibrator_gold_crit_response', 'item_followwake_calibrator', 'gold', '40', 'another_friendly_item_used', 'source_item_can_crit', '', 'any', 'trigger_source_item', '', '1000'],
+    ['effect_followwake_calibrator_diamond_crit_response', 'item_followwake_calibrator', 'diamond', '40', 'another_friendly_item_used', 'source_item_can_crit', '', 'any', 'trigger_source_item', '', '1250'],
+  ]);
+  const skill = readCsv('48_bz_item_skills.csv').rows.find(({ item_skill_id: itemSkillId }) => (
+    itemSkillId === 'skill_followwake_calibrator'
+  ));
+  assert.match(skill.description_zh, /可暴击.*本场暴击率.*后续使用/);
+  for (const { effect_id: effectId } of effects) assert.match(skill.effect_ids, new RegExp(effectId));
+  const offer = readCsv('50_bz_stall_offers.csv').rows.find(({ offer_id: offerId }) => (
+    offerId === 'offer_refresh_2_followwake_calibrator'
+  ));
+  assert.deepEqual([offer.refresh_index, offer.slot_order, offer.quality, offer.price], ['2', '2', 'bronze', '4']);
 });

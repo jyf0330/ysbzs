@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v28 candidate package while still validating every
+outside the formal v29 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 28
+CONTENT_SCHEMA_VERSION = 29
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 26
-SOURCE_CONTENT_SCHEMA_VERSION = 26
-SOURCE_RUNTIME_SCHEMA_VERSION = 24
+RUNTIME_SCHEMA_VERSION = 27
+SOURCE_CONTENT_SCHEMA_VERSION = 27
+SOURCE_RUNTIME_SCHEMA_VERSION = 25
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 18
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 19
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v24"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v25"
 DAMAGE_AURA_CONTRACT = "ysbzs.original-pirate-damage-aura.v1"
 DAMAGE_AURA_EVALUATION_POLICY = "per_damage_from_compiled_sources"
 DAMAGE_AURA_TARGET_SNAPSHOT_POLICY = "battle_start_board"
@@ -95,13 +95,19 @@ HEAL_STATUS_CLEANSE_POISON_SCHEDULE_POLICY = "clear_due_if_zero_else_preserve"
 HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY = "only_when_effective_heal_and_any_status_present"
 HEAL_STATUS_CLEANSE_CRIT_POLICY = "never"
 HEAL_STATUS_CLEANSE_RNG_POLICY = "never"
-CRIT_CONTRACT = "ysbzs.original-pirate-critical-damage.v1"
+CRIT_CONTRACT = "ysbzs.original-pirate-critical-damage.v2"
 CRIT_CHANCE_SCALE_BPS = 10000
 CRIT_DAMAGE_MULTIPLIER_MAX_BPS = 100000
 CRIT_DAMAGE_AMOUNT_MAX = 922337203685477580
 CRIT_ROUNDING_MODE = "floor"
 CRIT_ROLL_SCOPE = "item_use"
 CRIT_DRAW_POLICY = "once_if_eligible_damage_effect"
+CRIT_GROWTH_STACKING_POLICY = "additive_bps_per_effect"
+CRIT_GROWTH_CAP_POLICY = "effective_chance_capped_at_chance_scale"
+CRIT_GROWTH_TIMING_POLICY = "after_source_use_for_subsequent_uses"
+CRIT_GROWTH_ELIGIBLE_TARGET_POLICY = \
+    "trigger_source_item_with_exactly_one_can_crit_item_ready_direct_damage"
+CRIT_GROWTH_RNG_POLICY = "never"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
@@ -123,15 +129,16 @@ ITEM_EFFECT_TARGETS = {
 }
 ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "apply_status", "heal", "gain_shield",
-    "gain_damage_for_fight", "apply_burn", "apply_poison",
+    "gain_damage_for_fight", "gain_crit_chance_for_fight", "apply_burn", "apply_poison",
 }
 REACTIVE_ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "gain_damage_for_fight",
+    "gain_crit_chance_for_fight",
 }
 ITEM_STATUSES = {"haste", "slow", "freeze"}
 ITEM_TAGS = {"ammo", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "weapon"}
 ITEM_EFFECT_TRIGGERS = {"item_ready", "another_friendly_item_used", "battle_start"}
-ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag"}
+ITEM_EFFECT_CONDITIONS = {"always", "source_item_has_any_tag", "source_item_can_crit"}
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
 DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
 DAMAGE_AURA_OPERATION = "grant_damage"
@@ -156,6 +163,9 @@ DOMAIN_HEADERS = OrderedDict([
         "terminal_pressure_interval_ticks", "terminal_pressure_initial_damage",
         "terminal_pressure_increment_damage", "crit_contract", "chance_scale_bps",
         "damage_multiplier_bps", "rounding_mode", "roll_scope", "draw_policy",
+        "crit_growth_stacking_policy", "crit_growth_cap_policy",
+        "crit_growth_timing_policy", "crit_growth_eligible_target_policy",
+        "crit_growth_rng_policy",
         "burn_contract", "burn_pulse_interval_ticks", "burn_first_pulse_policy",
         "burn_pulse_phase", "burn_damage_per_stack", "burn_decay_stacks_per_pulse",
         "burn_shield_policy", "burn_resolution_order", "burn_max_stacks",
@@ -197,7 +207,8 @@ DOMAIN_HEADERS = OrderedDict([
         "effect_id", "item_id", "quality", "item_skill_id", "priority", "trigger_event",
         "condition_type", "condition_tags", "condition_source_relation", "target_type", "target_tags",
         "target_exclude_self", "target_count",
-        "operation_type", "amount", "stacks", "can_crit", "status", "ticks", "catalog_status",
+        "operation_type", "amount", "crit_chance_bps_delta", "stacks", "can_crit",
+        "status", "ticks", "catalog_status",
     ]),
     ("48_bz_item_skills.csv", [
         "item_skill_id", "name_zh", "description_zh", "trigger_events", "effect_ids",
@@ -597,18 +608,24 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         condition = _expect_exact_fields(
             conditions[0], {"type", "params"}, f"{context}:trigger:conditions:0"
         )
-        if condition["type"] != "source_item_has_any_tag":
-            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
-        params = _expect_exact_fields(
-            condition["params"], {"tags"}, f"{context}:trigger:conditions:0:params"
-        )
-        _expect_canonical_item_tags(params["tags"], f"{context}:trigger:conditions:0:params:tags")
-        if len(conditions) == 2:
-            adjacency = _expect_exact_fields(
-                conditions[1], {"type", "params"}, f"{context}:trigger:conditions:1"
-            )
-            if adjacency != {"type": "source_item_adjacent_to_self", "params": {}}:
+        if condition["type"] == "source_item_can_crit":
+            if condition["params"] != {} or len(conditions) != 1:
                 raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+        elif condition["type"] == "source_item_has_any_tag":
+            params = _expect_exact_fields(
+                condition["params"], {"tags"}, f"{context}:trigger:conditions:0:params"
+            )
+            _expect_canonical_item_tags(
+                params["tags"], f"{context}:trigger:conditions:0:params:tags"
+            )
+            if len(conditions) == 2:
+                adjacency = _expect_exact_fields(
+                    conditions[1], {"type", "params"}, f"{context}:trigger:conditions:1"
+                )
+                if adjacency != {"type": "source_item_adjacent_to_self", "params": {}}:
+                    raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+        else:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
     target = _expect_exact_fields(effect["target"], {"type", "params"}, f"{context}:target")
     target_type = target["type"]
     if target_type not in ITEM_EFFECT_TARGETS:
@@ -636,6 +653,9 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     if trigger_event == "another_friendly_item_used" \
             and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
+    if conditions and conditions[0].get("type") == "source_item_can_crit" \
+            and operation_type != "gain_crit_chance_for_fight":
+        raise ExportError(f"EXECUTABLE_ITEM_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
     if trigger_event == "battle_start" \
             and (target_type != "owner_hero" or operation_type != "gain_shield"):
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
@@ -667,6 +687,20 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
             valid_target = target_type in {"self_item", "trigger_source_item"}
         else:
             valid_target = target_type == ("self_item" if operation_type == "reload" else "owner_hero")
+    elif operation_type == "gain_crit_chance_for_fight":
+        params = _expect_exact_fields(
+            operation["params"], {"critChanceBpsDelta"}, f"{context}:operation:params"
+        )
+        crit_chance_bps_delta = _expect_integer(
+            params["critChanceBpsDelta"],
+            f"{context}:operation:params:critChanceBpsDelta",
+            1,
+        )
+        if crit_chance_bps_delta > CRIT_CHANCE_SCALE_BPS \
+                or trigger_event != "another_friendly_item_used" \
+                or conditions != [{"type": "source_item_can_crit", "params": {}}]:
+            raise ExportError(f"EXECUTABLE_ITEM_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
+        valid_target = target_type == "trigger_source_item"
     elif operation_type == "charge":
         params = _expect_exact_fields(operation["params"], {"ticks"}, f"{context}:operation:params")
         _expect_integer(params["ticks"], f"{context}:operation:params:ticks", 1)
@@ -898,7 +932,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v28/v26 candidate package without accepting partial data."""
+    """Validate the formal v29/v27 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -1040,7 +1074,8 @@ def validate_package(package: Any) -> None:
     _expect_integer(terminal_pressure["incrementDamage"], "battleRules:terminalPressure:incrementDamage", 0)
     crit_rules = _expect_exact_fields(battle_rules["critRules"], {
         "contractId", "chanceScaleBps", "damageMultiplierBps", "roundingMode",
-        "rollScope", "drawPolicy",
+        "rollScope", "drawPolicy", "growthStackingPolicy", "growthCapPolicy",
+        "growthTimingPolicy", "growthEligibleTargetPolicy", "growthRngPolicy",
     }, "battleRules:critRules")
     damage_multiplier_bps = _expect_integer(
         crit_rules["damageMultiplierBps"], "battleRules:critRules:damageMultiplierBps",
@@ -1051,7 +1086,12 @@ def validate_package(package: Any) -> None:
             or crit_rules["chanceScaleBps"] != CRIT_CHANCE_SCALE_BPS \
             or crit_rules["roundingMode"] != CRIT_ROUNDING_MODE \
             or crit_rules["rollScope"] != CRIT_ROLL_SCOPE \
-            or crit_rules["drawPolicy"] != CRIT_DRAW_POLICY:
+            or crit_rules["drawPolicy"] != CRIT_DRAW_POLICY \
+            or crit_rules["growthStackingPolicy"] != CRIT_GROWTH_STACKING_POLICY \
+            or crit_rules["growthCapPolicy"] != CRIT_GROWTH_CAP_POLICY \
+            or crit_rules["growthTimingPolicy"] != CRIT_GROWTH_TIMING_POLICY \
+            or crit_rules["growthEligibleTargetPolicy"] != CRIT_GROWTH_ELIGIBLE_TARGET_POLICY \
+            or crit_rules["growthRngPolicy"] != CRIT_GROWTH_RNG_POLICY:
         raise ExportError("EXECUTABLE_CRIT_RULES_INVALID")
     burn_rules = _expect_exact_fields(battle_rules["burnRules"], {
         "contractId", "pulseIntervalTicks", "firstPulsePolicy", "pulsePhase",
@@ -2655,18 +2695,23 @@ class ContentAssembler:
                     raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
                 conditions = [{"type": "always", "params": {}}]
             else:
-                if condition_type != "source_item_has_any_tag":
+                if condition_type == "source_item_can_crit":
+                    if row.get("condition_tags", "").strip() or source_relation != "any":
+                        raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
+                    conditions = [{"type": "source_item_can_crit", "params": {}}]
+                elif condition_type == "source_item_has_any_tag":
+                    condition_tags = _item_tags(filename, row, "condition_tags")
+                    conditions = [{
+                        "type": "source_item_has_any_tag",
+                        "params": {"tags": condition_tags},
+                    }]
+                    if source_relation == "adjacent":
+                        conditions.append({
+                            "type": "source_item_adjacent_to_self",
+                            "params": {},
+                        })
+                else:
                     raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
-                condition_tags = _item_tags(filename, row, "condition_tags")
-                conditions = [{
-                    "type": "source_item_has_any_tag",
-                    "params": {"tags": condition_tags},
-                }]
-                if source_relation == "adjacent":
-                    conditions.append({
-                        "type": "source_item_adjacent_to_self",
-                        "params": {},
-                    })
             target_type = _require_text(filename, row, "target_type")
             operation_type = _require_text(filename, row, "operation_type")
             if target_type not in ITEM_EFFECT_TARGETS:
@@ -2701,6 +2746,9 @@ class ContentAssembler:
             if trigger_event == "another_friendly_item_used" \
                     and operation_type not in REACTIVE_ITEM_EFFECT_OPERATIONS:
                 raise ExportError(f"EFFECT_REACTIVE_OPERATION_INVALID:{effect_id}")
+            if condition_type == "source_item_can_crit" \
+                    and operation_type != "gain_crit_chance_for_fight":
+                raise ExportError(f"EFFECT_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
             if trigger_event == "battle_start" \
                     and (target_type != "owner_hero" or operation_type != "gain_shield"):
                 raise ExportError(f"EFFECT_BATTLE_START_CONTRACT_INVALID:{effect_id}")
@@ -2733,6 +2781,11 @@ class ContentAssembler:
                         or len(conditions) not in {1, 2} \
                         or conditions[0].get("type") != "source_item_has_any_tag":
                     raise ExportError(f"EFFECT_DAMAGE_GROWTH_TRIGGER_INVALID:{effect_id}")
+            if operation_type == "gain_crit_chance_for_fight":
+                if target_type != "trigger_source_item" \
+                        or trigger_event != "another_friendly_item_used" \
+                        or conditions != [{"type": "source_item_can_crit", "params": {}}]:
+                    raise ExportError(f"EFFECT_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
             if operation_type == "apply_status" and target_type not in {"self_item", "first_enemy_item"}:
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type in {"heal", "gain_shield"} and target_type != "owner_hero":
@@ -2756,12 +2809,25 @@ class ContentAssembler:
                 elif row.get("can_crit", "").strip():
                     raise ExportError(f"EFFECT_CAN_CRIT_UNEXPECTED:{effect_id}")
                 if row.get("stacks", "").strip() or row.get("status", "").strip() \
+                        or row.get("ticks", "").strip() \
+                        or row.get("crit_chance_bps_delta", "").strip():
+                    raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
+            elif operation_type == "gain_crit_chance_for_fight":
+                crit_chance_bps_delta = _integer(
+                    filename, row, "crit_chance_bps_delta", 1
+                )
+                if crit_chance_bps_delta > CRIT_CHANCE_SCALE_BPS:
+                    raise ExportError(f"EFFECT_CRIT_GROWTH_DELTA_INVALID:{effect_id}")
+                params = {"critChanceBpsDelta": crit_chance_bps_delta}
+                if row.get("amount", "").strip() or row.get("stacks", "").strip() \
+                        or row.get("can_crit", "").strip() or row.get("status", "").strip() \
                         or row.get("ticks", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             elif operation_type == "charge":
                 params = {"ticks": _integer(filename, row, "ticks", 1)}
                 if row.get("amount", "").strip() or row.get("can_crit", "").strip() \
-                        or row.get("stacks", "").strip() or row.get("status", "").strip():
+                        or row.get("stacks", "").strip() or row.get("status", "").strip() \
+                        or row.get("crit_chance_bps_delta", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             elif operation_type == "apply_burn":
                 stacks = _integer(filename, row, "stacks", 1)
@@ -2769,7 +2835,8 @@ class ContentAssembler:
                     raise ExportError(f"EFFECT_BURN_STACKS_INVALID:{effect_id}")
                 params = {"stacks": stacks}
                 if row.get("amount", "").strip() or row.get("can_crit", "").strip() \
-                        or row.get("status", "").strip() or row.get("ticks", "").strip():
+                        or row.get("status", "").strip() or row.get("ticks", "").strip() \
+                        or row.get("crit_chance_bps_delta", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             elif operation_type == "apply_poison":
                 stacks = _integer(filename, row, "stacks", 1)
@@ -2777,7 +2844,8 @@ class ContentAssembler:
                     raise ExportError(f"EFFECT_POISON_STACKS_INVALID:{effect_id}")
                 params = {"stacks": stacks}
                 if row.get("amount", "").strip() or row.get("can_crit", "").strip() \
-                        or row.get("status", "").strip() or row.get("ticks", "").strip():
+                        or row.get("status", "").strip() or row.get("ticks", "").strip() \
+                        or row.get("crit_chance_bps_delta", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             else:
                 status = _require_text(filename, row, "status")
@@ -2785,7 +2853,8 @@ class ContentAssembler:
                     raise ExportError(f"EFFECT_STATUS_INVALID:{effect_id}")
                 params = {"status": status, "ticks": _integer(filename, row, "ticks", 1)}
                 if row.get("amount", "").strip() or row.get("stacks", "").strip() \
-                        or row.get("can_crit", "").strip():
+                        or row.get("can_crit", "").strip() \
+                        or row.get("crit_chance_bps_delta", "").strip():
                     raise ExportError(f"EFFECT_PARAMS_FORGED:{effect_id}")
             effect = {
                 "effectId": effect_id,
@@ -3486,8 +3555,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v26 candidate source.
-            # This adapter is its explicit one-way projection into executable v28.
+            # The current 23-domain workbook is the finite v27 candidate source.
+            # This adapter is its explicit one-way projection into executable v29.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3509,6 +3578,11 @@ class ContentAssembler:
             "rounding_mode": CRIT_ROUNDING_MODE,
             "roll_scope": CRIT_ROLL_SCOPE,
             "draw_policy": CRIT_DRAW_POLICY,
+            "crit_growth_stacking_policy": CRIT_GROWTH_STACKING_POLICY,
+            "crit_growth_cap_policy": CRIT_GROWTH_CAP_POLICY,
+            "crit_growth_timing_policy": CRIT_GROWTH_TIMING_POLICY,
+            "crit_growth_eligible_target_policy": CRIT_GROWTH_ELIGIBLE_TARGET_POLICY,
+            "crit_growth_rng_policy": CRIT_GROWTH_RNG_POLICY,
             "burn_contract": BURN_CONTRACT,
             "burn_pulse_interval_ticks": str(BURN_PULSE_INTERVAL_TICKS),
             "burn_first_pulse_policy": BURN_FIRST_PULSE_POLICY,
@@ -3620,6 +3694,11 @@ class ContentAssembler:
             "roundingMode": CRIT_ROUNDING_MODE,
             "rollScope": CRIT_ROLL_SCOPE,
             "drawPolicy": CRIT_DRAW_POLICY,
+            "growthStackingPolicy": CRIT_GROWTH_STACKING_POLICY,
+            "growthCapPolicy": CRIT_GROWTH_CAP_POLICY,
+            "growthTimingPolicy": CRIT_GROWTH_TIMING_POLICY,
+            "growthEligibleTargetPolicy": CRIT_GROWTH_ELIGIBLE_TARGET_POLICY,
+            "growthRngPolicy": CRIT_GROWTH_RNG_POLICY,
         }
         identity["burnRules"] = {
             "contractId": BURN_CONTRACT,
@@ -4122,7 +4201,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v28 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v29 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4137,7 +4216,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v28 candidate "
+            "PASS original-pirate v29 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4150,7 +4229,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v28 candidate to {output}")
+        print(f"exported original-pirate v29 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

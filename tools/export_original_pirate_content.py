@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v22 candidate package while still validating every
+outside the formal v23 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 22
+CONTENT_SCHEMA_VERSION = 23
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 20
-SOURCE_CONTENT_SCHEMA_VERSION = 20
-SOURCE_RUNTIME_SCHEMA_VERSION = 18
+RUNTIME_SCHEMA_VERSION = 21
+SOURCE_CONTENT_SCHEMA_VERSION = 21
+SOURCE_RUNTIME_SCHEMA_VERSION = 19
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 13
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 14
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v18"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v19"
 INCOME_PAYOUT_POLICY = "day_advance"
 QUALITIES = ["bronze", "silver", "gold", "diamond"]
 QUALITY_NAMES_ZH = {"bronze": "青铜", "silver": "白银", "gold": "黄金", "diamond": "钻石"}
@@ -60,11 +60,16 @@ DETERMINISTIC_FRIENDLY_ITEM_TARGETS = {
     "leftmost_friendly_item", "rightmost_friendly_item",
 }
 COLLECTION_FRIENDLY_ITEM_TARGETS = {"friendly_items_with_any_tag"}
+RANDOM_FRIENDLY_ITEM_TARGETS = {"random_friendly_item_with_any_tag"}
+PARAMETERIZED_FRIENDLY_ITEM_TARGETS = (
+    COLLECTION_FRIENDLY_ITEM_TARGETS | RANDOM_FRIENDLY_ITEM_TARGETS
+)
 ITEM_EFFECT_TARGETS = {
     "selected_enemy", "self_item", "first_enemy_item", "owner_hero",
     "trigger_source_item",
     *DETERMINISTIC_FRIENDLY_ITEM_TARGETS,
     *COLLECTION_FRIENDLY_ITEM_TARGETS,
+    *RANDOM_FRIENDLY_ITEM_TARGETS,
 }
 ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "apply_status", "heal", "gain_shield",
@@ -116,6 +121,7 @@ DOMAIN_HEADERS = OrderedDict([
     ("47_bz_item_effects.csv", [
         "effect_id", "item_id", "quality", "item_skill_id", "priority", "trigger_event",
         "condition_type", "condition_tags", "condition_source_relation", "target_type", "target_tags",
+        "target_exclude_self", "target_count",
         "operation_type", "amount", "status", "ticks", "catalog_status",
     ]),
     ("48_bz_item_skills.csv", [
@@ -306,9 +312,9 @@ def _ids(filename: str, row: dict[str, str], field: str, allow_empty: bool = Fal
 
 def _item_tags(filename: str, row: dict[str, str], field: str) -> list[str]:
     values = _ids(filename, row, field)
-    if any(value not in ITEM_TAGS for value in values):
+    if any(value not in ITEM_TAGS for value in values) or values != sorted(values):
         raise ExportError(f"ITEM_TAG_INVALID:{_location(filename, row)}:{field}")
-    return sorted(values)
+    return values
 
 
 def _hours(filename: str, row: dict[str, str], field: str) -> list[int]:
@@ -358,7 +364,7 @@ def _canonical_runtime_items(items: list[dict[str, Any]]) -> list[dict[str, Any]
                 for condition in effect.get("trigger", {}).get("conditions", []):
                     if condition.get("type") == "source_item_has_any_tag":
                         condition.get("params", {}).get("tags", []).sort()
-                if effect.get("target", {}).get("type") in COLLECTION_FRIENDLY_ITEM_TARGETS:
+                if effect.get("target", {}).get("type") in PARAMETERIZED_FRIENDLY_ITEM_TARGETS:
                     effect.get("target", {}).get("params", {}).get("tags", []).sort()
             profile.get("effects", []).sort(key=lambda value: (value.get("priority", 0), value.get("effectId", "")))
     result.sort(key=lambda value: value.get("itemId", ""))
@@ -526,6 +532,15 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
             target["params"], {"tags"}, f"{context}:target:params"
         )
         _expect_canonical_item_tags(target_params["tags"], f"{context}:target:params:tags")
+    elif target_type in RANDOM_FRIENDLY_ITEM_TARGETS:
+        target_params = _expect_exact_fields(
+            target["params"], {"tags", "excludeSelf", "count"}, f"{context}:target:params"
+        )
+        _expect_canonical_item_tags(target_params["tags"], f"{context}:target:params:tags")
+        if type(target_params["excludeSelf"]) is not bool:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_RANDOM_TARGET_EXCLUDE_SELF_INVALID:{effect_id}")
+        if _expect_integer(target_params["count"], f"{context}:target:params:count", 1) != 1:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_RANDOM_TARGET_COUNT_INVALID:{effect_id}")
     elif target["params"] != {}:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TARGET_INVALID:{effect_id}")
     operation = _expect_exact_fields(effect["operation"], {"type", "params"}, f"{context}:operation")
@@ -556,7 +571,7 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         params = _expect_exact_fields(operation["params"], {"ticks"}, f"{context}:operation:params")
         _expect_integer(params["ticks"], f"{context}:operation:params:ticks", 1)
         valid_target = target_type == "self_item" or (
-            target_type in DETERMINISTIC_FRIENDLY_ITEM_TARGETS | COLLECTION_FRIENDLY_ITEM_TARGETS
+            target_type in DETERMINISTIC_FRIENDLY_ITEM_TARGETS | PARAMETERIZED_FRIENDLY_ITEM_TARGETS
             and trigger_event == "item_ready"
         )
     else:
@@ -740,7 +755,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v22/v20 candidate package without accepting partial data."""
+    """Validate the formal v23/v21 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -2338,9 +2353,26 @@ class ContentAssembler:
                 target_params = {"tags": _item_tags(filename, row, "target_tags")}
                 if trigger_event != "item_ready" or operation_type != "charge":
                     raise ExportError(f"EFFECT_COLLECTION_TARGET_CONTRACT_INVALID:{effect_id}")
+                if row.get("target_exclude_self", "").strip() \
+                        or row.get("target_count", "").strip():
+                    raise ExportError(f"EFFECT_COLLECTION_TARGET_PARAMS_FORGED:{effect_id}")
+            elif target_type in RANDOM_FRIENDLY_ITEM_TARGETS:
+                exclude_self = _boolean(filename, row, "target_exclude_self")
+                target_count = _integer(filename, row, "target_count", 1)
+                if trigger_event != "item_ready" or condition_type != "always" \
+                        or source_relation != "any" or operation_type != "charge" \
+                        or target_count != 1:
+                    raise ExportError(f"EFFECT_RANDOM_TARGET_CONTRACT_INVALID:{effect_id}")
+                target_params = {
+                    "tags": _item_tags(filename, row, "target_tags"),
+                    "excludeSelf": exclude_self,
+                    "count": target_count,
+                }
             else:
-                if row.get("target_tags", "").strip():
-                    raise ExportError(f"EFFECT_TARGET_TAGS_FORGED:{effect_id}")
+                if row.get("target_tags", "").strip() \
+                        or row.get("target_exclude_self", "").strip() \
+                        or row.get("target_count", "").strip():
+                    raise ExportError(f"EFFECT_TARGET_PARAMS_FORGED:{effect_id}")
                 target_params = {}
             if operation_type not in ITEM_EFFECT_OPERATIONS:
                 raise ExportError(f"EFFECT_OPERATION_INVALID:{effect_id}")
@@ -2356,7 +2388,7 @@ class ContentAssembler:
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type == "charge" and not (
                 target_type == "self_item" or (
-                    target_type in DETERMINISTIC_FRIENDLY_ITEM_TARGETS | COLLECTION_FRIENDLY_ITEM_TARGETS
+                    target_type in DETERMINISTIC_FRIENDLY_ITEM_TARGETS | PARAMETERIZED_FRIENDLY_ITEM_TARGETS
                     and trigger_event == "item_ready"
                 )
             ):
@@ -3017,8 +3049,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v20 candidate source.
-            # This adapter is its explicit one-way projection into executable v22.
+            # The current 22-domain workbook is the finite v21 candidate source.
+            # This adapter is its explicit one-way projection into executable v23.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3539,7 +3571,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v22 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v23 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3554,7 +3586,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v22 candidate "
+            "PASS original-pirate v23 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3567,7 +3599,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v22 candidate to {output}")
+        print(f"exported original-pirate v23 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

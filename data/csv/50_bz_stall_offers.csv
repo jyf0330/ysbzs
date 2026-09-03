@@ -16,7 +16,7 @@ package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_mistkelp_remedy_kit,
 package_mistwake_refresh_4,stall_mistwake,4,offer_refresh_4_broadside_signal_relay,item_broadside_signal_relay,bronze,,4,false,3,formal
 package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_saltwind_capstan,item_saltwind_capstan,silver,,7,false,1,formal
 package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_tidefold_bulwark,item_tidefold_bulwark,bronze,,5,false,2,formal
-package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_signal_flare,item_signal_flare,diamond,,13,false,3,formal
+package_mistwake_refresh_5,stall_mistwake,5,offer_refresh_5_crosswind_selector,item_crosswind_selector,bronze,,2,false,3,formal
 package_mistwake_refresh_6,stall_mistwake,6,offer_refresh_6_tidefin_launcher,item_tidefin_launcher,silver,,5,false,1,formal
 package_mistwake_refresh_6,stall_mistwake,6,offer_refresh_6_homeglow_beacon,item_homeglow_beacon,bronze,,6,false,2,formal
 package_mistwake_refresh_6,stall_mistwake,6,offer_refresh_6_storm_compass,item_storm_compass,diamond,,16,false,3,formal

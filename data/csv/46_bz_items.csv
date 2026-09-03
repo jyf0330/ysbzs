@@ -65,3 +65,7 @@ item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,bronze,4,2,9,
 item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,silver,7,3,8,false,0,0,skill_broadside_signal_relay,,,,formal
 item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,gold,11,5,7,false,0,0,skill_broadside_signal_relay,,,,formal
 item_broadside_signal_relay,齐射传令台,"relic, tool",2,bronze,diamond,16,8,6,false,0,0,skill_broadside_signal_relay,,,,formal
+item_crosswind_selector,侧风择发器,"tool, weapon",1,bronze,bronze,2,1,8,false,0,0,skill_crosswind_selector,,,,formal
+item_crosswind_selector,侧风择发器,"tool, weapon",1,bronze,silver,5,2,7,false,0,0,skill_crosswind_selector,,,,formal
+item_crosswind_selector,侧风择发器,"tool, weapon",1,bronze,gold,9,4,6,false,0,0,skill_crosswind_selector,,,,formal
+item_crosswind_selector,侧风择发器,"tool, weapon",1,bronze,diamond,14,7,5,false,0,0,skill_crosswind_selector,,,,formal

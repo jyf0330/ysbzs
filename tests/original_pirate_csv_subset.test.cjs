@@ -45,7 +45,7 @@ function readCsv(filename) {
   };
 }
 
-test('OPCSV01 Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
+test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
   const gameplay = readCsv('44_bz_gameplay.csv');
   const effects = readCsv('47_bz_item_effects.csv');
   assert.deepEqual(gameplay.rows.map((row) => ({
@@ -124,13 +124,29 @@ test('OPCSV01 Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、
     lifestealTerminalPolicy: row.lifesteal_terminal_policy,
     lifestealTraceEmitPolicy: row.lifesteal_trace_emit_policy,
     lifestealRngPolicy: row.lifesteal_rng_policy,
+    regenContract: row.regen_contract,
+    regenGainTriggerPolicy: row.regen_gain_trigger_policy,
+    regenGainSourcePolicy: row.regen_gain_source_policy,
+    regenGainTimingPolicy: row.regen_gain_timing_policy,
+    regenGainRepeatPolicy: row.regen_gain_repeat_policy,
+    regenPulseIntervalTicks: row.regen_pulse_interval_ticks,
+    regenPulseAlignmentPolicy: row.regen_pulse_alignment_policy,
+    regenPulsePhase: row.regen_pulse_phase,
+    regenResolutionOrder: row.regen_resolution_order,
+    regenOverhealPolicy: row.regen_overheal_policy,
+    regenStatusCleansePolicy: row.regen_status_cleanse_policy,
+    regenCritPolicy: row.regen_crit_policy,
+    regenTraceEmitPolicy: row.regen_trace_emit_policy,
+    regenMaxAmount: row.regen_max_amount,
+    regenStackOverflowPolicy: row.regen_stack_overflow_policy,
+    regenRngPolicy: row.regen_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '31',
-    runtimeSchemaVersion: '29',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v29',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v30',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v30',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v30',
+    schemaVersion: '32',
+    runtimeSchemaVersion: '30',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v30',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v31',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v31',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v31',
     critContract: 'ysbzs.original-pirate-critical-damage.v3',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
@@ -200,6 +216,22 @@ test('OPCSV01 Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、
     lifestealTerminalPolicy: 'skip_if_source_damage_is_lethal',
     lifestealTraceEmitPolicy: 'always_for_eligible_nonterminal_damage_even_zero',
     lifestealRngPolicy: 'never',
+    regenContract: 'ysbzs.original-pirate-regen.v1',
+    regenGainTriggerPolicy: 'successful_slow_apply_status',
+    regenGainSourcePolicy: 'another_same_owner_active_board_item',
+    regenGainTimingPolicy: 'item_response_phase_after_source_use_effects',
+    regenGainRepeatPolicy: 'once_per_matching_effect_per_successful_slow_apply',
+    regenPulseIntervalTicks: '20',
+    regenPulseAlignmentPolicy: 'global_tick_multiple',
+    regenPulsePhase: 'tick_start_before_burn_poison_and_item_progress',
+    regenResolutionOrder: 'due_sides_snapshot_then_player_enemy_trace',
+    regenOverhealPolicy: 'cap_at_max_hp_record_overheal',
+    regenStatusCleansePolicy: 'never',
+    regenCritPolicy: 'never',
+    regenTraceEmitPolicy: 'always_when_positive_regen_on_due_tick',
+    regenMaxAmount: '1000000',
+    regenStackOverflowPolicy: 'reject_advance',
+    regenRngPolicy: 'never',
   })));
   assert.equal(effects.headers.includes('stacks'), true);
   assert.equal(effects.headers.includes('crit_chance_bps_delta'), true);
@@ -429,12 +461,12 @@ test('OPCSV07 尾潮回响鼓四品质只在另一件燃烧物品成功施加 Bu
 test('OPCSV08 继航校炮仪四品质只在另一件友方物品成功暴击后推进自身', () => {
   const gameplay = readCsv('44_bz_gameplay.csv').rows;
   assert.equal(gameplay.every((row) => (
-    row.schema_version === '31'
-      && row.runtime_schema_version === '29'
-      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v29'
-      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v30'
-      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v30'
-      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v30'
+    row.schema_version === '32'
+      && row.runtime_schema_version === '30'
+      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v30'
+      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v31'
+      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v31'
+      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v31'
       && row.crit_contract === 'ysbzs.original-pirate-critical-damage.v3'
       && row.crit_success_response_evidence_policy === 'crit_resolve_is_critical_with_bound_committed_damage'
       && row.crit_success_response_source_policy === 'another_same_owner_active_board_item'
@@ -468,4 +500,28 @@ test('OPCSV08 继航校炮仪四品质只在另一件友方物品成功暴击后
     offerId === 'offer_refresh_2_followwake_calibrator'
   ));
   assert.deepEqual([offer.refresh_index, offer.slot_order, offer.quality, offer.price], ['2', '2', 'bronze', '4']);
+});
+
+test('OPCSV09 归辉航标四品质只在另一件友方物品成功施加 Slow 后增加本场再生', () => {
+  const effects = readCsv('47_bz_item_effects.csv').rows.filter(({ trigger_event: triggerEvent }) => (
+    triggerEvent === 'another_friendly_item_applied_slow'
+  ));
+  assert.deepEqual(effects.map((row) => [
+    row.effect_id, row.item_id, row.quality, row.item_skill_id, row.priority,
+    row.trigger_event, row.condition_type, row.condition_tags,
+    row.condition_source_relation, row.target_type, row.target_tags,
+    row.target_exclude_self, row.target_count, row.operation_type, row.amount,
+    row.crit_chance_bps_delta, row.stacks, row.can_crit, row.status, row.ticks,
+  ]), [
+    ['effect_homeglow_beacon_bronze_slow_response_regen', 'item_homeglow_beacon', 'bronze', 'skill_homeglow_beacon', '30', 'another_friendly_item_applied_slow', 'always', '', 'any', 'owner_hero', '', '', '', 'gain_regen_for_fight', '1', '', '', '', '', ''],
+    ['effect_homeglow_beacon_silver_slow_response_regen', 'item_homeglow_beacon', 'silver', 'skill_homeglow_beacon', '30', 'another_friendly_item_applied_slow', 'always', '', 'any', 'owner_hero', '', '', '', 'gain_regen_for_fight', '2', '', '', '', '', ''],
+    ['effect_homeglow_beacon_gold_slow_response_regen', 'item_homeglow_beacon', 'gold', 'skill_homeglow_beacon', '30', 'another_friendly_item_applied_slow', 'always', '', 'any', 'owner_hero', '', '', '', 'gain_regen_for_fight', '3', '', '', '', '', ''],
+    ['effect_homeglow_beacon_diamond_slow_response_regen', 'item_homeglow_beacon', 'diamond', 'skill_homeglow_beacon', '30', 'another_friendly_item_applied_slow', 'always', '', 'any', 'owner_hero', '', '', '', 'gain_regen_for_fight', '4', '', '', '', '', ''],
+  ]);
+  const skill = readCsv('48_bz_item_skills.csv').rows.find(({ item_skill_id: itemSkillId }) => (
+    itemSkillId === 'skill_homeglow_beacon'
+  ));
+  assert.equal(skill.trigger_events, 'another_friendly_item_applied_slow, item_ready');
+  assert.match(skill.description_zh, /另一件友方物品.*成功施加减速.*增加本场再生/);
+  for (const { effect_id: effectId } of effects) assert.match(skill.effect_ids, new RegExp(effectId));
 });

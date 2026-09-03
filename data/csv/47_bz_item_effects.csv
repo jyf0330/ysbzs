@@ -159,3 +159,7 @@ effect_followwake_calibrator_bronze_crit_success_charge,item_followwake_calibrat
 effect_followwake_calibrator_silver_crit_success_charge,item_followwake_calibrator,silver,skill_followwake_calibrator,50,another_friendly_item_crit,always,,any,self_item,,,,charge,,,,,,1,formal
 effect_followwake_calibrator_gold_crit_success_charge,item_followwake_calibrator,gold,skill_followwake_calibrator,50,another_friendly_item_crit,always,,any,self_item,,,,charge,,,,,,2,formal
 effect_followwake_calibrator_diamond_crit_success_charge,item_followwake_calibrator,diamond,skill_followwake_calibrator,50,another_friendly_item_crit,always,,any,self_item,,,,charge,,,,,,2,formal
+effect_homeglow_beacon_bronze_slow_response_regen,item_homeglow_beacon,bronze,skill_homeglow_beacon,30,another_friendly_item_applied_slow,always,,any,owner_hero,,,,gain_regen_for_fight,1,,,,,,formal
+effect_homeglow_beacon_silver_slow_response_regen,item_homeglow_beacon,silver,skill_homeglow_beacon,30,another_friendly_item_applied_slow,always,,any,owner_hero,,,,gain_regen_for_fight,2,,,,,,formal
+effect_homeglow_beacon_gold_slow_response_regen,item_homeglow_beacon,gold,skill_homeglow_beacon,30,another_friendly_item_applied_slow,always,,any,owner_hero,,,,gain_regen_for_fight,3,,,,,,formal
+effect_homeglow_beacon_diamond_slow_response_regen,item_homeglow_beacon,diamond,skill_homeglow_beacon,30,another_friendly_item_applied_slow,always,,any,owner_hero,,,,gain_regen_for_fight,4,,,,,,formal

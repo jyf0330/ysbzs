@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v33 candidate package while still validating every
+outside the formal v34 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 33
+CONTENT_SCHEMA_VERSION = 34
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 31
-SOURCE_CONTENT_SCHEMA_VERSION = 31
-SOURCE_RUNTIME_SCHEMA_VERSION = 29
+RUNTIME_SCHEMA_VERSION = 32
+SOURCE_CONTENT_SCHEMA_VERSION = 32
+SOURCE_RUNTIME_SCHEMA_VERSION = 30
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 23
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 24
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v29"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v30"
 AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
 AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
 AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
@@ -84,6 +84,22 @@ LIFESTEAL_STATUS_CLEANSE_POLICY = "never"
 LIFESTEAL_TERMINAL_POLICY = "skip_if_source_damage_is_lethal"
 LIFESTEAL_TRACE_EMIT_POLICY = "always_for_eligible_nonterminal_damage_even_zero"
 LIFESTEAL_RNG_POLICY = "never"
+REGEN_CONTRACT = "ysbzs.original-pirate-regen.v1"
+REGEN_GAIN_TRIGGER_POLICY = "successful_slow_apply_status"
+REGEN_GAIN_SOURCE_POLICY = "another_same_owner_active_board_item"
+REGEN_GAIN_TIMING_POLICY = "item_response_phase_after_source_use_effects"
+REGEN_GAIN_REPEAT_POLICY = "once_per_matching_effect_per_successful_slow_apply"
+REGEN_PULSE_INTERVAL_TICKS = 20
+REGEN_PULSE_ALIGNMENT_POLICY = "global_tick_multiple"
+REGEN_PULSE_PHASE = "tick_start_before_burn_poison_and_item_progress"
+REGEN_RESOLUTION_ORDER = "due_sides_snapshot_then_player_enemy_trace"
+REGEN_OVERHEAL_POLICY = "cap_at_max_hp_record_overheal"
+REGEN_STATUS_CLEANSE_POLICY = "never"
+REGEN_CRIT_POLICY = "never"
+REGEN_TRACE_EMIT_POLICY = "always_when_positive_regen_on_due_tick"
+REGEN_MAX_AMOUNT = 1000000
+REGEN_STACK_OVERFLOW_POLICY = "reject_advance"
+REGEN_RNG_POLICY = "never"
 BURN_CONTRACT = "ysbzs.original-pirate-burn.v2"
 BURN_PULSE_INTERVAL_TICKS = 1
 BURN_FIRST_PULSE_POLICY = "next_tick"
@@ -159,7 +175,8 @@ ITEM_EFFECT_TARGETS = {
 }
 ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "apply_status", "heal", "gain_shield",
-    "gain_damage_for_fight", "gain_crit_chance_for_fight", "apply_burn", "apply_poison",
+    "gain_damage_for_fight", "gain_crit_chance_for_fight", "gain_regen_for_fight",
+    "apply_burn", "apply_poison",
 }
 REACTIVE_ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "gain_damage_for_fight",
@@ -169,9 +186,10 @@ ITEM_STATUSES = {"haste", "slow", "freeze"}
 ITEM_TAGS = {"ammo", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "weapon"}
 BURN_RESPONSE_TRIGGER = "another_friendly_item_applied_burn"
 CRIT_SUCCESS_RESPONSE_TRIGGER = "another_friendly_item_crit"
+SLOW_SUCCESS_RESPONSE_TRIGGER = "another_friendly_item_applied_slow"
 ITEM_EFFECT_TRIGGERS = {
     "item_ready", "another_friendly_item_used", BURN_RESPONSE_TRIGGER,
-    CRIT_SUCCESS_RESPONSE_TRIGGER, "battle_start",
+    CRIT_SUCCESS_RESPONSE_TRIGGER, SLOW_SUCCESS_RESPONSE_TRIGGER, "battle_start",
 }
 ITEM_EFFECT_CONDITIONS = {
     "always", "source_item_has_any_tag", "source_item_can_crit", "source_item_ammo_depleted",
@@ -240,6 +258,12 @@ DOMAIN_HEADERS = OrderedDict([
         "lifesteal_overheal_policy", "lifesteal_status_cleanse_policy",
         "lifesteal_terminal_policy", "lifesteal_trace_emit_policy",
         "lifesteal_rng_policy",
+        "regen_contract", "regen_gain_trigger_policy", "regen_gain_source_policy",
+        "regen_gain_timing_policy", "regen_gain_repeat_policy",
+        "regen_pulse_interval_ticks", "regen_pulse_alignment_policy",
+        "regen_pulse_phase", "regen_resolution_order", "regen_overheal_policy",
+        "regen_status_cleanse_policy", "regen_crit_policy", "regen_trace_emit_policy",
+        "regen_max_amount", "regen_stack_overflow_policy", "regen_rng_policy",
         "pve_win_bonus_xp",
         "prestige_battle_kind", "ghost_loss_prestige", "ghost_draw_prestige",
         "win_target", "last_chance_policy_id",
@@ -669,6 +693,9 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
     elif trigger_event == CRIT_SUCCESS_RESPONSE_TRIGGER:
         if conditions != [{"type": "always", "params": {}}]:
             raise ExportError(f"EXECUTABLE_ITEM_CRIT_SUCCESS_RESPONSE_TRIGGER_INVALID:{effect_id}")
+    elif trigger_event == SLOW_SUCCESS_RESPONSE_TRIGGER:
+        if conditions != [{"type": "always", "params": {}}]:
+            raise ExportError(f"EXECUTABLE_ITEM_SLOW_SUCCESS_RESPONSE_TRIGGER_INVALID:{effect_id}")
     else:
         if len(conditions) not in {1, 2}:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
@@ -728,6 +755,10 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         target_type != "self_item" or operation_type != "charge"
     ):
         raise ExportError(f"EXECUTABLE_ITEM_CRIT_SUCCESS_RESPONSE_CONTRACT_INVALID:{effect_id}")
+    if trigger_event == SLOW_SUCCESS_RESPONSE_TRIGGER and (
+        target_type != "owner_hero" or operation_type != "gain_regen_for_fight"
+    ):
+        raise ExportError(f"EXECUTABLE_ITEM_SLOW_SUCCESS_RESPONSE_CONTRACT_INVALID:{effect_id}")
     if conditions and conditions[0].get("type") == "source_item_can_crit" \
             and operation_type != "gain_crit_chance_for_fight":
         raise ExportError(f"EXECUTABLE_ITEM_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
@@ -758,14 +789,22 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         ):
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CRIT_CONTRACT_INVALID:{effect_id}")
         valid_target = target_type == "selected_enemy"
-    elif operation_type in {"reload", "heal", "gain_shield", "gain_damage_for_fight"}:
+    elif operation_type in {
+        "reload", "heal", "gain_shield", "gain_damage_for_fight", "gain_regen_for_fight",
+    }:
         params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
-        _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
+        amount = _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
         if operation_type == "gain_damage_for_fight":
             if trigger_event != "another_friendly_item_used" or len(conditions) not in {1, 2} \
                     or conditions[0].get("type") != "source_item_has_any_tag":
                 raise ExportError(f"EXECUTABLE_ITEM_DAMAGE_GROWTH_TRIGGER_INVALID:{effect_id}")
             valid_target = target_type in {"self_item", "trigger_source_item"}
+        elif operation_type == "gain_regen_for_fight":
+            if amount > REGEN_MAX_AMOUNT \
+                    or trigger_event != SLOW_SUCCESS_RESPONSE_TRIGGER \
+                    or conditions != [{"type": "always", "params": {}}]:
+                raise ExportError(f"EXECUTABLE_ITEM_REGEN_GAIN_CONTRACT_INVALID:{effect_id}")
+            valid_target = target_type == "owner_hero"
         else:
             valid_target = target_type == ("self_item" if operation_type == "reload" else "owner_hero")
     elif operation_type == "gain_crit_chance_for_fight":
@@ -1028,7 +1067,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v33/v31 candidate package without accepting partial data."""
+    """Validate the formal v34/v32 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -1176,7 +1215,7 @@ def validate_package(package: Any) -> None:
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
         "terminalPressure", "critRules", "burnRules", "poisonRules",
-        "healStatusCleanseRules", "damageAuraRules", "lifestealRules",
+        "healStatusCleanseRules", "damageAuraRules", "lifestealRules", "regenRules",
         "ammoDepletionRules",
     }, "battleRules")
     terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
@@ -1342,6 +1381,33 @@ def validate_package(package: Any) -> None:
         "rngPolicy": LIFESTEAL_RNG_POLICY,
     }:
         raise ExportError("EXECUTABLE_LIFESTEAL_RULES_INVALID")
+    regen_rules = _expect_exact_fields(battle_rules["regenRules"], {
+        "contractId", "gainTriggerPolicy", "gainSourcePolicy", "gainTimingPolicy",
+        "gainRepeatPolicy", "pulseIntervalTicks", "pulseAlignmentPolicy", "pulsePhase",
+        "resolutionOrder", "overhealPolicy", "statusCleansePolicy", "critPolicy",
+        "traceEmitPolicy", "maxRegen", "stackOverflowPolicy", "rngPolicy",
+    }, "battleRules:regenRules")
+    _expect_integer(regen_rules["pulseIntervalTicks"], "battleRules:regenRules:pulseIntervalTicks", 1)
+    _expect_integer(regen_rules["maxRegen"], "battleRules:regenRules:maxRegen", 1)
+    if regen_rules != {
+        "contractId": REGEN_CONTRACT,
+        "gainTriggerPolicy": REGEN_GAIN_TRIGGER_POLICY,
+        "gainSourcePolicy": REGEN_GAIN_SOURCE_POLICY,
+        "gainTimingPolicy": REGEN_GAIN_TIMING_POLICY,
+        "gainRepeatPolicy": REGEN_GAIN_REPEAT_POLICY,
+        "pulseIntervalTicks": REGEN_PULSE_INTERVAL_TICKS,
+        "pulseAlignmentPolicy": REGEN_PULSE_ALIGNMENT_POLICY,
+        "pulsePhase": REGEN_PULSE_PHASE,
+        "resolutionOrder": REGEN_RESOLUTION_ORDER,
+        "overhealPolicy": REGEN_OVERHEAL_POLICY,
+        "statusCleansePolicy": REGEN_STATUS_CLEANSE_POLICY,
+        "critPolicy": REGEN_CRIT_POLICY,
+        "traceEmitPolicy": REGEN_TRACE_EMIT_POLICY,
+        "maxRegen": REGEN_MAX_AMOUNT,
+        "stackOverflowPolicy": REGEN_STACK_OVERFLOW_POLICY,
+        "rngPolicy": REGEN_RNG_POLICY,
+    }:
+        raise ExportError("EXECUTABLE_REGEN_RULES_INVALID")
     ammo_depletion_rules = _expect_exact_fields(battle_rules["ammoDepletionRules"], {
         "contractId", "triggerPolicy", "evaluationPhase", "snapshotPolicy",
         "repeatPolicy", "nonAmmoPolicy", "reloadPolicy", "rngPolicy",
@@ -2306,6 +2372,7 @@ class ContentAssembler:
                 "healStatusCleanseRules": identity["healStatusCleanseRules"],
                 "damageAuraRules": identity["damageAuraRules"],
                 "lifestealRules": identity["lifestealRules"],
+                "regenRules": identity["regenRules"],
             },
             "progressionRules": progression_rules,
             "generation": {
@@ -2885,6 +2952,11 @@ class ContentAssembler:
                         or source_relation != "any":
                     raise ExportError(f"EFFECT_CRIT_SUCCESS_RESPONSE_TRIGGER_INVALID:{effect_id}")
                 conditions = [{"type": "always", "params": {}}]
+            elif trigger_event == SLOW_SUCCESS_RESPONSE_TRIGGER:
+                if condition_type != "always" or row.get("condition_tags", "").strip() \
+                        or source_relation != "any":
+                    raise ExportError(f"EFFECT_SLOW_SUCCESS_RESPONSE_TRIGGER_INVALID:{effect_id}")
+                conditions = [{"type": "always", "params": {}}]
             else:
                 if condition_type == "source_item_can_crit":
                     if row.get("condition_tags", "").strip() or source_relation != "any":
@@ -2945,6 +3017,10 @@ class ContentAssembler:
                 target_type != "self_item" or operation_type != "charge"
             ):
                 raise ExportError(f"EFFECT_CRIT_SUCCESS_RESPONSE_CONTRACT_INVALID:{effect_id}")
+            if trigger_event == SLOW_SUCCESS_RESPONSE_TRIGGER and (
+                target_type != "owner_hero" or operation_type != "gain_regen_for_fight"
+            ):
+                raise ExportError(f"EFFECT_SLOW_SUCCESS_RESPONSE_CONTRACT_INVALID:{effect_id}")
             if condition_type == "source_item_can_crit" \
                     and operation_type != "gain_crit_chance_for_fight":
                 raise ExportError(f"EFFECT_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
@@ -2991,6 +3067,11 @@ class ContentAssembler:
                         or trigger_event != "another_friendly_item_used" \
                         or conditions != [{"type": "source_item_can_crit", "params": {}}]:
                     raise ExportError(f"EFFECT_CRIT_GROWTH_TRIGGER_INVALID:{effect_id}")
+            if operation_type == "gain_regen_for_fight":
+                if target_type != "owner_hero" \
+                        or trigger_event != SLOW_SUCCESS_RESPONSE_TRIGGER \
+                        or conditions != [{"type": "always", "params": {}}]:
+                    raise ExportError(f"EFFECT_REGEN_GAIN_CONTRACT_INVALID:{effect_id}")
             if operation_type == "apply_status" and target_type not in {"self_item", "first_enemy_item"}:
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type in {"heal", "gain_shield"} and target_type != "owner_hero":
@@ -2998,8 +3079,11 @@ class ContentAssembler:
             params: dict[str, Any]
             if operation_type in {
                 "deal_damage", "reload", "heal", "gain_shield", "gain_damage_for_fight",
+                "gain_regen_for_fight",
             }:
                 amount = _integer(filename, row, "amount", 1)
+                if operation_type == "gain_regen_for_fight" and amount > REGEN_MAX_AMOUNT:
+                    raise ExportError(f"EFFECT_REGEN_AMOUNT_INVALID:{effect_id}")
                 params = {"amount": amount}
                 if operation_type == "deal_damage":
                     params["canCrit"] = _boolean(filename, row, "can_crit")
@@ -3783,8 +3867,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v31 candidate source.
-            # This adapter is its explicit one-way projection into executable v33.
+            # The current 23-domain workbook is the finite v32 candidate source.
+            # This adapter is its explicit one-way projection into executable v34.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3883,6 +3967,22 @@ class ContentAssembler:
             "lifesteal_terminal_policy": LIFESTEAL_TERMINAL_POLICY,
             "lifesteal_trace_emit_policy": LIFESTEAL_TRACE_EMIT_POLICY,
             "lifesteal_rng_policy": LIFESTEAL_RNG_POLICY,
+            "regen_contract": REGEN_CONTRACT,
+            "regen_gain_trigger_policy": REGEN_GAIN_TRIGGER_POLICY,
+            "regen_gain_source_policy": REGEN_GAIN_SOURCE_POLICY,
+            "regen_gain_timing_policy": REGEN_GAIN_TIMING_POLICY,
+            "regen_gain_repeat_policy": REGEN_GAIN_REPEAT_POLICY,
+            "regen_pulse_interval_ticks": str(REGEN_PULSE_INTERVAL_TICKS),
+            "regen_pulse_alignment_policy": REGEN_PULSE_ALIGNMENT_POLICY,
+            "regen_pulse_phase": REGEN_PULSE_PHASE,
+            "regen_resolution_order": REGEN_RESOLUTION_ORDER,
+            "regen_overheal_policy": REGEN_OVERHEAL_POLICY,
+            "regen_status_cleanse_policy": REGEN_STATUS_CLEANSE_POLICY,
+            "regen_crit_policy": REGEN_CRIT_POLICY,
+            "regen_trace_emit_policy": REGEN_TRACE_EMIT_POLICY,
+            "regen_max_amount": str(REGEN_MAX_AMOUNT),
+            "regen_stack_overflow_policy": REGEN_STACK_OVERFLOW_POLICY,
+            "regen_rng_policy": REGEN_RNG_POLICY,
         }
         for field, expected in expected_constants.items():
             actual = _same(rows, filename, field)
@@ -4040,6 +4140,24 @@ class ContentAssembler:
             "terminalPolicy": LIFESTEAL_TERMINAL_POLICY,
             "traceEmitPolicy": LIFESTEAL_TRACE_EMIT_POLICY,
             "rngPolicy": LIFESTEAL_RNG_POLICY,
+        }
+        identity["regenRules"] = {
+            "contractId": REGEN_CONTRACT,
+            "gainTriggerPolicy": REGEN_GAIN_TRIGGER_POLICY,
+            "gainSourcePolicy": REGEN_GAIN_SOURCE_POLICY,
+            "gainTimingPolicy": REGEN_GAIN_TIMING_POLICY,
+            "gainRepeatPolicy": REGEN_GAIN_REPEAT_POLICY,
+            "pulseIntervalTicks": REGEN_PULSE_INTERVAL_TICKS,
+            "pulseAlignmentPolicy": REGEN_PULSE_ALIGNMENT_POLICY,
+            "pulsePhase": REGEN_PULSE_PHASE,
+            "resolutionOrder": REGEN_RESOLUTION_ORDER,
+            "overhealPolicy": REGEN_OVERHEAL_POLICY,
+            "statusCleansePolicy": REGEN_STATUS_CLEANSE_POLICY,
+            "critPolicy": REGEN_CRIT_POLICY,
+            "traceEmitPolicy": REGEN_TRACE_EMIT_POLICY,
+            "maxRegen": REGEN_MAX_AMOUNT,
+            "stackOverflowPolicy": REGEN_STACK_OVERFLOW_POLICY,
+            "rngPolicy": REGEN_RNG_POLICY,
         }
         prestige_battle_kind = _same(rows, filename, "prestige_battle_kind")
         if prestige_battle_kind != "ghost":
@@ -4491,7 +4609,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v33 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v34 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4506,7 +4624,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v33 candidate "
+            "PASS original-pirate v34 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4519,7 +4637,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v33 candidate to {output}")
+        print(f"exported original-pirate v34 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

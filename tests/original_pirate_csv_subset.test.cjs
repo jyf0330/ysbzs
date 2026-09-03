@@ -45,7 +45,7 @@ function readCsv(filename) {
   };
 }
 
-test('OPCSV01 Burn/Poison v1 source rules 与共享的 operation-owned stacks 列严格落在 44/47', () => {
+test('OPCSV01 Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned stacks 严格落在 44/47', () => {
   const gameplay = readCsv('44_bz_gameplay.csv');
   const effects = readCsv('47_bz_item_effects.csv');
   assert.deepEqual(gameplay.rows.map((row) => ({
@@ -78,13 +78,24 @@ test('OPCSV01 Burn/Poison v1 source rules 与共享的 operation-owned stacks �
     poisonCritPolicy: row.poison_crit_policy,
     poisonMaxStacks: row.poison_max_stacks,
     poisonStackOverflowPolicy: row.poison_stack_overflow_policy,
+    healStatusCleanseContract: row.heal_status_cleanse_contract,
+    healStatusCleanseTriggerPolicy: row.heal_status_cleanse_trigger_policy,
+    healStatusCleanseHealBasis: row.heal_status_cleanse_heal_basis,
+    healStatusCleanseScaleBps: row.heal_status_cleanse_scale_bps,
+    healStatusCleanseRoundingMode: row.heal_status_cleanse_rounding_mode,
+    healStatusCleanseStatusTargets: row.heal_status_cleanse_status_targets,
+    healStatusCleanseStatusResolutionPolicy: row.heal_status_cleanse_status_resolution_policy,
+    healStatusCleansePoisonSchedulePolicy: row.heal_status_cleanse_poison_schedule_policy,
+    healStatusCleanseTraceEmitPolicy: row.heal_status_cleanse_trace_emit_policy,
+    healStatusCleanseCritPolicy: row.heal_status_cleanse_crit_policy,
+    healStatusCleanseRngPolicy: row.heal_status_cleanse_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '24',
-    runtimeSchemaVersion: '22',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v22',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v23',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v23',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v23',
+    schemaVersion: '25',
+    runtimeSchemaVersion: '23',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-03-v23',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-03-v24',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-03-v24',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v24',
     burnContract: 'ysbzs.original-pirate-burn.v1',
     pulseIntervalTicks: '1',
     firstPulsePolicy: 'next_tick',
@@ -95,7 +106,7 @@ test('OPCSV01 Burn/Poison v1 source rules 与共享的 operation-owned stacks �
     resolutionOrder: 'simultaneous_sides_then_terminal',
     maxStacks: '1000000',
     stackOverflowPolicy: 'reject_advance',
-    poisonContract: 'ysbzs.original-pirate-poison.v1',
+    poisonContract: 'ysbzs.original-pirate-poison.v2',
     poisonPulseIntervalTicks: '10',
     poisonFirstPulsePolicy: 'after_full_interval',
     poisonReapplySchedulePolicy: 'preserve_existing_due_tick',
@@ -104,10 +115,21 @@ test('OPCSV01 Burn/Poison v1 source rules 与共享的 operation-owned stacks �
     poisonDecayStacksPerPulse: '0',
     poisonShieldPolicy: 'bypass_without_consuming',
     poisonResolutionOrder: 'due_sides_snapshot_then_terminal',
-    poisonHealCleansePolicy: 'none',
+    poisonHealCleansePolicy: 'delegated_to_heal_status_cleanse_rules',
     poisonCritPolicy: 'never',
     poisonMaxStacks: '1000000',
     poisonStackOverflowPolicy: 'reject_advance',
+    healStatusCleanseContract: 'ysbzs.original-pirate-heal-status-cleanse.v1',
+    healStatusCleanseTriggerPolicy: 'after_effective_heal',
+    healStatusCleanseHealBasis: 'applied_heal',
+    healStatusCleanseScaleBps: '2500',
+    healStatusCleanseRoundingMode: 'floor_min_one_if_positive',
+    healStatusCleanseStatusTargets: 'burn, poison',
+    healStatusCleanseStatusResolutionPolicy: 'independent_caps_from_same_snapshot',
+    healStatusCleansePoisonSchedulePolicy: 'clear_due_if_zero_else_preserve',
+    healStatusCleanseTraceEmitPolicy: 'only_when_effective_heal_and_any_status_present',
+    healStatusCleanseCritPolicy: 'never',
+    healStatusCleanseRngPolicy: 'never',
   })));
   assert.equal(effects.headers.includes('stacks'), true);
   const burnRows = effects.rows.filter(({ operation_type: operationType }) => operationType === 'apply_burn');
@@ -160,7 +182,7 @@ test('OPCSV02 烬航灯四品质、初始报价、升级、单铭刻与 Ghost �
   )), true);
 });
 
-test('OPCSV03 墨航滴液器四品质、refresh 5 报价、升级与单铭刻完整且不覆盖 Burn/Crit', () => {
+test('OPCSV03 墨航滴液器四品质、refresh 5 报价、升级与单铭刻完整，并进入 Day 1 正式 Ghost', () => {
   const items = readCsv('46_bz_items.csv').rows.filter(({ item_id: itemId }) => itemId === 'item_inkwake_doser');
   assert.deepEqual(items.map(({
     quality, buy_price: buy, sell_price: sell, cooldown_ticks: cooldown,
@@ -187,7 +209,14 @@ test('OPCSV03 墨航滴液器四品质、refresh 5 报价、升级与单铭刻�
   ));
   assert.equal(enchantments.length, 4);
   assert.equal(enchantments.every(({ enchantment_id: enchantmentId }) => enchantmentId === 'enchant_tailwind'), true);
-  assert.equal(readCsv('60_bz_ghost_snapshots.csv').rows.some(({ item_id: itemId }) => (
-    itemId === 'item_inkwake_doser'
-  )), false);
+  const dayOneGhost = readCsv('60_bz_ghost_snapshots.csv').rows.filter(({ snapshot_id: snapshotId }) => (
+    snapshotId === 'ghost_snapshot_day_01'
+  ));
+  assert.deepEqual(dayOneGhost.map(({
+    instance_id: instanceId, item_id: itemId, quality, start_slot: startSlot,
+  }) => [instanceId, itemId, quality, startSlot]), [
+    ['ghost_d01_emberwake', 'item_emberwake_lantern', 'gold', '2'],
+    ['ghost_d01_inkwake', 'item_inkwake_doser', 'bronze', '3'],
+  ]);
+  assert.equal(dayOneGhost.some(({ item_id: itemId }) => itemId === 'item_patchwork_ram'), false);
 });

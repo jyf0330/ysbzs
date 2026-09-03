@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v26 candidate package while still validating every
+outside the formal v27 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 26
+CONTENT_SCHEMA_VERSION = 27
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 24
-SOURCE_CONTENT_SCHEMA_VERSION = 24
-SOURCE_RUNTIME_SCHEMA_VERSION = 22
+RUNTIME_SCHEMA_VERSION = 25
+SOURCE_CONTENT_SCHEMA_VERSION = 25
+SOURCE_RUNTIME_SCHEMA_VERSION = 23
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v22"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-03-v23"
 BURN_CONTRACT = "ysbzs.original-pirate-burn.v1"
 BURN_PULSE_INTERVAL_TICKS = 1
 BURN_FIRST_PULSE_POLICY = "next_tick"
@@ -62,7 +62,7 @@ BURN_SHIELD_POLICY = "shield_first_consuming"
 BURN_RESOLUTION_ORDER = "simultaneous_sides_then_terminal"
 BURN_MAX_STACKS = 1000000
 BURN_STACK_OVERFLOW_POLICY = "reject_advance"
-POISON_CONTRACT = "ysbzs.original-pirate-poison.v1"
+POISON_CONTRACT = "ysbzs.original-pirate-poison.v2"
 POISON_PULSE_INTERVAL_TICKS = 10
 POISON_FIRST_PULSE_POLICY = "after_full_interval"
 POISON_REAPPLY_SCHEDULE_POLICY = "preserve_existing_due_tick"
@@ -71,10 +71,21 @@ POISON_DAMAGE_PER_STACK = 1
 POISON_DECAY_STACKS_PER_PULSE = 0
 POISON_SHIELD_POLICY = "bypass_without_consuming"
 POISON_RESOLUTION_ORDER = "due_sides_snapshot_then_terminal"
-POISON_HEAL_CLEANSE_POLICY = "none"
+POISON_HEAL_CLEANSE_POLICY = "delegated_to_heal_status_cleanse_rules"
 POISON_CRIT_POLICY = "never"
 POISON_MAX_STACKS = 1000000
 POISON_STACK_OVERFLOW_POLICY = "reject_advance"
+HEAL_STATUS_CLEANSE_CONTRACT = "ysbzs.original-pirate-heal-status-cleanse.v1"
+HEAL_STATUS_CLEANSE_TRIGGER_POLICY = "after_effective_heal"
+HEAL_STATUS_CLEANSE_HEAL_BASIS = "applied_heal"
+HEAL_STATUS_CLEANSE_SCALE_BPS = 2500
+HEAL_STATUS_CLEANSE_ROUNDING_MODE = "floor_min_one_if_positive"
+HEAL_STATUS_CLEANSE_STATUS_TARGETS = ["burn", "poison"]
+HEAL_STATUS_CLEANSE_STATUS_RESOLUTION_POLICY = "independent_caps_from_same_snapshot"
+HEAL_STATUS_CLEANSE_POISON_SCHEDULE_POLICY = "clear_due_if_zero_else_preserve"
+HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY = "only_when_effective_heal_and_any_status_present"
+HEAL_STATUS_CLEANSE_CRIT_POLICY = "never"
+HEAL_STATUS_CLEANSE_RNG_POLICY = "never"
 CRIT_CONTRACT = "ysbzs.original-pirate-critical-damage.v1"
 CRIT_CHANCE_SCALE_BPS = 10000
 CRIT_DAMAGE_MULTIPLIER_MAX_BPS = 100000
@@ -143,6 +154,13 @@ DOMAIN_HEADERS = OrderedDict([
         "poison_decay_stacks_per_pulse", "poison_shield_policy", "poison_resolution_order",
         "poison_heal_cleanse_policy", "poison_crit_policy", "poison_max_stacks",
         "poison_stack_overflow_policy",
+        "heal_status_cleanse_contract", "heal_status_cleanse_trigger_policy",
+        "heal_status_cleanse_heal_basis", "heal_status_cleanse_scale_bps",
+        "heal_status_cleanse_rounding_mode", "heal_status_cleanse_status_targets",
+        "heal_status_cleanse_status_resolution_policy",
+        "heal_status_cleanse_poison_schedule_policy",
+        "heal_status_cleanse_trace_emit_policy", "heal_status_cleanse_crit_policy",
+        "heal_status_cleanse_rng_policy",
         "pve_win_bonus_xp",
         "prestige_battle_kind", "ghost_loss_prestige", "ghost_draw_prestige",
         "win_target", "last_chance_policy_id",
@@ -826,7 +844,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v26/v24 candidate package without accepting partial data."""
+    """Validate the formal v27/v25 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -944,6 +962,7 @@ def validate_package(package: Any) -> None:
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
         "terminalPressure", "critRules", "burnRules", "poisonRules",
+        "healStatusCleanseRules",
     }, "battleRules")
     terminal_pressure = _expect_exact_fields(battle_rules["terminalPressure"], {
         "enabled", "startTick", "intervalTicks", "initialDamage", "incrementDamage",
@@ -1018,6 +1037,34 @@ def validate_package(package: Any) -> None:
         "stackOverflowPolicy": POISON_STACK_OVERFLOW_POLICY,
     }:
         raise ExportError("EXECUTABLE_POISON_RULES_INVALID")
+    heal_status_cleanse_rules = _expect_exact_fields(battle_rules["healStatusCleanseRules"], {
+        "contractId", "triggerPolicy", "healBasis", "cleanseScaleBps", "roundingMode",
+        "statusTargets", "statusResolutionPolicy", "poisonSchedulePolicy",
+        "traceEmitPolicy", "critPolicy", "rngPolicy",
+    }, "battleRules:healStatusCleanseRules")
+    _expect_integer(
+        heal_status_cleanse_rules["cleanseScaleBps"],
+        "battleRules:healStatusCleanseRules:cleanseScaleBps",
+        1,
+    )
+    _expect_list(
+        heal_status_cleanse_rules["statusTargets"],
+        "battleRules:healStatusCleanseRules:statusTargets",
+    )
+    if heal_status_cleanse_rules != {
+        "contractId": HEAL_STATUS_CLEANSE_CONTRACT,
+        "triggerPolicy": HEAL_STATUS_CLEANSE_TRIGGER_POLICY,
+        "healBasis": HEAL_STATUS_CLEANSE_HEAL_BASIS,
+        "cleanseScaleBps": HEAL_STATUS_CLEANSE_SCALE_BPS,
+        "roundingMode": HEAL_STATUS_CLEANSE_ROUNDING_MODE,
+        "statusTargets": HEAL_STATUS_CLEANSE_STATUS_TARGETS,
+        "statusResolutionPolicy": HEAL_STATUS_CLEANSE_STATUS_RESOLUTION_POLICY,
+        "poisonSchedulePolicy": HEAL_STATUS_CLEANSE_POISON_SCHEDULE_POLICY,
+        "traceEmitPolicy": HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY,
+        "critPolicy": HEAL_STATUS_CLEANSE_CRIT_POLICY,
+        "rngPolicy": HEAL_STATUS_CLEANSE_RNG_POLICY,
+    }:
+        raise ExportError("EXECUTABLE_HEAL_STATUS_CLEANSE_RULES_INVALID")
 
     progression = _expect_exact_fields(bundle["progressionRules"], {
         "schema", "schemaVersion", "enabled", "milestones", "options",
@@ -1947,6 +1994,7 @@ class ContentAssembler:
                 "critRules": identity["critRules"],
                 "burnRules": identity["burnRules"],
                 "poisonRules": identity["poisonRules"],
+                "healStatusCleanseRules": identity["healStatusCleanseRules"],
             },
             "progressionRules": progression_rules,
             "generation": {
@@ -3281,8 +3329,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 22-domain workbook is the finite v24 candidate source.
-            # This adapter is its explicit one-way projection into executable v26.
+            # The current 22-domain workbook is the finite v25 candidate source.
+            # This adapter is its explicit one-way projection into executable v27.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -3327,6 +3375,17 @@ class ContentAssembler:
             "poison_crit_policy": POISON_CRIT_POLICY,
             "poison_max_stacks": str(POISON_MAX_STACKS),
             "poison_stack_overflow_policy": POISON_STACK_OVERFLOW_POLICY,
+            "heal_status_cleanse_contract": HEAL_STATUS_CLEANSE_CONTRACT,
+            "heal_status_cleanse_trigger_policy": HEAL_STATUS_CLEANSE_TRIGGER_POLICY,
+            "heal_status_cleanse_heal_basis": HEAL_STATUS_CLEANSE_HEAL_BASIS,
+            "heal_status_cleanse_scale_bps": str(HEAL_STATUS_CLEANSE_SCALE_BPS),
+            "heal_status_cleanse_rounding_mode": HEAL_STATUS_CLEANSE_ROUNDING_MODE,
+            "heal_status_cleanse_status_targets": ", ".join(HEAL_STATUS_CLEANSE_STATUS_TARGETS),
+            "heal_status_cleanse_status_resolution_policy": HEAL_STATUS_CLEANSE_STATUS_RESOLUTION_POLICY,
+            "heal_status_cleanse_poison_schedule_policy": HEAL_STATUS_CLEANSE_POISON_SCHEDULE_POLICY,
+            "heal_status_cleanse_trace_emit_policy": HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY,
+            "heal_status_cleanse_crit_policy": HEAL_STATUS_CLEANSE_CRIT_POLICY,
+            "heal_status_cleanse_rng_policy": HEAL_STATUS_CLEANSE_RNG_POLICY,
         }
         for field, expected in expected_constants.items():
             actual = _same(rows, filename, field)
@@ -3422,6 +3481,19 @@ class ContentAssembler:
             "critPolicy": POISON_CRIT_POLICY,
             "maxStacks": POISON_MAX_STACKS,
             "stackOverflowPolicy": POISON_STACK_OVERFLOW_POLICY,
+        }
+        identity["healStatusCleanseRules"] = {
+            "contractId": HEAL_STATUS_CLEANSE_CONTRACT,
+            "triggerPolicy": HEAL_STATUS_CLEANSE_TRIGGER_POLICY,
+            "healBasis": HEAL_STATUS_CLEANSE_HEAL_BASIS,
+            "cleanseScaleBps": HEAL_STATUS_CLEANSE_SCALE_BPS,
+            "roundingMode": HEAL_STATUS_CLEANSE_ROUNDING_MODE,
+            "statusTargets": list(HEAL_STATUS_CLEANSE_STATUS_TARGETS),
+            "statusResolutionPolicy": HEAL_STATUS_CLEANSE_STATUS_RESOLUTION_POLICY,
+            "poisonSchedulePolicy": HEAL_STATUS_CLEANSE_POISON_SCHEDULE_POLICY,
+            "traceEmitPolicy": HEAL_STATUS_CLEANSE_TRACE_EMIT_POLICY,
+            "critPolicy": HEAL_STATUS_CLEANSE_CRIT_POLICY,
+            "rngPolicy": HEAL_STATUS_CLEANSE_RNG_POLICY,
         }
         prestige_battle_kind = _same(rows, filename, "prestige_battle_kind")
         if prestige_battle_kind != "ghost":
@@ -3873,7 +3945,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v26 runtime and display candidates from 22 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v27 runtime and display candidates from 22 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -3888,7 +3960,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v26 candidate "
+            "PASS original-pirate v27 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -3901,7 +3973,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v26 candidate to {output}")
+        print(f"exported original-pirate v27 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

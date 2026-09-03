@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-03，由 `2026-09-03_original_pirate_burn_response` 数据侧交付刷新。
+最后刷新：2026-09-03，由 `2026-09-03_bazaar_local_gamedata_source_relock_v2` 来源锁交付刷新。
 
 ## 使用规则
 
@@ -54,6 +54,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-03_bazaar_local_gamedata_source_relock_v2.md` — data source: 保留旧 build 快照并追加 `25079259/db8914ab` reference-only GameData 身份锁，固定 Vanessa 140 Item / 138 Skill 集合及不可再分发边界。
 
 - `tasks/done/2026-09-03_original_pirate_burn_response.md` — data rules: 项目原创 Burn 成功施加结果响应、尾潮回响鼓四品质自充能与 156 effects 已完成 workbook→CSV→exporter 真相链、确定性生成和下游消费准备。
 

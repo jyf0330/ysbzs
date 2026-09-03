@@ -110,7 +110,7 @@ test('CSV02D 宠物商品店字段必须能在商品店表中证明', () => {
   for (const [storeId, count] of productCounts) assert.ok(count >= 8, `${storeId} should contain at least 8 pets`);
 });
 
-test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
+test('CSV02F 369 宠来源映射、13 类附魔与版本化本机来源锁完整导出', () => {
   const pets = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '01_pets.csv'), 'utf8'));
   const shapes = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '08_action_shapes.csv'), 'utf8'));
   const enchantments = parseCsv(fs.readFileSync(resolveCsvFile(csvDir, '32_enchantment_types.csv'), 'utf8'));
@@ -140,6 +140,7 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
     'snapshot_the_bazaar_patch_18_0_boundary',
     'snapshot_vanessa_legacy_catalog_v1',
     'snapshot_vanessa_local_cache_24720155_398715e6',
+    'snapshot_vanessa_local_cache_25079259_db8914ab',
   ]);
   const currentBoundary = referenceSnapshots[0];
   assert.equal(currentBoundary.snapshot_role, 'current_version_boundary');
@@ -196,6 +197,38 @@ test('CSV02F 369 宠来源映射和 13 类附魔完整导出', () => {
   assert.equal(localCacheSnapshot.catalog_status, 'reference_reserved');
   assert.equal(
     localCacheSnapshot.unresolved_fields,
+    'game_patch,explicit_patch_build_binding,license_terms,merchant_package_identity',
+  );
+  const relockedLocalCacheSnapshot = referenceSnapshots[3];
+  assert.equal(relockedLocalCacheSnapshot.snapshot_role, 'build_bound_catalog_candidate');
+  assert.equal(relockedLocalCacheSnapshot.source_kind, 'local_installed_server_cache');
+  assert.equal(relockedLocalCacheSnapshot.source_namespace, 'tempo_prod_cache_gamedata');
+  assert.equal(relockedLocalCacheSnapshot.hero_scope, 'vanessa');
+  assert.equal(relockedLocalCacheSnapshot.game_patch, null);
+  assert.equal(
+    relockedLocalCacheSnapshot.game_build,
+    'steam_build_25079259+steam_lastupdated_epoch_1788421691+client_1.0.12221-prod-macos-arm64-adc9ca50+gamedata_etag_db8914ab78bb1832b18bb89e9f5d8113',
+  );
+  assert.equal(relockedLocalCacheSnapshot.steam_app_id, '1617400');
+  assert.equal(relockedLocalCacheSnapshot.steam_announcement_gid, null);
+  assert.equal(relockedLocalCacheSnapshot.published_at_utc, null);
+  assert.equal(relockedLocalCacheSnapshot.official_api_url, null);
+  assert.equal(relockedLocalCacheSnapshot.official_announcement_url, null);
+  assert.equal(
+    relockedLocalCacheSnapshot.raw_content_hash_subject,
+    'local_cache_GameData.db_raw_bytes:bytes=41586688:mtime_epoch=1788411702:manifest_observed_epoch=1788445021',
+  );
+  assert.equal(relockedLocalCacheSnapshot.raw_content_sha256, '7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9');
+  assert.equal(relockedLocalCacheSnapshot.record_count, '278');
+  assert.equal(relockedLocalCacheSnapshot.license_status, 'unverified');
+  assert.equal(relockedLocalCacheSnapshot.usage_scope, 'reference_only');
+  assert.equal(
+    relockedLocalCacheSnapshot.rule_verification_policy,
+    'identity_set_locked:item_id_set_sha256=b18e167f48956a4ef63dcb4a2ba265c05cc7c6aac87739a737c45acea35af7bd;skill_id_set_sha256=66cacbf986415cf6218e98254274d4b58c528136186e7fc7b632d0b01588d81b;per_record_rule_semantics_and_live_trace_required',
+  );
+  assert.equal(relockedLocalCacheSnapshot.catalog_status, 'reference_reserved');
+  assert.equal(
+    relockedLocalCacheSnapshot.unresolved_fields,
     'game_patch,explicit_patch_build_binding,license_terms,merchant_package_identity',
   );
   assert.ok(objects.every(row => row.source_snapshot_id === legacySnapshot.source_snapshot_id));
@@ -291,6 +324,13 @@ forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('recor
 forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('license_status', 'verified'), 'SNAPSHOT_FIELDS_INVALID')
 forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('rule_verification_policy', t['66_bazaar_reference_snapshots.csv'][0][2]['rule_verification_policy'].replace(exporter.LOCAL_CACHE_ITEM_ID_SET_SHA256, '0' * 64)), 'LOCAL_ID_SET_LOCK_INVALID')
 forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][2].__setitem__('rule_verification_policy', 'identity_set_locked:item_id_set_sha256=bad;skill_id_set_sha256=bad;per_record_rule_semantics_and_live_trace_required'), 'LOCAL_ID_SET_LOCK_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][3].__setitem__('game_patch', '18.0'), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][3].__setitem__('game_build', t['66_bazaar_reference_snapshots.csv'][0][3]['game_build'].replace('db8914ab78bb1832b18bb89e9f5d8113', '00000000000000000000000000000000')), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][3].__setitem__('raw_content_sha256', '0' * 64), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][3].__setitem__('record_count', '276'), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][3].__setitem__('license_status', 'verified'), 'SNAPSHOT_FIELDS_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0][3].__setitem__('rule_verification_policy', t['66_bazaar_reference_snapshots.csv'][0][3]['rule_verification_policy'].replace(exporter.RELOCKED_LOCAL_CACHE_ITEM_ID_SET_SHA256, '0' * 64)), 'LOCAL_ID_SET_LOCK_INVALID')
+forged(lambda t: t['66_bazaar_reference_snapshots.csv'][0].pop(), 'SNAPSHOT_IDENTITY_INVALID')
 forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('source_snapshot_id', exporter.CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID), 'LEGACY_BINDING_INVALID')
 forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('rule_verified', 'true'), 'VERIFICATION_INVALID')
 forged(lambda t: t['34_bazaar_objects.csv'][0][0].__setitem__('catalog_status', 'playable'), 'STATUS_INVALID')
@@ -472,6 +512,7 @@ assert nonempty_rows('PETS') == 370, nonempty_rows('PETS')
 assert nonempty_rows('SHOP_STORES') == 31, nonempty_rows('SHOP_STORES')
 assert nonempty_rows('ENCHANTMENTS') == 14, nonempty_rows('ENCHANTMENTS')
 assert nonempty_rows('PET_STAT_RULES') == 87, nonempty_rows('PET_STAT_RULES')
+assert nonempty_rows('BAZAAR_REFERENCE_SNAPSHOTS') == 5, nonempty_rows('BAZAAR_REFERENCE_SNAPSHOTS')
 marker_values = [str(row[1] or '') for row in wb['SHAPES_TRIALS'].iter_rows(min_col=1, max_col=2, values_only=True)]
 assert '13_day7_beast_trial.csv' not in marker_values, marker_values
 mechanic_markers = [str(row[1] or '') for row in wb['MECHANICS_QUALITY'].iter_rows(min_col=1, max_col=2, values_only=True)]

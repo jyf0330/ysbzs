@@ -92,16 +92,35 @@ LEGACY_CATALOG_HASH_FIELDS = [
 CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID = "snapshot_the_bazaar_patch_18_0_boundary"
 LEGACY_CATALOG_SNAPSHOT_ID = "snapshot_vanessa_legacy_catalog_v1"
 LOCAL_CACHE_SNAPSHOT_ID = "snapshot_vanessa_local_cache_24720155_398715e6"
+RELOCKED_LOCAL_CACHE_SNAPSHOT_ID = "snapshot_vanessa_local_cache_25079259_db8914ab"
 OFFICIAL_PATCH_18_CONTENT_SHA256 = "c3d70877395c8fcd6b64f36a72cfd2ce46583f4b493588bd8e4e955ca6d71681"
 LEGACY_CATALOG_SHA256 = "44d1f157bd4f27d4fe3cd12827f67a9b2cd8d64fbd2e03032c10fff1dd7c4cb9"
 LOCAL_CACHE_GAMEDATA_SHA256 = "352c635cda5acf8af7ab91a81fa73a5d33c3e6beec19ffd9e29dbd17d8a89d31"
 LOCAL_CACHE_ITEM_ID_SET_SHA256 = "ac97522afdae6d9f0174b4c695bc272252adcc6ad9aea924853712e43d6d9708"
 LOCAL_CACHE_SKILL_ID_SET_SHA256 = "66cacbf986415cf6218e98254274d4b58c528136186e7fc7b632d0b01588d81b"
+RELOCKED_LOCAL_CACHE_GAMEDATA_SHA256 = "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9"
+RELOCKED_LOCAL_CACHE_ITEM_ID_SET_SHA256 = "b18e167f48956a4ef63dcb4a2ba265c05cc7c6aac87739a737c45acea35af7bd"
+RELOCKED_LOCAL_CACHE_SKILL_ID_SET_SHA256 = "66cacbf986415cf6218e98254274d4b58c528136186e7fc7b632d0b01588d81b"
 LOCAL_CACHE_RULE_VERIFICATION_POLICY = (
     f"identity_set_locked:item_id_set_sha256={LOCAL_CACHE_ITEM_ID_SET_SHA256};"
     f"skill_id_set_sha256={LOCAL_CACHE_SKILL_ID_SET_SHA256};"
     "per_record_rule_semantics_and_live_trace_required"
 )
+RELOCKED_LOCAL_CACHE_RULE_VERIFICATION_POLICY = (
+    f"identity_set_locked:item_id_set_sha256={RELOCKED_LOCAL_CACHE_ITEM_ID_SET_SHA256};"
+    f"skill_id_set_sha256={RELOCKED_LOCAL_CACHE_SKILL_ID_SET_SHA256};"
+    "per_record_rule_semantics_and_live_trace_required"
+)
+LOCAL_CACHE_ID_SET_LOCKS = {
+    LOCAL_CACHE_SNAPSHOT_ID: (
+        LOCAL_CACHE_ITEM_ID_SET_SHA256,
+        LOCAL_CACHE_SKILL_ID_SET_SHA256,
+    ),
+    RELOCKED_LOCAL_CACHE_SNAPSHOT_ID: (
+        RELOCKED_LOCAL_CACHE_ITEM_ID_SET_SHA256,
+        RELOCKED_LOCAL_CACHE_SKILL_ID_SET_SHA256,
+    ),
+}
 
 REFERENCE_SNAPSHOT_ROWS = {
     CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID: {
@@ -176,6 +195,31 @@ REFERENCE_SNAPSHOT_ROWS = {
         "license_status": "unverified",
         "usage_scope": "reference_only",
         "rule_verification_policy": LOCAL_CACHE_RULE_VERIFICATION_POLICY,
+        "catalog_status": "reference_reserved",
+        "unresolved_fields": "game_patch,explicit_patch_build_binding,license_terms,merchant_package_identity",
+    },
+    RELOCKED_LOCAL_CACHE_SNAPSHOT_ID: {
+        "source_snapshot_id": RELOCKED_LOCAL_CACHE_SNAPSHOT_ID,
+        "snapshot_role": "build_bound_catalog_candidate",
+        "source_kind": "local_installed_server_cache",
+        "source_namespace": "tempo_prod_cache_gamedata",
+        "game_id": "the_bazaar",
+        "hero_scope": "vanessa",
+        "game_patch": "",
+        "game_build": "steam_build_25079259+steam_lastupdated_epoch_1788421691+client_1.0.12221-prod-macos-arm64-adc9ca50+gamedata_etag_db8914ab78bb1832b18bb89e9f5d8113",
+        "steam_app_id": "1617400",
+        "steam_announcement_gid": "",
+        "published_at_utc": "",
+        "captured_on": "2026-09-03",
+        "official_api_url": "",
+        "official_announcement_url": "",
+        "raw_content_hash_algorithm": "sha256",
+        "raw_content_hash_subject": "local_cache_GameData.db_raw_bytes:bytes=41586688:mtime_epoch=1788411702:manifest_observed_epoch=1788445021",
+        "raw_content_sha256": RELOCKED_LOCAL_CACHE_GAMEDATA_SHA256,
+        "record_count": "278",
+        "license_status": "unverified",
+        "usage_scope": "reference_only",
+        "rule_verification_policy": RELOCKED_LOCAL_CACHE_RULE_VERIFICATION_POLICY,
         "catalog_status": "reference_reserved",
         "unresolved_fields": "game_patch,explicit_patch_build_binding,license_terms,merchant_package_identity",
     },
@@ -352,20 +396,21 @@ def validate_bazaar_reference_source_lock(tables):
         CURRENT_VERSION_BOUNDARY_SNAPSHOT_ID,
         LEGACY_CATALOG_SNAPSHOT_ID,
         LOCAL_CACHE_SNAPSHOT_ID,
+        RELOCKED_LOCAL_CACHE_SNAPSHOT_ID,
     ]:
         raise ValueError("BAZAAR_REFERENCE_SNAPSHOT_IDENTITY_INVALID")
     for row in snapshot_rows:
         snapshot_id = row.get("source_snapshot_id", "")
-        if snapshot_id == LOCAL_CACHE_SNAPSHOT_ID:
+        if snapshot_id in LOCAL_CACHE_ID_SET_LOCKS:
             local_policy_match = re.fullmatch(
                 r"identity_set_locked:item_id_set_sha256=([0-9a-f]{64});"
                 r"skill_id_set_sha256=([0-9a-f]{64});"
                 r"per_record_rule_semantics_and_live_trace_required",
                 row.get("rule_verification_policy", ""),
             )
-            if local_policy_match is None or local_policy_match.groups() != (
-                LOCAL_CACHE_ITEM_ID_SET_SHA256,
-                LOCAL_CACHE_SKILL_ID_SET_SHA256,
+            if (
+                local_policy_match is None
+                or local_policy_match.groups() != LOCAL_CACHE_ID_SET_LOCKS[snapshot_id]
             ):
                 raise ValueError("BAZAAR_REFERENCE_LOCAL_ID_SET_LOCK_INVALID")
         if row != REFERENCE_SNAPSHOT_ROWS.get(snapshot_id):

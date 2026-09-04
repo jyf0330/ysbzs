@@ -57,6 +57,7 @@ ORIGINAL_PIRATE_EXPORTS = [
     ("BZ_HERO_SKILL_OFFERS", "65_bz_hero_skill_offers.csv"),
     ("BZ_ITEM_AURAS", "66_bz_item_auras.csv"),
     ("BZ_ITEM_SOURCE_BINDINGS", "68_bz_item_source_bindings.csv"),
+    ("BZ_HERO_SKILL_SOURCE_BINDINGS", "71_bz_hero_skill_source_bindings.csv"),
 ]
 
 REFERENCE_SOURCE_EXPORTS = [

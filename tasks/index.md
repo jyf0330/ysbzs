@@ -24,6 +24,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-04_original_pirate_hero_skill_sources.md` — VERIFIED_CORE_ONLY：Lead数据复跑31/31、Godot来源13/13与独立审核通过；版本37/35/26，执行值不变，三阵容原规则验收未完成。
+
 - `tasks/doing/2026-09-04_original_pirate_sparse_skill_qualities.md` — 实际技能品质/引用/相邻升级/可达性数据专项5/5及旧整包拒绝1/1通过，生产逐字不变；来源扩展下一切片。
 
 - `tasks/doing/2026-09-04_original_pirate_max_ammo_aura.md` — 最大弹药 Aura 数据专项4/4、旧Aura及整包拒绝2/2通过，生产包逐字不变；待Lead集成，不声明原版初态通过。

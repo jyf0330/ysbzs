@@ -13,6 +13,7 @@ sid='hero_skill_tailwind_return'
 def fixture(qualities,skill=sid):
     t=copy.deepcopy(tables)
     t['62_bz_hero_skills.csv']=[r for r in t['62_bz_hero_skills.csv'] if r['hero_skill_id']!=skill or r['quality'] in qualities]
+    t['71_bz_hero_skill_source_bindings.csv']=[r for r in t['71_bz_hero_skill_source_bindings.csv'] if r['hero_skill_id']!=skill or r['quality'] in qualities]
     for r in t['63_bz_hero_skill_loadouts.csv']:
         if r['hero_skill_id']==skill:r['quality']=qualities[0]
     offers=[]

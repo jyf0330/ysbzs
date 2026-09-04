@@ -39,6 +39,7 @@ ss=fixture['runtimeBundle']['sourceCatalog']['snapshots'][0]
 ss['originKind']='synthetic_fixture';ss['metadata']={'fixtureId':ss['snapshotId']}
 ss['snapshotDigest']=snapshot_digest(ss)
 for item in fixture['items']:item['sourceBinding']['snapshotDigest']=ss['snapshotDigest']
+for skill in fixture['runtimeBundle']['executableCatalogs']['heroSkills']:skill['sourceBinding']['snapshotDigest']=ss['snapshotDigest']
 validate_sources(fixture['items'],fixture['runtimeBundle'])
 before=copy.deepcopy(p);validate_sources(p['items'],p['runtimeBundle']);assert p==before
 # Use a real identity but retain original test-item rules: this is NOT an original item mapping.

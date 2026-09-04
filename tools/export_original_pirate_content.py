@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 24 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 25 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
-Planner-facing display text remains in the display sidecar. The v36 candidate
+Planner-facing display text remains in the display sidecar. The v37 candidate
 hash includes source identity metadata in runtimeBundle.sourceCatalog, never
 original-game payload or review PASS claims. Every domain/reference is validated
 before emitting output.
@@ -27,10 +27,10 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 36
+CONTENT_SCHEMA_VERSION = 37
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 34
+RUNTIME_SCHEMA_VERSION = 35
 SOURCE_CONTENT_SCHEMA_VERSION = 34
 SOURCE_RUNTIME_SCHEMA_VERSION = 32
 NEW_RUN_SCHEMA_VERSION = 3
@@ -41,7 +41,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 25
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 26
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -212,6 +212,7 @@ INTEGER_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
 
 DOMAIN_HEADERS = OrderedDict([
+    ("71_bz_hero_skill_source_bindings.csv", source_binding.SKILL_HEADERS),
     ("68_bz_item_source_bindings.csv", source_binding.HEADERS),
     ("44_bz_gameplay.csv", [
         "gameplay_id", "content_schema", "schema_version", "quality_profile_schema",
@@ -606,6 +607,8 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
         skill.get("auraIds", []).sort()
     catalogs.get("itemSkills", []).sort(key=lambda value: value.get("itemSkillId", ""))
     for skill in catalogs.get("heroSkills", []):
+        if "sourceBinding" in skill:
+            skill["sourceBinding"]["declaredScopes"].sort(key=source_binding.scope_key)
         for profile in skill.get("qualityProfiles", {}).values():
             profile.get("effects", []).sort(key=lambda value: value.get("effectId", ""))
     catalogs.get("heroSkills", []).sort(key=lambda value: value.get("heroSkillId", ""))
@@ -1082,7 +1085,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v36/v34 candidate package without accepting partial data."""
+    """Validate the formal v37/v35 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -1596,7 +1599,7 @@ def validate_package(package: Any) -> None:
     hero_skills = _directory(
         _expect_list(catalogs["heroSkills"], "catalogs:heroSkills"), "heroSkillId", {
             "heroSkillId", "heroId", "priority", "triggerEvent", "reentrant",
-            "qualityProfiles",
+            "qualityProfiles", "sourceBinding",
         }, "heroSkills"
     )
     if not hero_skills or set(item_skills).intersection(hero_skills):
@@ -3953,8 +3956,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 24-domain workbook is the finite v34 candidate source.
-            # This adapter is its explicit one-way projection into executable v36.
+            # The workbook retains v34 authoring identity; source bindings are explicit domains.
+            # This adapter is its explicit one-way projection into executable v37.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -4695,7 +4698,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v36 runtime and display candidates from 24 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v37 runtime and display candidates from 25 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4710,7 +4713,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v36 candidate "
+            "PASS original-pirate v37 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4723,7 +4726,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v36 candidate to {output}")
+        print(f"exported original-pirate v37 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

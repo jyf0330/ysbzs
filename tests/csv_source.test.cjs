@@ -492,6 +492,7 @@ assert visible == [
     'BZ_HERO_SKILL_LOADOUTS', 'BZ_HERO_SKILL_TRAINERS', 'BZ_HERO_SKILL_OFFERS',
     'BZ_ITEM_AURAS', 'BAZAAR_REFERENCE_MEMBERS', 'BZ_ITEM_SOURCE_BINDINGS',
     'BAZAAR_RUN_SOURCE_VIEWS', 'BAZAAR_RUN_SOURCE_MEMBERS',
+    'BZ_HERO_SKILL_SOURCE_BINDINGS',
 ], visible
 assert not hidden, hidden
 raw_csv_sheets = [name[:-4] for name in csv_files if name[:-4] in wb.sheetnames]

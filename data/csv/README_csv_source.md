@@ -8,13 +8,21 @@
 
 英雄集合小写字典序，以|分隔；品质小写按铜银金钻顺序，以|分隔；生成资格保留Always/GuidOnly源枚举。重复、空值、错误大小写、未知字段拒绝。成员按(source_type,source_uuid)排序，依70表头列序形成字符串二维数组，紧凑JSON UTF-8 SHA256固定为04aaf9676efff60f370c1400168390909715d975e702c87f021737c72cb3b6a5。strict模块固定锁校验，不允许手填或重签CSV摘要来添加成员。
 
-生成/复验：`python3 tools/export_master_to_csv.py --reference-source-lock-only [--check]`。一次性脚本tools/add_bazaar_run_source_view.py只读已锁DB，核验SHA和完整身份摘要后局部新增工作表，并校验旧表所有单元格值不变。本视图不进入当前runtime sourceCatalog/content/display，后续完整来源绑定迁移另行消费。
+生成/复验：`python3 tools/export_master_to_csv.py --reference-source-lock-only [--check]`。一次性脚本tools/add_bazaar_run_source_view.py只读已锁DB，核验SHA和完整身份摘要后局部新增工作表，并校验旧表所有单元格值不变。视图仅在明确绑定时进入sourceCatalog v2的external_run_view分支，不成为执行规则或自动技能池。
+
+## 英雄技能来源绑定（2026-09-04）
+
+`BZ_HERO_SKILL_SOURCE_BINDINGS -> 71_bz_hero_skill_source_bindings.csv` 五列为hero_skill_id、quality、scope_id、source_snapshot_id、source_object_id。定义级heroSkills.sourceBinding使用同一个snapshotId/snapshotDigest/objectId，declaredScopes仅含quality和hero_skill_profile，不带enchantmentId，恰好覆盖实际品质档案。8条正式声明均属两个原创技能；local/synthetic objectId必须等于heroSkillId，external必须为typed skill UUID，不可冒用item UUID。
+
+external_run_view保持snapshot五字段。metadata为parentSnapshotId、artifactMetadata、selectionScope、evidenceUrl、memberCount、membersSha256；除artifactMetadata字典外均为字符串，父66只有game_patch空值转null。members带sourceType/sourceUuid/sourceHeroes/spawningEligibility/sourceQualities五字符串，完整15成员摘要复用70算法（含view_id）。父快照无需作为未引用目录另装配，不继承父Vanessa集合范围。外部声明品质必须存在于sourceQualities；这些是身份与声明覆盖，不是执行审核。
+
+当前sourceCatalog v2/content37/runtime35/catalog26；规则32、revision34及56源快照不变。所有技能绑定及目录进入原bundleHash/serviceHash链，不另建审核真相。工作簿新增脚本tools/add_original_pirate_hero_skill_sources.py只添加71工作表并核验46个既有表值不变。
 
 ## 逐物品来源绑定（2026-09-04）
 
 `BZ_ITEM_SOURCE_BINDINGS -> 68_bz_item_source_bindings.csv` 只声明六列：item_id、quality、enchantment_id、scope_id、source_snapshot_id、source_object_id。每件物品在同一个对象/快照下精确声明全部品质的none和已配置附魔；battle_profile不表示审核通过，none不是所有附魔通配符。现有230条关系全部对应22件原创物品，原版执行审核覆盖不增加。
 
-`runtimeBundle.sourceCatalog` 从56及按需读取、完整验证的66/67派生；local metadata去掉56的snapshot_id，external metadata去掉66的source_snapshot_id且仅game_patch空值转null，其余保留字符串。external成员为67完整140 item UUID，不包含专有规则。snapshotDigest是去掉自身字段后、成员按sourceType/sourceUuid排序的canonical JSON UTF-8 SHA256；JSON字典键排序、紧凑分隔、不转义Unicode。items.sourceBinding带同一摘要与声明范围，目录进入bundle hash。synthetic_fixture仅显式测试包身份，生产CSV不生成；无PASS或verifiedScopes字段。当前content36/runtime34、rules32、revision34；历史切片版本不覆盖当前身份。
+`runtimeBundle.sourceCatalog` 从56及按需读取、完整验证的66/67派生；local metadata去掉56的snapshot_id，external metadata去掉66的source_snapshot_id且仅game_patch空值转null，其余保留字符串。旧external_reference成员为67完整140 item UUID，不包含专有规则。snapshotDigest是去掉自身字段后、成员按sourceType/sourceUuid排序的canonical JSON UTF-8 SHA256；JSON字典键排序、紧凑分隔、不转义Unicode。items.sourceBinding带同一摘要与声明范围，目录进入bundle hash。synthetic_fixture仅显式测试包身份，生产CSV不生成；无PASS或verifiedScopes字段。原切片content36/runtime34现由上述技能来源迁移升级，rules32/revision34保留。
 
 ## Poison 频率纠正（2026-09-04）
 

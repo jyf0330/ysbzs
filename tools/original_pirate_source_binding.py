@@ -5,10 +5,14 @@ import json
 import re
 
 import export_master_to_csv as source
+import bazaar_run_source_views as run_view
 
-SCHEMA = "ysbzs.original-pirate-source-catalog.v1"
+SCHEMA = "ysbzs.original-pirate-source-catalog.v2"
 QUALITIES = ("bronze", "silver", "gold", "diamond")
 HEADERS = ["item_id", "quality", "enchantment_id", "scope_id", "source_snapshot_id", "source_object_id"]
+SKILL_HEADERS = ["hero_skill_id", "quality", "scope_id", "source_snapshot_id", "source_object_id"]
+RUN_METADATA_FIELDS = ["parentSnapshotId", "artifactMetadata", "selectionScope", "evidenceUrl", "memberCount", "membersSha256"]
+RUN_MEMBER_FIELDS = ["sourceType", "sourceUuid", "sourceHeroes", "spawningEligibility", "sourceQualities"]
 LOCAL_FIELDS = ["source_kind", "source_revision", "captured_on", "license_note", "catalog_scope", "completeness", "catalog_status"]
 EXTERNAL_FIELDS = source.REFERENCE_SNAPSHOT_HEADERS[1:]
 
@@ -23,7 +27,13 @@ def _id(value):
 
 
 def scope_key(value):
-    return (QUALITIES.index(value["quality"]), value["enchantmentId"], value["scopeId"])
+    return (QUALITIES.index(value["quality"]), value.get("enchantmentId", ""), value["scopeId"])
+
+
+def run_metadata(view, parent):
+    return {"parentSnapshotId": view["parent_source_snapshot_id"], "artifactMetadata": external_snapshot(parent),
+            "selectionScope": view["selection_scope"], "evidenceUrl": view["evidence_url"],
+            "memberCount": view["member_count"], "membersSha256": view["members_sha256"]}
 
 
 def canonical_catalog(catalog):
@@ -81,6 +91,20 @@ def validate_sources(items, bundle):
             _exact(metadata, ["fixtureId"], "FIXTURE_METADATA_INVALID")
             if metadata["fixtureId"] != sid or members:
                 raise ValueError("SOURCE_FIXTURE_INVALID")
+        elif kind == "external_run_view":
+            _exact(metadata, RUN_METADATA_FIELDS, "RUN_METADATA_INVALID")
+            expected_meta = run_metadata(run_view.view_row(source.RELOCKED_LOCAL_CACHE_SNAPSHOT_ID),
+                                        source.REFERENCE_SNAPSHOT_ROWS[source.RELOCKED_LOCAL_CACHE_SNAPSHOT_ID])
+            if sid != run_view.VIEW_ID or metadata != expected_meta:
+                raise ValueError("SOURCE_RUN_VIEW_LOCK_INVALID")
+            rows = []
+            for member in members:
+                _exact(member, RUN_MEMBER_FIELDS, "RUN_MEMBER_FIELDS_INVALID")
+                if any(not isinstance(member[k], str) for k in RUN_MEMBER_FIELDS):
+                    raise ValueError("SOURCE_RUN_MEMBER_VALUE_INVALID")
+                rows.append(dict(zip(run_view.MEMBER_HEADERS, [sid] + [member[k] for k in RUN_MEMBER_FIELDS])))
+            if len(rows) != 15 or run_view.member_digest(rows) != run_view.MEMBERS_SHA256:
+                raise ValueError("SOURCE_RUN_MEMBER_SET_INVALID")
         elif kind == "external_reference":
             _exact(metadata, EXTERNAL_FIELDS, "EXTERNAL_METADATA_INVALID")
             if sid != source.RELOCKED_LOCAL_CACHE_SNAPSHOT_ID or metadata != external_snapshot():
@@ -103,7 +127,10 @@ def validate_sources(items, bundle):
         snapshots[sid] = snapshot
     expected = expected_scopes(items, bundle)
     used = set()
-    for item in items:
+    definitions = [(item, "item", item["itemId"]) for item in items] + [
+        (skill, "skill", skill["heroSkillId"]) for skill in bundle["executableCatalogs"]["heroSkills"]
+    ]
+    for item, source_type, object_id in definitions:
         binding = item.get("sourceBinding")
         _exact(binding, ["snapshotId", "snapshotDigest", "objectId", "declaredScopes"], "BINDING_FIELDS_INVALID")
         sid = binding["snapshotId"]
@@ -113,20 +140,28 @@ def validate_sources(items, bundle):
         used.add(sid)
         if binding["snapshotDigest"] != snapshot["snapshotDigest"]:
             raise ValueError("SOURCE_BINDING_DIGEST_MISMATCH")
-        if snapshot["originKind"] == "external_reference":
-            if binding["objectId"] not in [m["sourceUuid"] for m in snapshot["members"]]:
+        member = None
+        if snapshot["originKind"] in ("external_reference", "external_run_view"):
+            member = next((m for m in snapshot["members"] if m["sourceType"] == source_type and m["sourceUuid"] == binding["objectId"]), None)
+            if member is None:
                 raise ValueError("SOURCE_BINDING_OBJECT_UNKNOWN")
-        elif binding["objectId"] != item["itemId"]:
+        elif binding["objectId"] != object_id:
             raise ValueError("SOURCE_BINDING_LOCAL_OBJECT_MISMATCH")
         if not isinstance(binding["declaredScopes"], list):
             raise ValueError("SOURCE_SCOPES_INVALID")
         scopes = []
         for scope in binding["declaredScopes"]:
-            _exact(scope, ["quality", "enchantmentId", "scopeId"], "SCOPE_FIELDS_INVALID")
-            if scope["quality"] not in QUALITIES or not _id(scope["enchantmentId"]) or scope["scopeId"] != "battle_profile":
+            fields = ["quality", "scopeId"] if source_type == "skill" else ["quality", "enchantmentId", "scopeId"]
+            _exact(scope, fields, "SCOPE_FIELDS_INVALID")
+            if scope["quality"] not in QUALITIES or scope["scopeId"] != ("hero_skill_profile" if source_type == "skill" else "battle_profile"):
                 raise ValueError("SOURCE_SCOPE_INVALID")
-            scopes.append((scope["quality"], scope["enchantmentId"], scope["scopeId"]))
-        if len(set(scopes)) != len(scopes) or set(scopes) != expected[item["itemId"]]:
+            if source_type == "item" and not _id(scope["enchantmentId"]):
+                raise ValueError("SOURCE_SCOPE_INVALID")
+            if member is not None and snapshot["originKind"] == "external_run_view" and scope["quality"] not in member["sourceQualities"].split('|'):
+                raise ValueError("SOURCE_MEMBER_QUALITY_UNDECLARED")
+            scopes.append((scope["quality"], scope["scopeId"]) if source_type == "skill" else (scope["quality"], scope["enchantmentId"], scope["scopeId"]))
+        expected_set = {(q, "hero_skill_profile") for q in item["qualityProfiles"]} if source_type == "skill" else expected[object_id]
+        if len(set(scopes)) != len(scopes) or set(scopes) != expected_set:
             raise ValueError("SOURCE_SCOPE_COVERAGE_INVALID")
     if used != set(snapshots):
         raise ValueError("SOURCE_CATALOG_UNUSED_SNAPSHOT")
@@ -137,7 +172,8 @@ def assemble_sources(tables, csv_dir, items, bundle):
     local_id = local["snapshot_id"]
     available = {local_id: {"snapshotId": local_id, "originKind": "local_original", "metadata": {k: local[k] for k in LOCAL_FIELDS}, "members": []}}
     rows = tables["68_bz_item_source_bindings.csv"]
-    if any(row["source_snapshot_id"] != local_id for row in rows):
+    skill_rows = tables["71_bz_hero_skill_source_bindings.csv"]
+    if any(row["source_snapshot_id"] != local_id for row in rows + skill_rows):
         reference = {filename: source.read_csv(csv_dir / filename) for _, filename in source.REFERENCE_SOURCE_EXPORTS}
         source.validate_bazaar_reference_members(reference)
         sid = source.RELOCKED_LOCAL_CACHE_SNAPSHOT_ID
@@ -146,6 +182,13 @@ def assemble_sources(tables, csv_dir, items, bundle):
             {"sourceType": row["source_type"], "sourceUuid": row["source_uuid"]}
             for row in reference["67_bazaar_reference_members.csv"][0]
         ]}
+        if any(row["source_snapshot_id"] == run_view.VIEW_ID for row in rows + skill_rows):
+            run_view.validate(reference)
+            view = reference[run_view.VIEW_FILE][0][0]
+            available[run_view.VIEW_ID] = {"snapshotId": run_view.VIEW_ID, "originKind": "external_run_view",
+                "metadata": run_metadata(view, snapshot_row), "members": [
+                    dict(zip(RUN_MEMBER_FIELDS, [r[k] for k in run_view.MEMBER_HEADERS[1:]]))
+                    for r in reference[run_view.MEMBER_FILE][0]]}
     index = {item["itemId"]: item for item in items}
     used = set()
     for row in rows:
@@ -160,10 +203,25 @@ def assemble_sources(tables, csv_dir, items, bundle):
             raise ValueError("SOURCE_ROW_OBJECT_CHANGED")
         binding["declaredScopes"].append({"quality": row["quality"], "enchantmentId": row["enchantment_id"], "scopeId": row["scope_id"]})
         used.add(sid)
+    skill_index = {k["heroSkillId"]: k for k in bundle["executableCatalogs"]["heroSkills"]}
+    for row in skill_rows:
+        skill_id, sid, oid = row["hero_skill_id"], row["source_snapshot_id"], row["source_object_id"]
+        if skill_id not in skill_index or sid not in available:
+            raise ValueError("SOURCE_SKILL_ROW_REFERENCE_UNKNOWN")
+        skill = skill_index[skill_id]
+        if "sourceBinding" not in skill:
+            skill["sourceBinding"] = {"snapshotId": sid, "snapshotDigest": snapshot_digest(available[sid]), "objectId": oid, "declaredScopes": []}
+        binding = skill["sourceBinding"]
+        if binding["snapshotId"] != sid or binding["objectId"] != oid:
+            raise ValueError("SOURCE_SKILL_ROW_OBJECT_CHANGED")
+        binding["declaredScopes"].append({"quality": row["quality"], "scopeId": row["scope_id"]})
+        used.add(sid)
     for sid in used:
         available[sid]["snapshotDigest"] = snapshot_digest(available[sid])
     bundle["sourceCatalog"] = {"schema": SCHEMA, "snapshots": [available[sid] for sid in sorted(used)]}
     validate_sources(items, bundle)
     for item in items:
         item["sourceBinding"]["declaredScopes"].sort(key=scope_key)
+    for skill in skill_index.values():
+        skill["sourceBinding"]["declaredScopes"].sort(key=scope_key)
     bundle["sourceCatalog"] = canonical_catalog(bundle["sourceCatalog"])

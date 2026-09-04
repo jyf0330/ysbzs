@@ -141,12 +141,12 @@ test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Pois
     regenStackOverflowPolicy: row.regen_stack_overflow_policy,
     regenRngPolicy: row.regen_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '32',
-    runtimeSchemaVersion: '30',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v30',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v31',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v31',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v31',
+    schemaVersion: '33',
+    runtimeSchemaVersion: '31',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v31',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v32',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v32',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v32',
     critContract: 'ysbzs.original-pirate-critical-damage.v3',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
@@ -461,12 +461,12 @@ test('OPCSV07 尾潮回响鼓四品质只在另一件燃烧物品成功施加 Bu
 test('OPCSV08 继航校炮仪四品质只在另一件友方物品成功暴击后推进自身', () => {
   const gameplay = readCsv('44_bz_gameplay.csv').rows;
   assert.equal(gameplay.every((row) => (
-    row.schema_version === '32'
-      && row.runtime_schema_version === '30'
-      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v30'
-      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v31'
-      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v31'
-      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v31'
+    row.schema_version === '33'
+      && row.runtime_schema_version === '31'
+      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v31'
+      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v32'
+      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v32'
+      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v32'
       && row.crit_contract === 'ysbzs.original-pirate-critical-damage.v3'
       && row.crit_success_response_evidence_policy === 'crit_resolve_is_critical_with_bound_committed_damage'
       && row.crit_success_response_source_policy === 'another_same_owner_active_board_item'

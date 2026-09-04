@@ -1,6 +1,6 @@
 # 任务总览
 
-最后刷新：2026-09-04，由 `2026-09-04_original_pirate_regen_on_slow` 数据规则实现刷新。
+最后刷新：2026-09-04，由 `2026-09-04_original_pirate_passive_items` 数据合同实现刷新。
 
 ## 使用规则
 
@@ -57,6 +57,8 @@
 - 无
 
 ## DONE
+
+- `tasks/done/2026-09-04_original_pirate_passive_items.md` — 数据合同切片完成：显式 cooldown/passive，原 22 件数值效果不变，38/38 数据测试通过；Godot 性能/实窗与三构筑独立日志验收仍未关闭。
 
 - `tasks/done/2026-09-04_original_pirate_crit_success_response.md` — data rules: Crit v3 与另一件友方物品成功暴击后驱动继航校炮仪自充能的数据真相链已完成，并保持原有正式报价、升级与铭刻可达。
 

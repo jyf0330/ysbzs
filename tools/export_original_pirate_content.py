@@ -3,7 +3,7 @@
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v34 candidate package while still validating every
+outside the formal v35 candidate package while still validating every
 domain and every reference before emitting any output.
 """
 
@@ -25,12 +25,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 34
+CONTENT_SCHEMA_VERSION = 35
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 32
-SOURCE_CONTENT_SCHEMA_VERSION = 32
-SOURCE_RUNTIME_SCHEMA_VERSION = 30
+RUNTIME_SCHEMA_VERSION = 33
+SOURCE_CONTENT_SCHEMA_VERSION = 33
+SOURCE_RUNTIME_SCHEMA_VERSION = 31
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -39,7 +39,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 24
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 25
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -51,7 +51,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v30"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v31"
 AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
 AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
 AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
@@ -276,7 +276,7 @@ DOMAIN_HEADERS = OrderedDict([
     ]),
     ("46_bz_items.csv", [
         "item_id", "name_zh", "tags", "slot_width", "base_quality", "quality", "buy_price",
-        "sell_price", "cooldown_ticks", "crit_chance_bps", "ammo_enabled", "ammo_initial", "ammo_maximum",
+        "sell_price", "activation_mode", "cooldown_ticks", "crit_chance_bps", "ammo_enabled", "ammo_initial", "ammo_maximum",
         "item_skill_id", "starter_instance_id", "starter_location", "starter_start_slot",
         "catalog_status",
     ]),
@@ -1067,7 +1067,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v34/v32 candidate package without accepting partial data."""
+    """Validate the formal v35/v33 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -1106,17 +1106,26 @@ def validate_package(package: Any) -> None:
         base_quality = item.get("baseQuality")
         if base_quality not in QUALITIES or qualities != QUALITIES[QUALITIES.index(base_quality):]:
             raise ExportError(f"EXECUTABLE_ITEM_PROFILE_COVERAGE_INVALID:{item_id}")
+        if not isinstance(profiles[base_quality], dict):
+            raise ExportError(f"EXECUTABLE_ITEM_PROFILE_INVALID:{item_id}:{base_quality}")
         item_qualities[item_id] = qualities
         for quality, profile in profiles.items():
             if quality not in QUALITIES or not isinstance(profile, dict):
                 raise ExportError(f"EXECUTABLE_ITEM_PROFILE_INVALID:{item_id}:{quality}")
             _expect_exact_fields(profile, {
-                "buyPrice", "sellPrice", "baseCooldownTicks", "critChanceBps", "ammo",
+                "buyPrice", "sellPrice", "activationMode", "baseCooldownTicks", "critChanceBps", "ammo",
                 "effects", "auras",
             }, f"items:{item_id}:{quality}")
             _expect_integer(profile["buyPrice"], f"items:{item_id}:{quality}:buyPrice", 1)
             _expect_integer(profile["sellPrice"], f"items:{item_id}:{quality}:sellPrice", 0)
-            _expect_integer(profile["baseCooldownTicks"], f"items:{item_id}:{quality}:baseCooldownTicks", 1)
+            mode = profile["activationMode"]
+            if mode not in ("cooldown", "passive"):
+                raise ExportError(f"EXECUTABLE_ITEM_ACTIVATION_MODE_INVALID:{item_id}:{quality}")
+            if mode != profiles[base_quality].get("activationMode"):
+                raise ExportError(f"EXECUTABLE_ITEM_ACTIVATION_MODE_CHANGED:{item_id}:{quality}")
+            cooldown = _expect_integer(profile["baseCooldownTicks"], f"items:{item_id}:{quality}:baseCooldownTicks", 0)
+            if (mode == "cooldown" and cooldown <= 0) or (mode == "passive" and cooldown != 0):
+                raise ExportError(f"EXECUTABLE_ITEM_ACTIVATION_COOLDOWN_MISMATCH:{item_id}:{quality}")
             crit_chance_bps = _expect_integer(
                 profile["critChanceBps"], f"items:{item_id}:{quality}:critChanceBps", 0
             )
@@ -1137,6 +1146,8 @@ def validate_package(package: Any) -> None:
                 raise ExportError(f"EXECUTABLE_ITEM_AMMO_RANGE_INVALID:{item_id}:{quality}")
             if not ammo["enabled"] and (ammo_initial != 0 or ammo_maximum != 0):
                 raise ExportError(f"EXECUTABLE_ITEM_AMMO_DISABLED_INVALID:{item_id}:{quality}")
+            if mode == "passive" and ammo["enabled"]:
+                raise ExportError(f"EXECUTABLE_PASSIVE_ITEM_AMMO_FORBIDDEN:{item_id}:{quality}")
             item_profiles.add((item_id, quality))
             item_profile_values[(item_id, quality)] = profile
             profile_events: set[str] = set()
@@ -1188,8 +1199,16 @@ def validate_package(package: Any) -> None:
                 raise ExportError(
                     f"EXECUTABLE_ITEM_AMMO_DEPLETION_PROFILE_MISMATCH:{item_id}:{quality}"
                 )
-            if "item_ready" not in profile_events:
+            if mode == "cooldown" and "item_ready" not in profile_events:
                 raise ExportError(f"EXECUTABLE_ITEM_READY_EFFECT_REQUIRED:{item_id}:{quality}")
+            if mode == "passive" and ("item_ready" in profile_events or not (profile["effects"] or profile["auras"])):
+                raise ExportError(f"EXECUTABLE_PASSIVE_ITEM_EFFECTS_INVALID:{item_id}:{quality}")
+            if mode == "passive" and any(
+                effect["target"]["type"] == "self_item"
+                and effect["operation"]["type"] in ("charge", "apply_status", "reload")
+                for effect in profile["effects"]
+            ):
+                raise ExportError(f"EXECUTABLE_PASSIVE_SELF_CLOCK_FORBIDDEN:{item_id}:{quality}")
             if any(
                 effect.get("operation", {}).get("type") == "gain_damage_for_fight"
                 for effect in profile["effects"]
@@ -1525,7 +1544,7 @@ def validate_package(package: Any) -> None:
     referenced_auras: set[str] = set()
     for item_skill_id, skill in item_skills.items():
         trigger_events = _expect_list(skill["triggerEvents"], f"itemSkills:{item_skill_id}:triggerEvents")
-        if not trigger_events or trigger_events != sorted(trigger_events) \
+        if trigger_events != sorted(trigger_events) \
                 or len(trigger_events) != len(set(trigger_events)) \
                 or any(event not in ITEM_EFFECT_TRIGGERS for event in trigger_events):
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_TRIGGER_INVALID:{item_skill_id}")
@@ -1533,7 +1552,7 @@ def validate_package(package: Any) -> None:
             _expect_stable_id(effect_id, f"itemSkills:{item_skill_id}:effectIds")
             for effect_id in _expect_list(skill["effectIds"], f"itemSkills:{item_skill_id}:effectIds")
         ]
-        if not effect_ids or len(effect_ids) != len(set(effect_ids)) or any(effect_id not in item_effect_ids for effect_id in effect_ids):
+        if len(effect_ids) != len(set(effect_ids)) or any(effect_id not in item_effect_ids for effect_id in effect_ids):
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_EFFECT_REFERENCE_INVALID:{item_skill_id}")
         if referenced_effects.intersection(effect_ids):
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_EFFECT_OWNERSHIP_INVALID:{item_skill_id}")
@@ -1552,6 +1571,8 @@ def validate_package(package: Any) -> None:
         if referenced_auras.intersection(aura_ids):
             raise ExportError(f"EXECUTABLE_ITEM_SKILL_AURA_OWNERSHIP_INVALID:{item_skill_id}")
         referenced_auras.update(aura_ids)
+        if not effect_ids and not aura_ids:
+            raise ExportError(f"EXECUTABLE_ITEM_SKILL_EMPTY:{item_skill_id}")
     if referenced_effects != item_effect_ids:
         raise ExportError("EXECUTABLE_ITEM_SKILL_EFFECT_COVERAGE_INVALID")
     if referenced_auras != item_aura_ids:
@@ -1942,7 +1963,9 @@ def validate_package(package: Any) -> None:
             if cooldown_delta == 0 and damage_delta == 0 and ammo_delta == 0:
                 raise ExportError(f"EXECUTABLE_ENCHANTMENT_PROFILE_NOOP:{enchantment_id}:{item_id}:{quality}")
             item_profile = item_profile_values[profile_key]
-            if item_profile["baseCooldownTicks"] + cooldown_delta <= 0:
+            if item_profile["activationMode"] == "passive" and (cooldown_delta != 0 or ammo_delta != 0):
+                raise ExportError(f"EXECUTABLE_PASSIVE_ENCHANTMENT_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
+            if item_profile["activationMode"] == "cooldown" and item_profile["baseCooldownTicks"] + cooldown_delta <= 0:
                 raise ExportError(f"EXECUTABLE_ENCHANTMENT_COOLDOWN_INVALID:{enchantment_id}:{item_id}:{quality}")
             if ammo_delta > 0 and not item_profile["ammo"]["enabled"]:
                 raise ExportError(f"EXECUTABLE_ENCHANTMENT_AMMO_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
@@ -2640,15 +2663,16 @@ class ContentAssembler:
             _formal(filename, row)
             _require_chinese(filename, row, "name_zh")
             _require_chinese(filename, row, "description_zh")
-            trigger_events = _ids(filename, row, "trigger_events")
-            if "item_ready" not in trigger_events \
-                    or any(event not in ITEM_EFFECT_TRIGGERS for event in trigger_events):
+            trigger_events = _ids(filename, row, "trigger_events", allow_empty=True)
+            if any(event not in ITEM_EFFECT_TRIGGERS for event in trigger_events):
                 raise ExportError(f"ITEM_SKILL_TRIGGER_INVALID:{item_skill_id}")
-            effect_ids = _ids(filename, row, "effect_ids")
+            effect_ids = _ids(filename, row, "effect_ids", allow_empty=True)
             if seen_effects.intersection(effect_ids):
                 raise ExportError(f"ITEM_SKILL_EFFECT_OWNERSHIP_DUPLICATE:{item_skill_id}")
             seen_effects.update(effect_ids)
             aura_ids = _ids(filename, row, "aura_ids", allow_empty=True)
+            if not effect_ids and not aura_ids:
+                raise ExportError(f"ITEM_SKILL_EMPTY:{item_skill_id}")
             if seen_auras.intersection(aura_ids):
                 raise ExportError(f"ITEM_SKILL_AURA_OWNERSHIP_DUPLICATE:{item_skill_id}")
             seen_auras.update(aura_ids)
@@ -2709,6 +2733,9 @@ class ContentAssembler:
             if slot_width not in {1, 2, 3}:
                 raise ExportError(f"ITEM_SLOT_WIDTH_INVALID:{item_id}")
             base_quality = _same(rows, filename, "base_quality")
+            mode = _same(rows, filename, "activation_mode")
+            if mode not in ("cooldown", "passive"):
+                raise ExportError(f"ITEM_ACTIVATION_MODE_INVALID:{item_id}")
             if base_quality not in QUALITIES:
                 raise ExportError(f"ITEM_BASE_QUALITY_INVALID:{item_id}")
             item_skill_id = _same(rows, filename, "item_skill_id")
@@ -2725,11 +2752,15 @@ class ContentAssembler:
                 sell_price = _integer(filename, row, "sell_price", 0)
                 if sell_price > buy_price:
                     raise ExportError(f"ITEM_PRICE_ORDER_INVALID:{item_id}:{quality}")
-                cooldown = _integer(filename, row, "cooldown_ticks", 1)
+                if mode == "passive" and row["cooldown_ticks"] != "":
+                    raise ExportError(f"PASSIVE_ITEM_COOLDOWN_MUST_BE_EMPTY:{item_id}:{quality}")
+                cooldown = _integer(filename, row, "cooldown_ticks", 1) if mode == "cooldown" else 0
                 crit_chance_bps = _integer(filename, row, "crit_chance_bps", 0)
                 if crit_chance_bps > CRIT_CHANCE_SCALE_BPS:
                     raise ExportError(f"ITEM_CRIT_CHANCE_INVALID:{item_id}:{quality}")
                 ammo_enabled = _boolean(filename, row, "ammo_enabled")
+                if mode == "passive" and ammo_enabled:
+                    raise ExportError(f"PASSIVE_ITEM_AMMO_FORBIDDEN:{item_id}:{quality}")
                 ammo_initial = _integer(filename, row, "ammo_initial", 0)
                 ammo_maximum = _integer(filename, row, "ammo_maximum", 0)
                 if ammo_enabled and (ammo_maximum <= 0 or ammo_initial > ammo_maximum):
@@ -2739,6 +2770,7 @@ class ContentAssembler:
                 profile = {
                     "buyPrice": buy_price,
                     "sellPrice": sell_price,
+                    "activationMode": mode,
                     "baseCooldownTicks": cooldown,
                     "critChanceBps": crit_chance_bps,
                     "ammo": {"enabled": ammo_enabled, "initial": ammo_initial, "maximum": ammo_maximum},
@@ -2836,7 +2868,9 @@ class ContentAssembler:
                 ammo_delta = _integer(filename, row, "ammo_delta", 0)
                 if cooldown_delta == 0 and damage_delta == 0 and ammo_delta == 0:
                     raise ExportError(f"ENCHANTMENT_PROFILE_NOOP:{enchantment_id}:{item_id}:{quality}")
-                if int(item_profile["baseCooldownTicks"]) + cooldown_delta <= 0:
+                if item_profile["activationMode"] == "passive" and (cooldown_delta != 0 or ammo_delta != 0):
+                    raise ExportError(f"PASSIVE_ENCHANTMENT_INCOMPATIBLE:{enchantment_id}:{item_id}:{quality}")
+                if item_profile["activationMode"] == "cooldown" and int(item_profile["baseCooldownTicks"]) + cooldown_delta <= 0:
                     raise ExportError(f"ENCHANTMENT_COOLDOWN_INVALID:{enchantment_id}:{item_id}:{quality}")
                 ammo = item_profile["ammo"]
                 if ammo_delta > 0 and not bool(ammo["enabled"]):
@@ -3156,9 +3190,18 @@ class ContentAssembler:
             actual_item_skill_effects[item_skill_id].add(effect_id)
             actual_item_skill_triggers[item_skill_id].add(trigger_event)
         for key, profile in self.item_profiles.items():
-            if not profile["effects"]:
+            if profile["activationMode"] == "cooldown" and not profile["effects"]:
                 raise ExportError(f"EFFECT_REQUIRED:{key[0]}:{key[1]}")
-            if not any(effect["trigger"]["event"] == "item_ready" for effect in profile["effects"]):
+            ready = any(effect["trigger"]["event"] == "item_ready" for effect in profile["effects"])
+            if profile["activationMode"] == "passive" and ready:
+                raise ExportError(f"PASSIVE_ITEM_READY_FORBIDDEN:{key[0]}:{key[1]}")
+            if profile["activationMode"] == "passive" and any(
+                effect["target"]["type"] == "self_item"
+                and effect["operation"]["type"] in ("charge", "apply_status", "reload")
+                for effect in profile["effects"]
+            ):
+                raise ExportError(f"PASSIVE_SELF_CLOCK_FORBIDDEN:{key[0]}:{key[1]}")
+            if profile["activationMode"] == "cooldown" and not ready:
                 raise ExportError(f"ITEM_READY_EFFECT_REQUIRED:{key[0]}:{key[1]}")
             if any(
                 effect["operation"]["type"] == "gain_damage_for_fight"
@@ -3867,8 +3910,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v32 candidate source.
-            # This adapter is its explicit one-way projection into executable v34.
+            # The current 23-domain workbook is the finite v33 candidate source.
+            # This adapter is its explicit one-way projection into executable v35.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -4609,7 +4652,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v34 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v35 runtime and display candidates from 23 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4624,7 +4667,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v34 candidate "
+            "PASS original-pirate v35 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4637,7 +4680,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v34 candidate to {output}")
+        print(f"exported original-pirate v35 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

@@ -1,5 +1,11 @@
 # CSV 数据真源说明
 
+## 无主动冷却物品合同（2026-09-04）
+
+被动品质也不得声明 `self_item` 目标的 `charge/apply_status/reload`：它没有可操作的自身时钟，源数据与导出包均在进入战斗前拒绝。对其他物品的时钟操作不因施法者被动而被一概禁止，具体目标由运行时按时钟资格筛选。
+
+`BZ_ITEMS.activation_mode` 必须显式为 `cooldown` 或 `passive`，同一物品全部品质一致。主动品质必须有正 `cooldown_ticks` 与 `item_ready` 效果；被动品质的源冷却必须留空，由显式 mode 导出 `activationMode=passive/baseCooldownTicks=0`，不能从缺值推断模式。被动禁止 ready/弹药及冷却或弹药铭刻增量，至少有一个响应、开战效果或 Aura；纯 Aura 的 effect_ids/trigger_events 可空，完整归属仍校验。此切片只迁移既有 22 件物品为显式 cooldown，数值与效果不变；不新增原版或原创被动物品。content/runtime 为 35/33、catalog 25、rules v31、revision v32；独立旧冷却 Aura 工作树的增量不在本包。
+
 这个目录是新核心默认读取的数据源。日常策划优先改 `xlsx/ysbzs_master.xlsx`，再运行 `npm run data:export` 生成这里的完整 CSV；需要看完整好读版时运行 `npm run data:workbook` 刷新 `xlsx/ysbzs_v1_linked_data_tables.xlsx`。
 
 ## 读取规则

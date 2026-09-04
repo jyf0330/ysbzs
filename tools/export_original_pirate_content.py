@@ -484,9 +484,9 @@ def _ids(filename: str, row: dict[str, str], field: str, allow_empty: bool = Fal
     return values
 
 
-def _item_tags(filename: str, row: dict[str, str], field: str) -> list[str]:
-    values = _ids(filename, row, field)
-    if any(value not in ITEM_TAGS for value in values) or values != sorted(values):
+def _item_tags(filename: str, row: dict[str, str], field: str, allow_empty: bool = False) -> list[str]:
+    values = _ids(filename, row, field, allow_empty=allow_empty)
+    if (not values and row.get(field, "") != "") or any(value not in ITEM_TAGS for value in values) or values != sorted(values):
         raise ExportError(f"ITEM_TAG_INVALID:{_location(filename, row)}:{field}")
     return values
 
@@ -663,9 +663,9 @@ def _expect_stable_id(value: Any, context: str) -> str:
     return value
 
 
-def _expect_canonical_item_tags(value: Any, context: str) -> list[str]:
+def _expect_canonical_item_tags(value: Any, context: str, allow_empty: bool = False) -> list[str]:
     tags = _expect_list(value, context)
-    if not tags or any(not isinstance(tag, str) or tag not in ITEM_TAGS for tag in tags) \
+    if (not tags and not allow_empty) or any(not isinstance(tag, str) or tag not in ITEM_TAGS for tag in tags) \
             or len(tags) != len(set(tags)) or tags != sorted(tags):
         raise ExportError(f"EXECUTABLE_ITEM_TAGS_INVALID:{context}")
     return tags
@@ -1113,7 +1113,7 @@ def validate_package(package: Any) -> None:
         item_id = _expect_stable_id(item["itemId"], f"items:{item_index}:itemId")
         if item_id in item_widths:
             raise ExportError(f"EXECUTABLE_ITEM_ID_DUPLICATE:{item_id}")
-        _expect_canonical_item_tags(item["tags"], f"items:{item_id}:tags")
+        _expect_canonical_item_tags(item["tags"], f"items:{item_id}:tags", allow_empty=True)
         item_widths[item_id] = _expect_integer(item["slotWidth"], f"items:{item_id}:slotWidth", 1)
         if item_widths[item_id] > 3:
             raise ExportError(f"EXECUTABLE_ITEM_SLOT_WIDTH_INVALID:{item_id}")
@@ -2756,8 +2756,9 @@ class ContentAssembler:
             name = _same(rows, filename, "name_zh")
             if not CJK_RE.search(name):
                 raise ExportError(f"ITEM_CHINESE_NAME_REQUIRED:{item_id}")
-            _same(rows, filename, "tags")
-            tags = _item_tags(filename, rows[0], "tags")
+            if len({row["tags"] for row in rows}) != 1:
+                raise ExportError(f"ITEM_TAGS_INCONSISTENT:{item_id}")
+            tags = _item_tags(filename, rows[0], "tags", allow_empty=True)
             slot_width = int(_same(rows, filename, "slot_width")) if INTEGER_RE.fullmatch(_same(rows, filename, "slot_width")) else 0
             if slot_width not in {1, 2, 3}:
                 raise ExportError(f"ITEM_SLOT_WIDTH_INVALID:{item_id}")

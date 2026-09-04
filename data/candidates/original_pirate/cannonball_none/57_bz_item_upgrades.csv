@@ -1,0 +1,3 @@
+upgrade_id,item_id,from_quality,to_quality,price,source_stall_id,catalog_status
+upgrade_bazaar_cannonball_gold_diamond,item_bazaar_cannonball,gold,diamond,1,stall_mistwake,formal
+upgrade_bazaar_cannonball_silver_gold,item_bazaar_cannonball,silver,gold,1,stall_mistwake,formal

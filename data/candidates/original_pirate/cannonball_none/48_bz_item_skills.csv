@@ -1,0 +1,2 @@
+item_skill_id,name_zh,description_zh,trigger_events,effect_ids,aura_ids,catalog_status
+skill_bazaar_cannonball,炮弹容量增益,装备时，己方最大弹药大于零的物品增加最大弹药；不补充当前弹药。仅未附魔候选。,,,"aura_bazaar_cannonball_silver,aura_bazaar_cannonball_gold,aura_bazaar_cannonball_diamond",formal

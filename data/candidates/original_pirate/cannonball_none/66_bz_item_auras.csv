@@ -1,0 +1,4 @@
+aura_id,item_id,quality,item_skill_id,priority,target_type,target_tags,target_exclude_self,operation_type,amount,lifesteal_bps,catalog_status
+aura_bazaar_cannonball_diamond,item_bazaar_cannonball,diamond,skill_bazaar_cannonball,0,friendly_ammo_items,,false,grant_max_ammo,3,,formal
+aura_bazaar_cannonball_gold,item_bazaar_cannonball,gold,skill_bazaar_cannonball,0,friendly_ammo_items,,false,grant_max_ammo,2,,formal
+aura_bazaar_cannonball_silver,item_bazaar_cannonball,silver,skill_bazaar_cannonball,0,friendly_ammo_items,,false,grant_max_ammo,1,,formal

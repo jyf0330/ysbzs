@@ -60,7 +60,10 @@ ORIGINAL_PIRATE_EXPORTS = [
 REFERENCE_SOURCE_EXPORTS = [
     ("BAZAAR_OBJECTS", "34_bazaar_objects.csv"),
     ("BAZAAR_REFERENCE_SNAPSHOTS", "66_bazaar_reference_snapshots.csv"),
+    ("BAZAAR_REFERENCE_MEMBERS", "67_bazaar_reference_members.csv"),
 ]
+
+REFERENCE_MEMBER_HEADERS = ["source_snapshot_id", "source_type", "source_uuid"]
 
 REFERENCE_SNAPSHOT_HEADERS = [
     "source_snapshot_id", "snapshot_role", "source_kind", "source_namespace",
@@ -457,6 +460,42 @@ def validate_bazaar_reference_source_lock(tables):
     ).hexdigest()
     if actual_hash != LEGACY_CATALOG_SHA256:
         raise ValueError("BAZAAR_REFERENCE_LEGACY_CATALOG_HASH_INVALID")
+
+
+def validate_bazaar_reference_members(tables):
+    """Validate complete reference-only identities, never executable rules.
+
+    The existing snapshot lock owns build/version/artifact and ID-set hashes.
+    Members contain no duplicated source metadata or self-attested review state.
+    """
+    validate_bazaar_reference_source_lock(tables)
+    filename = "67_bazaar_reference_members.csv"
+    if filename not in tables:
+        raise ValueError("BAZAAR_REFERENCE_MEMBERS_TABLE_REQUIRED")
+    rows, headers = tables[filename]
+    if headers != REFERENCE_MEMBER_HEADERS:
+        raise ValueError("BAZAAR_REFERENCE_MEMBERS_SCHEMA_INVALID")
+    if len(rows) != 140:
+        raise ValueError("BAZAAR_REFERENCE_MEMBERS_COUNT_INVALID")
+    ids = []
+    for row in rows:
+        if set(row) != set(REFERENCE_MEMBER_HEADERS):
+            raise ValueError("BAZAAR_REFERENCE_MEMBERS_SCHEMA_INVALID")
+        if row["source_snapshot_id"] != RELOCKED_LOCAL_CACHE_SNAPSHOT_ID:
+            raise ValueError("BAZAAR_REFERENCE_MEMBER_SNAPSHOT_INVALID")
+        if row["source_type"] != "item":
+            raise ValueError("BAZAAR_REFERENCE_MEMBER_TYPE_INVALID")
+        source_uuid = row["source_uuid"]
+        if not isinstance(source_uuid, str) or not re.fullmatch(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", source_uuid
+        ):
+            raise ValueError("BAZAAR_REFERENCE_MEMBER_UUID_INVALID")
+        ids.append(source_uuid)
+    if len(set(ids)) != len(ids):
+        raise ValueError("BAZAAR_REFERENCE_MEMBER_UUID_DUPLICATE")
+    actual_hash = hashlib.sha256("\n".join(sorted(ids)).encode("utf-8")).hexdigest()
+    if actual_hash != RELOCKED_LOCAL_CACHE_ITEM_ID_SET_SHA256:
+        raise ValueError("BAZAAR_REFERENCE_MEMBERS_HASH_INVALID")
 
 
 def write_csv(path, rows, headers, bom=False):
@@ -913,6 +952,8 @@ def generated_domain_section_tables(master_path):
 
 
 def generated_tables(master_path, baseline_dir):
+    # Reference identities fail closed even if an unrelated legacy formula fails later.
+    generated_reference_source_tables(master_path)
     redesign_pets = normalize_redesign_pets(sheet_dicts(master_path, PETS_REDESIGN_SHEET))
     domain_sections = generated_domain_section_tables(master_path)
     master = {
@@ -1148,7 +1189,11 @@ def generated_tables(master_path, baseline_dir):
         rows, headers = generated_sheet_table(master_path, sheet_name)
         if rows and headers:
             result[filename] = (rows, headers)
-    validate_bazaar_reference_source_lock(result)
+    validate_bazaar_reference_members(result)
+    member_rows, member_headers = result["67_bazaar_reference_members.csv"]
+    result["67_bazaar_reference_members.csv"] = (
+        sorted(member_rows, key=lambda row: row["source_uuid"]), member_headers
+    )
     for baseline_file in sorted(baseline_dir.glob("*.csv")):
         if baseline_file.name not in result:
             result[baseline_file.name] = read_csv(baseline_file)
@@ -1172,7 +1217,11 @@ def generated_reference_source_tables(master_path):
         if not rows or not headers:
             raise ValueError(f"master workbook missing reference-source sheet rows: {sheet_name}")
         result[filename] = (rows, headers)
-    validate_bazaar_reference_source_lock(result)
+    validate_bazaar_reference_members(result)
+    member_rows, member_headers = result["67_bazaar_reference_members.csv"]
+    result["67_bazaar_reference_members.csv"] = (
+        sorted(member_rows, key=lambda row: row["source_uuid"]), member_headers
+    )
     return result
 
 

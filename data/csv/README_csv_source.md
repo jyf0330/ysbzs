@@ -1,5 +1,9 @@
 # CSV 数据真源说明
 
+## Build-bound 身份成员（2026-09-04）
+
+`BAZAAR_REFERENCE_MEMBERS -> 67_bazaar_reference_members.csv` 只保存 `source_snapshot_id/source_type/source_uuid` 三列。新 build `snapshot_vanessa_local_cache_25079259_db8914ab` 的 Vanessa Always 140 件物品 UUID 必须完整、唯一且为 canonical 小写；排序 UTF-8 UUID 以换行连接、无末尾换行的 SHA-256 必须匹配既有 66 快照锁。普通和 reference-scoped master 导出均校验成员，行重排规范化后输出一致。版本、build、原始 artifact SHA 和许可状态仍只由 66 快照拥有；34 的 legacy 对象不重绑。该身份清单保持 reference-only，原规则可执行映射覆盖为 0，不包含专有规则 payload、审核通过状态或 verifiedScopes。
+
 ## 无主动冷却物品合同（2026-09-04）
 
 被动品质也不得声明 `self_item` 目标的 `charge/apply_status/reload`：它没有可操作的自身时钟，源数据与导出包均在进入战斗前拒绝。对其他物品的时钟操作不因施法者被动而被一概禁止，具体目标由运行时按时钟资格筛选。

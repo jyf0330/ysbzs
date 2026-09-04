@@ -93,9 +93,12 @@ def validate_sources(items, bundle):
                 raise ValueError("SOURCE_FIXTURE_INVALID")
         elif kind == "external_run_view":
             _exact(metadata, RUN_METADATA_FIELDS, "RUN_METADATA_INVALID")
-            expected_meta = run_metadata(run_view.view_row(source.RELOCKED_LOCAL_CACHE_SNAPSHOT_ID),
+            view = next((v for v in run_view.view_rows(source.RELOCKED_LOCAL_CACHE_SNAPSHOT_ID) if v['view_id']==sid), None)
+            if view is None:
+                raise ValueError("SOURCE_RUN_VIEW_LOCK_INVALID")
+            expected_meta = run_metadata(view,
                                         source.REFERENCE_SNAPSHOT_ROWS[source.RELOCKED_LOCAL_CACHE_SNAPSHOT_ID])
-            if sid != run_view.VIEW_ID or metadata != expected_meta:
+            if metadata != expected_meta:
                 raise ValueError("SOURCE_RUN_VIEW_LOCK_INVALID")
             rows = []
             for member in members:
@@ -103,7 +106,7 @@ def validate_sources(items, bundle):
                 if any(not isinstance(member[k], str) for k in RUN_MEMBER_FIELDS):
                     raise ValueError("SOURCE_RUN_MEMBER_VALUE_INVALID")
                 rows.append(dict(zip(run_view.MEMBER_HEADERS, [sid] + [member[k] for k in RUN_MEMBER_FIELDS])))
-            if len(rows) != 15 or run_view.member_digest(rows) != run_view.MEMBERS_SHA256:
+            if len(rows) != int(view['member_count']) or run_view.member_digest(rows) != view['members_sha256']:
                 raise ValueError("SOURCE_RUN_MEMBER_SET_INVALID")
         elif kind == "external_reference":
             _exact(metadata, EXTERNAL_FIELDS, "EXTERNAL_METADATA_INVALID")
@@ -182,13 +185,13 @@ def assemble_sources(tables, csv_dir, items, bundle):
             {"sourceType": row["source_type"], "sourceUuid": row["source_uuid"]}
             for row in reference["67_bazaar_reference_members.csv"][0]
         ]}
-        if any(row["source_snapshot_id"] == run_view.VIEW_ID for row in rows + skill_rows):
+        if any(row["source_snapshot_id"] in {v['view_id'] for v in run_view.view_rows(sid)} for row in rows + skill_rows):
             run_view.validate(reference)
-            view = reference[run_view.VIEW_FILE][0][0]
-            available[run_view.VIEW_ID] = {"snapshotId": run_view.VIEW_ID, "originKind": "external_run_view",
-                "metadata": run_metadata(view, snapshot_row), "members": [
-                    dict(zip(RUN_MEMBER_FIELDS, [r[k] for k in run_view.MEMBER_HEADERS[1:]]))
-                    for r in reference[run_view.MEMBER_FILE][0]]}
+            for view in reference[run_view.VIEW_FILE][0]:
+                available[view['view_id']] = {"snapshotId": view['view_id'], "originKind": "external_run_view",
+                    "metadata": run_metadata(view, snapshot_row), "members": [
+                        dict(zip(RUN_MEMBER_FIELDS, [r[k] for k in run_view.MEMBER_HEADERS[1:]]))
+                        for r in reference[run_view.MEMBER_FILE][0] if r['view_id']==view['view_id']]}
     index = {item["itemId"]: item for item in items}
     used = set()
     for row in rows:

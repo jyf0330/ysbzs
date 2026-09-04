@@ -58,6 +58,7 @@ ORIGINAL_PIRATE_EXPORTS = [
     ("BZ_ITEM_AURAS", "66_bz_item_auras.csv"),
     ("BZ_ITEM_SOURCE_BINDINGS", "68_bz_item_source_bindings.csv"),
     ("BZ_HERO_SKILL_SOURCE_BINDINGS", "71_bz_hero_skill_source_bindings.csv"),
+    ("BZ_HERO_SKILL_AURAS", "72_bz_hero_skill_auras.csv"),
 ]
 
 REFERENCE_SOURCE_EXPORTS = [
@@ -910,6 +911,9 @@ def normalize_redesign_pets(rows):
 def generated_sheet_table(master_path, sheet_name):
     rows = sheet_dicts(master_path, sheet_name)
     if not rows:
+        if sheet_name == "BZ_HERO_SKILL_AURAS":
+            raw = read_sheet_rows(master_path, sheet_name)
+            return [], raw[0] if raw else []
         return [], []
     headers = list(rows[0].keys())
     return rows, headers
@@ -1214,7 +1218,7 @@ def generated_original_pirate_tables(master_path):
     result = {}
     for sheet_name, filename in ORIGINAL_PIRATE_EXPORTS:
         rows, headers = generated_sheet_table(master_path, sheet_name)
-        if not rows or not headers:
+        if (not rows and filename != "72_bz_hero_skill_auras.csv") or not headers:
             raise ValueError(f"master workbook missing original-pirate sheet rows: {sheet_name}")
         result[filename] = (rows, headers)
     return result

@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {spawnSync} = require('node:child_process');
 const path = require('node:path');
-test('candidate Run source view is a strict 15-object reference-only set', () => {
+test('candidate Run source views preserve the 15-object lock and separate Circle identity', () => {
  const code=String.raw`
 import copy,pathlib,sys,tempfile
 sys.path.insert(0,'tools')
@@ -27,7 +27,7 @@ reject(lambda t:t[v.MEMBER_FILE][0][0].__setitem__('verified',True))
 reject(lambda t:t[v.VIEW_FILE][0][0].__setitem__('PASS','true'))
 def resigned(t,field,value):
  t[v.MEMBER_FILE][0][0][field]=value
- t[v.VIEW_FILE][0][0]['members_sha256']=v.member_digest(t[v.MEMBER_FILE][0])
+ t[v.VIEW_FILE][0][0]['members_sha256']=v.member_digest([r for r in t[v.MEMBER_FILE][0] if r['view_id']==v.VIEW_ID])
 for field,value in [('source_uuid','00000000-0000-4000-8000-000000000001'),('source_type','skill'),('source_qualities','diamond')]:
  reject(lambda t:resigned(t,field,value))
 for field,value in [('usage_scope','executable'),('parent_source_snapshot_id','unknown'),('member_count','14'),('members_sha256','0'*64),('evidence_url','https://example.com'),('selection_scope','natural_pool')]:

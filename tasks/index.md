@@ -12,6 +12,7 @@
 ## ACTIVE_IMPL
 
 
+
 - `tasks/done/2026-09-04_original_pirate_regen_on_slow.md` — data rules: 项目原创减速成功响应 Regen v1 已完成 workbook→CSV→exporter 真相链、严格 fail-closed 校验与确定性生成。
 - `tasks/done/2026-09-04_original_pirate_lifesteal_aura.md` — data rules: 项目原创武器吸血 Aura v1 已完成 workbook→CSV→exporter 真相链、严格 fail-closed 校验与确定性生成。
 
@@ -68,6 +69,7 @@
 
 ## DONE
 
+- `tasks/done/2026-09-04_original_pirate_hero_skill_auras.md` — 数据35/35，Godot英雄Aura15/15、炮弹兼容15/15及真实Circle实际吸血1/1；静态映射独立审核通过，check:all仍有12项既有失败，原三构筑总验收未完成。
 - `tasks/done/2026-09-04_original_pirate_cannonball_candidate.md` — 数据专项 5+2+2、Godot 15/15、独立静态映射审核通过；正式字节不变，全量 unit 仍有失败；仅候选切片完成，不是三阵容整套验收。
 
 - `tasks/done/2026-09-04_bazaar_run_source_view.md` — Spices＋14技能独立参考视图完成；来源3/3、主线程CSV08B及独立审核通过，旧140/44张旧表/正式JSON不变。全量unit12失败已在精确父提交逐名重现；不代表原规则执行或六场对战验收。

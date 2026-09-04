@@ -1,0 +1,2 @@
+hero_skill_id,hero_id,quality,name_zh,description_zh,effect_description_zh,priority,trigger_event,reentrant,max_triggers_per_battle,effect_id,target_type,operation_type,amount,ticks,catalog_status,aura_ids
+hero_skill_bazaar_circle_of_life,hero_mistwake_captain,diamond,生命循环（原版钻石候选）,已装备英雄技能为己方最左武器提供吸血；仅静态候选。,己方最左武器增加百分之一百吸血，其他结算规则仍依项目宿主。,30,none,false,0,,,,,,formal,hero_aura_circle_of_life_diamond

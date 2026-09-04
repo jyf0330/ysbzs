@@ -1,8 +1,18 @@
 # CSV 数据真源说明
 
+## 英雄技能光环（2026-09-04）
+
+content38/runtimeBundle36/catalog27，Lifesteal v2、rules v33。62 每技能×品质唯一行增加 aura_ids；72_bz_hero_skill_auras.csv 来自 BZ_HERO_SKILL_AURAS，以独立 Aura ID 外键归属到该技能品质。正式两项技能保留原效果，auras=[]，72 允许仅表头但不可缺表或错误表头；其他非空域门禁不变。
+
+纯 Aura 使用 trigger_event=none、max_triggers_per_battle=0，effect_id/target_type/operation_type/amount/ticks 必须空。JSON profile 必含 effects 与 auras，二者不可同空。有响应的技能继续使用现有 friendly_item_used、正次数，可同时含 Aura；CSV 保持一行一个 operation，JSON 保留非空多 effects 并逐项严格校验，不收窄既有运行时接受域。同定义不得跨品质混用响应模式。Aura 最小动作 grant_lifesteal_bps、整数1..10000；目标 leftmost_friendly_item_with_any_tag 使用非空规范 tags。技能仍是英雄技能，不占物品槽、不构造伪物品。来源71仍绑定实际完整品质档案；serviceHash包含Aura。
+
+新增独立 Circle of Life 参考视图 view_weapon_damage_run_5c450f18_circle_of_life：只锁公开候选C中真实钻石技能一件，UUID9ec041be-6f89-4e95-963d-1deb7460e1d0，成员摘要3b3e9cdb0c06536f4b1f5f7c8c9db00650def32c5c90c16ee7dbc0d5906dceb0。旧15成员视图及140 Vanessa Item锁不变。两视图分别摘要验证，不称新的全集。
+
+生命循环只在 xlsx/candidates/original_pirate_circle_of_life.xlsx → data/candidates/original_pirate/circle_of_life →正常ContentAssembler 的隔离候选中提供。候选训练师/取得价为synthetic，非原作自然获取；静态最左武器100%吸血已转译，但现有HP伤害基数、上限、治疗/清状态等仍为项目规则，未获完整原规则验收。炮弹候选同步新基线，三档none规则不变。
+
 ## 候选 Run 补充身份视图（2026-09-04，仅参考）
 
-69_bazaar_run_source_views.csv 与 70_bazaar_run_source_members.csv 来自工作簿 BAZAAR_RUN_SOURCE_VIEWS / BAZAAR_RUN_SOURCE_MEMBERS。范围严格为公开 Run 866a4939-d497-45a1-9726-4a0874a5340b 已观察的 Spices 和14技能；不是完整构筑初态、自然获取池、热门固定阵容榜或原规则执行证明。
+69_bazaar_run_source_views.csv 与 70_bazaar_run_source_members.csv 来自工作簿 BAZAAR_RUN_SOURCE_VIEWS / BAZAAR_RUN_SOURCE_MEMBERS。原视图范围严格为公开 Run 866a4939-d497-45a1-9726-4a0874a5340b 已观察的 Spices 和14技能；现另有上节所述独立Circle视图。两者均不是完整构筑初态、自然获取池、热门固定阵容榜或原规则执行证明。
 
 父外键复用66中完整GameData.db的artifact/build身份，不继承父行历史hero_scope=vanessa为新视图筛选条件；旧67的140 Vanessa Item集合不变。70只含类型、UUID、来源英雄分类、生成资格及DB实际品质集合，不含专有规则文案/payload/素材。source_qualities不是该Run实例品质，页面footer版本不是该Run版本锁。
 
@@ -14,9 +24,9 @@
 
 `BZ_HERO_SKILL_SOURCE_BINDINGS -> 71_bz_hero_skill_source_bindings.csv` 五列为hero_skill_id、quality、scope_id、source_snapshot_id、source_object_id。定义级heroSkills.sourceBinding使用同一个snapshotId/snapshotDigest/objectId，declaredScopes仅含quality和hero_skill_profile，不带enchantmentId，恰好覆盖实际品质档案。8条正式声明均属两个原创技能；local/synthetic objectId必须等于heroSkillId，external必须为typed skill UUID，不可冒用item UUID。
 
-external_run_view保持snapshot五字段。metadata为parentSnapshotId、artifactMetadata、selectionScope、evidenceUrl、memberCount、membersSha256；除artifactMetadata字典外均为字符串，父66只有game_patch空值转null。members带sourceType/sourceUuid/sourceHeroes/spawningEligibility/sourceQualities五字符串，完整15成员摘要复用70算法（含view_id）。父快照无需作为未引用目录另装配，不继承父Vanessa集合范围。外部声明品质必须存在于sourceQualities；这些是身份与声明覆盖，不是执行审核。
+external_run_view保持snapshot五字段。metadata为parentSnapshotId、artifactMetadata、selectionScope、evidenceUrl、memberCount、membersSha256；除artifactMetadata字典外均为字符串，父66只有game_patch空值转null。members带sourceType/sourceUuid/sourceHeroes/spawningEligibility/sourceQualities五字符串，每个视图的完整成员摘要复用70算法（含view_id）。父快照无需作为未引用目录另装配，不继承父Vanessa集合范围。外部声明品质必须存在于sourceQualities；这些是身份与声明覆盖，不是执行审核。
 
-当前sourceCatalog v2/content37/runtime35/catalog26；规则32、revision34及56源快照不变。所有技能绑定及目录进入原bundleHash/serviceHash链，不另建审核真相。工作簿新增脚本tools/add_original_pirate_hero_skill_sources.py只添加71工作表并核验46个既有表值不变。
+来源绑定切片使用sourceCatalog v2/content37/runtime35/catalog26；现由上节英雄技能光环迁移到content38/runtime36/catalog27、规则33，revision34及56源快照不变。所有技能绑定及目录进入原bundleHash/serviceHash链，不另建审核真相。历史工作簿新增脚本tools/add_original_pirate_hero_skill_sources.py只添加71工作表并核验46个既有表值不变。
 
 ## 逐物品来源绑定（2026-09-04）
 

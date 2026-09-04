@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 25 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 26 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
 Planner-facing display text remains in the display sidecar. The v37 candidate
@@ -27,10 +27,10 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 37
+CONTENT_SCHEMA_VERSION = 38
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 35
+RUNTIME_SCHEMA_VERSION = 36
 SOURCE_CONTENT_SCHEMA_VERSION = 34
 SOURCE_RUNTIME_SCHEMA_VERSION = 32
 NEW_RUN_SCHEMA_VERSION = 3
@@ -41,7 +41,7 @@ GENERATION_ALGORITHM = "sha256-ranked-selection-v1"
 DISPLAY_SCHEMA = "ysbzs.original-pirate-display-directory.v1"
 DISPLAY_SCHEMA_VERSION = 3
 EXECUTABLE_CATALOGS_SCHEMA = "ysbzs.original-pirate-executable-catalogs.v1"
-EXECUTABLE_CATALOGS_SCHEMA_VERSION = 26
+EXECUTABLE_CATALOGS_SCHEMA_VERSION = 27
 PROGRESSION_SCHEMA = "ysbzs.original-pirate-progression-rules.v1"
 PROGRESSION_SCHEMA_VERSION = 1
 SCHEDULE_SCHEMA = "ysbzs.original-pirate-schedule-config.v4"
@@ -53,7 +53,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v32"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v33"
 AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
 AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
 AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
@@ -71,13 +71,13 @@ DAMAGE_AURA_DAMAGE_PHASE = "before_crit"
 DAMAGE_AURA_SOURCE_LIFECYCLE_POLICY = "compiled_board_source_for_battle"
 DAMAGE_AURA_OVERFLOW_POLICY = "reject_advance"
 DAMAGE_AURA_RNG_POLICY = "never"
-LIFESTEAL_CONTRACT = "ysbzs.original-pirate-lifesteal.v1"
+LIFESTEAL_CONTRACT = "ysbzs.original-pirate-lifesteal.v2"
 LIFESTEAL_ELIGIBLE_SOURCE_POLICY = "item_ready_always_selected_enemy_direct_damage"
 LIFESTEAL_HEAL_BASIS = "committed_hp_damage"
 LIFESTEAL_BASIS_POINTS_SCALE = 10000
 LIFESTEAL_ROUNDING_MODE = "floor"
 LIFESTEAL_AURA_STACKING_POLICY = "sum_then_cap_at_basis_points_scale"
-LIFESTEAL_TARGET_POLICY = "friendly_weapon_exclude_self_active_board_snapshot"
+LIFESTEAL_TARGET_POLICY = "typed_item_and_hero_skill_active_board_targets"
 LIFESTEAL_RESOLUTION_TIMING_POLICY = "immediately_after_nonterminal_damage_before_next_effect"
 LIFESTEAL_REPEAT_POLICY = "once_per_eligible_damage_effect"
 LIFESTEAL_SHIELD_POLICY = "defender_shield_reduces_basis_source_shield_unchanged"
@@ -357,7 +357,7 @@ DOMAIN_HEADERS = OrderedDict([
         "hero_skill_id", "hero_id", "quality", "name_zh", "description_zh", "effect_description_zh",
         "priority", "trigger_event", "reentrant", "max_triggers_per_battle",
         "effect_id", "target_type", "operation_type", "amount", "ticks",
-        "catalog_status",
+        "catalog_status", "aura_ids",
     ]),
     ("63_bz_hero_skill_loadouts.csv", [
         "loadout_kind", "loadout_id", "instance_id", "hero_skill_id", "quality",
@@ -376,6 +376,10 @@ DOMAIN_HEADERS = OrderedDict([
         "aura_id", "item_id", "quality", "item_skill_id", "priority",
         "target_type", "target_tags", "target_exclude_self", "operation_type",
         "amount", "lifesteal_bps", "catalog_status",
+    ]),
+    ("72_bz_hero_skill_auras.csv", [
+        "aura_id", "hero_skill_id", "quality", "priority", "target_type",
+        "target_tags", "operation_type", "lifesteal_bps", "catalog_status",
     ]),
 ])
 
@@ -420,7 +424,7 @@ def _read_domains(csv_dir: Path) -> dict[str, list[dict[str, str]]]:
                     continue
                 row["__row__"] = str(row_index)
                 rows.append(row)
-        if not rows:
+        if not rows and filename != "72_bz_hero_skill_auras.csv":
             raise ExportError(f"DOMAIN_EMPTY:{filename}")
         tables[filename] = rows
     return tables
@@ -611,6 +615,7 @@ def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
             skill["sourceBinding"]["declaredScopes"].sort(key=source_binding.scope_key)
         for profile in skill.get("qualityProfiles", {}).values():
             profile.get("effects", []).sort(key=lambda value: value.get("effectId", ""))
+            profile.get("auras", []).sort(key=lambda value: (value.get("priority", 0), value.get("auraId", "")))
     catalogs.get("heroSkills", []).sort(key=lambda value: value.get("heroSkillId", ""))
     for trainer in catalogs.get("heroSkillTrainers", []):
         trainer.get("offerIds", []).sort()
@@ -669,6 +674,25 @@ def _expect_canonical_item_tags(value: Any, context: str, allow_empty: bool = Fa
             or len(tags) != len(set(tags)) or tags != sorted(tags):
         raise ExportError(f"EXECUTABLE_ITEM_TAGS_INVALID:{context}")
     return tags
+
+
+def _validate_hero_aura(value: Any, context: str) -> str:
+    aura = _expect_exact_fields(value, {"auraId", "priority", "target", "operation"}, context)
+    aura_id = _expect_stable_id(aura["auraId"], context)
+    _expect_integer(aura["priority"], context, 0)
+    target = _expect_exact_fields(aura["target"], {"type", "params"}, context)
+    if target["type"] != "leftmost_friendly_item_with_any_tag":
+        raise ExportError(f"HERO_AURA_TARGET_INVALID:{aura_id}")
+    params = _expect_exact_fields(target["params"], {"tags"}, context)
+    _expect_canonical_item_tags(params["tags"], context)
+    operation = _expect_exact_fields(aura["operation"], {"type", "params"}, context)
+    if operation["type"] != LIFESTEAL_AURA_OPERATION:
+        raise ExportError(f"HERO_AURA_OPERATION_INVALID:{aura_id}")
+    params = _expect_exact_fields(operation["params"], {"lifestealBps"}, context)
+    value = _expect_integer(params["lifestealBps"], context, 1)
+    if value > LIFESTEAL_BASIS_POINTS_SCALE:
+        raise ExportError(f"HERO_AURA_VALUE_INVALID:{aura_id}")
+    return aura_id
 
 
 def _expect_integer(value: Any, context: str, minimum: int | None = None) -> int:
@@ -1605,6 +1629,7 @@ def validate_package(package: Any) -> None:
     if not hero_skills or set(item_skills).intersection(hero_skills):
         raise ExportError("EXECUTABLE_HERO_SKILL_CATALOG_INVALID")
     hero_effect_ids: set[str] = set()
+    hero_aura_ids: set[str] = set()
     priorities: set[int] = set()
     for hero_skill_id, skill in hero_skills.items():
         _expect_stable_id(skill["heroId"], f"heroSkills:{hero_skill_id}:heroId")
@@ -1612,28 +1637,44 @@ def validate_package(package: Any) -> None:
         if priority in priorities:
             raise ExportError(f"EXECUTABLE_HERO_SKILL_PRIORITY_DUPLICATE:{priority}")
         priorities.add(priority)
-        if skill["triggerEvent"] != HERO_SKILL_TRIGGER or skill["reentrant"] is not False:
+        if skill["triggerEvent"] not in (HERO_SKILL_TRIGGER, "none") or skill["reentrant"] is not False:
             raise ExportError(f"EXECUTABLE_HERO_SKILL_TRIGGER_INVALID:{hero_skill_id}")
         profiles = skill["qualityProfiles"]
         if not isinstance(profiles, dict) or not profiles or not set(profiles).issubset(QUALITIES):
             raise ExportError(f"EXECUTABLE_HERO_SKILL_QUALITY_COVERAGE_INVALID:{hero_skill_id}")
         for quality, profile_value in profiles.items():
             profile = _expect_exact_fields(profile_value, {
-                "maxTriggersPerBattle", "effects",
+                "maxTriggersPerBattle", "effects", "auras",
             }, f"heroSkills:{hero_skill_id}:{quality}")
             _expect_integer(
                 profile["maxTriggersPerBattle"],
-                f"heroSkills:{hero_skill_id}:{quality}:maxTriggersPerBattle", 1,
+                f"heroSkills:{hero_skill_id}:{quality}:maxTriggersPerBattle", 0,
             )
             effects = _expect_list(profile["effects"], f"heroSkills:{hero_skill_id}:{quality}:effects")
-            if len(effects) != 1:
+            auras = _expect_list(profile["auras"], f"heroSkills:{hero_skill_id}:{quality}:auras")
+            for aura in auras:
+                aura_id = _validate_hero_aura(aura, f"heroSkills:{hero_skill_id}:{quality}:auras")
+                if aura_id in hero_aura_ids or aura_id in item_aura_ids or aura_id in item_effect_ids:
+                    raise ExportError(f"HERO_AURA_ID_DUPLICATE:{aura_id}")
+                hero_aura_ids.add(aura_id)
+            if skill["triggerEvent"] == "none":
+                if effects or not auras or profile["maxTriggersPerBattle"] != 0:
+                    raise ExportError(f"HERO_PURE_AURA_PROFILE_INVALID:{hero_skill_id}:{quality}")
+                continue
+            if profile["maxTriggersPerBattle"] <= 0:
+                raise ExportError(f"HERO_REACTIVE_TRIGGER_LIMIT_INVALID:{hero_skill_id}:{quality}")
+            if not effects:
                 raise ExportError(f"EXECUTABLE_HERO_SKILL_EFFECT_COUNT_INVALID:{hero_skill_id}:{quality}")
-            effect_id = _validate_executable_hero_skill_effect(
-                effects[0], f"heroSkills:{hero_skill_id}:{quality}:effects:0"
-            )
-            if effect_id in hero_effect_ids or effect_id in item_effect_ids:
-                raise ExportError(f"EXECUTABLE_HERO_SKILL_EFFECT_ID_DUPLICATE:{effect_id}")
-            hero_effect_ids.add(effect_id)
+            for effect_index, effect in enumerate(effects):
+                effect_id = _validate_executable_hero_skill_effect(
+                    effect, f"heroSkills:{hero_skill_id}:{quality}:effects:{effect_index}"
+                )
+                if effect_id in hero_effect_ids or effect_id in item_effect_ids:
+                    raise ExportError(f"EXECUTABLE_HERO_SKILL_EFFECT_ID_DUPLICATE:{effect_id}")
+                hero_effect_ids.add(effect_id)
+
+    if hero_aura_ids.intersection(hero_effect_ids):
+        raise ExportError("HERO_AURA_EFFECT_ID_COLLISION")
 
     heroes = _directory(_expect_list(catalogs["heroes"], "catalogs:heroes"), "heroId", {
         "heroId", "heroSkillIds", "startingHeroSkills",
@@ -3387,7 +3428,8 @@ class ContentAssembler:
             if priority in priorities:
                 raise ExportError(f"HERO_SKILL_PRIORITY_DUPLICATE:{priority}")
             priorities.add(priority)
-            if _same(rows, filename, "trigger_event") != HERO_SKILL_TRIGGER:
+            trigger_event = _same(rows, filename, "trigger_event")
+            if trigger_event not in (HERO_SKILL_TRIGGER, "none"):
                 raise ExportError(f"HERO_SKILL_TRIGGER_INVALID:{hero_skill_id}")
             if any(_boolean(filename, row, "reentrant") for row in rows):
                 raise ExportError(f"HERO_SKILL_REENTRANT_FORBIDDEN:{hero_skill_id}")
@@ -3395,6 +3437,14 @@ class ContentAssembler:
             for row in rows:
                 quality = _require_text(filename, row, "quality")
                 _require_chinese(filename, row, "effect_description_zh")
+                if quality not in QUALITIES or quality in profiles:
+                    raise ExportError(f"HERO_SKILL_PROFILE_INVALID:{hero_skill_id}:{quality}")
+                if trigger_event == "none":
+                    if any(row[k] != "" for k in ("effect_id", "target_type", "operation_type", "amount", "ticks")) \
+                            or _integer(filename, row, "max_triggers_per_battle", 0) != 0:
+                        raise ExportError(f"HERO_PURE_AURA_FIELDS_INVALID:{hero_skill_id}:{quality}")
+                    profiles[quality] = {"maxTriggersPerBattle": 0, "effects": [], "auras": []}
+                    continue
                 effect_id = _require_id(filename, row, "effect_id")
                 profile_key = (hero_skill_id, quality, effect_id)
                 if quality not in QUALITIES or profile_key in seen_profile_effects:
@@ -3422,6 +3472,7 @@ class ContentAssembler:
                 if not valid:
                     raise ExportError(f"HERO_SKILL_EFFECT_PARAMS_INVALID:{effect_id}")
                 profiles[quality] = {
+                    "auras": [],
                     "maxTriggersPerBattle": _integer(
                         filename, row, "max_triggers_per_battle", 1
                     ),
@@ -3439,10 +3490,37 @@ class ContentAssembler:
                 "heroSkillId": hero_skill_id,
                 "heroId": hero_id,
                 "priority": priority,
-                "triggerEvent": HERO_SKILL_TRIGGER,
+                "triggerEvent": trigger_event,
                 "reentrant": False,
                 "qualityProfiles": {quality: profiles[quality] for quality in QUALITIES if quality in profiles},
             }
+        aura_filename = "72_bz_hero_skill_auras.csv"
+        actual = defaultdict(set)
+        seen = set()
+        for row in self.tables[aura_filename]:
+            _formal(aura_filename, row)
+            sid = _require_id(aura_filename, row, "hero_skill_id")
+            quality = _require_text(aura_filename, row, "quality")
+            if sid not in result or quality not in result[sid]["qualityProfiles"]:
+                raise ExportError("HERO_AURA_PROFILE_UNKNOWN")
+            aid = _require_id(aura_filename, row, "aura_id")
+            if aid in seen:
+                raise ExportError("HERO_AURA_ID_DUPLICATE")
+            seen.add(aid)
+            aura = {"auraId": aid, "priority": _integer(aura_filename, row, "priority", 0),
+                    "target": {"type": row["target_type"], "params": {"tags": _item_tags(aura_filename, row, "target_tags")}},
+                    "operation": {"type": row["operation_type"], "params": {"lifestealBps": _integer(aura_filename, row, "lifesteal_bps", 1)}}}
+            _validate_hero_aura(aura, aura_filename)
+            result[sid]["qualityProfiles"][quality]["auras"].append(aura)
+            actual[(sid, quality)].add(aid)
+        for row in self.tables[filename]:
+            key = (row["hero_skill_id"], row["quality"])
+            if set(_ids(filename, row, "aura_ids", allow_empty=True)) != actual[key]:
+                raise ExportError("HERO_AURA_DECLARATION_MISMATCH")
+            profile = result[key[0]]["qualityProfiles"][key[1]]
+            profile["auras"].sort(key=lambda a: (a["priority"], a["auraId"]))
+            if not profile["effects"] and not profile["auras"]:
+                raise ExportError("HERO_SKILL_EMPTY_PROFILE")
         return result
 
     def _hero_skill_loadouts(
@@ -4699,7 +4777,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v37 runtime and display candidates from 25 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v38 runtime and display candidates from 26 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4714,7 +4792,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v37 candidate "
+            "PASS original-pirate v38 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4727,7 +4805,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v37 candidate to {output}")
+        print(f"exported original-pirate v38 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

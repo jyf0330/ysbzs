@@ -12,8 +12,8 @@ directory=pathlib.Path('data/csv');tables=e._read_domains(directory)
 p,_=e.build_exports(directory)
 def skills(p):return p['runtimeBundle']['executableCatalogs']['heroSkills']
 assert all('sourceBinding' in k for k in skills(p)), 'hero skill binding missing'
-assert p['schemaVersion']==37 and p['runtimeBundle']['schemaVersion']==35
-assert p['runtimeBundle']['executableCatalogs']['schemaVersion']==26
+assert p['schemaVersion']==38 and p['runtimeBundle']['schemaVersion']==36
+assert p['runtimeBundle']['executableCatalogs']['schemaVersion']==27
 for k in skills(p):
  assert k['sourceBinding']['objectId']==k['heroSkillId']
  assert k['sourceBinding']['declaredScopes']==[{'quality':q,'scopeId':'hero_skill_profile'} for q in s.QUALITIES if q in k['qualityProfiles']]

@@ -1,0 +1,2 @@
+aura_id,hero_skill_id,quality,priority,target_type,target_tags,operation_type,lifesteal_bps,catalog_status
+hero_aura_circle_of_life_diamond,hero_skill_bazaar_circle_of_life,diamond,0,leftmost_friendly_item_with_any_tag,weapon,grant_lifesteal_bps,10000,formal

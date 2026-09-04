@@ -45,7 +45,9 @@ def main():
     for name,(headers,records) in additions.items():
         values=[tuple(headers)]+[tuple(r[k] for k in headers) for r in records]
         if name in workbook:
-            if list(workbook[name].values)!=values:raise ValueError('RUN_SOURCE_EXISTING_SHEET_CONFLICT:'+name)
+            existing=list(workbook[name].values)
+            original_view=[existing[0]]+[row for row in existing[1:] if row[0]==view.VIEW_ID]
+            if original_view!=values:raise ValueError('RUN_SOURCE_EXISTING_SHEET_CONFLICT:'+name)
         else:
             changed=True
             sheet=workbook.create_sheet(name)

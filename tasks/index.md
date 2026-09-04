@@ -58,6 +58,8 @@
 
 ## DONE
 
+- `tasks/done/2026-09-04_original_pirate_poison_cadence.md` — Poison v3每20tick一次，数据38/38、Godot功能与原Poison耗时门禁通过；只核实频率，完整海盗与三构筑日志审核仍开放。
+
 - `tasks/done/2026-09-04_bazaar_reference_members.md` — source identity: 完整140 UUID成员清单与摘要校验完成，主线程独立专项1+3通过；普通全导出仍有既有pet缺口，原规则执行映射仍为0。
 
 - `tasks/done/2026-09-04_original_pirate_passive_items.md` — 数据合同切片完成：显式 cooldown/passive，原 22 件数值效果不变，38/38 数据测试通过；Godot 性能/实窗与三构筑独立日志验收仍未关闭。

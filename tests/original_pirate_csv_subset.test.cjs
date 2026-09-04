@@ -45,7 +45,7 @@ function readCsv(filename) {
   };
 }
 
-test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Poison v2、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
+test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Poison v3、Burn source rules 与 operation-owned 参数严格落在 44/47', () => {
   const gameplay = readCsv('44_bz_gameplay.csv');
   const effects = readCsv('47_bz_item_effects.csv');
   assert.deepEqual(gameplay.rows.map((row) => ({
@@ -143,10 +143,10 @@ test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Pois
   })), Array.from({ length: 6 }, () => ({
     schemaVersion: '33',
     runtimeSchemaVersion: '31',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v31',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v32',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v32',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v32',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v32',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v33',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v33',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v33',
     critContract: 'ysbzs.original-pirate-critical-damage.v3',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
@@ -169,8 +169,8 @@ test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Pois
     resolutionOrder: 'simultaneous_sides_then_terminal',
     maxStacks: '1000000',
     stackOverflowPolicy: 'reject_advance',
-    poisonContract: 'ysbzs.original-pirate-poison.v2',
-    poisonPulseIntervalTicks: '10',
+    poisonContract: 'ysbzs.original-pirate-poison.v3',
+    poisonPulseIntervalTicks: '20',
     poisonFirstPulsePolicy: 'after_full_interval',
     poisonReapplySchedulePolicy: 'preserve_existing_due_tick',
     poisonPulsePhase: 'tick_start_after_burn_terminal_before_item_progress',
@@ -463,10 +463,10 @@ test('OPCSV08 继航校炮仪四品质只在另一件友方物品成功暴击后
   assert.equal(gameplay.every((row) => (
     row.schema_version === '33'
       && row.runtime_schema_version === '31'
-      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v31'
-      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v32'
-      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v32'
-      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v32'
+      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v32'
+      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v33'
+      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v33'
+      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v33'
       && row.crit_contract === 'ysbzs.original-pirate-critical-damage.v3'
       && row.crit_success_response_evidence_policy === 'crit_resolve_is_critical_with_bound_committed_damage'
       && row.crit_success_response_source_policy === 'another_same_owner_active_board_item'

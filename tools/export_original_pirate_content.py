@@ -200,6 +200,8 @@ ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
 DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
 DAMAGE_AURA_OPERATION = "grant_damage"
 LIFESTEAL_AURA_OPERATION = "grant_lifesteal_bps"
+MAX_AMMO_AURA_TARGET = "friendly_ammo_items"
+MAX_AMMO_AURA_OPERATION = "grant_max_ammo"
 HERO_SKILL_TRIGGER = "friendly_item_used"
 HERO_SKILL_TARGETS = {"opponent_hero", "source_item", "owner_hero"}
 HERO_SKILL_OPERATIONS = {"deal_damage", "charge", "heal", "gain_shield"}
@@ -874,6 +876,18 @@ def _validate_executable_aura(value: Any, context: str) -> str:
     aura_id = _expect_stable_id(aura["auraId"], f"{context}:auraId")
     _expect_integer(aura["priority"], f"{context}:priority", 0)
     target = _expect_exact_fields(aura["target"], {"type", "params"}, f"{context}:target")
+    operation = _expect_exact_fields(
+        aura["operation"], {"type", "params"}, f"{context}:operation"
+    )
+    if operation["type"] == MAX_AMMO_AURA_OPERATION:
+        if target["type"] != MAX_AMMO_AURA_TARGET:
+            raise ExportError(f"EXECUTABLE_MAX_AMMO_AURA_TARGET_INVALID:{aura_id}")
+        _expect_exact_fields(target["params"], set(), f"{context}:target:params")
+        params = _expect_exact_fields(
+            operation["params"], {"amount"}, f"{context}:operation:params"
+        )
+        _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
+        return aura_id
     if target["type"] != DAMAGE_AURA_TARGET:
         raise ExportError(f"EXECUTABLE_DAMAGE_AURA_TARGET_INVALID:{aura_id}")
     target_params = _expect_exact_fields(
@@ -882,9 +896,6 @@ def _validate_executable_aura(value: Any, context: str) -> str:
     _expect_canonical_item_tags(target_params["tags"], f"{context}:target:params:tags")
     if target_params["excludeSelf"] is not True:
         raise ExportError(f"EXECUTABLE_DAMAGE_AURA_EXCLUDE_SELF_INVALID:{aura_id}")
-    operation = _expect_exact_fields(
-        aura["operation"], {"type", "params"}, f"{context}:operation"
-    )
     operation_type = operation["type"]
     if operation_type == DAMAGE_AURA_OPERATION:
         params = _expect_exact_fields(
@@ -3293,15 +3304,27 @@ class ContentAssembler:
             if self.item_skills.get(item_id) != item_skill_id or item_skill_id not in item_skills:
                 raise ExportError(f"AURA_ITEM_SKILL_MISMATCH:{aura_id}")
             target_type = _require_text(filename, row, "target_type")
-            if target_type != DAMAGE_AURA_TARGET:
-                raise ExportError(f"AURA_TARGET_INVALID:{aura_id}")
-            target_tags = _item_tags(filename, row, "target_tags")
-            exclude_self = _boolean(filename, row, "target_exclude_self")
-            if not exclude_self:
-                raise ExportError(f"AURA_EXCLUDE_SELF_INVALID:{aura_id}")
             operation_type = _require_text(filename, row, "operation_type")
+            if operation_type == MAX_AMMO_AURA_OPERATION:
+                if target_type != MAX_AMMO_AURA_TARGET:
+                    raise ExportError(f"MAX_AMMO_AURA_TARGET_INVALID:{aura_id}")
+                if row["target_tags"] != "" or _boolean(filename, row, "target_exclude_self"):
+                    raise ExportError(f"MAX_AMMO_AURA_TARGET_PARAMS_INVALID:{aura_id}")
+                target_params = {}
+            else:
+                if target_type != DAMAGE_AURA_TARGET:
+                    raise ExportError(f"AURA_TARGET_INVALID:{aura_id}")
+                target_tags = _item_tags(filename, row, "target_tags")
+                exclude_self = _boolean(filename, row, "target_exclude_self")
+                if not exclude_self:
+                    raise ExportError(f"AURA_EXCLUDE_SELF_INVALID:{aura_id}")
+                target_params = {"tags": target_tags, "excludeSelf": exclude_self}
             operation_params: dict[str, int]
-            if operation_type == DAMAGE_AURA_OPERATION:
+            if operation_type == MAX_AMMO_AURA_OPERATION:
+                if row["lifesteal_bps"] != "":
+                    raise ExportError(f"MAX_AMMO_AURA_LIFESTEAL_PARAM_FORBIDDEN:{aura_id}")
+                operation_params = {"amount": _integer(filename, row, "amount", 1)}
+            elif operation_type == DAMAGE_AURA_OPERATION:
                 amount = _integer(filename, row, "amount", 1)
                 if amount > CRIT_DAMAGE_AMOUNT_MAX:
                     raise ExportError(f"DAMAGE_AURA_AMOUNT_INVALID:{aura_id}")
@@ -3324,7 +3347,7 @@ class ContentAssembler:
                 "priority": _integer(filename, row, "priority", 0),
                 "target": {
                     "type": target_type,
-                    "params": {"tags": target_tags, "excludeSelf": exclude_self},
+                    "params": target_params,
                 },
                 "operation": {"type": operation_type, "params": operation_params},
             })

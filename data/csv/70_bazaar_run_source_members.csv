@@ -1,0 +1,16 @@
+view_id,source_type,source_uuid,source_heroes,spawning_eligibility,source_qualities
+view_ammo_tool_run_866a4939,item,c05828f1-39e6-47aa-9041-216dfa60d83d,pygmalien,Always,gold|diamond
+view_ammo_tool_run_866a4939,skill,0beccea0-bb9b-444b-b063-bf6aeadaddc8,common,GuidOnly,diamond
+view_ammo_tool_run_866a4939,skill,13989ad3-2122-4d86-a323-bb90fda8360b,karnok|vanessa,Always,silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,1e75f81b-f982-4642-b33d-497336784f9e,dooley|hero8|jules|karnok|mak|stelle|vanessa,Always,silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,2b081d19-8f82-44fd-b6d2-0daeaf97a85e,karnok|vanessa,Always,silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,42c33f6c-a233-4ad1-8f04-b1cadac3a15f,mak|vanessa,Always,silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,4b491993-ccc9-4021-a347-5492a51f7b30,dooley|hero8|jules|karnok|mak|pygmalien|stelle|vanessa,Always,silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,71433809-d05a-4544-9959-aff20ae5db93,vanessa,Always,silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,756024f8-ad19-4f9b-a3c1-3a93c285b5d1,common,Always,bronze|silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,83cf85fa-f486-4486-ba76-c28f4db60677,common,GuidOnly,diamond
+view_ammo_tool_run_866a4939,skill,8612baa6-4d55-430e-9f40-6db1e5dfe8ff,common,Always,diamond
+view_ammo_tool_run_866a4939,skill,a2200487-1d56-4383-8671-781049f8f7de,dooley|hero8|jules|karnok|mak|pygmalien|stelle|vanessa,Always,silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,a885b513-3fe3-4795-a10e-c2e4f6b5f1f6,karnok|vanessa,Always,gold|diamond
+view_ammo_tool_run_866a4939,skill,c5936035-d32a-4d82-8dfc-44deb993b5ea,common,Always,bronze|silver|gold|diamond
+view_ammo_tool_run_866a4939,skill,e41f6a66-9257-45c3-b249-9f9ef0f93f3e,dooley|karnok|mak|vanessa,Always,gold|diamond

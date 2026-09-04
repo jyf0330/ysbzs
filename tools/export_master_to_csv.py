@@ -16,6 +16,7 @@ import sys
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
+import bazaar_run_source_views as run_source_views
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MASTER = ROOT / "xlsx" / "ysbzs_master.xlsx"
@@ -62,6 +63,8 @@ REFERENCE_SOURCE_EXPORTS = [
     ("BAZAAR_OBJECTS", "34_bazaar_objects.csv"),
     ("BAZAAR_REFERENCE_SNAPSHOTS", "66_bazaar_reference_snapshots.csv"),
     ("BAZAAR_REFERENCE_MEMBERS", "67_bazaar_reference_members.csv"),
+    (run_source_views.VIEW_SHEET, run_source_views.VIEW_FILE),
+    (run_source_views.MEMBER_SHEET, run_source_views.MEMBER_FILE),
 ]
 
 REFERENCE_MEMBER_HEADERS = ["source_snapshot_id", "source_type", "source_uuid"]
@@ -497,6 +500,10 @@ def validate_bazaar_reference_members(tables):
     actual_hash = hashlib.sha256("\n".join(sorted(ids)).encode("utf-8")).hexdigest()
     if actual_hash != RELOCKED_LOCAL_CACHE_ITEM_ID_SET_SHA256:
         raise ValueError("BAZAAR_REFERENCE_MEMBERS_HASH_INVALID")
+
+
+def validate_bazaar_run_source_views(tables):
+    run_source_views.validate(tables)
 
 
 def write_csv(path, rows, headers, bom=False):
@@ -1190,7 +1197,8 @@ def generated_tables(master_path, baseline_dir):
         rows, headers = generated_sheet_table(master_path, sheet_name)
         if rows and headers:
             result[filename] = (rows, headers)
-    validate_bazaar_reference_members(result)
+    validate_bazaar_run_source_views(result)
+    run_source_views.canonicalize(result)
     member_rows, member_headers = result["67_bazaar_reference_members.csv"]
     result["67_bazaar_reference_members.csv"] = (
         sorted(member_rows, key=lambda row: row["source_uuid"]), member_headers
@@ -1218,7 +1226,8 @@ def generated_reference_source_tables(master_path):
         if not rows or not headers:
             raise ValueError(f"master workbook missing reference-source sheet rows: {sheet_name}")
         result[filename] = (rows, headers)
-    validate_bazaar_reference_members(result)
+    validate_bazaar_run_source_views(result)
+    run_source_views.canonicalize(result)
     member_rows, member_headers = result["67_bazaar_reference_members.csv"]
     result["67_bazaar_reference_members.csv"] = (
         sorted(member_rows, key=lambda row: row["source_uuid"]), member_headers

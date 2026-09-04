@@ -64,6 +64,8 @@
 
 ## DONE
 
+- `tasks/done/2026-09-04_bazaar_run_source_view.md` — Spices＋14技能独立参考视图完成；来源3/3、主线程CSV08B及独立审核通过，旧140/44张旧表/正式JSON不变。全量unit12失败已在精确父提交逐名重现；不代表原规则执行或六场对战验收。
+
 - `tasks/done/2026-09-04_original_pirate_source_binding.md` — 来源绑定数据切片：数据39/39、两端hash与公开Session拒绝链已验证；12项unit失败有逐项早期同签名证据，广泛回归不全绿。22件仍原创，不增加原规则审核通过数。
 
 - `tasks/done/2026-09-04_original_pirate_poison_cadence.md` — Poison v3每20tick一次，数据38/38、Godot功能与原Poison耗时门禁通过；只核实频率，完整海盗与三构筑日志审核仍开放。

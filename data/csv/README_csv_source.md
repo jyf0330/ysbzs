@@ -1,5 +1,15 @@
 # CSV 数据真源说明
 
+## 候选 Run 补充身份视图（2026-09-04，仅参考）
+
+69_bazaar_run_source_views.csv 与 70_bazaar_run_source_members.csv 来自工作簿 BAZAAR_RUN_SOURCE_VIEWS / BAZAAR_RUN_SOURCE_MEMBERS。范围严格为公开 Run 866a4939-d497-45a1-9726-4a0874a5340b 已观察的 Spices 和14技能；不是完整构筑初态、自然获取池、热门固定阵容榜或原规则执行证明。
+
+父外键复用66中完整GameData.db的artifact/build身份，不继承父行历史hero_scope=vanessa为新视图筛选条件；旧67的140 Vanessa Item集合不变。70只含类型、UUID、来源英雄分类、生成资格及DB实际品质集合，不含专有规则文案/payload/素材。source_qualities不是该Run实例品质，页面footer版本不是该Run版本锁。
+
+英雄集合小写字典序，以|分隔；品质小写按铜银金钻顺序，以|分隔；生成资格保留Always/GuidOnly源枚举。重复、空值、错误大小写、未知字段拒绝。成员按(source_type,source_uuid)排序，依70表头列序形成字符串二维数组，紧凑JSON UTF-8 SHA256固定为04aaf9676efff60f370c1400168390909715d975e702c87f021737c72cb3b6a5。strict模块固定锁校验，不允许手填或重签CSV摘要来添加成员。
+
+生成/复验：`python3 tools/export_master_to_csv.py --reference-source-lock-only [--check]`。一次性脚本tools/add_bazaar_run_source_view.py只读已锁DB，核验SHA和完整身份摘要后局部新增工作表，并校验旧表所有单元格值不变。本视图不进入当前runtime sourceCatalog/content/display，后续完整来源绑定迁移另行消费。
+
 ## 逐物品来源绑定（2026-09-04）
 
 `BZ_ITEM_SOURCE_BINDINGS -> 68_bz_item_source_bindings.csv` 只声明六列：item_id、quality、enchantment_id、scope_id、source_snapshot_id、source_object_id。每件物品在同一个对象/快照下精确声明全部品质的none和已配置附魔；battle_profile不表示审核通过，none不是所有附魔通配符。现有230条关系全部对应22件原创物品，原版执行审核覆盖不增加。

@@ -1014,10 +1014,6 @@ def _validate_combat_build(
             raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_UNKNOWN:{context}:{hero_id}")
         _expect_integer(hero["level"], f"{context}:hero:level", 1)
         skill_instances = _expect_list(build["heroSkills"], f"{context}:heroSkills")
-        expected_quality = (
-            "bronze" if expected_day <= 3 else "silver" if expected_day <= 6
-            else "gold" if expected_day <= 9 else "diamond"
-        )
         instance_ids: set[str] = set()
         skill_ids: set[str] = set()
         sequences: list[int] = []
@@ -1026,10 +1022,6 @@ def _validate_combat_build(
                 instance_value, f"{context}:heroSkills:{index}", hero_id, hero_skills,
                 "offline_snapshot", expected_source_id, expected_day,
             )
-            if instance["quality"] != expected_quality:
-                raise ExportError(
-                    f"EXECUTABLE_COMBAT_BUILD_HERO_SKILL_QUALITY_INVALID:{context}:{instance['instanceId']}"
-                )
             if instance["instanceId"] in instance_ids or instance["heroSkillId"] in skill_ids:
                 raise ExportError(f"EXECUTABLE_COMBAT_BUILD_HERO_SKILL_DUPLICATE:{context}")
             instance_ids.add(instance["instanceId"])
@@ -1620,7 +1612,7 @@ def validate_package(package: Any) -> None:
         if skill["triggerEvent"] != HERO_SKILL_TRIGGER or skill["reentrant"] is not False:
             raise ExportError(f"EXECUTABLE_HERO_SKILL_TRIGGER_INVALID:{hero_skill_id}")
         profiles = skill["qualityProfiles"]
-        if not isinstance(profiles, dict) or set(profiles) != set(QUALITIES):
+        if not isinstance(profiles, dict) or not profiles or not set(profiles).issubset(QUALITIES):
             raise ExportError(f"EXECUTABLE_HERO_SKILL_QUALITY_COVERAGE_INVALID:{hero_skill_id}")
         for quality, profile_value in profiles.items():
             profile = _expect_exact_fields(profile_value, {
@@ -1663,8 +1655,7 @@ def validate_package(package: Any) -> None:
                 instance_value, f"heroes:{hero_id}:startingHeroSkills:{index}", hero_id,
                 hero_skills, "starting_loadout", hero_id, 1,
             )
-            if instance["quality"] != "bronze" \
-                    or instance["instanceId"] in starting_ids \
+            if instance["instanceId"] in starting_ids \
                     or instance["heroSkillId"] in starting_skill_ids:
                 raise ExportError(f"EXECUTABLE_HERO_STARTING_SKILLS_INVALID:{hero_id}")
             starting_ids.add(instance["instanceId"])
@@ -1829,7 +1820,7 @@ def validate_package(package: Any) -> None:
         action_type = action.get("type")
         if action_type == "learn":
             _expect_exact_fields(action, {"type", "toQuality"}, f"heroSkillOffers:{offer_id}:action")
-            if action["toQuality"] != "bronze":
+            if not isinstance(action["toQuality"], str) or action["toQuality"] not in skill["qualityProfiles"]:
                 raise ExportError(f"EXECUTABLE_HERO_SKILL_LEARN_ACTION_INVALID:{offer_id}")
             learn_by_skill[hero_skill_id].append(offer)
         elif action_type == "upgrade":
@@ -1846,7 +1837,8 @@ def validate_package(package: Any) -> None:
             upgrade_ids.add(upgrade_id)
             from_quality = action["fromQuality"]
             to_quality = action["toQuality"]
-            if from_quality not in QUALITIES \
+            if not isinstance(from_quality, str) or not isinstance(to_quality, str) \
+                    or from_quality not in skill["qualityProfiles"] or to_quality not in skill["qualityProfiles"] \
                     or QUALITIES.index(from_quality) + 1 >= len(QUALITIES) \
                     or QUALITIES[QUALITIES.index(from_quality) + 1] != to_quality:
                 raise ExportError(f"EXECUTABLE_HERO_SKILL_UPGRADE_TRANSITION_INVALID:{offer_id}")
@@ -1914,6 +1906,8 @@ def validate_package(package: Any) -> None:
         (hero_skill_id, QUALITIES[index], QUALITIES[index + 1])
         for hero_skill_id in hero_skills
         for index in range(len(QUALITIES) - 1)
+        if QUALITIES[index] in hero_skills[hero_skill_id]["qualityProfiles"]
+        and QUALITIES[index + 1] in hero_skills[hero_skill_id]["qualityProfiles"]
     }
     if set(upgrade_by_transition) != expected_hero_skill_transitions \
             or any(len(values) != 1 for values in upgrade_by_transition.values()):
@@ -2319,7 +2313,7 @@ def validate_package(package: Any) -> None:
     expected_hero_skill_profiles = {
         (hero_skill_id, quality)
         for hero_skill_id in hero_skills
-        for quality in QUALITIES
+        for quality in hero_skills[hero_skill_id]["qualityProfiles"]
     }
     if set(reachable_hero_skill_profiles) != expected_hero_skill_profiles \
             or any(day > maximum_day for day in reachable_hero_skill_profiles.values()):
@@ -3435,7 +3429,7 @@ class ContentAssembler:
                         "ticks": ticks,
                     }],
                 }
-            if sorted(profiles, key=QUALITIES.index) != QUALITIES:
+            if not profiles:
                 raise ExportError(f"HERO_SKILL_QUALITY_COVERAGE_INVALID:{hero_skill_id}")
             result[hero_skill_id] = {
                 "heroSkillId": hero_skill_id,
@@ -3443,7 +3437,7 @@ class ContentAssembler:
                 "priority": priority,
                 "triggerEvent": HERO_SKILL_TRIGGER,
                 "reentrant": False,
-                "qualityProfiles": {quality: profiles[quality] for quality in QUALITIES},
+                "qualityProfiles": {quality: profiles[quality] for quality in QUALITIES if quality in profiles},
             }
         return result
 
@@ -3484,7 +3478,6 @@ class ContentAssembler:
                 raise ExportError(f"HERO_SKILL_LOADOUT_SOURCE_INVALID:{instance_id}")
             if loadout_kind == "starter" and (
                 loadout_id != hero["heroId"] or skill["heroId"] != hero["heroId"]
-                or quality != "bronze"
             ):
                 raise ExportError(f"HERO_STARTING_SKILL_INVALID:{instance_id}")
             grouped[loadout_kind][loadout_id].append({
@@ -3573,10 +3566,10 @@ class ContentAssembler:
             action_type = _require_text(offer_file, row, "action_type")
             from_quality = row.get("from_quality", "")
             to_quality = _require_text(offer_file, row, "to_quality")
-            if to_quality not in QUALITIES:
+            if to_quality not in skill["qualityProfiles"]:
                 raise ExportError(f"HERO_SKILL_OFFER_QUALITY_INVALID:{offer_id}")
             if action_type == "learn":
-                if row.get("upgrade_id", "") or from_quality or to_quality != "bronze":
+                if row.get("upgrade_id", "") or from_quality:
                     raise ExportError(f"HERO_SKILL_LEARN_ACTION_INVALID:{offer_id}")
                 learn_key = (trainer_id, hero_skill_id)
                 if learn_key in learn_keys:
@@ -3588,7 +3581,7 @@ class ContentAssembler:
                 if upgrade_id in upgrade_ids or upgrade_id in item_upgrade_ids:
                     raise ExportError(f"HERO_SKILL_UPGRADE_ID_DUPLICATE:{upgrade_id}")
                 upgrade_ids.add(upgrade_id)
-                if from_quality not in QUALITIES \
+                if from_quality not in skill["qualityProfiles"] \
                         or QUALITIES.index(from_quality) + 1 >= len(QUALITIES) \
                         or QUALITIES[QUALITIES.index(from_quality) + 1] != to_quality:
                     raise ExportError(f"HERO_SKILL_UPGRADE_TRANSITION_INVALID:{offer_id}")
@@ -3688,6 +3681,8 @@ class ContentAssembler:
             (hero_skill_id, QUALITIES[index], QUALITIES[index + 1])
             for hero_skill_id in hero_skills
             for index in range(len(QUALITIES) - 1)
+            if QUALITIES[index] in hero_skills[hero_skill_id]["qualityProfiles"]
+            and QUALITIES[index + 1] in hero_skills[hero_skill_id]["qualityProfiles"]
         }
         if set(upgrade_by_transition) != expected_transitions \
                 or any(len(values) != 1 for values in upgrade_by_transition.values()):
@@ -3717,7 +3712,7 @@ class ContentAssembler:
         expected_profiles = {
             (hero_skill_id, quality)
             for hero_skill_id in hero_skills
-            for quality in QUALITIES
+            for quality in hero_skills[hero_skill_id]["qualityProfiles"]
         }
         if set(reachable) != expected_profiles \
                 or any(day > run_day_max for day in reachable.values()):
@@ -4352,7 +4347,7 @@ class ContentAssembler:
                 skill = hero_skills[value["heroSkillId"]]
                 if skill["heroId"] != hero_id or value["sourceType"] != "offline_snapshot" \
                         or value["sourceId"] != snapshot_id or value["acquiredDay"] != day \
-                        or value["quality"] != expected_quality:
+                        or value["quality"] not in skill["qualityProfiles"]:
                     raise ExportError(f"GHOST_HERO_SKILL_INSTANCE_INVALID:{value['instanceId']}")
             hero_hp_text = _same(rows, filename, "hero_hp")
             hero_max_text = _same(rows, filename, "hero_max_hp")

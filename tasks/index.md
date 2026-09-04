@@ -24,6 +24,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-04_original_pirate_sparse_skill_qualities.md` — 实际技能品质/引用/相邻升级/可达性数据专项5/5及旧整包拒绝1/1通过，生产逐字不变；来源扩展下一切片。
+
 - `tasks/doing/2026-09-04_original_pirate_max_ammo_aura.md` — 最大弹药 Aura 数据专项4/4、旧Aura及整包拒绝2/2通过，生产包逐字不变；待Lead集成，不声明原版初态通过。
 
 - `tasks/doing/2026-09-04_original_pirate_self_use_damage_growth.md` — 数据能力专项3/3、既有增伤/整包拒绝专项2/2通过；仅新增ready/always/self本场增伤，生产包逐字不变，待Lead集成。

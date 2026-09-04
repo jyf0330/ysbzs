@@ -4098,9 +4098,9 @@ test('OPC06 v36/v34 forged Regen/Lifesteal/Crit/Burn成功响应、Ammo depletio
       snapshot.build.heroSkills.reverse();
       snapshot.buildHash = expectedBuildHash(snapshot.build);
     }],
-    ['ghost-snapshot-hero-skill-quality', (value) => {
+    ['ghost-snapshot-hero-skill-unknown-quality', (value) => {
       const snapshot = value.runtimeBundle.generation.battle.ghostSnapshots[0];
-      snapshot.build.heroSkills[0].quality = 'silver';
+      snapshot.build.heroSkills[0].quality = 'legendary';
       snapshot.buildHash = expectedBuildHash(snapshot.build);
     }],
     ['ghost-snapshot-hero-skill-source', (value) => {

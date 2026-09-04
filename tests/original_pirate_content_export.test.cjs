@@ -3593,10 +3593,10 @@ test('OPC06 v36/v34 forged Regen/Lifesteal/Crit/Burn成功响应、Ammo depletio
         .qualityProfiles.bronze.effects.find(({ operation }) => operation.type === 'gain_damage_for_fight')
         .target.type = 'selected_enemy';
     }],
-    ['damage-growth-trigger', (value) => {
+    ['damage-growth-battle-start-trigger', (value) => {
       const effect = value.items.find(({ itemId }) => itemId === 'item_tidescar_matchlock')
         .qualityProfiles.bronze.effects.find(({ operation }) => operation.type === 'gain_damage_for_fight');
-      effect.trigger = { event: 'item_ready', conditions: [{ type: 'always', params: {} }] };
+      effect.trigger = { event: 'battle_start', conditions: [{ type: 'always', params: {} }] };
     }],
     ['damage-growth-condition', (value) => {
       const effect = value.items.find(({ itemId }) => itemId === 'item_tidescar_matchlock')

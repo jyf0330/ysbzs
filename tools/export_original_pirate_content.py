@@ -802,10 +802,15 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         params = _expect_exact_fields(operation["params"], {"amount"}, f"{context}:operation:params")
         amount = _expect_integer(params["amount"], f"{context}:operation:params:amount", 1)
         if operation_type == "gain_damage_for_fight":
-            if trigger_event != "another_friendly_item_used" or len(conditions) not in {1, 2} \
-                    or conditions[0].get("type") != "source_item_has_any_tag":
+            self_use = trigger_event == "item_ready" \
+                and conditions == [{"type": "always", "params": {}}]
+            reactive = trigger_event == "another_friendly_item_used" \
+                and len(conditions) in {1, 2} \
+                and conditions[0].get("type") == "source_item_has_any_tag"
+            if not (self_use or reactive):
                 raise ExportError(f"EXECUTABLE_ITEM_DAMAGE_GROWTH_TRIGGER_INVALID:{effect_id}")
-            valid_target = target_type in {"self_item", "trigger_source_item"}
+            valid_target = target_type == "self_item" if self_use \
+                else target_type in {"self_item", "trigger_source_item"}
         elif operation_type == "gain_regen_for_fight":
             if amount > REGEN_MAX_AMOUNT \
                     or trigger_event != SLOW_SUCCESS_RESPONSE_TRIGGER \
@@ -3107,10 +3112,14 @@ class ContentAssembler:
             ):
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type == "gain_damage_for_fight":
-                if target_type not in {"self_item", "trigger_source_item"} \
-                        or trigger_event != "another_friendly_item_used" \
-                        or len(conditions) not in {1, 2} \
-                        or conditions[0].get("type") != "source_item_has_any_tag":
+                self_use = trigger_event == "item_ready" \
+                    and conditions == [{"type": "always", "params": {}}] \
+                    and target_type == "self_item"
+                reactive = trigger_event == "another_friendly_item_used" \
+                    and len(conditions) in {1, 2} \
+                    and conditions[0].get("type") == "source_item_has_any_tag" \
+                    and target_type in {"self_item", "trigger_source_item"}
+                if not (self_use or reactive):
                     raise ExportError(f"EFFECT_DAMAGE_GROWTH_TRIGGER_INVALID:{effect_id}")
             if operation_type == "gain_crit_chance_for_fight":
                 if target_type != "trigger_source_item" \

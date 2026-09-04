@@ -24,6 +24,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-04_original_pirate_self_use_damage_growth.md` — 数据能力专项3/3、既有增伤/整包拒绝专项2/2通过；仅新增ready/always/self本场增伤，生产包逐字不变，待Lead集成。
+
 - `tasks/doing/2026-06-29_auto-enemy-turn-flow.md` — UI flow: 我方出击后自动推进敌方行动。
 - `tasks/doing/2026-06-30_attack-event-animation.md` — UI feedback: 战斗攻击/伤害/KO 动画反馈。
 - `tasks/doing/2026-06-30_battle-debug-route-page.md` — UI tool: 独立战斗调试入口页。

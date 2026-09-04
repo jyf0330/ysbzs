@@ -1,5 +1,11 @@
 # CSV 数据真源说明
 
+## 逐物品来源绑定（2026-09-04）
+
+`BZ_ITEM_SOURCE_BINDINGS -> 68_bz_item_source_bindings.csv` 只声明六列：item_id、quality、enchantment_id、scope_id、source_snapshot_id、source_object_id。每件物品在同一个对象/快照下精确声明全部品质的none和已配置附魔；battle_profile不表示审核通过，none不是所有附魔通配符。现有230条关系全部对应22件原创物品，原版执行审核覆盖不增加。
+
+`runtimeBundle.sourceCatalog` 从56及按需读取、完整验证的66/67派生；local metadata去掉56的snapshot_id，external metadata去掉66的source_snapshot_id且仅game_patch空值转null，其余保留字符串。external成员为67完整140 item UUID，不包含专有规则。snapshotDigest是去掉自身字段后、成员按sourceType/sourceUuid排序的canonical JSON UTF-8 SHA256；JSON字典键排序、紧凑分隔、不转义Unicode。items.sourceBinding带同一摘要与声明范围，目录进入bundle hash。synthetic_fixture仅显式测试包身份，生产CSV不生成；无PASS或verifiedScopes字段。当前content36/runtime34、rules32、revision34；历史切片版本不覆盖当前身份。
+
 ## Poison 频率纠正（2026-09-04）
 
 锁定 GameData.db SHA `7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9` 的 Poison tooltip 提供“每秒一次”频率证据。按运行时 50ms/tick，当前 `poison.v3` 为 20 ticks；rules v32、source/content/bundle revision v33，原创批次 snapshot_id 同步为 snapshot_original_pirate_bootstrap_v33，content35/runtime33/catalog25 不变。此次仅频率获得来源支持；首次 pulse、重施加、结算阶段、护盾、暴击、治疗交互及其他既有策略保持未验证，不表示整套 Poison 或任何物品原规则验收通过。下文被动切片的 v31/revision32 是其历史迁移版本，不覆盖本次当前版本。

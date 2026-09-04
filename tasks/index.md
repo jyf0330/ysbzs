@@ -58,6 +58,8 @@
 
 ## DONE
 
+- `tasks/done/2026-09-04_original_pirate_source_binding.md` — 来源绑定数据切片：数据39/39、两端hash与公开Session拒绝链已验证；12项unit失败有逐项早期同签名证据，广泛回归不全绿。22件仍原创，不增加原规则审核通过数。
+
 - `tasks/done/2026-09-04_original_pirate_poison_cadence.md` — Poison v3每20tick一次，数据38/38、Godot功能与原Poison耗时门禁通过；只核实频率，完整海盗与三构筑日志审核仍开放。
 
 - `tasks/done/2026-09-04_bazaar_reference_members.md` — source identity: 完整140 UUID成员清单与摘要校验完成，主线程独立专项1+3通过；普通全导出仍有既有pet缺口，原规则执行映射仍为0。

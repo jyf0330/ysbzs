@@ -40,6 +40,7 @@ def passive(directory, item_id, keep_event=None):
         return rows
     edit(directory, '48_bz_item_skills.csv', skills)
     edit(directory, '58_bz_enchantments.csv', lambda rows: [r for r in rows if r['item_id'] != item_id])
+    edit(directory, '68_bz_item_source_bindings.csv', lambda rows: [r for r in rows if r['item_id'] != item_id or r['enchantment_id'] == 'none'])
 
 def export(directory):
     return build_exports(directory)

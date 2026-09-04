@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 23 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 24 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
-This exporter deliberately keeps planner-facing Chinese/catalog/source fields
-outside the formal v35 candidate package while still validating every
-domain and every reference before emitting any output.
+Planner-facing display text remains in the display sidecar. The v36 candidate
+hash includes source identity metadata in runtimeBundle.sourceCatalog, never
+original-game payload or review PASS claims. Every domain/reference is validated
+before emitting output.
 """
 
 from __future__ import annotations
 
 import argparse
+import original_pirate_source_binding as source_binding
 import csv
 import hashlib
 import json
@@ -25,12 +27,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 35
+CONTENT_SCHEMA_VERSION = 36
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 33
-SOURCE_CONTENT_SCHEMA_VERSION = 33
-SOURCE_RUNTIME_SCHEMA_VERSION = 31
+RUNTIME_SCHEMA_VERSION = 34
+SOURCE_CONTENT_SCHEMA_VERSION = 34
+SOURCE_RUNTIME_SCHEMA_VERSION = 32
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -208,6 +210,7 @@ INTEGER_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
 
 DOMAIN_HEADERS = OrderedDict([
+    ("68_bz_item_source_bindings.csv", source_binding.HEADERS),
     ("44_bz_gameplay.csv", [
         "gameplay_id", "content_schema", "schema_version", "quality_profile_schema",
         "rules_version", "source_revision", "bundle_revision", "content_revision",
@@ -526,6 +529,8 @@ def _canonical_json(value: Any) -> str:
 def _canonical_runtime_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result = json.loads(json.dumps(items, ensure_ascii=False))
     for item in result:
+        if "sourceBinding" in item:
+            item["sourceBinding"]["declaredScopes"].sort(key=source_binding.scope_key)
         item.get("tags", []).sort()
         for profile in item.get("qualityProfiles", {}).values():
             for effect in profile.get("effects", []):
@@ -559,6 +564,8 @@ def _canonical_combat_build(build: dict[str, Any]) -> dict[str, Any]:
 def _canonical_runtime_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     result = json.loads(json.dumps(bundle, ensure_ascii=False))
     result.pop("bundleHash", None)
+    if "sourceCatalog" in result:
+        result["sourceCatalog"] = source_binding.canonical_catalog(result["sourceCatalog"])
     generation = result.get("generation", {})
     shop = generation.get("shop", {})
     shop.get("templates", []).sort(key=lambda value: value.get("offerTemplateId", ""))
@@ -1067,7 +1074,7 @@ def _validate_combat_build(
 
 
 def validate_package(package: Any) -> None:
-    """Validate the formal v35/v33 candidate package without accepting partial data."""
+    """Validate the formal v36/v34 candidate package without accepting partial data."""
     root = _expect_exact_fields(package, {
         "gameplayId", "contentSchema", "sourceRevision", "rulesVersion", "schemaVersion",
         "qualityProfileSchema", "contentRevision", "items", "runtimeBundle",
@@ -1090,7 +1097,7 @@ def validate_package(package: Any) -> None:
     item_aura_ids: set[str] = set()
     for item_index, item_value in enumerate(items):
         item = _expect_exact_fields(item_value, {
-            "itemId", "tags", "slotWidth", "baseQuality", "qualityProfiles",
+            "itemId", "tags", "slotWidth", "baseQuality", "qualityProfiles", "sourceBinding",
         }, f"items:{item_index}")
         item_id = _expect_stable_id(item["itemId"], f"items:{item_index}:itemId")
         if item_id in item_widths:
@@ -1224,7 +1231,7 @@ def validate_package(package: Any) -> None:
     bundle = _expect_exact_fields(root["runtimeBundle"], {
         "schema", "schemaVersion", "bundleRevision", "rulesVersion", "contentRevision",
         "bundleHash", "newRunTemplate", "scheduleConfig", "shopRules", "battleRules",
-        "progressionRules", "generation", "executableCatalogs",
+        "progressionRules", "generation", "executableCatalogs", "sourceCatalog",
     }, "runtimeBundle")
     if bundle["schema"] != RUNTIME_SCHEMA or bundle["schemaVersion"] != RUNTIME_SCHEMA_VERSION \
             or bundle["rulesVersion"] != root["rulesVersion"] \
@@ -2304,13 +2311,18 @@ def validate_package(package: Any) -> None:
     if referenced_rewards != set(rewards):
         raise ExportError("EXECUTABLE_REWARD_REFERENCE_COVERAGE_INVALID")
 
+    try:
+        source_binding.validate_sources(items, bundle)
+    except ValueError as exc:
+        raise ExportError(str(exc)) from exc
     expected_hash = _runtime_bundle_hash(bundle, items)
     if not isinstance(bundle["bundleHash"], str) or bundle["bundleHash"] != expected_hash:
         raise ExportError("EXECUTABLE_BUNDLE_HASH_INVALID")
 
 
 class ContentAssembler:
-    def __init__(self, tables: dict[str, list[dict[str, str]]]) -> None:
+    def __init__(self, tables: dict[str, list[dict[str, str]]], csv_dir: Path = DEFAULT_CSV_DIR) -> None:
+        self.csv_dir = csv_dir
         self.tables = tables
         self.item_profiles: dict[tuple[str, str], dict[str, Any]] = {}
         self.item_widths: dict[str, int] = {}
@@ -2407,6 +2419,10 @@ class ContentAssembler:
             },
             "executableCatalogs": executable_catalogs,
         }
+        try:
+            source_binding.assemble_sources(self.tables, self.csv_dir, items, bundle)
+        except ValueError as exc:
+            raise ExportError(str(exc)) from exc
         bundle["bundleHash"] = _runtime_bundle_hash(bundle, items)
         return {
             "gameplayId": GAMEPLAY_ID,
@@ -3910,8 +3926,8 @@ class ContentAssembler:
         expected_constants = {
             "gameplay_id": GAMEPLAY_ID,
             "content_schema": CONTENT_SCHEMA,
-            # The current 23-domain workbook is the finite v33 candidate source.
-            # This adapter is its explicit one-way projection into executable v35.
+            # The current 24-domain workbook is the finite v34 candidate source.
+            # This adapter is its explicit one-way projection into executable v36.
             "schema_version": str(SOURCE_CONTENT_SCHEMA_VERSION),
             "quality_profile_schema": QUALITY_PROFILE_SCHEMA,
             "rules_version": RULES_VERSION,
@@ -4631,7 +4647,7 @@ def _build_display_directory(
 
 def build_exports(csv_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     tables = _read_domains(csv_dir)
-    package = ContentAssembler(tables).build()
+    package = ContentAssembler(tables, csv_dir).build()
     # JSON round-trip is the final type gate. NaN and non-string dictionary keys
     # cannot enter from CSV, but this also isolates the returned value.
     package = json.loads(_canonical_json(package))
@@ -4652,7 +4668,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v35 runtime and display candidates from 23 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v36 runtime and display candidates from 24 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4667,7 +4683,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v35 candidate "
+            "PASS original-pirate v36 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4680,7 +4696,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v35 candidate to {output}")
+        print(f"exported original-pirate v36 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

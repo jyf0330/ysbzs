@@ -59,6 +59,7 @@ ORIGINAL_PIRATE_EXPORTS = [
     ("BZ_ITEM_SOURCE_BINDINGS", "68_bz_item_source_bindings.csv"),
     ("BZ_HERO_SKILL_SOURCE_BINDINGS", "71_bz_hero_skill_source_bindings.csv"),
     ("BZ_HERO_SKILL_AURAS", "72_bz_hero_skill_auras.csv"),
+    ("BZ_SOURCE_EFFECT_MAPPINGS", "73_bz_source_effect_mappings.csv"),
 ]
 
 REFERENCE_SOURCE_EXPORTS = [

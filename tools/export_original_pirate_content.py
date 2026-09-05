@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build strict original-pirate runtime and display candidates from 26 BZ domains.
+"""Build strict original-pirate runtime and display candidates from 27 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
-Planner-facing display text remains in the display sidecar. The v37 candidate
+Planner-facing display text remains in the display sidecar. The v39 candidate
 hash includes source identity metadata in runtimeBundle.sourceCatalog, never
 original-game payload or review PASS claims. Every domain/reference is validated
 before emitting output.
@@ -27,12 +27,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 38
+CONTENT_SCHEMA_VERSION = 39
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 36
-SOURCE_CONTENT_SCHEMA_VERSION = 34
-SOURCE_RUNTIME_SCHEMA_VERSION = 32
+RUNTIME_SCHEMA_VERSION = 37
+SOURCE_CONTENT_SCHEMA_VERSION = 35
+SOURCE_RUNTIME_SCHEMA_VERSION = 33
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -53,7 +53,7 @@ LAST_CHANCE_SCHEMA_VERSION = 1
 GHOST_SNAPSHOT_SCHEMA = "ysbzs.original-pirate-ghost-snapshot.v1"
 GHOST_SNAPSHOT_SCHEMA_VERSION = 2
 GHOST_MATCH_SOURCE = "offline_content"
-RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-04-v33"
+RULES_VERSION = "ysbzs.original-pirate-rules.2026-09-05-v34"
 AMMO_DEPLETION_CONTRACT = "ysbzs.original-pirate-ammo-depletion.v1"
 AMMO_DEPLETION_TRIGGER_POLICY = "current_item_use_positive_to_zero"
 AMMO_DEPLETION_EVALUATION_PHASE = "after_ammo_spend_before_item_effects"
@@ -174,6 +174,7 @@ ITEM_EFFECT_TARGETS = {
     *DETERMINISTIC_FRIENDLY_ITEM_TARGETS,
     *COLLECTION_FRIENDLY_ITEM_TARGETS,
     *RANDOM_FRIENDLY_ITEM_TARGETS,
+    "all_other_friendly_active_clock_items",
 }
 ITEM_EFFECT_OPERATIONS = {
     "deal_damage", "reload", "charge", "apply_status", "heal", "gain_shield",
@@ -199,6 +200,12 @@ ITEM_EFFECT_CONDITIONS = {
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
 SOURCE_TRIGGER_PRIORITIES = {"Immediate", "Highest", "High", "Medium", "Low", "Lowest"}
 SOURCE_ABILITY_EFFECT_FIELDS = {"sourceAbilityId", "triggerPriority", "effectOrder"}
+ITEM_AVAILABILITIES = {"run_acquirable", "reference_battle_only"}
+SOURCE_EFFECT_MAPPING_SCHEMA = "ysbzs.original-pirate-source-effect-mapping-catalog.v1"
+SOURCE_EFFECT_MAPPING_SCHEMA_VERSION = 1
+WATER_WHEEL_MAPPING_SHA256 = "d1b8812853d4eb182d781fef683bf8c89a384848196123f2e92560b25727c8de"
+WATER_WHEEL_PROVENANCE_SHA256 = "1015faefd611e535fc7bccefcc55a318c8681484a15c81a6fe642be349729ee7"
+WATER_WHEEL_SOURCE_DATA_COMMIT = "21d57c2415690992631c6c4e1607e10ddcf06a24"
 DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
 DAMAGE_AURA_OPERATION = "grant_damage"
 LIFESTEAL_AURA_OPERATION = "grant_lifesteal_bps"
@@ -283,7 +290,7 @@ DOMAIN_HEADERS = OrderedDict([
         "start_gold", "start_income", "catalog_status",
     ]),
     ("46_bz_items.csv", [
-        "item_id", "name_zh", "tags", "slot_width", "base_quality", "quality", "buy_price",
+        "item_id", "name_zh", "tags", "slot_width", "availability", "base_quality", "quality", "buy_price",
         "sell_price", "activation_mode", "cooldown_ticks", "crit_chance_bps", "ammo_enabled", "ammo_initial", "ammo_maximum",
         "item_skill_id", "starter_instance_id", "starter_location", "starter_start_slot",
         "catalog_status",
@@ -382,6 +389,18 @@ DOMAIN_HEADERS = OrderedDict([
     ("72_bz_hero_skill_auras.csv", [
         "aura_id", "hero_skill_id", "quality", "priority", "target_type",
         "target_tags", "operation_type", "lifesteal_bps", "catalog_status",
+    ]),
+    ("73_bz_source_effect_mappings.csv", [
+        "mapping_id", "mapping_schema", "mapping_schema_version", "acceptance",
+        "source_data_commit", "mapping_sha256", "provenance_sha256", "source_db_sha256",
+        "source_object_uuid", "source_internal_name", "item_id", "quality",
+        "cooldown_max_milliseconds", "multicast", "haste_amount_milliseconds",
+        "charge_amount_milliseconds", "charge_targets", "source_ability_id",
+        "source_trigger_type", "mapped_trigger_event", "trigger_priority", "effect_order",
+        "target_type", "target_exclude_self", "target_condition_attribute",
+        "target_condition_operator", "target_condition_value", "subject_type",
+        "subject_target_mode", "subject_include_origin", "operation_type", "status", "ticks",
+        "unknown_source_fields", "excluded_scopes", "catalog_status",
     ]),
 ])
 
@@ -678,6 +697,83 @@ def _expect_canonical_item_tags(value: Any, context: str, allow_empty: bool = Fa
     return tags
 
 
+def _validate_source_effect_mapping_catalog(value: Any) -> None:
+    catalog = _expect_exact_fields(value, {"schema", "schemaVersion", "entries"}, "sourceEffectMappings")
+    if catalog["schema"] != SOURCE_EFFECT_MAPPING_SCHEMA \
+            or catalog["schemaVersion"] != SOURCE_EFFECT_MAPPING_SCHEMA_VERSION:
+        raise ExportError("SOURCE_EFFECT_MAPPING_CATALOG_IDENTITY_INVALID")
+    entries = _expect_list(catalog["entries"], "sourceEffectMappings:entries")
+    if len(entries) != 1:
+        raise ExportError("SOURCE_EFFECT_MAPPING_CATALOG_COVERAGE_INVALID")
+    entry = _expect_exact_fields(entries[0], {
+        "mappingId", "sourceDataCommit", "mappingSha256", "provenanceSha256",
+        "executionStatus", "mapping",
+    }, "sourceEffectMappings:entries:0")
+    if entry["mappingId"] != "water_wheel" \
+            or entry["sourceDataCommit"] != WATER_WHEEL_SOURCE_DATA_COMMIT \
+            or entry["mappingSha256"] != WATER_WHEEL_MAPPING_SHA256 \
+            or entry["provenanceSha256"] != WATER_WHEEL_PROVENANCE_SHA256 \
+            or entry["executionStatus"] != "reference_battle_only_haste_reapplication_fail_closed":
+        raise ExportError("SOURCE_EFFECT_MAPPING_BINDING_INVALID:water_wheel")
+    mapping = entry["mapping"]
+    if not isinstance(mapping, dict) \
+            or hashlib.sha256(_canonical_json(mapping).encode("utf-8")).hexdigest() != WATER_WHEEL_MAPPING_SHA256:
+        raise ExportError("SOURCE_EFFECT_MAPPING_DIGEST_MISMATCH:water_wheel")
+
+
+def _validate_water_wheel_formal_reference(items: list[dict[str, Any]], bundle: dict[str, Any]) -> None:
+    matches = [item for item in items if item.get("itemId") == "item_bazaar_water_wheel"]
+    if len(matches) != 1:
+        raise ExportError("WATER_WHEEL_FORMAL_REFERENCE_REQUIRED")
+    item = matches[0]
+    if item.get("availability") != "reference_battle_only" or item.get("tags") != ["aquatic"] \
+            or item.get("slotWidth") != 3 or item.get("baseQuality") != "silver":
+        raise ExportError("WATER_WHEEL_FORMAL_REFERENCE_IDENTITY_INVALID")
+    binding = item.get("sourceBinding", {})
+    if binding.get("snapshotId") != "snapshot_vanessa_local_cache_25079259_db8914ab" \
+            or binding.get("objectId") != "d8106a24-647f-40c6-8587-22f977931d76" \
+            or binding.get("declaredScopes") != [
+                {"quality": quality, "enchantmentId": "none", "scopeId": "battle_profile"}
+                for quality in ("silver", "gold", "diamond")
+            ]:
+        raise ExportError("WATER_WHEEL_FORMAL_REFERENCE_SOURCE_BINDING_INVALID")
+    cooldowns = {"silver": 160, "gold": 140, "diamond": 120}
+    profiles = item.get("qualityProfiles")
+    if not isinstance(profiles, dict) or set(profiles) != set(cooldowns):
+        raise ExportError("WATER_WHEEL_FORMAL_REFERENCE_PROFILE_COVERAGE_INVALID")
+    for quality, cooldown in cooldowns.items():
+        profile = profiles[quality]
+        expected_effects = [
+            {
+                "effectId": f"effect_bazaar_water_wheel_{quality}_0", "priority": 20,
+                "sourceAbilityId": "0", "triggerPriority": "High", "effectOrder": 0,
+                "trigger": {"event": "item_ready", "conditions": [{"type": "always", "params": {}}]},
+                "target": {"type": "all_other_friendly_active_clock_items", "params": {"excludeSelf": True}},
+                "operation": {"type": "apply_status", "params": {"status": "haste", "ticks": 40}},
+            },
+            {
+                "effectId": f"effect_bazaar_water_wheel_{quality}_1", "priority": 30,
+                "sourceAbilityId": "1", "triggerPriority": "Medium", "effectOrder": 0,
+                "trigger": {"event": "another_friendly_item_used", "conditions": [
+                    {"type": "always", "params": {}},
+                    {"type": "source_item_adjacent_to_self", "params": {}},
+                ]},
+                "target": {"type": "self_item", "params": {}},
+                "operation": {"type": "charge", "params": {"ticks": 40}},
+            },
+        ]
+        expected = {
+            "activationMode": "cooldown", "baseCooldownTicks": cooldown, "critChanceBps": 0,
+            "ammo": {"enabled": False, "initial": 0, "maximum": 0},
+            "effects": expected_effects, "auras": [],
+        }
+        if profile != expected:
+            raise ExportError(f"WATER_WHEEL_FORMAL_REFERENCE_PROFILE_INVALID:{quality}")
+    mapping = bundle["sourceEffectMappings"]["entries"][0]["mapping"]
+    if mapping.get("itemId") != item["itemId"]:
+        raise ExportError("WATER_WHEEL_FORMAL_REFERENCE_MAPPING_ITEM_INVALID")
+
+
 def _validate_hero_aura(value: Any, context: str) -> str:
     aura = _expect_exact_fields(value, {"auraId", "priority", "target", "operation"}, context)
     aura_id = _expect_stable_id(aura["auraId"], context)
@@ -751,7 +847,15 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         condition = _expect_exact_fields(
             conditions[0], {"type", "params"}, f"{context}:trigger:conditions:0"
         )
-        if condition["type"] == "source_item_can_crit":
+        if condition["type"] == "always":
+            if condition["params"] != {} or len(conditions) != 2:
+                raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+            adjacency = _expect_exact_fields(
+                conditions[1], {"type", "params"}, f"{context}:trigger:conditions:1"
+            )
+            if adjacency != {"type": "source_item_adjacent_to_self", "params": {}}:
+                raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
+        elif condition["type"] == "source_item_can_crit":
             if condition["params"] != {} or len(conditions) != 1:
                 raise ExportError(f"EXECUTABLE_ITEM_EFFECT_CONDITIONS_INVALID:{effect_id}")
         elif condition["type"] == "source_item_has_any_tag":
@@ -787,6 +891,12 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_RANDOM_TARGET_EXCLUDE_SELF_INVALID:{effect_id}")
         if _expect_integer(target_params["count"], f"{context}:target:params:count", 1) != 1:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_RANDOM_TARGET_COUNT_INVALID:{effect_id}")
+    elif target_type == "all_other_friendly_active_clock_items":
+        target_params = _expect_exact_fields(
+            target["params"], {"excludeSelf"}, f"{context}:target:params"
+        )
+        if target_params["excludeSelf"] is not True:
+            raise ExportError(f"EXECUTABLE_ITEM_EFFECT_ACTIVE_CLOCK_TARGET_INVALID:{effect_id}")
     elif target["params"] != {}:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TARGET_INVALID:{effect_id}")
     operation = _expect_exact_fields(effect["operation"], {"type", "params"}, f"{context}:operation")
@@ -903,7 +1013,9 @@ def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str
         if params["status"] not in ITEM_STATUSES:
             raise ExportError(f"EXECUTABLE_ITEM_EFFECT_STATUS_INVALID:{effect_id}")
         _expect_integer(params["ticks"], f"{context}:operation:params:ticks", 1)
-        valid_target = target_type in {"self_item", "first_enemy_item"}
+        valid_target = target_type in {
+            "self_item", "first_enemy_item", "all_other_friendly_active_clock_items",
+        }
     if not valid_target:
         raise ExportError(f"EXECUTABLE_ITEM_EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
     return effect_id, trigger_event
@@ -1139,6 +1251,7 @@ def validate_package(package: Any) -> None:
     item_profiles: set[tuple[str, str]] = set()
     item_profile_values: dict[tuple[str, str], dict[str, Any]] = {}
     item_qualities: dict[str, list[str]] = {}
+    item_availabilities: dict[str, str] = {}
     item_widths: dict[str, int] = {}
     item_effect_ids: set[str] = set()
     item_effect_events: dict[str, str] = {}
@@ -1146,12 +1259,16 @@ def validate_package(package: Any) -> None:
     item_aura_ids: set[str] = set()
     for item_index, item_value in enumerate(items):
         item = _expect_exact_fields(item_value, {
-            "itemId", "tags", "slotWidth", "baseQuality", "qualityProfiles", "sourceBinding",
+            "itemId", "availability", "tags", "slotWidth", "baseQuality", "qualityProfiles", "sourceBinding",
         }, f"items:{item_index}")
         item_id = _expect_stable_id(item["itemId"], f"items:{item_index}:itemId")
         if item_id in item_widths:
             raise ExportError(f"EXECUTABLE_ITEM_ID_DUPLICATE:{item_id}")
         _expect_canonical_item_tags(item["tags"], f"items:{item_id}:tags", allow_empty=True)
+        availability = item["availability"]
+        if availability not in ITEM_AVAILABILITIES:
+            raise ExportError(f"EXECUTABLE_ITEM_AVAILABILITY_INVALID:{item_id}")
+        item_availabilities[item_id] = availability
         item_widths[item_id] = _expect_integer(item["slotWidth"], f"items:{item_id}:slotWidth", 1)
         if item_widths[item_id] > 3:
             raise ExportError(f"EXECUTABLE_ITEM_SLOT_WIDTH_INVALID:{item_id}")
@@ -1168,12 +1285,14 @@ def validate_package(package: Any) -> None:
         for quality, profile in profiles.items():
             if quality not in QUALITIES or not isinstance(profile, dict):
                 raise ExportError(f"EXECUTABLE_ITEM_PROFILE_INVALID:{item_id}:{quality}")
-            _expect_exact_fields(profile, {
-                "buyPrice", "sellPrice", "activationMode", "baseCooldownTicks", "critChanceBps", "ammo",
-                "effects", "auras",
-            }, f"items:{item_id}:{quality}")
-            _expect_integer(profile["buyPrice"], f"items:{item_id}:{quality}:buyPrice", 1)
-            _expect_integer(profile["sellPrice"], f"items:{item_id}:{quality}:sellPrice", 0)
+            common_profile_fields = {
+                "activationMode", "baseCooldownTicks", "critChanceBps", "ammo", "effects", "auras",
+            }
+            expected_profile_fields = common_profile_fields | ({"buyPrice", "sellPrice"} if availability == "run_acquirable" else set())
+            _expect_exact_fields(profile, expected_profile_fields, f"items:{item_id}:{quality}")
+            if availability == "run_acquirable":
+                _expect_integer(profile["buyPrice"], f"items:{item_id}:{quality}:buyPrice", 1)
+                _expect_integer(profile["sellPrice"], f"items:{item_id}:{quality}:sellPrice", 0)
             mode = profile["activationMode"]
             if mode not in ("cooldown", "passive"):
                 raise ExportError(f"EXECUTABLE_ITEM_ACTIVATION_MODE_INVALID:{item_id}:{quality}")
@@ -1299,12 +1418,14 @@ def validate_package(package: Any) -> None:
         "schema", "schemaVersion", "bundleRevision", "rulesVersion", "contentRevision",
         "bundleHash", "newRunTemplate", "scheduleConfig", "shopRules", "battleRules",
         "progressionRules", "generation", "executableCatalogs", "sourceCatalog",
+        "sourceEffectMappings",
     }, "runtimeBundle")
     if bundle["schema"] != RUNTIME_SCHEMA or bundle["schemaVersion"] != RUNTIME_SCHEMA_VERSION \
             or bundle["rulesVersion"] != root["rulesVersion"] \
             or bundle["contentRevision"] != root["contentRevision"]:
         raise ExportError("EXECUTABLE_RUNTIME_IDENTITY_INVALID")
     _expect_stable_id(bundle["bundleRevision"], "runtimeBundle:bundleRevision")
+    _validate_source_effect_mapping_catalog(bundle["sourceEffectMappings"])
 
     battle_rules = _expect_exact_fields(bundle["battleRules"], {
         "terminalPressure", "critRules", "burnRules", "poisonRules",
@@ -1827,6 +1948,9 @@ def validate_package(package: Any) -> None:
     shop_templates = _directory(_expect_list(shop.get("templates"), "generation:shop:templates"), "offerTemplateId", {
         "offerTemplateId", "itemId", "quality", "enchantment",
     }, "shopTemplates")
+    for template_id, template in shop_templates.items():
+        if item_availabilities.get(template.get("itemId")) != "run_acquirable":
+            raise ExportError(f"EXECUTABLE_REFERENCE_BATTLE_ITEM_SHOP_FORBIDDEN:{template_id}")
     stalls = _directory(_expect_list(catalogs["stalls"], "catalogs:stalls"), "stallId", {
         "stallId", "offerCount", "shopTemplateIds",
     }, "stalls")
@@ -1997,6 +2121,8 @@ def validate_package(package: Any) -> None:
     upgrade_transitions: set[tuple[str, str, str]] = set()
     for upgrade_id, upgrade in upgrades.items():
         item_id = _expect_stable_id(upgrade["itemId"], f"upgrades:{upgrade_id}:itemId")
+        if item_availabilities.get(item_id) != "run_acquirable":
+            raise ExportError(f"EXECUTABLE_REFERENCE_BATTLE_ITEM_UPGRADE_FORBIDDEN:{upgrade_id}")
         from_quality = upgrade["fromQuality"]
         to_quality = upgrade["toQuality"]
         if (item_id, from_quality) not in item_profiles or (item_id, to_quality) not in item_profiles \
@@ -2014,6 +2140,7 @@ def validate_package(package: Any) -> None:
     expected_transitions = {
         (item_id, qualities[index], qualities[index + 1])
         for item_id, qualities in item_qualities.items()
+        if item_availabilities.get(item_id) == "run_acquirable"
         for index in range(len(qualities) - 1)
     }
     if upgrade_transitions != expected_transitions:
@@ -2043,6 +2170,8 @@ def validate_package(package: Any) -> None:
                 "itemId", "quality", "price", "cooldownDeltaTicks", "damageDelta", "ammoDelta",
             }, f"enchantments:{enchantment_id}:profiles:{profile_index}")
             item_id = _expect_stable_id(profile["itemId"], f"enchantments:{enchantment_id}:profiles:{profile_index}:itemId")
+            if item_availabilities.get(item_id) != "run_acquirable":
+                raise ExportError(f"EXECUTABLE_REFERENCE_BATTLE_ITEM_ENCHANTMENT_FORBIDDEN:{enchantment_id}:{item_id}")
             quality = profile["quality"]
             profile_key = (item_id, quality)
             if profile_key not in item_profiles or profile_key in profile_keys:
@@ -2071,16 +2200,22 @@ def validate_package(package: Any) -> None:
     reachable_profiles: set[tuple[str, str]] = set()
     for instance_value in _expect_list(new_run.get("itemInstances"), "newRunTemplate:itemInstances"):
         if isinstance(instance_value, dict):
+            if item_availabilities.get(instance_value.get("itemId")) != "run_acquirable":
+                raise ExportError("EXECUTABLE_REFERENCE_BATTLE_ITEM_NEW_RUN_FORBIDDEN")
             reachable_profiles.add((instance_value.get("itemId"), instance_value.get("quality")))
     for template in shop_templates.values():
         reachable_profiles.add((template.get("itemId"), template.get("quality")))
     for reward in rewards.values():
         effects = reward.get("effects", [])
         if effects and isinstance(effects[0], dict) and effects[0].get("type") == "grant_item":
+            if item_availabilities.get(effects[0].get("itemId")) != "run_acquirable":
+                raise ExportError("EXECUTABLE_REFERENCE_BATTLE_ITEM_REWARD_FORBIDDEN")
             reachable_profiles.add((effects[0].get("itemId"), effects[0].get("quality")))
     for option in progression_options.values():
         effect = option.get("effect", {})
         if isinstance(effect, dict) and effect.get("type") == "grant_item":
+            if item_availabilities.get(effect.get("itemId")) != "run_acquirable":
+                raise ExportError("EXECUTABLE_REFERENCE_BATTLE_ITEM_PROGRESSION_FORBIDDEN")
             reachable_profiles.add((effect.get("itemId"), effect.get("quality")))
     changed = True
     while changed:
@@ -2091,7 +2226,11 @@ def validate_package(package: Any) -> None:
             if source in reachable_profiles and target not in reachable_profiles:
                 reachable_profiles.add(target)
                 changed = True
-    if reachable_profiles.intersection(item_profiles) != item_profiles:
+    required_reachable_profiles = {
+        profile for profile in item_profiles
+        if item_availabilities.get(profile[0]) == "run_acquirable"
+    }
+    if reachable_profiles.intersection(required_reachable_profiles) != required_reachable_profiles:
         raise ExportError("EXECUTABLE_PLAYER_ITEM_PROFILE_REACHABILITY_INVALID")
 
     events = _directory(_expect_list(catalogs["events"], "catalogs:events"), "eventId", {
@@ -2401,6 +2540,7 @@ def validate_package(package: Any) -> None:
         source_binding.validate_sources(items, bundle)
     except ValueError as exc:
         raise ExportError(str(exc)) from exc
+    _validate_water_wheel_formal_reference(items, bundle)
     expected_hash = _runtime_bundle_hash(bundle, items)
     if not isinstance(bundle["bundleHash"], str) or bundle["bundleHash"] != expected_hash:
         raise ExportError("EXECUTABLE_BUNDLE_HASH_INVALID")
@@ -2412,7 +2552,8 @@ class ContentAssembler:
         self.tables = tables
         self.item_profiles: dict[tuple[str, str], dict[str, Any]] = {}
         self.item_widths: dict[str, int] = {}
-        self.item_skills: dict[str, str] = {}
+        self.item_skills: dict[str, set[str]] = {}
+        self.item_availability: dict[str, str] = {}
 
     def build(self) -> dict[str, Any]:
         source_revision = self._source_snapshot()
@@ -2474,6 +2615,7 @@ class ContentAssembler:
             upgrades,
             enchantments,
         )
+        source_effect_mappings = self._source_effect_mappings()
         bundle = {
             "schema": identity["runtimeSchema"],
             "schemaVersion": identity["runtimeSchemaVersion"],
@@ -2504,6 +2646,7 @@ class ContentAssembler:
                 "battle": battle_generation,
             },
             "executableCatalogs": executable_catalogs,
+            "sourceEffectMappings": source_effect_mappings,
         }
         try:
             source_binding.assemble_sources(self.tables, self.csv_dir, items, bundle)
@@ -2540,6 +2683,106 @@ class ContentAssembler:
         if _require_text(filename, row, "completeness") != "bootstrap":
             raise ExportError("SOURCE_COMPLETENESS_MUST_BE_BOOTSTRAP")
         return revision
+
+    def _source_effect_mappings(self) -> dict[str, Any]:
+        filename = "73_bz_source_effect_mappings.csv"
+        rows = self.tables[filename]
+        if len(rows) != 6:
+            raise ExportError("SOURCE_EFFECT_MAPPING_ROW_COUNT_INVALID:water_wheel")
+        for row in rows:
+            _formal(filename, row)
+        expected_constants = {
+            "mapping_id": "water_wheel",
+            "mapping_schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+            "mapping_schema_version": "1",
+            "acceptance": "source_effect_mapping_only_not_complete_item",
+            "source_data_commit": WATER_WHEEL_SOURCE_DATA_COMMIT,
+            "mapping_sha256": WATER_WHEEL_MAPPING_SHA256,
+            "provenance_sha256": WATER_WHEEL_PROVENANCE_SHA256,
+            "source_db_sha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+            "source_object_uuid": "d8106a24-647f-40c6-8587-22f977931d76",
+            "source_internal_name": "Water Wheel",
+            "item_id": "item_bazaar_water_wheel",
+            "multicast": "1",
+            "haste_amount_milliseconds": "2000",
+            "charge_amount_milliseconds": "2000",
+            "charge_targets": "1",
+            "effect_order": "0",
+            "unknown_source_fields": "initialCooldownProgress,hasteReapplicationPolicy,same_priority_tie_break",
+            "excluded_scopes": "enchantments,economy,acquisition,complete_initial_state,simultaneous_ready_order,complete_run_state,top_three_identity",
+        }
+        for field, expected in expected_constants.items():
+            if _same(rows, filename, field) != expected:
+                raise ExportError(f"SOURCE_EFFECT_MAPPING_LOCK_MISMATCH:water_wheel:{field}")
+        profiles = []
+        cooldowns = {"silver": 8000, "gold": 7000, "diamond": 6000}
+        for quality in ["silver", "gold", "diamond"]:
+            pair = [row for row in rows if row["quality"] == quality]
+            if len(pair) != 2 or {row["source_ability_id"] for row in pair} != {"0", "1"}:
+                raise ExportError(f"SOURCE_EFFECT_MAPPING_ABILITY_COVERAGE_INVALID:water_wheel:{quality}")
+            if any(_integer(filename, row, "cooldown_max_milliseconds", 1) != cooldowns[quality] for row in pair):
+                raise ExportError(f"SOURCE_EFFECT_MAPPING_COOLDOWN_INVALID:water_wheel:{quality}")
+            by_ability = {row["source_ability_id"]: row for row in pair}
+            haste = by_ability["0"]
+            charge = by_ability["1"]
+            if any(haste[field] != expected for field, expected in {
+                "source_trigger_type": "TTriggerOnCardFired", "mapped_trigger_event": "item_ready",
+                "trigger_priority": "High", "target_type": "self_hand_section",
+                "target_exclude_self": "true", "target_condition_attribute": "CooldownMax",
+                "target_condition_operator": "GreaterThan", "target_condition_value": "0",
+                "subject_type": "", "subject_target_mode": "", "subject_include_origin": "",
+                "operation_type": "apply_status", "status": "haste", "ticks": "40",
+            }.items()):
+                raise ExportError(f"SOURCE_EFFECT_MAPPING_ABILITY_INVALID:water_wheel:{quality}:0")
+            if any(charge[field] != expected for field, expected in {
+                "source_trigger_type": "TTriggerOnItemUsed", "mapped_trigger_event": "another_friendly_item_used",
+                "trigger_priority": "Medium", "target_type": "self", "target_exclude_self": "",
+                "target_condition_attribute": "", "target_condition_operator": "", "target_condition_value": "",
+                "subject_type": "self_positional", "subject_target_mode": "Neighbor", "subject_include_origin": "false",
+                "operation_type": "charge", "status": "", "ticks": "40",
+            }.items()):
+                raise ExportError(f"SOURCE_EFFECT_MAPPING_ABILITY_INVALID:water_wheel:{quality}:1")
+            profiles.append({
+                "quality": quality,
+                "sourceAttributes": {
+                    "cooldownMaxMilliseconds": cooldowns[quality], "multicast": 1,
+                    "hasteAmountMilliseconds": 2000, "chargeAmountMilliseconds": 2000,
+                    "chargeTargets": 1,
+                },
+                "effects": [
+                    {
+                        "sourceAbilityId": "0", "sourceTriggerType": "TTriggerOnCardFired",
+                        "mappedTriggerEvent": "item_ready", "triggerPriority": "High", "effectOrder": 0,
+                        "target": {"type": "self_hand_section", "excludeSelf": True,
+                            "condition": {"attribute": "CooldownMax", "operator": "GreaterThan", "value": 0}},
+                        "operation": {"type": "apply_status", "status": "haste", "ticks": 40},
+                    },
+                    {
+                        "sourceAbilityId": "1", "sourceTriggerType": "TTriggerOnItemUsed",
+                        "mappedTriggerEvent": "another_friendly_item_used", "triggerPriority": "Medium", "effectOrder": 0,
+                        "subject": {"type": "self_positional", "targetMode": "Neighbor", "includeOrigin": False},
+                        "target": {"type": "self"},
+                        "operation": {"type": "charge", "ticks": 40},
+                    },
+                ],
+            })
+        mapping = {
+            "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1", "schemaVersion": 1,
+            "acceptance": "source_effect_mapping_only_not_complete_item",
+            "sourceDbSha256": expected_constants["source_db_sha256"],
+            "sourceObjectUuid": expected_constants["source_object_uuid"],
+            "sourceInternalName": "Water Wheel", "itemId": "item_bazaar_water_wheel",
+            "qualityProfiles": profiles,
+            "unknownSourceFields": expected_constants["unknown_source_fields"].split(","),
+            "excludedScopes": expected_constants["excluded_scopes"].split(","),
+        }
+        catalog = {"schema": SOURCE_EFFECT_MAPPING_SCHEMA, "schemaVersion": 1, "entries": [{
+            "mappingId": "water_wheel", "sourceDataCommit": WATER_WHEEL_SOURCE_DATA_COMMIT,
+            "mappingSha256": WATER_WHEEL_MAPPING_SHA256, "provenanceSha256": WATER_WHEEL_PROVENANCE_SHA256,
+            "executionStatus": "reference_battle_only_haste_reapplication_fail_closed", "mapping": mapping,
+        }]}
+        _validate_source_effect_mapping_catalog(catalog)
+        return catalog
 
     def _rewards(self) -> dict[str, dict[str, Any]]:
         filename = "55_bz_rewards.csv"
@@ -2841,9 +3084,13 @@ class ContentAssembler:
                 raise ExportError(f"ITEM_ACTIVATION_MODE_INVALID:{item_id}")
             if base_quality not in QUALITIES:
                 raise ExportError(f"ITEM_BASE_QUALITY_INVALID:{item_id}")
-            item_skill_id = _same(rows, filename, "item_skill_id")
-            if not STABLE_ID_RE.fullmatch(item_skill_id) or item_skill_id not in item_skills:
-                raise ExportError(f"ITEM_SKILL_UNKNOWN:{item_id}:{item_skill_id}")
+            item_skill_ids = set(_ids(filename, rows[0], "item_skill_id"))
+            if any(set(_ids(filename, row, "item_skill_id")) != item_skill_ids for row in rows) \
+                    or not item_skill_ids.issubset(item_skills):
+                raise ExportError(f"ITEM_SKILL_UNKNOWN:{item_id}")
+            availability = _same(rows, filename, "availability")
+            if availability not in ITEM_AVAILABILITIES:
+                raise ExportError(f"ITEM_AVAILABILITY_INVALID:{item_id}")
             expected_qualities = QUALITIES[QUALITIES.index(base_quality):]
             actual_qualities = sorted((row["quality"] for row in rows), key=QUALITIES.index)
             if actual_qualities != expected_qualities:
@@ -2851,10 +3098,13 @@ class ContentAssembler:
             profiles: dict[str, Any] = {}
             for row in rows:
                 quality = row["quality"]
-                buy_price = _integer(filename, row, "buy_price", 1)
-                sell_price = _integer(filename, row, "sell_price", 0)
-                if sell_price > buy_price:
-                    raise ExportError(f"ITEM_PRICE_ORDER_INVALID:{item_id}:{quality}")
+                if availability == "run_acquirable":
+                    buy_price = _integer(filename, row, "buy_price", 1)
+                    sell_price = _integer(filename, row, "sell_price", 0)
+                    if sell_price > buy_price:
+                        raise ExportError(f"ITEM_PRICE_ORDER_INVALID:{item_id}:{quality}")
+                elif row.get("buy_price", "") or row.get("sell_price", ""):
+                    raise ExportError(f"REFERENCE_BATTLE_ITEM_PRICE_FORBIDDEN:{item_id}:{quality}")
                 if mode == "passive" and row["cooldown_ticks"] != "":
                     raise ExportError(f"PASSIVE_ITEM_COOLDOWN_MUST_BE_EMPTY:{item_id}:{quality}")
                 cooldown = _integer(filename, row, "cooldown_ticks", 1) if mode == "cooldown" else 0
@@ -2871,8 +3121,6 @@ class ContentAssembler:
                 if not ammo_enabled and (ammo_initial != 0 or ammo_maximum != 0):
                     raise ExportError(f"ITEM_AMMO_DISABLED_INVALID:{item_id}:{quality}")
                 profile = {
-                    "buyPrice": buy_price,
-                    "sellPrice": sell_price,
                     "activationMode": mode,
                     "baseCooldownTicks": cooldown,
                     "critChanceBps": crit_chance_bps,
@@ -2880,12 +3128,17 @@ class ContentAssembler:
                     "effects": [],
                     "auras": [],
                 }
+                if availability == "run_acquirable":
+                    profile["buyPrice"] = buy_price
+                    profile["sellPrice"] = sell_price
                 profiles[quality] = profile
                 self.item_profiles[(item_id, quality)] = profile
             self.item_widths[item_id] = slot_width
-            self.item_skills[item_id] = item_skill_id
+            self.item_skills[item_id] = item_skill_ids
+            self.item_availability[item_id] = availability
             items.append({
                 "itemId": item_id,
+                "availability": availability,
                 "tags": tags,
                 "slotWidth": slot_width,
                 "baseQuality": base_quality,
@@ -2896,6 +3149,8 @@ class ContentAssembler:
         for starter in starters:
             if (starter["itemId"], starter["quality"]) not in self.item_profiles:
                 raise ExportError(f"STARTER_QUALITY_UNAVAILABLE:{starter['instanceId']}")
+            if self.item_availability.get(starter["itemId"]) != "run_acquirable":
+                raise ExportError(f"REFERENCE_BATTLE_ITEM_STARTER_FORBIDDEN:{starter['instanceId']}")
         self._validate_placements(starters, "STARTER")
         return items, starters
 
@@ -2907,6 +3162,8 @@ class ContentAssembler:
         for upgrade_id, row in rows_by_id.items():
             _formal(filename, row)
             item_id = _require_id(filename, row, "item_id")
+            if self.item_availability.get(item_id) != "run_acquirable":
+                raise ExportError(f"REFERENCE_BATTLE_ITEM_UPGRADE_FORBIDDEN:{upgrade_id}")
             from_quality = _require_text(filename, row, "from_quality")
             to_quality = _require_text(filename, row, "to_quality")
             if (item_id, from_quality) not in self.item_profiles or (item_id, to_quality) not in self.item_profiles:
@@ -2931,6 +3188,8 @@ class ContentAssembler:
             })
         expected: set[tuple[str, str, str]] = set()
         for item_id in sorted(self.item_widths):
+            if self.item_availability.get(item_id) != "run_acquirable":
+                continue
             qualities = [quality for quality in QUALITIES if (item_id, quality) in self.item_profiles]
             for index in range(len(qualities) - 1):
                 expected.add((item_id, qualities[index], qualities[index + 1]))
@@ -2958,6 +3217,8 @@ class ContentAssembler:
             stall_ids: set[str] = set()
             for row in rows:
                 item_id = _require_id(filename, row, "item_id")
+                if self.item_availability.get(item_id) != "run_acquirable":
+                    raise ExportError(f"REFERENCE_BATTLE_ITEM_ENCHANTMENT_FORBIDDEN:{enchantment_id}:{item_id}")
                 quality = _require_text(filename, row, "quality")
                 profile_key = (enchantment_id, item_id, quality)
                 if profile_key in seen_profiles:
@@ -3032,7 +3293,11 @@ class ContentAssembler:
                 if source in reachable and target not in reachable:
                     reachable.add(target)
                     changed = True
-        missing = sorted(set(self.item_profiles) - reachable)
+        required = {
+            key for key in self.item_profiles
+            if self.item_availability.get(key[0]) == "run_acquirable"
+        }
+        missing = sorted(required - reachable)
         if missing:
             raise ExportError("PLAYER_ITEM_PROFILE_UNREACHABLE:" + ",".join(f"{item_id}:{quality}" for item_id, quality in missing))
 
@@ -3056,7 +3321,7 @@ class ContentAssembler:
             if profile is None:
                 raise ExportError(f"EFFECT_ITEM_QUALITY_UNKNOWN:{effect_id}")
             item_skill_id = _require_id(filename, row, "item_skill_id")
-            if self.item_skills.get(item_id) != item_skill_id or item_skill_id not in item_skills:
+            if item_skill_id not in self.item_skills.get(item_id, set()) or item_skill_id not in item_skills:
                 raise ExportError(f"EFFECT_ITEM_SKILL_MISMATCH:{effect_id}")
             trigger_event = _require_text(filename, row, "trigger_event")
             if trigger_event not in ITEM_EFFECT_TRIGGERS:
@@ -3097,7 +3362,13 @@ class ContentAssembler:
                     raise ExportError(f"EFFECT_SLOW_SUCCESS_RESPONSE_TRIGGER_INVALID:{effect_id}")
                 conditions = [{"type": "always", "params": {}}]
             else:
-                if condition_type == "source_item_can_crit":
+                if condition_type == "always" and source_relation == "adjacent" \
+                        and not row.get("condition_tags", "").strip():
+                    conditions = [
+                        {"type": "always", "params": {}},
+                        {"type": "source_item_adjacent_to_self", "params": {}},
+                    ]
+                elif condition_type == "source_item_can_crit":
                     if row.get("condition_tags", "").strip() or source_relation != "any":
                         raise ExportError(f"EFFECT_CONDITION_INVALID:{effect_id}")
                     conditions = [{"type": "source_item_can_crit", "params": {}}]
@@ -3137,6 +3408,14 @@ class ContentAssembler:
                     "excludeSelf": exclude_self,
                     "count": target_count,
                 }
+            elif target_type == "all_other_friendly_active_clock_items":
+                if trigger_event != "item_ready" or condition_type != "always" \
+                        or source_relation != "any" or operation_type != "apply_status" \
+                        or not _boolean(filename, row, "target_exclude_self"):
+                    raise ExportError(f"EFFECT_ACTIVE_CLOCK_TARGET_CONTRACT_INVALID:{effect_id}")
+                if row.get("target_tags", "").strip() or row.get("target_count", "").strip():
+                    raise ExportError(f"EFFECT_ACTIVE_CLOCK_TARGET_PARAMS_FORGED:{effect_id}")
+                target_params = {"excludeSelf": True}
             else:
                 if row.get("target_tags", "").strip() \
                         or row.get("target_exclude_self", "").strip() \
@@ -3215,7 +3494,9 @@ class ContentAssembler:
                         or trigger_event != SLOW_SUCCESS_RESPONSE_TRIGGER \
                         or conditions != [{"type": "always", "params": {}}]:
                     raise ExportError(f"EFFECT_REGEN_GAIN_CONTRACT_INVALID:{effect_id}")
-            if operation_type == "apply_status" and target_type not in {"self_item", "first_enemy_item"}:
+            if operation_type == "apply_status" and target_type not in {
+                "self_item", "first_enemy_item", "all_other_friendly_active_clock_items",
+            }:
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
             if operation_type in {"heal", "gain_shield"} and target_type != "owner_hero":
                 raise ExportError(f"EFFECT_TARGET_OPERATION_MISMATCH:{effect_id}")
@@ -3402,7 +3683,7 @@ class ContentAssembler:
             if profile is None:
                 raise ExportError(f"AURA_ITEM_QUALITY_UNKNOWN:{aura_id}")
             item_skill_id = _require_id(filename, row, "item_skill_id")
-            if self.item_skills.get(item_id) != item_skill_id or item_skill_id not in item_skills:
+            if item_skill_id not in self.item_skills.get(item_id, set()) or item_skill_id not in item_skills:
                 raise ExportError(f"AURA_ITEM_SKILL_MISMATCH:{aura_id}")
             target_type = _require_text(filename, row, "target_type")
             operation_type = _require_text(filename, row, "operation_type")
@@ -3470,7 +3751,8 @@ class ContentAssembler:
             _formal(filename, row)
             hero_skill_id = _require_id(filename, row, "hero_skill_id")
             grouped[hero_skill_id].append(row)
-        if not grouped or set(grouped).intersection(self.item_skills.values()):
+        owned_item_skill_ids = set().union(*self.item_skills.values()) if self.item_skills else set()
+        if not grouped or set(grouped).intersection(owned_item_skill_ids):
             raise ExportError("HERO_SKILL_CATALOG_INVALID")
         result: dict[str, dict[str, Any]] = {}
         priorities: set[int] = set()
@@ -3667,7 +3949,8 @@ class ContentAssembler:
             _require_chinese(trainer_file, row, "description_zh")
             hero_id = _require_id(trainer_file, row, "hero_id")
             stall_id = _require_id(trainer_file, row, "stall_id")
-            if trainer_id in set(hero_skills) | set(self.item_skills.values()) | set(stalls):
+            owned_item_skill_ids = set().union(*self.item_skills.values()) if self.item_skills else set()
+            if trainer_id in set(hero_skills) | owned_item_skill_ids | set(stalls):
                 raise ExportError(f"HERO_SKILL_TRAINER_ID_CROSS_DIRECTORY:{trainer_id}")
             if hero_id != hero["heroId"]:
                 raise ExportError(f"HERO_SKILL_TRAINER_OWNER_INVALID:{trainer_id}")
@@ -3692,7 +3975,7 @@ class ContentAssembler:
             offer_id = _require_id(offer_file, row, "offer_id")
             if offer_id in offer_ids or offer_id in item_offer_ids \
                     or offer_id in trainers or offer_id in hero_skills \
-                    or offer_id in self.item_skills.values():
+                    or any(offer_id in skill_ids for skill_ids in self.item_skills.values()):
                 raise ExportError(f"HERO_SKILL_OFFER_ID_DUPLICATE:{offer_id}")
             offer_ids.add(offer_id)
             trainer_id = _require_id(offer_file, row, "trainer_id")
@@ -3919,6 +4202,8 @@ class ContentAssembler:
                 raise ExportError(f"STALL_OFFER_ID_DUPLICATE:{offer_id}")
             seen_offer_ids.add(offer_id)
             item_id = _require_id(filename, row, "item_id")
+            if self.item_availability.get(item_id) != "run_acquirable":
+                raise ExportError(f"REFERENCE_BATTLE_ITEM_SHOP_FORBIDDEN:{offer_id}")
             quality = _require_text(filename, row, "quality")
             profile = self.item_profiles.get((item_id, quality))
             if profile is None:
@@ -4839,7 +5124,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v38 runtime and display candidates from 26 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v39 runtime and display candidates from 27 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -4854,7 +5139,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v38 candidate "
+            "PASS original-pirate v39 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -4867,7 +5152,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v38 candidate to {output}")
+        print(f"exported original-pirate v39 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

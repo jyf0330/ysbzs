@@ -163,3 +163,9 @@ effect_homeglow_beacon_bronze_slow_response_regen,item_homeglow_beacon,bronze,sk
 effect_homeglow_beacon_silver_slow_response_regen,item_homeglow_beacon,silver,skill_homeglow_beacon,30,another_friendly_item_applied_slow,always,,any,owner_hero,,,,gain_regen_for_fight,2,,,,,,formal,,,
 effect_homeglow_beacon_gold_slow_response_regen,item_homeglow_beacon,gold,skill_homeglow_beacon,30,another_friendly_item_applied_slow,always,,any,owner_hero,,,,gain_regen_for_fight,3,,,,,,formal,,,
 effect_homeglow_beacon_diamond_slow_response_regen,item_homeglow_beacon,diamond,skill_homeglow_beacon,30,another_friendly_item_applied_slow,always,,any,owner_hero,,,,gain_regen_for_fight,4,,,,,,formal,,,
+effect_bazaar_water_wheel_silver_0,item_bazaar_water_wheel,silver,skill_bazaar_water_wheel_haste,20,item_ready,always,,any,all_other_friendly_active_clock_items,,true,,apply_status,,,,,haste,40,formal,0,High,0
+effect_bazaar_water_wheel_silver_1,item_bazaar_water_wheel,silver,skill_bazaar_water_wheel_charge,30,another_friendly_item_used,always,,adjacent,self_item,,,,charge,,,,,,40,formal,1,Medium,0
+effect_bazaar_water_wheel_gold_0,item_bazaar_water_wheel,gold,skill_bazaar_water_wheel_haste,20,item_ready,always,,any,all_other_friendly_active_clock_items,,true,,apply_status,,,,,haste,40,formal,0,High,0
+effect_bazaar_water_wheel_gold_1,item_bazaar_water_wheel,gold,skill_bazaar_water_wheel_charge,30,another_friendly_item_used,always,,adjacent,self_item,,,,charge,,,,,,40,formal,1,Medium,0
+effect_bazaar_water_wheel_diamond_0,item_bazaar_water_wheel,diamond,skill_bazaar_water_wheel_haste,20,item_ready,always,,any,all_other_friendly_active_clock_items,,true,,apply_status,,,,,haste,40,formal,0,High,0
+effect_bazaar_water_wheel_diamond_1,item_bazaar_water_wheel,diamond,skill_bazaar_water_wheel_charge,30,another_friendly_item_used,always,,adjacent,self_item,,,,charge,,,,,,40,formal,1,Medium,0

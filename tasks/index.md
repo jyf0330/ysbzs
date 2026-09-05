@@ -11,6 +11,8 @@
 
 ## ACTIVE_IMPL
 
+- `tasks/doing/2026-09-05_original_pirate_water_wheel_formal_reference.md` — Water Wheel锁定映射正式晋升为 `reference_battle_only`；禁止商店、奖励、升级、铭刻及自然Run获取，不声明完整原版物品。
+
 - `tasks/done/2026-09-04_original_pirate_regen_on_slow.md` — data rules: 项目原创减速成功响应 Regen v1 已完成 workbook→CSV→exporter 真相链、严格 fail-closed 校验与确定性生成。
 - `tasks/done/2026-09-04_original_pirate_lifesteal_aura.md` — data rules: 项目原创武器吸血 Aura v1 已完成 workbook→CSV→exporter 真相链、严格 fail-closed 校验与确定性生成。
 

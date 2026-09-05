@@ -25,7 +25,11 @@ for field,value in [('trigger_priority','Lowest'),('ticks','41'),('target_type',
  except ValueError:pass
  else:raise AssertionError((field,value))
 package,_=formal.build_exports(pathlib.Path('data/csv'))
-assert package['runtimeBundle']['bundleHash']==c.BASE_HASH
+entry=package['runtimeBundle']['sourceEffectMappings']['entries'][0]
+assert entry['mapping']==mapping
+assert entry['mappingSha256']==formal.WATER_WHEEL_MAPPING_SHA256
+assert entry['provenanceSha256']==formal.WATER_WHEEL_PROVENANCE_SHA256
+assert entry['sourceDataCommit']=='21d57c2415690992631c6c4e1607e10ddcf06a24'
 print('PASS Water Wheel source mapping candidate')
 `],{cwd:path.resolve(__dirname,'..'),encoding:'utf8',env:{...process.env,PYTHONDONTWRITEBYTECODE:'1'}});
  assert.equal(r.status,0,r.stderr||r.stdout);

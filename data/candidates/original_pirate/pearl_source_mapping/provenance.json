@@ -1,0 +1,17 @@
+{
+  "schema": "ysbzs.original-pirate-pearl-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "0125a723133f49003f943b30a272d6946b80c590afecfad986a5d8a5bc8c982a",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "4492639ac8cd3b65148f666e7f4f7b39dd3be0ab7f05228830502320a74adead",
+  "sourceObjectUuid": "1312cf29-3dbb-446f-88b2-0d4999e68d78",
+  "sourceScope": "Complete four-tier inheritance, Ability 0/1 and empty base Aura directory",
+  "limitations": [
+    "This is static source mapping, not executable Pearl content or a complete Run.",
+    "All event ordering, initial cooldown progress and Charge-caused Ready reentrancy remain unverified and fail closed.",
+    "The enchantment directory is identity-locked but no enchantment execution semantics are accepted.",
+    "No economy, acquisition, exact-top-three or original-game acceptance claim is included."
+  ]
+}

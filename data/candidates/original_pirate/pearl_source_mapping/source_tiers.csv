@@ -1,0 +1,5 @@
+quality,ability_ids,aura_ids,tooltip_ids,declared_attributes_json
+bronze,"0,1",,"0,1","{""ChargeAmount"":1000,""ChargeTargets"":1,""CooldownMax"":5000,""Multicast"":1,""ShieldApplyAmount"":10}"
+silver,"0,1",,"0,1","{""ShieldApplyAmount"":20}"
+gold,"0,1",,"0,1","{""ShieldApplyAmount"":40}"
+diamond,"0,1",,"0,1","{""ShieldApplyAmount"":80}"

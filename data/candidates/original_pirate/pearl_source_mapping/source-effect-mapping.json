@@ -1,0 +1,375 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "4492639ac8cd3b65148f666e7f4f7b39dd3be0ab7f05228830502320a74adead",
+  "sourceObjectUuid": "1312cf29-3dbb-446f-88b2-0d4999e68d78",
+  "sourceInternalName": "Pearl",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Small",
+    "startingTier": "Bronze",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Aquatic"
+    ],
+    "hiddenTags": [
+      "Shield"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "itemId": "item_bazaar_pearl",
+  "sourceDirectoryLocks": {
+    "tiersSha256": "0ec94186b2e4c9bf4c2a076c7b8f7ef36c47d9623e3363aa2da741c24341f0d3",
+    "abilitiesSha256": "fdb0614ef071e8ef9a15d026c3c331231d43eae6ce75234cc0ef0af4e8ec9cd8",
+    "aurasSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "enchantmentsSha256": "03b9329c944fe77ff899d82be764b63b275c495f4a12fbc926d1f56e1bd88595"
+  },
+  "sourceAbilityDirectoryOrderObserved": [
+    "0",
+    "1"
+  ],
+  "sourceAuraDirectoryOrderObserved": [],
+  "sourceEnchantmentDirectoryOrderObserved": [
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Turbo",
+    "Shielded",
+    "Restorative",
+    "Toxic",
+    "Fiery",
+    "Shiny",
+    "Radiant",
+    "Deadly",
+    "Obsidian",
+    "Mossy"
+  ],
+  "qualityProfiles": [
+    {
+      "quality": "bronze",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "ChargeAmount": 1000,
+          "ChargeTargets": 1,
+          "CooldownMax": 5000,
+          "Multicast": 1,
+          "ShieldApplyAmount": 10
+        },
+        "resolvedAttributes": {
+          "ChargeAmount": 1000,
+          "ChargeTargets": 1,
+          "CooldownMax": 5000,
+          "Multicast": 1,
+          "ShieldApplyAmount": 10
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 5000,
+        "multicast": 1,
+        "shieldApplyAmount": 10,
+        "chargeAmountMilliseconds": 1000,
+        "chargeTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "ShieldApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "target": {
+            "type": "self_player"
+          },
+          "operation": {
+            "type": "gain_shield",
+            "amount": 10
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "ChargeAmount",
+          "sourceTargetCountAttribute": "ChargeTargets",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "another_friendly_item_used",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "subject": {
+            "type": "self_hand_section",
+            "excludeSelf": true,
+            "condition": {
+              "tag": "Aquatic",
+              "operator": "Any"
+            }
+          },
+          "target": {
+            "type": "self"
+          },
+          "operation": {
+            "type": "charge",
+            "ticks": 20
+          }
+        }
+      ]
+    },
+    {
+      "quality": "silver",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "ShieldApplyAmount": 20
+        },
+        "resolvedAttributes": {
+          "ChargeAmount": 1000,
+          "ChargeTargets": 1,
+          "CooldownMax": 5000,
+          "Multicast": 1,
+          "ShieldApplyAmount": 20
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 5000,
+        "multicast": 1,
+        "shieldApplyAmount": 20,
+        "chargeAmountMilliseconds": 1000,
+        "chargeTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "ShieldApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "target": {
+            "type": "self_player"
+          },
+          "operation": {
+            "type": "gain_shield",
+            "amount": 20
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "ChargeAmount",
+          "sourceTargetCountAttribute": "ChargeTargets",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "another_friendly_item_used",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "subject": {
+            "type": "self_hand_section",
+            "excludeSelf": true,
+            "condition": {
+              "tag": "Aquatic",
+              "operator": "Any"
+            }
+          },
+          "target": {
+            "type": "self"
+          },
+          "operation": {
+            "type": "charge",
+            "ticks": 20
+          }
+        }
+      ]
+    },
+    {
+      "quality": "gold",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "ShieldApplyAmount": 40
+        },
+        "resolvedAttributes": {
+          "ChargeAmount": 1000,
+          "ChargeTargets": 1,
+          "CooldownMax": 5000,
+          "Multicast": 1,
+          "ShieldApplyAmount": 40
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 5000,
+        "multicast": 1,
+        "shieldApplyAmount": 40,
+        "chargeAmountMilliseconds": 1000,
+        "chargeTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "ShieldApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "target": {
+            "type": "self_player"
+          },
+          "operation": {
+            "type": "gain_shield",
+            "amount": 40
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "ChargeAmount",
+          "sourceTargetCountAttribute": "ChargeTargets",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "another_friendly_item_used",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "subject": {
+            "type": "self_hand_section",
+            "excludeSelf": true,
+            "condition": {
+              "tag": "Aquatic",
+              "operator": "Any"
+            }
+          },
+          "target": {
+            "type": "self"
+          },
+          "operation": {
+            "type": "charge",
+            "ticks": 20
+          }
+        }
+      ]
+    },
+    {
+      "quality": "diamond",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "ShieldApplyAmount": 80
+        },
+        "resolvedAttributes": {
+          "ChargeAmount": 1000,
+          "ChargeTargets": 1,
+          "CooldownMax": 5000,
+          "Multicast": 1,
+          "ShieldApplyAmount": 80
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 5000,
+        "multicast": 1,
+        "shieldApplyAmount": 80,
+        "chargeAmountMilliseconds": 1000,
+        "chargeTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "ShieldApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "target": {
+            "type": "self_player"
+          },
+          "operation": {
+            "type": "gain_shield",
+            "amount": 80
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "ChargeAmount",
+          "sourceTargetCountAttribute": "ChargeTargets",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "another_friendly_item_used",
+          "triggerPriority": "Low",
+          "effectOrder": 0,
+          "subject": {
+            "type": "self_hand_section",
+            "excludeSelf": true,
+            "condition": {
+              "tag": "Aquatic",
+              "operator": "Any"
+            }
+          },
+          "target": {
+            "type": "self"
+          },
+          "operation": {
+            "type": "charge",
+            "ticks": 20
+          }
+        }
+      ]
+    }
+  ],
+  "sourceAuras": [],
+  "executionStatus": "static_source_mapping_only_all_timing_fail_closed",
+  "unknownSourceFields": [
+    "initialCooldownProgress",
+    "samePriorityCrossItemOrder",
+    "samePriorityAbilityOrder",
+    "cardFiredToItemUsedDispatchOrder",
+    "chargeCausedReadyReentrancy",
+    "shieldAndChargeSameTimestampOrder",
+    "multicastCardFiredPolicy",
+    "completeCritAndStatusInitialState"
+  ],
+  "excludedScopes": [
+    "enchantment_execution",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "simultaneous_ready_order",
+    "complete_run_state",
+    "top_three_identity"
+  ]
+}

@@ -24,6 +24,7 @@ CANDIDATE_DIRS = (
     "pearl_source_mapping",
     "pistol_sword_source_mapping",
     "torpedo_source_mapping",
+    "top3_metrics_github_gap",
     "wetware_source_mapping",
 )
 WORKBOOK_STEMS = (
@@ -38,8 +39,8 @@ WORKBOOK_STEMS = (
     "torpedo",
     "wetware",
 )
-EXPECTED_FILE_COUNT = 63
-EXPECTED_AGGREGATE_SHA256 = "86c7893b4dc7d2afa8b657c960a4f6be8eaf48c366cc1987a81f86aa71fd3960"
+EXPECTED_FILE_COUNT = 65
+EXPECTED_AGGREGATE_SHA256 = "ced85f8b4d3005cb184a2f96c5eca10d20ad2f3cec05a6297e475f295b1d32c2"
 
 
 class VerificationError(RuntimeError):

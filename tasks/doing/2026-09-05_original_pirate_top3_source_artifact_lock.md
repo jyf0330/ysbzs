@@ -13,13 +13,13 @@ commit_plan: one atomic verifier/test/task-card commit
 
 # Top-three source artifact byte lock
 
-This gate locks 63 current candidate files across eleven isolated candidate
+This gate locks 65 current candidate files across twelve isolated candidate
 directories and ten workbooks. Captain's Quarters remains an explicit source-gap
 record because its source references a missing Ability 3; the lock does not fill
 that gap.
 
 The canonical aggregate SHA-256 is
-`86c7893b4dc7d2afa8b657c960a4f6be8eaf48c366cc1987a81f86aa71fd3960`.
+`ced85f8b4d3005cb184a2f96c5eca10d20ad2f3cec05a6297e475f295b1d32c2`.
 Paths and byte lengths are framed into the digest, so byte edits, path changes,
 additions and removals all change it. Symlink substitution is rejected before
 hashing.

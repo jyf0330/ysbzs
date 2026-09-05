@@ -1,0 +1,66 @@
+{
+  "schema": "ysbzs.original-pirate-top3-github-gap.v1",
+  "acceptanceStatus": "CANDIDATE_ONLY_PUBLIC_BACKEND_CONTRACT_INCOMPLETE",
+  "snapshotLocks": {
+    "buildsSha256": "fa090c98b597d77e6adb19d28b08c11c05f55f7bc3d1b9442ed212835e3055bc",
+    "heroesSha256": "a2da8ea9d94a1133d39a765a1867ce27a7aa4763b92d09ecd239d117ba30aea7",
+    "windowStart": "2026-08-29",
+    "windowEnd": "2026-09-04"
+  },
+  "candidateRows": [
+    {"rankByListedCompletedRunCount": 1, "snapshotArrayIndex": 222, "completedRunCount": 58, "tenWinRunCount": 22},
+    {"rankByListedCompletedRunCount": 2, "snapshotArrayIndex": 180, "completedRunCount": 48, "tenWinRunCount": 22},
+    {"rankByListedCompletedRunCount": 3, "snapshotArrayIndex": 219, "completedRunCount": 39, "tenWinRunCount": 16}
+  ],
+  "denominatorEvidence": {
+    "listedVanessaBuildRows": 931,
+    "listedCompletedRunCount": 2010,
+    "listedTenWinRunCount": 1597,
+    "sameWindowVanessaHeroCompletedRunCount": 41000,
+    "sameWindowVanessaHeroTenWinRunCount": 11213,
+    "assessment": "LISTED_BUILD_TOTALS_DO_NOT_CLOSE_AGAINST_HERO_TOTALS"
+  },
+  "immutableGithubEvidence": {
+    "repository": "https://github.com/BazaarPlusPlus/BazaarPlusPlus",
+    "commit": "6a721f6a55214117adf9ac4cd0672a289f0949d7",
+    "tenWinBuildCorpus": {
+      "path": "bazaarplusplus-mod/src/BazaarPlusPlus/Game/LiveBuildPanel/Recommendations/TenWinBuildCorpus.cs",
+      "rawSha256": "3035180f23c8363bb26950562e90f90438560dd9fe29c59066ae945475b48159",
+      "lineRanges": ["9-17", "31-47", "530-577"],
+      "proves": [
+        "BUILD_ID_IS_IMPLICIT_ZERO_BASED_ARRAY_INDEX",
+        "BUILD_SCHEMA_ONLY_CARD_REFS_LAYOUT_STATS",
+        "LAYOUT_CAN_FILL_EXACTLY_TEN_SLOTS"
+      ]
+    },
+    "runPayloadComposer": {
+      "path": "bazaarplusplus-mod/src/BazaarPlusPlus/Game/BundlePipeline/RunPayloadComposer.cs",
+      "rawSha256": "b5aa7c73a5fc923659a51682ace682feb7a33e2574ef1607b6a2870b6b6c1170",
+      "lineRange": "206-214",
+      "proves": "UPLOADER_CAN_CAPTURE_PLAYER_AND_OPPONENT_SKILL_CARD_SETS"
+    },
+    "runPayloadV5": {
+      "path": "bazaarplusplus-mod/src/BazaarPlusPlus.ModApi/Bundle/RunPayloadV5.cs",
+      "rawSha256": "f0a398b1ad090e6911c2700941a821eca69a75af7f9d98a291e6ba72cc90daa5",
+      "lineRange": "35-101",
+      "proves": "RUN_FACTS_EXPOSE_BUILD_CHANNEL_AND_MOD_VERSION_BUT_NO_RAW_GAME_CLIENT_VERSION"
+    }
+  },
+  "missingAcceptanceEvidence": [
+    "ROW_BOUND_SKILLS",
+    "RAW_GAME_CLIENT_VERSION",
+    "ANALYZER_QUERY_AND_FILTERS",
+    "EXACT_GROUPING_KEY",
+    "ELIGIBLE_POPULATION_DENOMINATOR",
+    "STABLE_ROW_IDENTITY_ACROSS_SNAPSHOTS"
+  ],
+  "candidateRowsAcceptedAsExactTop3": false,
+  "battleLogsAllowed": false,
+  "originalRulesAccepted": false,
+  "requiredResolution": "Obtain an immutable publisher artifact that binds complete item and skill state, raw game client version, exact query and grouping semantics, eligible population denominator, and a stable row identity to each ranked build.",
+  "nonInference": [
+    "Snapshot array indices are not stable build identifiers.",
+    "Uploader support for skills does not prove that published build rows include or group by skills.",
+    "Hero totals are not substituted as the undeclared build-ranking denominator."
+  ]
+}

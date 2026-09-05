@@ -13,6 +13,7 @@ const candidateDirs = [
   'diving_helmet_source_mapping', 'flagship_source_mapping',
   'nesting_doll_source_mapping', 'pearl_source_mapping',
   'pistol_sword_source_mapping', 'torpedo_source_mapping',
+  'top3_metrics_github_gap',
   'wetware_source_mapping',
 ];
 const workbookStems = [
@@ -47,7 +48,7 @@ test('top-three candidate source bytes are exact and remain non-acceptance evide
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.artifactLockVerified, true);
-  assert.equal(payload.fileCount, 63);
+  assert.equal(payload.fileCount, 65);
   assert.equal(payload.scope, 'candidate_source_artifact_integrity_only');
   assert.equal(payload.completeBuildsAccepted, false);
   assert.equal(payload.originalRulesAccepted, false);

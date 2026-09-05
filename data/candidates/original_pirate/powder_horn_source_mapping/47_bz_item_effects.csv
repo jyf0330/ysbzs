@@ -1,0 +1,5 @@
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,condition_tags,condition_source_relation,target_type,target_tags,target_exclude_self,target_count,operation_type,amount,crit_chance_bps_delta,stacks,can_crit,status,ticks,catalog_status,source_ability_id,trigger_priority,effect_order
+effect_bazaar_powder_horn_bronze_reload_right,item_bazaar_powder_horn,bronze,skill_bazaar_powder_horn,,item_ready,always,,any,adjacent_right_ammo_item,,,,reload_ammo,1,,,,,,candidate_reference,0,Lowest,0
+effect_bazaar_powder_horn_silver_reload_right,item_bazaar_powder_horn,silver,skill_bazaar_powder_horn,,item_ready,always,,any,adjacent_right_ammo_item,,,,reload_ammo,2,,,,,,candidate_reference,0,Lowest,0
+effect_bazaar_powder_horn_gold_reload_right,item_bazaar_powder_horn,gold,skill_bazaar_powder_horn,,item_ready,always,,any,adjacent_right_ammo_item,,,,reload_ammo,3,,,,,,candidate_reference,0,Lowest,0
+effect_bazaar_powder_horn_diamond_reload_right,item_bazaar_powder_horn,diamond,skill_bazaar_powder_horn,,item_ready,always,,any,adjacent_right_ammo_item,,,,reload_ammo,4,,,,,,candidate_reference,0,Lowest,0

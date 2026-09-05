@@ -1,0 +1,25 @@
+{
+  "schema": "ysbzs.original-pirate-source-ability-priority-fixture.v1",
+  "acceptance": "identity_and_ordering_contract_only_not_rule_mapping",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "priorityExamples": [
+    {"sourceObjectUuid": "04a994d3-9aeb-4dde-8243-e954b55ada63", "sourceAbilityId": "2", "triggerPriority": "Immediate"},
+    {"sourceObjectUuid": "02859d88-e334-45a9-8483-597d744cb7c7", "sourceAbilityId": "0", "triggerPriority": "Highest"},
+    {"sourceObjectUuid": "00729ddf-cef5-487e-9c8b-2ddea70ec3a6", "sourceAbilityId": "0", "triggerPriority": "High"},
+    {"sourceObjectUuid": "001092a2-3703-4f7d-b686-ce812f6622ea", "sourceAbilityId": "2", "triggerPriority": "Medium"},
+    {"sourceObjectUuid": "0012231c-bc8a-4367-a652-378440652e11", "sourceAbilityId": "0", "triggerPriority": "Low"},
+    {"sourceObjectUuid": "03968f2d-5f40-464a-bf1f-9475836157cd", "sourceAbilityId": "0", "triggerPriority": "Lowest"}
+  ],
+  "rifle": {
+    "sourceObjectUuid": "1dcc7604-4f84-46e9-bbd1-2456317ec0ed",
+    "abilities": [
+      {"sourceAbilityId": "0", "triggerType": "TTriggerOnCardFired", "triggerPriority": "Medium", "actionType": "TActionPlayerDamage", "effectOrder": 0},
+      {"sourceAbilityId": "1", "triggerType": "TTriggerOnCardFired", "triggerPriority": "Low", "actionType": "TActionCardModifyAttribute", "effectOrder": 0}
+    ]
+  },
+  "limitations": [
+    "The six rows prove the closed priority vocabulary only.",
+    "Rifle abilities each contain one source Action; this fixture does not claim a complete Rifle rule mapping.",
+    "No source Ability in the locked cards table exposes a top-level multi-Action list, so multi-effect mappings remain rejected."
+  ]
+}

@@ -506,6 +506,9 @@ assert 'enemy_move_range' in [cell.value for cell in wb['PETS'][1]], [cell.value
 assert 'enemy_attack_count' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'skill_ids' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
 assert 'def' in [cell.value for cell in wb['PETS'][1]], [cell.value for cell in wb['PETS'][1]]
+assert [cell.value for cell in wb['BZ_ITEM_EFFECTS'][1]][-3:] == [
+    'source_ability_id', 'trigger_priority', 'effect_order'
+]
 assert 'shop_store_id' in [cell.value for cell in wb['SHOP_STORES'][1]], [cell.value for cell in wb['SHOP_STORES'][1]]
 nonempty_rows = lambda sheet: sum(
     1 for row in wb[sheet].iter_rows(values_only=True)

@@ -197,6 +197,8 @@ ITEM_EFFECT_CONDITIONS = {
     "always", "source_item_has_any_tag", "source_item_can_crit", "source_item_ammo_depleted",
 }
 ITEM_EFFECT_SOURCE_RELATIONS = {"any", "adjacent"}
+SOURCE_TRIGGER_PRIORITIES = {"Immediate", "Highest", "High", "Medium", "Low", "Lowest"}
+SOURCE_ABILITY_EFFECT_FIELDS = {"sourceAbilityId", "triggerPriority", "effectOrder"}
 DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
 DAMAGE_AURA_OPERATION = "grant_damage"
 LIFESTEAL_AURA_OPERATION = "grant_lifesteal_bps"
@@ -291,7 +293,7 @@ DOMAIN_HEADERS = OrderedDict([
         "condition_type", "condition_tags", "condition_source_relation", "target_type", "target_tags",
         "target_exclude_self", "target_count",
         "operation_type", "amount", "crit_chance_bps_delta", "stacks", "can_crit",
-        "status", "ticks", "catalog_status",
+        "status", "ticks", "catalog_status", "source_ability_id", "trigger_priority", "effect_order",
     ]),
     ("48_bz_item_skills.csv", [
         "item_skill_id", "name_zh", "description_zh", "trigger_events", "effect_ids",
@@ -702,11 +704,22 @@ def _expect_integer(value: Any, context: str, minimum: int | None = None) -> int
 
 
 def _validate_executable_item_effect(value: Any, context: str) -> tuple[str, str]:
-    effect = _expect_exact_fields(value, {
+    required_fields = {
         "effectId", "priority", "trigger", "target", "operation",
-    }, context)
+    }
+    if not isinstance(value, dict) or set(value) not in {
+        frozenset(required_fields), frozenset(required_fields | SOURCE_ABILITY_EFFECT_FIELDS),
+    }:
+        raise ExportError(f"EXECUTABLE_FIELDS_INVALID:{context}")
+    effect = value
     effect_id = _expect_stable_id(effect["effectId"], f"{context}:effectId")
     _expect_integer(effect["priority"], f"{context}:priority", 0)
+    if SOURCE_ABILITY_EFFECT_FIELDS.issubset(effect):
+        _expect_stable_id(effect["sourceAbilityId"], f"{context}:sourceAbilityId")
+        if effect["triggerPriority"] not in SOURCE_TRIGGER_PRIORITIES:
+            raise ExportError(f"EXECUTABLE_SOURCE_TRIGGER_PRIORITY_INVALID:{effect_id}")
+        if _expect_integer(effect["effectOrder"], f"{context}:effectOrder", 0) != 0:
+            raise ExportError(f"EXECUTABLE_SOURCE_ABILITY_EFFECT_ORDER_UNSUPPORTED:{effect_id}")
     trigger = _expect_exact_fields(effect["trigger"], {"event", "conditions"}, f"{context}:trigger")
     trigger_event = trigger["event"]
     if trigger_event not in ITEM_EFFECT_TRIGGERS:
@@ -1129,6 +1142,7 @@ def validate_package(package: Any) -> None:
     item_widths: dict[str, int] = {}
     item_effect_ids: set[str] = set()
     item_effect_events: dict[str, str] = {}
+    item_source_ability_contracts: dict[tuple[str, str], tuple[str, str]] = {}
     item_aura_ids: set[str] = set()
     for item_index, item_value in enumerate(items):
         item = _expect_exact_fields(item_value, {
@@ -1193,6 +1207,7 @@ def validate_package(package: Any) -> None:
             item_profiles.add((item_id, quality))
             item_profile_values[(item_id, quality)] = profile
             profile_events: set[str] = set()
+            profile_source_ability_ids: set[str] = set()
             for effect_index, effect in enumerate(_expect_list(profile.get("effects"), f"items:{item_id}:{quality}:effects")):
                 effect_id, trigger_event = _validate_executable_item_effect(
                     effect, f"items:{item_id}:{quality}:effects:{effect_index}"
@@ -1202,6 +1217,23 @@ def validate_package(package: Any) -> None:
                 item_effect_ids.add(effect_id)
                 item_effect_events[effect_id] = trigger_event
                 profile_events.add(trigger_event)
+                if SOURCE_ABILITY_EFFECT_FIELDS.issubset(effect):
+                    source_ability_id = effect["sourceAbilityId"]
+                    if source_ability_id in profile_source_ability_ids:
+                        raise ExportError(
+                            f"EXECUTABLE_SOURCE_ABILITY_MULTI_EFFECT_UNSUPPORTED:"
+                            f"{item_id}:{quality}:{source_ability_id}"
+                        )
+                    profile_source_ability_ids.add(source_ability_id)
+                    contract_key = (item_id, source_ability_id)
+                    contract = (trigger_event, effect["triggerPriority"])
+                    if contract_key in item_source_ability_contracts \
+                            and item_source_ability_contracts[contract_key] != contract:
+                        raise ExportError(
+                            f"EXECUTABLE_SOURCE_ABILITY_CONTRACT_MIXED:"
+                            f"{item_id}:{source_ability_id}"
+                        )
+                    item_source_ability_contracts[contract_key] = contract
             for aura_index, aura in enumerate(
                 _expect_list(profile.get("auras"), f"items:{item_id}:{quality}:auras")
             ):
@@ -3010,6 +3042,8 @@ class ContentAssembler:
         seen_ids: set[str] = set()
         actual_item_skill_effects: dict[str, set[str]] = defaultdict(set)
         actual_item_skill_triggers: dict[str, set[str]] = defaultdict(set)
+        source_ability_contracts: dict[tuple[str, str], tuple[str, str, str]] = {}
+        source_ability_profiles: set[tuple[str, str, str]] = set()
         for row in self.tables[filename]:
             _formal(filename, row)
             effect_id = _require_id(filename, row, "effect_id")
@@ -3261,6 +3295,34 @@ class ContentAssembler:
                 "target": {"type": target_type, "params": target_params},
                 "operation": {"type": operation_type, "params": params},
             }
+            source_values = [row.get(field, "").strip() for field in (
+                "source_ability_id", "trigger_priority", "effect_order",
+            )]
+            if any(source_values) and not all(source_values):
+                raise ExportError(f"SOURCE_ABILITY_METADATA_PARTIAL:{effect_id}")
+            if all(source_values):
+                source_ability_id = _require_id(filename, row, "source_ability_id")
+                trigger_priority = _require_text(filename, row, "trigger_priority")
+                if trigger_priority not in SOURCE_TRIGGER_PRIORITIES:
+                    raise ExportError(f"SOURCE_TRIGGER_PRIORITY_INVALID:{effect_id}")
+                effect_order = _integer(filename, row, "effect_order", 0)
+                if effect_order != 0:
+                    raise ExportError(f"SOURCE_ABILITY_EFFECT_ORDER_UNSUPPORTED:{effect_id}")
+                contract_key = (item_id, source_ability_id)
+                contract = (item_skill_id, trigger_event, trigger_priority)
+                if contract_key in source_ability_contracts \
+                        and source_ability_contracts[contract_key] != contract:
+                    raise ExportError(f"SOURCE_ABILITY_CONTRACT_MIXED:{item_id}:{source_ability_id}")
+                source_ability_contracts[contract_key] = contract
+                profile_key = (item_id, quality, source_ability_id)
+                if profile_key in source_ability_profiles:
+                    raise ExportError(f"SOURCE_ABILITY_MULTI_EFFECT_UNSUPPORTED:{item_id}:{quality}:{source_ability_id}")
+                source_ability_profiles.add(profile_key)
+                effect.update({
+                    "sourceAbilityId": source_ability_id,
+                    "triggerPriority": trigger_priority,
+                    "effectOrder": effect_order,
+                })
             profile["effects"].append(effect)
             actual_item_skill_effects[item_skill_id].add(effect_id)
             actual_item_skill_triggers[item_skill_id].add(trigger_event)

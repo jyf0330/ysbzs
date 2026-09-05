@@ -308,6 +308,8 @@ for filename, sheet in zip(files, sheets):
     with open(pathlib.Path(sys.argv[4]) / filename, encoding='utf-8-sig', newline='') as stream:
         rows = list(csv.reader(stream))
     actual = read_sheet_rows(pathlib.Path(sys.argv[1]), sheet)
+    width = len(rows[0])
+    actual = [row + [''] * (width - len(row)) for row in actual]
     assert actual == rows, (sheet, len(actual), len(rows))
     assert not any(isinstance(value, str) and any(error in value for error in ['#REF!', '#DIV/0!', '#VALUE!', '#NAME?']) for row in actual for value in row), sheet
 `;

@@ -1,0 +1,17 @@
+{
+  "schema": "ysbzs.original-pirate-wetware-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "49d032e6f4206802dcc1333feebf596ef47f89cac4a7fc3ad5e7a2e2c03806bf",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "cba511727cac679efe645bb469067846fdcbd1ee5189d0efa38474d245a06d8b",
+  "sourceObjectUuid": "dd913d79-7509-4c8a-b68a-5bf364dc521e",
+  "sourceScope": "Complete Silver/Gold/Diamond tiers, Ability 0/1 and empty base Aura directory",
+  "referenceBuildScope": "Task-locked Rank 1 and Rank 2 appearances are Diamond and unenchanted",
+  "limitations": [
+    "This is static source mapping, not executable Wetware content or a complete Run.",
+    "Dynamic attribute evaluation, random Weapon choice, Shield-event timing, reentrancy, stacking and expiry remain unverified and fail closed.",
+    "Rank observations do not establish exact build identity, acquisition, enchantment rules or original-game execution acceptance."
+  ]
+}

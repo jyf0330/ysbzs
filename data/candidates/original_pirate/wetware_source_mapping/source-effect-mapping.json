@@ -1,0 +1,233 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "cba511727cac679efe645bb469067846fdcbd1ee5189d0efa38474d245a06d8b",
+  "sourceObjectUuid": "dd913d79-7509-4c8a-b68a-5bf364dc521e",
+  "sourceInternalName": "Wetware",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Medium",
+    "startingTier": "Silver",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Aquatic",
+      "Apparel",
+      "Tech"
+    ],
+    "hiddenTags": [
+      "Shield",
+      "DamageReference"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "sourceDirectoryLocks": {
+    "tiersSha256": "aacf1f03b94f9d974ac039a5ae0626acc6da84b224b63eb5528625f04a4c191f",
+    "abilitiesSha256": "f648ad26812dfa5c869893ecc5ef396aaf6d5186d6bbde666936d5155e18b23a",
+    "aurasSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "sourceAbilityDirectoryOrderObserved": [
+    "0",
+    "1"
+  ],
+  "sourceAuraDirectoryOrderObserved": [],
+  "qualityProfiles": [
+    {
+      "quality": "silver",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1,
+          2
+        ],
+        "declaredAttributes": {
+          "CooldownMax": 6000,
+          "Custom_0": 15,
+          "Multicast": 1,
+          "ShieldApplyAmount": 20
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 6000,
+          "Custom_0": 15,
+          "Multicast": 1,
+          "ShieldApplyAmount": 20
+        }
+      }
+    },
+    {
+      "quality": "gold",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1,
+          2
+        ],
+        "declaredAttributes": {
+          "Custom_0": 25,
+          "ShieldApplyAmount": 40
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 6000,
+          "Custom_0": 25,
+          "Multicast": 1,
+          "ShieldApplyAmount": 40
+        }
+      }
+    },
+    {
+      "quality": "diamond",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1,
+          2
+        ],
+        "declaredAttributes": {
+          "Custom_0": 35,
+          "ShieldApplyAmount": 80
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 6000,
+          "Custom_0": 35,
+          "Multicast": 1,
+          "ShieldApplyAmount": 80
+        }
+      }
+    }
+  ],
+  "sourceAbilities": [
+    {
+      "sourceAbilityId": "0",
+      "sourceAbilityDirectoryIndex": 0,
+      "priority": "Medium",
+      "trigger": {
+        "$type": "TTriggerOnCardFired"
+      },
+      "action": {
+        "$type": "TActionPlayerShieldApply",
+        "Cost": null,
+        "ReferenceValue": null,
+        "Target": {
+          "$type": "TTargetPlayerRelative",
+          "Conditions": null,
+          "TargetMode": "Self"
+        }
+      },
+      "activeIn": "HandOnly",
+      "worksIn": "Anywhere",
+      "prerequisites": null
+    },
+    {
+      "sourceAbilityId": "1",
+      "sourceAbilityDirectoryIndex": 1,
+      "priority": "Medium",
+      "trigger": {
+        "$type": "TTriggerOnCardPerformedShield",
+        "Subject": {
+          "$type": "TTargetCardSection",
+          "Conditions": null,
+          "ExcludeSelf": false,
+          "TargetSection": "SelfBoard"
+        },
+        "Target": null
+      },
+      "action": {
+        "$type": "TActionCardModifyAttribute",
+        "AttributeType": "DamageAmount",
+        "Cost": null,
+        "Duration": {
+          "$type": "TDeterminantDuration",
+          "DurationType": "UntilEndOfCombat"
+        },
+        "Operation": "Add",
+        "Target": {
+          "$type": "TTargetCardRandom",
+          "Conditions": {
+            "$type": "TCardConditionalTag",
+            "Operator": "Any",
+            "Tags": [
+              "Weapon"
+            ]
+          },
+          "ExcludeSelf": false,
+          "TargetSection": "SelfHand"
+        },
+        "TargetCount": {
+          "$type": "TFixedValue",
+          "Value": 1.0
+        },
+        "Value": {
+          "$type": "TReferenceValueCardAttribute",
+          "AttributeType": "Custom_0",
+          "DefaultValue": 0.0,
+          "Modifier": null,
+          "Target": {
+            "$type": "TTargetCardSelf",
+            "Conditions": null
+          }
+        }
+      },
+      "activeIn": "HandOnly",
+      "worksIn": "Anywhere",
+      "prerequisites": null
+    }
+  ],
+  "sourceAuras": [],
+  "referenceBuildAppearances": [
+    {
+      "rank": 1,
+      "quality": "diamond",
+      "enchantment": null,
+      "evidenceScope": "task_locked_reference_build_observation"
+    },
+    {
+      "rank": 2,
+      "quality": "diamond",
+      "enchantment": null,
+      "evidenceScope": "task_locked_reference_build_observation"
+    }
+  ],
+  "executionStatus": "static_source_mapping_only_dynamic_expression_and_timing_fail_closed",
+  "unknownSourceFields": [
+    "initialCooldownProgress",
+    "performedShieldEventEmissionTiming",
+    "performedShieldEventSourceIdentity",
+    "shieldToDamageBuffReentrancy",
+    "samePriorityAbilityAndCrossItemOrder",
+    "randomWeaponSelectionRngAndSnapshotPolicy",
+    "emptyRandomWeaponTargetPolicy",
+    "dynamicReferenceValueEvaluationTime",
+    "untilEndOfCombatStackingAndExpiry",
+    "shieldAndDamageCritEligibility"
+  ],
+  "excludedScopes": [
+    "dynamic_expression_execution",
+    "event_timing",
+    "enchantment_directory_and_execution",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "complete_run_state",
+    "exact_top_three_identity",
+    "original_game_acceptance"
+  ]
+}

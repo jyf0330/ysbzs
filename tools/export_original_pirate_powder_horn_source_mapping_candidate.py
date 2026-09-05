@@ -152,7 +152,11 @@ def build_artifacts(tables: dict[str, list[dict[str, str]]]):
         "sourceInternalName": "Powder Horn",
         "itemId": ITEM_ID,
         "qualityProfiles": profiles,
-        "unknownSourceFields": ["baseCritChance"],
+        "unknownSourceFields": [
+            "baseCritChance",
+            "emptyAmmoCooldownPolicy",
+            "reloadWakePolicy",
+        ],
         "excludedScopes": ["enchantments", "economy", "acquisition", "complete_initial_state"],
     }
     mapping_hash = hashlib.sha256(
@@ -169,6 +173,7 @@ def build_artifacts(tables: dict[str, list[dict[str, str]]]):
         "limitations": [
             "This is not an executable original-pirate content package or a complete Powder Horn item.",
             "No Rifle initial Ammo value is inferred by this mapping.",
+            "The locked source does not define whether cooldown progresses at zero Ammo or how Reload wakes a charged item.",
             "No enchantment, price, acquisition, Run state or original-game acceptance claim is included.",
         ],
     }

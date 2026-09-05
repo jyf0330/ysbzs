@@ -19,6 +19,7 @@ for p in mapping['qualityProfiles']:
  assert e['sourceAbilityId']=='0' and e['sourceTriggerType']=='TTriggerOnCardFired'
  assert e['target']=={'type':'adjacent_right_ammo_item','origin':'self','targetMode':'right_card','includeOrigin':False,'condition':'AmmoMax > 0'}
 assert 'initialAmmo' not in repr(mapping)
+assert mapping['unknownSourceFields']==['baseCritChance','emptyAmmoCooldownPolicy','reloadWakePolicy']
 assert provenance['notValidatedAs']=='ysbzs.original-pirate-content.v1'
 def reject(field,value):
  bad=copy.deepcopy(tables);bad[c.CSV_NAME][0][field]=value

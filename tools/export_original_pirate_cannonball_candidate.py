@@ -23,8 +23,8 @@ ITEM_ID = 'item_bazaar_cannonball'
 SOURCE_UUID = '55377bdf-359b-495c-895c-c7852511c915'
 SOURCE_SNAPSHOT = 'snapshot_vanessa_local_cache_25079259_db8914ab'
 DB_SHA = '7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9'
-BASE_HASH = '36f2f03b10f3d822472b216db9a8c355fd42df829c2831ed40cda1555192a83b'
-BASE_CSV_SHA = 'ba45a8108a85bb392c8e03e080f1dad25e191f6ee47fe9c02a22075b06984d1a'
+BASE_HASH = 'a8150bb63a72227318b33ec9f9c3872bfa70acad2a4277f525d43ca4699c186c'
+BASE_CSV_SHA = 'beb7977ffa8bb732a7b4273688c04ef973a3532cf8c7106929526ad1bb5b7b30'
 QUALITIES = ('silver', 'gold', 'diamond')
 SHEETS = {
     'BZ_ITEMS': '46_bz_items.csv', 'BZ_ITEM_SKILLS': '48_bz_item_skills.csv',

@@ -1,0 +1,7 @@
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,condition_tags,condition_source_relation,target_type,target_tags,target_exclude_self,target_count,operation_type,amount,crit_chance_bps_delta,stacks,can_crit,status,ticks,catalog_status,source_ability_id,trigger_priority,effect_order
+effect_bazaar_water_wheel_silver_0,item_bazaar_water_wheel,silver,skill_bazaar_water_wheel_haste,,item_ready,always,,any,all_other_friendly_active_clock_items,,true,,apply_status,,,,,haste,40,candidate_reference,0,High,0
+effect_bazaar_water_wheel_silver_1,item_bazaar_water_wheel,silver,skill_bazaar_water_wheel_charge,,another_friendly_item_used,always,,adjacent,self,,,,charge,,,,,,40,candidate_reference,1,Medium,0
+effect_bazaar_water_wheel_gold_0,item_bazaar_water_wheel,gold,skill_bazaar_water_wheel_haste,,item_ready,always,,any,all_other_friendly_active_clock_items,,true,,apply_status,,,,,haste,40,candidate_reference,0,High,0
+effect_bazaar_water_wheel_gold_1,item_bazaar_water_wheel,gold,skill_bazaar_water_wheel_charge,,another_friendly_item_used,always,,adjacent,self,,,,charge,,,,,,40,candidate_reference,1,Medium,0
+effect_bazaar_water_wheel_diamond_0,item_bazaar_water_wheel,diamond,skill_bazaar_water_wheel_haste,,item_ready,always,,any,all_other_friendly_active_clock_items,,true,,apply_status,,,,,haste,40,candidate_reference,0,High,0
+effect_bazaar_water_wheel_diamond_1,item_bazaar_water_wheel,diamond,skill_bazaar_water_wheel_charge,,another_friendly_item_used,always,,adjacent,self,,,,charge,,,,,,40,candidate_reference,1,Medium,0

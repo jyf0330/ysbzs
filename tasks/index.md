@@ -28,6 +28,7 @@
 - `tasks/doing/2026-09-05_original_pirate_powder_horn_source_mapping_candidate.md` — Powder Horn真实Lowest右邻装填来源映射候选，不补Rifle未知初始弹药。
 - `tasks/doing/2026-09-05_original_pirate_run_c_listener_mapping_candidate.md` — 代表Run C的Cannonade Medium与Grapeshot Lowest同事件监听来源映射。
 - `tasks/doing/2026-09-05_original_pirate_revolver_source_mapping_candidate.md` — Run C Gold Revolver真实Ability 0与继承属性隔离映射，不补跨事件同档顺序。
+- `tasks/doing/2026-09-05_original_pirate_water_wheel_source_mapping_candidate.md` — Run A Water Wheel品质继承与High群体Haste/Medium相邻自充能双Ability隔离映射，不补Haste重施加规则。
 
 - `tasks/doing/2026-09-05_original_pirate_source_ability_priority.md` — 来源Ability六档优先级与单Action顺序，正式legacy包逐字不变。
 

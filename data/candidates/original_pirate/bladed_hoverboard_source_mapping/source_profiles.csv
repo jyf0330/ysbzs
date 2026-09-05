@@ -1,0 +1,9 @@
+record_type,source_id,scope,quality_or_enchantment,priority,trigger,action_type,attribute,target,value_expression,active_in,works_in
+tier,silver,base,silver,,,,,,"{""abilityIds"":[""0"",""1""],""auraIds"":[],""damageAmount"":20,""flyingTargets"":1,""tooltipIds"":[0]}",,
+tier,gold,base,gold,,,,,,"{""abilityIds"":[""0"",""1""],""auraIds"":[],""damageAmount"":40,""flyingTargets"":1,""tooltipIds"":[0]}",,
+tier,diamond,base,diamond,,,,,,"{""abilityIds"":[""0"",""1""],""auraIds"":[],""damageAmount"":60,""flyingTargets"":1,""tooltipIds"":[0]}",,
+ability,0,base,,Medium,"{""subject"":{""includeOrigin"":false,""origin"":""Self"",""targetMode"":""Neighbor"",""type"":""TTargetCardPositional""},""type"":""TTriggerOnItemUsed""}",TActionPlayerDamage,,OpponentPlayer,ReferenceValue:null,HandOnly,Anywhere
+ability,1,base,,Medium,"{""subject"":{""includeOrigin"":false,""origin"":""Self"",""targetMode"":""Neighbor"",""type"":""TTargetCardPositional""},""type"":""TTriggerOnItemUsed""}",TActionCardFlyingStart,,TriggerSource,"{""condition"":{""attribute"":""Flying"",""operator"":""Equal"",""value"":0},""excludeSelf"":false}",HandOnly,Anywhere
+enchantment,Toxic,enchantment,Toxic,,,,,,"{""abilityIds"":[""e1""],""auraIds"":[""e2""],""declaredAttributes"":{""PoisonApplyAmount"":0},""hiddenTags"":[""Poison""]}",,
+ability,e1,Toxic,Toxic,Medium,"{""subject"":{""includeOrigin"":false,""origin"":""Self"",""targetMode"":""Neighbor"",""type"":""TTargetCardPositional""},""type"":""TTriggerOnItemUsed""}",TActionPlayerPoisonApply,,OpponentPlayer,ReferenceValue:null,HandOnly,Anywhere
+aura,e2,Toxic,Toxic,,,TAuraActionCardModifyAttribute,PoisonApplyAmount,SelfCard,Self.DamageAmount*0.1:round,HandAndStash,Anywhere

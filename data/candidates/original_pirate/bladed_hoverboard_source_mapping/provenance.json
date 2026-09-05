@@ -1,0 +1,16 @@
+{
+  "schema": "ysbzs.original-pirate-bladed-hoverboard-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "c06d02c037d9981fcaa43a13351a29da893084afcda203b884536be334e86e52",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "808ad956-94c2-4510-a06c-396156c59791",
+  "sourceScope": "Three base tiers, Abilities 0/1, empty base Aura directory and Toxic e1/e2 overlay",
+  "limitations": [
+    "This is not executable original-pirate content or a complete Rank 2 build.",
+    "Medium is a locked source declaration, not proof of runtime tier semantics or same-tier order.",
+    "Null ReferenceValue binding, nested timing, status application and complete-build RNG remain unverified.",
+    "No popularity, economy, acquisition, match acceptance or original-game execution claim is included."
+  ]
+}

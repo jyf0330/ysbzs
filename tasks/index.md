@@ -26,6 +26,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-05_original_pirate_bladed_hoverboard_source_mapping_candidate.md` — Bladed Hoverboard 三品质、相邻使用监听与 Toxic 覆盖的隔离来源映射；Flying/Poison时点、空引用绑定及三条 Medium 顺序未知，不进入正式内容。
+
 - `tasks/doing/2026-09-05_original_pirate_captains_quarters_source_gap.md` — Captain's Quarters 三品质均悬空引用缺失 Ability 3；来源缺口已锁并禁止正式晋升，等待同版本完整来源。
 
 - `tasks/doing/2026-09-05_original_pirate_wetware_source_mapping_candidate.md` — Wetware 三品质护盾与 PerformedShield 随机武器成长的隔离来源映射；事件上下文、随机池、重入和叠加清理未知，不进入正式内容。

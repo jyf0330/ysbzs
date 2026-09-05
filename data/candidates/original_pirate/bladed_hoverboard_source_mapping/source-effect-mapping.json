@@ -1,0 +1,169 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "808ad956-94c2-4510-a06c-396156c59791",
+  "sourceInternalName": "Bladed Hoverboard",
+  "requestedRankProfile": {
+    "rank": 2,
+    "quality": "gold",
+    "enchantment": "Toxic",
+    "status": "requested_candidate_only_not_source_popularity_evidence"
+  },
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Medium",
+    "startingTier": "Silver",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Weapon",
+      "Tech",
+      "Aquatic",
+      "Vehicle"
+    ],
+    "hiddenTags": [
+      "Damage",
+      "Flying"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "sourceAbilityDirectoryOrderObserved": [
+    "0",
+    "1"
+  ],
+  "sourceBaseAuraDirectoryObserved": [],
+  "qualityProfiles": [
+    {
+      "quality": "silver",
+      "abilityIds": [
+        "0",
+        "1"
+      ],
+      "auraIds": [],
+      "damageAmount": 20,
+      "flyingTargets": 1
+    },
+    {
+      "quality": "gold",
+      "abilityIds": [
+        "0",
+        "1"
+      ],
+      "auraIds": [],
+      "damageAmount": 40,
+      "flyingTargets": 1
+    },
+    {
+      "quality": "diamond",
+      "abilityIds": [
+        "0",
+        "1"
+      ],
+      "auraIds": [],
+      "damageAmount": 60,
+      "flyingTargets": 1
+    }
+  ],
+  "baseAbilities": [
+    {
+      "sourceAbilityId": "0",
+      "declaredPriority": "Medium",
+      "trigger": {
+        "type": "TTriggerOnItemUsed",
+        "subject": {
+          "type": "TTargetCardPositional",
+          "origin": "Self",
+          "targetMode": "Neighbor",
+          "includeOrigin": false
+        }
+      },
+      "action": "TActionPlayerDamage",
+      "target": "opponent_player",
+      "referenceValue": null
+    },
+    {
+      "sourceAbilityId": "1",
+      "declaredPriority": "Medium",
+      "trigger": {
+        "type": "TTriggerOnItemUsed",
+        "subject": {
+          "type": "TTargetCardPositional",
+          "origin": "Self",
+          "targetMode": "Neighbor",
+          "includeOrigin": false
+        }
+      },
+      "action": "TActionCardFlyingStart",
+      "target": "trigger_source",
+      "targetCount": null,
+      "duration": null,
+      "excludeSelf": false,
+      "condition": {
+        "attribute": "Flying",
+        "operator": "Equal",
+        "value": 0
+      }
+    }
+  ],
+  "toxicOverlay": {
+    "hiddenTags": [
+      "Poison"
+    ],
+    "declaredAttributes": {
+      "PoisonApplyAmount": 0
+    },
+    "ability": {
+      "sourceAbilityId": "e1",
+      "declaredPriority": "Medium",
+      "trigger": {
+        "type": "TTriggerOnItemUsed",
+        "subject": {
+          "type": "TTargetCardPositional",
+          "origin": "Self",
+          "targetMode": "Neighbor",
+          "includeOrigin": false
+        }
+      },
+      "action": "TActionPlayerPoisonApply",
+      "target": "opponent_player",
+      "referenceValue": null
+    },
+    "aura": {
+      "sourceAuraId": "e2",
+      "attribute": "PoisonApplyAmount",
+      "operation": "Add",
+      "target": "self_card",
+      "value": {
+        "attribute": "DamageAmount",
+        "target": "self_card",
+        "multiplier": 0.1,
+        "shouldRound": true
+      }
+    }
+  },
+  "unknownSourceFields": [
+    "nullReferenceValueRuntimeBinding",
+    "runtimePriorityTierOrdering",
+    "base0Base1ToxicE1SameMediumExecutionOrder",
+    "nestedTriggerQueueTiming",
+    "flyingStateApplicationTiming",
+    "poisonRoundingAndApplicationTiming",
+    "criticalEligibility",
+    "rngSeedAndConsumptionForRank2CompleteBuild",
+    "completeCooldownStatusAndTargetInteraction"
+  ],
+  "excludedScopes": [
+    "non_toxic_enchantments",
+    "economy",
+    "acquisition",
+    "complete_rank2_build",
+    "complete_combat_initial_state",
+    "runtime_priority_acceptance",
+    "simultaneous_ready_order",
+    "top_three_popularity_evidence"
+  ]
+}

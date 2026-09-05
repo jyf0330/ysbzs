@@ -1,36 +1,76 @@
 {
-  "schema": "ysbzs.original-pirate-source-gap.v1",
-  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "schema": "ysbzs.original-pirate-source-gap.v2",
   "sourceObjectUuid": "8908d2d1-1a7e-4f97-8ecb-6834e96b1eab",
   "sourceInternalName": "Captain's Quarters",
-  "identity": {
-    "type": "Item",
-    "size": "Large",
-    "startingTier": "Silver",
-    "heroes": ["Vanessa"],
-    "tags": ["Aquatic", "Property"],
-    "hiddenTags": ["Haste", "DamageReference", "AmmoReference"],
-    "spawningEligibility": "Always"
-  },
-  "tierAbilityReferences": {
-    "silver": ["0", "1", "2", "3"],
-    "gold": ["0", "1", "2", "3"],
-    "diamond": ["0", "1", "2", "3"]
-  },
-  "sourceAbilityDirectoryObserved": ["0", "1", "2"],
-  "missingAbilityIds": ["3"],
-  "knownAbilitySummaries": [
-    {"abilityId": "0", "priority": "Medium", "trigger": "TTriggerOnCardFired", "action": "TActionCardHaste", "target": "SelfHand Vehicle-or-Tool with active clock", "silverGoldDiamondValues": [1000, 2000, 3000]},
-    {"abilityId": "1", "priority": "Low", "trigger": "TTriggerOnCardFired", "action": "TActionCardReload", "target": "SelfHand AmmoMax>0", "silverGoldDiamondValues": [1, 2, 3]},
-    {"abilityId": "2", "priority": "High", "trigger": "TTriggerOnCardFired", "action": "TActionCardModifyAttribute DamageAmount UntilEndOfCombat", "target": "SelfHand Weapon", "silverGoldDiamondValues": [20, 30, 40]}
+  "v5SourceObservations": [
+    {
+      "label": "current-prod-cache",
+      "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+      "cardPayloadSha256": "90eeb9887879a55f8f3275848fe97b68130ea784d9c6e03e551c957788263c0b",
+      "cardVersion": "5.0.0",
+      "tierAbilityReferences": {"silver": ["0", "1", "2", "3"], "gold": ["0", "1", "2", "3"], "diamond": ["0", "1", "2", "3"]},
+      "sourceAbilityDirectoryObserved": ["0", "1", "2"],
+      "missingAbilityIds": ["3"],
+      "subtreeSha256": {
+        "identity": "1b940aa1ec3d942e7175c963933f662f866dfbb6f669e4a49a012f1e839f3268",
+        "tiers": "a5130471300f692715ca637b3454261ff6fffc49a658567d339e13a2083ce989",
+        "abilities": "d8f6a00fca6f3cbe4a0aae37e6579bd1010e430f3cdbcc06e1d7143c7e6f33a7",
+        "auras": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "enchantments": "4cab81d26c53a16cabfee5c912d38708dc0129ccaa8b96b9577acaae9d696700"
+      }
+    },
+    {
+      "label": "archived-independent-cache",
+      "sourceDbSha256": "2b9c6b3765c72a21a5ebfb7336c13251d09017b87c0e599671b14299800ba092",
+      "cardPayloadSha256": "5eebc0bbdf0efc43cf2b395e4fc0c49b993b5674e1808b65c43a5e6075f24b82",
+      "cardVersion": "5.0.0",
+      "tierAbilityReferences": {"silver": ["0", "1", "2", "3"], "gold": ["0", "1", "2", "3"], "diamond": ["0", "1", "2", "3"]},
+      "sourceAbilityDirectoryObserved": ["0", "1", "2"],
+      "missingAbilityIds": ["3"],
+      "subtreeSha256": {
+        "identity": "b607eb8965af2c99c9e94f862692eabd3bd2256e474a5bbc1e981de83a09fb73",
+        "tiers": "a5130471300f692715ca637b3454261ff6fffc49a658567d339e13a2083ce989",
+        "abilities": "e6212a560fe9680b878610644530823d37ba84bba12b401bd736d4b137084837",
+        "auras": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "enchantments": "4644dba09229fcd81d4f2f8f35127b9e11078d12ccefeaae020ed9e830f3ac76"
+      }
+    }
   ],
+  "v5KnownAbilityPriorityDifference": {
+    "abilityId": "2",
+    "currentProdCachePriority": "High",
+    "archivedIndependentCachePriority": "Low",
+    "consequence": "Even two v5-labelled source caches do not establish one universal trigger priority contract."
+  },
+  "fixedGithubHistoricalPredecessor": {
+    "repository": "https://github.com/vjeux/bazaar-engine",
+    "commit": "f309056f7d7f6783702933a20b9b5d6e0e1d3a2f",
+    "cardsPath": "public/json/cards.json",
+    "cardsRawSha256": "109ed2f8c0900a5f1071aef609b53f2b482a38e6d1788bec367bd1580d430a48",
+    "cardJsonPath": "/2.0.0/740",
+    "cardCanonicalSha256": "b29b4769299cb443f2005450fe604b5a091550e9792e8532280c86c681662b22",
+    "cardVersion": "2.0.0",
+    "ability3CanonicalSha256": "20f98c7f5dde46dae1c6166327d636d686264a7a50d83b3310c5ba52d7d1b7b4",
+    "ability3Summary": {
+      "trigger": "TTriggerOnCardFired",
+      "priority": "Low",
+      "action": "TActionCardModifyAttribute DamageAmount Add UntilEndOfCombat",
+      "target": "one random SelfHand Weapon",
+      "silverGoldDiamondValues": [20, 30, 40]
+    },
+    "downloadToolPath": "src/tools/downloadLatestJSON.js",
+    "downloadToolRawSha256": "f1428a97b748f998562b4b6f049d38004e3594c3847c1b41935d30492f28e0b4",
+    "downloadToolSourceUrl": "https://cdn.playthebazaar.com/bazaardesigndataprod/cards.json"
+  },
+  "historicalPredecessorAssessment": "The v2 Ability 3 is historical evidence only. It cannot fill the v5 dangling reference: v5 places the all-Weapons damage action in Ability 2, and its observed priority differs across the two v5 caches.",
   "sourceGapStatus": "BLOCKED_SOURCE_REFERENCE_MISSING",
   "formalPromotionAllowed": false,
+  "battleLogsAllowed": false,
   "originalRulesAccepted": false,
-  "requiredResolution": "Obtain a version-bound source in which every tier AbilityId resolves, then re-lock and inspect Ability 3 before any executable mapping or battle log.",
+  "requiredResolution": "Obtain a single raw-client-version-bound v5-or-current source whose complete tier references resolve, then lock original runtime trigger order before executable mapping or battle logs.",
   "nonInference": [
-    "Ability 3 is not assumed to be removed, inert, duplicated, or equivalent to a tooltip.",
-    "Known Abilities 0/1/2 do not make the item complete.",
-    "Directory order does not prove runtime execution order."
+    "The historical v2 Ability 3 is not copied into v5.",
+    "Ability 3 is not assumed removed, inert, duplicated, or equivalent to a tooltip.",
+    "Neither directory order nor numeric AbilityId proves runtime execution order."
   ]
 }

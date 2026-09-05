@@ -19,7 +19,7 @@ record because its source references a missing Ability 3; the lock does not fill
 that gap.
 
 The canonical aggregate SHA-256 is
-`ced85f8b4d3005cb184a2f96c5eca10d20ad2f3cec05a6297e475f295b1d32c2`.
+`70e73ae9374c6d7c986718a24fc72aeb265011e41659cfa7f1045b45706c1ac0`.
 Paths and byte lengths are framed into the digest, so byte edits, path changes,
 additions and removals all change it. Symlink substitution is rejected before
 hashing.

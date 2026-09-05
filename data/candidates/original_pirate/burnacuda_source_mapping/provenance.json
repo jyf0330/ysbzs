@@ -1,0 +1,15 @@
+{
+  "schema": "ysbzs.original-pirate-burnacuda-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "fb92888d06ca60607b8f7f4644fc2a02123b354095787f8db50e90ed13fab577",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "8f18974c-eef9-4e82-a2d2-7f4e7c67daf8",
+  "sourceScope": "Full four-tier identity, inheritance, Ability and Aura directories",
+  "limitations": [
+    "This is not an executable original-pirate content package or a complete Burnacuda item.",
+    "Initial Ammo, empty-Ammo cooldown, same-priority Ability order, original random selection, Haste reapplication and Burn resolution remain unverified.",
+    "No enchantment, economy, acquisition, exact-top-three or original-game acceptance claim is included."
+  ]
+}

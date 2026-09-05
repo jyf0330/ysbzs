@@ -1,0 +1,369 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "8f18974c-eef9-4e82-a2d2-7f4e7c67daf8",
+  "sourceInternalName": "Burnacuda",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Small",
+    "startingTier": "Bronze",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Aquatic",
+      "Friend"
+    ],
+    "hiddenTags": [
+      "Burn",
+      "Ammo",
+      "Haste"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "itemId": "item_bazaar_burnacuda",
+  "sourceAbilityDirectoryOrderObserved": [
+    "0",
+    "1"
+  ],
+  "samePriorityAbilityExecutionOrderStatus": "UNVERIFIED_FAIL_CLOSED",
+  "sourceAuraDirectory": [],
+  "qualityProfiles": [
+    {
+      "quality": "bronze",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "CooldownMax": 3000,
+          "Multicast": 1,
+          "AmmoMax": 1,
+          "BurnApplyAmount": 3,
+          "HasteAmount": 1000,
+          "HasteTargets": 1
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 3000,
+          "Multicast": 1,
+          "AmmoMax": 1,
+          "BurnApplyAmount": 3,
+          "HasteAmount": 1000,
+          "HasteTargets": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 3000,
+        "multicast": 1,
+        "ammoMaximum": 1,
+        "burnApplyAmount": 3,
+        "hasteAmountMilliseconds": 1000,
+        "hasteTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "BurnApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "apply_burn",
+            "stacks": 3
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "HasteAmount",
+          "sourceTargetCountAttribute": "HasteTargets",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "random_card",
+            "section": "self_neighbors",
+            "excludeSelf": false,
+            "count": 1,
+            "condition": {
+              "attribute": "CooldownMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "operation": {
+            "type": "apply_status",
+            "status": "haste",
+            "ticks": 20
+          }
+        }
+      ]
+    },
+    {
+      "quality": "silver",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "AmmoMax": 2
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 3000,
+          "Multicast": 1,
+          "AmmoMax": 2,
+          "BurnApplyAmount": 3,
+          "HasteAmount": 1000,
+          "HasteTargets": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 3000,
+        "multicast": 1,
+        "ammoMaximum": 2,
+        "burnApplyAmount": 3,
+        "hasteAmountMilliseconds": 1000,
+        "hasteTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "BurnApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "apply_burn",
+            "stacks": 3
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "HasteAmount",
+          "sourceTargetCountAttribute": "HasteTargets",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "random_card",
+            "section": "self_neighbors",
+            "excludeSelf": false,
+            "count": 1,
+            "condition": {
+              "attribute": "CooldownMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "operation": {
+            "type": "apply_status",
+            "status": "haste",
+            "ticks": 20
+          }
+        }
+      ]
+    },
+    {
+      "quality": "gold",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "AmmoMax": 3
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 3000,
+          "Multicast": 1,
+          "AmmoMax": 3,
+          "BurnApplyAmount": 3,
+          "HasteAmount": 1000,
+          "HasteTargets": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 3000,
+        "multicast": 1,
+        "ammoMaximum": 3,
+        "burnApplyAmount": 3,
+        "hasteAmountMilliseconds": 1000,
+        "hasteTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "BurnApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "apply_burn",
+            "stacks": 3
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "HasteAmount",
+          "sourceTargetCountAttribute": "HasteTargets",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "random_card",
+            "section": "self_neighbors",
+            "excludeSelf": false,
+            "count": 1,
+            "condition": {
+              "attribute": "CooldownMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "operation": {
+            "type": "apply_status",
+            "status": "haste",
+            "ticks": 20
+          }
+        }
+      ]
+    },
+    {
+      "quality": "diamond",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "AmmoMax": 4
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 3000,
+          "Multicast": 1,
+          "AmmoMax": 4,
+          "BurnApplyAmount": 3,
+          "HasteAmount": 1000,
+          "HasteTargets": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 3000,
+        "multicast": 1,
+        "ammoMaximum": 4,
+        "burnApplyAmount": 3,
+        "hasteAmountMilliseconds": 1000,
+        "hasteTargets": 1
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "BurnApplyAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "apply_burn",
+            "stacks": 3
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "HasteAmount",
+          "sourceTargetCountAttribute": "HasteTargets",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "random_card",
+            "section": "self_neighbors",
+            "excludeSelf": false,
+            "count": 1,
+            "condition": {
+              "attribute": "CooldownMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "operation": {
+            "type": "apply_status",
+            "status": "haste",
+            "ticks": 20
+          }
+        }
+      ]
+    }
+  ],
+  "unknownSourceFields": [
+    "initialAmmo",
+    "initialCooldownProgress",
+    "zeroAmmoCooldownPolicy",
+    "ammoSpendRelativeToAbilityExecution",
+    "samePriorityAbilityExecutionOrder",
+    "randomTargetRngAndSnapshotPolicy",
+    "emptyRandomTargetPolicy",
+    "hasteReapplicationPolicy",
+    "burnResolutionAndReapplicationPolicy"
+  ],
+  "excludedScopes": [
+    "enchantments",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "simultaneous_ready_order",
+    "complete_run_state",
+    "top_three_identity"
+  ]
+}

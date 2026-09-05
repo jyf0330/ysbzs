@@ -1,0 +1,9 @@
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,condition_tags,condition_source_relation,target_type,target_tags,target_exclude_self,target_count,operation_type,amount,crit_chance_bps_delta,stacks,can_crit,status,ticks,catalog_status,source_ability_id,trigger_priority,effect_order
+effect_bazaar_burnacuda_bronze_0,item_bazaar_burnacuda,bronze,skill_bazaar_burnacuda_burn,,item_ready,always,,any,selected_enemy,,,,apply_burn,,,3,,,,candidate_reference,0,Medium,0
+effect_bazaar_burnacuda_bronze_1,item_bazaar_burnacuda,bronze,skill_bazaar_burnacuda_haste_neighbor,,item_ready,always,,any,random_adjacent_friendly_active_clock_item,,false,1,apply_status,,,,,haste,20,candidate_reference,1,Medium,0
+effect_bazaar_burnacuda_silver_0,item_bazaar_burnacuda,silver,skill_bazaar_burnacuda_burn,,item_ready,always,,any,selected_enemy,,,,apply_burn,,,3,,,,candidate_reference,0,Medium,0
+effect_bazaar_burnacuda_silver_1,item_bazaar_burnacuda,silver,skill_bazaar_burnacuda_haste_neighbor,,item_ready,always,,any,random_adjacent_friendly_active_clock_item,,false,1,apply_status,,,,,haste,20,candidate_reference,1,Medium,0
+effect_bazaar_burnacuda_gold_0,item_bazaar_burnacuda,gold,skill_bazaar_burnacuda_burn,,item_ready,always,,any,selected_enemy,,,,apply_burn,,,3,,,,candidate_reference,0,Medium,0
+effect_bazaar_burnacuda_gold_1,item_bazaar_burnacuda,gold,skill_bazaar_burnacuda_haste_neighbor,,item_ready,always,,any,random_adjacent_friendly_active_clock_item,,false,1,apply_status,,,,,haste,20,candidate_reference,1,Medium,0
+effect_bazaar_burnacuda_diamond_0,item_bazaar_burnacuda,diamond,skill_bazaar_burnacuda_burn,,item_ready,always,,any,selected_enemy,,,,apply_burn,,,3,,,,candidate_reference,0,Medium,0
+effect_bazaar_burnacuda_diamond_1,item_bazaar_burnacuda,diamond,skill_bazaar_burnacuda_haste_neighbor,,item_ready,always,,any,random_adjacent_friendly_active_clock_item,,false,1,apply_status,,,,,haste,20,candidate_reference,1,Medium,0

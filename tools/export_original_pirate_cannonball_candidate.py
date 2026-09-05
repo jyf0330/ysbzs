@@ -23,8 +23,8 @@ ITEM_ID = 'item_bazaar_cannonball'
 SOURCE_UUID = '55377bdf-359b-495c-895c-c7852511c915'
 SOURCE_SNAPSHOT = 'snapshot_vanessa_local_cache_25079259_db8914ab'
 DB_SHA = '7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9'
-BASE_HASH = '53b65f2034c8fa1b3a4e67361ec2be06f0d7cc5ab2631af089b6d0a3f462bd04'
-BASE_CSV_SHA = 'cf47a211ff7225aba5e7072703744b62b4443b457a38cfbbe40b98f1d42001b8'
+BASE_HASH = '36f2f03b10f3d822472b216db9a8c355fd42df829c2831ed40cda1555192a83b'
+BASE_CSV_SHA = 'ba45a8108a85bb392c8e03e080f1dad25e191f6ee47fe9c02a22075b06984d1a'
 QUALITIES = ('silver', 'gold', 'diamond')
 SHEETS = {
     'BZ_ITEMS': '46_bz_items.csv', 'BZ_ITEM_SKILLS': '48_bz_item_skills.csv',
@@ -43,7 +43,8 @@ def expected_rows():
     skill = 'skill_bazaar_cannonball'
     for index, quality in enumerate(QUALITIES, 1):
         row('46_bz_items.csv', item_id=ITEM_ID, name_zh='炮弹（原版未附魔候选）',
-            tags='', slot_width=1, base_quality='silver', quality=quality,
+            tags='', slot_width=1, availability='run_acquirable',
+            base_quality='silver', quality=quality,
             buy_price=index+1, sell_price=1, activation_mode='passive',
             crit_chance_bps=0, ammo_enabled='false', ammo_initial=0, ammo_maximum=0,
             item_skill_id=skill,

@@ -9,7 +9,7 @@ sys.path.insert(0,'tools')
 import export_original_pirate_content as e
 t=e._read_domains(pathlib.Path('data/csv'))
 p,d=e.build_exports(pathlib.Path('data/csv'))
-assert p['schemaVersion']==38
+assert p['schemaVersion']==39
 assert all(q['auras']==[] for s in p['runtimeBundle']['executableCatalogs']['heroSkills'] for q in s['qualityProfiles'].values())
 sid='hero_skill_mist_salvo'
 fixture=copy.deepcopy(t)
@@ -61,7 +61,7 @@ bad=copy.deepcopy(fixture);bad['72_bz_hero_skill_auras.csv'].pop();reject(bad)
 bad=copy.deepcopy(fixture);bad['72_bz_hero_skill_auras.csv'].append(copy.deepcopy(bad['72_bz_hero_skill_auras.csv'][0]));reject(bad)
 for qfield,value in [('trigger_event','friendly_item_used'),('max_triggers_per_battle','1'),('aura_ids',''),('amount','0')]:
  bad=copy.deepcopy(fixture);next(r for r in bad['62_bz_hero_skills.csv'] if r['hero_skill_id']==sid)[qfield]=value;reject(bad)
-for old in [37,36]:
+for old in [38,37]:
  bad=copy.deepcopy(p);bad['schemaVersion']=old
  try:e.validate_package(bad)
  except e.ExportError:pass
@@ -80,10 +80,11 @@ import export_original_pirate_content as e
 import export_master_to_csv as m
 import bazaar_run_source_views as v
 p,d,meta=c.build_candidate();e.validate_package(p)
+base,_=e.build_exports(e.DEFAULT_CSV_DIR)
 s=next(s for s in p['runtimeBundle']['executableCatalogs']['heroSkills'] if s['heroSkillId']==c.SKILL_ID)
 assert s['sourceBinding']['objectId']==c.UUID and set(s['qualityProfiles'])=={'diamond'}
 assert s['qualityProfiles']['diamond']['auras'][0]['operation']['params']=={'lifestealBps':10000}
-assert len(p['items'])==22 and meta['acceptance']=='not_original_game_acceptance'
+assert p['items']==base['items'] and meta['acceptance']=='not_original_game_acceptance'
 assert s['sourceBinding']['declaredScopes']==[{'quality':'diamond','scopeId':'hero_skill_profile'}]
 assert next(o for o in p['runtimeBundle']['executableCatalogs']['heroSkillOffers'] if o['heroSkillId']==c.SKILL_ID)['action']=={'type':'learn','toQuality':'diamond'}
 tables=m.generated_reference_source_tables(m.DEFAULT_MASTER)

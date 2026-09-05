@@ -8,6 +8,42 @@ import openpyxl
 import export_original_pirate_cannonball_candidate as c
 
 
+def migrate_legacy_workbook(path, expected):
+    """Add the v39 availability column only after the old rows match exactly."""
+    book = openpyxl.load_workbook(path)
+    try:
+        sheet = book['BZ_ITEMS']
+        current_headers = [cell.value for cell in sheet[1]]
+        target_headers = c.e.DOMAIN_HEADERS['46_bz_items.csv']
+        legacy_headers = [header for header in target_headers if header != 'availability']
+        if current_headers == target_headers:
+            return False
+        if current_headers != legacy_headers:
+            raise ValueError('CANDIDATE_LEGACY_HEADERS_INVALID')
+        expected_rows = [
+            {key: value for key, value in row.items() if key != 'availability'}
+            for row in expected['46_bz_items.csv']
+        ]
+        actual_rows = []
+        for values in sheet.iter_rows(min_row=2, values_only=True):
+            actual_rows.append(dict(zip(legacy_headers, ['' if value is None else str(value) for value in values])))
+        if sorted(actual_rows, key=lambda row: tuple(row[key] for key in legacy_headers)) != sorted(expected_rows, key=lambda row: tuple(row[key] for key in legacy_headers)):
+            raise ValueError('CANDIDATE_LEGACY_ROWS_INVALID')
+        column = target_headers.index('availability') + 1
+        sheet.insert_cols(column)
+        sheet.cell(row=1, column=column, value='availability')
+        for row_index in range(2, sheet.max_row + 1):
+            sheet.cell(row=row_index, column=column, value='run_acquirable')
+        with tempfile.NamedTemporaryFile(dir=path.parent, suffix='.xlsx', delete=False) as stream:
+            temporary = Path(stream.name)
+        book.save(temporary)
+        c.workbook_rows(temporary)
+        temporary.replace(path)
+        return True
+    finally:
+        book.close()
+
+
 def verify_source():
     path=Path('/Users/ywh/Library/Application Support/com.TempoStorm.TheBazaar/prod/cache/GameData.db')
     if hashlib.sha256(path.read_bytes()).hexdigest()!=c.DB_SHA:raise ValueError('SOURCE_DB_SHA_MISMATCH')
@@ -32,6 +68,7 @@ def main():
     verify_source()
     rows=c.expected_rows()
     if c.WORKBOOK.exists():
+        migrate_legacy_workbook(c.WORKBOOK, rows)
         assert c.workbook_rows(c.WORKBOOK)==c.canonical_rows(rows)
     else:
         book=openpyxl.Workbook();book.remove(book.active)

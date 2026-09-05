@@ -1,4 +1,4 @@
-item_id,name_zh,tags,slot_width,base_quality,quality,buy_price,sell_price,activation_mode,cooldown_ticks,crit_chance_bps,ammo_enabled,ammo_initial,ammo_maximum,item_skill_id,starter_instance_id,starter_location,starter_start_slot,catalog_status
-item_bazaar_cannonball,炮弹（原版未附魔候选）,,1,silver,diamond,4,1,passive,,0,false,0,0,skill_bazaar_cannonball,,,,formal
-item_bazaar_cannonball,炮弹（原版未附魔候选）,,1,silver,gold,3,1,passive,,0,false,0,0,skill_bazaar_cannonball,,,,formal
-item_bazaar_cannonball,炮弹（原版未附魔候选）,,1,silver,silver,2,1,passive,,0,false,0,0,skill_bazaar_cannonball,candidate_cannonball_silver,stash,,formal
+item_id,name_zh,tags,slot_width,availability,base_quality,quality,buy_price,sell_price,activation_mode,cooldown_ticks,crit_chance_bps,ammo_enabled,ammo_initial,ammo_maximum,item_skill_id,starter_instance_id,starter_location,starter_start_slot,catalog_status
+item_bazaar_cannonball,炮弹（原版未附魔候选）,,1,run_acquirable,silver,diamond,4,1,passive,,0,false,0,0,skill_bazaar_cannonball,,,,formal
+item_bazaar_cannonball,炮弹（原版未附魔候选）,,1,run_acquirable,silver,gold,3,1,passive,,0,false,0,0,skill_bazaar_cannonball,,,,formal
+item_bazaar_cannonball,炮弹（原版未附魔候选）,,1,run_acquirable,silver,silver,2,1,passive,,0,false,0,0,skill_bazaar_cannonball,candidate_cannonball_silver,stash,,formal

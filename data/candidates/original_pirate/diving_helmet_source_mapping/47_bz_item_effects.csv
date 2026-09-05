@@ -1,0 +1,3 @@
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,condition_tags,condition_source_relation,target_type,target_tags,target_exclude_self,target_count,operation_type,amount,crit_chance_bps_delta,stacks,can_crit,status,ticks,catalog_status,source_ability_id,trigger_priority,effect_order
+effect_bazaar_diving_helmet_gold_0,item_bazaar_diving_helmet,gold,skill_bazaar_diving_helmet_shield,,friendly_item_used,source_item_has_any_tag,aquatic,any,owner_hero,,,,gain_shield,50,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_diving_helmet_diamond_0,item_bazaar_diving_helmet,diamond,skill_bazaar_diving_helmet_shield,,friendly_item_used,source_item_has_any_tag,aquatic,any,owner_hero,,,,gain_shield,100,,,,,,candidate_reference,0,Medium,0

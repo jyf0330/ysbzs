@@ -1,0 +1,185 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "fb6e6b16-d6d0-4493-ac3f-46c26afe6c51",
+  "sourceInternalName": "Diving Helmet",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Medium",
+    "startingTier": "Gold",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Aquatic",
+      "Tool",
+      "Apparel"
+    ],
+    "hiddenTags": [
+      "Shield"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "itemId": "item_bazaar_diving_helmet",
+  "activationEvidence": "no_source_cooldown_attributes_listener_and_aura_only",
+  "sourceAbilityDirectoryOrderObserved": [
+    "0"
+  ],
+  "sourceAuraDirectoryOrderObserved": [
+    "2"
+  ],
+  "qualityProfiles": [
+    {
+      "quality": "gold",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "2"
+        ],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "ShieldApplyAmount": 50
+        },
+        "resolvedAttributes": {
+          "ShieldApplyAmount": 50
+        }
+      },
+      "sourceAttributes": {
+        "shieldApplyAmount": 50
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "ShieldApplyAmount",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "friendly_item_used",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "subject": {
+            "type": "card_section",
+            "section": "self_hand",
+            "excludeSelf": false,
+            "condition": {
+              "type": "card_tag",
+              "tags": [
+                "Aquatic"
+              ],
+              "operator": "Any"
+            }
+          },
+          "target": {
+            "type": "self_player"
+          },
+          "operation": {
+            "type": "gain_shield",
+            "amount": 50
+          }
+        }
+      ]
+    },
+    {
+      "quality": "diamond",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "2"
+        ],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "ShieldApplyAmount": 100
+        },
+        "resolvedAttributes": {
+          "ShieldApplyAmount": 100
+        }
+      },
+      "sourceAttributes": {
+        "shieldApplyAmount": 100
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "ShieldApplyAmount",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "friendly_item_used",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "subject": {
+            "type": "card_section",
+            "section": "self_hand",
+            "excludeSelf": false,
+            "condition": {
+              "type": "card_tag",
+              "tags": [
+                "Aquatic"
+              ],
+              "operator": "Any"
+            }
+          },
+          "target": {
+            "type": "self_player"
+          },
+          "operation": {
+            "type": "gain_shield",
+            "amount": 100
+          }
+        }
+      ]
+    }
+  ],
+  "sourceAuras": [
+    {
+      "sourceAuraId": "2",
+      "sourceAuraDirectoryIndex": 0,
+      "activeIn": "HandAndStash",
+      "worksIn": "CombatOnly",
+      "prerequisites": null,
+      "action": {
+        "type": "TAuraActionCardAddTagsList",
+        "tags": [
+          "Aquatic"
+        ],
+        "target": {
+          "type": "TTargetCardPositional",
+          "origin": "Self",
+          "targetMode": "Neighbor",
+          "includeOrigin": false,
+          "conditions": null
+        }
+      }
+    }
+  ],
+  "unknownSourceFields": [
+    "dynamicTagAuraApplicationTiming",
+    "dynamicTagAuraRemovalTiming",
+    "overlappingTagAuraReferenceCounting",
+    "sourceEventTagSnapshotPolicy",
+    "adjacencySnapshotAndMovementPolicy",
+    "disabledDestroyedTransformedAuraLifecycle",
+    "samePriorityCrossItemOrder",
+    "shieldResolutionOrder"
+  ],
+  "excludedScopes": [
+    "enchantments",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "simultaneous_event_order",
+    "complete_run_state",
+    "top_three_identity"
+  ]
+}

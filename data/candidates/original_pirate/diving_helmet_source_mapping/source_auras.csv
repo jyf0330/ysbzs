@@ -1,0 +1,2 @@
+source_aura_id,active_in,action_type,tags,target_type,target_origin,target_mode,include_origin,target_conditions,prerequisites,works_in
+2,HandAndStash,TAuraActionCardAddTagsList,Aquatic,TTargetCardPositional,Self,Neighbor,false,none,none,CombatOnly

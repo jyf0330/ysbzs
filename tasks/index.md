@@ -26,6 +26,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-05_original_pirate_top3_source_artifact_lock.md` — 三套候选涉及的 63 个来源文件/工作簿已做路径、长度与原始字节总锁；只证明候选证据未漂移，不代表完整构筑或原规则通过。
+
 - `tasks/doing/2026-09-05_original_pirate_flagship_source_mapping_candidate.md` — Flagship 三品质、五类条件 Multicast Aura 与 Shielded 覆盖的隔离来源映射；Aura 生命周期、多播事件包和双 Medium 顺序未知，不进入正式内容。
 
 - `tasks/doing/2026-09-05_original_pirate_torpedo_source_mapping_candidate.md` — Torpedo 三品质、双条件成长监听与 Radiant 覆盖的隔离来源映射；Reload 文案与加伤结构冲突、同 Medium 时序和运行免疫语义均 fail closed。

@@ -1,0 +1,15 @@
+{
+  "schema": "ysbzs.original-pirate-dive-weights-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "de767b5a8319620fdbe740752358a3eb167ef3af49b80682500f0559b2c998fd",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "ce6769db-f9a6-44a8-b915-afec472a2ea3",
+  "sourceScope": "Complete three-tier inheritance, Ability 0 and Aura 1/2/3 directories",
+  "limitations": [
+    "This is not executable original-pirate content or a complete Dive Weights item.",
+    "Initial Ammo, zero-Ammo clock, Ammo/multicast timing, multicast CardFired behavior, original random selection and Haste reapplication remain unverified.",
+    "No enchantment, economy, acquisition, exact-top-three or original-game acceptance claim is included."
+  ]
+}

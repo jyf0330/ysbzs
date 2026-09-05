@@ -1,0 +1,4 @@
+source_aura_id,active_in,action_type,attribute_type,operation,value_type,value_attribute,value_target,value_default,modifier_mode,modifier_value,modifier_round,target_type,prerequisite_type,subject_target_mode,subject_include_origin,subject_condition_tags,subject_condition_operator,comparison,amount,works_in
+1,HandAndStash,TAuraActionCardModifyAttribute,FlatCooldownReduction,Add,TReferenceValueCardAttribute,Custom_0,Self,0,Multiply,1,true,Self,TPrerequisiteCardCount,LeftCard,false,Aquatic,Any,Equal,1,Anywhere
+2,HandAndStash,TAuraActionCardModifyAttribute,FlatCooldownReduction,Add,TReferenceValueCardAttribute,Custom_0,Self,0,Multiply,1,true,Self,TPrerequisiteCardCount,RightCard,false,Aquatic,Any,Equal,1,Anywhere
+3,HandAndStash,TAuraActionCardModifyAttribute,Multicast,Add,TReferenceValueCardAttribute,Ammo,Self,0,,,,Self,,,,,,,,Anywhere

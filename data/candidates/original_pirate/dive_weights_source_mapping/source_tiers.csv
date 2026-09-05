@@ -1,0 +1,4 @@
+quality,ability_ids,aura_ids,tooltip_ids,declared_attributes_json
+silver,0,"1,2,3","0,1,2","{""AmmoMax"":4,""CooldownMax"":8000,""Custom_0"":1000,""HasteAmount"":1000,""HasteTargets"":1,""Multicast"":1}"
+gold,0,"1,2,3","0,1,2","{""HasteAmount"":2000}"
+diamond,0,"1,2,3","0,1,2","{""HasteAmount"":3000}"

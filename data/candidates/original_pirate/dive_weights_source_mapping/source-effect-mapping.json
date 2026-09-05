@@ -1,0 +1,362 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "ce6769db-f9a6-44a8-b915-afec472a2ea3",
+  "sourceInternalName": "Dive Weights",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Small",
+    "startingTier": "Silver",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Aquatic",
+      "Tool",
+      "Apparel"
+    ],
+    "hiddenTags": [
+      "Haste",
+      "Ammo"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "itemId": "item_bazaar_dive_weights",
+  "sourceAbilityDirectoryOrderObserved": [
+    "0"
+  ],
+  "sourceAuraDirectoryOrderObserved": [
+    "1",
+    "2",
+    "3"
+  ],
+  "qualityProfiles": [
+    {
+      "quality": "silver",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "1",
+          "2",
+          "3"
+        ],
+        "tooltipIds": [
+          0,
+          1,
+          2
+        ],
+        "declaredAttributes": {
+          "AmmoMax": 4,
+          "CooldownMax": 8000,
+          "Custom_0": 1000,
+          "HasteAmount": 1000,
+          "HasteTargets": 1,
+          "Multicast": 1
+        },
+        "resolvedAttributes": {
+          "AmmoMax": 4,
+          "CooldownMax": 8000,
+          "Custom_0": 1000,
+          "HasteAmount": 1000,
+          "HasteTargets": 1,
+          "Multicast": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 8000,
+        "multicastBase": 1,
+        "ammoMaximum": 4,
+        "hasteTargets": 1,
+        "hasteAmountMilliseconds": 1000,
+        "adjacentAquaticCooldownReductionMilliseconds": 1000
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "HasteAmount",
+          "sourceTargetCountAttribute": "HasteTargets",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "random_card",
+            "section": "self_hand",
+            "excludeSelf": false,
+            "count": 1,
+            "condition": {
+              "attribute": "CooldownMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "operation": {
+            "type": "apply_status",
+            "status": "haste",
+            "ticks": 20
+          }
+        }
+      ]
+    },
+    {
+      "quality": "gold",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "1",
+          "2",
+          "3"
+        ],
+        "tooltipIds": [
+          0,
+          1,
+          2
+        ],
+        "declaredAttributes": {
+          "HasteAmount": 2000
+        },
+        "resolvedAttributes": {
+          "AmmoMax": 4,
+          "CooldownMax": 8000,
+          "Custom_0": 1000,
+          "HasteAmount": 2000,
+          "HasteTargets": 1,
+          "Multicast": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 8000,
+        "multicastBase": 1,
+        "ammoMaximum": 4,
+        "hasteTargets": 1,
+        "hasteAmountMilliseconds": 2000,
+        "adjacentAquaticCooldownReductionMilliseconds": 1000
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "HasteAmount",
+          "sourceTargetCountAttribute": "HasteTargets",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "random_card",
+            "section": "self_hand",
+            "excludeSelf": false,
+            "count": 1,
+            "condition": {
+              "attribute": "CooldownMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "operation": {
+            "type": "apply_status",
+            "status": "haste",
+            "ticks": 40
+          }
+        }
+      ]
+    },
+    {
+      "quality": "diamond",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "1",
+          "2",
+          "3"
+        ],
+        "tooltipIds": [
+          0,
+          1,
+          2
+        ],
+        "declaredAttributes": {
+          "HasteAmount": 3000
+        },
+        "resolvedAttributes": {
+          "AmmoMax": 4,
+          "CooldownMax": 8000,
+          "Custom_0": 1000,
+          "HasteAmount": 3000,
+          "HasteTargets": 1,
+          "Multicast": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 8000,
+        "multicastBase": 1,
+        "ammoMaximum": 4,
+        "hasteTargets": 1,
+        "hasteAmountMilliseconds": 3000,
+        "adjacentAquaticCooldownReductionMilliseconds": 1000
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "HasteAmount",
+          "sourceTargetCountAttribute": "HasteTargets",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "random_card",
+            "section": "self_hand",
+            "excludeSelf": false,
+            "count": 1,
+            "condition": {
+              "attribute": "CooldownMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "operation": {
+            "type": "apply_status",
+            "status": "haste",
+            "ticks": 60
+          }
+        }
+      ]
+    }
+  ],
+  "sourceAuras": [
+    {
+      "sourceAuraId": "1",
+      "sourceAuraDirectoryIndex": 0,
+      "activeIn": "HandAndStash",
+      "worksIn": "Anywhere",
+      "action": {
+        "type": "TAuraActionCardModifyAttribute",
+        "attribute": "FlatCooldownReduction",
+        "operation": "Add",
+        "value": {
+          "type": "TReferenceValueCardAttribute",
+          "attribute": "Custom_0",
+          "target": "self",
+          "default": 0,
+          "modifier": {
+            "mode": "Multiply",
+            "value": 1,
+            "shouldRound": true
+          }
+        },
+        "target": "self"
+      },
+      "prerequisite": {
+        "type": "TPrerequisiteCardCount",
+        "comparison": "Equal",
+        "amount": 1,
+        "subject": {
+          "type": "TTargetCardPositional",
+          "origin": "Self",
+          "targetMode": "LeftCard",
+          "includeOrigin": false,
+          "condition": {
+            "type": "TCardConditionalTag",
+            "tags": [
+              "Aquatic"
+            ],
+            "operator": "Any"
+          }
+        }
+      }
+    },
+    {
+      "sourceAuraId": "2",
+      "sourceAuraDirectoryIndex": 1,
+      "activeIn": "HandAndStash",
+      "worksIn": "Anywhere",
+      "action": {
+        "type": "TAuraActionCardModifyAttribute",
+        "attribute": "FlatCooldownReduction",
+        "operation": "Add",
+        "value": {
+          "type": "TReferenceValueCardAttribute",
+          "attribute": "Custom_0",
+          "target": "self",
+          "default": 0,
+          "modifier": {
+            "mode": "Multiply",
+            "value": 1,
+            "shouldRound": true
+          }
+        },
+        "target": "self"
+      },
+      "prerequisite": {
+        "type": "TPrerequisiteCardCount",
+        "comparison": "Equal",
+        "amount": 1,
+        "subject": {
+          "type": "TTargetCardPositional",
+          "origin": "Self",
+          "targetMode": "RightCard",
+          "includeOrigin": false,
+          "condition": {
+            "type": "TCardConditionalTag",
+            "tags": [
+              "Aquatic"
+            ],
+            "operator": "Any"
+          }
+        }
+      }
+    },
+    {
+      "sourceAuraId": "3",
+      "sourceAuraDirectoryIndex": 2,
+      "activeIn": "HandAndStash",
+      "worksIn": "Anywhere",
+      "action": {
+        "type": "TAuraActionCardModifyAttribute",
+        "attribute": "Multicast",
+        "operation": "Add",
+        "value": {
+          "type": "TReferenceValueCardAttribute",
+          "attribute": "Ammo",
+          "target": "self",
+          "default": 0
+        },
+        "target": "self"
+      }
+    }
+  ],
+  "unknownSourceFields": [
+    "initialAmmo",
+    "initialCooldownProgress",
+    "zeroAmmoCooldownPolicy",
+    "ammoSpendRelativeToMulticastSnapshot",
+    "multicastPacketAndCardFiredPolicy",
+    "dynamicAuraRefreshTiming",
+    "randomTargetRngAndSnapshotPolicy",
+    "emptyRandomTargetPolicy",
+    "hasteReapplicationPolicy",
+    "samePriorityCrossItemOrder",
+    "completeStatusAndCooldownInteraction"
+  ],
+  "excludedScopes": [
+    "enchantments",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "simultaneous_ready_order",
+    "complete_run_state",
+    "top_three_identity"
+  ]
+}

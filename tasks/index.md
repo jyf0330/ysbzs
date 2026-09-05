@@ -26,6 +26,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-05_original_pirate_dive_weights_source_mapping_candidate.md` — Dive Weights 三品质继承、一个 Medium Ability 与三个动态 Aura 的隔离来源映射；首次弹药、Ammo/Multicast时点、随机目标及重复急速未知，不进入正式内容。
+
 - `tasks/doing/2026-09-05_original_pirate_burnacuda_source_mapping_candidate.md` — Burnacuda 四品质继承、双 Medium Ability、无 Aura 的隔离来源映射；首次弹药、空弹冷却、同档顺序、随机目标与重复急速未知，不进入正式内容。
 
 - `tasks/doing/2026-09-05_original_pirate_rifle_source_mapping_candidate.md` — Rifle真实Ability优先级/品质值隔离映射候选，不补未知Ammo初值或Crit。

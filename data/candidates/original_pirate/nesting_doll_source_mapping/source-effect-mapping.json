@@ -1,0 +1,210 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "c65da89e-3504-40e7-87a8-10defcb7f07b",
+  "sourceInternalName": "Nesting Doll",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Small",
+    "startingTier": "Silver",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Toy"
+    ],
+    "hiddenTags": [
+      "Shield",
+      "Ammo"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "sourceAbilityDirectoryOrderObserved": [
+    "0",
+    "1"
+  ],
+  "sourceAuraDirectoryOrderObserved": [
+    "2",
+    "3",
+    "4",
+    "9"
+  ],
+  "qualityProfiles": [
+    {
+      "quality": "silver",
+      "abilityIds": [
+        "0",
+        "1"
+      ],
+      "auraIds": [
+        "2"
+      ],
+      "cooldownMaxMilliseconds": 2000,
+      "multicastBase": 1,
+      "ammoMaximumBase": 8,
+      "dailyPermanentAmmoMaximumGain": 1,
+      "shieldPerCurrentAmmo": 5
+    },
+    {
+      "quality": "gold",
+      "abilityIds": [
+        "0",
+        "1"
+      ],
+      "auraIds": [
+        "3"
+      ],
+      "cooldownMaxMilliseconds": 2000,
+      "multicastBase": 1,
+      "ammoMaximumBase": 8,
+      "dailyPermanentAmmoMaximumGain": 1,
+      "shieldPerCurrentAmmo": 10
+    },
+    {
+      "quality": "diamond",
+      "abilityIds": [
+        "0",
+        "1"
+      ],
+      "auraIds": [
+        "4"
+      ],
+      "cooldownMaxMilliseconds": 2000,
+      "multicastBase": 1,
+      "ammoMaximumBase": 8,
+      "dailyPermanentAmmoMaximumGain": 1,
+      "shieldPerCurrentAmmo": 15
+    }
+  ],
+  "baseAbilities": [
+    {
+      "sourceAbilityId": "0",
+      "priority": "Medium",
+      "trigger": "TTriggerOnCardFired",
+      "action": "TActionPlayerShieldApply",
+      "target": "self_player",
+      "referenceValue": null
+    },
+    {
+      "sourceAbilityId": "1",
+      "priority": "Medium",
+      "trigger": "TTriggerOnDayStarted",
+      "action": "TActionCardModifyAttribute",
+      "attribute": "AmmoMax",
+      "operation": "Add",
+      "target": "self_card",
+      "value": {
+        "attribute": "Custom_0",
+        "target": "self_card",
+        "default": 0
+      }
+    }
+  ],
+  "baseAuras": [
+    {
+      "sourceAuraId": "2",
+      "quality": "silver",
+      "attribute": "ShieldApplyAmount",
+      "operation": "Add",
+      "target": "self_card",
+      "value": {
+        "attribute": "Ammo",
+        "target": "self_card",
+        "multiplier": 5,
+        "shouldRound": true
+      }
+    },
+    {
+      "sourceAuraId": "3",
+      "quality": "gold",
+      "attribute": "ShieldApplyAmount",
+      "operation": "Add",
+      "target": "self_card",
+      "value": {
+        "attribute": "Ammo",
+        "target": "self_card",
+        "multiplier": 10,
+        "shouldRound": true
+      }
+    },
+    {
+      "sourceAuraId": "4",
+      "quality": "diamond",
+      "attribute": "ShieldApplyAmount",
+      "operation": "Add",
+      "target": "self_card",
+      "value": {
+        "attribute": "Ammo",
+        "target": "self_card",
+        "multiplier": 15,
+        "shouldRound": true
+      }
+    },
+    {
+      "sourceAuraId": "9",
+      "quality": "all_source_directory_only",
+      "attribute": "Custom_2",
+      "operation": "Add",
+      "target": "self_card",
+      "value": {
+        "attribute": "Custom_1",
+        "target": "self_card",
+        "multiplier": 1,
+        "shouldRound": true
+      }
+    }
+  ],
+  "fieryOverlay": {
+    "hiddenTags": [
+      "Burn"
+    ],
+    "declaredAttributes": {
+      "BurnApplyAmount": 0
+    },
+    "ability": {
+      "sourceAbilityId": "e1",
+      "priority": "Medium",
+      "trigger": "TTriggerOnCardFired",
+      "action": "TActionPlayerBurnApply",
+      "target": "opponent_player",
+      "referenceValue": null
+    },
+    "aura": {
+      "sourceAuraId": "e2",
+      "attribute": "BurnApplyAmount",
+      "operation": "Add",
+      "target": "self_card",
+      "value": {
+        "attribute": "ShieldApplyAmount",
+        "target": "self_card",
+        "multiplier": 0.1,
+        "shouldRound": true
+      }
+    }
+  },
+  "unknownSourceFields": [
+    "initialAmmo",
+    "initialCooldownProgress",
+    "zeroAmmoCooldownPolicy",
+    "ammoSpendRelativeToShieldSnapshot",
+    "nullReferenceValueRuntimeBinding",
+    "dayStartHistoryAndInitialPermanentAmmo",
+    "dynamicAuraRefreshTiming",
+    "baseAndFierySameMediumAbilityOrder",
+    "shieldAndBurnCritEligibility",
+    "fieryBurnRoundingAndApplicationTiming",
+    "completeStatusAndCooldownInteraction"
+  ],
+  "excludedScopes": [
+    "non_fiery_enchantments",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "complete_run_history",
+    "simultaneous_ready_order",
+    "top_three_identity"
+  ]
+}

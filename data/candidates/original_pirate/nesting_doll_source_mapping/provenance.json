@@ -1,0 +1,16 @@
+{
+  "schema": "ysbzs.original-pirate-nesting-doll-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "4dbd294626033901c1c7fac22c4cf99abe5c94c57ef64e53cbffdf2e2be2747a",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "c65da89e-3504-40e7-87a8-10defcb7f07b",
+  "sourceScope": "Three base tiers, Abilities 0/1, Auras 2/3/4/9 and Fiery e1/e2 overlay",
+  "limitations": [
+    "This is not executable original-pirate content or a complete Nesting Doll item.",
+    "Initial Ammo, day-history state, null ReferenceValue binding, Ammo snapshot timing and zero-Ammo behavior remain unverified.",
+    "The Fiery overlay is source-locked but its same-Medium order, Burn rounding/application and combat execution remain unverified.",
+    "No other enchantment, economy, acquisition, exact-top-three or original-game acceptance claim is included."
+  ]
+}

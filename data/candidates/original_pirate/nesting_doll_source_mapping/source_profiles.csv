@@ -1,0 +1,13 @@
+record_type,source_id,scope,quality_or_enchantment,priority,trigger,action_type,attribute,target,value_expression,active_in,works_in
+tier,silver,base,silver,,,,,,"{""abilityIds"":[""0"",""1""],""auraIds"":[""2""],""shieldPerCurrentAmmo"":5,""tooltipIds"":[0,1]}",,
+tier,gold,base,gold,,,,,,"{""abilityIds"":[""0"",""1""],""auraIds"":[""3""],""shieldPerCurrentAmmo"":10,""tooltipIds"":[0,1]}",,
+tier,diamond,base,diamond,,,,,,"{""abilityIds"":[""0"",""1""],""auraIds"":[""4""],""shieldPerCurrentAmmo"":15,""tooltipIds"":[0,1]}",,
+ability,0,base,,Medium,TTriggerOnCardFired,TActionPlayerShieldApply,,SelfPlayer,ReferenceValue:null,HandOnly,Anywhere
+ability,1,base,,Medium,TTriggerOnDayStarted,TActionCardModifyAttribute,AmmoMax,SelfCard,Self.Custom_0,HandAndStash,Anywhere
+aura,2,base,silver,,,TAuraActionCardModifyAttribute,ShieldApplyAmount,SelfCard,Self.Ammo*5:round,HandAndStash,Anywhere
+aura,3,base,gold,,,TAuraActionCardModifyAttribute,ShieldApplyAmount,SelfCard,Self.Ammo*10:round,HandAndStash,Anywhere
+aura,4,base,diamond,,,TAuraActionCardModifyAttribute,ShieldApplyAmount,SelfCard,Self.Ammo*15:round,HandAndStash,Anywhere
+aura,9,base,,,,TAuraActionCardModifyAttribute,Custom_2,SelfCard,Self.Custom_1*1:round,HandAndStash,Anywhere
+enchantment,Fiery,enchantment,Fiery,,,,,,"{""abilityIds"":[""e1""],""auraIds"":[""e2""],""declaredAttributes"":{""BurnApplyAmount"":0},""hiddenTags"":[""Burn""]}",,
+ability,e1,Fiery,Fiery,Medium,TTriggerOnCardFired,TActionPlayerBurnApply,,OpponentPlayer,ReferenceValue:null,HandOnly,Anywhere
+aura,e2,Fiery,Fiery,,,TAuraActionCardModifyAttribute,BurnApplyAmount,SelfCard,Self.ShieldApplyAmount*0.1:round,HandAndStash,Anywhere

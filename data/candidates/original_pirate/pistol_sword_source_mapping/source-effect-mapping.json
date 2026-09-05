@@ -1,0 +1,236 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "e82625692474cb68e5e6e5d738dc6822e44c06b6f7be6268842395e21f13c7b5",
+  "sourceObjectUuid": "65527be1-b100-4a4c-98d1-4f8975368b5b",
+  "sourceInternalName": "Pistol Sword",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Medium",
+    "startingTier": "Gold",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Weapon"
+    ],
+    "hiddenTags": [
+      "Damage",
+      "Ammo"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "itemId": "item_bazaar_pistol_sword",
+  "candidateBuildUsage": {
+    "buildRank": 1,
+    "quality": "diamond",
+    "enchantmentId": "none",
+    "claimScope": "provided_candidate_membership_only_not_popularity_or_rules_proof"
+  },
+  "sourceDirectoryLocks": {
+    "tiersSha256": "154af4404369f30dad77a238f3666730a7787759eb7610d35bff7db36aab72ad",
+    "abilitiesSha256": "81f8eee29d4f1001bd14c8fa14c3f663cb689078d86c304912e1ca28fa3d10a8",
+    "aurasSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "enchantmentsSha256": "21886d0f433c9bda3d910bb084ebd2fd92df6289a1ffda093158f4c06f81074f"
+  },
+  "sourceAbilityDirectoryOrderObserved": [
+    "0",
+    "1"
+  ],
+  "sourceAuraDirectoryOrderObserved": [],
+  "sourceEnchantmentDirectoryOrderObserved": [
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Turbo",
+    "Shielded",
+    "Restorative",
+    "Toxic",
+    "Fiery",
+    "Shiny",
+    "Deadly",
+    "Radiant",
+    "Obsidian",
+    "Mossy"
+  ],
+  "qualityProfiles": [
+    {
+      "quality": "gold",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "AmmoMax": 3,
+          "CooldownMax": 5000,
+          "DamageAmount": 15,
+          "Multicast": 1
+        },
+        "resolvedAttributes": {
+          "AmmoMax": 3,
+          "CooldownMax": 5000,
+          "DamageAmount": 15,
+          "Multicast": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 5000,
+        "multicast": 1,
+        "ammoMaximum": 3,
+        "damageAmount": 15
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "DamageAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "deal_damage",
+            "amount": 15
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "DamageAmount",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "friendly_item_used",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "subject": {
+            "type": "card_section",
+            "section": "self_hand",
+            "excludeSelf": false,
+            "condition": {
+              "type": "card_attribute",
+              "attribute": "AmmoMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "deal_damage",
+            "amount": 15
+          }
+        }
+      ]
+    },
+    {
+      "quality": "diamond",
+      "sourceTier": {
+        "abilityIds": [
+          "0",
+          "1"
+        ],
+        "auraIds": [],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "DamageAmount": 30
+        },
+        "resolvedAttributes": {
+          "AmmoMax": 3,
+          "CooldownMax": 5000,
+          "DamageAmount": 30,
+          "Multicast": 1
+        }
+      },
+      "sourceAttributes": {
+        "cooldownMaxMilliseconds": 5000,
+        "multicast": 1,
+        "ammoMaximum": 3,
+        "damageAmount": 30
+      },
+      "effects": [
+        {
+          "sourceAbilityId": "0",
+          "sourceAbilityDirectoryIndex": 0,
+          "sourceValueAttribute": "DamageAmount",
+          "sourceTriggerType": "TTriggerOnCardFired",
+          "mappedTriggerEvent": "item_ready",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "deal_damage",
+            "amount": 30
+          }
+        },
+        {
+          "sourceAbilityId": "1",
+          "sourceAbilityDirectoryIndex": 1,
+          "sourceValueAttribute": "DamageAmount",
+          "sourceTriggerType": "TTriggerOnItemUsed",
+          "mappedTriggerEvent": "friendly_item_used",
+          "triggerPriority": "Medium",
+          "effectOrder": 0,
+          "subject": {
+            "type": "card_section",
+            "section": "self_hand",
+            "excludeSelf": false,
+            "condition": {
+              "type": "card_attribute",
+              "attribute": "AmmoMax",
+              "operator": "GreaterThan",
+              "value": 0
+            }
+          },
+          "target": {
+            "type": "opponent_player"
+          },
+          "operation": {
+            "type": "deal_damage",
+            "amount": 30
+          }
+        }
+      ]
+    }
+  ],
+  "sourceAuras": [],
+  "executionStatus": "static_source_mapping_only_all_timing_fail_closed",
+  "unknownSourceFields": [
+    "initialAmmo",
+    "initialCooldownProgress",
+    "baseCritChance",
+    "damageCritEligibility",
+    "emptyAmmoCooldownPolicy",
+    "samePriorityAbilityOrder",
+    "samePriorityCrossItemOrder",
+    "cardFiredToItemUsedDispatchOrder",
+    "selfAmmoItemUseReentrancy",
+    "ammoConsumptionVersusItemUsedDispatchOrder",
+    "multicastCardFiredPolicy"
+  ],
+  "excludedScopes": [
+    "enchantment_execution",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "simultaneous_event_order",
+    "complete_run_state",
+    "top_three_identity_proof"
+  ]
+}

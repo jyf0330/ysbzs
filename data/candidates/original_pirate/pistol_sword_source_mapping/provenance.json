@@ -1,0 +1,17 @@
+{
+  "schema": "ysbzs.original-pirate-pistol-sword-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "2adc381455c147424277641a04842fecb78a0f5048772ec390958f84d3dc1229",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "e82625692474cb68e5e6e5d738dc6822e44c06b6f7be6268842395e21f13c7b5",
+  "sourceObjectUuid": "65527be1-b100-4a4c-98d1-4f8975368b5b",
+  "sourceScope": "Complete Gold/Diamond inheritance, Ability 0/1 and empty base Aura directory",
+  "limitations": [
+    "This is static source mapping, not executable Pistol Sword content or a complete Run.",
+    "Rank 1 Diamond/none is provided candidate membership context, not source-derived popularity or original-rules proof.",
+    "Ammo initialization/consumption, event nesting, Crit eligibility and same-priority ordering remain unverified and fail closed.",
+    "The enchantment directory is identity-locked but no enchantment execution semantics are accepted."
+  ]
+}

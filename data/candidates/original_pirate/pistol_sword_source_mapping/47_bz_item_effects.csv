@@ -1,0 +1,5 @@
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,condition_tags,condition_source_relation,target_type,target_tags,target_exclude_self,target_count,operation_type,amount,crit_chance_bps_delta,stacks,can_crit,status,ticks,catalog_status,source_ability_id,trigger_priority,effect_order
+effect_bazaar_pistol_sword_gold_0,item_bazaar_pistol_sword,gold,skill_bazaar_pistol_sword_fire,,item_ready,always,,any,opponent_hero,,,,deal_damage,15,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_pistol_sword_gold_1,item_bazaar_pistol_sword,gold,skill_bazaar_pistol_sword_ammo_listener,,friendly_item_used,source_item_ammo_max_gt_zero,,any,opponent_hero,,,,deal_damage,15,,,,,,candidate_reference,1,Medium,0
+effect_bazaar_pistol_sword_diamond_0,item_bazaar_pistol_sword,diamond,skill_bazaar_pistol_sword_fire,,item_ready,always,,any,opponent_hero,,,,deal_damage,30,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_pistol_sword_diamond_1,item_bazaar_pistol_sword,diamond,skill_bazaar_pistol_sword_ammo_listener,,friendly_item_used,source_item_ammo_max_gt_zero,,any,opponent_hero,,,,deal_damage,30,,,,,,candidate_reference,1,Medium,0

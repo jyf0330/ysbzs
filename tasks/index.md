@@ -26,6 +26,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-05_original_pirate_pistol_sword_source_mapping_candidate.md` — Pistol Sword 金/钻品质、主动伤害与友方弹药物品使用监听的隔离来源映射；弹药消耗、重入与双 Medium 顺序未知，不进入正式内容。
+
 - `tasks/doing/2026-09-05_original_pirate_nesting_doll_source_mapping_candidate.md` — Nesting Doll 三品质、每日永久弹药、按当前 Ammo 护盾与 Fiery 灼烧覆盖的隔离来源映射；弹药取样、空引用绑定和双 Medium 顺序未知，不进入正式内容。
 
 - `tasks/doing/2026-09-05_original_pirate_diving_helmet_source_mapping_candidate.md` — Diving Helmet 金/钻双品质、Aquatic 使用监听与邻位动态标签 Aura 的隔离来源映射；标签生命周期、采样时点与同档顺序未知，不进入正式内容。

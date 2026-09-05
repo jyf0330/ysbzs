@@ -1,0 +1,3 @@
+quality,ability_ids,aura_ids,tooltip_ids,declared_attributes_json
+gold,"0,1",,"0,1","{""AmmoMax"":3,""CooldownMax"":5000,""DamageAmount"":15,""Multicast"":1}"
+diamond,"0,1",,"0,1","{""DamageAmount"":30}"

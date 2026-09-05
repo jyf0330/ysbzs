@@ -1,0 +1,36 @@
+{
+  "schema": "ysbzs.original-pirate-source-gap.v1",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceObjectUuid": "8908d2d1-1a7e-4f97-8ecb-6834e96b1eab",
+  "sourceInternalName": "Captain's Quarters",
+  "identity": {
+    "type": "Item",
+    "size": "Large",
+    "startingTier": "Silver",
+    "heroes": ["Vanessa"],
+    "tags": ["Aquatic", "Property"],
+    "hiddenTags": ["Haste", "DamageReference", "AmmoReference"],
+    "spawningEligibility": "Always"
+  },
+  "tierAbilityReferences": {
+    "silver": ["0", "1", "2", "3"],
+    "gold": ["0", "1", "2", "3"],
+    "diamond": ["0", "1", "2", "3"]
+  },
+  "sourceAbilityDirectoryObserved": ["0", "1", "2"],
+  "missingAbilityIds": ["3"],
+  "knownAbilitySummaries": [
+    {"abilityId": "0", "priority": "Medium", "trigger": "TTriggerOnCardFired", "action": "TActionCardHaste", "target": "SelfHand Vehicle-or-Tool with active clock", "silverGoldDiamondValues": [1000, 2000, 3000]},
+    {"abilityId": "1", "priority": "Low", "trigger": "TTriggerOnCardFired", "action": "TActionCardReload", "target": "SelfHand AmmoMax>0", "silverGoldDiamondValues": [1, 2, 3]},
+    {"abilityId": "2", "priority": "High", "trigger": "TTriggerOnCardFired", "action": "TActionCardModifyAttribute DamageAmount UntilEndOfCombat", "target": "SelfHand Weapon", "silverGoldDiamondValues": [20, 30, 40]}
+  ],
+  "sourceGapStatus": "BLOCKED_SOURCE_REFERENCE_MISSING",
+  "formalPromotionAllowed": false,
+  "originalRulesAccepted": false,
+  "requiredResolution": "Obtain a version-bound source in which every tier AbilityId resolves, then re-lock and inspect Ability 3 before any executable mapping or battle log.",
+  "nonInference": [
+    "Ability 3 is not assumed to be removed, inert, duplicated, or equivalent to a tooltip.",
+    "Known Abilities 0/1/2 do not make the item complete.",
+    "Directory order does not prove runtime execution order."
+  ]
+}

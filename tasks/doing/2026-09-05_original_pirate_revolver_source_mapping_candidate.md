@@ -9,7 +9,7 @@ related_files: tools/export_original_pirate_revolver_source_mapping_candidate.py
 # Revolver source mapping candidate
 
 - Lock DB SHA, UUID, identity, tier inheritance, Ability 0 and six-tier priority.
-- Keep initial Ammo, base Crit and empty-Ammo cooldown unknown.
+- Keep initial Ammo, base Crit, damage Crit eligibility and empty-Ammo cooldown unknown.
 - Do not infer CardFired versus ItemUsed phase ordering or same-tier tie-break.
 - Do not alter formal `data/csv` or generated gameplay content.
 
@@ -21,4 +21,4 @@ Acceptance remains `source_effect_mapping_only_not_complete_item`.
 - Revolver plus Rifle, Powder Horn and Run C listener source candidates: 4/4 PASS.
 - Formal master exporter check: PASS, runtime bundle hash unchanged.
 - Canonical Revolver mapping SHA-256:
-  `b5c5fc716d6ca9f5a40d7138fa722e06125af81956ff0d5eadc887c05a949daa`.
+  `11d3907417d99552492519c4c3aed5f8c98673953af5da8b6b8fb151cb7c7f37`.

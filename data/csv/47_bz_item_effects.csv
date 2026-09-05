@@ -169,3 +169,11 @@ effect_bazaar_water_wheel_gold_0,item_bazaar_water_wheel,gold,skill_bazaar_water
 effect_bazaar_water_wheel_gold_1,item_bazaar_water_wheel,gold,skill_bazaar_water_wheel_charge,30,another_friendly_item_used,always,,adjacent,self_item,,,,charge,,,,,,40,formal,1,Medium,0
 effect_bazaar_water_wheel_diamond_0,item_bazaar_water_wheel,diamond,skill_bazaar_water_wheel_haste,20,item_ready,always,,any,all_other_friendly_active_clock_items,,true,,apply_status,,,,,haste,40,formal,0,High,0
 effect_bazaar_water_wheel_diamond_1,item_bazaar_water_wheel,diamond,skill_bazaar_water_wheel_charge,30,another_friendly_item_used,always,,adjacent,self_item,,,,charge,,,,,,40,formal,1,Medium,0
+effect_bazaar_pearl_bronze_0,item_bazaar_pearl,bronze,skill_bazaar_pearl_shield,20,item_ready,always,,any,owner_hero,,,,gain_shield,10,,,,,,formal,0,Low,0
+effect_bazaar_pearl_bronze_1,item_bazaar_pearl,bronze,skill_bazaar_pearl_charge,30,another_friendly_item_used,source_item_has_any_tag,aquatic,any,self_item,,,,charge,,,,,,20,formal,1,Low,0
+effect_bazaar_pearl_silver_0,item_bazaar_pearl,silver,skill_bazaar_pearl_shield,20,item_ready,always,,any,owner_hero,,,,gain_shield,20,,,,,,formal,0,Low,0
+effect_bazaar_pearl_silver_1,item_bazaar_pearl,silver,skill_bazaar_pearl_charge,30,another_friendly_item_used,source_item_has_any_tag,aquatic,any,self_item,,,,charge,,,,,,20,formal,1,Low,0
+effect_bazaar_pearl_gold_0,item_bazaar_pearl,gold,skill_bazaar_pearl_shield,20,item_ready,always,,any,owner_hero,,,,gain_shield,40,,,,,,formal,0,Low,0
+effect_bazaar_pearl_gold_1,item_bazaar_pearl,gold,skill_bazaar_pearl_charge,30,another_friendly_item_used,source_item_has_any_tag,aquatic,any,self_item,,,,charge,,,,,,20,formal,1,Low,0
+effect_bazaar_pearl_diamond_0,item_bazaar_pearl,diamond,skill_bazaar_pearl_shield,20,item_ready,always,,any,owner_hero,,,,gain_shield,80,,,,,,formal,0,Low,0
+effect_bazaar_pearl_diamond_1,item_bazaar_pearl,diamond,skill_bazaar_pearl_charge,30,another_friendly_item_used,source_item_has_any_tag,aquatic,any,self_item,,,,charge,,,,,,20,formal,1,Low,0

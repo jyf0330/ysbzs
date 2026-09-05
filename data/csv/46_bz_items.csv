@@ -84,3 +84,7 @@ item_inkwake_doser,墨航滴液器,"poison, relic, tool",1,run_acquirable,bronze
 item_bazaar_water_wheel,水车,aquatic,3,reference_battle_only,silver,silver,,,cooldown,160,0,false,0,0,"skill_bazaar_water_wheel_haste,skill_bazaar_water_wheel_charge",,,,formal
 item_bazaar_water_wheel,水车,aquatic,3,reference_battle_only,silver,gold,,,cooldown,140,0,false,0,0,"skill_bazaar_water_wheel_haste,skill_bazaar_water_wheel_charge",,,,formal
 item_bazaar_water_wheel,水车,aquatic,3,reference_battle_only,silver,diamond,,,cooldown,120,0,false,0,0,"skill_bazaar_water_wheel_haste,skill_bazaar_water_wheel_charge",,,,formal
+item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,bronze,,,cooldown,100,0,false,0,0,"skill_bazaar_pearl_shield,skill_bazaar_pearl_charge",,,,formal
+item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,silver,,,cooldown,100,0,false,0,0,"skill_bazaar_pearl_shield,skill_bazaar_pearl_charge",,,,formal
+item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,gold,,,cooldown,100,0,false,0,0,"skill_bazaar_pearl_shield,skill_bazaar_pearl_charge",,,,formal
+item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,diamond,,,cooldown,100,0,false,0,0,"skill_bazaar_pearl_shield,skill_bazaar_pearl_charge",,,,formal

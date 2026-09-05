@@ -25,7 +25,7 @@ assert item['sourceBinding']['declaredScopes']==[
  for quality in ('silver','gold','diamond')
 ]
 catalog=package['runtimeBundle']['sourceEffectMappings']
-entry=catalog['entries'][0]
+entry=next(value for value in catalog['entries'] if value['mappingId']=='water_wheel')
 candidate_mapping,_=candidate.build_artifacts(candidate.read_candidate())
 assert entry['mapping']==candidate_mapping
 assert entry['sourceDataCommit']=='21d57c2415690992631c6c4e1607e10ddcf06a24'
@@ -33,8 +33,8 @@ assert entry['mappingSha256']=='d1b8812853d4eb182d781fef683bf8c89a384848196123f2
 assert entry['executionStatus']=='reference_battle_only_haste_reapplication_fail_closed'
 skills={value['itemSkillId']:value for value in package['runtimeBundle']['executableCatalogs']['itemSkills']}
 assert {'skill_bazaar_water_wheel_haste','skill_bazaar_water_wheel_charge'} <= set(skills)
-assert all(value['availability']=='run_acquirable' for value in package['items'] if value['itemId']!=item['itemId'])
-assert all('buyPrice' in profile and 'sellPrice' in profile for value in package['items'] if value['itemId']!=item['itemId'] for profile in value['qualityProfiles'].values())
+assert all(value['availability']=='run_acquirable' for value in package['items'] if value['itemId'] not in {item['itemId'],'item_bazaar_pearl'})
+assert all('buyPrice' in profile and 'sellPrice' in profile for value in package['items'] if value['itemId'] not in {item['itemId'],'item_bazaar_pearl'} for profile in value['qualityProfiles'].values())
 
 def rejected(mutator, expected):
  forged=copy.deepcopy(package)
@@ -67,7 +67,7 @@ rejected(forge_progression,'REFERENCE_BATTLE_ITEM_PROGRESSION_FORBIDDEN')
 
 tables=e._read_domains(base)
 bad=copy.deepcopy(tables)
-bad['73_bz_source_effect_mappings.csv'][0]['ticks']='41'
+next(row for row in bad['73_bz_source_effect_mappings.csv'] if row['mapping_id']=='water_wheel' and row['source_ability_id']=='0')['ticks']='41'
 try:e.ContentAssembler(bad,base).build()
 except e.ExportError as exc:assert 'SOURCE_EFFECT_MAPPING' in str(exc)
 else:raise AssertionError('tampered mapping accepted')

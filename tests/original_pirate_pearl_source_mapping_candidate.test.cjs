@@ -14,7 +14,6 @@ import export_original_pirate_pearl_source_mapping_candidate as c
 
 EXPECTED_SOURCE_DB_SHA256='7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9'
 EXPECTED_SOURCE_UUID='1312cf29-3dbb-446f-88b2-0d4999e68d78'
-EXPECTED_FORMAL_CONTENT_SHA256='8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366'
 source_db=pathlib.Path(os.environ.get(
  'THE_BAZAAR_GAMEDATA_DB',
  pathlib.Path.home()/'Library/Application Support/com.TempoStorm.TheBazaar/prod/cache/GameData.db',
@@ -62,11 +61,10 @@ for domain,row_index,field,value in [
  else:raise AssertionError((domain,row_index,field,value))
 
 package,_=formal.build_exports(pathlib.Path('data/csv'))
-payload=(json.dumps(package,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
-assert c.FORMAL_CONTENT_SHA256==EXPECTED_FORMAL_CONTENT_SHA256
-assert hashlib.sha256(payload).hexdigest()==EXPECTED_FORMAL_CONTENT_SHA256
-assert all(item['itemId']!=c.ITEM_ID for item in package['items'])
-assert all(entry.get('mapping',{}).get('sourceObjectUuid')!=c.SOURCE_UUID for entry in package['runtimeBundle']['sourceEffectMappings']['entries'])
+item=next(item for item in package['items'] if item['itemId']==c.ITEM_ID)
+entry=next(entry for entry in package['runtimeBundle']['sourceEffectMappings']['entries'] if entry['mappingId']=='pearl')
+assert item['availability']=='reference_battle_only'
+assert entry['mapping']==mapping and entry['mappingSha256']==formal.PEARL_MAPPING_SHA256
 print('PASS Pearl source mapping candidate')
 `], {
     cwd: path.resolve(__dirname, '..'), encoding: 'utf8',

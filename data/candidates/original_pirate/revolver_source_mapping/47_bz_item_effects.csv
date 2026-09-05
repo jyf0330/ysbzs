@@ -1,0 +1,5 @@
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,condition_tags,condition_source_relation,target_type,target_tags,target_exclude_self,target_count,operation_type,amount,crit_chance_bps_delta,stacks,can_crit,status,ticks,catalog_status,source_ability_id,trigger_priority,effect_order
+effect_bazaar_revolver_bronze_damage,item_bazaar_revolver,bronze,skill_bazaar_revolver,,item_ready,always,,any,selected_enemy,,,,deal_damage,8,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_revolver_silver_damage,item_bazaar_revolver,silver,skill_bazaar_revolver,,item_ready,always,,any,selected_enemy,,,,deal_damage,16,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_revolver_gold_damage,item_bazaar_revolver,gold,skill_bazaar_revolver,,item_ready,always,,any,selected_enemy,,,,deal_damage,32,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_revolver_diamond_damage,item_bazaar_revolver,diamond,skill_bazaar_revolver,,item_ready,always,,any,selected_enemy,,,,deal_damage,64,,,,,,candidate_reference,0,Medium,0

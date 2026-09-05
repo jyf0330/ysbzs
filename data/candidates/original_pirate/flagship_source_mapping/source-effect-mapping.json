@@ -1,0 +1,414 @@
+{
+  "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+  "schemaVersion": 1,
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "2b9420c0cd20ac692331a4be1167cc979214f58027240c1f665217f6d6cd84ce",
+  "sourceObjectUuid": "865a673a-beae-4f5c-b04a-dd3fd026bc6d",
+  "sourceInternalName": "Flagship",
+  "sourceIdentity": {
+    "type": "Item",
+    "size": "Large",
+    "startingTier": "Silver",
+    "heroes": [
+      "Vanessa"
+    ],
+    "tags": [
+      "Aquatic",
+      "Vehicle",
+      "Weapon"
+    ],
+    "hiddenTags": [
+      "Damage",
+      "AmmoReference"
+    ],
+    "spawningEligibility": "Always"
+  },
+  "sourceDirectoryLocks": {
+    "tiersSha256": "161e6fec29dad57cea9fd5aa0db250ea8c755761ba22fc56d3ea17045732de09",
+    "abilitiesSha256": "8cf9033cc4a5b842c5ec71c9cb5bbf4952e4f3257f675749f0baaa79e1bf3576",
+    "aurasSha256": "c3b3c0e3cfb9eab6d51250301f5f9cf6498895e78d4e9fbfd373c8ce3ecca513",
+    "enchantmentsSha256": "98834576c8a57bec634394a11114a2ed2420fcade25be98d3d9833b0ce1a80a6"
+  },
+  "sourceAbilityDirectoryOrderObserved": [
+    "0"
+  ],
+  "sourceAuraDirectoryOrderObserved": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "qualityProfiles": [
+    {
+      "quality": "silver",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "CooldownMax": 5000,
+          "DamageAmount": 35,
+          "Multicast": 1
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 5000,
+          "DamageAmount": 35,
+          "Multicast": 1
+        }
+      }
+    },
+    {
+      "quality": "gold",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "DamageAmount": 70
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 5000,
+          "DamageAmount": 70,
+          "Multicast": 1
+        }
+      }
+    },
+    {
+      "quality": "diamond",
+      "sourceTier": {
+        "abilityIds": [
+          "0"
+        ],
+        "auraIds": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "tooltipIds": [
+          0,
+          1
+        ],
+        "declaredAttributes": {
+          "DamageAmount": 140
+        },
+        "resolvedAttributes": {
+          "CooldownMax": 5000,
+          "DamageAmount": 140,
+          "Multicast": 1
+        }
+      }
+    }
+  ],
+  "sourceAbilities": [
+    {
+      "sourceAbilityId": "0",
+      "sourceAbilityDirectoryIndex": 0,
+      "action": {
+        "referenceValue": null,
+        "target": "OpponentPlayer",
+        "type": "TActionPlayerDamage"
+      },
+      "activeIn": "HandOnly",
+      "prerequisites": null,
+      "priority": "Medium",
+      "trigger": "TTriggerOnCardFired",
+      "worksIn": "Anywhere"
+    }
+  ],
+  "sourceAuras": [
+    {
+      "sourceAuraDirectoryIndex": 0,
+      "action": {
+        "attribute": "Multicast",
+        "operation": "Add",
+        "target": {
+          "conditions": null,
+          "type": "TTargetCardSelf"
+        },
+        "type": "TAuraActionCardModifyAttribute",
+        "value": {
+          "type": "TFixedValue",
+          "value": 1.0
+        }
+      },
+      "activeIn": "HandOnly",
+      "prerequisites": [
+        {
+          "amount": 1,
+          "comparison": "GreaterThanOrEqual",
+          "subject": {
+            "condition": {
+              "operator": "Any",
+              "tags": [
+                "Property"
+              ],
+              "type": "TCardConditionalTag"
+            },
+            "excludeSelf": false,
+            "section": "SelfHand",
+            "type": "TTargetCardSection"
+          },
+          "type": "TPrerequisiteCardCount"
+        }
+      ],
+      "sourceAuraId": "1",
+      "worksIn": "Anywhere"
+    },
+    {
+      "sourceAuraDirectoryIndex": 1,
+      "action": {
+        "attribute": "Multicast",
+        "operation": "Add",
+        "target": {
+          "conditions": null,
+          "type": "TTargetCardSelf"
+        },
+        "type": "TAuraActionCardModifyAttribute",
+        "value": {
+          "type": "TFixedValue",
+          "value": 1.0
+        }
+      },
+      "activeIn": "HandAndStash",
+      "prerequisites": [
+        {
+          "amount": 1,
+          "comparison": "GreaterThanOrEqual",
+          "subject": {
+            "condition": {
+              "operator": "Any",
+              "tags": [
+                "Tool"
+              ],
+              "type": "TCardConditionalTag"
+            },
+            "excludeSelf": false,
+            "section": "SelfHand",
+            "type": "TTargetCardSection"
+          },
+          "type": "TPrerequisiteCardCount"
+        }
+      ],
+      "sourceAuraId": "2",
+      "worksIn": "Anywhere"
+    },
+    {
+      "sourceAuraDirectoryIndex": 2,
+      "action": {
+        "attribute": "Multicast",
+        "operation": "Add",
+        "target": {
+          "conditions": null,
+          "type": "TTargetCardSelf"
+        },
+        "type": "TAuraActionCardModifyAttribute",
+        "value": {
+          "type": "TFixedValue",
+          "value": 1.0
+        }
+      },
+      "activeIn": "HandAndStash",
+      "prerequisites": [
+        {
+          "amount": 1,
+          "comparison": "GreaterThanOrEqual",
+          "subject": {
+            "condition": {
+              "operator": "Any",
+              "tags": [
+                "Friend"
+              ],
+              "type": "TCardConditionalTag"
+            },
+            "excludeSelf": false,
+            "section": "SelfHand",
+            "type": "TTargetCardSection"
+          },
+          "type": "TPrerequisiteCardCount"
+        }
+      ],
+      "sourceAuraId": "3",
+      "worksIn": "Anywhere"
+    },
+    {
+      "sourceAuraDirectoryIndex": 3,
+      "action": {
+        "attribute": "Multicast",
+        "operation": "Add",
+        "target": {
+          "conditions": null,
+          "type": "TTargetCardSelf"
+        },
+        "type": "TAuraActionCardModifyAttribute",
+        "value": {
+          "type": "TFixedValue",
+          "value": 1.0
+        }
+      },
+      "activeIn": "HandAndStash",
+      "prerequisites": [
+        {
+          "amount": 1,
+          "comparison": "GreaterThanOrEqual",
+          "subject": {
+            "condition": {
+              "attribute": "AmmoMax",
+              "comparison": "GreaterThan",
+              "type": "TCardConditionalAttribute",
+              "value": 0.0
+            },
+            "excludeSelf": false,
+            "section": "SelfHand",
+            "type": "TTargetCardSection"
+          },
+          "type": "TPrerequisiteCardCount"
+        }
+      ],
+      "sourceAuraId": "4",
+      "worksIn": "Anywhere"
+    },
+    {
+      "sourceAuraDirectoryIndex": 4,
+      "action": {
+        "attribute": "Multicast",
+        "operation": "Add",
+        "target": {
+          "conditions": null,
+          "type": "TTargetCardSelf"
+        },
+        "type": "TAuraActionCardModifyAttribute",
+        "value": {
+          "type": "TFixedValue",
+          "value": 1.0
+        }
+      },
+      "activeIn": "HandAndStash",
+      "prerequisites": [
+        {
+          "amount": 1,
+          "comparison": "GreaterThanOrEqual",
+          "subject": {
+            "condition": {
+              "operator": "Any",
+              "tags": [
+                "Relic"
+              ],
+              "type": "TCardConditionalTag"
+            },
+            "excludeSelf": false,
+            "section": "SelfHand",
+            "type": "TTargetCardSection"
+          },
+          "type": "TPrerequisiteCardCount"
+        }
+      ],
+      "sourceAuraId": "5",
+      "worksIn": "Anywhere"
+    }
+  ],
+  "shieldedOverlay": {
+    "ability": {
+      "action": {
+        "referenceValue": null,
+        "target": "SelfPlayer",
+        "type": "TActionPlayerShieldApply"
+      },
+      "activeIn": "HandOnly",
+      "prerequisites": null,
+      "priority": "Medium",
+      "sourceAbilityId": "e1",
+      "trigger": "TTriggerOnCardFired",
+      "worksIn": "Anywhere"
+    },
+    "attributes": {
+      "ShieldApplyAmount": 0
+    },
+    "aura": {
+      "action": {
+        "attribute": "ShieldApplyAmount",
+        "operation": "Add",
+        "target": "SelfCard",
+        "type": "TAuraActionCardModifyAttribute",
+        "value": {
+          "attribute": "DamageAmount",
+          "defaultValue": 0.0,
+          "modifier": {
+            "mode": "Multiply",
+            "shouldRound": true,
+            "value": 1.0
+          },
+          "target": "SelfCard",
+          "type": "TReferenceValueCardAttribute"
+        }
+      },
+      "activeIn": "HandAndStash",
+      "prerequisites": null,
+      "sourceAuraId": "e2",
+      "worksIn": "Anywhere"
+    },
+    "hiddenTags": [
+      "Shield"
+    ]
+  },
+  "candidateBuildUsage": {
+    "buildRank": 3,
+    "quality": "diamond",
+    "enchantmentId": "Shielded",
+    "claimScope": "task_locked_membership_only_not_popularity_or_rules_proof"
+  },
+  "executionStatus": "static_source_mapping_only_dynamic_aura_and_multicast_fail_closed",
+  "unknownSourceFields": [
+    "initialCooldownProgress",
+    "nullReferenceValueRuntimeBinding",
+    "dynamicAuraActivationAndRemovalTiming",
+    "multipleAuraStackingAndRefreshPolicy",
+    "selfIncludedCardCountSemantics",
+    "stashAuraContributionToBoardCombatState",
+    "multicastEventBundleConstructionAndDispatch",
+    "multicastSubeventOrdering",
+    "shieldedDamageReferenceEvaluationTime",
+    "baseDamageAndShieldedSameMediumOrder",
+    "shieldedShieldCritEligibility",
+    "completeStatusAndCooldownInteraction"
+  ],
+  "excludedScopes": [
+    "dynamic_aura_execution",
+    "multicast_runtime_execution",
+    "shielded_runtime_execution",
+    "non_shielded_enchantment_execution",
+    "event_timing",
+    "economy",
+    "acquisition",
+    "complete_initial_state",
+    "complete_run_state",
+    "top_three_identity_proof",
+    "original_game_acceptance"
+  ]
+}

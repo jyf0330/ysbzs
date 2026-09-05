@@ -1,0 +1,17 @@
+{
+  "schema": "ysbzs.original-pirate-flagship-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "b10ecf5910b240ac4cfd06322bd806af164252542ca50e13fc16f90bbc0e5a29",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "2b9420c0cd20ac692331a4be1167cc979214f58027240c1f665217f6d6cd84ce",
+  "sourceObjectUuid": "865a673a-beae-4f5c-b04a-dd3fd026bc6d",
+  "sourceScope": "Complete three tiers, Ability 0, Auras 1..5 and Shielded e1/e2 overlay",
+  "limitations": [
+    "This is static source mapping, not executable Flagship content or a complete Run.",
+    "Property Aura is HandOnly; Tool, Friend, Ammo and Relic Auras are HandAndStash. All count SelfHand with ExcludeSelf=false.",
+    "Dynamic Aura refresh/stacking, Multicast event packaging, null ReferenceValue and Shielded/base same-Medium order remain unverified.",
+    "Rank 3 Diamond Shielded is task membership context, not popularity or original-rules proof."
+  ]
+}

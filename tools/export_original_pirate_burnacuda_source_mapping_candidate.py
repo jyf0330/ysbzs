@@ -25,7 +25,7 @@ ITEM_ID = "item_bazaar_burnacuda"
 SKILL_IDS = ("skill_bazaar_burnacuda_burn", "skill_bazaar_burnacuda_haste_neighbor")
 QUALITIES = ("bronze", "silver", "gold", "diamond")
 AMMO_MAXIMUM = (1, 2, 3, 4)
-FORMAL_CONTENT_SHA256 = "8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366"
+FORMAL_CONTENT_SHA256 = "edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd"
 
 
 def expected_rows() -> list[dict[str, str]]:

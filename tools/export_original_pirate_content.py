@@ -2,7 +2,7 @@
 """Build strict original-pirate runtime and display candidates from 27 BZ domains.
 
 The CSV files are the complete authoring projection from ysbzs_master.xlsx.
-Planner-facing display text remains in the display sidecar. The v40 candidate
+Planner-facing display text remains in the display sidecar. The v41 candidate
 hash includes source identity metadata in runtimeBundle.sourceCatalog, never
 original-game payload or review PASS claims. Every domain/reference is validated
 before emitting output.
@@ -27,12 +27,12 @@ DEFAULT_CSV_DIR = ROOT / "data" / "csv"
 
 GAMEPLAY_ID = "original_pirate"
 CONTENT_SCHEMA = "ysbzs.original-pirate-content.v1"
-CONTENT_SCHEMA_VERSION = 40
+CONTENT_SCHEMA_VERSION = 41
 QUALITY_PROFILE_SCHEMA = "ysbzs.original-pirate-item-quality-profiles.v1"
 RUNTIME_SCHEMA = "ysbzs.original-pirate-runtime-bundle.v1"
-RUNTIME_SCHEMA_VERSION = 38
-SOURCE_CONTENT_SCHEMA_VERSION = 36
-SOURCE_RUNTIME_SCHEMA_VERSION = 34
+RUNTIME_SCHEMA_VERSION = 39
+SOURCE_CONTENT_SCHEMA_VERSION = 37
+SOURCE_RUNTIME_SCHEMA_VERSION = 35
 NEW_RUN_SCHEMA_VERSION = 3
 BATTLE_PACKAGE_SCHEMA_VERSION = 3
 GENERATION_SCHEMA = "ysbzs.original-pirate-generation.v1"
@@ -182,11 +182,11 @@ ITEM_EFFECT_OPERATIONS = {
     "apply_burn", "apply_poison",
 }
 REACTIVE_ITEM_EFFECT_OPERATIONS = {
-    "deal_damage", "reload", "charge", "gain_damage_for_fight",
+    "deal_damage", "reload", "charge", "gain_shield", "gain_damage_for_fight",
     "gain_crit_chance_for_fight",
 }
 ITEM_STATUSES = {"haste", "slow", "freeze"}
-ITEM_TAGS = {"ammo", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "weapon"}
+ITEM_TAGS = {"ammo", "apparel", "aquatic", "burn", "poison", "relic", "tool", "vehicle", "weapon"}
 BURN_RESPONSE_TRIGGER = "another_friendly_item_applied_burn"
 CRIT_SUCCESS_RESPONSE_TRIGGER = "another_friendly_item_crit"
 SLOW_SUCCESS_RESPONSE_TRIGGER = "another_friendly_item_applied_slow"
@@ -209,6 +209,9 @@ WATER_WHEEL_SOURCE_DATA_COMMIT = "21d57c2415690992631c6c4e1607e10ddcf06a24"
 PEARL_MAPPING_SHA256 = "0125a723133f49003f943b30a272d6946b80c590afecfad986a5d8a5bc8c982a"
 PEARL_PROVENANCE_SHA256 = "dab7c2932ce6166f923d0a5c3d890c83320d271e6eaa949f16bbcac1512f1c3f"
 PEARL_SOURCE_DATA_COMMIT = "fa3eaee9e2a599861fb8bf0ba0fe1c1ba0ac30f5"
+DIVING_HELMET_MAPPING_SHA256 = "5d3c6a6464afc328c588cce7202278f9157a2183b9059758452a5945b9fcdba1"
+DIVING_HELMET_PROVENANCE_SHA256 = "b995bec5b2a402ebeb61f3015e4a8e203bff5530f6546e31b51d87041a5b5470"
+DIVING_HELMET_SOURCE_DATA_COMMIT = "9753ae6901f13269fddd62ce0e5e63b83e144adf"
 DAMAGE_AURA_TARGET = "friendly_items_with_any_tag"
 DAMAGE_AURA_OPERATION = "grant_damage"
 LIFESTEAL_AURA_OPERATION = "grant_lifesteal_bps"
@@ -706,7 +709,7 @@ def _validate_source_effect_mapping_catalog(value: Any) -> None:
             or catalog["schemaVersion"] != SOURCE_EFFECT_MAPPING_SCHEMA_VERSION:
         raise ExportError("SOURCE_EFFECT_MAPPING_CATALOG_IDENTITY_INVALID")
     entries = _expect_list(catalog["entries"], "sourceEffectMappings:entries")
-    if len(entries) != 2:
+    if len(entries) != 3:
         raise ExportError("SOURCE_EFFECT_MAPPING_CATALOG_COVERAGE_INVALID")
     by_id: dict[str, dict[str, Any]] = {}
     for index, value in enumerate(entries):
@@ -718,7 +721,7 @@ def _validate_source_effect_mapping_catalog(value: Any) -> None:
         if mapping_id in by_id:
             raise ExportError("SOURCE_EFFECT_MAPPING_ID_DUPLICATE")
         by_id[mapping_id] = entry
-    if list(by_id) != ["pearl", "water_wheel"]:
+    if list(by_id) != ["diving_helmet", "pearl", "water_wheel"]:
         raise ExportError("SOURCE_EFFECT_MAPPING_CATALOG_ORDER_INVALID")
     expected = {
         "water_wheel": (
@@ -729,6 +732,11 @@ def _validate_source_effect_mapping_catalog(value: Any) -> None:
         "pearl": (
             PEARL_SOURCE_DATA_COMMIT, PEARL_MAPPING_SHA256, PEARL_PROVENANCE_SHA256,
             "reference_battle_only_phase_reentry_same_timestamp_fail_closed",
+        ),
+        "diving_helmet": (
+            DIVING_HELMET_SOURCE_DATA_COMMIT, DIVING_HELMET_MAPPING_SHA256,
+            DIVING_HELMET_PROVENANCE_SHA256,
+            "reference_battle_only_dynamic_tag_aura_and_same_timestamp_fail_closed",
         ),
     }
     for mapping_id, values in expected.items():
@@ -850,6 +858,52 @@ def _validate_pearl_formal_reference(items: list[dict[str, Any]], bundle: dict[s
     )
     if mapping.get("itemId") != item["itemId"]:
         raise ExportError("PEARL_FORMAL_REFERENCE_MAPPING_ITEM_INVALID")
+
+
+def _validate_diving_helmet_formal_reference(items: list[dict[str, Any]], bundle: dict[str, Any]) -> None:
+    matches = [item for item in items if item.get("itemId") == "item_bazaar_diving_helmet"]
+    if len(matches) != 1:
+        raise ExportError("DIVING_HELMET_FORMAL_REFERENCE_REQUIRED")
+    item = matches[0]
+    if item.get("availability") != "reference_battle_only" \
+            or item.get("tags") != ["apparel", "aquatic", "tool"] \
+            or item.get("slotWidth") != 2 or item.get("baseQuality") != "gold":
+        raise ExportError("DIVING_HELMET_FORMAL_REFERENCE_IDENTITY_INVALID")
+    binding = item.get("sourceBinding", {})
+    if binding.get("snapshotId") != "snapshot_vanessa_local_cache_25079259_db8914ab" \
+            or binding.get("objectId") != "fb6e6b16-d6d0-4493-ac3f-46c26afe6c51" \
+            or binding.get("declaredScopes") != [
+                {"quality": quality, "enchantmentId": "none", "scopeId": "battle_profile"}
+                for quality in ("gold", "diamond")
+            ]:
+        raise ExportError("DIVING_HELMET_FORMAL_REFERENCE_SOURCE_BINDING_INVALID")
+    shields = {"gold": 50, "diamond": 100}
+    profiles = item.get("qualityProfiles")
+    if not isinstance(profiles, dict) or set(profiles) != set(shields):
+        raise ExportError("DIVING_HELMET_FORMAL_REFERENCE_PROFILE_COVERAGE_INVALID")
+    for quality, shield in shields.items():
+        expected = {
+            "activationMode": "passive", "baseCooldownTicks": 0, "critChanceBps": 0,
+            "ammo": {"enabled": False, "initial": 0, "maximum": 0},
+            "effects": [{
+                "effectId": f"effect_bazaar_diving_helmet_{quality}_0", "priority": 20,
+                "sourceAbilityId": "0", "triggerPriority": "Medium", "effectOrder": 0,
+                "trigger": {"event": "another_friendly_item_used", "conditions": [
+                    {"type": "source_item_has_any_tag", "params": {"tags": ["aquatic"]}},
+                ]},
+                "target": {"type": "owner_hero", "params": {}},
+                "operation": {"type": "gain_shield", "params": {"amount": shield}},
+            }],
+            "auras": [],
+        }
+        if profiles[quality] != expected:
+            raise ExportError(f"DIVING_HELMET_FORMAL_REFERENCE_PROFILE_INVALID:{quality}")
+    mapping = next(
+        entry["mapping"] for entry in bundle["sourceEffectMappings"]["entries"]
+        if entry["mappingId"] == "diving_helmet"
+    )
+    if mapping.get("itemId") != item["itemId"]:
+        raise ExportError("DIVING_HELMET_FORMAL_REFERENCE_MAPPING_ITEM_INVALID")
 
 
 def _validate_hero_aura(value: Any, context: str) -> str:
@@ -2620,6 +2674,7 @@ def validate_package(package: Any) -> None:
         raise ExportError(str(exc)) from exc
     _validate_water_wheel_formal_reference(items, bundle)
     _validate_pearl_formal_reference(items, bundle)
+    _validate_diving_helmet_formal_reference(items, bundle)
     expected_hash = _runtime_bundle_hash(bundle, items)
     if not isinstance(bundle["bundleHash"], str) or bundle["bundleHash"] != expected_hash:
         raise ExportError("EXECUTABLE_BUNDLE_HASH_INVALID")
@@ -2766,7 +2821,7 @@ class ContentAssembler:
     def _source_effect_mappings(self) -> dict[str, Any]:
         filename = "73_bz_source_effect_mappings.csv"
         all_rows = self.tables[filename]
-        if len(all_rows) != 14:
+        if len(all_rows) != 16:
             raise ExportError("SOURCE_EFFECT_MAPPING_ROW_COUNT_INVALID")
         for row in all_rows:
             _formal(filename, row)
@@ -2857,6 +2912,81 @@ class ContentAssembler:
             "qualityProfiles": profiles,
             "unknownSourceFields": expected_constants["unknown_source_fields"].split(","),
             "excludedScopes": expected_constants["excluded_scopes"].split(","),
+        }
+        diving_rows = [row for row in all_rows if row["mapping_id"] == "diving_helmet"]
+        if len(diving_rows) != 2:
+            raise ExportError("SOURCE_EFFECT_MAPPING_ROW_COUNT_INVALID:diving_helmet")
+        diving_constants = {
+            "mapping_id": "diving_helmet",
+            "mapping_schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1",
+            "mapping_schema_version": "1", "acceptance": "source_effect_mapping_only_not_complete_item",
+            "source_data_commit": DIVING_HELMET_SOURCE_DATA_COMMIT,
+            "mapping_sha256": DIVING_HELMET_MAPPING_SHA256,
+            "provenance_sha256": DIVING_HELMET_PROVENANCE_SHA256,
+            "source_db_sha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+            "source_object_uuid": "fb6e6b16-d6d0-4493-ac3f-46c26afe6c51",
+            "source_internal_name": "Diving Helmet", "item_id": "item_bazaar_diving_helmet",
+            "cooldown_max_milliseconds": "", "multicast": "", "haste_amount_milliseconds": "",
+            "charge_amount_milliseconds": "", "charge_targets": "", "source_ability_id": "0",
+            "source_trigger_type": "TTriggerOnItemUsed", "mapped_trigger_event": "friendly_item_used",
+            "trigger_priority": "Medium", "effect_order": "0", "target_type": "self_player",
+            "target_exclude_self": "", "target_condition_attribute": "Aquatic",
+            "target_condition_operator": "Any", "target_condition_value": "",
+            "subject_type": "self_hand_section", "subject_target_mode": "",
+            "subject_include_origin": "true", "operation_type": "gain_shield", "status": "", "ticks": "",
+            "unknown_source_fields": "dynamicTagAuraApplicationTiming,dynamicTagAuraRemovalTiming,overlappingTagAuraReferenceCounting,sourceEventTagSnapshotPolicy,adjacencySnapshotAndMovementPolicy,disabledDestroyedTransformedAuraLifecycle,samePriorityCrossItemOrder,shieldResolutionOrder",
+            "excluded_scopes": "enchantments,economy,acquisition,complete_initial_state,simultaneous_event_order,complete_run_state,top_three_identity",
+        }
+        for field, expected in diving_constants.items():
+            observed = _same(diving_rows, filename, field) if expected != "" \
+                else ({row.get(field, "") for row in diving_rows}.pop()
+                      if len({row.get(field, "") for row in diving_rows}) == 1 else None)
+            if observed != expected:
+                raise ExportError(f"SOURCE_EFFECT_MAPPING_LOCK_MISMATCH:diving_helmet:{field}")
+        diving_profiles = []
+        diving_shields = {"gold": 50, "diamond": 100}
+        for quality in ("gold", "diamond"):
+            pair = [row for row in diving_rows if row["quality"] == quality]
+            if len(pair) != 1 or _integer(filename, pair[0], "shield_apply_amount", 1) != diving_shields[quality]:
+                raise ExportError(f"SOURCE_EFFECT_MAPPING_SHIELD_INVALID:diving_helmet:{quality}")
+            shield = diving_shields[quality]
+            diving_profiles.append({
+                "quality": quality,
+                "sourceTier": {"abilityIds": ["0"], "auraIds": ["2"], "tooltipIds": [0, 1],
+                    "declaredAttributes": {"ShieldApplyAmount": shield},
+                    "resolvedAttributes": {"ShieldApplyAmount": shield}},
+                "sourceAttributes": {"shieldApplyAmount": shield},
+                "effects": [{
+                    "sourceAbilityId": "0", "sourceAbilityDirectoryIndex": 0,
+                    "sourceValueAttribute": "ShieldApplyAmount",
+                    "sourceTriggerType": "TTriggerOnItemUsed", "mappedTriggerEvent": "friendly_item_used",
+                    "triggerPriority": "Medium", "effectOrder": 0,
+                    "subject": {"type": "card_section", "section": "self_hand", "excludeSelf": False,
+                        "condition": {"type": "card_tag", "tags": ["Aquatic"], "operator": "Any"}},
+                    "target": {"type": "self_player"},
+                    "operation": {"type": "gain_shield", "amount": shield},
+                }],
+            })
+        diving_mapping = {
+            "schema": "ysbzs.original-pirate-source-effect-mapping-candidate.v1", "schemaVersion": 1,
+            "acceptance": "source_effect_mapping_only_not_complete_item", "originalRulesAccepted": False,
+            "sourceDbSha256": diving_constants["source_db_sha256"],
+            "sourceObjectUuid": diving_constants["source_object_uuid"],
+            "sourceInternalName": "Diving Helmet",
+            "sourceIdentity": {"type": "Item", "size": "Medium", "startingTier": "Gold",
+                "heroes": ["Vanessa"], "tags": ["Aquatic", "Tool", "Apparel"],
+                "hiddenTags": ["Shield"], "spawningEligibility": "Always"},
+            "itemId": "item_bazaar_diving_helmet",
+            "activationEvidence": "no_source_cooldown_attributes_listener_and_aura_only",
+            "sourceAbilityDirectoryOrderObserved": ["0"], "sourceAuraDirectoryOrderObserved": ["2"],
+            "qualityProfiles": diving_profiles,
+            "sourceAuras": [{"sourceAuraId": "2", "sourceAuraDirectoryIndex": 0,
+                "activeIn": "HandAndStash", "worksIn": "CombatOnly", "prerequisites": None,
+                "action": {"type": "TAuraActionCardAddTagsList", "tags": ["Aquatic"],
+                    "target": {"type": "TTargetCardPositional", "origin": "Self",
+                        "targetMode": "Neighbor", "includeOrigin": False, "conditions": None}}}],
+            "unknownSourceFields": diving_constants["unknown_source_fields"].split(","),
+            "excludedScopes": diving_constants["excluded_scopes"].split(","),
         }
         pearl_rows = [row for row in all_rows if row["mapping_id"] == "pearl"]
         if len(pearl_rows) != 8:
@@ -2984,6 +3114,12 @@ class ContentAssembler:
             "excludedScopes": pearl_constants["excluded_scopes"].split(","),
         }
         catalog = {"schema": SOURCE_EFFECT_MAPPING_SCHEMA, "schemaVersion": 1, "entries": [{
+            "mappingId": "diving_helmet", "sourceDataCommit": DIVING_HELMET_SOURCE_DATA_COMMIT,
+            "mappingSha256": DIVING_HELMET_MAPPING_SHA256,
+            "provenanceSha256": DIVING_HELMET_PROVENANCE_SHA256,
+            "executionStatus": "reference_battle_only_dynamic_tag_aura_and_same_timestamp_fail_closed",
+            "mapping": diving_mapping,
+        }, {
             "mappingId": "pearl", "sourceDataCommit": PEARL_SOURCE_DATA_COMMIT,
             "mappingSha256": PEARL_MAPPING_SHA256, "provenanceSha256": PEARL_PROVENANCE_SHA256,
             "executionStatus": "reference_battle_only_phase_reentry_same_timestamp_fail_closed",
@@ -5336,7 +5472,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export strict original-pirate v40 runtime and display candidates from 27 BZ CSV domains")
+    parser = argparse.ArgumentParser(description="Export strict original-pirate v41 runtime and display candidates from 27 BZ CSV domains")
     parser.add_argument("--csv-dir", default=str(DEFAULT_CSV_DIR))
     parser.add_argument("--out", help="Write one deterministic JSON package; stdout when omitted")
     parser.add_argument("--display-out", help="Write the independent deterministic Chinese display sidecar")
@@ -5351,7 +5487,7 @@ def main(argv: list[str] | None = None) -> int:
     display_text = _canonical_json(display) + "\n"
     if args.check:
         print(
-            "PASS original-pirate v40 candidate "
+            "PASS original-pirate v41 candidate "
             f"items={len(package['items'])} hours={len(package['runtimeBundle']['scheduleConfig']['hours'])} "
             f"shopTemplates={len(package['runtimeBundle']['generation']['shop']['templates'])} "
             f"battleTemplates={len(package['runtimeBundle']['generation']['battle']['templates'])} "
@@ -5364,7 +5500,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         output = Path(args.out)
         _write_atomic(output, text)
-        print(f"exported original-pirate v40 candidate to {output}")
+        print(f"exported original-pirate v41 candidate to {output}")
     else:
         sys.stdout.write(text)
     if args.display_out:

@@ -6,7 +6,7 @@ sys.path.insert(0,'tools')
 import add_original_pirate_flagship_source_mapping_candidate as add
 import export_original_pirate_flagship_source_mapping_candidate as c
 import export_original_pirate_content as formal
-DB='7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9';UUID='865a673a-beae-4f5c-b04a-dd3fd026bc6d';FORMAL='8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366'
+DB='7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9';UUID='865a673a-beae-4f5c-b04a-dd3fd026bc6d';FORMAL='edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd'
 db=pathlib.Path(os.environ.get('THE_BAZAAR_GAMEDATA_DB',pathlib.Path.home()/'Library/Application Support/com.TempoStorm.TheBazaar/prod/cache/GameData.db')).expanduser();assert c.SOURCE_DB_SHA256==DB and c.SOURCE_UUID==UUID;add.verify_source(db)
 c.export_csv(check=True);c.validate_artifacts();rows=c.workbook_rows();m,p=c.build_artifacts(rows)
 assert c.strict_json_loads((c.CSV_DIR/'source-effect-mapping.json').read_text())==m

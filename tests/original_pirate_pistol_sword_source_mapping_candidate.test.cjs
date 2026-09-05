@@ -14,7 +14,7 @@ import export_original_pirate_pistol_sword_source_mapping_candidate as c
 
 EXPECTED_SOURCE_DB_SHA256='7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9'
 EXPECTED_SOURCE_UUID='65527be1-b100-4a4c-98d1-4f8975368b5b'
-EXPECTED_FORMAL_CONTENT_SHA256='8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366'
+EXPECTED_FORMAL_CONTENT_SHA256='edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd'
 source_db=pathlib.Path(os.environ.get(
  'THE_BAZAAR_GAMEDATA_DB',
  pathlib.Path.home()/'Library/Application Support/com.TempoStorm.TheBazaar/prod/cache/GameData.db',

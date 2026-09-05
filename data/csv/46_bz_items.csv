@@ -88,3 +88,5 @@ item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,bronze,,,cooldow
 item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,silver,,,cooldown,100,0,false,0,0,"skill_bazaar_pearl_shield,skill_bazaar_pearl_charge",,,,formal
 item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,gold,,,cooldown,100,0,false,0,0,"skill_bazaar_pearl_shield,skill_bazaar_pearl_charge",,,,formal
 item_bazaar_pearl,珍珠,aquatic,1,reference_battle_only,bronze,diamond,,,cooldown,100,0,false,0,0,"skill_bazaar_pearl_shield,skill_bazaar_pearl_charge",,,,formal
+item_bazaar_diving_helmet,潜水头盔,"apparel,aquatic,tool",2,reference_battle_only,gold,gold,,,passive,,0,false,0,0,skill_bazaar_diving_helmet_shield,,,,formal
+item_bazaar_diving_helmet,潜水头盔,"apparel,aquatic,tool",2,reference_battle_only,gold,diamond,,,passive,,0,false,0,0,skill_bazaar_diving_helmet_shield,,,,formal

@@ -141,12 +141,12 @@ test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Pois
     regenStackOverflowPolicy: row.regen_stack_overflow_policy,
     regenRngPolicy: row.regen_rng_policy,
   })), Array.from({ length: 6 }, () => ({
-    schemaVersion: '34',
-    runtimeSchemaVersion: '32',
-    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-04-v32',
-    sourceRevision: 'original-pirate-bootstrap-source-2026-09-04-v34',
-    contentRevision: 'original-pirate-bootstrap-content-2026-09-04-v34',
-    bundleRevision: 'original_pirate_bootstrap_bundle_v34',
+    schemaVersion: '37',
+    runtimeSchemaVersion: '35',
+    rulesVersion: 'ysbzs.original-pirate-rules.2026-09-05-v34',
+    sourceRevision: 'original-pirate-bootstrap-source-2026-09-05-v37',
+    contentRevision: 'original-pirate-bootstrap-content-2026-09-05-v37',
+    bundleRevision: 'original_pirate_bootstrap_bundle_v37',
     critContract: 'ysbzs.original-pirate-critical-damage.v3',
     critGrowthStackingPolicy: 'additive_bps_per_effect',
     critGrowthCapPolicy: 'effective_chance_capped_at_chance_scale',
@@ -201,13 +201,13 @@ test('OPCSV01 Regen、Lifesteal、Ammo depletion、Crit v3、Heal/Cleanse、Pois
     ammoDepletionNonAmmoPolicy: 'not_eligible',
     ammoDepletionReloadPolicy: 'later_reload_does_not_cancel',
     ammoDepletionRngPolicy: 'never',
-    lifestealContract: 'ysbzs.original-pirate-lifesteal.v1',
+    lifestealContract: 'ysbzs.original-pirate-lifesteal.v2',
     lifestealEligibleSourcePolicy: 'item_ready_always_selected_enemy_direct_damage',
     lifestealHealBasis: 'committed_hp_damage',
     lifestealBasisPointsScale: '10000',
     lifestealRoundingMode: 'floor',
     lifestealAuraStackingPolicy: 'sum_then_cap_at_basis_points_scale',
-    lifestealTargetPolicy: 'friendly_weapon_exclude_self_active_board_snapshot',
+    lifestealTargetPolicy: 'typed_item_and_hero_skill_active_board_targets',
     lifestealResolutionTimingPolicy: 'immediately_after_nonterminal_damage_before_next_effect',
     lifestealRepeatPolicy: 'once_per_eligible_damage_effect',
     lifestealShieldPolicy: 'defender_shield_reduces_basis_source_shield_unchanged',
@@ -339,13 +339,13 @@ test('OPCSV04 伤害与 Lifesteal Aura 语义分离、规则合同与雾藻疗�
       && row.damage_aura_source_lifecycle_policy === 'compiled_board_source_for_battle'
       && row.damage_aura_overflow_policy === 'reject_advance'
       && row.damage_aura_rng_policy === 'never'
-      && row.lifesteal_contract === 'ysbzs.original-pirate-lifesteal.v1'
+      && row.lifesteal_contract === 'ysbzs.original-pirate-lifesteal.v2'
       && row.lifesteal_eligible_source_policy === 'item_ready_always_selected_enemy_direct_damage'
       && row.lifesteal_heal_basis === 'committed_hp_damage'
       && row.lifesteal_basis_points_scale === '10000'
       && row.lifesteal_rounding_mode === 'floor'
       && row.lifesteal_aura_stacking_policy === 'sum_then_cap_at_basis_points_scale'
-      && row.lifesteal_target_policy === 'friendly_weapon_exclude_self_active_board_snapshot'
+      && row.lifesteal_target_policy === 'typed_item_and_hero_skill_active_board_targets'
       && row.lifesteal_resolution_timing_policy === 'immediately_after_nonterminal_damage_before_next_effect'
       && row.lifesteal_repeat_policy === 'once_per_eligible_damage_effect'
       && row.lifesteal_shield_policy === 'defender_shield_reduces_basis_source_shield_unchanged'
@@ -461,12 +461,12 @@ test('OPCSV07 尾潮回响鼓四品质只在另一件燃烧物品成功施加 Bu
 test('OPCSV08 继航校炮仪四品质只在另一件友方物品成功暴击后推进自身', () => {
   const gameplay = readCsv('44_bz_gameplay.csv').rows;
   assert.equal(gameplay.every((row) => (
-    row.schema_version === '34'
-      && row.runtime_schema_version === '32'
-      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-04-v32'
-      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-04-v34'
-      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-04-v34'
-      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v34'
+    row.schema_version === '37'
+      && row.runtime_schema_version === '35'
+      && row.rules_version === 'ysbzs.original-pirate-rules.2026-09-05-v34'
+      && row.source_revision === 'original-pirate-bootstrap-source-2026-09-05-v37'
+      && row.content_revision === 'original-pirate-bootstrap-content-2026-09-05-v37'
+      && row.bundle_revision === 'original_pirate_bootstrap_bundle_v37'
       && row.crit_contract === 'ysbzs.original-pirate-critical-damage.v3'
       && row.crit_success_response_evidence_policy === 'crit_resolve_is_critical_with_bound_committed_damage'
       && row.crit_success_response_source_policy === 'another_same_owner_active_board_item'

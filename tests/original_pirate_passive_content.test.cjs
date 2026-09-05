@@ -66,7 +66,10 @@ with tempfile.TemporaryDirectory(prefix='passive-data-') as tmp:
     directory = pathlib.Path(tmp)
     shutil.copytree('data/csv', directory, dirs_exist_ok=True)
     baseline = export(directory)
-    assert all(p['activationMode']=='cooldown' for i in baseline[0]['items'] for p in i['qualityProfiles'].values())
+    assert all(
+        p['activationMode']==('passive' if i['itemId']=='item_bazaar_diving_helmet' else 'cooldown')
+        for i in baseline[0]['items'] for p in i['qualityProfiles'].values()
+    )
     passive(directory, 'item_mistkelp_remedy_kit')
     passive(directory, 'item_homeglow_beacon', 'another_friendly_item_applied_slow')
     passive(directory, 'item_dawntide_timer', 'battle_start')

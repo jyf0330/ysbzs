@@ -177,3 +177,5 @@ effect_bazaar_pearl_gold_0,item_bazaar_pearl,gold,skill_bazaar_pearl_shield,20,i
 effect_bazaar_pearl_gold_1,item_bazaar_pearl,gold,skill_bazaar_pearl_charge,30,another_friendly_item_used,source_item_has_any_tag,aquatic,any,self_item,,,,charge,,,,,,20,formal,1,Low,0
 effect_bazaar_pearl_diamond_0,item_bazaar_pearl,diamond,skill_bazaar_pearl_shield,20,item_ready,always,,any,owner_hero,,,,gain_shield,80,,,,,,formal,0,Low,0
 effect_bazaar_pearl_diamond_1,item_bazaar_pearl,diamond,skill_bazaar_pearl_charge,30,another_friendly_item_used,source_item_has_any_tag,aquatic,any,self_item,,,,charge,,,,,,20,formal,1,Low,0
+effect_bazaar_diving_helmet_gold_0,item_bazaar_diving_helmet,gold,skill_bazaar_diving_helmet_shield,20,another_friendly_item_used,source_item_has_any_tag,aquatic,any,owner_hero,,,,gain_shield,50,,,,,,formal,0,Medium,0
+effect_bazaar_diving_helmet_diamond_0,item_bazaar_diving_helmet,diamond,skill_bazaar_diving_helmet_shield,20,another_friendly_item_used,source_item_has_any_tag,aquatic,any,owner_hero,,,,gain_shield,100,,,,,,formal,0,Medium,0

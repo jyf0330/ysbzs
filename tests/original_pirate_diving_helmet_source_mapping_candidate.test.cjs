@@ -14,7 +14,6 @@ import export_original_pirate_diving_helmet_source_mapping_candidate as c
 
 EXPECTED_SOURCE_DB_SHA256='7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9'
 EXPECTED_SOURCE_UUID='fb6e6b16-d6d0-4493-ac3f-46c26afe6c51'
-EXPECTED_FORMAL_CONTENT_SHA256='8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366'
 source_db=pathlib.Path(os.environ.get(
  'THE_BAZAAR_GAMEDATA_DB',
  pathlib.Path.home()/'Library/Application Support/com.TempoStorm.TheBazaar/prod/cache/GameData.db',
@@ -54,10 +53,14 @@ for domain,row_index,field,value in [(c.EFFECT_CSV,0,'amount','51'),(c.EFFECT_CS
 
 package,_=formal.build_exports(pathlib.Path('data/csv'))
 payload=(json.dumps(package,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
-assert c.FORMAL_CONTENT_SHA256==EXPECTED_FORMAL_CONTENT_SHA256
-assert hashlib.sha256(payload).hexdigest()==EXPECTED_FORMAL_CONTENT_SHA256
-assert all(item['itemId']!=c.ITEM_ID for item in package['items'])
-assert all(entry.get('mapping',{}).get('sourceObjectUuid')!=c.SOURCE_UUID for entry in package['runtimeBundle']['sourceEffectMappings']['entries'])
+assert c.FORMAL_CONTENT_SHA256=='edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd'
+assert hashlib.sha256(payload).hexdigest()==c.FORMAL_CONTENT_SHA256
+item=next(item for item in package['items'] if item['itemId']==c.ITEM_ID)
+entry=next(entry for entry in package['runtimeBundle']['sourceEffectMappings']['entries'] if entry['mappingId']=='diving_helmet')
+assert item['availability']=='reference_battle_only'
+assert entry['mapping']==mapping
+assert entry['mappingSha256']==formal.DIVING_HELMET_MAPPING_SHA256
+assert entry['provenanceSha256']==formal.DIVING_HELMET_PROVENANCE_SHA256
 print('PASS Diving Helmet source mapping candidate')
 `], {
     cwd: path.resolve(__dirname, '..'), encoding: 'utf8',

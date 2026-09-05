@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory() as raw:
  else:raise AssertionError('tampered checked artifact passed')
 package,_=formal.build_exports(pathlib.Path('data/csv'))
 payload=(json.dumps(package,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
-assert hashlib.sha256(payload).hexdigest()=='8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366'
+assert hashlib.sha256(payload).hexdigest()=='edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd'
 assert all(i['itemId']!='item_bazaar_nesting_doll' for i in package['items'])
 print('PASS Nesting Doll mapping-only candidate')
 `], {cwd: path.resolve(__dirname, '..'), encoding: 'utf8',

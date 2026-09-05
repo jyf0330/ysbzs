@@ -12,7 +12,7 @@ directory=pathlib.Path('data/csv');tables=e._read_domains(directory)
 p,_=e.build_exports(directory)
 def skills(p):return p['runtimeBundle']['executableCatalogs']['heroSkills']
 assert all('sourceBinding' in k for k in skills(p)), 'hero skill binding missing'
-assert p['schemaVersion']==38 and p['runtimeBundle']['schemaVersion']==36
+assert p['schemaVersion']==41 and p['runtimeBundle']['schemaVersion']==39
 assert p['runtimeBundle']['executableCatalogs']['schemaVersion']==27
 for k in skills(p):
  assert k['sourceBinding']['objectId']==k['heroSkillId']
@@ -25,8 +25,9 @@ for r in tables['71_bz_hero_skill_source_bindings.csv']:
 external=e.ContentAssembler(tables,directory).build();e.validate_package(external)
 def ext(p):return next(x for x in p['runtimeBundle']['sourceCatalog']['snapshots'] if x['originKind']=='external_run_view')
 snapshot=ext(external);assert len(snapshot['members'])==15
-assert len(external['runtimeBundle']['sourceCatalog']['snapshots'])==2
-assert snapshot['metadata']['parentSnapshotId'] not in [x['snapshotId'] for x in external['runtimeBundle']['sourceCatalog']['snapshots']]
+assert len(external['runtimeBundle']['sourceCatalog']['snapshots'])==3
+assert snapshot['metadata']['parentSnapshotId']=='snapshot_vanessa_local_cache_25079259_db8914ab'
+assert snapshot['metadata']['parentSnapshotId'] in [x['snapshotId'] for x in external['runtimeBundle']['sourceCatalog']['snapshots']]
 assert snapshot['metadata']['artifactMetadata']['game_patch'] is None
 def bound(p):return next(k for k in skills(p) if k['heroSkillId']==sid)['sourceBinding']
 def reject(change):

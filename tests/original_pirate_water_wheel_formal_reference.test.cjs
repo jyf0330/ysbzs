@@ -33,8 +33,9 @@ assert entry['mappingSha256']=='d1b8812853d4eb182d781fef683bf8c89a384848196123f2
 assert entry['executionStatus']=='reference_battle_only_haste_reapplication_fail_closed'
 skills={value['itemSkillId']:value for value in package['runtimeBundle']['executableCatalogs']['itemSkills']}
 assert {'skill_bazaar_water_wheel_haste','skill_bazaar_water_wheel_charge'} <= set(skills)
-assert all(value['availability']=='run_acquirable' for value in package['items'] if value['itemId'] not in {item['itemId'],'item_bazaar_pearl'})
-assert all('buyPrice' in profile and 'sellPrice' in profile for value in package['items'] if value['itemId'] not in {item['itemId'],'item_bazaar_pearl'} for profile in value['qualityProfiles'].values())
+reference_ids={item['itemId'],'item_bazaar_pearl','item_bazaar_diving_helmet'}
+assert all(value['availability']=='run_acquirable' for value in package['items'] if value['itemId'] not in reference_ids)
+assert all('buyPrice' in profile and 'sellPrice' in profile for value in package['items'] if value['itemId'] not in reference_ids for profile in value['qualityProfiles'].values())
 
 def rejected(mutator, expected):
  forged=copy.deepcopy(package)

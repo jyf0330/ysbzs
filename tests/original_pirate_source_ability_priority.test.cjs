@@ -17,9 +17,9 @@ assert [(x['sourceAbilityId'],x['triggerPriority'],x['effectOrder']) for x in so
 tables=e._read_domains(base)
 legacy,_=e.build_exports(base)
 formal_source_effects=[effect for item in legacy['items'] for profile in item['qualityProfiles'].values() for effect in profile['effects'] if e.SOURCE_ABILITY_EFFECT_FIELDS.intersection(effect)]
-assert len(formal_source_effects)==14
-assert all((effect['effectId'].startswith('effect_bazaar_water_wheel_') or effect['effectId'].startswith('effect_bazaar_pearl_')) and e.SOURCE_ABILITY_EFFECT_FIELDS.issubset(effect) for effect in formal_source_effects)
-assert all(not e.SOURCE_ABILITY_EFFECT_FIELDS.intersection(effect) for item in legacy['items'] if item['itemId'] not in {'item_bazaar_water_wheel','item_bazaar_pearl'} for profile in item['qualityProfiles'].values() for effect in profile['effects'])
+assert len(formal_source_effects)==16
+assert all(effect['effectId'].startswith(('effect_bazaar_diving_helmet_','effect_bazaar_water_wheel_','effect_bazaar_pearl_')) and e.SOURCE_ABILITY_EFFECT_FIELDS.issubset(effect) for effect in formal_source_effects)
+assert all(not e.SOURCE_ABILITY_EFFECT_FIELDS.intersection(effect) for item in legacy['items'] if item['itemId'] not in {'item_bazaar_diving_helmet','item_bazaar_water_wheel','item_bazaar_pearl'} for profile in item['qualityProfiles'].values() for effect in profile['effects'])
 fixture=copy.deepcopy(tables);rows=fixture['47_bz_item_effects.csv']
 pair=[r for r in rows if r['item_id']=='item_patchwork_ram' and r['quality']=='bronze']
 assert len(pair)>=2

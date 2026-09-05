@@ -19,7 +19,7 @@ WORKBOOK = ROOT / "xlsx/candidates/original_pirate_bladed_hoverboard_source_mapp
 CSV_DIR = ROOT / "data/candidates/original_pirate/bladed_hoverboard_source_mapping"
 SOURCE_UUID = "808ad956-94c2-4510-a06c-396156c59791"
 SOURCE_DB_SHA256 = "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9"
-FORMAL_CONTENT_SHA256 = "8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366"
+FORMAL_CONTENT_SHA256 = "edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd"
 PROFILE_CSV = "source_profiles.csv"
 HEADERS = [
     "record_type", "source_id", "scope", "quality_or_enchantment", "priority",

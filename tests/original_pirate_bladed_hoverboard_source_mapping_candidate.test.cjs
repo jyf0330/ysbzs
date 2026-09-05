@@ -10,7 +10,7 @@ sys.path.insert(0,'tools')
 import add_original_pirate_bladed_hoverboard_source_mapping_candidate as add
 import export_original_pirate_bladed_hoverboard_source_mapping_candidate as c
 import export_original_pirate_content as formal
-EXPECTED_FORMAL_SHA='8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366'
+EXPECTED_FORMAL_SHA='edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd'
 db=pathlib.Path('/Users/ywh/Library/Application Support/com.TempoStorm.TheBazaar/prod/cache/GameData.db')
 add.verify_source(db)
 rows=c.workbook_rows();c.export_csv(check=True);c.validate_artifacts();m,p=c.build_artifacts(rows)

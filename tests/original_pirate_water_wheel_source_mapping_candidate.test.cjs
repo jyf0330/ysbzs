@@ -25,7 +25,7 @@ for field,value in [('trigger_priority','Lowest'),('ticks','41'),('target_type',
  except ValueError:pass
  else:raise AssertionError((field,value))
 package,_=formal.build_exports(pathlib.Path('data/csv'))
-entry=package['runtimeBundle']['sourceEffectMappings']['entries'][0]
+entry=next(value for value in package['runtimeBundle']['sourceEffectMappings']['entries'] if value['mappingId']=='water_wheel')
 assert entry['mapping']==mapping
 assert entry['mappingSha256']==formal.WATER_WHEEL_MAPPING_SHA256
 assert entry['provenanceSha256']==formal.WATER_WHEEL_PROVENANCE_SHA256

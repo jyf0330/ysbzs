@@ -13,7 +13,7 @@ import export_original_pirate_wetware_source_mapping_candidate as c
 
 EXPECTED_DB='7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9'
 EXPECTED_UUID='dd913d79-7509-4c8a-b68a-5bf364dc521e'
-EXPECTED_FORMAL_SHA='8412253fee8faa427f19a98b8a5a0257b86dd4acd9477c70a7195f2c6a682366'
+EXPECTED_FORMAL_SHA='edf1006c193d5cd772157b05ae6150fbe0db2a73f9e633673e3dcc2f8aa255cd'
 db=pathlib.Path(os.environ.get('THE_BAZAAR_GAMEDATA_DB', pathlib.Path.home()/'Library/Application Support/com.TempoStorm.TheBazaar/prod/cache/GameData.db')).expanduser()
 assert c.SOURCE_DB_SHA256==EXPECTED_DB and c.SOURCE_UUID==EXPECTED_UUID
 add.verify_source(db)

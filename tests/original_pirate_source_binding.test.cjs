@@ -13,11 +13,14 @@ assert 'sourceCatalog' in p['runtimeBundle'], 'source catalog missing'
 from original_pirate_source_binding import snapshot_digest, validate_sources
 import export_master_to_csv as master
 c = p['runtimeBundle']['sourceCatalog']
-assert len(c['snapshots']) == 1
-s = c['snapshots'][0]
+assert len(c['snapshots']) == 2
+s = next(value for value in c['snapshots'] if value['originKind']=='local_original')
 assert s['originKind']=='local_original' and s['members']==[]
 assert s['snapshotDigest']==snapshot_digest(s)
-assert all(i['sourceBinding']['objectId']==i['itemId'] for i in p['items'])
+assert all(
+    i['sourceBinding']['objectId']==i['itemId']
+    for i in p['items'] if i['sourceBinding']['snapshotId']==s['snapshotId']
+)
 validate_sources(p['items'],p['runtimeBundle'])
 def reject(change):
     f=copy.deepcopy(p);change(f)
@@ -38,8 +41,10 @@ fixture=copy.deepcopy(p)
 ss=fixture['runtimeBundle']['sourceCatalog']['snapshots'][0]
 ss['originKind']='synthetic_fixture';ss['metadata']={'fixtureId':ss['snapshotId']}
 ss['snapshotDigest']=snapshot_digest(ss)
-for item in fixture['items']:item['sourceBinding']['snapshotDigest']=ss['snapshotDigest']
-for skill in fixture['runtimeBundle']['executableCatalogs']['heroSkills']:skill['sourceBinding']['snapshotDigest']=ss['snapshotDigest']
+for item in fixture['items']:
+    if item['sourceBinding']['snapshotId']==ss['snapshotId']:item['sourceBinding']['snapshotDigest']=ss['snapshotDigest']
+for skill in fixture['runtimeBundle']['executableCatalogs']['heroSkills']:
+    if skill['sourceBinding']['snapshotId']==ss['snapshotId']:skill['sourceBinding']['snapshotDigest']=ss['snapshotDigest']
 validate_sources(fixture['items'],fixture['runtimeBundle'])
 before=copy.deepcopy(p);validate_sources(p['items'],p['runtimeBundle']);assert p==before
 # Use a real identity but retain original test-item rules: this is NOT an original item mapping.

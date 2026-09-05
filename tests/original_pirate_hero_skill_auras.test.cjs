@@ -9,7 +9,7 @@ sys.path.insert(0,'tools')
 import export_original_pirate_content as e
 t=e._read_domains(pathlib.Path('data/csv'))
 p,d=e.build_exports(pathlib.Path('data/csv'))
-assert p['schemaVersion']==40
+assert p['schemaVersion']==41
 assert all(q['auras']==[] for s in p['runtimeBundle']['executableCatalogs']['heroSkills'] for q in s['qualityProfiles'].values())
 sid='hero_skill_mist_salvo'
 fixture=copy.deepcopy(t)
@@ -61,7 +61,7 @@ bad=copy.deepcopy(fixture);bad['72_bz_hero_skill_auras.csv'].pop();reject(bad)
 bad=copy.deepcopy(fixture);bad['72_bz_hero_skill_auras.csv'].append(copy.deepcopy(bad['72_bz_hero_skill_auras.csv'][0]));reject(bad)
 for qfield,value in [('trigger_event','friendly_item_used'),('max_triggers_per_battle','1'),('aura_ids',''),('amount','0')]:
  bad=copy.deepcopy(fixture);next(r for r in bad['62_bz_hero_skills.csv'] if r['hero_skill_id']==sid)[qfield]=value;reject(bad)
-for old in [39,38]:
+for old in [40,39,38]:
  bad=copy.deepcopy(p);bad['schemaVersion']=old
  try:e.validate_package(bad)
  except e.ExportError:pass

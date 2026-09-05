@@ -26,6 +26,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-05_original_pirate_torpedo_source_mapping_candidate.md` — Torpedo 三品质、双条件成长监听与 Radiant 覆盖的隔离来源映射；Reload 文案与加伤结构冲突、同 Medium 时序和运行免疫语义均 fail closed。
+
 - `tasks/doing/2026-09-05_original_pirate_bladed_hoverboard_source_mapping_candidate.md` — Bladed Hoverboard 三品质、相邻使用监听与 Toxic 覆盖的隔离来源映射；Flying/Poison时点、空引用绑定及三条 Medium 顺序未知，不进入正式内容。
 
 - `tasks/doing/2026-09-05_original_pirate_captains_quarters_source_gap.md` — Captain's Quarters 三品质均悬空引用缺失 Ability 3；来源缺口已锁并禁止正式晋升，等待同版本完整来源。

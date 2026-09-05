@@ -1,0 +1,17 @@
+{
+  "schema": "ysbzs.original-pirate-torpedo-source-mapping-provenance.v1",
+  "acceptance": "source_effect_mapping_only_not_complete_item",
+  "originalRulesAccepted": false,
+  "notValidatedAs": "ysbzs.original-pirate-content.v1",
+  "mappingSha256": "f5c534f3dbd7d76ee6eee5d6256e29ade53f43b3ccf46994ae13ab826017a2ed",
+  "sourceDbSha256": "7d8df658ebce967edf59ab8d0c889fa266f56917b87336928694cdce54246ee9",
+  "sourceCardCanonicalSha256": "99750a608b4684072bcc86fc65b5b52ff46b117356b26cedf728124547b11eea",
+  "sourceObjectUuid": "9778f31c-87b0-4d8d-8289-50e90dd7edc5",
+  "sourceScope": "Complete Silver/Gold/Diamond tiers, Abilities 0/1/2, empty base Aura directory and Radiant overlay",
+  "limitations": [
+    "This is static source mapping, not executable Torpedo content or a complete Run.",
+    "Ability 1 OR and Ability 2 Large-AND-OR structures are source-locked; their simultaneous Medium stacking and event order remain unverified.",
+    "DamageAmount 100 is distinct from Custom_0 gains 40/80/160; dynamic evaluation and combat stacking remain fail closed.",
+    "Radiant immunity attributes are source-locked, but their runtime application is not accepted."
+  ]
+}

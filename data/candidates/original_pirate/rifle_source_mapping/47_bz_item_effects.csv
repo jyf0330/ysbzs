@@ -1,0 +1,9 @@
+effect_id,item_id,quality,item_skill_id,priority,trigger_event,condition_type,condition_tags,condition_source_relation,target_type,target_tags,target_exclude_self,target_count,operation_type,amount,crit_chance_bps_delta,stacks,can_crit,status,ticks,catalog_status,source_ability_id,trigger_priority,effect_order
+effect_bazaar_rifle_bronze_damage,item_bazaar_rifle,bronze,skill_bazaar_rifle,,item_ready,always,,any,selected_enemy,,,,deal_damage,20,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_rifle_bronze_growth,item_bazaar_rifle,bronze,skill_bazaar_rifle,,item_ready,always,,any,self_item,,,,gain_damage_for_fight,10,,,,,,candidate_reference,1,Low,0
+effect_bazaar_rifle_silver_damage,item_bazaar_rifle,silver,skill_bazaar_rifle,,item_ready,always,,any,selected_enemy,,,,deal_damage,40,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_rifle_silver_growth,item_bazaar_rifle,silver,skill_bazaar_rifle,,item_ready,always,,any,self_item,,,,gain_damage_for_fight,20,,,,,,candidate_reference,1,Low,0
+effect_bazaar_rifle_gold_damage,item_bazaar_rifle,gold,skill_bazaar_rifle,,item_ready,always,,any,selected_enemy,,,,deal_damage,80,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_rifle_gold_growth,item_bazaar_rifle,gold,skill_bazaar_rifle,,item_ready,always,,any,self_item,,,,gain_damage_for_fight,40,,,,,,candidate_reference,1,Low,0
+effect_bazaar_rifle_diamond_damage,item_bazaar_rifle,diamond,skill_bazaar_rifle,,item_ready,always,,any,selected_enemy,,,,deal_damage,160,,,,,,candidate_reference,0,Medium,0
+effect_bazaar_rifle_diamond_growth,item_bazaar_rifle,diamond,skill_bazaar_rifle,,item_ready,always,,any,self_item,,,,gain_damage_for_fight,80,,,,,,candidate_reference,1,Low,0

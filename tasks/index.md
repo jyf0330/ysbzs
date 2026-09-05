@@ -24,6 +24,8 @@
 
 ## READY_TO_MERGE
 
+- `tasks/doing/2026-09-05_original_pirate_rifle_source_mapping_candidate.md` — Rifle真实Ability优先级/品质值隔离映射候选，不补未知Ammo初值或Crit。
+
 - `tasks/doing/2026-09-05_original_pirate_source_ability_priority.md` — 来源Ability六档优先级与单Action顺序，正式legacy包逐字不变。
 
 - `tasks/doing/2026-09-04_original_pirate_hero_skill_sources.md` — VERIFIED_CORE_ONLY：Lead数据复跑31/31、Godot来源13/13与独立审核通过；版本37/35/26，执行值不变，三阵容原规则验收未完成。
